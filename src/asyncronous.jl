@@ -8,17 +8,21 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-module SDDP
+master node just stores a jagged array of cuts
+    cuts[stage][markovstate][pricestate] = Cut[]
 
-using JuMP
-
-export @state,
-    # risk measures
-    Expectation
-
-include("typedefinitions.jl")
-include("riskmeasures.jl")
-include("states.jl")
+slave nodes run independent SDDPModels.
+    getcuts!(m::SDDPModel, stage, markovstate, pricestate, n::Int) # n is current number
+    passcuts!(m::SDDPModel, stage, markovstate, pricestate)
 
 
+asyncronous solve goes
+
+while not converged
+
+    @async do a whole lot of cuts
+
+    @async simulate bound
+
+    check convergence
 end

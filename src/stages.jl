@@ -8,17 +8,4 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-module SDDP
-
-using JuMP
-
-export @state,
-    # risk measures
-    Expectation
-
-include("typedefinitions.jl")
-include("riskmeasures.jl")
-include("states.jl")
-
-
-end
+stages(m::SDDPModel) = m.stages

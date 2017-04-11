@@ -8,17 +8,17 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-module SDDP
+function simulate(m::SDDPModel, n::Int, variablestorecord::Vector{Symbol}=Symbol[])
+    for stage 1 to t-1
+        solve stage i
+        pass new state forward
+        pass new price forward
+        transition to new markov state
+        record variables
+        record stage cost
+    end
 
-using JuMP
-
-export @state,
-    # risk measures
-    Expectation
-
-include("typedefinitions.jl")
-include("riskmeasures.jl")
-include("states.jl")
-
-
+    solve stage t
+    record variables
+    record stage cost
 end
