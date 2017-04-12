@@ -9,6 +9,7 @@
 #############################################################################
 
 abstract type AbstractRiskMeasure end
+abstract type AbstractCutOracle end
 
 const LinearConstraint=JuMP.ConstraintRef{JuMP.Model, JuMP.GenericRangeConstraint{JuMP.GenericAffExpr{Float64, JuMP.Variable}}}
 
@@ -19,27 +20,22 @@ end
 
 struct Scenario
     # list of row indices
-    row::Vector{LinearConstraint}
+    constraints::Vector{LinearConstraint}
     # list of RHS values
-    value::Vector{Float64}
+    values::Vector{Float64}
 end
-Scenario() = Scenario(LinearConstraint[], Float64[])
 
-struct Scenarios
-    # vector of scenarios
-    scenarios::Vector{Scenario}
-    # probability[i] = probability of scenarios[i] occuring
-    probability::Vector{Float64}
+struct PriceOracle{T}
+    pricetransition::Function  # ℜ → ℜ
+    pricescenarios::Vector{T}
+    objective::Function        # ℜ → AffExpr
 end
-Scenarios() = Scenarios(Scenario[], Float64[])
-
-import Base: length
-Base.length(s::Scenarios) = length(s.scenarios)
-
+PriceOracle() = PriceOracle((p)->p, Float64[], (p) -> AffExpr(p))
 
 struct ValueFunction
+    location::Float64
     theta::JuMP.Variable
-    cuts#::AbstractCutOracle # a cut oracle
+    cuts::AbstractCutOracle # a cut oracle
 end
 
 struct SubproblemExt
@@ -47,11 +43,32 @@ struct SubproblemExt
     markovstate::Int         # index of the subproblem by markov state
 
     states::Vector{State}                # a vector of states
-    valuefunction::Vector{ValueFunction} # a value function
 
-    scenarios::Scenarios
+    valuefunctions::Vector{ValueFunction} # a value function
+    priceoracle::PriceOracle
+
+    # vector of scenarios
+    scenarios::Vector{Scenario}
+    # probability[i] = probability of scenarios[i] occuring
+    scenarioprobability::Vector{Float64}
 
     riskmeasure::AbstractRiskMeasure # A risk measure to use for the subproblem
+end
+ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
+
+function Subproblem()
+    m = Model()
+    m.ext[:SDDP] = SDDP.SubproblemExt(
+        1,
+        1,
+        SDDP.State[],
+        SDDP.ValueFunction[],
+        SDDP.PriceOracle(),
+        SDDP.Scenario[],
+        Float64[],
+        Expectation()
+    )
+    m
 end
 
 struct Stage

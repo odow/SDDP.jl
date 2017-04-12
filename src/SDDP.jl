@@ -12,13 +12,15 @@ module SDDP
 
 using JuMP
 
-export @state,
+export @state, @states,
+    @scenario, @scenarios, setscenarioprobability!,
     # risk measures
     Expectation
 
 include("typedefinitions.jl")
 include("riskmeasures.jl")
 include("states.jl")
+include("scenarios.jl")
 
 
 end

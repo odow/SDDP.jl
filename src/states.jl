@@ -38,44 +38,86 @@ function statevariable!{T<:Union{JuMP.JuMPArray, JuMP.JuMPDict}}(sp::JuMP.Model,
     end
 end
 
+_copy(x::Symbol) = x
+_copy(x::Expr) = copy(x)
+
 """
     @state(sp, stateleaving, stateentering)
+
 Define a new state variable in the subproblem `sp`.
+
 Arguments:
     sp               the subproblem
     stateleaving     any valid JuMP `@variable` syntax to define the value of the state variable at the end of the stage
     stateentering    any valid JuMP `@variable` syntax to define the value of the state variable at the beginning of the stage
+
 Usage:
-    @state(sp, 0 <= x[i=1:3] <= 1, x0=rand(3)[i] )
-    @state(sp,      y        <= 1, y0=0.5        )
-    @state(sp,      z            , z0=0.5        )
+    @state(sp, 0 <= x[i=1:3] <= 1, x0==rand(3)[i] )
+    @state(sp,      y        <= 1, y0==0.5        )
+    @state(sp,      z            , z0==0.5        )
 """
 macro state(sp, x, x0)
     sp = esc(sp)                        # escape the model
-    @assert x0.head == :(=)             # must be a keyword
-    symin, rhs = x0.args                # name of the statein variable
+    @assert x0.head == :call && x0.args[1] == :(==) # must be ==
+    compsym, symin, rhs = x0.args                # name of the statein variable
     if is_comparison(x)
         if length(x.args) == 5          # double sided
-            xin = identity(x.args[3])       # variable is in middle
+            xin = _copy(x.args[3])       # variable is in middle
         elseif length(x.args) == 3      # single comparison
-            xin = identity(x.args[2])       # variable is second entry
+            xin = _copy(x.args[2])       # variable is second entry
         else
             error("Unknown format for $(x)")
         end
     else
-        xin = identity(x)                   # no bounds
+        xin = _copy(x)  # no bounds
     end
     if isa(xin, Expr)                   # x has indices
         xin.args[1] = symin             # so just change the name
     else                                # its just a Symbol
         xin = symin                     # so change the Symbol
     end
-    # ex = Expr(:(=), QuoteNode(:start), esc(rhs))
-    # @show ex, dump(ex)
     quote
-        stateout = $(Expr(:macrocall, Symbol("@variable"), sp, esc(x), :(start=esc(rhs))))
+        stateout = $(Expr(:macrocall, Symbol("@variable"), sp, esc(x), Expr(:(=), esc(:start), esc(rhs))))
         statein  = $(Expr(:macrocall, Symbol("@variable"), sp, esc(xin)))
         statevariable!($sp, statein, stateout)
         stateout, statein
     end
+end
+
+"""
+    @states(sp, begin
+        stateleaving1, stateentering1
+        stateleaving2, stateentering2
+    end)
+
+Define a new state variables in the subproblem `sp`.
+
+Arguments:
+    sp               the subproblem
+    stateleaving     any valid JuMP `@variable` syntax to define the value of the state variable at the end of the stage
+    stateentering    any valid JuMP `@variable` syntax to define the value of the state variable at the beginning of the stage
+
+Usage:
+    @states(sp, begin
+        0 <= x[i=1:3] <= 1, x0==rand(3)[i]
+             y        <= 1, y0==0.5
+             z            , z0==0.5
+     end)
+"""
+macro states(m, b)
+    @assert b.head == :block || error("Invalid syntax for @states")
+    code = quote end
+    for line in b.args
+        if !Base.Meta.isexpr(line, :line)
+            if line.head == :tuple && length(line.args) == 2
+                push!(code.args,
+                    Expr(:macrocall, Symbol("@state"), esc(m), esc(line.args[1]), esc(line.args[2]))
+                )
+            else
+                error("Unknown arguments in @states")
+            end
+        end
+    end
+    push!(code.args, :(nothing))
+    return code
 end

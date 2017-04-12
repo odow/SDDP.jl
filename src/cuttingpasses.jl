@@ -8,7 +8,7 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-for stage 1 to t
+for stage 1 to t-1
     solve stage i
     pass new state forward
     pass new price forward
