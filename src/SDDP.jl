@@ -14,6 +14,7 @@ using JuMP
 
 export @state, @states,
     @scenario, @scenarios, setscenarioprobability!,
+    stageobjective!,
     # risk measures
     Expectation
 
@@ -21,6 +22,8 @@ include("typedefinitions.jl")
 include("riskmeasures.jl")
 include("states.jl")
 include("scenarios.jl")
+include("cutoracles.jl")
+# include("stageobjectives.jl")
 
 
 end

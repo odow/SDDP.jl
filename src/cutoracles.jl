@@ -1,6 +1,12 @@
-abstract AbstractCutOracle
-
-initialise(t::AbstractCutOracle) = error("""You must define an initialisation method for your cut oracle.""")
+#  Copyright 2017, Oscar Dowson
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#############################################################################
+# SDDP
+# Stochastic Dual Dynamic Programming in Julia
+# See http://github.com/odow/SDDP.jl
+#############################################################################
 
 """
     storecut!(oracle::AbstractCutOracle, cut::Cut)
@@ -27,6 +33,6 @@ struct DefaultCutOracle <: AbstractCutOracle
     cuts::Vector{Cut}
 end
 DefaultCutOracle() = DefaultCutOracle(Cut[])
-initialise(::DefaultCutOracle, m, stage, markov, price) = DefaultCutOracle()
-storecut!(oracle::DefaultCutOracle, m::SDDPModel, stage::Int, markovstate::Int, pricestate::Int, cut) = push!(oracle.cuts, cut)
+
+storecut!(oracle::DefaultCutOracle, cut::Cut) = push!(oracle.cuts, cut)
 validcuts(oracle::DefaultCutOracle) = oracle.cuts

@@ -10,8 +10,16 @@
 
 abstract type AbstractRiskMeasure end
 abstract type AbstractCutOracle end
+abstract type OptimisationSense end
+struct Max <: OptimisationSense end
+struct Min <: OptimisationSense end
 
 const LinearConstraint=JuMP.ConstraintRef{JuMP.Model, JuMP.GenericRangeConstraint{JuMP.GenericAffExpr{Float64, JuMP.Variable}}}
+
+struct Cut
+    intercept::Float64
+    coefficients::Vector{Float64}
+end
 
 struct State
     variable::JuMP.Variable
@@ -25,34 +33,41 @@ struct Scenario
     values::Vector{Float64}
 end
 
-struct PriceOracle{T}
-    pricetransition::Function  # ℜ → ℜ
-    pricescenarios::Vector{T}
-    objective::Function        # ℜ → AffExpr
-end
-PriceOracle() = PriceOracle((p)->p, Float64[], (p) -> AffExpr(p))
+abstract type AbstractPriceOracle end
 
-struct ValueFunction
-    location::Float64
+# # mutable struct RibPriceOracle{T} <: AbstractPriceOracle
+# #     pricetransition::Function  # ℜ² → ℜ
+# #     pricescenarios::Vector{T}
+# #     objective::Function        # ℜ → AffExpr
+# #     ribs::Vector{Float64}
+# #     thetas::Vector{JuMP.Variable}
+# #     cutoracles::Vector{CutOracles}
+# # end
+# # PriceOracle() = PriceOracle((p)->p, Float64[], (p) -> AffExpr(p))
+
+struct DefaultPriceOracle{T<:AbstractCutOracle} <: AbstractPriceOracle
     theta::JuMP.Variable
-    cuts::AbstractCutOracle # a cut oracle
+    cutoracle::T
 end
 
-struct SubproblemExt
+struct SubproblemExt{R<:AbstractRiskMeasure, S<:OptimisationSense}
     stage::Int               # stage index
     markovstate::Int         # index of the subproblem by markov state
 
     states::Vector{State}                # a vector of states
 
-    valuefunctions::Vector{ValueFunction} # a value function
-    priceoracle::PriceOracle
+    # priceoracle::AbstractPriceOracle
+    # cuts::Vector{Cut}
 
     # vector of scenarios
     scenarios::Vector{Scenario}
     # probability[i] = probability of scenarios[i] occuring
     scenarioprobability::Vector{Float64}
 
-    riskmeasure::AbstractRiskMeasure # A risk measure to use for the subproblem
+    riskmeasure::R # A risk measure to use for the subproblem
+
+    problembound::Float64
+    sense::Type{S}
 end
 ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 
@@ -61,12 +76,15 @@ function Subproblem()
     m.ext[:SDDP] = SDDP.SubproblemExt(
         1,
         1,
-        SDDP.State[],
-        SDDP.ValueFunction[],
-        SDDP.PriceOracle(),
-        SDDP.Scenario[],
+        State[],
+        # ValueFunction[],
+        # AbstractCutOracle[],
+        # DefaultPriceOracle(),
+        Scenario[],
         Float64[],
-        Expectation()
+        Expectation(),
+        0.0,
+        Min
     )
     m
 end

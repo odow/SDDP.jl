@@ -7,7 +7,6 @@
 # Stochastic Dual Dynamic Programming in Julia
 # See http://github.com/odow/SDDP.jl
 #############################################################################
-using JuMP
 
 @testset "Scenarios" begin
     @testset "Simple RHS" begin
