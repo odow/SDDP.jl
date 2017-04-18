@@ -7,14 +7,13 @@
 # Stochastic Dual Dynamic Programming in Julia
 # See http://github.com/odow/SDDP.jl
 #############################################################################
-
-@testset "Default Price Oracle" begin
-    @testset "Simple RHS" begin
+# using Clp
+@testset "Stage Objectives" begin
+    @testset "Default Price Oracle" begin
         m = SDDP.Subproblem()
-        ext = SDDP.ext(m)
         @variable(m, x)
         stageobjective!(m, x)
-        @test length(ext.valuefunctions) == 1
+        @test getobjective(m) == convert(QuadExpr, x + SDDP.ext(m).valueoracle.theta)
     end
 end
 #

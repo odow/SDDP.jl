@@ -7,27 +7,18 @@
 # Stochastic Dual Dynamic Programming in Julia
 # See http://github.com/odow/SDDP.jl
 #############################################################################
-
-module SDDP
-
-using JuMP
-
-export @state, @states,
-    @scenario, @scenarios, setscenarioprobability!,
-    SDDPModel,
-    stageobjective!,
-    # risk measures
-    Expectation
-
-include("typedefinitions.jl")
-include("utilities.jl")
-include("riskmeasures.jl")
-include("states.jl")
-include("scenarios.jl")
-include("cutoracles.jl")
-include("valuefunctions.jl")
-include("stageobjectives.jl")
-include("sddpmodels.jl")
-
-
+getsense(::Type{Max}) = :Max
+getsense(::Type{Min}) = :Min
+getsense(m::JuMP.Model) = getsense(ext(m).sense)
+function optimisationsense(s::Symbol)
+    if s==:Min
+        return Min
+    elseif s==:Max
+        return Max
+    else
+        error("Unknown optimisation sense $s. Must be :Max or :Min")
+    end
 end
+
+futureobjective!(::Type{Max}, m::JuMP.Model, bound) = @variable(m, upperbound = bound)
+futureobjective!(::Type{Min}, m::JuMP.Model, bound) = @variable(m, lowerbound = bound)

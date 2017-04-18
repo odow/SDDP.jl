@@ -36,3 +36,18 @@ DefaultCutOracle() = DefaultCutOracle(Cut[])
 
 storecut!(oracle::DefaultCutOracle, cut::Cut) = push!(oracle.cuts, cut)
 validcuts(oracle::DefaultCutOracle) = oracle.cuts
+
+# abstract type AbstractPriceOracle end
+# mutable struct RibPriceOracle{T} <: AbstractPriceOracle
+#     pricetransition::Function  # ℜ² → ℜ
+#     pricescenarios::Vector{T}
+#     objective::Function        # ℜ → AffExpr
+#     ribs::Vector{Float64}
+#     thetas::Vector{JuMP.Variable}
+#     cutoracles::Vector{CutOracles}
+# end
+# PriceOracle() = PriceOracle((p)->p, Float64[], (p) -> AffExpr(p))
+# struct DefaultPriceOracle{T<:AbstractCutOracle} <: AbstractPriceOracle
+#     theta::JuMP.Variable
+#     cutoracle::T
+# end

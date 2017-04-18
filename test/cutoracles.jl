@@ -11,7 +11,7 @@
 struct NewCutOracle <: SDDP.AbstractCutOracle end
 struct NotACutOracle end
 
-@testset "Bad Cut Oracles" begin
+@testset "Cut Oracles" begin
     @testset "New Cut Oracle" begin
         newcutoracle = NewCutOracle()
         cut = SDDP.Cut(1, [1])
@@ -25,12 +25,11 @@ struct NotACutOracle end
         @test_throws Exception SDDP.storecut!(notacutoracle, cut)
         @test_throws Exception SDDP.validcuts(notacutoracle)
     end
-end
 
-
-@testset "Default Cut Oracle" begin
-    oracle = SDDP.DefaultCutOracle()
-    cut = SDDP.Cut(1, [1])
-    SDDP.storecut!(oracle, cut)
-    @test SDDP.validcuts(oracle) == [cut]
+    @testset "Default Cut Oracle" begin
+        oracle = SDDP.DefaultCutOracle()
+        cut = SDDP.Cut(1, [1])
+        SDDP.storecut!(oracle, cut)
+        @test SDDP.validcuts(oracle) == [cut]
+    end
 end

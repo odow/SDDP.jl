@@ -8,26 +8,15 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-module SDDP
+struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
+    cutmanager::C
+    theta::JuMP.Variable
+end
 
-using JuMP
+function DefaultValueFunction(m::JuMP.Model, sense, bound, cutmanager=DefaultCutOracle())
+    DefaultValueFunction(cutmanager, futureobjective!(sense, m, bound))
+end
 
-export @state, @states,
-    @scenario, @scenarios, setscenarioprobability!,
-    SDDPModel,
-    stageobjective!,
-    # risk measures
-    Expectation
-
-include("typedefinitions.jl")
-include("utilities.jl")
-include("riskmeasures.jl")
-include("states.jl")
-include("scenarios.jl")
-include("cutoracles.jl")
-include("valuefunctions.jl")
-include("stageobjectives.jl")
-include("sddpmodels.jl")
-
-
+function init!(vf::Type{DefaultValueFunction}, m::JuMP.Model, sense, bound, cutmanager)
+    DefaultValueFunction(m::JuMP.Model, sense, bound, cutmanager)
 end

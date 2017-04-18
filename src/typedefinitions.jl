@@ -10,6 +10,8 @@
 
 abstract type AbstractRiskMeasure end
 abstract type AbstractCutOracle end
+abstract type AbstractValueFunction end
+
 abstract type OptimisationSense end
 struct Max <: OptimisationSense end
 struct Min <: OptimisationSense end
@@ -33,58 +35,39 @@ struct Scenario
     values::Vector{Float64}
 end
 
-abstract type AbstractPriceOracle end
-
-# # mutable struct RibPriceOracle{T} <: AbstractPriceOracle
-# #     pricetransition::Function  # ℜ² → ℜ
-# #     pricescenarios::Vector{T}
-# #     objective::Function        # ℜ → AffExpr
-# #     ribs::Vector{Float64}
-# #     thetas::Vector{JuMP.Variable}
-# #     cutoracles::Vector{CutOracles}
-# # end
-# # PriceOracle() = PriceOracle((p)->p, Float64[], (p) -> AffExpr(p))
-
-struct DefaultPriceOracle{T<:AbstractCutOracle} <: AbstractPriceOracle
-    theta::JuMP.Variable
-    cutoracle::T
-end
-
-struct SubproblemExt{R<:AbstractRiskMeasure, S<:OptimisationSense}
-    stage::Int               # stage index
-    markovstate::Int         # index of the subproblem by markov state
-
-    states::Vector{State}                # a vector of states
-
-    # priceoracle::AbstractPriceOracle
-    # cuts::Vector{Cut}
-
+struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:AbstractRiskMeasure}
+    stage::Int              # stage index
+    markovstate::Int        # index of the subproblem by markov state
+    problembound::Float64   # objective bound
+    sense::Type{S}          # optimisation sense (max or min)
+    # a vector of states
+    states::Vector{State}
+    # an oracle to value function
+    valueoracle::V
     # vector of scenarios
     scenarios::Vector{Scenario}
     # probability[i] = probability of scenarios[i] occuring
     scenarioprobability::Vector{Float64}
-
-    riskmeasure::R # A risk measure to use for the subproblem
-
-    problembound::Float64
-    sense::Type{S}
+    # A risk measure to use for the subproblem
+    riskmeasure::R
 end
 ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
+isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
 
-function Subproblem()
+function Subproblem(;stage=1, markov_state=1, sense=Min, bound=-1e6,
+    risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction)
+
     m = Model()
     m.ext[:SDDP] = SDDP.SubproblemExt(
-        1,
-        1,
+        stage,
+        markov_state,
+        bound,
+        sense,
         State[],
-        # ValueFunction[],
-        # AbstractCutOracle[],
-        # DefaultPriceOracle(),
+        init!(value_function, m, sense, bound, cut_oracle),
         Scenario[],
         Float64[],
-        Expectation(),
-        0.0,
-        Min
+        risk_measure
     )
     m
 end
@@ -96,7 +79,9 @@ struct Stage
     # probability of transitioning to subproblem i in next stage
     transitionprobabilities::Vector{Float64}
 end
+Stage(transition=Float64[]) = Stage(JuMP.Model[], transition)
 
 struct SDDPModel
     stages::Vector{Stage}
 end
+SDDPModel() = SDDPModel(Stage[])

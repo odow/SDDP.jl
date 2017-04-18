@@ -8,26 +8,9 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-module SDDP
-
-using JuMP
-
-export @state, @states,
-    @scenario, @scenarios, setscenarioprobability!,
-    SDDPModel,
-    stageobjective!,
-    # risk measures
-    Expectation
-
-include("typedefinitions.jl")
-include("utilities.jl")
-include("riskmeasures.jl")
-include("states.jl")
-include("scenarios.jl")
-include("cutoracles.jl")
-include("valuefunctions.jl")
-include("stageobjectives.jl")
-include("sddpmodels.jl")
-
-
+@testset "Utilities" begin
+    @test SDDP.getsense(SDDP.Max) == :Max
+    @test SDDP.getsense(SDDP.Min) == :Min
+    m=SDDP.Subproblem()
+    @test SDDP.getsense(m) == :Min
 end

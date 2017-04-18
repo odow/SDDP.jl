@@ -37,7 +37,7 @@ end
 import Base: *
 *(x::Int, ::Type{Stages}) = Stages(x)
 *(x::Int, ::Type{MarkovStates}) = MarkovStates(x)
-*(s::Stages, m::MarkovStates) = (s.x, m.x)
+*(s::Stages, m::MarkovStates) = (s.n, m.n)
 5Stages
 
-5Stages * 2MarkovStates
+scenario_tree = 5Stages * 2MarkovStates
