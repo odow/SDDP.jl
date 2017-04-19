@@ -35,7 +35,7 @@ function SDDPModel(build!::Function;
 
     for t in 1:stages
         # TODO: Transition for stage
-        push!(m.stages, Stage())
+        stage = Stage()
         if !includes_markovstate && (getel(Int, markov_states, t) != 1)
             error("""Because you specified a scenario tree in the SDDPModel constructor, you need to use the
 
@@ -60,7 +60,9 @@ function SDDPModel(build!::Function;
             else
                 build!(mod, t)
             end
+            push!(stage.subproblems, mod)
         end
+        push!(m.stages, stage)
     end
     m
 end

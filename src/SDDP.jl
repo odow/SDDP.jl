@@ -16,6 +16,7 @@ export @state, @states,
     @scenario, @scenarios, setscenarioprobability!,
     SDDPModel,
     stageobjective!,
+    DefaultCutOracle,
     # risk measures
     Expectation
 

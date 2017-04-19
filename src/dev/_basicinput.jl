@@ -81,3 +81,13 @@ using JuMP, Clp
         )
 
 end
+#
+# @testset "Rib Price Oracle" begin
+#     @testset "Simple RHS" begin
+#         m = SDDP.Subproblem()
+#         ext = SDDP.ext(m)
+#         @variable(m, x)
+#         stageobjective!(m, x)
+#         @test length(ext.valuefunctions) == 1
+#     end
+# end

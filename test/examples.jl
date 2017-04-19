@@ -8,4 +8,12 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-stages(m::SDDPModel) = m.stages
+const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
+
+for example in [
+        "hydro_valley.jl"
+    ]
+    @testset "$example" begin
+        include(joinpath(examples_dir, example))
+    end
+end

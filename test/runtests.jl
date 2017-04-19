@@ -12,10 +12,11 @@ using SDDP
 using JuMP
 using Base.Test
 
-# include("utilities.jl")
-# include("riskmeasures.jl")
-# include("states.jl")
-# include("scenarios.jl")
-# include("cutoracles.jl")
-# include("stageobjectives.jl")
+include("utilities.jl")
+include("riskmeasures.jl")
+include("states.jl")
+include("scenarios.jl")
+include("cutoracles.jl")
+include("stageobjectives.jl")
 include("sddpmodels.jl")
+include("examples.jl")
