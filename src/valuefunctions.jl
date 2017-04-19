@@ -20,3 +20,5 @@ end
 function init!(vf::Type{DefaultValueFunction}, m::JuMP.Model, sense, bound, cutmanager)
     DefaultValueFunction(m::JuMP.Model, sense, bound, cutmanager)
 end
+
+# setvaluefunction!(m::SDDPModel, t::Int, i::Int) = setvaluefunction!(m.stages[t])

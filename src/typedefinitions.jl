@@ -81,7 +81,31 @@ struct Stage
 end
 Stage(transition=Float64[]) = Stage(JuMP.Model[], transition)
 
+mutable struct BackwardPassStorage
+    state::Vector{Float64}
+    duals::Vector{Vector{Float64}}
+    objective::Vector{Float64}
+    probability::Vector{Float64}
+    newprobability::Vector{Float64}
+    n::Int
+end
+BackwardPassStorage() = BackwardPassStorage(Float64[], Vector{Float64}[], Float64[], Float64[], Float64[], 0)
+
+struct ForwardPassStorage
+    states::Vector{Vector{Float64}}
+end
+
 struct SDDPModel
     stages::Vector{Stage}
+    storage::BackwardPassStorage
+    forwardstorage::ForwardPassStorage
 end
-SDDPModel() = SDDPModel(Stage[])
+SDDPModel() = SDDPModel(Stage[], BackwardPassStorage())
+
+struct Timer
+    simulation::Float64
+    cutting::Float64
+    lpsolver::Float64
+    riskmeasure::Float64
+    cutselection::Float64
+end

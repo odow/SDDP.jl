@@ -15,7 +15,7 @@
     + measure::AbstractRiskMeasure - used to dispatch
     + newprobabilities::Vector{Float64} - the probability support of the scenarios. Should sum to one
     + oldprobabilities::Vector{Float64} - the probability support of the scenarios. Should sum to one
-    + x::Vector{Float64}        - a vector of vector of state values for each scenario
+    + x::Vector{Float64}                - objectives
 """
 modifyprobability!(measure::AbstractRiskMeasure, newprobabilities::Vector{Float64}, oldprobabilities::Vector{Float64}, x::Vector{Float64}) = error("You need to overload a `modifyprobability` method for the measure of type $(typeof(measure)).")
 

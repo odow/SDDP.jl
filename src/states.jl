@@ -12,8 +12,21 @@ const comparison_symbols = [:(<=), :(>=), :(==)]
 is_comparison(x) = Base.Meta.isexpr(x, :comparison) || (Base.Meta.isexpr(x, :call) && x.args[1] in comparison_symbols)
 
 setvalue!(x::State, y::Float64) = JuMP.setRHS(x.constraint, y)
+JuMP.getvalue(x::State) = JuMP.getvalue(x.variable)
 JuMP.getdual(x::State) = JuMP.getdual(x.constraint)
-states(sp::JuMP.Model) = sp.ext[:SDDP].states
+states(sp::JuMP.Model) = ext(sp).states
+nstates(sp::JuMP.Model) = length(states(sp))
+function saveduals!(y, sp::JuMP.Model)
+    for (i, state) in enumerate(states(sp))
+        y[i] = getdual(state)
+    end
+end
+function savestates!(y, sp::JuMP.Model)
+    for (i, state) in enumerate(states(sp))
+        y[i] = getvalue(state)
+    end
+end
+
 
 function statevariable!(m::JuMP.Model, xin::JuMP.Variable, xout::JuMP.Variable)
     push!(states(m),

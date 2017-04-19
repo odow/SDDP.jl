@@ -22,3 +22,12 @@ end
 
 futureobjective!(::Type{Max}, m::JuMP.Model, bound) = @variable(m, upperbound = bound)
 futureobjective!(::Type{Min}, m::JuMP.Model, bound) = @variable(m, lowerbound = bound)
+
+stages(m::SDDPModel) = m.stages
+stage(m::SDDPModel, t) = stages(m)[t]
+
+subproblems(m::SDDPModel, t) = stage(m, t).subproblems
+subproblem(m::SDDPModel, t, i) = subproblem(m, t)[i]
+
+nstages(m::SDDPModel) = length(stages(m))
+nsubproblems(m::SDDPModel, t::Int) = length(subproblems(m, t))

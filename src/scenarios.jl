@@ -7,6 +7,13 @@
 # Stochastic Dual Dynamic Programming in Julia
 # See http://github.com/odow/SDDP.jl
 #############################################################################
+
+function setscenario!(sp::JuMP.Model, scenario::Scenario)
+    for (c, v) in zip(scenario.constraints, scenario.values)
+        JuMP.setRHS!(c, v)
+    end
+end
+
 """
     setscenarioprobability!(sp::JuMP.Model, p::Vector{Float64})
 """
