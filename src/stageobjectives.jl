@@ -8,12 +8,12 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-function stageobjective!{S,V<:DefaultValueFunction,R}(ex::SubproblemExt{S,V,R}, sp::JuMP.Model, obj::AffExpr)
-    JuMP.setobjective(sp, getsense(sp), obj + ex.valueoracle.theta)
-end
-
-stageobjective!(sp::JuMP.Model, obj::AffExpr) = stageobjective!(ext(sp), sp, obj)
-stageobjective!(sp::JuMP.Model, obj::JuMP.Variable) = stageobjective!(sp, AffExpr(obj))
+# function stageobjective!{S,V<:DefaultValueFunction,R}(ex::SubproblemExt{S,V,R}, sp::JuMP.Model, obj::AffExpr)
+#     JuMP.setobjective(sp, getsense(sp), obj + ex.valueoracle.theta)
+# end
+#
+# stageobjective!(sp::JuMP.Model, obj::AffExpr) = stageobjective!(ext(sp), sp, obj)
+# stageobjective!(sp::JuMP.Model, obj::JuMP.Variable) = stageobjective!(sp, AffExpr(obj))
 
 # function stageobjective!(sp::JuMP.Model,        # the JuMP model
 #                     ribs::Vector{Float64},      # locations of ribs

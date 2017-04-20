@@ -22,11 +22,14 @@ function saveduals!(y, sp::JuMP.Model)
     end
 end
 function savestates!(y, sp::JuMP.Model)
+    padvec!(y, nstates(sp))
     for (i, state) in enumerate(states(sp))
         y[i] = getvalue(state)
     end
 end
-
+function padvec!{T}(x::AbstractVector{T}, n::Int)
+    append!(x, zeros(T, max(0, n - length(x))))
+end
 
 function statevariable!(m::JuMP.Model, xin::JuMP.Variable, xout::JuMP.Variable)
     push!(states(m),

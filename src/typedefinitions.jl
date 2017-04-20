@@ -16,6 +16,10 @@ abstract type OptimisationSense end
 struct Max <: OptimisationSense end
 struct Min <: OptimisationSense end
 
+abstract type IterationDirection end
+struct ForwardPass <: IterationDirection end
+struct BackwardPass <: IterationDirection end
+
 const LinearConstraint=JuMP.ConstraintRef{JuMP.Model, JuMP.GenericRangeConstraint{JuMP.GenericAffExpr{Float64, JuMP.Variable}}}
 
 struct Cut
@@ -54,6 +58,9 @@ end
 ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
 
+vftype(sp::JuMP.Model) = vftype(ext(sp))
+vftype{S,V,R}(s::SubproblemExt{S,V,R}) = V
+
 function Subproblem(;stage=1, markov_state=1, sense=Min, bound=-1e6,
     risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction)
 
@@ -75,11 +82,15 @@ end
 struct Stage
     # vector of subproblems in this stage
     subproblems::Vector{JuMP.Model}
-    # transitionprobabilities[i] =
-    # probability of transitioning to subproblem i in next stage
-    transitionprobabilities::Vector{Float64}
+    # transitionprobabilities[i, j] =
+    # probability of transitioning from subproblem i to subproblem j in next stage
+    transitionprobabilities::Array{Float64, 2}
+    # storage for state on forward pass
+    state::Vector{Float64}
+    # extension dictionary
+    ext::Dict
 end
-Stage(transition=Float64[]) = Stage(JuMP.Model[], transition)
+Stage() = Stage(JuMP.Model[], Array{Float64}(0,0), Float64[], Dict())
 
 mutable struct BackwardPassStorage
     state::Vector{Float64}
@@ -87,20 +98,19 @@ mutable struct BackwardPassStorage
     objective::Vector{Float64}
     probability::Vector{Float64}
     newprobability::Vector{Float64}
-    n::Int
+    scenario::Vector{Int}
+    markovstate::Vector{Int}
+    idx::Int # current index
+    N::Int   # length
 end
-BackwardPassStorage() = BackwardPassStorage(Float64[], Vector{Float64}[], Float64[], Float64[], Float64[], 0)
-
-struct ForwardPassStorage
-    states::Vector{Vector{Float64}}
-end
+BackwardPassStorage() = BackwardPassStorage(Float64[], Vector{Float64}[], Float64[], Float64[], Float64[], , Int[], Int[], 0, 0)
 
 struct SDDPModel
     stages::Vector{Stage}
     storage::BackwardPassStorage
-    forwardstorage::ForwardPassStorage
+    ext::Dict # extension dictionary
 end
-SDDPModel() = SDDPModel(Stage[], BackwardPassStorage())
+SDDPModel() = SDDPModel(Stage[], BackwardPassStorage(), Dict())
 
 struct Timer
     simulation::Float64
@@ -108,4 +118,8 @@ struct Timer
     lpsolver::Float64
     riskmeasure::Float64
     cutselection::Float64
+end
+
+struct Settings
+    maxiterations::Int
 end

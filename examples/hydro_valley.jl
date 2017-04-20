@@ -51,10 +51,11 @@ N = length(valley_chain)
 # Initialise SDDP Model
 m = SDDPModel(
             sense           = :Max,
-            stages          = 3,
+            stages          = 4,
             objective_bound = 1e6,
             markov_states   = size(transition, 1),
             transition      = transition,
+            initial_markov_state = 1,
             risk_measure    = Expectation(),
             cut_oracle      = DefaultCutOracle()
                                     ) do sp, stage, markov_state
@@ -99,10 +100,15 @@ m = SDDPModel(
 
     # rainfall scenarios
     for i in 1:N
-        @scenario(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
+        if stage > 1 # in future stages random inflows
+            @scenario(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
+        else # in the first stage deterministic inflow
+            @constraint(sp, inflow[i] <= valley_chain[i].inflows[1])
+        end
     end
 
     # ------------------------------------------------------------------
     #   Objective Function
     stageobjective!(sp, prices[stage, markov_state]*generation_quantity - valley_chain[i].spill_cost * sum(spill))
+
 end

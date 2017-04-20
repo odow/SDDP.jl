@@ -10,15 +10,28 @@
 
 struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
     cutmanager::C
+    stageobjective::QuadExpr
     theta::JuMP.Variable
 end
 
 function DefaultValueFunction(m::JuMP.Model, sense, bound, cutmanager=DefaultCutOracle())
-    DefaultValueFunction(cutmanager, futureobjective!(sense, m, bound))
+    DefaultValueFunction(cutmanager, QuadExpr(0), futureobjective!(sense, m, bound))
 end
 
-function init!(vf::Type{DefaultValueFunction}, m::JuMP.Model, sense, bound, cutmanager)
+function init!(::Type{DefaultValueFunction}, m::JuMP.Model, sense, bound, cutmanager)
     DefaultValueFunction(m::JuMP.Model, sense, bound, cutmanager)
 end
 
-# setvaluefunction!(m::SDDPModel, t::Int, i::Int) = setvaluefunction!(m.stages[t])
+function stageobjective!(::Type{DefaultValueFunction}, sp::JuMP.Model, obj::AffExpr)
+    ext(sp).valueoracle.stageobjective += obj
+    JuMP.setobjective(sp, getsense(sp), obj + ex.valueoracle.theta)
+
+getstageobjective(::Type{DefaultValueFunction}, sp::JuMP.Model) = getvalue(ext(sp).valueoracle.stageobjective)
+
+stageobjective!{T<:AbstractValueFunction}(::Type{T}, sp::JuMP.Model, obj::AffExpr) = error("You need this method")
+getstageobjective{T<:AbstractValueFunction}(::Type{T}, , sp::JuMP.Model) = error("You need this method")
+init!{T<:AbstractValueFunction}(::Type{T}, m::JuMP.Model, sense, bound, cutmanager) = error("You need this method")
+
+stageobjective!(sp::JuMP.Model, obj::AffExpr) = stageobjective!(vftype(sp), sp, obj)
+stageobjective!(sp::JuMP.Model, obj::JuMP.Variable) = stageobjective!(sp, AffExpr(obj))
+getstageobjective(sp::JuMP.Model) = getstageobjective(ext(sp), sp)

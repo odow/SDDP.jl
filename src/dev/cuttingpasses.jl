@@ -17,61 +17,103 @@ function sample(x::Vector{Float64})
     end
     error("x must be a discrete probablity distribution that sums to one.")
 end
-function cutiteration(m::SDDPModel)
-    # forward pass
-    markov_state = 1
-    for (t, stage) in enumerate(stages(m))
-        sp = subproblem(m, t, markov_state)
-        scenario = sample(ext(sp).scenarioprobability)
-        setscenario!(sp, ext(sp).scenarios[scenario])
 
-        status = solve(sp)
-        @assert status == :Optimal
-
-        savestates!(m.forwardstorage.states[t], sp)
-
-        markov_state = sample(stage.transitionprobabilities)
-    end
-
-    # for t in nstages(m)-:-1:2
-    #     # m.storage.state
-    #     for i in 1:nsubproblems(m, t)
-    #         probability = 1.0
-    #         sp = subproblem(m, t, i)
-    #         solvesubproblem!(m, sp, probability)
-    #     end
-    #
-    #     for i in 1:nsubproblems(m, t-1)
-    #         sp = subproblem(m, t, i)
-    #         # change probabilities
-    #         modifyprobability!(
-    #             ex.risk_measure,
-    #             m.storage.newprobabilities,
-    #             m.storage.oldprobabilities,
-    #             sp,
-    #             m.storage.state,
-    #             m.storage.duals,
-    #             m.storage.objective
-    #         )
-    #
-    #         # construct cut
-    #         cut = constructcut(m.storage)
-    #     end
-    # end
+function samplesubproblem(stage::Stage, last_markov_state::Int)
+    newidx = sample(stage.transitionprobabilities[last_markov_state, :])
+    return newidx, subproblem(stage, newidx)
 end
 
-function solvesubproblem!{S,V<:DefaultValueFunction,R}(ex::SubproblemExt{S, V, R}, m::SDDPModel, sp::JuMP.Model, probability)
+function samplescenario(sp::JuMP.Model)
+    scenarioidx = sample(ext(sp).scenarioprobability)
+    return scenairoidx, ext(sp).scenarios[scenarioidx]
+end
 
-    status = solve(sp)
-    @assert status == :Optimal
+function newsolutionstore(X::Vector{Symbol})
+    d = Dict(
+        :markov         = Int[],
+        :scenario       = Int[],
+        :obj            = Float64[],
+        :stageobjective = Float64[]
+    )
+    for x in X
+        d[x] = Any[]
+    end
+    d
+end
+savesolution!(solutionstore::Void, markov::Int, scenarioidx::Int, sp::JuMP.Model) = nothing
+function savesolution!(solutionstore::Dict{Symbol, Vector}, markov::Int, scenarioidx::Int, sp::JuMP.Model)
+    for (key, store) in solutionstore
+        if key == :markov
+            push!(store, markov)
+        elseif key == :scenario
+            push!(store, scenarioidx)
+        elseif key == :obj
+            push!(store, getobjectivevalue(sp))
+        elseif key == :stageobjective
+            push!(store, getstageobjective(sp)
+        else
+            push!(store, getvalue(getvariable(sp, key)))
+        end
+    end
+end
 
-    # store values for risk measure
-    preparestore!(m.storage, nstates(sp), n)
-    idx = m.storage.idx
-    m.storage.objective[idx]   = getobjectivevalue(sp)
-    m.storage.probability[idx] = probability
-    saveduals!(m.storage.duals[idx], sp)
-    m.storage.idx += 1
+function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
+    last_markov_state = 1
+    for (t, stage) in enumerate(stages(m))
+        # choose markov state
+        (last_markov_state, sp) = samplesubproblem(stage, last_markov_state)
+        # choose and set RHS scenario
+        (scenarioidx, scenario) = samplescenario(sp)
+        setscenario!(sp, scenario)
+        # solve subproblem
+        @assert solvesubproblem!(ForwardPass, m, sp) == :Optimal
+        # store state
+        savestates!(stage.state, sp)
+        # save solution for simulations (defaults to no-op)
+        savesolution!(solutionstore, last_markov_state, scenarioidx, sp)
+    end
+end
+
+function backwardpass!(m::SDDPModel, settings::Settings)
+    # walk backward through the stages
+    for t in nstages(m):-1:2
+        stage = stage(m, t)
+        # solve all stage t problems
+        m.storage.idx = 0
+        for (i, sp) in enumerate(subproblems(stage))
+            solvesubproblem!(BackwardPass, m, sp)
+        end
+        # add appropriate cuts
+
+    end
+end
+
+
+solvesubproblem!(direction, m::SDDPModel, ex::SubproblemExt, sp::JuMP.Model) = solve(sp)
+solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, m, ext(sp), sp)
+
+function padstore!(s::BackwardPassStorage, sp::JuMP.Model)
+    while s.idx > s.N
+        push!(m.storage.objective, 0.0)
+        push!(m.storage.scenario, 0)
+        push!(m.storage.markovstate, 0)
+        push!(m.storage.probability, 0.0)
+        push!(m.storage.duals, zeros(nstates(sp)))
+        s.N += 1
+    end
+end
+function solvesubproblem!{S,R}(::Type{BackwardPass}, m::SDDPModel, ex::SubproblemExt{S,DefaultValueFunction,R}, sp::JuMP.Model)
+    for i in 1:length(ex.scenarioprobaiblity)
+        setscenario!(sp, ex.scenarios[i])
+        status = solve(sp)
+        m.storage.idx += 1
+        padstore!(m.storage, sp)
+        m.storage.objective[m.storage.idx] = getobjectivevalue(sp)
+        m.storage.scenario[m.storage.idx] = i
+        m.storage.probability[m.storage.idx] = ex.scenarioprobability[i]
+        m.storage.markovstate[m.storage.idx] = ex.markovstate
+        saveduals!(m.storage.duals[m.storage.idx], sp)
+    end
 end
 
 function constructcut(storage)
@@ -86,26 +128,3 @@ function constructcut(storage)
     end
     Cut(intercept, coefficients)
 end
-
-solvesubproblem!(m::SDDPModel, sp::JuMP.Model, probability) = solvesubproblem!(ext(sp), m, sp, probability)
-
-function preparestore!(s::Storage, l::Int, n::Int)
-    append!(s.objective, zeros(max(0, length(s.objective) - s.n)))
-    append!(s.probability, zeros(max(0, length(s.probability) - s.n)))
-    append!(s.duals, [zeros(l) for i in 1:max(0, length(s.probability) - s.n))])
-end
-function store!{T}(x::Vector{T}, value::T, idx::Int)
-    if length(x) > idx
-        x[idx] = value
-    else
-        push!(x, value)
-    end
-end
-
-# for stage 1 to t-1
-#     solve stage i
-#     pass new state forward
-#     pass new price forward
-#     transition to new markov state
-#     record state
-# end
