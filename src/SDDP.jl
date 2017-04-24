@@ -12,13 +12,16 @@ module SDDP
 
 using JuMP
 
-export @state, @states,
+export SDDPModel,
+    # inputs
+    @state, @states,
     @scenario, @scenarios, setscenarioprobability!,
-    SDDPModel,
     stageobjective!,
+    # cut oracles
     DefaultCutOracle,
     # risk measures
-    Expectation
+    Expectation,
+    solve
 
 include("typedefinitions.jl")
 include("utilities.jl")
@@ -29,6 +32,6 @@ include("cutoracles.jl")
 include("valuefunctions.jl")
 include("stageobjectives.jl")
 include("sddpmodels.jl")
-
+include("cuttingpasses.jl")
 
 end

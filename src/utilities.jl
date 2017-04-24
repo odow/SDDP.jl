@@ -26,8 +26,8 @@ futureobjective!(::Type{Min}, m::JuMP.Model, bound) = @variable(m, lowerbound = 
 stages(m::SDDPModel) = m.stages
 stage(m::SDDPModel, t) = stages(m)[t]
 
-subproblems(s::Stage) = stage.subproblems
-subproblem(s::Stage, i::Int) = subproblems(stage)[i]
+subproblems(s::Stage) = s.subproblems
+subproblem(s::Stage, i::Int) = subproblems(s)[i]
 subproblems(m::SDDPModel, t) = subproblems(stage(m, t))
 subproblem(m::SDDPModel, t, i) = subproblem(stage(m, t), i)
 

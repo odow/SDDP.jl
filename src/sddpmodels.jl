@@ -23,7 +23,7 @@ function SDDPModel(build!::Function;
     stages          = 1,
     objective_bound = -1e6,
     markov_states   = 1,
-    transition      = [1.0],
+    transition      = Array{Float64}(0,0),
     risk_measure    = Expectation(),
     cut_oracle      = DefaultCutOracle(),
     # value_function = DefaultValueFunction{cut_oracle},
@@ -35,7 +35,7 @@ function SDDPModel(build!::Function;
 
     for t in 1:stages
         # TODO: Transition for stage
-        stage = Stage()
+        stage = Stage(transition)
         if !includes_markovstate && (getel(Int, markov_states, t) != 1)
             error("""Because you specified a scenario tree in the SDDPModel constructor, you need to use the
 
@@ -60,8 +60,12 @@ function SDDPModel(build!::Function;
             else
                 build!(mod, t)
             end
+            for i in 1:length(ext(mod).scenarios)
+                push!(ext(mod).scenarioprobability, 1 / length(ext(mod).scenarios))
+            end
             push!(stage.subproblems, mod)
         end
+
         push!(m.stages, stage)
     end
     m

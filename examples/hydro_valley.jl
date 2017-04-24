@@ -8,7 +8,7 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-using SDDP, JuMP
+using SDDP, JuMP, Clp
 
 # For repeatability
 srand(11111)
@@ -51,7 +51,7 @@ N = length(valley_chain)
 # Initialise SDDP Model
 m = SDDPModel(
             sense           = :Max,
-            stages          = 4,
+            stages          = 3,
             objective_bound = 1e6,
             markov_states   = size(transition, 1),
             transition      = transition,
@@ -59,6 +59,7 @@ m = SDDPModel(
             risk_measure    = Expectation(),
             cut_oracle      = DefaultCutOracle()
                                     ) do sp, stage, markov_state
+    setsolver(sp, ClpSolver())
     # ------------------------------------------------------------------
     #   SDDP State Variables
     # Level of upper reservoir
@@ -112,3 +113,5 @@ m = SDDPModel(
     stageobjective!(sp, prices[stage, markov_state]*generation_quantity - valley_chain[i].spill_cost * sum(spill))
 
 end
+
+SDDP.solve(m)

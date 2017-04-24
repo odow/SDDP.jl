@@ -90,7 +90,7 @@ struct Stage
     # extension dictionary
     ext::Dict
 end
-Stage() = Stage(JuMP.Model[], Array{Float64}(0,0), Float64[], Dict())
+Stage(transition=Array{Float64}(0,0)) = Stage(JuMP.Model[], transition, Float64[], Dict())
 
 mutable struct BackwardPassStorage
     state::Vector{Float64}
@@ -103,7 +103,7 @@ mutable struct BackwardPassStorage
     idx::Int # current index
     N::Int   # length
 end
-BackwardPassStorage() = BackwardPassStorage(Float64[], Vector{Float64}[], Float64[], Float64[], Float64[], , Int[], Int[], 0, 0)
+BackwardPassStorage() = BackwardPassStorage(Float64[], Vector{Float64}[], Float64[], Float64[], Float64[], Int[], Int[], 0, 0)
 
 struct SDDPModel
     stages::Vector{Stage}
@@ -123,3 +123,4 @@ end
 struct Settings
     maxiterations::Int
 end
+Settings() = Settings(0)

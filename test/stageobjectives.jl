@@ -12,6 +12,7 @@
     @testset "Default Price Oracle" begin
         m = SDDP.Subproblem()
         @variable(m, x)
+        @test SDDP.vftype(m) == SDDP.DefaultValueFunction{SDDP.DefaultCutOracle}
         stageobjective!(m, x)
         @test getobjective(m) == convert(QuadExpr, x + SDDP.ext(m).valueoracle.theta)
     end

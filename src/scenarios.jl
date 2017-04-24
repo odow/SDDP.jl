@@ -10,7 +10,7 @@
 
 function setscenario!(sp::JuMP.Model, scenario::Scenario)
     for (c, v) in zip(scenario.constraints, scenario.values)
-        JuMP.setRHS!(c, v)
+        JuMP.setRHS(c, v)
     end
 end
 
