@@ -20,7 +20,7 @@ end
 
 function samplesubproblem(stage::Stage, last_markov_state::Int)
     newidx = sample(stage.transitionprobabilities[last_markov_state, :])
-    return newidx, subproblem(stage, newidx)
+    return newidx, getsubproblem(stage, newidx)
 end
 
 function samplescenario(sp::JuMP.Model)
@@ -57,9 +57,12 @@ function savesolution!(solutionstore::Dict{Symbol, Vector}, markov::Int, scenari
     end
 end
 
-solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model) = JuMP.solve(sp)
-solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, vftype(sp), m, sp)
+function solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model)
+    @assert JuMP.solve(sp) == :Optimal
+end
+solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
 hasscenarios(sp::JuMP.Model) = length(ext(sp).scenarios) > 0
+
 function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
     last_markov_state = 1
     scenarioidx = 0
@@ -72,7 +75,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
             setscenario!(sp, scenario)
         end
         # solve subproblem
-        @assert solvesubproblem!(ForwardPass, m, sp) == :Optimal
+        solvesubproblem!(ForwardPass, m, sp)
         # store state
         savestates!(stage.state, sp)
         # save solution for simulations (defaults to no-op)
@@ -81,16 +84,17 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
 end
 
 function backwardpass!(m::SDDPModel, settings::Settings)
+    reset!(m.storage)
     # walk backward through the stages
     for t in nstages(m):-1:2
-        s = stage(m, t)
+        s = getstage(m, t)
         # solve all stage t problems
         m.storage.idx = 0
         for (i, sp) in enumerate(subproblems(s))
             solvesubproblem!(BackwardPass, m, sp)
         end
         # add appropriate cuts
-        for sp in subproblems(stage(m, t-1))
+        for sp in subproblems(getstage(m, t-1))
             modifyvaluefunction!(m, sp)
         end
     end

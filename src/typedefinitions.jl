@@ -57,9 +57,7 @@ struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:Abstract
 end
 ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
-
-vftype(sp::JuMP.Model) = vftype(ext(sp))
-vftype{S,V,R}(s::SubproblemExt{S,V,R}) = V
+valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
 
 function Subproblem(;stage=1, markov_state=1, sense=Min, bound=-1e6,
     risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction)
@@ -92,35 +90,46 @@ struct Stage
 end
 Stage(transition=Array{Float64}(0,0)) = Stage(JuMP.Model[], transition, Float64[], Dict())
 
-mutable struct BackwardPassStorage
+struct Storage
     state::Vector{Float64}
-    duals::Vector{Vector{Float64}}
-    objective::Vector{Float64}
-    probability::Vector{Float64}
-    newprobability::Vector{Float64}
-    scenario::Vector{Int}
-    markovstate::Vector{Int}
-    idx::Int # current index
-    N::Int   # length
+    scenario::CachedVector{Int}
+    markov::CachedVector{Int}
+    duals::CachedVector{Vector{Float64}}
+    objective::CachedVector{Float64}
+    probability::CachedVector{Float64}
+    modifiedprobability::CachedVector{Float64}
 end
-BackwardPassStorage() = BackwardPassStorage(Float64[], Vector{Float64}[], Float64[], Float64[], Float64[], Int[], Int[], 0, 0)
+Storage() = Storage(
+    Float64[],
+    CachedVector(Int),
+    CachedVector(Int),
+    CachedVector(Vector{Float64}),
+    CachedVector(Float64),
+    CachedVector(Float64),
+    CachedVector(Float64)
+)
+
+struct SolutionLog
+    iteration::Int
+    bound::Float64
+    lower_statistical_bound::Float64
+    upper_statistical_bound::Float64
+    timecuts::Float64
+    simulations::Int
+    timesimulations::Float64
+end
+SolutionLog() = SolutionLog(0, 0.0, 0.0, 0.0, 0.0, 0, 0.0)
 
 struct SDDPModel
     stages::Vector{Stage}
-    storage::BackwardPassStorage
+    storage::Storage
+    log::Vector{SolutionLog}
     ext::Dict # extension dictionary
 end
-SDDPModel() = SDDPModel(Stage[], BackwardPassStorage(), Dict())
-
-struct Timer
-    simulation::Float64
-    cutting::Float64
-    lpsolver::Float64
-    riskmeasure::Float64
-    cutselection::Float64
-end
+SDDPModel() = SDDPModel(Stage[], Storage(), SolutionLog[], Dict())
 
 struct Settings
-    maxiterations::Int
+    max_iterations::Int
+    simulation_frequency::Int
 end
 Settings() = Settings(0)

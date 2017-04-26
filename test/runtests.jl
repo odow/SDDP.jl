@@ -12,6 +12,7 @@ using SDDP
 using JuMP
 using Base.Test
 
+include("cachevectors.jl")
 include("utilities.jl")
 include("riskmeasures.jl")
 include("states.jl")

@@ -107,6 +107,13 @@ m = SDDPModel(
             @constraint(sp, inflow[i] <= valley_chain[i].inflows[1])
         end
     end
+    
+    # @scenarioconstraints(sp, idx = 1:10, Uniform(), begin
+    #     for i in 1:N
+    #         scenarioconstraint!(inflow[idx] <= valley_chain[idx].inflows)
+    #     end
+    # end)
+
 
     # ------------------------------------------------------------------
     #   Objective Function

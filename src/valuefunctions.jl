@@ -3,10 +3,17 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
-# SDDP
-# Stochastic Dual Dynamic Programming in Julia
-# See http://github.com/odow/SDDP.jl
-#############################################################################
+
+stageobjective!(vf::AbstractValueFunction, sp::JuMP.Model, obj) = error("You need this method")
+getstageobjective(vf::AbstractValueFunction, sp::JuMP.Model) = error("You need this method")
+init!(vf::AbstractValueFunction, m::JuMP.Model, sense, bound, cutmanager) = error("You need this method")
+modifyvaluefunction!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = error("You need this method")
+
+stageobjective!(sp::JuMP.Model, obj::AffExpr) = stageobjective!(valueoracle(sp), sp, obj)
+stageobjective!(sp::JuMP.Model, obj::JuMP.Variable) = stageobjective!(sp, AffExpr(obj))
+getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
+modifyvaluefunction!(m::SDDPModel, sp::JuMP.Model) = modifyvaluefunction!(valueoracle(sp), m, sp)
+
 
 struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
     cutmanager::C
@@ -21,56 +28,46 @@ function init!(::Type{DefaultValueFunction}, m::JuMP.Model, sense, bound, cutman
     DefaultValueFunction(m::JuMP.Model, sense, bound, cutmanager)
 end
 
-function stageobjective!{C<:AbstractCutOracle}(::Type{DefaultValueFunction{C}}, sp::JuMP.Model, obj::AffExpr)
-    append!(ext(sp).valueoracle.stageobjective, QuadExpr(obj))
-    JuMP.setobjective(sp, getsense(sp), obj + ext(sp).valueoracle.theta)
+function stageobjective!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, sp::JuMP.Model, obj::AffExpr)
+    append!(vf.stageobjective, QuadExpr(obj))
+    JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
 end
-getstageobjective{C<:AbstractCutOracle}(::Type{DefaultValueFunction{C}}, sp::JuMP.Model) = getvalue(ext(sp).valueoracle.stageobjective)
-
-function padstore!(s::BackwardPassStorage, sp::JuMP.Model)
-    while s.idx > s.N
-        push!(s.objective, 0.0)
-        push!(s.scenario, 0)
-        push!(s.markovstate, 0)
-        push!(s.probability, 0.0)
-        push!(s.duals, zeros(nstates(sp)))
-        s.N += 1
-    end
-end
+getstageobjective{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, sp::JuMP.Model) = getvalue(vf.stageobjective)
 
 # optional method that can be overloaded
-function solvesubproblem!{C<:AbstractCutOracle}(::Type{BackwardPass}, ::Type{DefaultValueFunction{C}}, m::SDDPModel, sp::JuMP.Model)
+function solvesubproblem!{C<:AbstractCutOracle}(::Type{BackwardPass}, vf::DefaultValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
     ex = ext(sp)
     if hasscenarios(sp)
         for i in 1:length(ex.scenarioprobability)
             setscenario!(sp, ex.scenarios[i])
-            status = JuMP.solve(sp)
-            m.storage.idx += 1
-            padstore!(m.storage, sp)
-            m.storage.objective[m.storage.idx] = getobjectivevalue(sp)
-            m.storage.scenario[m.storage.idx] = i
-            m.storage.probability[m.storage.idx] = ex.scenarioprobability[i]
-            m.storage.markovstate[m.storage.idx] = ex.markovstate
-            saveduals!(m.storage.duals[m.storage.idx], sp)
+            @assert JuMP.solve(sp) == :Optimal
+            push!(m.storage.objective, getobjectivevalue(sp))
+            push!(m.storage.scenario, i)
+            push!(m.storage.probability, ex.scenarioprobability[i])
+            push!(m.storage.newprobability, ex.scenarioprobability[i])
+            push!(m.storage.markovstate, ex.markovstate)
+            push!(m.storage.duals, zeros(nstates(sp)))
+            saveduals!(m.storage.duals[end], sp)
         end
     else
-        status = JuMP.solve(sp)
-        m.storage.idx += 1
-        padstore!(m.storage, sp)
-        m.storage.objective[m.storage.idx] = getobjectivevalue(sp)
-        m.storage.scenario[m.storage.idx] = 0
-        m.storage.probability[m.storage.idx] = 1.0
-        m.storage.markovstate[m.storage.idx] = ex.markovstate
-        saveduals!(m.storage.duals[m.storage.idx], sp)
+        @assert JuMP.solve(sp) == :Optimal
+        push!(m.storage.objective, getobjectivevalue(sp))
+        push!(m.storage.scenario, 0)
+        push!(m.storage.probability, 1.0)
+        push!(m.storage.newprobability, 1.0)
+        push!(m.storage.markovstate, ex.markovstate)
+        push!(m.storage.duals, zeros(nstates(sp)))
+        saveduals!(m.storage.duals[end], sp)
     end
 end
 
-function constructcut(storage)
+function constructcut(m::SDDPModel, sp::JuMP.Model)
+    storage = m.storage
     # theta <=/>= E[ (y - πᵀx̄) + πᵀx ]
     intercept = 0.0
     coefficients = zeros(nstates(sp))
-    for i in 1:storage.n
-        intercept += storage.newprobability[i] * (storage.objective[i] - dot(storage.stage, storage.duals[i]))
+    for i in 1:length(storage.objective)
+        intercept += storage.newprobability[i] * (storage.objective[i] - dot(getstage(m, ext(sp).stage).state, storage.duals[i]))
         for j in 1:nstates(sp)
             coefficients[j] += storage.newprobability[i] * storage.duals[i][j]
         end
@@ -81,35 +78,24 @@ end
 _addcut!(::Type{Min}, sp, theta, affexpr) = @constraint(sp, theta >= affexpr)
 _addcut!(::Type{Max}, sp, theta, affexpr) = @constraint(sp, theta <= affexpr)
 # valuefunction(sp::JuMP.Model) = ext(sp).valuefunction
-function modifyvaluefunction!{C<:AbstractCutOracle}(::Type{DefaultValueFunction{C}}, m::SDDPModel, sp::JuMP.Model)
+function modifyvaluefunction!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
     ex = ext(sp)
     I = 1:m.storage.idx
     for i in I
-        m.storage.probability[i] *= stage(m, ex.stage).transitionprobabilities[ex.stage, m.storage.markovstate[i]]
+        m.storage.probability[i] *= getstage(m, ex.stage).transitionprobabilities[ex.stage, m.storage.markovstate[i]]
     end
-    modifyprobability!(ex.riskmeasure, view(m.storage.newprobability, I), view(m.storage.probability, I), view(m.storage.objective, I))
-    cut = constructcut(m.storage)
+    modifyprobability!(ex.riskmeasure, m.storage.newprobability[I], m.storage.probability[I], m.storage.objective[I])
+    cut = constructcut(m, sp)
 
-    storecut!(ex.valuefunction.cutmanager, m, ex.stage, ex.markovstate, cut)
+    storecut!(vf.cutmanager, m, ex.stage, ex.markovstate, cut)
 
-    ex = ext(sp)
-    affexpr = cut.intercept
+    affexpr = AffExpr(cut.intercept)
     for i in 1:nstates(sp)
         affexpr += cut.coefficients[i] * ex.states[i].variable
     end
-    _addcut!(ex.sense, sp, ex.valuefunction.cutmanager, affexpr)
+    _addcut!(ex.sense, sp, vf.theta, affexpr)
 
     for i in 1:m.storage.idx
-        m.storage.probability[i] /= stage.transitionprobabilities[ex.stage, m.storage.markovstate[i]]
+        m.storage.probability[i] /= getstage(m, ex.stage).transitionprobabilities[ex.stage, m.storage.markovstate[i]]
     end
 end
-
-stageobjective!{T<:AbstractValueFunction}(::Type{T}, sp::JuMP.Model, obj) = error("You need this method")
-getstageobjective{T<:AbstractValueFunction}(::Type{T}, sp::JuMP.Model) = error("You need this method")
-init!{T<:AbstractValueFunction}(::Type{T}, m::JuMP.Model, sense, bound, cutmanager) = error("You need this method")
-modifyvaluefunction!{T<:AbstractValueFunction}(::Type{T}, m::SDDPModel, sp::JuMP.Model) = error("You need this method")
-
-stageobjective!(sp::JuMP.Model, obj::AffExpr) = stageobjective!(vftype(sp), sp, obj)
-stageobjective!(sp::JuMP.Model, obj::JuMP.Variable) = stageobjective!(sp, AffExpr(obj))
-getstageobjective(sp::JuMP.Model) = getstageobjective(ext(sp), sp)
-modifyvaluefunction!(m::SDDPModel, sp::JuMP.Model) = modifyvaluefunction!(vftype(sp), m, sp)

@@ -24,12 +24,22 @@ futureobjective!(::Type{Max}, m::JuMP.Model, bound) = @variable(m, upperbound = 
 futureobjective!(::Type{Min}, m::JuMP.Model, bound) = @variable(m, lowerbound = bound)
 
 stages(m::SDDPModel) = m.stages
-stage(m::SDDPModel, t) = stages(m)[t]
+getstage(m::SDDPModel, t) = stages(m)[t]
 
 subproblems(s::Stage) = s.subproblems
-subproblem(s::Stage, i::Int) = subproblems(s)[i]
-subproblems(m::SDDPModel, t) = subproblems(stage(m, t))
-subproblem(m::SDDPModel, t, i) = subproblem(stage(m, t), i)
+getsubproblem(s::Stage, i::Int) = subproblems(s)[i]
+subproblems(m::SDDPModel, t) = subproblems(getstage(m, t))
+getsubproblem(m::SDDPModel, t, i) = getsubproblem(getstage(m, t), i)
 
 nstages(m::SDDPModel) = length(stages(m))
 nsubproblems(m::SDDPModel, t::Int) = length(subproblems(m, t))
+
+function n_args(f::Function)
+    @assert length(methods(f)) == 1
+    return methods(f).mt.max_args-1
+end
+getel{A, T <: A}(::Type{A}, x::T, t::Int, i::Int) = x
+getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int, i::Int) = x[t]
+getel{A, T <: A}(::Type{A}, x::Vector{Vector{T}}, t::Int, i::Int) = x[t][i]
+getel{A, T <: A}(::Type{A}, x::T, t::Int) = x
+getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int) = x[t]

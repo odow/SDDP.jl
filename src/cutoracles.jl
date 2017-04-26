@@ -19,7 +19,7 @@ storecut!(oracle::AbstractCutOracle, cut::Cut) = error("""
     that is overloaded for your oracle of type $(typeof(oracle)).
 """)
 # more expansive method that can also be overloaded
-storecut!(oracle::AbstractCutOracle, m::SDDPModel, stage::Int, markovstate::Int, cut) = storecut!(oracle, cut)
+storecut!(oracle::AbstractCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut) = storecut!(oracle, cut)
 
 """
     validcuts(oracle::AbstactCutOracle)
