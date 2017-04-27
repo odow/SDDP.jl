@@ -43,9 +43,9 @@ function SDDPModel(build!::Function;
     stages          = 1,
     objective_bound = -1e6,
 
-    markov_states   = 1,
-    initial_markov_probability = ones(Float64, 1),
-    transition      = ones(Float64, (1,1)),
+    # markov_states        = 1,
+    # initial_markov_state = -1,
+    markov_transition    = [ones(Float64, (1,1)) for t in 1:stages],
 
     scenario_probability = Float64[],
 
@@ -76,9 +76,9 @@ function SDDPModel(build!::Function;
 
     for t in 1:stages
         # todo: transition probabilities that vary by stage
-        stage = Stage(transition)
+        stage = Stage(getel(Array{Float64, 2}, markov_transition, t))
         # check that
-        if num_args == 2 && getel(Int, markov_states, t) != 1
+        if num_args == 2 && size(markov_transition[t], 2) > 1
             error("""Because you specified a scenario tree in the SDDPModel constructor, you need to use the
 
                 SDDPModel() do sp, stage, markov_state
@@ -87,7 +87,7 @@ function SDDPModel(build!::Function;
 
             syntax.""")
         end
-        for i in 1:getel(Int, markov_states, t)
+        for i in 1:size(markov_transition[t], 2)
             mod = Subproblem(
                 finalstage   = (t == stages),
                 stage        = t,

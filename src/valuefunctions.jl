@@ -66,14 +66,13 @@ function solvesubproblem!{C<:AbstractCutOracle}(::Type{BackwardPass}, vf::Defaul
 end
 
 function constructcut(m::SDDPModel, sp::JuMP.Model)
-    storage = m.storage
     # theta <=/>= E[ (y - πᵀx̄) + πᵀx ]
     intercept = 0.0
     coefficients = zeros(nstates(sp))
-    for i in 1:length(storage.objective)
-        intercept += storage.modifiedprobability[i] * (storage.objective[i] - dot(getstage(m, ext(sp).stage).state, storage.duals[i]))
+    for i in 1:length(m.storage.objective)
+        intercept += m.storage.modifiedprobability[i] * (m.storage.objective[i] - dot(getstage(m, ext(sp).stage).state, m.storage.duals[i]))
         for j in 1:nstates(sp)
-            coefficients[j] += storage.modifiedprobability[i] * storage.duals[i][j]
+            coefficients[j] += m.storage.modifiedprobability[i] * m.storage.duals[i][j]
         end
     end
     Cut(intercept, coefficients)
@@ -86,9 +85,14 @@ function modifyvaluefunction!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C},
     ex = ext(sp)
     I = 1:length(m.storage.objective)
     for i in I
-        m.storage.probability[i] *= getstage(m, ex.stage).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
+        m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
-    modifyprobability!(ex.riskmeasure, m.storage.modifiedprobability.data[I], m.storage.probability.data[I], m.storage.objective.data[I])
+    # Todo: fix this stuff
+    y = m.storage.modifiedprobability.data[I]
+    modifyprobability!(ex.riskmeasure, y, m.storage.probability.data[I], m.storage.objective.data[I])
+    for i in 1:length(y)
+        m.storage.modifiedprobability[i] = y[i]
+    end
     cut = constructcut(m, sp)
     storecut!(vf.cutmanager, m, sp, cut)
 
@@ -99,6 +103,6 @@ function modifyvaluefunction!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C},
     c = _addcut!(ex.sense, sp, vf.theta, affexpr)
 
     for i in I
-        m.storage.probability[i] /= getstage(m, ex.stage).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
+        m.storage.probability[i] /= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
 end

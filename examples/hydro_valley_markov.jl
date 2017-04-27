@@ -39,11 +39,16 @@ prices = [
     2 1;
     3 4
 ]
+# prices = [
+#     1 1;
+#     2 2;
+#     3 3
+# ]
 
 # Transition matrix
-transition = [
+transition = Array{Float64, 2}[
+    [ 1.0 ]',
     [ 0.6 0.4 ],
-    [ 0.6 0.4; 0.3 0.7 ],
     [ 0.6 0.4; 0.3 0.7 ]
 ]
 
@@ -54,8 +59,7 @@ m = SDDPModel(
             sense           = :Max,
             stages          = 3,
             objective_bound = 1e6,
-            markov_states   = [1, 2, 2],
-            transition      = transition,
+            markov_transition = transition,
             risk_measure    = Expectation(),
             cut_oracle      = DefaultCutOracle(),
             solver          = ClpSolver()
@@ -69,14 +73,10 @@ m = SDDPModel(
     # ------------------------------------------------------------------
     #   Additional variables
     @variables(sp, begin
-        outflow[r=1:N] >= 0
-        spill[r=1:N]   >= 0
-
-        inflow[r=1:N]
-
-        # Total quantity of water
-        generation_quantity     >= 0
-
+        outflow[r=1:N]      >= 0
+        spill[r=1:N]        >= 0
+        inflow[r=1:N]       >= 0
+        generation_quantity >= 0 # Total quantity of water
         # Proportion of levels to dispatch on
         0 <= dispatch[r=1:N, level=1:length(turbine(r).flowknots)] <= 1
     end)

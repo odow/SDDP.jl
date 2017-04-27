@@ -19,11 +19,7 @@ function sample(x::AbstractVector{Float64})
 end
 
 function samplesubproblem(stage::Stage, last_markov_state::Int)
-    if length(stage.transitionprobabilities) == 0
-        newidx = 1
-    else
-        newidx = sample(stage.transitionprobabilities[last_markov_state, :])
-    end
+    newidx = sample(stage.transitionprobabilities[last_markov_state, :])
     return newidx, getsubproblem(stage, newidx)
 end
 
@@ -101,25 +97,22 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
 end
 
 function backwardpass!(m::SDDPModel, settings::Settings)
-    reset!(m.storage)
     # walk backward through the stages
     for t in nstages(m):-1:2
-        s = getstage(m, t)
         # solve all stage t problems
         reset!(m.storage)
-        for (i, sp) in enumerate(subproblems(s))
+        for sp in subproblems(m, t)
             setstates!(m, sp)
             solvesubproblem!(BackwardPass, m, sp)
         end
         # add appropriate cuts
-        for sp in subproblems(getstage(m, t-1))
+        for sp in subproblems(m, t-1)
             modifyvaluefunction!(m, sp)
         end
     end
 
-    s0 = getstage(m, 1)
     reset!(m.storage)
-    for (i, sp) in enumerate(subproblems(s0))
+    for sp in subproblems(m, 1)
         solvesubproblem!(BackwardPass, m, sp)
     end
     bound = mean(m.storage.objective)
