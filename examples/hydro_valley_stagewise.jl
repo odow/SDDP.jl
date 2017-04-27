@@ -103,7 +103,7 @@ m = SDDPModel(
 end
 
 SDDP.solve(m,
-    max_iterations = 10
+    max_iterations = 20
 )
 
 @test isapprox(m.log[end].bound, 836.67, atol=1e-2)

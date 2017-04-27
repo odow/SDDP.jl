@@ -43,3 +43,11 @@ getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int, i::Int) = x[t]
 getel{A, T <: A}(::Type{A}, x::Vector{Vector{T}}, t::Int, i::Int) = x[t][i]
 getel{A, T <: A}(::Type{A}, x::T, t::Int) = x
 getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int) = x[t]
+
+# Construct a confidence interval
+function confidenceinterval(x, conf_level=0.95)
+    tstar = quantile(TDist(length(x)-1), 1 - (1 - conf_level)/2)
+    err = tstar * std(x)/sqrt(length(x))
+    mu = mean(x)
+    return mu - err, mu + err
+end

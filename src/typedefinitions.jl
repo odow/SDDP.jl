@@ -141,6 +141,9 @@ SDDPModel() = SDDPModel(Stage[], Storage(), SolutionLog[], Dict())
 struct Settings
     max_iterations::Int
     simulation_frequency::Int
+    simulation_steps::Vector{Int}
+    simulation_confidence::Float64
+    simulation_terminate::Bool
     print_level::Int
     log_file::String
 end

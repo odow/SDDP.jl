@@ -1,3 +1,4 @@
 julia 0.6-
 
 JuMP 0.16
+Distributions

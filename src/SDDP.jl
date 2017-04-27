@@ -10,7 +10,7 @@
 
 module SDDP
 
-using JuMP
+using JuMP, Distributions
 
 export SDDPModel,
     # inputs
@@ -53,11 +53,10 @@ function SDDPModel(build!::Function;
 
     cut_oracle      = DefaultCutOracle(),
 
-    solver          = UnsetSolver(),
+    solver          = UnsetSolver()
 
     # value_function = DefaultValueFunction{cut_oracle},
-
-    kwargs...)
+    )
 
     # check number of arguments to SDDPModel() do [args...] ...  model def ... end
     num_args = n_args(build!)
@@ -130,35 +129,79 @@ function SDDPModel(build!::Function;
     m
 end
 
+contains(x, l, u) = x >= l && x <= u
+
 function solve_serial(m::SDDPModel, settings::Settings=Settings())
+    status = :solving
     time_simulating = 0.0
     time_cutting    = 0.0
-    for itr in 1:settings.max_iterations
+    objectives = CachedVector(Float64)
+    nsimulations = 0
+    keep_iterating = true
+    iteration = 1
+    while keep_iterating
         (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
         time_cutting += time_backwards + time_forwards
+        lower, upper = simulation_objective, simulation_objective
         # simulate policy
-        nsimulations = 0
-        if mod(itr, settings.simulation_frequency) == 0
+        if mod(iteration, settings.simulation_frequency) == 0
             t = time()
-            #
+            reset!(objectives)
+            simidx = 1
+            for i in 1:settings.simulation_steps[end]
+                push!(objectives, forwardpass!(m, settings))
+                nsimulations += 1
+                if i == settings.simulation_steps[simidx]
+                    (lower, upper) = confidenceinterval(objectives, settings.simulation_confidence)
+                    if contains(objective_bound, lower, upper)
+                        if settings.simulation_terminate && simidx == length(settings.simulation_steps)
+                            # max simulations
+                            status = :converged
+                            keep_iterating = false
+                        end
+                    else
+                        break
+                    end
+                    simidx += 1
+                end
+            end
             time_simulating += time() - t
         end
 
-        push!(m.log, SolutionLog(itr, objective_bound, simulation_objective, simulation_objective, time_cutting, nsimulations, time_simulating))
+        push!(m.log, SolutionLog(iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating))
 
-        settings.print_level > 0 && print(STDOUT, m.log[end])
-        settings.log_file != "" && print(settings.log_file, m.log[end])
+        settings.print_level > 0 && print(STDOUT, m.log[end], mod(iteration, settings.simulation_frequency) != 0)
+        settings.log_file != "" && print(settings.log_file, m.log[end], mod(iteration, settings.simulation_frequency) != 0)
+
+        iteration += 1
+        if iteration > settings.max_iterations
+            status = :max_iterations
+            keep_iterating = false
+        end
 
     end
 end
 
 function solve(m::SDDPModel;
         max_iterations::Int       = 10,
-        simulation_frequency::Int = 1,
+        simulation_frequency::Int = 5,
+        simulation_min::Int       = 10,
+        simulation_max::Int       = 20,
+        simulation_step::Int      = 10,
+        simulation_confidence::Float64 = 0.95,
+        simulation_terminate::Bool = false,
         print_level::Int          = 4,
         log_file::String          = ""
     )
-    settings = Settings(max_iterations, simulation_frequency, print_level, log_file)
+    settings = Settings(
+        max_iterations,
+        simulation_frequency,
+        collect(simulation_min:simulation_step:simulation_max),
+        simulation_confidence,
+        simulation_terminate,
+        print_level,
+        log_file
+    )
 
     print_level > 0 && printheader(STDOUT)
     log_file != "" && printheader(log_file)
@@ -166,8 +209,5 @@ function solve(m::SDDPModel;
     solve_serial(m, settings)
 
 end
-
-
-
 
 end

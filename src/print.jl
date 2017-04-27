@@ -9,9 +9,9 @@ function printheader(io::IO)
     println(io, "      Expected      |   Bound   % Gap  |   #     Time  |    #    Time  ")
 end
 
-function Base.print(io::IO, l::SolutionLog)
-    if l.lower_statistical_bound == l.upper_statistical_bound
-        bound_string = string("     ", humanize(l.lower_statistical_bound, "8.3f"), "     ")
+function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)
+    if printmean
+        bound_string = string("     ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.3f"), "     ")
     else
         bound_string = string(
             humanize(l.lower_statistical_bound, "8.3f"), " ",
@@ -45,9 +45,9 @@ function printheader(s::String)
         printheader(file)
     end
 end
-function Base.print(s::String, l::SolutionLog)
+function Base.print(s::String, l::SolutionLog, printmean::Bool=false)
     open(s, "a") do file
-        print(file, l)
+        print(file, l, printmean)
     end
 end
 
