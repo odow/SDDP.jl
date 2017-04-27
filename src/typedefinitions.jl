@@ -40,6 +40,7 @@ struct Scenario
 end
 
 struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:AbstractRiskMeasure}
+    finalstage::Bool        # if final stage
     stage::Int              # stage index
     markovstate::Int        # index of the subproblem by markov state
     problembound::Float64   # objective bound
@@ -59,11 +60,12 @@ ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
 valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
 
-function Subproblem(;stage=1, markov_state=1, sense=Min, bound=-1e6,
+function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound=-1e6,
     risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction)
 
     m = Model()
     m.ext[:SDDP] = SDDP.SubproblemExt(
+        finalstage,
         stage,
         markov_state,
         bound,
@@ -108,6 +110,14 @@ Storage() = Storage(
     CachedVector(Float64),
     CachedVector(Float64)
 )
+function reset!(s::Storage)
+    reset!(s.scenario)
+    reset!(s.markov)
+    reset!(s.duals)
+    reset!(s.objective)
+    reset!(s.probability)
+    reset!(s.modifiedprobability)
+end
 
 struct SolutionLog
     iteration::Int
@@ -131,5 +141,6 @@ SDDPModel() = SDDPModel(Stage[], Storage(), SolutionLog[], Dict())
 struct Settings
     max_iterations::Int
     simulation_frequency::Int
+    print_level::Int
+    log_file::String
 end
-Settings() = Settings(0)

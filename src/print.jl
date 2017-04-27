@@ -6,7 +6,7 @@
 
 function printheader(io::IO)
     println(io, "               Objective               |  Cut  Passes  |  Simulations  ")
-    println(io, "      Expected      |   Bound   % Gap  |  Cuts   Time  |  Sims   Time  ")
+    println(io, "      Expected      |   Bound   % Gap  |   #     Time  |    #    Time  ")
 end
 
 function Base.print(io::IO, l::SolutionLog)
@@ -37,6 +37,17 @@ function humanize(value::Int)
         return humanize(value, "5d")
     else
         return humanize(value, "5.1f")
+    end
+end
+
+function printheader(s::String)
+    open(s, "a") do file
+        printheader(file)
+    end
+end
+function Base.print(s::String, l::SolutionLog)
+    open(s, "a") do file
+        print(file, l)
     end
 end
 

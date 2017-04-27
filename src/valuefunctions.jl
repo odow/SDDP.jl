@@ -30,7 +30,11 @@ end
 
 function stageobjective!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, sp::JuMP.Model, obj::AffExpr)
     append!(vf.stageobjective, QuadExpr(obj))
-    JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
+    if ext(sp).finalstage
+        JuMP.setobjective(sp, getsense(sp), obj)
+    else
+        JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
+    end
 end
 getstageobjective{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, sp::JuMP.Model) = getvalue(vf.stageobjective)
 
@@ -44,8 +48,8 @@ function solvesubproblem!{C<:AbstractCutOracle}(::Type{BackwardPass}, vf::Defaul
             push!(m.storage.objective, getobjectivevalue(sp))
             push!(m.storage.scenario, i)
             push!(m.storage.probability, ex.scenarioprobability[i])
-            push!(m.storage.newprobability, ex.scenarioprobability[i])
-            push!(m.storage.markovstate, ex.markovstate)
+            push!(m.storage.modifiedprobability, ex.scenarioprobability[i])
+            push!(m.storage.markov, ex.markovstate)
             push!(m.storage.duals, zeros(nstates(sp)))
             saveduals!(m.storage.duals[end], sp)
         end
@@ -54,8 +58,8 @@ function solvesubproblem!{C<:AbstractCutOracle}(::Type{BackwardPass}, vf::Defaul
         push!(m.storage.objective, getobjectivevalue(sp))
         push!(m.storage.scenario, 0)
         push!(m.storage.probability, 1.0)
-        push!(m.storage.newprobability, 1.0)
-        push!(m.storage.markovstate, ex.markovstate)
+        push!(m.storage.modifiedprobability, 1.0)
+        push!(m.storage.markov, ex.markovstate)
         push!(m.storage.duals, zeros(nstates(sp)))
         saveduals!(m.storage.duals[end], sp)
     end
@@ -67,9 +71,9 @@ function constructcut(m::SDDPModel, sp::JuMP.Model)
     intercept = 0.0
     coefficients = zeros(nstates(sp))
     for i in 1:length(storage.objective)
-        intercept += storage.newprobability[i] * (storage.objective[i] - dot(getstage(m, ext(sp).stage).state, storage.duals[i]))
+        intercept += storage.modifiedprobability[i] * (storage.objective[i] - dot(getstage(m, ext(sp).stage).state, storage.duals[i]))
         for j in 1:nstates(sp)
-            coefficients[j] += storage.newprobability[i] * storage.duals[i][j]
+            coefficients[j] += storage.modifiedprobability[i] * storage.duals[i][j]
         end
     end
     Cut(intercept, coefficients)
@@ -80,22 +84,21 @@ _addcut!(::Type{Max}, sp, theta, affexpr) = @constraint(sp, theta <= affexpr)
 # valuefunction(sp::JuMP.Model) = ext(sp).valuefunction
 function modifyvaluefunction!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
     ex = ext(sp)
-    I = 1:m.storage.idx
+    I = 1:length(m.storage.objective)
     for i in I
-        m.storage.probability[i] *= getstage(m, ex.stage).transitionprobabilities[ex.stage, m.storage.markovstate[i]]
+        m.storage.probability[i] *= getstage(m, ex.stage).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
-    modifyprobability!(ex.riskmeasure, m.storage.newprobability[I], m.storage.probability[I], m.storage.objective[I])
+    modifyprobability!(ex.riskmeasure, m.storage.modifiedprobability.data[I], m.storage.probability.data[I], m.storage.objective.data[I])
     cut = constructcut(m, sp)
-
-    storecut!(vf.cutmanager, m, ex.stage, ex.markovstate, cut)
+    storecut!(vf.cutmanager, m, sp, cut)
 
     affexpr = AffExpr(cut.intercept)
     for i in 1:nstates(sp)
         affexpr += cut.coefficients[i] * ex.states[i].variable
     end
-    _addcut!(ex.sense, sp, vf.theta, affexpr)
+    c = _addcut!(ex.sense, sp, vf.theta, affexpr)
 
-    for i in 1:m.storage.idx
-        m.storage.probability[i] /= getstage(m, ex.stage).transitionprobabilities[ex.stage, m.storage.markovstate[i]]
+    for i in I
+        m.storage.probability[i] /= getstage(m, ex.stage).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
 end

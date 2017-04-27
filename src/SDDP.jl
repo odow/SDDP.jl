@@ -36,16 +36,27 @@ include("cuttingpasses.jl")
 include("MIT_licensedcode.jl")
 include("print.jl")
 
+struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
+
 function SDDPModel(build!::Function;
     sense           = :Min,
     stages          = 1,
     objective_bound = -1e6,
+
     markov_states   = 1,
-    initial_markov_probability = [1.0],
-    transition      = Array{Float64}(0,0),
+    initial_markov_probability = ones(Float64, 1),
+    transition      = ones(Float64, (1,1)),
+
+    scenario_probability = Float64[],
+
     risk_measure    = Expectation(),
+
     cut_oracle      = DefaultCutOracle(),
+
+    solver          = UnsetSolver(),
+
     # value_function = DefaultValueFunction{cut_oracle},
+
     kwargs...)
 
     # check number of arguments to SDDPModel() do [args...] ...  model def ... end
@@ -78,6 +89,7 @@ function SDDPModel(build!::Function;
         end
         for i in 1:getel(Int, markov_states, t)
             mod = Subproblem(
+                finalstage   = (t == stages),
                 stage        = t,
                 markov_state = i,
                 sense        = optimisationsense(sense),
@@ -86,6 +98,7 @@ function SDDPModel(build!::Function;
                 cut_oracle   = getel(AbstractCutOracle, cut_oracle, t, i),
                 value_function = DefaultValueFunction
             )
+            setsolver(mod, solver)
             # dispatch to correct function
             # maybe we should do this with tuples
             if num_args == 3
@@ -94,8 +107,21 @@ function SDDPModel(build!::Function;
                 build!(mod, t)
             end
             # Uniform scenario probability for now
-            for i in 1:length(ext(mod).scenarios)
-                push!(ext(mod).scenarioprobability, 1 / length(ext(mod).scenarios))
+            scenario_prob = getel(Vector, scenario_probability, t, i)
+            if length(scenario_prob) != 0 && length(scenario_prob) != length(ext(mod).scenarios)
+                error("Invalid number of scenarios.")
+            end
+            if length(scenario_prob) == 0
+                for i in 1:length(ext(mod).scenarios)
+                    push!(ext(mod).scenarioprobability, 1 / length(ext(mod).scenarios))
+                end
+            else
+                if abs(sum(scenario_prob) - 1) > 1e-6 # check probability
+                    error("You must specify a discrete probability distribution that sums to 1.0")
+                end
+                for i in 1:length(ext(mod).scenarios)
+                    push!(ext(mod).scenarioprobability, scenario_prob[i])
+                end
             end
             push!(stage.subproblems, mod)
         end
@@ -105,15 +131,43 @@ function SDDPModel(build!::Function;
 end
 
 function solve_serial(m::SDDPModel, settings::Settings=Settings())
+    time_simulating = 0.0
+    time_cutting    = 0.0
     for itr in 1:settings.max_iterations
-        iteration!(m, settings)
+        (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
+        time_cutting += time_backwards + time_forwards
         # simulate policy
+        nsimulations = 0
         if mod(itr, settings.simulation_frequency) == 0
+            t = time()
             #
+            time_simulating += time() - t
         end
 
+        push!(m.log, SolutionLog(itr, objective_bound, simulation_objective, simulation_objective, time_cutting, nsimulations, time_simulating))
+
+        settings.print_level > 0 && print(STDOUT, m.log[end])
+        settings.log_file != "" && print(settings.log_file, m.log[end])
 
     end
 end
+
+function solve(m::SDDPModel;
+        max_iterations::Int       = 10,
+        simulation_frequency::Int = 1,
+        print_level::Int          = 4,
+        log_file::String          = ""
+    )
+    settings = Settings(max_iterations, simulation_frequency, print_level, log_file)
+
+    print_level > 0 && printheader(STDOUT)
+    log_file != "" && printheader(log_file)
+
+    solve_serial(m, settings)
+
+end
+
+
+
 
 end

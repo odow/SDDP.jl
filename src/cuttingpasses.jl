@@ -19,7 +19,11 @@ function sample(x::AbstractVector{Float64})
 end
 
 function samplesubproblem(stage::Stage, last_markov_state::Int)
-    newidx = sample(stage.transitionprobabilities[last_markov_state, :])
+    if length(stage.transitionprobabilities) == 0
+        newidx = 1
+    else
+        newidx = sample(stage.transitionprobabilities[last_markov_state, :])
+    end
     return newidx, getsubproblem(stage, newidx)
 end
 
@@ -62,13 +66,23 @@ function solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model
 end
 solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
 hasscenarios(sp::JuMP.Model) = length(ext(sp).scenarios) > 0
-
+function setstates!(m, sp)
+    s = getstage(m, ext(sp).stage-1)
+    for (st, v) in zip(states(sp), s.state)
+        setvalue!(st, v)
+    end
+end
 function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
     last_markov_state = 1
     scenarioidx = 0
+    obj = 0.0
     for (t, stage) in enumerate(stages(m))
         # choose markov state
         (last_markov_state, sp) = samplesubproblem(stage, last_markov_state)
+        if t > 1
+            setstates!(m, sp)
+        end
+
         # choose and set RHS scenario
         if hasscenarios(sp)
             (scenarioidx, scenario) = samplescenario(sp)
@@ -76,11 +90,14 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         end
         # solve subproblem
         solvesubproblem!(ForwardPass, m, sp)
+        # store stage obj
+        obj += getstageobjective(sp)
         # store state
         savestates!(stage.state, sp)
         # save solution for simulations (defaults to no-op)
         savesolution!(solutionstore, last_markov_state, scenarioidx, sp)
     end
+    return obj
 end
 
 function backwardpass!(m::SDDPModel, settings::Settings)
@@ -89,8 +106,9 @@ function backwardpass!(m::SDDPModel, settings::Settings)
     for t in nstages(m):-1:2
         s = getstage(m, t)
         # solve all stage t problems
-        m.storage.idx = 0
+        reset!(m.storage)
         for (i, sp) in enumerate(subproblems(s))
+            setstates!(m, sp)
             solvesubproblem!(BackwardPass, m, sp)
         end
         # add appropriate cuts
@@ -98,13 +116,26 @@ function backwardpass!(m::SDDPModel, settings::Settings)
             modifyvaluefunction!(m, sp)
         end
     end
+
+    s0 = getstage(m, 1)
+    reset!(m.storage)
+    for (i, sp) in enumerate(subproblems(s0))
+        solvesubproblem!(BackwardPass, m, sp)
+    end
+    bound = mean(m.storage.objective)
+
+    return bound
 end
 
 function iteration!(m::SDDPModel, settings::Settings)
-    forwardpass!(m, settings)
-    backwardpass!(m, settings)
-end
+    t = time()
 
-function solve(m::SDDPModel, settings::Settings=Settings())
-    iteration!(m, settings)
+    simulation_objective = forwardpass!(m, settings)
+    time_forwards = time() - t
+
+    objective_bound = backwardpass!(m, settings)
+    time_backwards = time() - time_forwards - t
+
+    return objective_bound, time_backwards, simulation_objective, time_forwards
+
 end

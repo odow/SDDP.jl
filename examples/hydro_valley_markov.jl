@@ -13,23 +13,23 @@ using SDDP, JuMP, Clp
 # For repeatability
 srand(11111)
 
-struct Turbine
+struct TurbineC
     flowknots::Vector{Float64}
     powerknots::Vector{Float64}
 end
 
-struct Reservoir
+struct ReservoirC
     min::Float64
     max::Float64
     initial::Float64
-    turbine::Turbine
+    turbine::TurbineC
     spill_cost::Float64
     inflows::Vector{Float64}
 end
 
 valley_chain = [
-    Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0, 20, 50]),
-    Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0, 0,  20])
+    ReservoirC(0, 200, 200, TurbineC([50, 60, 70], [55, 65, 70]), 1000, [0, 20, 50]),
+    ReservoirC(0, 200, 200, TurbineC([50, 60, 70], [55, 65, 70]), 1000, [0, 0,  20])
 ]
 turbine(i) = valley_chain[i].turbine
 
@@ -42,8 +42,9 @@ prices = [
 
 # Transition matrix
 transition = [
-    0.6 0.4;
-    0.3 0.7
+    [ 0.6 0.4 ],
+    [ 0.6 0.4; 0.3 0.7 ],
+    [ 0.6 0.4; 0.3 0.7 ]
 ]
 
 N = length(valley_chain)
@@ -53,13 +54,13 @@ m = SDDPModel(
             sense           = :Max,
             stages          = 3,
             objective_bound = 1e6,
-            markov_states   = size(transition, 1),
+            markov_states   = [1, 2, 2],
             transition      = transition,
-            initial_markov_state = 1,
             risk_measure    = Expectation(),
-            cut_oracle      = DefaultCutOracle()
+            cut_oracle      = DefaultCutOracle(),
+            solver          = ClpSolver()
                                     ) do sp, stage, markov_state
-    setsolver(sp, ClpSolver())
+
     # ------------------------------------------------------------------
     #   SDDP State Variables
     # Level of upper reservoir
@@ -97,28 +98,20 @@ m = SDDPModel(
 
         # Dispatch combination of levels
         dispatched[r=1:N], sum(dispatch[r, level] for level in 1:length(turbine(r).flowknots)) <= 1
-    end)
 
-    # rainfall scenarios
-    for i in 1:N
-        if stage > 1 # in future stages random inflows
-            @scenario(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
-        else # in the first stage deterministic inflow
-            @constraint(sp, inflow[i] <= valley_chain[i].inflows[1])
-        end
-    end
-    
-    # @scenarioconstraints(sp, idx = 1:10, Uniform(), begin
-    #     for i in 1:N
-    #         scenarioconstraint!(inflow[idx] <= valley_chain[idx].inflows)
-    #     end
-    # end)
+        # inflows
+        inflows[r=1:N], inflow[r] <= valley_chain[r].inflows[1]
+    end)
 
 
     # ------------------------------------------------------------------
     #   Objective Function
-    stageobjective!(sp, prices[stage, markov_state]*generation_quantity - valley_chain[i].spill_cost * sum(spill))
+    stageobjective!(sp, prices[stage, markov_state]*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N))
 
 end
 
-SDDP.solve(m)
+SDDP.solve(m,
+    max_iterations = 10
+)
+@test isapprox(m.log[end].bound, 846.8, atol=1e-2)
+# objective = 846.8
