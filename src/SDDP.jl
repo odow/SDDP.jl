@@ -36,6 +36,9 @@ include("cuttingpasses.jl")
 include("MIT_licensedcode.jl")
 include("print.jl")
 
+include("pro/dematos_cutselection.jl")
+include("pro/avar_riskaversion.jl")
+
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
 function SDDPModel(build!::Function;
@@ -133,12 +136,10 @@ contains(x, l, u) = x >= l && x <= u
 
 function solve_serial(m::SDDPModel, settings::Settings=Settings())
     status = :solving
-    time_simulating = 0.0
-    time_cutting    = 0.0
+    time_simulating, time_cutting = 0.0, 0.0
     objectives = CachedVector(Float64)
-    nsimulations = 0
-    keep_iterating = true
-    iteration = 1
+    nsimulations, iteration, keep_iterating = 0, 1, true
+
     while keep_iterating
         (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
         time_cutting += time_backwards + time_forwards

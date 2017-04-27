@@ -43,14 +43,3 @@ modifyprobability!(
     oldprobabilities::Vector{Float64},
     x::Vector{Float64}
     ) = (newprobabilities .= oldprobabilities)
-
-# ==============================================================================
-#   Average Value at Risk
-#   (1 - λ) * E[x] + λ * AV@R(1-β)[x]
-struct NestedAVaR <: AbstractRiskMeasure
-    lambda::Float64
-    beta::Float64
-    storage::Vector{Float64}
-end
-NestedAVaR(lamba, beta) = NestedAVaR(lambda, beta, Float64[])
-NestedAVaR(;lamba=0.0, beta=0.0) = NestedAVaR(lambda, beta, Float64[])

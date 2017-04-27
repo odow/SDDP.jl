@@ -89,7 +89,14 @@ function modifyvaluefunction!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C},
     end
     # Todo: fix this stuff
     y = m.storage.modifiedprobability.data[I]
-    modifyprobability!(ex.riskmeasure, y, m.storage.probability.data[I], m.storage.objective.data[I])
+    modifyprobability!(ex.riskmeasure,
+        y,
+        m.storage.probability.data[I],
+        sp,
+        m.storage.state,
+        m.storage.duals.data[I],
+        m.storage.objective.data[I]
+    )
     for i in 1:length(y)
         m.storage.modifiedprobability[i] = y[i]
     end

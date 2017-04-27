@@ -3,10 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
-# SDDP
-# Stochastic Dual Dynamic Programming in Julia
-# See http://github.com/odow/SDDP.jl
-#############################################################################
+
 getsense(::Type{Max}) = :Max
 getsense(::Type{Min}) = :Min
 getsense(m::JuMP.Model) = getsense(ext(m).sense)
@@ -50,4 +47,12 @@ function confidenceinterval(x, conf_level=0.95)
     err = tstar * std(x)/sqrt(length(x))
     mu = mean(x)
     return mu - err, mu + err
+end
+
+function rtol(x, y)
+    if abs(y) < 1e-6
+        return x - y
+    else
+        (x - y) / y
+    end
 end

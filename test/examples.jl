@@ -10,13 +10,25 @@
 
 const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
 
-for example in [
-        "hydro_valley_deterministic.jl",
-        "hydro_valley_stagewise.jl",
-        "hydro_valley_markov.jl",
-        "hydro_valley_stagewise_markov.jl"
-    ]
-    @testset "$example" begin
-        include(joinpath(examples_dir, example))
+@testset "Basic Examples" begin
+    for example in [
+            "hydro_valley_deterministic.jl",
+            "hydro_valley_stagewise.jl",
+            "hydro_valley_markov.jl",
+            "hydro_valley_stagewise_markov.jl"
+        ]
+        @testset "$example" begin
+            include(joinpath(examples_dir, example))
+        end
+    end
+end
+
+@testset "Pro Examples" begin
+    for example in [
+            "risk_aversion.jl"
+        ]
+        @testset "$example" begin
+            include(joinpath(examples_dir, "pro", example))
+        end
     end
 end

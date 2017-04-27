@@ -12,18 +12,20 @@ end
 function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)
     if printmean
         bound_string = string("     ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.3f"), "     ")
+        rtol_string = "      "
     else
         bound_string = string(
             humanize(l.lower_statistical_bound, "8.3f"), " ",
             humanize(l.upper_statistical_bound, "8.3f")
         )
+        rtol_string = humanize(100*rtol(l.bound, l.upper_statistical_bound), "5.1f")
     end
 
     println(io,
         @sprintf("%s | %s %s | %s %s | %s %s",
             bound_string,
             humanize(l.bound, "8.3f"),
-            "      ",
+            rtol_string,
             humanize(l.iteration),
             humanize(l.timecuts),
             humanize(l.simulations),
@@ -49,25 +51,4 @@ function Base.print(s::String, l::SolutionLog, printmean::Bool=false)
     open(s, "a") do file
         print(file, l, printmean)
     end
-end
-
-# printheader(STDOUT)
-# print(STDOUT, SolutionLog())
-
-
-# getCloseCIBound(::Type{Min}, m::SDDPModel) = m.confidence_interval[1]
-# getCloseCIBound(::Type{Max}, m::SDDPModel) = m.confidence_interval[2]
-# getCloseCIBound{T, M, S, X, TM}(m::SDDPModel{T, M, S, X, TM}) = getCloseCIBound(X, m)
-# getBound(m::SDDPModel) = m.valid_bound
-# atol(::Type{Min}, m::SDDPModel) = getCloseCIBound(m) - getBound(m)
-# atol(::Type{Max}, m::SDDPModel) = getBound(m) - getCloseCIBound(m)
-# atol{T, M, S, X, TM}(m::SDDPModel{T, M, S, X, TM}) = atol(X, m)
-#
-# """
-#     rtol(SDDPModel)
-# Relative tolerance of the solution
-# Defined as [Outer bound - closest simulated bound] / [Outer bound]
-# """
-function rtol(l::SolutionLog)
-    abs(getBound(m)) != Inf?atol(m) / abs(getBound(m)):Inf
 end
