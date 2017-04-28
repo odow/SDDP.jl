@@ -25,7 +25,8 @@ end
 
 @testset "Pro Examples" begin
     for example in [
-            "risk_aversion.jl"
+            "risk_aversion.jl",
+            "dematos_cutselection.jl"
         ]
         @testset "$example" begin
             include(joinpath(examples_dir, "pro", example))

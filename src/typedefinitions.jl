@@ -134,9 +134,10 @@ struct SDDPModel
     stages::Vector{Stage}
     storage::Storage
     log::Vector{SolutionLog}
+    build!::Function
     ext::Dict # extension dictionary
 end
-SDDPModel() = SDDPModel(Stage[], Storage(), SolutionLog[], Dict())
+newSDDPModel(build!::Function) = SDDPModel(Stage[], Storage(), SolutionLog[], build!, Dict())
 
 struct Settings
     max_iterations::Int
@@ -144,6 +145,7 @@ struct Settings
     simulation_steps::Vector{Int}
     simulation_confidence::Float64
     simulation_terminate::Bool
+    cut_selection_frequency::Int
     print_level::Int
     log_file::String
 end

@@ -74,7 +74,7 @@ function SDDPModel(build!::Function;
     end
 
     # New SDDPModel
-    m = SDDPModel()
+    m = newSDDPModel(build!)
 
     for t in 1:stages
         # todo: transition probabilities that vary by stage
@@ -134,6 +134,8 @@ end
 
 contains(x, l, u) = x >= l && x <= u
 
+applicable(iteration, frequency) = frequency > 0 && mod(iteration, frequency) == 0
+
 function solve_serial(m::SDDPModel, settings::Settings=Settings())
     status = :solving
     time_simulating, time_cutting = 0.0, 0.0
@@ -144,8 +146,18 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
         (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
         time_cutting += time_backwards + time_forwards
         lower, upper = simulation_objective, simulation_objective
+
+        # cut selection
+        if applicable(iteration, settings.cut_selection_frequency)
+            for stage in stages(m)
+                for sp in subproblems(stage)
+                    rebuildsubproblem!(m, sp)
+                end
+            end
+        end
+
         # simulate policy
-        if mod(iteration, settings.simulation_frequency) == 0
+        if applicable(iteration, settings.simulation_frequency)
             t = time()
             reset!(objectives)
             simidx = 1
@@ -191,6 +203,7 @@ function solve(m::SDDPModel;
         simulation_step::Int      = 10,
         simulation_confidence::Float64 = 0.95,
         simulation_terminate::Bool = false,
+        cut_selection_frequency::Int = 0,
         print_level::Int          = 4,
         log_file::String          = ""
     )
@@ -200,6 +213,7 @@ function solve(m::SDDPModel;
         collect(simulation_min:simulation_step:simulation_max),
         simulation_confidence,
         simulation_terminate,
+        cut_selection_frequency,
         print_level,
         log_file
     )
