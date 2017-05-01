@@ -56,3 +56,14 @@ function rtol(x, y)
         (x - y) / y
     end
 end
+
+function sample(x::AbstractVector{Float64})
+    r = rand()
+    for i in 1:length(x)
+        @inbounds r -= x[i]
+        if r < eps(Float64)
+            return i
+        end
+    end
+    error("x must be a discrete probablity distribution that sums to one. sum= $(sum(x))")
+end

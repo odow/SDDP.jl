@@ -4,15 +4,14 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-stageobjective!(vf::AbstractValueFunction, sp::JuMP.Model, obj) = error("You need this method")
+stageobjective!(vf::AbstractValueFunction, sp::JuMP.Model, obj...) = error("You need this method")
 getstageobjective(vf::AbstractValueFunction, sp::JuMP.Model) = error("You need this method")
 init!(vf::AbstractValueFunction, m::JuMP.Model, sense, bound, cutmanager) = error("You need this method")
 modifyvaluefunction!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = error("You need this method")
 # this one is optional
 rebuildsubproblem!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = nothing
 
-stageobjective!(sp::JuMP.Model, obj::AffExpr) = stageobjective!(valueoracle(sp), sp, obj)
-stageobjective!(sp::JuMP.Model, obj::JuMP.Variable) = stageobjective!(sp, AffExpr(obj))
+stageobjective!(sp::JuMP.Model, obj...) = stageobjective!(valueoracle(sp), sp, obj...)
 getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
 modifyvaluefunction!(m::SDDPModel, sp::JuMP.Model) = modifyvaluefunction!(valueoracle(sp), m, sp)
 rebuildsubproblem!(m::SDDPModel, sp::JuMP.Model) = rebuildsubproblem!(valueoracle(sp), m, sp)
@@ -30,7 +29,7 @@ function init!(::Type{DefaultValueFunction}, m::JuMP.Model, sense, bound, cutman
     DefaultValueFunction(m::JuMP.Model, sense, bound, cutmanager)
 end
 
-function stageobjective!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, sp::JuMP.Model, obj::AffExpr)
+function stageobjective!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, sp::JuMP.Model, obj)
     append!(vf.stageobjective, QuadExpr(obj))
     if ext(sp).finalstage
         JuMP.setobjective(sp, getsense(sp), obj)

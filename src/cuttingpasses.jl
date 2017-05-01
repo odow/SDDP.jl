@@ -7,16 +7,6 @@
 # Stochastic Dual Dynamic Programming in Julia
 # See http://github.com/odow/SDDP.jl
 #############################################################################
-function sample(x::AbstractVector{Float64})
-    r = rand()
-    for i in 1:length(x)
-        @inbounds r -= x[i]
-        if r < eps(Float64)
-            return i
-        end
-    end
-    error("x must be a discrete probablity distribution that sums to one. sum= $(sum(x))")
-end
 
 function samplesubproblem(stage::Stage, last_markov_state::Int)
     newidx = sample(stage.transitionprobabilities[last_markov_state, :])
@@ -115,6 +105,7 @@ function backwardpass!(m::SDDPModel, settings::Settings)
     for sp in subproblems(m, 1)
         solvesubproblem!(BackwardPass, m, sp)
     end
+    # TODO: improve over just taking mean of first stage subproblems
     bound = mean(m.storage.objective)
 
     return bound

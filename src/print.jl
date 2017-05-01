@@ -4,14 +4,18 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-function printheader(io::IO)
-    println(io, """
-
-        SDDP Solver. © Oscar Dowson, 2017
-
-    """)
-    println(io, "              Objective              |  Cut  Passes    Simulations     Rebuild")
-    println(io, "      Expected        Bound   % Gap  |   #     Time     #    Time        Time ")
+function printheader(io::IO, m::SDDPModel)
+    n = length(m.stages)
+    println(io, """------------------------------------------------------------------------------
+                          SDDP Solver. © Oscar Dowson, 2017.
+    ------------------------------------------------------------------------------""")
+    println(io, """    Statistics:
+            Stages: $(length(m.stages))
+            States: $(nstates(getsubproblem(m, 1, 1)))
+    ------------------------------------------------------------------------------""")
+    println(io, "              Objective              |  Cut  Passes    Simulations   Total    ")
+    println(io, "      Expected        Bound   % Gap  |   #     Time     #    Time    Time     ")
+    println(io, "------------------------------------------------------------------------------")
 end
 
 function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)
@@ -35,7 +39,7 @@ function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)
             humanize(l.timecuts),
             humanize(l.simulations),
             humanize(l.timesimulations),
-            humanize(l.timerebuilding)
+            humanize(l.timetotal)
         )
     )
 end

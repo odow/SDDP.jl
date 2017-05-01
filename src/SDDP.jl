@@ -138,10 +138,10 @@ applicable(iteration, frequency) = frequency > 0 && mod(iteration, frequency) ==
 
 function solve_serial(m::SDDPModel, settings::Settings=Settings())
     status = :solving
-    time_simulating, time_cutting, time_rebuilding = 0.0, 0.0, 0.0
+    time_simulating, time_cutting = 0.0, 0.0
     objectives = CachedVector(Float64)
     nsimulations, iteration, keep_iterating = 0, 1, true
-
+    start_time = time()
     while keep_iterating
         (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
         time_cutting += time_backwards + time_forwards
@@ -149,18 +149,18 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
 
         # cut selection
         if applicable(iteration, settings.cut_selection_frequency)
-            tim = time()
+            settings.print_level > 1 && info("Running Cut Selection")
             for (t, stage) in enumerate(stages(m))
                 t == length(stages(m)) && continue
                 for sp in subproblems(stage)
                     rebuildsubproblem!(m, sp)
                 end
             end
-            time_rebuilding += time() - tim
         end
 
         # simulate policy
         if applicable(iteration, settings.simulation_frequency)
+            settings.print_level > 1 && info("Running Monte-Carlo Simulation")
             t = time()
             reset!(objectives)
             simidx = 1
@@ -184,7 +184,8 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
             time_simulating += time() - t
         end
 
-        push!(m.log, SolutionLog(iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, time_rebuilding))
+        total_time = time() - start_time
+        push!(m.log, SolutionLog(iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time))
 
         settings.print_level > 0 && print(STDOUT, m.log[end], mod(iteration, settings.simulation_frequency) != 0)
         settings.log_file != "" && print(settings.log_file, m.log[end], mod(iteration, settings.simulation_frequency) != 0)
@@ -221,8 +222,8 @@ function solve(m::SDDPModel;
         log_file
     )
 
-    print_level > 0 && printheader(STDOUT)
-    log_file != "" && printheader(log_file)
+    print_level > 0 && printheader(STDOUT, m)
+    log_file != "" && printheader(log_file, m)
 
     solve_serial(m, settings)
 
