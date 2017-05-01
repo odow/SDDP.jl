@@ -112,7 +112,7 @@ end
 
 SDDP.solve(m,
     max_iterations = 10,
-    cut_selection_frequency = 1
+    cut_selection_frequency = 2
 )
 
 @test length(SDDP.getsubproblem(m, 2, 1).linconstr) < 10 + 11

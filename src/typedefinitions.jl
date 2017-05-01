@@ -129,8 +129,9 @@ struct SolutionLog
     timecuts::Float64
     simulations::Int
     timesimulations::Float64
+    timerebuilding::Float64
 end
-SolutionLog() = SolutionLog(0, 0.0, 0.0, 0.0, 0.0, 0, 0.0)
+SolutionLog() = SolutionLog(0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0)
 
 struct SDDPModel
     stages::Vector{Stage}

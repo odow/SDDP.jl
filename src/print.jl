@@ -5,8 +5,13 @@
 #############################################################################
 
 function printheader(io::IO)
-    println(io, "               Objective               |  Cut  Passes  |  Simulations  ")
-    println(io, "      Expected      |   Bound   % Gap  |   #     Time  |    #    Time  ")
+    println(io, """
+
+        SDDP Solver. © Oscar Dowson, 2017
+
+    """)
+    println(io, "              Objective              |  Cut  Passes    Simulations     Rebuild")
+    println(io, "      Expected        Bound   % Gap  |   #     Time     #    Time        Time ")
 end
 
 function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)
@@ -22,14 +27,15 @@ function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)
     end
 
     println(io,
-        @sprintf("%s | %s %s | %s %s | %s %s",
+        @sprintf("%s %s %s | %s %s %s %s %s",
             bound_string,
             humanize(l.bound, "8.3f"),
             rtol_string,
             humanize(l.iteration),
             humanize(l.timecuts),
             humanize(l.simulations),
-            humanize(l.timesimulations)
+            humanize(l.timesimulations),
+            humanize(l.timerebuilding)
         )
     )
 end

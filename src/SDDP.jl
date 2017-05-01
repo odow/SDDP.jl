@@ -138,7 +138,7 @@ applicable(iteration, frequency) = frequency > 0 && mod(iteration, frequency) ==
 
 function solve_serial(m::SDDPModel, settings::Settings=Settings())
     status = :solving
-    time_simulating, time_cutting = 0.0, 0.0
+    time_simulating, time_cutting, time_rebuilding = 0.0, 0.0, 0.0
     objectives = CachedVector(Float64)
     nsimulations, iteration, keep_iterating = 0, 1, true
 
@@ -149,12 +149,14 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
 
         # cut selection
         if applicable(iteration, settings.cut_selection_frequency)
+            tim = time()
             for (t, stage) in enumerate(stages(m))
                 t == length(stages(m)) && continue
                 for sp in subproblems(stage)
                     rebuildsubproblem!(m, sp)
                 end
             end
+            time_rebuilding += time() - tim
         end
 
         # simulate policy
@@ -182,7 +184,7 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
             time_simulating += time() - t
         end
 
-        push!(m.log, SolutionLog(iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating))
+        push!(m.log, SolutionLog(iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, time_rebuilding))
 
         settings.print_level > 0 && print(STDOUT, m.log[end], mod(iteration, settings.simulation_frequency) != 0)
         settings.log_file != "" && print(settings.log_file, m.log[end], mod(iteration, settings.simulation_frequency) != 0)
