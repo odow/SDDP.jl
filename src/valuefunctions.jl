@@ -17,7 +17,7 @@ getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
 modifyvaluefunction!(m::SDDPModel, sp::JuMP.Model) = modifyvaluefunction!(valueoracle(sp), m, sp)
 rebuildsubproblem!(m::SDDPModel, sp::JuMP.Model) = rebuildsubproblem!(valueoracle(sp), m, sp)
 
-struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
+mutable struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
     cutmanager::C
     stageobjective::QuadExpr
     theta::JuMP.Variable
@@ -41,17 +41,26 @@ end
 getstageobjective{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, sp::JuMP.Model) = getvalue(vf.stageobjective)
 
 function rebuildsubproblem!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
-    cutoracle = vf.cutmanager
     n = n_args(m.build!)
     ex = ext(sp)
-    sp = Model()
+    for i in 1:nstates(sp)
+        pop!(ex.states)
+    end
+    for i in 1:length(ex.scenarios)
+        pop!(ex.scenarios)
+    end
+    sp = Model(solver = m.lpsolver)
+
+    vf.stageobjective = QuadExpr(0.0)
+    vf.theta = futureobjective!(ex.sense, sp, ex.problembound)
+
     sp.ext[:SDDP] = ex
     if n == 2
         m.build!(sp, ex.stage)
     elseif n == 3
         m.build!(sp, ex.stage, ex.markovstate)
     end
-    for cut in validcuts(cutoracle)
+    for cut in validcuts(vf.cutmanager)
         addcut!(sp, cut)
     end
     m.stages[ex.stage].subproblems[ex.markovstate] = sp

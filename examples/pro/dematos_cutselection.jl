@@ -54,7 +54,7 @@ m = SDDPModel(
             sense           = :Max,
             stages          = 3,
             objective_bound = 1e6,
-            markov_transition      = transition,
+            markov_transition = transition,
             risk_measure    = Expectation(),
             cut_oracle      = DematosCutOracle(),
             solver          = ClpSolver()
@@ -115,5 +115,6 @@ SDDP.solve(m,
     cut_selection_frequency = 1
 )
 
-@test isapprox(m.log[end].bound, 825.806, atol=1e-3)
+@test length(SDDP.getsubproblem(m, 2, 1).linconstr) < 10 + 11
+@test isapprox(m.log[end].bound, 853.20, atol=1e-3)
 # objective 853.2

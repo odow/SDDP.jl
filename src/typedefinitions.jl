@@ -60,6 +60,8 @@ ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
 valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
 
+
+
 function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound=-1e6,
     risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction)
 
@@ -135,9 +137,10 @@ struct SDDPModel
     storage::Storage
     log::Vector{SolutionLog}
     build!::Function
+    lpsolver::JuMP.MathProgBase.AbstractMathProgSolver
     ext::Dict # extension dictionary
 end
-newSDDPModel(build!::Function) = SDDPModel(Stage[], Storage(), SolutionLog[], build!, Dict())
+newSDDPModel(build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = SDDPModel(Stage[], Storage(), SolutionLog[], build!, solver, Dict())
 
 struct Settings
     max_iterations::Int

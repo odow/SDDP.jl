@@ -74,7 +74,7 @@ function SDDPModel(build!::Function;
     end
 
     # New SDDPModel
-    m = newSDDPModel(build!)
+    m = newSDDPModel(build!, solver)
 
     for t in 1:stages
         # todo: transition probabilities that vary by stage
@@ -97,7 +97,7 @@ function SDDPModel(build!::Function;
                 sense        = optimisationsense(sense),
                 bound        = float(objective_bound),
                 risk_measure = getel(AbstractRiskMeasure, risk_measure, t, i),
-                cut_oracle   = getel(AbstractCutOracle, cut_oracle, t, i),
+                cut_oracle   = deepcopy(getel(AbstractCutOracle, cut_oracle, t, i)),
                 value_function = DefaultValueFunction
             )
             setsolver(mod, solver)
@@ -149,7 +149,8 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
 
         # cut selection
         if applicable(iteration, settings.cut_selection_frequency)
-            for stage in stages(m)
+            for (t, stage) in enumerate(stages(m))
+                t == length(stages(m)) && continue
                 for sp in subproblems(stage)
                     rebuildsubproblem!(m, sp)
                 end
