@@ -13,16 +13,16 @@
 
     This function assembles a new cut using the following inputs
     + measure::AbstractRiskMeasure - used to dispatch
-    + newprobabilities::Vector{Float64} - the probability support of the scenarios. Should sum to one
+    + newprobabilities                  - the probability support of the scenarios. Should sum to one
     + oldprobabilities::Vector{Float64} - the probability support of the scenarios. Should sum to one
     + x::Vector{Float64}                - objectives
 """
-modifyprobability!(measure::AbstractRiskMeasure, newprobabilities::Vector{Float64}, oldprobabilities::Vector{Float64}, x::Vector{Float64}) = error("You need to overload a `modifyprobability` method for the measure of type $(typeof(measure)).")
+modifyprobability!(measure::AbstractRiskMeasure, newprobabilities, oldprobabilities, x) = error("You need to overload a `modifyprobability` method for the measure of type $(typeof(measure)).")
 
 # a more expansive method that can be overloaded
 modifyprobability!(
     measure::AbstractRiskMeasure,           # risk measure to be overloaded
-    newprobabilities::Vector{Float64},      # vector of new probabilities (to by modified in place)
+    newprobabilities,      # vector of new probabilities (to by modified in place)
     oldprobabilities::Vector{Float64},      # vector of old probabilities
     m::JuMP.Model,
     x::Vector{Float64},                     # vector of state values
@@ -39,7 +39,7 @@ struct Expectation <: AbstractRiskMeasure end
 
 modifyprobability!(
     measure::Expectation,
-    newprobabilities::Vector{Float64},
+    newprobabilities::AbstractVector,
     oldprobabilities::Vector{Float64},
     x::Vector{Float64}
     ) = (newprobabilities .= oldprobabilities)

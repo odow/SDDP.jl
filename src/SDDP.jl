@@ -31,6 +31,7 @@ include("states.jl")
 include("scenarios.jl")
 include("cutoracles.jl")
 include("valuefunctions.jl")
+include("default_value_function.jl")
 include("stageobjectives.jl")
 include("cuttingpasses.jl")
 include("MIT_licensedcode.jl")
@@ -38,6 +39,7 @@ include("print.jl")
 
 include("pro/dematos_cutselection.jl")
 include("pro/avar_riskaversion.jl")
+include("pro/rib_valuefunction.jl")
 
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
@@ -56,9 +58,9 @@ function SDDPModel(build!::Function;
 
     cut_oracle      = DefaultCutOracle(),
 
-    solver          = UnsetSolver()
+    solver          = UnsetSolver(),
 
-    # value_function = DefaultValueFunction{cut_oracle},
+    value_function = DefaultValueFunction(),
     )
 
     # check number of arguments to SDDPModel() do [args...] ...  model def ... end
@@ -74,7 +76,7 @@ function SDDPModel(build!::Function;
     end
 
     # New SDDPModel
-    m = newSDDPModel(build!, solver)
+    m = newSDDPModel(value_function, build!, solver)
 
     for t in 1:stages
         # todo: transition probabilities that vary by stage
@@ -91,14 +93,14 @@ function SDDPModel(build!::Function;
         end
         for i in 1:size(markov_transition[t], 2)
             mod = Subproblem(
-                finalstage   = (t == stages),
-                stage        = t,
-                markov_state = i,
-                sense        = optimisationsense(sense),
-                bound        = float(objective_bound),
-                risk_measure = getel(AbstractRiskMeasure, risk_measure, t, i),
-                cut_oracle   = deepcopy(getel(AbstractCutOracle, cut_oracle, t, i)),
-                value_function = DefaultValueFunction
+                finalstage     = (t == stages),
+                stage          = t,
+                markov_state   = i,
+                sense          = optimisationsense(sense),
+                bound          = float(objective_bound),
+                risk_measure   = getel(AbstractRiskMeasure, risk_measure, t, i),
+                cut_oracle     = deepcopy(getel(AbstractCutOracle, cut_oracle, t, i)),
+                value_function = value_function
             )
             setsolver(mod, solver)
             # dispatch to correct function

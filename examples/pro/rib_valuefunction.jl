@@ -19,20 +19,28 @@ markov_states = [0.9, 1.1]
 markov_transition = Array{Float64, 2}[
     [0.5 0.5]
 ]
+ribs = Vector{Float64}[ [5.5, 6.5] ]
 for t in 2:28
     push!(markov_transition, [0.75 0.25; 0.3 0.7])
+    push!(ribs, collect(linspace(3,9,3)))
 end
 
 box(x, a, b) = min(b, max(a, x))
-price_dynamics(p, w, t) = box(exp(log(p) + σ²[t]*w), 3, 9)
+price_dynamics(p, w, t, i) = box(exp(log(p) + σ²[t]*w), 3, 9)
 
 m = SDDPModel(
-    stages       = 28,
-    markovstates = 2,
-    transition = markov_transition,
-    scenarios = ones(19) / 19,
-    sense        = :Max
-                        ) do sp, t, i
+    sense             = :Max,
+    stages            = 28,
+    objective_bound   = 1e6,
+    markov_transition = markov_transition,
+    value_function    = InterpolatedValueFunction(
+                            # dynamics can't depend on other things
+                            dynamics       = price_dynamics,
+                            initial_price  = 6.50,
+                            rib_locations  = ribs,
+                            noise          = Noise([0, 0.01, 0.02, 0.03, 0.04])
+                        )
+                                            ) do sp, t, i
 
     # create state variables
     @states(sp, begin
@@ -61,19 +69,15 @@ m = SDDPModel(
 
     if t < 28
         stageobjective!(sp,
-            linspace(3, 9, 5),                  # locations
-            (p, w)->price_dynamics(p, w, t),    # dynamics for updating price state
-            linspace(0, 0.05, 5),   # noises
-            fill(0.2, 5),           # probability support
             price -> (buy * price - transaction_cost * (buy + sell)) # returns AffExpr for stage objective
         )
     else
         stageobjective!(sp,
-            linspace(3, 9, 5),                  # locations
-            (p, w)->price_dynamics(p, w, t),    # dynamics for updating price state
-            linspace(0, 0.05, 5), # noises
-            # fill(0.2, 5),           # probability support
             price -> (production - contracts) * price # objective
         )
     end
 end
+
+SDDP.solve(m,
+    max_iterations = 10
+)

@@ -133,7 +133,7 @@ struct SolutionLog
 end
 SolutionLog() = SolutionLog(0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0)
 
-struct SDDPModel
+struct SDDPModel{V<:AbstractValueFunction}
     stages::Vector{Stage}
     storage::Storage
     log::Vector{SolutionLog}
@@ -141,7 +141,8 @@ struct SDDPModel
     lpsolver::JuMP.MathProgBase.AbstractMathProgSolver
     ext::Dict # extension dictionary
 end
-newSDDPModel(build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = SDDPModel(Stage[], Storage(), SolutionLog[], build!, solver, Dict())
+newSDDPModel(v::AbstractValueFunction, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = newSDDPModel(typeof(v), build!, solver)
+newSDDPModel{V<:AbstractValueFunction}(v::Type{V}, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = SDDPModel{V}(Stage[], Storage(), SolutionLog[], build!, solver, Dict())
 
 struct Settings
     max_iterations::Int

@@ -21,7 +21,7 @@ NestedAVaR(;lambda=0.0, beta=0.0) = NestedAVaR(lambda, beta)
 
 function modifyprobability!(
     measure::NestedAVaR,                    # risk measure to be overloaded
-    newp::Vector{Float64},      # vector of new probabilities (to by modified in place)
+    newp,      # vector of new probabilities (to by modified in place)
     p::Vector{Float64},      # vector of old probabilities
     m::JuMP.Model,
     x::Vector{Float64},                     # vector of state values
