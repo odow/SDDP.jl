@@ -154,3 +154,4 @@ struct Settings
     print_level::Int
     log_file::String
 end
+Settings() = Settings(0,0,Int[],0.0,false,0,0,"")
