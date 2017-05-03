@@ -14,21 +14,10 @@ sampled_errors = [-0.1290, -0.1010, -0.0814, -0.0661, -0.0530, -0.0412, -0.0303,
 σ² = linspace(1, 0, 28) # Decreasing variance in changes in price over time
 transaction_cost = 0.01
 
-markov_states = [0.9, 1.1]
-
-markov_transition = Array{Float64, 2}[
-    [1.0]',
-    [0.5 0.5]
-]
-# ribs = Vector{Float64}[ [5.5, 6.5] ]
-for t in 3:28
-    push!(markov_transition, [0.75 0.25; 0.3 0.7])
-#     push!(ribs, collect(linspace(3,9,3)))
-end
-ribs = collect(linspace(3, 9, 15))
+ribs = collect(linspace(3, 9, 2))
 
 box(x, a, b) = min(b, max(a, x))
-price_dynamics(p, w, t, i) = box(exp(log(p) + σ²[t]*w), 3, 9)
+price_dynamics(p, w, t, i) = box(1.01 * exp(log(p) + σ²[t]*w), 3, 9)
 
 m = SDDPModel(
     sense             = :Max,
@@ -39,7 +28,7 @@ m = SDDPModel(
     value_function    = InterpolatedValueFunction(
                             # dynamics can't depend on other things
                             dynamics       = price_dynamics,
-                            initial_price  = 6.50,
+                            initial_price  = 4.50,
                             rib_locations  = ribs,
                             noise          = Noise(sampled_errors)
                         )
@@ -62,17 +51,14 @@ m = SDDPModel(
     @constraints(sp, begin
         contracts_sold  == contracts_sold0 + sell
         production == production0 + output
+        contracts_sold0 + sell <= 1.2
     end)
 
     # a constraint with varying RHS (but we leverage the JuMP tooling to evaluate that)
-    # if t > 1
-    #     @scenario(sp,
-    #         alpha = [0, 0.01, 0.02, 0.03, 0.04],
-    #         output <= alpha * markov_states[1]
-    #     )
-    # else
-        @constraint(sp, output <= 0.04)
-    # end
+    @scenario(sp,
+        alpha = linspace(0., 0.05, 5),
+        output <= alpha
+    )
 
     if t < 28
         stageobjective!(sp,
@@ -86,6 +72,9 @@ m = SDDPModel(
 end
 
 SDDP.solve(m,
-    max_iterations = 20,
-    simulation_frequency = 2
+    max_iterations = 30,
+    simulation_frequency = 15,
+    simulation_min = 500,
+    simulation_step = 10,
+    simulation_max = 500
 )

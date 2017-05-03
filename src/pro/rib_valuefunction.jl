@@ -19,6 +19,14 @@ function Noise{T}(x::AbstractVector{T})
     y
 end
 
+function Noise{T}(x::AbstractVector{T}, p::AbstractVector{Float64})
+    y = Noise{T}[]
+    for (xi, pi) in zip(x, p)
+        push!(y, Noise(xi, pi))
+    end
+    y
+end
+
 function sample{T}(x::Vector{Noise{T}})
     r = rand()
     for i in 1:length(x)
@@ -75,16 +83,16 @@ function interpolate{C<:AbstractCutOracle, T}(vf::InterpolatedValueFunction{C, T
     y = AffExpr(0.0)
     _set = false
     for i in 2:length(vf.rib_locations)
-        if vf.location <= vf.rib_locations[i]
+        if vf.location <= vf.rib_locations[i] || i == length(vf.rib_locations)
             lambda = (vf.location - vf.rib_locations[i-1]) / (vf.rib_locations[i] - vf.rib_locations[i-1])
-            append!(y, vf.variables[i-1] * lambda)
-            append!(y, vf.variables[i] * (1 - lambda))
+            append!(y, vf.variables[i-1] * (1- lambda))
+            append!(y, vf.variables[i] * lambda)
             _set = true
             break
         end
     end
     if !_set
-        error("Price must lie inside ribs")
+        error("Price must lie inside ribs. $(vf.location), $(vf.rib_locations)")
     end
     y
 end
