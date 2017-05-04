@@ -5,7 +5,7 @@ os:
   - osx
 julia:
   # - release
-  - nightly
+  - 0.6
 notifications:
   email: false
 sudo: false
