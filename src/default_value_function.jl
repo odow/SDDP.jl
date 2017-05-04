@@ -9,9 +9,9 @@ mutable struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFuncti
     stageobjective::QuadExpr
     theta::JuMP.Variable
 end
-DefaultValueFunction() = DefaultValueFunction
+DefaultValueFunction(cutoracle=DefaultCutOracle()) = DefaultValueFunction{typeof(cutoracle)}
 
-init!(::Type{DefaultValueFunction}, m::JuMP.Model, sense, bound, cutmanager) = DefaultValueFunction(
+init!{C}(::Type{DefaultValueFunction{C}}, m::JuMP.Model, sense, bound, cutmanager::C) = DefaultValueFunction(
     cutmanager,
     QuadExpr(0.0),
     futureobjective!(sense, m, bound)

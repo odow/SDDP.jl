@@ -4,7 +4,7 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-using SDDP, JuMP, Clp
+using SDDP, JuMP, Clp, Base.Test
 
 # For repeatability
 srand(11111)

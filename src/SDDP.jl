@@ -42,6 +42,7 @@ include("print.jl")
 include("pro/dematos_cutselection.jl")
 include("pro/avar_riskaversion.jl")
 include("pro/rib_valuefunction.jl")
+include("pro/historical_simulation.jl")
 
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
@@ -62,7 +63,7 @@ function SDDPModel(build!::Function;
 
     solver          = UnsetSolver(),
 
-    value_function = DefaultValueFunction(),
+    value_function = DefaultValueFunction(cut_oracle),
     )
 
     # check number of arguments to SDDPModel() do [args...] ...  model def ... end
@@ -249,6 +250,8 @@ function solve(m::SDDPModel;
     status = solve(solvetype, m, settings)
     print_level > 0 && printfooter(STDOUT, m, status)
     log_file != "" && printfooter(log_file, m, status)
+
+    status
 end
 
 end

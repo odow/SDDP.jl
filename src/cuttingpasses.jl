@@ -31,7 +31,7 @@ function newsolutionstore(X::Vector{Symbol})
     d
 end
 savesolution!(solutionstore::Void, markov::Int, scenarioidx::Int, sp::JuMP.Model) = nothing
-function savesolution!(solutionstore::Dict{Symbol, Vector}, markov::Int, scenarioidx::Int, sp::JuMP.Model)
+function savesolution!(solutionstore::Dict{Symbol, Any}, markov::Int, scenarioidx::Int, sp::JuMP.Model)
     for (key, store) in solutionstore
         if key == :markov
             push!(store, markov)
