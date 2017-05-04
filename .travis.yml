@@ -8,10 +8,22 @@ julia:
   - nightly
 notifications:
   email: false
+sudo: false
+cache:
+  directories:
+  - $HOME/usr
+addons:
+  apt_packages:
+  - gfortran
+env:
+  - MAKEFLAGS="-j3"
+    LD_LIBRARY_PATH=$HOME/usr/lib
 # uncomment the following lines to override the default test script
 #script:
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 #  - julia -e 'Pkg.clone(pwd()); Pkg.build("SDDP"); Pkg.test("SDDP"; coverage=true)'
+before_cache:
+  - cp -R $HOME/.julia/*/Cbc/deps/usr $HOME
 after_success:
   # push coverage results to Coveralls
   - julia -e 'cd(Pkg.dir("SDDP")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
