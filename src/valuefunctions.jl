@@ -15,7 +15,6 @@ getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
 modifyvaluefunction!(m::SDDPModel, sp::JuMP.Model) = modifyvaluefunction!(valueoracle(sp), m, sp)
 rebuildsubproblem!(m::SDDPModel, sp::JuMP.Model) = rebuildsubproblem!(valueoracle(sp), m, sp)
 
-
 mutable struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
     cutmanager::C
     stageobjective::QuadExpr

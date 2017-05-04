@@ -70,9 +70,9 @@ m = SDDPModel(
 end
 
 SDDP.solve(m,
-    max_iterations = 15,
+    max_iterations = 5,
     simulation = MonteCarloSimulation(
-        frequency = 15,
+        frequency = 5,
         min       = 500,
         max       = 500
     )

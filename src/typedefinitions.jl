@@ -22,6 +22,11 @@ struct Serial <: SDDPSolveType end
 
 const LinearConstraint=JuMP.ConstraintRef{JuMP.Model, JuMP.GenericRangeConstraint{JuMP.GenericAffExpr{Float64, JuMP.Variable}}}
 
+mutable struct CachedVector{T} <: AbstractArray{T, 1}
+    data::Vector{T}
+    n::Int
+end
+
 struct Cut
     intercept::Float64
     coefficients::Vector{Float64}
@@ -58,7 +63,7 @@ struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:Abstract
 end
 
 function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound=-1e6,
-    risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction)
+    risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction{typeof(cut_oracle)})
 
     m = Model()
     m.ext[:SDDP] = SDDP.SubproblemExt(
@@ -163,8 +168,3 @@ struct Settings
     log_file::String
 end
 Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"")
-
-mutable struct CachedVector{T} <: AbstractArray{T, 1}
-    data::Vector{T}
-    n::Int
-end
