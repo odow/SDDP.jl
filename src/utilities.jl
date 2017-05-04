@@ -4,6 +4,14 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
+function getbound(m::SDDPModel)
+    if length(m.log) > 0
+        return m.log[end].bound
+    else
+        error("Model not solved.")
+    end
+end
+
 getsense(::Type{Max}) = :Max
 getsense(::Type{Min}) = :Min
 getsense(m::JuMP.Model) = getsense(ext(m).sense)
@@ -67,3 +75,7 @@ function sample(x::AbstractVector{Float64})
     end
     error("x must be a discrete probablity distribution that sums to one. sum= $(sum(x))")
 end
+
+contains(x, l, u) = x >= l && x <= u
+
+applicable(iteration, frequency) = frequency > 0 && mod(iteration, frequency) == 0

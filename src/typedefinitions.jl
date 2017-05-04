@@ -20,6 +20,10 @@ abstract type IterationDirection end
 struct ForwardPass <: IterationDirection end
 struct BackwardPass <: IterationDirection end
 
+
+abstract type SDDPSolveType end
+struct Serial <: SDDPSolveType end
+
 const LinearConstraint=JuMP.ConstraintRef{JuMP.Model, JuMP.GenericRangeConstraint{JuMP.GenericAffExpr{Float64, JuMP.Variable}}}
 
 struct Cut
@@ -144,14 +148,27 @@ end
 newSDDPModel(v::AbstractValueFunction, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = newSDDPModel(typeof(v), build!, solver)
 newSDDPModel{V<:AbstractValueFunction}(v::Type{V}, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = SDDPModel{V}(Stage[], Storage(), SolutionLog[], build!, solver, Dict())
 
+struct BoundConvergence
+    iterations::Int
+    rtol::Float64
+    atol::Float64
+end
+BoundConvergence(;iterations=0,rtol=0.0,atol=0.0) = BoundConvergence(iterations,rtol,atol)
+struct MonteCarloSimulation
+    frequency::Int
+    steps::Vector{Int}
+    confidence::Float64
+    termination::Bool
+end
+MonteCarloSimulation(;frequency=0,min=20,max=0,step=1,confidence=0.95,termination=false) = MonteCarloSimulation(frequency,collect(min:step:max),confidence,termination)
+
 struct Settings
     max_iterations::Int
-    simulation_frequency::Int
-    simulation_steps::Vector{Int}
-    simulation_confidence::Float64
-    simulation_terminate::Bool
+    time_limit::Float64
+    simulation::MonteCarloSimulation
+    bound_convergence::BoundConvergence
     cut_selection_frequency::Int
     print_level::Int
     log_file::String
 end
-Settings() = Settings(0,0,Int[],0.0,false,0,0,"")
+Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"")

@@ -14,7 +14,7 @@ sampled_errors = [-0.1290, -0.1010, -0.0814, -0.0661, -0.0530, -0.0412, -0.0303,
 σ² = linspace(1, 0, 28) # Decreasing variance in changes in price over time
 transaction_cost = 0.01
 
-ribs = collect(linspace(3, 9, 2))
+ribs = collect(linspace(3, 9, 5))
 
 box(x, a, b) = min(b, max(a, x))
 price_dynamics(p, w, t, i) = box(1.01 * exp(log(p) + σ²[t]*w), 3, 9)
@@ -23,7 +23,6 @@ m = SDDPModel(
     sense             = :Max,
     stages            = 28,
     objective_bound   = 20,
-    # markov_transition = markov_transition,
     solver            = ClpSolver(),
     value_function    = InterpolatedValueFunction(
                             # dynamics can't depend on other things
@@ -42,7 +41,6 @@ m = SDDPModel(
 
     # auxillary variables
     @variables(sp, begin
-        # 0 <= buy <= 1.2
         0 <= sell <= 1.2
         output >= 0
     end)
@@ -72,9 +70,13 @@ m = SDDPModel(
 end
 
 SDDP.solve(m,
-    max_iterations = 30,
-    simulation_frequency = 15,
-    simulation_min = 500,
-    simulation_step = 10,
-    simulation_max = 500
+    max_iterations = 15,
+    simulation = MonteCarloSimulation(
+        frequency = 15,
+        min       = 500,
+        max       = 500
+    )
 )
+
+@test getbound(m) >= 4.1
+@test getbound(m) <= 4.3

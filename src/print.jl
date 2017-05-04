@@ -10,12 +10,21 @@ function printheader(io::IO, m::SDDPModel)
                           SDDP Solver. © Oscar Dowson, 2017.
     ------------------------------------------------------------------------------""")
     println(io, """    Statistics:
-            Stages: $(length(m.stages))
-            States: $(nstates(getsubproblem(m, 1, 1)))
+            Stages:      $(length(m.stages))
+            States:      $(nstates(getsubproblem(m, 1, 1)))
+            Subproblems: $(sum(length(subproblems(s)) for s in stages(m)))
     ------------------------------------------------------------------------------""")
     println(io, "              Objective              |  Cut  Passes    Simulations   Total    ")
     println(io, "      Expected        Bound   % Gap  |   #     Time     #    Time    Time     ")
     println(io, "------------------------------------------------------------------------------")
+end
+
+function printfooter(io::IO, m::SDDPModel, status)
+    println(io, "------------------------------------------------------------------------------")
+    println(io, """    Statistics:
+            Cuts added:         $(length(m.log))
+            Termination Status: $(status)
+    ------------------------------------------------------------------------------""")
 end
 
 function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)

@@ -21,7 +21,9 @@ export SDDPModel,
     DefaultCutOracle,
     # risk measures
     Expectation,
-    solve
+    MonteCarloSimulation, BoundConvergence,
+    solve,
+    getbound
 
 include("storage.jl")
 include("typedefinitions.jl")
@@ -134,11 +136,8 @@ function SDDPModel(build!::Function;
     m
 end
 
-contains(x, l, u) = x >= l && x <= u
 
-applicable(iteration, frequency) = frequency > 0 && mod(iteration, frequency) == 0
-
-function solve_serial(m::SDDPModel, settings::Settings=Settings())
+function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     status = :solving
     time_simulating, time_cutting = 0.0, 0.0
     objectives = CachedVector(Float64)
@@ -161,18 +160,18 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
         end
 
         # simulate policy
-        if applicable(iteration, settings.simulation_frequency)
+        if applicable(iteration, settings.simulation.frequency)
             settings.print_level > 1 && info("Running Monte-Carlo Simulation")
             t = time()
             reset!(objectives)
             simidx = 1
-            for i in 1:settings.simulation_steps[end]
+            for i in 1:settings.simulation.steps[end]
                 push!(objectives, forwardpass!(m, settings))
                 nsimulations += 1
-                if i == settings.simulation_steps[simidx]
-                    (lower, upper) = confidenceinterval(objectives, settings.simulation_confidence)
+                if i == settings.simulation.steps[simidx]
+                    (lower, upper) = confidenceinterval(objectives, settings.simulation.confidence)
                     if contains(objective_bound, lower, upper)
-                        if settings.simulation_terminate && simidx == length(settings.simulation_steps)
+                        if settings.simulation.termination && simidx == length(settings.simulation.steps)
                             # max simulations
                             status = :converged
                             keep_iterating = false
@@ -187,10 +186,21 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
         end
 
         total_time = time() - start_time
+        if total_time > settings.time_limit
+            status = :time_limit
+            keep_iterating = false
+        end
         push!(m.log, SolutionLog(iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time))
 
-        settings.print_level > 0 && print(STDOUT, m.log[end], mod(iteration, settings.simulation_frequency) != 0)
-        settings.log_file != "" && print(settings.log_file, m.log[end], mod(iteration, settings.simulation_frequency) != 0)
+        last_n = map(l->l.bound, m.log[end-settings.bound_convergence.iterations:end])
+        if all(last_n - mean(last_n) .< settings.bound_convergence.atol) || all(abs.(last_n / mean(last_n)-1) .< settings.bound_convergence.rtol)
+            status = :bound_convergence
+            keep_iterating = false
+        end
+
+
+        settings.print_level > 0 && print(STDOUT, m.log[end], mod(iteration, settings.simulation.frequency) != 0)
+        settings.log_file != "" && print(settings.log_file, m.log[end], mod(iteration, settings.simulation.frequency) != 0)
 
         iteration += 1
         if iteration > settings.max_iterations
@@ -199,26 +209,35 @@ function solve_serial(m::SDDPModel, settings::Settings=Settings())
         end
 
     end
+    status
 end
 
 function solve(m::SDDPModel;
         max_iterations::Int       = 10,
-        simulation_frequency::Int = 5,
-        simulation_min::Int       = 10,
-        simulation_max::Int       = 20,
-        simulation_step::Int      = 10,
-        simulation_confidence::Float64 = 0.95,
-        simulation_terminate::Bool = false,
+        time_limit::Real          = 600, # seconds
+        simulation = MonteCarloSimulation(
+                frequency   = 5,
+                min         = 10,
+                step        = 10,
+                max         = 20,
+                confidence  = 0.95,
+                termination = false
+            ),
+        bound_convergence = BoundConvergence(
+                iterations = 0,
+                rtol       = 0.0,
+                atol       = 0.0
+            ),
         cut_selection_frequency::Int = 0,
         print_level::Int          = 4,
-        log_file::String          = ""
+        log_file::String          = "",
+        solvetype::SDDPSolveType  = Serial()
     )
     settings = Settings(
         max_iterations,
-        simulation_frequency,
-        collect(simulation_min:simulation_step:simulation_max),
-        simulation_confidence,
-        simulation_terminate,
+        time_limit,
+        simulation,
+        bound_convergence,
         cut_selection_frequency,
         print_level,
         log_file
@@ -227,8 +246,9 @@ function solve(m::SDDPModel;
     print_level > 0 && printheader(STDOUT, m)
     log_file != "" && printheader(log_file, m)
 
-    solve_serial(m, settings)
-
+    status = solve(solvetype, m, settings)
+    print_level > 0 && printfooter(STDOUT, m, status)
+    log_file != "" && printfooter(log_file, m, status)
 end
 
 end

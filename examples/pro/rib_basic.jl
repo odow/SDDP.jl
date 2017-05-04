@@ -46,8 +46,10 @@ end
 
 SDDP.solve(m,
     max_iterations = 5,
-    simulation_frequency = 2,
-    simulation_max = 20
+    simulation = MonteCarloSimulation(
+        frequency = 2,
+        max       = 20
+    )
 )
 
 @test isapprox(m.log[end].bound, 1.5)
