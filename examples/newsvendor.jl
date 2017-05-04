@@ -35,10 +35,6 @@ m = SDDPModel(
         stages            = 3,
         objective_bound   = 1000,
         markov_transition = Transition,
-        risk_measure      = NestedAVaR(
-                             beta   = 0.6,
-                             lambda = 0.5
-                             ),
         solver          = ClpSolver()
                                                 ) do sp, stage, markov_state
 
@@ -71,14 +67,18 @@ m = SDDPModel(
 end
 
 @time solvestatus = SDDP.solve(m,
-    max_iterations = 50,
+    max_iterations = 20,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
-                        min       = 5,
-                        max       = 50,
-                        step      = 5
-                             )
+                        min       = 10,
+                        max       = 500,
+                        step      = 10
+                             ),
+    bound_convergence = BoundConvergence(
+                        iterations = 5,
+                        atol       = 1e-3
+                            )
 )
 
-@test isapprox(getbound(m), 93.267, atol=1e-3)
-@test solvestatus == :max_iterations
+@test isapprox(getbound(m), 97.9, atol=1e-3)
+@test solvestatus == :bound_convergence

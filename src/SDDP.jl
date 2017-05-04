@@ -193,10 +193,12 @@ function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
         end
         push!(m.log, SolutionLog(iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time))
 
-        last_n = map(l->l.bound, m.log[end-settings.bound_convergence.iterations:end])
-        if all(last_n - mean(last_n) .< settings.bound_convergence.atol) || all(abs.(last_n / mean(last_n)-1) .< settings.bound_convergence.rtol)
-            status = :bound_convergence
-            keep_iterating = false
+        if settings.bound_convergence.iterations > 1 && length(m.log) >= settings.bound_convergence.iterations
+            last_n = map(l->l.bound, m.log[end-settings.bound_convergence.iterations+1:end])
+            if all(last_n - mean(last_n) .< settings.bound_convergence.atol) || all(abs.(last_n / mean(last_n)-1) .<    settings.bound_convergence.rtol)
+                status = :bound_convergence
+                keep_iterating = false
+            end
         end
 
 
