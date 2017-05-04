@@ -4,6 +4,10 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
+ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
+isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
+valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
+
 function getbound(m::SDDPModel)
     if length(m.log) > 0
         return m.log[end].bound
@@ -79,3 +83,89 @@ end
 contains(x, l, u) = x >= l && x <= u
 
 applicable(iteration, frequency) = frequency > 0 && mod(iteration, frequency) == 0
+
+function constructcut(m::SDDPModel, sp::JuMP.Model)
+    # theta <=/>= E[ (y - πᵀx̄) + πᵀx ]
+    intercept = 0.0
+    coefficients = zeros(nstates(sp))
+    for i in 1:length(m.storage.objective)
+        intercept += m.storage.modifiedprobability[i] * (m.storage.objective[i] - dot(getstage(m, ext(sp).stage).state, m.storage.duals[i]))
+        for j in 1:nstates(sp)
+            coefficients[j] += m.storage.modifiedprobability[i] * m.storage.duals[i][j]
+        end
+    end
+    Cut(intercept, coefficients)
+end
+
+_addcut!(::Type{Min}, sp, theta, affexpr) = @constraint(sp, theta >= affexpr)
+_addcut!(::Type{Max}, sp, theta, affexpr) = @constraint(sp, theta <= affexpr)
+
+
+Base.size{T}(x::CachedVector{T}) = (x.n,)
+function Base.getindex{T}(x::CachedVector{T}, i)
+    if i > x.n
+        throw(BoundsError(x, i))
+    end
+    x.data[i]
+end
+
+function Base.setindex!{T}(x::CachedVector{T}, y::T, i)
+    if i > x.n
+        throw(BoundsError(x, i))
+    end
+    x.data[i] = y
+end
+function Base.push!{T}(x::CachedVector{T}, y::T)
+    x.n += 1
+    if x.n <= length(x.data)
+        x.data[x.n] = y
+    else
+        push!(x.data, y)
+    end
+end
+CachedVector(T) = CachedVector{T}(T[], 0)
+
+function reset!{T}(x::CachedVector{T})
+    x.n = 0
+end
+
+
+function samplesubproblem(stage::Stage, last_markov_state::Int)
+    newidx = sample(stage.transitionprobabilities[last_markov_state, :])
+    return newidx, getsubproblem(stage, newidx)
+end
+
+function newsolutionstore(X::Vector{Symbol})
+    d = Dict(
+        :markov         => Int[],
+        :scenario       => Int[],
+        :obj            => Float64[],
+        :stageobjective => Float64[]
+    )
+    for x in X
+        d[x] = Any[]
+    end
+    d
+end
+savesolution!(solutionstore::Void, markov::Int, scenarioidx::Int, sp::JuMP.Model) = nothing
+function savesolution!(solutionstore::Dict{Symbol, Any}, markov::Int, scenarioidx::Int, sp::JuMP.Model)
+    for (key, store) in solutionstore
+        if key == :markov
+            push!(store, markov)
+        elseif key == :scenario
+            push!(store, scenarioidx)
+        elseif key == :obj
+            push!(store, getobjectivevalue(sp))
+        elseif key == :stageobjective
+            push!(store, getstageobjective(sp))
+        else
+            push!(store, getvalue(getvariable(sp, key)))
+        end
+    end
+end
+
+function solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model)
+    @assert JuMP.solve(sp) == :Optimal
+end
+solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
+hasscenarios(sp::JuMP.Model) = length(ext(sp).scenarios) > 0

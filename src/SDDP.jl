@@ -3,10 +3,6 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
-# SDDP
-# Stochastic Dual Dynamic Programming in Julia
-# See http://github.com/odow/SDDP.jl
-#############################################################################
 
 module SDDP
 
@@ -25,7 +21,6 @@ export SDDPModel,
     solve,
     getbound
 
-include("storage.jl")
 include("typedefinitions.jl")
 include("utilities.jl")
 include("riskmeasures.jl")
@@ -33,8 +28,6 @@ include("states.jl")
 include("scenarios.jl")
 include("cutoracles.jl")
 include("valuefunctions.jl")
-include("default_value_function.jl")
-include("stageobjectives.jl")
 include("cuttingpasses.jl")
 include("MIT_licensedcode.jl")
 include("print.jl")
@@ -47,23 +40,15 @@ include("pro/historical_simulation.jl")
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
 function SDDPModel(build!::Function;
-    sense           = :Min,
-    stages          = 1,
-    objective_bound = -1e6,
-
-    # markov_states        = 1,
-    # initial_markov_state = -1,
+    sense                = :Min,
+    stages               = 1,
+    objective_bound      = -1e6,
     markov_transition    = [ones(Float64, (1,1)) for t in 1:stages],
-
     scenario_probability = Float64[],
-
-    risk_measure    = Expectation(),
-
-    cut_oracle      = DefaultCutOracle(),
-
-    solver          = UnsetSolver(),
-
-    value_function = DefaultValueFunction(cut_oracle),
+    risk_measure         = Expectation(),
+    cut_oracle           = DefaultCutOracle(),
+    solver               = UnsetSolver(),
+    value_function       = DefaultValueFunction(cut_oracle),
     )
 
     # check number of arguments to SDDPModel() do [args...] ...  model def ... end
@@ -137,6 +122,71 @@ function SDDPModel(build!::Function;
     m
 end
 
+function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
+    last_markov_state = 1
+    scenarioidx = 0
+    obj = 0.0
+    for (t, stage) in enumerate(stages(m))
+        # choose markov state
+        (last_markov_state, sp) = samplesubproblem(stage, last_markov_state)
+        if t > 1
+            setstates!(m, sp)
+        end
+
+        # choose and set RHS scenario
+        if hasscenarios(sp)
+            (scenarioidx, scenario) = samplescenario(sp)
+            setscenario!(sp, scenario)
+        end
+        # solve subproblem
+        solvesubproblem!(ForwardPass, m, sp)
+        # store stage obj
+        obj += getstageobjective(sp)
+        # store state
+        savestates!(stage.state, sp)
+        # save solution for simulations (defaults to no-op)
+        savesolution!(solutionstore, last_markov_state, scenarioidx, sp)
+    end
+    return obj
+end
+
+function backwardpass!(m::SDDPModel, settings::Settings)
+    # walk backward through the stages
+    for t in nstages(m):-1:2
+        # solve all stage t problems
+        reset!(m.storage)
+        for sp in subproblems(m, t)
+            setstates!(m, sp)
+            solvesubproblem!(BackwardPass, m, sp)
+        end
+        # add appropriate cuts
+        for sp in subproblems(m, t-1)
+            modifyvaluefunction!(m, sp)
+        end
+    end
+
+    reset!(m.storage)
+    for sp in subproblems(m, 1)
+        solvesubproblem!(BackwardPass, m, sp)
+    end
+    # TODO: improve over just taking mean of first stage subproblems
+    bound = mean(m.storage.objective)
+
+    return bound
+end
+
+function iteration!(m::SDDPModel, settings::Settings)
+    t = time()
+
+    simulation_objective = forwardpass!(m, settings)
+    time_forwards = time() - t
+
+    objective_bound = backwardpass!(m, settings)
+    time_backwards = time() - time_forwards - t
+
+    return objective_bound, time_backwards, simulation_objective, time_forwards
+
+end
 
 function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     status = :solving
@@ -145,12 +195,14 @@ function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     nsimulations, iteration, keep_iterating = 0, 1, true
     start_time = time()
     while keep_iterating
+        # add cuts
         (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
+        # update timers and bounds
         time_cutting += time_backwards + time_forwards
         lower, upper = simulation_objective, simulation_objective
 
-        # cut selection
         if applicable(iteration, settings.cut_selection_frequency)
+            # run cut selection
             settings.print_level > 1 && info("Running Cut Selection")
             for (t, stage) in enumerate(stages(m))
                 t == length(stages(m)) && continue
@@ -160,16 +212,19 @@ function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
             end
         end
 
-        # simulate policy
         if applicable(iteration, settings.simulation.frequency)
+            # simulate policy
             settings.print_level > 1 && info("Running Monte-Carlo Simulation")
             t = time()
-            reset!(objectives)
             simidx = 1
+            # reuse store for objectives
+            reset!(objectives)
             for i in 1:settings.simulation.steps[end]
+                # forwardpass! returns objective
                 push!(objectives, forwardpass!(m, settings))
                 nsimulations += 1
                 if i == settings.simulation.steps[simidx]
+                    # simulation incrementation
                     (lower, upper) = confidenceinterval(objectives, settings.simulation.confidence)
                     if contains(objective_bound, lower, upper)
                         if settings.simulation.termination && simidx == length(settings.simulation.steps)
@@ -201,9 +256,7 @@ function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
             end
         end
 
-
-        settings.print_level > 0 && print(STDOUT, m.log[end], mod(iteration, settings.simulation.frequency) != 0)
-        settings.log_file != "" && print(settings.log_file, m.log[end], mod(iteration, settings.simulation.frequency) != 0)
+        print(print, settings, m.log[end], mod(iteration, settings.simulation.frequency) != 0)
 
         iteration += 1
         if iteration > settings.max_iterations
@@ -214,6 +267,8 @@ function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     end
     status
 end
+
+
 
 function solve(m::SDDPModel;
         max_iterations::Int       = 10,
@@ -246,12 +301,9 @@ function solve(m::SDDPModel;
         log_file
     )
 
-    print_level > 0 && printheader(STDOUT, m)
-    log_file != "" && printheader(log_file, m)
-
+    print(printheader, settings, m)
     status = solve(solvetype, m, settings)
-    print_level > 0 && printfooter(STDOUT, m, status)
-    log_file != "" && printfooter(log_file, m, status)
+    print(printfooter, settings, m, status)
 
     status
 end

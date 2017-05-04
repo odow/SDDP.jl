@@ -3,10 +3,6 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
-# SDDP
-# Stochastic Dual Dynamic Programming in Julia
-# See http://github.com/odow/SDDP.jl
-#############################################################################
 
 """
     storecut!(oracle::AbstractCutOracle, cut::Cut)
@@ -36,18 +32,3 @@ DefaultCutOracle() = DefaultCutOracle(Cut[])
 
 storecut!(oracle::DefaultCutOracle, cut::Cut) = push!(oracle.cuts, cut)
 validcuts(oracle::DefaultCutOracle) = oracle.cuts
-
-# abstract type AbstractPriceOracle end
-# mutable struct RibPriceOracle{T} <: AbstractPriceOracle
-#     pricetransition::Function  # ℜ² → ℜ
-#     pricescenarios::Vector{T}
-#     objective::Function        # ℜ → AffExpr
-#     ribs::Vector{Float64}
-#     thetas::Vector{JuMP.Variable}
-#     cutoracles::Vector{CutOracles}
-# end
-# PriceOracle() = PriceOracle((p)->p, Float64[], (p) -> AffExpr(p))
-# struct DefaultPriceOracle{T<:AbstractCutOracle} <: AbstractPriceOracle
-#     theta::JuMP.Variable
-#     cutoracle::T
-# end

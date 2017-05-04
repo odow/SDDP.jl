@@ -71,3 +71,8 @@ function Base.print(s::String, l::SolutionLog, printmean::Bool=false)
         print(file, l, printmean)
     end
 end
+
+function Base.print(printfunc::Function, settings::Settings, args...)
+    settings.print_level > 0 && print(STDOUT, args...)
+    settings.log_file != "" && print(settings.log_file, args...)
+end

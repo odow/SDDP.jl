@@ -37,11 +37,7 @@ function humanize(value::Number, fmt_str::String="5.1f")
 end
 # O.D. 2017 renamed. drop style option
 function humanize(value::Number, fmt_str::Function)
-    # O.D. fix suffix
-    # O.D. fix base
     bytes   = abs(float(value)) # O.D. abs value
-    # format  = "%$(format)%s"    # O.D. add % char to beginning
-    # fmt_str = @eval (v,s)->@sprintf($format,v,s)
     unit    = base
     s       = suffix[1]
     for (i,s) in enumerate(suffix)

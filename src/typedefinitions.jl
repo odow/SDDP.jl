@@ -3,10 +3,6 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
-# SDDP
-# Stochastic Dual Dynamic Programming in Julia
-# See http://github.com/odow/SDDP.jl
-#############################################################################
 
 abstract type AbstractRiskMeasure end
 abstract type AbstractCutOracle end
@@ -60,11 +56,6 @@ struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:Abstract
     # A risk measure to use for the subproblem
     riskmeasure::R
 end
-ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
-isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
-valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
-
-
 
 function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound=-1e6,
     risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction)
@@ -172,3 +163,8 @@ struct Settings
     log_file::String
 end
 Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"")
+
+mutable struct CachedVector{T} <: AbstractArray{T, 1}
+    data::Vector{T}
+    n::Int
+end

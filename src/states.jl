@@ -3,10 +3,6 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
-# SDDP
-# Stochastic Dual Dynamic Programming in Julia
-# See http://github.com/odow/SDDP.jl
-#############################################################################
 
 const comparison_symbols = [:(<=), :(>=), :(==)]
 is_comparison(x) = Base.Meta.isexpr(x, :comparison) || (Base.Meta.isexpr(x, :call) && x.args[1] in comparison_symbols)
@@ -27,6 +23,14 @@ function savestates!(y, sp::JuMP.Model)
         y[i] = getvalue(state)
     end
 end
+
+function setstates!(m, sp)
+    s = getstage(m, ext(sp).stage-1)
+    for (st, v) in zip(states(sp), s.state)
+        setvalue!(st, v)
+    end
+end
+
 function padvec!{T}(x::AbstractVector{T}, n::Int)
     append!(x, zeros(T, max(0, n - length(x))))
 end

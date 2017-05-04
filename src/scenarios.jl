@@ -3,15 +3,16 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
-# SDDP
-# Stochastic Dual Dynamic Programming in Julia
-# See http://github.com/odow/SDDP.jl
-#############################################################################
 
 function setscenario!(sp::JuMP.Model, scenario::Scenario)
     for (c, v) in zip(scenario.constraints, scenario.values)
         JuMP.setRHS(c, v)
     end
+end
+
+function samplescenario(sp::JuMP.Model)
+    scenarioidx = sample(ext(sp).scenarioprobability)
+    return scenarioidx, ext(sp).scenarios[scenarioidx]
 end
 
 """
