@@ -38,15 +38,16 @@ function sample{T}(x::Vector{Noise{T}})
     error("x must be a discrete probablity distribution that sums to one. sum= $(sum(x))")
 end
 
-mutable struct InterpolatedValueFunction{C<:AbstractCutOracle, T} <: AbstractValueFunction
-    initial_price::Float64
-    location::Float64
-    rib_locations::Vector{Float64}
+mutable struct InterpolatedValueFunction{C<:AbstractCutOracle, T, T2} <: AbstractValueFunction
+    initial_price::T
+    location::T
+    rib_locations::Vector{T}
     variables::Vector{JuMP.Variable}
     cutoracles::Vector{C}
-    noises::Vector{Noise{T}}
+    noises::Vector{Noise{T2}}
     objective::Function
     dynamics::Function
+    A::Array{Float64, 2}
 end
 InterpolatedValueFunction(;
     cut_oracle = DefaultCutOracle(),
@@ -54,16 +55,16 @@ InterpolatedValueFunction(;
     initial_price = 0.0,
     rib_locations = [0.0, 1.0],
     noise         = Noise([0.0])) = InterpolatedValueFunction(initial_price,
-        initial_price, rib_locations,JuMP.Variable[], typeof(cut_oracle)[], noise, (p)->QuadExpr(p), dynamics
+        initial_price, rib_locations,JuMP.Variable[], typeof(cut_oracle)[], noise, (p)->QuadExpr(p), dynamics, Array{Float64}(0,0)
     )
 
-function stageobjective!{C<:AbstractCutOracle, T}(vf::InterpolatedValueFunction{C, T}, sp::JuMP.Model, obj::Function)
+function stageobjective!(vf::InterpolatedValueFunction, sp::JuMP.Model, obj::Function)
     vf.objective = obj
 end
 
-getstageobjective{C<:AbstractCutOracle, T}(vf::InterpolatedValueFunction{C, T}, sp::JuMP.Model) = getvalue(vf.objective(vf.location))
+getstageobjective(vf::InterpolatedValueFunction, sp::JuMP.Model) = getvalue(vf.objective(vf.location))
 
-function setobjective!(sp::JuMP.Model, price::Float64, noise)
+function setobjective!(sp::JuMP.Model, price, noise)
     vf = valueoracle(sp)
     p = vf.dynamics(price, noise, ext(sp).stage, ext(sp).markovstate)
     vf.location = p
@@ -79,7 +80,7 @@ function setobjective!(sp::JuMP.Model, price::Float64, noise)
         JuMP.setobjective(sp, getsense(sp), stageobj + future_value)
     end
 end
-function interpolate{C<:AbstractCutOracle, T}(vf::InterpolatedValueFunction{C, T})
+function interpolate{C<:AbstractCutOracle, T,T2}(vf::InterpolatedValueFunction{C, T,T2})
     y = AffExpr(0.0)
     _set = false
     for i in 2:length(vf.rib_locations)
@@ -97,8 +98,26 @@ function interpolate{C<:AbstractCutOracle, T}(vf::InterpolatedValueFunction{C, T
     y
 end
 
+function interpolate{C<:AbstractCutOracle,T2, N}(vf::InterpolatedValueFunction{C, NTuple{N, Float64},T2})
+    if size(vf.A, 1) == 0
+        vf.A = zeros(N + 1, length(vf.rib_locations))
+        for i in 1:length(vf.rib_locations)
+            vf.A[1, i] = 1.0
+            for j in 1:N
+                vf.A[j+1, i] = vf.rib_locations[i][j]
+                vf.A[j+1, i] = vf.rib_locations[i][j]
+            end
+        end
+    end
+    lambda = vf.A \ [1, vf.location...]
+    y = AffExpr(0.0)
+    for i in 1:length(lambda)
+        append!(y, vf.variables[i] * lambda[i])
+    end
+    y
+end
 
-function init!{C<:AbstractCutOracle, T}(vf::InterpolatedValueFunction{C, T}, m::JuMP.Model, sense, bound, cutmanager)
+function init!{C<:AbstractCutOracle, T, T2}(vf::InterpolatedValueFunction{C, T, T2}, m::JuMP.Model, sense, bound, cutmanager::C)
     for r in vf.rib_locations
         push!(vf.variables, futureobjective!(sense, m, bound))
         push!(vf.cutoracles, deepcopy(cutmanager))
@@ -117,7 +136,7 @@ function passpriceforward!(m::SDDPModel, sp::JuMP.Model)
 end
 
 
-function solvesubproblem!{C<:AbstractCutOracle, T}(::Type{ForwardPass}, vf::InterpolatedValueFunction{C, T}, m::SDDPModel, sp::JuMP.Model)
+function solvesubproblem!(::Type{ForwardPass}, vf::InterpolatedValueFunction, m::SDDPModel, sp::JuMP.Model)
     if ext(sp).stage == 1
         vf.location = vf.initial_price
     end
@@ -131,7 +150,7 @@ function solvesubproblem!{C<:AbstractCutOracle, T}(::Type{ForwardPass}, vf::Inte
     @assert JuMP.solve(sp) == :Optimal
 end
 
-function backwardpass!{C, T}(m::SDDPModel{InterpolatedValueFunction{C, T}}, settings::Settings)
+function backwardpass!{C, T, T2}(m::SDDPModel{InterpolatedValueFunction{C, T, T2}}, settings::Settings)
     for t in (nstages(m)-1):-1:1
         for sp in subproblems(m, t)
             vf = valueoracle(sp)
@@ -210,7 +229,7 @@ function backwardpass!{C, T}(m::SDDPModel{InterpolatedValueFunction{C, T}}, sett
     mean(m.storage.objective)
 end
 
-function addcut!{C<:AbstractCutOracle, T}(vf::InterpolatedValueFunction{C, T}, sp::JuMP.Model, theta::JuMP.Variable, cut::Cut)
+function addcut!(vf::InterpolatedValueFunction, sp::JuMP.Model, theta::JuMP.Variable, cut::Cut)
     ex = ext(sp)
     affexpr = AffExpr(cut.intercept)
     for i in 1:nstates(sp)
@@ -219,15 +238,5 @@ function addcut!{C<:AbstractCutOracle, T}(vf::InterpolatedValueFunction{C, T}, s
     _addcut!(ex.sense, sp, theta, affexpr)
 end
 
-
-
-
-
-
-
-
-# function modifyvaluefunction!{C<:AbstractCutOracle}(vf::InterpolatedValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
-# end
-#
 # function rebuildsubproblem!{C<:AbstractCutOracle}(vf::InterpolatedValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
 # end
