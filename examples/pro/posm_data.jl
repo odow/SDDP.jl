@@ -1,17 +1,45 @@
-# Number of stages
-const T = 52
+# A helper set
+feed_type = [:supplement, :pasture]
 
-const MAX_HARVEST  = 10
-const HARVEST_COST = 100
-const AREA	       = 50
-const BCS_RESPONSE = 180
-const MAX_PROFIT   = 400_000
-const MAX_WEEK	   = 45
-const MOIR_SLOPE   = 12.01
-const MOIR_INTERCEPT = 5.16
+STATES = Dict(
+    :SoilMoisture  => Dict(
+        :min =>0,
+        :max=>150,
+        :initial=>150
+    ),
+    :PastureCover  => Dict(
+        :min =>0,
+        :max=>3500,
+        :initial=>2200,
+        :endminimum=>2200
+    ),
+    :FeedReserves  => Dict(
+        :min =>0,
+        :max=>50,
+        :initial=>0,
+        :finalvalue=>400
+    ),
+    :NumberMilking => Dict(
+        :min =>0,
+        :max=>175,
+        :initial=>175
+    )
+)
+
+# Number of stages
+T = 52
+
+MAX_HARVEST  = 10
+HARVEST_COST = 100
+AREA	       = 50
+BCS_RESPONSE = 180
+MAX_PROFIT   = 400_000
+MAX_WEEK	   = 45
+MOIR_SLOPE   = 12.01
+MOIR_INTERCEPT = 5.16
 
 # Year	Week	Ep	Rainfall
-const NIWA = [
+NIWA = [
 1993	1	0.730003115	4.225714286;
 1993	2	0.672900996	5.636;
 1993	3	0.786823683	3.134642857;
@@ -585,7 +613,41 @@ const NIWA = [
 2003	51	0.845288404	9.542857143;
 2003	52	1.325273905	0.07 ]
 
-const BCS = [
+# Extract scenario data
+YEARS = unique(NIWA[:, 1])
+
+function EP(year, week)
+    for i in 1:size(NIWA, 1)
+        if NIWA[i, 1] == year && NIWA[i, 2] == week
+            return NIWA[i, 3]
+        end
+    end
+    return 0.0
+end
+function Rainfall(year, week)
+    for i in 1:size(NIWA, 1)
+        if NIWA[i, 1] == year && NIWA[i, 2] == week
+            return NIWA[i, 4]
+        end
+    end
+    return 0.0
+end
+
+# Helper functions for grass growth
+#   y = a * x * (1-x/N)
+function grwth(t, g)
+    ep_max = maximum([EP(year, t) for year in YEARS])
+    delta_max = 7 * (MOIR_INTERCEPT + MOIR_SLOPE * ep_max)
+    4 * delta_max / STATES[:PastureCover][:max] * g * (1 - g / STATES[:PastureCover][:max])
+end
+#   dy/dx = a - 2ax/N
+function dGrwthdG(t, g)
+    ep_max = maximum([EP(year, t) for year in YEARS])
+    delta_max = 7 * (MOIR_INTERCEPT + MOIR_SLOPE * ep_max)
+    4 * delta_max / STATES[:PastureCover][:max]  - 8 * delta_max / STATES[:PastureCover][:max]^2 * g
+end
+
+BCS = [
 4.5,
 4.425,
 4.35,
@@ -640,7 +702,7 @@ const BCS = [
 5,
 5 ]
 
-const FEED = [ # milking, dry
+FEED = [ # milking, dry
 19.66714286	12;
 19.548	12;
 19.42885714	12;
@@ -694,7 +756,7 @@ const FEED = [ # milking, dry
 13.71	12;
 13.59085714	12 ]
 
-const MILK_SOLIDS = [
+MILK_SOLIDS = [
 2.07,
 2.05,
 2.03,
@@ -748,7 +810,7 @@ const MILK_SOLIDS = [
 1.00,
 0.98 ]
 
-const SUPPLEMENT_COST = [
+SUPPLEMENT_COST = [
 400,
 410,
 420,

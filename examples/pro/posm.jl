@@ -8,86 +8,24 @@
 # addprocs(Sys.CPU_CORES-1)
 
 # Load our favourite packages
-using SDDP, JuMP, Gurobi#, CPLEX
+using SDDP, JuMP, Gurobi
 
 # These commands get run on all processors
 @everywhere begin
 
     # Intialise some random seed.
-    # Note: You really shouldn't have the same seed on all processors or
-    #   you end up doing the same thing N times!
+    # Note: You can't have the same seed on all processors or
+    #   you'll end up doing the same thing N times!
     srand(1000*myid())
-    # srand(1000)
 
     include("posm_data.jl")
-
-    # Extract scenario data
-    YEARS = unique(NIWA[:, 1])
-    function EP(year, week)
-        for i in 1:size(NIWA, 1)
-            if NIWA[i, 1] == year && NIWA[i, 2] == week
-                return NIWA[i, 3]
-            end
-        end
-        return 0.0
-    end
-    function Rainfall(year, week)
-        for i in 1:size(NIWA, 1)
-            if NIWA[i, 1] == year && NIWA[i, 2] == week
-                return NIWA[i, 4]
-            end
-        end
-        return 0.0
-    end
-
-    # A helper set
-    feed_type = [:supplement, :pasture]
-
-    STATES = Dict(
-        :SoilMoisture  => Dict(
-            :min =>0,
-            :max=>150,
-            :initial=>150
-        ),
-        :PastureCover  => Dict(
-            :min =>0,
-            :max=>3500,
-            :initial=>2200,
-            :endminimum=>2200
-        ),
-        :FeedReserves  => Dict(
-            :min =>0,
-            :max=>50,
-            :initial=>0,
-            :finalvalue=>400
-        ),
-        :NumberMilking => Dict(
-            :min =>0,
-            :max=>175,
-            :initial=>175
-        )
-    )
-
-    # Helper functions for grass growth
-    #   y = a * x * (1-x/N)
-    function grwth(t, g)
-        ep_max = maximum([EP(year, t) for year in YEARS])
-        delta_max = 7 * (MOIR_INTERCEPT + MOIR_SLOPE * ep_max)
-        4 * delta_max / STATES[:PastureCover][:max] * g * (1 - g / STATES[:PastureCover][:max])
-    end
-    #   dy/dx = a - 2ax/N
-    function dGrwthdG(t, g)
-        ep_max = maximum([EP(year, t) for year in YEARS])
-        delta_max = 7 * (MOIR_INTERCEPT + MOIR_SLOPE * ep_max)
-        4 * delta_max / STATES[:PastureCover][:max]  - 8 * delta_max / STATES[:PastureCover][:max]^2 * g
-    end
 
 end
 
 m = SDDPModel(
     sense             = :Max,
     stages            = T,
-    solver            = GurobiSolver(OutputFlag=0), # Note: I get some weird issues with Clp sometimes
+    solver            = GurobiSolver(OutputFlag=0),
     # solver            = CplexSolver(CPX_PARAM_SCRIND=0),
     objective_bound   = MAX_PROFIT
                                                         ) do sp, t, markovstate
@@ -100,7 +38,7 @@ m = SDDPModel(
         #----------------------------------------------------------------------
         #   Actions
         dry_off            >= 0 # number cows to dry off
-        0 <= harvest <= MAX_HARVEST # tonnes
+        harvest            >= 0 # tonnes
         buy_feed           >= 0 # tonnes
         feed[feed_type]    >= 0 # tonnes
 
@@ -135,7 +73,7 @@ m = SDDPModel(
         dry_off        <= S0[:NumberMilking]
         # max growth
         pasture_growth <= (STATES[:PastureCover][:max] - S0[:PastureCover])
-
+        harvest <= MAX_HARVEST
         #--------------------------------------------------------------------------
         #   State Conservation
         # Milking cow conservation
@@ -204,33 +142,13 @@ m = SDDPModel(
     stageobjective!(sp, weekly_profit)
 
 end
-#
 @time status = solve(m,
-    max_iterations=150,
+    max_iterations=10,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
-                        min       = 500,
-                        max       = 500,
-                        step      = 100
+                        min       = 10,
+                        max       = 100,
+                        step      = 10
                              ),
     solve_type = Asyncronous()
 )
-#
-# @time results = simulate(m, 5000, [:S, :feed], parallel=true)
-#
-# x = results[:Objective]
-# Objective["Max"] = maximum(x)
-# Objective["UQ"] = quantile(x, 0.75)
-# Objective["Med"] = quantile(x, 0.5)
-# Objective["LQ"] = quantile(x, 0.25)
-# Objective["Min"] = minimum(x)
-#
-# for t=1:52
-#     for (ql, qt) in [("Q1", 0.05), ("M", 0.5), ("Q2", 0.95)]
-#         for state in STATES
-#             Solution[t, state, ql] = quantile([s[state] for s in results[:S][t]], qt)
-#         end
-#         Solution[t, "pasture", ql] = quantile([r[:pasture] for r in results[:feed][t]], qt)
-#         Solution[t, "supplement", ql] = quantile([r[:supplement] for r in results[:feed][t]], qt)
-#     end
-# end

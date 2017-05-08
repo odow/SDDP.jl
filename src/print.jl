@@ -22,7 +22,7 @@ end
 function printfooter(io::IO, m::SDDPModel, status)
     println(io, "------------------------------------------------------------------------------")
     println(io, """    Statistics:
-            Cuts added:         $(length(m.log))
+            Iterations:         $(m.log[end].iteration)
             Termination Status: $(status)
     ------------------------------------------------------------------------------""")
 end

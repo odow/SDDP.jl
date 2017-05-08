@@ -16,11 +16,16 @@ function sendtoworkers(;args...)
     end
 end
 
-function async_iteration!{C}(T, settings::Settings, slave::Channel{C})
+function async_iteration!{C}(T, settings::Settings, slave::Vector{C})
     m = SDDP.m::T
-    while isready(slave)
-        c = take!(slave)
+    while length(slave) > 0
+        c = pop!(slave)
         addcut!(m, c)
+    end
+    if !haskey(m.ext, :cuts)
+        m.ext[:cuts] = C[]
+    else
+        empty!(m.ext[:cuts])
     end
     (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
     y = similar(m.ext[:cuts])
@@ -48,7 +53,11 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
     if np <= 2
         error("You've only loaded two processes. You should solve using the Serial solver instead.")
     end
-    slaves = [Channel{Tuple{Int, Int, Cut}}(Inf) for p in 1:np]
+    slaves = Dict{Int, Vector{Tuple{Int, Int, Cut}}}()
+    for i in workers()
+        slaves[i] = Tuple{Int, Int, Cut}[]
+    end
+
     begin
         t=time()
         sendtoworkers(m=deepcopy(m))
@@ -56,18 +65,19 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
     end
 
     nextiter() = (nidx=iteration;iteration+=1;nidx)
+    getiter() = (iteration)
     # nextsim!() =(simidx+=1)
-    # addsimulation()
-    # gettype() = (iterationtype)
+    addsimulation!() = (simulations += 1; s=simulations;s)
     settype!(x) = (iterationtype = x)
     setbestobjective!(v) = (best_objective = v)
-    cutting_timer = time()
-    simulation_timer = time()
+    cutting_timer = -1.0
+    simulation_timer = -1.0
     @sync begin
         for p in workers()
             @async begin
                 while true
                     if iterationtype == :cutting
+                        cutting_timer = time()
                         it = nextiter()
                         if applicable(it, settings.simulation.frequency)
                             # the next worker should start simulating
@@ -79,14 +89,14 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
                             status = :max_iterations
                             break
                         end
-
-                        (cuts, objective_bound, simulation_objective) = remotecall_fetch(async_iteration!, p, typeof(m), settings, slaves[p])
-
+                        newcuts = deepcopy(slaves[p])
+                        empty!(slaves[p])
+                        (cuts, objective_bound, simulation_objective) = remotecall_fetch(async_iteration!, p, typeof(m), settings, newcuts)
                         for cut in cuts
                             addcut!(m, cut)
                             for p2 in workers()
                                 p == p2 && continue
-                                put!(slaves[p2], cut)
+                                push!(slaves[p2], cut)
                             end
                         end
 
@@ -94,26 +104,32 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
                         if objective_bound < best_objective
                             setbestobjective!(objective_bound)
                         end
-
-                        addsolutionlog!(m, settings, it, best_objective, simulation_objective, simulation_objective, cutting_time, simulations, simulation_time, total_time, true)
+                        cutting_time += time() - cutting_timer
+                        addsolutionlog!(m, settings, it, best_objective, simulation_objective, simulation_objective, cutting_time , simulations, simulation_time, total_time, true)
 
                         status, keep_iterating = testconvergence(m, settings)
                         !keep_iterating && break
 
 
                     elseif iterationtype == :simulation
-                        push!(objectives, remotecall_fetch(async_forwardpass!, p, typeof(m), settings))
-                        simulations += 1
 
                         if simidx > length(settings.simulation.steps)
                             settype!(:cutting)
-                        elseif length(objectives) >= settings.simulation.steps[simidx]
+                            continue
+                        end
+                        simulation_timer = time()
+
+                        push!(objectives, remotecall_fetch(async_forwardpass!, p, typeof(m), settings))
+                        nsimulations = addsimulation!()
+
+                        simulation_time += time() - simulation_timer
+                        if length(objectives) >= settings.simulation.steps[min(end,simidx)]
                             simidx += 1
                             (lower, upper) = confidenceinterval(objectives, settings.simulation.confidence)
                             total_time = time() - start_time
                             if contains(best_objective, lower, upper)
                                 if length(objectives) >= settings.simulation.steps[end]
-                                    addsolutionlog!(m, settings, iteration-1, best_objective, lower, upper, cutting_time, simulations, simulation_time, total_time, false)
+                                    addsolutionlog!(m, settings, iteration-1, best_objective, lower, upper, cutting_time, nsimulations, simulation_time, total_time, false)
                                     # terminate with statistical bound convergence
                                     if settings.simulation.termination
                                         status = :converged
@@ -121,7 +137,7 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
                                     end
                                 end
                             else
-                                addsolutionlog!(m, settings, iteration-1, best_objective, lower, upper, cutting_time, simulations, simulation_time, total_time, false)
+                                addsolutionlog!(m, settings, iteration-1, best_objective, lower, upper, cutting_time, nsimulations, simulation_time, total_time, false)
                                 settype!(:cutting)
                             end
                         end
@@ -142,11 +158,11 @@ function addcut!{C}(m::SDDPModel{DefaultValueFunction{C}}, cut::Tuple{Int, Int, 
     addcut!(vf, sp, cut[3])
 end
 
-function storecut!{C}(m::SDDPModel{DefaultValueFunction{C}}, cut::Tuple{Int, Int, Cut})
+function storecut!{C}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model, cut::Cut)
     if !haskey(m.ext, :cuts)
         m.ext[:cuts] = Tuple{Int, Int, Cut}[]
     end
-    push!(m.ext[:cuts], cut)
+    push!(m.ext[:cuts], (ext(sp).stage, ext(sp).markovstate, cut))
 end
 
 # addprocs(4)
