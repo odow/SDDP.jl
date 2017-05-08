@@ -35,6 +35,7 @@ include("pro/dematos_cutselection.jl")
 include("pro/avar_riskaversion.jl")
 include("pro/rib_valuefunction.jl")
 include("pro/historical_simulation.jl")
+include("pro/solve_asyncronous.jl")
 
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
@@ -187,7 +188,7 @@ function iteration!(m::SDDPModel, settings::Settings)
 
 end
 
-function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
+function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     status = :solving
     time_simulating, time_cutting = 0.0, 0.0
     objectives = CachedVector(Float64)
@@ -245,17 +246,9 @@ function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
             status = :time_limit
             keep_iterating = false
         end
-        push!(m.log, SolutionLog(iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time))
+        addsolutionlog!(m, settings, iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
 
-        if settings.bound_convergence.iterations > 1 && length(m.log) >= settings.bound_convergence.iterations
-            last_n = map(l->l.bound, m.log[end-settings.bound_convergence.iterations+1:end])
-            if all(last_n - mean(last_n) .< settings.bound_convergence.atol) || all(abs.(last_n / mean(last_n)-1) .<    settings.bound_convergence.rtol)
-                status = :bound_convergence
-                keep_iterating = false
-            end
-        end
-
-        print(print, settings, m.log[end], mod(iteration, settings.simulation.frequency) != 0)
+        status, keep_iterating = testconvergence(m, settings)
 
         iteration += 1
         if iteration > settings.max_iterations
@@ -267,13 +260,27 @@ function solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     status
 end
 
+function addsolutionlog!(m, settings, iteration, objective, lower, upper, cutting_time, simulations, simulation_time, total_time, printsingle)
+    push!(m.log, SolutionLog(iteration, objective, lower, upper, cutting_time, simulations, simulation_time, total_time))
+    print(print, settings, m.log[end], printsingle)
+end
+
+function testconvergence(m::SDDPModel, settings::Settings)
+    if settings.bound_convergence.iterations > 1 && length(m.log) >= settings.bound_convergence.iterations
+        last_n = map(l->l.bound, m.log[end-settings.bound_convergence.iterations+1:end])
+        if all(last_n - mean(last_n) .< settings.bound_convergence.atol) || all(abs.(last_n / mean(last_n)-1) .<    settings.bound_convergence.rtol)
+            return :bound_convergence, false
+        end
+    end
+    return :solving, true
+end
 
 
-function solve(m::SDDPModel;
+function JuMP.solve(m::SDDPModel;
         max_iterations::Int       = 10,
         time_limit::Real          = 600, # seconds
         simulation = MonteCarloSimulation(
-                frequency   = 5,
+                frequency   = 0,
                 min         = 10,
                 step        = 10,
                 max         = 20,
@@ -288,7 +295,7 @@ function solve(m::SDDPModel;
         cut_selection_frequency::Int = 0,
         print_level::Int          = 4,
         log_file::String          = "",
-        solvetype::SDDPSolveType  = Serial()
+        solve_type::SDDPSolveType = Serial()
     )
     settings = Settings(
         max_iterations,
@@ -301,7 +308,7 @@ function solve(m::SDDPModel;
     )
 
     print(printheader, settings, m)
-    status = solve(solvetype, m, settings)
+    status = solve(solve_type, m, settings)
     print(printfooter, settings, m, status)
 
     status

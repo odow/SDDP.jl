@@ -56,10 +56,12 @@ function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, sp::JuMP.M
     cut = constructcut(m, sp)
     storecut!(vf.cutmanager, m, sp, cut)
     addcut!(vf, sp, cut)
+    storecut!(m, (ex.stage, ex.markovstate, cut))
     for i in I
         m.storage.probability[i] /= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
 end
+storecut!(m::SDDPModel, cut) = nothing
 
 function addcut!(vf::DefaultValueFunction, sp, cut::Cut)
     ex = ext(sp)
