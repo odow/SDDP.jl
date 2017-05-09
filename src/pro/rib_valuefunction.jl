@@ -58,6 +58,8 @@ InterpolatedValueFunction(;
         initial_price, rib_locations,JuMP.Variable[], typeof(cut_oracle)[], noise, (p)->QuadExpr(p), dynamics, Array{Float64}(0,0)
     )
 
+summarise{C,T,T2}(::Type{InterpolatedValueFunction{C,T,T2}}) = "Interpolated Value Function"
+
 function stageobjective!(vf::InterpolatedValueFunction, sp::JuMP.Model, obj::Function)
     vf.objective = obj
 end

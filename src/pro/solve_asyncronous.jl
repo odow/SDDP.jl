@@ -103,6 +103,10 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
             p == myid() && continue
             @async begin
                 while true
+                    if time() - start_time > settings.time_limit
+                        status = :time_limit
+                        break
+                    end
                     if !(p in async.slaves[1:min(end, ceil(Int, getiter() / async.step))])
                         sleep(1.0)
                         continue
