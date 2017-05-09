@@ -1,3 +1,19 @@
+#  Copyright 2017, Oscar Dowson
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#############################################################################
+
+sampled_errors = [-0.1290, -0.1010, -0.0814, -0.0661, -0.0530, -0.0412, -0.0303, -0.0199, -0.00987, 0.0, 0.00987, 0.0199, 0.0303, 0.0412, 0.0530, 0.0661, 0.0814, 0.1010, 0.1290]
+
+σ² = linspace(1, 0, 52) # Decreasing variance in changes in price over time
+transaction_cost = 0.01
+
+ribs = collect(linspace(3, 9, 5))
+
+box(x, a, b) = min(b, max(a, x))
+price_dynamics(p, w, t, i) = box(1.01 * exp(log(p) + σ²[t]*w), 3, 9)
+
 # A helper set
 feed_type = [:supplement, :pasture]
 

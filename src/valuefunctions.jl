@@ -9,6 +9,7 @@ getstageobjective(vf::AbstractValueFunction, sp::JuMP.Model) = error("You need t
 init!(vf::AbstractValueFunction, m::JuMP.Model, sense, bound, cutmanager) = error("You need this method")
 modifyvaluefunction!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = error("You need this method")
 rebuildsubproblem!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = nothing
+summarise{T<:AbstractValueFunction}(::Type{T}) = "$T"
 
 stageobjective!(sp::JuMP.Model, obj...) = stageobjective!(valueoracle(sp), sp, obj...)
 getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
@@ -21,6 +22,8 @@ mutable struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFuncti
     theta::JuMP.Variable
 end
 DefaultValueFunction(cutoracle=DefaultCutOracle()) = DefaultValueFunction{typeof(cutoracle)}
+
+summarise{C}(::Type{DefaultValueFunction{C}}) = "Default"
 
 init!{C}(::Type{DefaultValueFunction{C}}, m::JuMP.Model, sense, bound, cutmanager::C) = DefaultValueFunction(
     cutmanager,
@@ -61,7 +64,7 @@ function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, sp::JuMP.M
         m.storage.probability[i] /= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
 end
-storecut!(m, sp, cut) = nothing
+storecut!(m::SDDPModel, sp::JuMP.Model, cut::Cut, args...) = nothing
 
 function addcut!(vf::DefaultValueFunction, sp, cut::Cut)
     ex = ext(sp)

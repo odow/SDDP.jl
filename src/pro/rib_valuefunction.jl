@@ -158,8 +158,9 @@ function backwardpass!{C, T, T2}(m::SDDPModel{InterpolatedValueFunction{C, T, T2
                 vf.location = vf.initial_price
             end
             ex = ext(sp)
-
+            i = 0
             for (rib, theta, cutoracle) in zip(vf.rib_locations, vf.variables, vf.cutoracles)
+                i += 1
                 reset!(m.storage)
                 for sp2 in subproblems(m, t+1)
                     vf2 = valueoracle(sp2)
@@ -204,6 +205,7 @@ function backwardpass!{C, T, T2}(m::SDDPModel{InterpolatedValueFunction{C, T, T2
                 )
                 cut = constructcut(m, sp)
                 storecut!(cutoracle, m, sp, cut)
+                storecut!(m, sp, cut, i)
                 addcut!(vf, sp, theta, cut)
             end
         end

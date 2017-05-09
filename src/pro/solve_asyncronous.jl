@@ -6,12 +6,36 @@
 
 export Asyncronous
 
-struct Asyncronous <: SDDPSolveType end
+struct Asyncronous <: SDDPSolveType
+    slaves::Vector{Int} # pid of slave processors
+    step::Float64       # number of iterations before introducing another slave
+end
+function Asyncronous(;slaves=workers(), step=1/(1 + length(slaves)))
+    sl = Int[]
+    for s in slaves
+        if s == myid()
+            warn("Current process passed to Asyncronous() as slave. Ignoring.")
+        else
+            push!(sl, s)
+        end
+    end
+    Asyncronous(sl, step)
+end
+Base.show(io::IO, async::Asyncronous) = print(io, "Asyncronous solver with $(length(async.slaves)) slave processors and a step of $(async.step)")
 
-function sendtoworkers(;args...)
-    for p in workers()
+function sendto(procs;args...)
+    for p in procs
+        p == myid() && continue
         for (nm, val) in args
-            @spawnat(p, eval(SDDP, Expr(:(=), nm, deepcopy(val))))
+            io = IOBuffer()
+            serialize(io, val)
+            @spawnat(p, begin
+                eval(SDDP, Expr(:(=), :io, io))
+                seekstart(SDDP.io)
+                eval(SDDP, Expr(:(=), nm, deserialize(SDDP.io)))
+                close(SDDP.io)
+            end)
+            close(io)
         end
     end
 end
@@ -37,7 +61,8 @@ function async_forwardpass!(T, settings::Settings)
     m = SDDP.m::T
     forwardpass!(m, settings)
 end
-function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
+
+function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=Settings())
     status = :solving
     iterationtype = :cutting
     iteration = 1
@@ -53,14 +78,15 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
     if np <= 2
         error("You've only loaded two processes. You should solve using the Serial solver instead.")
     end
-    slaves = Dict{Int, Vector{Tuple{Int, Int, Cut}}}()
+    storage_type = getcutstoragetype(T)
+    slaves = Dict{Int, Vector{storage_type}}()
     for i in workers()
-        slaves[i] = Tuple{Int, Int, Cut}[]
+        slaves[i] = storage_type[]
     end
 
     begin
         t=time()
-        sendtoworkers(m=deepcopy(m))
+        sendto(async.slaves, m=m)
         info("Took $(round(time() - t, 2)) seconds to copy model to all processes.")
     end
 
@@ -73,9 +99,14 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
     cutting_timer = -1.0
     simulation_timer = -1.0
     @sync begin
-        for p in workers()
+        for p in async.slaves
+            p == myid() && continue
             @async begin
                 while true
+                    if !(p in async.slaves[1:min(end, ceil(Int, getiter() / async.step))])
+                        sleep(1.0)
+                        continue
+                    end
                     if iterationtype == :cutting
                         cutting_timer = time()
                         it = nextiter()
@@ -94,7 +125,7 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
                         (cuts, objective_bound, simulation_objective) = remotecall_fetch(async_iteration!, p, typeof(m), settings, newcuts)
                         for cut in cuts
                             addcut!(m, cut)
-                            for p2 in workers()
+                            for p2 in async.slaves
                                 p == p2 && continue
                                 push!(slaves[p2], cut)
                             end
@@ -151,13 +182,13 @@ function JuMP.solve(::Asyncronous, m::SDDPModel, settings::Settings=Settings())
 end
 
 
+getcutstoragetype{C}(::Type{DefaultValueFunction{C}}) = Tuple{Int, Int, Cut}
 function addcut!{C}(m::SDDPModel{DefaultValueFunction{C}}, cut::Tuple{Int, Int, Cut})
     sp = getsubproblem(m, cut[1], cut[2])
     vf = valueoracle(sp)
     storecut!(vf.cutmanager, m, sp, cut[3])
     addcut!(vf, sp, cut[3])
 end
-
 function storecut!{C}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model, cut::Cut)
     if !haskey(m.ext, :cuts)
         m.ext[:cuts] = Tuple{Int, Int, Cut}[]
@@ -165,6 +196,21 @@ function storecut!{C}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model, cut
     push!(m.ext[:cuts], (ext(sp).stage, ext(sp).markovstate, cut))
 end
 
+
+getcutstoragetype{C, T, T2}(::Type{InterpolatedValueFunction{C,T,T2}}) = Tuple{Int, Int, Int, Cut}
+
+function addcut!{C, T, T2}(m::SDDPModel{InterpolatedValueFunction{C,T,T2}}, cut::Tuple{Int, Int, Int, Cut})
+    sp = getsubproblem(m, cut[1], cut[2])
+    vf = valueoracle(sp)
+    storecut!(vf.cutoracles[cut[3]], m, sp, cut[4])
+    addcut!(vf, sp, vf.variables[cut[3]], cut[4])
+end
+function storecut!{C, T, T2}(m::SDDPModel{InterpolatedValueFunction{C,T,T2}}, sp::JuMP.Model, cut::Cut, i)
+    if !haskey(m.ext, :cuts)
+        m.ext[:cuts] = Tuple{Int, Int, Int, Cut}[]
+    end
+    push!(m.ext[:cuts], (ext(sp).stage, ext(sp).markovstate, i, cut))
+end
 # addprocs(4)
 #
 # @everywhere begin

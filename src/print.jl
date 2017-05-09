@@ -4,15 +4,18 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-function printheader(io::IO, m::SDDPModel)
+function printheader{T}(io::IO, m::SDDPModel{T}, solve_type)
     n = length(m.stages)
     println(io, """------------------------------------------------------------------------------
                           SDDP Solver. © Oscar Dowson, 2017.
     ------------------------------------------------------------------------------""")
-    println(io, """    Statistics:
-            Stages:      $(length(m.stages))
-            States:      $(nstates(getsubproblem(m, 1, 1)))
-            Subproblems: $(sum(length(subproblems(s)) for s in stages(m)))
+    println(io, """    Solver:
+            $(solve_type)
+        Model:
+            Stages:         $(length(m.stages))
+            States:         $(nstates(getsubproblem(m, 1, 1)))
+            Subproblems:    $(sum(length(subproblems(s)) for s in stages(m)))
+            Value Function: $(summarise(T))
     ------------------------------------------------------------------------------""")
     println(io, "              Objective              |  Cut  Passes    Simulations   Total    ")
     println(io, "      Expected        Bound   % Gap  |   #     Time     #    Time    Time     ")
@@ -61,11 +64,13 @@ function humanize(value::Int)
     end
 end
 
-function printheader(s::String)
-    open(s, "a") do file
-        printheader(file)
+function printtofile(foo::Function, filename::String, args...)
+    open(filename, "a") do file
+        foo(file, args...)
     end
 end
+
+
 function Base.print(s::String, l::SolutionLog, printmean::Bool=false)
     open(s, "a") do file
         print(file, l, printmean)
@@ -74,5 +79,5 @@ end
 
 function Base.print(printfunc::Function, settings::Settings, args...)
     settings.print_level > 0 && printfunc(STDOUT, args...)
-    settings.log_file != "" && printfunc(settings.log_file, args...)
+    settings.log_file != "" && printtofile(printfunc, settings.log_file, args...)
 end

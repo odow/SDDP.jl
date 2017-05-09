@@ -19,6 +19,8 @@ struct BackwardPass <: IterationDirection end
 
 abstract type SDDPSolveType end
 struct Serial <: SDDPSolveType end
+Base.show(io::IO, async::Serial) = print(io, "Serial solver")
+
 
 const LinearConstraint=JuMP.ConstraintRef{JuMP.Model, JuMP.GenericRangeConstraint{JuMP.GenericAffExpr{Float64, JuMP.Variable}}}
 
@@ -166,5 +168,6 @@ struct Settings
     cut_selection_frequency::Int
     print_level::Int
     log_file::String
+    reduce_memory_footprint::Bool
 end
-Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"")
+Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false)

@@ -184,6 +184,18 @@ function iteration!(m::SDDPModel, settings::Settings)
     objective_bound = backwardpass!(m, settings)
     time_backwards = time() - time_forwards - t
 
+    # reduce memory footprint
+    if settings.reduce_memory_footprint
+        # For future reference
+        # https://github.com/JuliaOpt/JuMP.jl/issues/969#issuecomment-282191105
+        for stage in stages(m)
+            for sp in subproblems(stage)
+                for con in sp.linconstr
+                    con.terms = 0
+                end
+            end
+        end
+    end
     return objective_bound, time_backwards, simulation_objective, time_forwards
 
 end
@@ -242,13 +254,15 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
         end
 
         total_time = time() - start_time
+
+        addsolutionlog!(m, settings, iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
+
+        status, keep_iterating = testconvergence(m, settings)
+
         if total_time > settings.time_limit
             status = :time_limit
             keep_iterating = false
         end
-        addsolutionlog!(m, settings, iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
-
-        status, keep_iterating = testconvergence(m, settings)
 
         iteration += 1
         if iteration > settings.max_iterations
@@ -295,7 +309,8 @@ function JuMP.solve(m::SDDPModel;
         cut_selection_frequency::Int = 0,
         print_level::Int          = 4,
         log_file::String          = "",
-        solve_type::SDDPSolveType = Serial()
+        solve_type::SDDPSolveType = Serial(),
+        reduce_memory_footprint = true
     )
     settings = Settings(
         max_iterations,
@@ -304,10 +319,11 @@ function JuMP.solve(m::SDDPModel;
         bound_convergence,
         cut_selection_frequency,
         print_level,
-        log_file
+        log_file,
+        reduce_memory_footprint
     )
 
-    print(printheader, settings, m)
+    print(printheader, settings, m, solve_type)
     status = solve(solve_type, m, settings)
     print(printfooter, settings, m, status)
 

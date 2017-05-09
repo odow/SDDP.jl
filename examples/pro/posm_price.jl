@@ -20,6 +20,7 @@ using SDDP, JuMP, Gurobi
 
     # you need to include all the data necessary to run things on all processors
     include("posm_data.jl")
+
 end
 
 m = SDDPModel(
@@ -27,7 +28,14 @@ m = SDDPModel(
     stages            = T,
     solver            = GurobiSolver(OutputFlag=0),
     # solver            = CplexSolver(CPX_PARAM_SCRIND=0),
-    objective_bound   = MAX_PROFIT
+    objective_bound   = MAX_PROFIT,
+    value_function    = InterpolatedValueFunction(
+                            # dynamics can't depend on other things
+                            dynamics       = price_dynamics,
+                            initial_price  = 4.50,
+                            rib_locations  = ribs,
+                            noise          = Noise(sampled_errors)
+                        )
                                                         ) do sp, t, markovstate
     #--------------------------------------------------------------------------
     #   State Variables
@@ -127,8 +135,7 @@ m = SDDPModel(
     #--------------------------------------------------------------------------
     #   Profit definition
     supplement_penalty_cost = 1 # $/kg above 8kg/day
-    weekly_profit = 6.0 * MILK_SOLIDS[t] * 7 * S[:NumberMilking] -
-        SUPPLEMENT_COST[t] * buy_feed -
+    weekly_profit = - SUPPLEMENT_COST[t] * buy_feed -
         HARVEST_COST * harvest -
         1e-4 * drainage - # Note: this is to ensure we maintain water
         supplement_penalty_cost * supplement_penalty
@@ -139,20 +146,32 @@ m = SDDPModel(
         append!(weekly_profit, S[:FeedReserves] * STATES[:FeedReserves][:finalvalue] - 1e6 * end_pasture_slack)
     end
 
-    stageobjective!(sp, weekly_profit)
+    # some weird bug in Julia serialization
+    t2 = deepcopy(t)
 
+    stageobjective!(sp,
+        price::Float64 -> price * MILK_SOLIDS[t2] * 7 * S[:NumberMilking] + weekly_profit
+    )
 end
+
+# function serialize_round_trip(x)
+#     io = IOBuffer()
+#     serialize(io, x)
+#     seekstart(io)
+#     return deserialize(io)
+# end
 @time status = solve(m,
-    max_iterations=100,
+    max_iterations=150,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
-                        min       = 100,
-                        max       = 1000,
-                        step      = 100
+                        min       = 50,
+                        max       = 100,
+                        step      = 50
                              ),
-    # solve_type = Asyncronous(),
+    # time_limit = 100.0
+    solve_type = Asyncronous(step=15),
     log_file   = "posm.log"
 )
 
 # clean up
-rm("posm.log")
+# rm("posm.log")
