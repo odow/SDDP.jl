@@ -1,34 +1,23 @@
-# module Test
-#
-#     struct T2
-#         x::Int
-#     end
-#
-#     struct T1
-#         x::Vector{T2}
-#     end
-#
-#     function T1(f::Function, n::Int)
-#         y = T2[]
-#         for i in 1:n
-#             push!(y, f(i))
-#         end
-#         T1(y)
-#     end
+module Foo
 
-# end
-#
-# a = [1,2,3]
-#
-# y = Test.T1(3) do i
-#     y = Test.T2(2)
-#     function foo(x)
-#         x*a[i] + y.x
-#     end
-#     y
-# end
-#
-# @show Test.serialize_round_trip(y)
+using JuMP, Gurobi
+
+mutable struct T1
+    x::Vector{Int}
+end
+T1() = T1(Int[])
+
+function foo(f!::Function, n::Int)
+    t1 = T1()
+    for i in 1:n
+        push!(t1.x, f!(i))
+    end
+    t1
+end
+
+end
+
+using Foo
 
 function serialize_round_trip(x)
     io = IOBuffer()
@@ -36,10 +25,21 @@ function serialize_round_trip(x)
     seekstart(io)
     return deserialize(io)
 end
-global x = ones(10)
-A = B = x
 
-serialize_round_trip(A)
+@everywhere begin
+    A = ones(10)
+end
 
-# @show Base.Serializer.handle_deserialize(ss, i)
-# @show @which deserialize(ss)
+y = Foo.foo(3) do t
+    # t2 = deepcopy(t)
+    function bar(p)
+        p * A[t]
+    end
+    A[t]
+end
+
+io = IOBuffer()
+serialize(io, y)
+seekstart(io)
+@show take!(io)
+@show serialize_round_trip(y)
