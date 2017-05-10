@@ -5,10 +5,10 @@
 #############################################################################
 
 # Add all available procs for parallel speeeeeeed
-# addprocs(Sys.CPU_CORES-1)
+addprocs(Sys.CPU_CORES-1)
 
 # Load our favourite packages
-using SDDP, JuMP, Gurobi
+using SDDP, JuMP, Clp
 
 # These commands get run on all processors
 @everywhere begin
@@ -25,7 +25,8 @@ end
 m = SDDPModel(
     sense             = :Max,
     stages            = T,
-    solver            = GurobiSolver(OutputFlag=0),
+    solver            = ClpSolver(),
+    # solver            = GurobiSolver(OutputFlag=0),
     # solver            = CplexSolver(CPX_PARAM_SCRIND=0),
     objective_bound   = MAX_PROFIT
                                                         ) do sp, t, markovstate
@@ -143,16 +144,18 @@ m = SDDPModel(
 
 end
 @time status = solve(m,
-    max_iterations=100,
+    max_iterations = 100,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
                         min       = 100,
                         max       = 1000,
                         step      = 100
                              ),
-    # solve_type = Asyncronous(),
+    solve_type = Asyncronous(),
     log_file   = "posm.log"
 )
 
 # clean up
 rm("posm.log")
+
+rmprocs(workers())

@@ -74,25 +74,29 @@ end
     max_iterations = 50,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
-                        min       = 5,
-                        max       = 50,
-                        step      = 5
+                        min       = 500,
+                        max       = 500,
+                        step      = 1
                              )
 )
 
 @test isapprox(getbound(m), 93.267, atol=1e-3)
 @test solvestatus == :max_iterations
 
-results = historicalsimulation(m, [:buy, :sell];
+results = simulate(m, 500)
+@test isapprox(mean(r[:objective] for r in results), 97, atol=2)
+
+
+historical_results = simulate(m, [:buy, :sell];
     markovstates = [1, 2, 1],
     scenarios    = [1, 1, 1]
 )
 
-@test isapprox(results[:objective], 85)
+@test isapprox(historical_results[:objective], 85)
 
-results = historicalsimulation(m, [:buy, :sell];
+historical_results2 = simulate(m, [:buy, :sell];
     markovstates = [1, 2, 1],
     scenarios    = [2, 2, 2]
 )
 
-@test isapprox(results[:objective], 119)
+@test isapprox(historical_results2[:objective], 119)

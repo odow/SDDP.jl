@@ -4,30 +4,40 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-using SDDP, JuMP, Clp, Base.Test
+# Add all available procs for parallel speeeeeeed
+addprocs(Sys.CPU_CORES-1)
 
-srand(11111)
+# only need this on master
+using Base.Test
 
-# Demand for newspapers
-# There are two equally probable scenarios in each stage
-#   Demand[stage, scenario]
-Demand = [
-    10. 15.;
-    12. 20.;
-    8.  20.
-]
+@everywhere begin
+    # need these everywhere
+    using SDDP, JuMP, Clp
 
-# Markov state purchase prices
-PurchasePrice = [5., 8.]
+    srand(myid() * 11111)
 
-RetailPrice = 7.
+    # Demand for newspapers
+    # There are two equally probable scenarios in each stage
+    #   Demand[stage, scenario]
+    Demand = [
+        10.0 15.0;
+        12.0 20.0;
+         8.0 20.0
+    ]
 
-# Transition matrix
-Transition = Array{Float64, 2}[
-    [1.0]',
-    [0.6 0.4],
-    [0.3 0.7; 0.3 0.7]
-  ]
+    # Markov state purchase prices
+    PurchasePrice = [5.0, 8.0]
+
+    RetailPrice = 7.0
+
+    # Transition matrix
+    Transition = Array{Float64, 2}[
+        [1.0]',
+        [0.6 0.4],
+        [0.3 0.7; 0.3 0.7]
+      ]
+
+end
 
 # Initialise SDDP Model
 m = SDDPModel(
@@ -71,8 +81,8 @@ m = SDDPModel(
 end
 
 @time solvestatus = SDDP.solve(m,
-    solve_type     = Asyncronous(),
     max_iterations = 50,
+    solve_type     = Asyncronous(),
     simulation     = MonteCarloSimulation(
                         frequency = 10,
                         min       = 5,
@@ -84,16 +94,4 @@ end
 @test isapprox(getbound(m), 93.267, atol=1e-3)
 @test solvestatus == :max_iterations
 
-@everywhere begin
-    if myid() != 1
-        mm = SDDP.m
-        sp = SDDP.getsubproblem(mm, 1, 1)
-        @show length(sp.linconstr)
-        sp2 = SDDP.getsubproblem(mm, 2, 1)
-        @show length(sp2.linconstr)
-    end
-end
-sp = SDDP.getsubproblem(m, 1, 1)
-@show length(sp.linconstr)
-sp2 = SDDP.getsubproblem(m, 2, 1)
-@show length(sp2.linconstr)
+rmprocs(workers())

@@ -1,0 +1,50 @@
+/*Dark Blue  #00467F*/
+/*Light Blue #009AC7*/
+/*Silver     #8D9091*/
+
+body {
+  font: 20px Arial;
+}
+
+.title {
+  font-size: 22px;
+}
+
+.axislabel {
+  font-size: 22px;
+  text-anchor: middle;
+}
+
+.axis {
+  font-size: 22px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: #8D9091;
+  stroke-width: 2px;
+  opacity: 0.1;
+}
+
+.bar {
+  fill: #00467F;
+  opacity:0.5;
+}
+
+.vertline {
+  stroke-width: 2;
+  stroke: #00467F;
+  fill: none;
+  opacity:0.5;
+}

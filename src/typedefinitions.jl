@@ -84,6 +84,7 @@ function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound
 end
 
 struct Stage
+    t::Int
     # vector of subproblems in this stage
     subproblems::Vector{JuMP.Model}
     # transitionprobabilities[i, j] =
@@ -94,7 +95,7 @@ struct Stage
     # extension dictionary
     ext::Dict
 end
-Stage(transition=Array{Float64}(0,0)) = Stage(JuMP.Model[], transition, Float64[], Dict())
+Stage(t=1, transition=Array{Float64}(0,0)) = Stage(t, JuMP.Model[], transition, Float64[], Dict())
 
 struct Storage
     state::Vector{Float64}

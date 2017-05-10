@@ -16,7 +16,8 @@ const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
             "hydro_valley_stagewise.jl",
             "hydro_valley_markov.jl",
             "hydro_valley_stagewise_markov.jl",
-            "newsvendor.jl"
+            "newsvendor.jl",
+            "newsvendor_historic_simulation.jl"
         ]
         @testset "$example" begin
             include(joinpath(examples_dir, example))
@@ -30,7 +31,7 @@ end
             "dematos_cutselection.jl",
             "rib_basic.jl",
             "rib_valuefunction.jl",
-            "newsvendor.jl"
+            "async_newsvendor.jl"
         ]
         @testset "$example" begin
             include(joinpath(examples_dir, "pro", example))

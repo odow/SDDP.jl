@@ -135,34 +135,8 @@ function samplesubproblem(stage::Stage, last_markov_state::Int)
     return newidx, getsubproblem(stage, newidx)
 end
 
-function newsolutionstore(X::Vector{Symbol})
-    d = Dict(
-        :markov         => Int[],
-        :scenario       => Int[],
-        :obj            => Float64[],
-        :stageobjective => Float64[]
-    )
-    for x in X
-        d[x] = Any[]
-    end
-    d
-end
-savesolution!(solutionstore::Void, markov::Int, scenarioidx::Int, sp::JuMP.Model) = nothing
-function savesolution!(solutionstore::Dict{Symbol, Any}, markov::Int, scenarioidx::Int, sp::JuMP.Model)
-    for (key, store) in solutionstore
-        if key == :markov
-            push!(store, markov)
-        elseif key == :scenario
-            push!(store, scenarioidx)
-        elseif key == :obj
-            push!(store, getobjectivevalue(sp))
-        elseif key == :stageobjective
-            push!(store, getstageobjective(sp))
-        else
-            push!(store, getvalue(getvariable(sp, key)))
-        end
-    end
-end
+savesolution!(solutionstore::Void, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int) = nothing
+
 
 function solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model)
     @assert JuMP.solve(sp) == :Optimal

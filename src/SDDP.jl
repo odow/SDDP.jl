@@ -18,7 +18,7 @@ export SDDPModel,
     # risk measures
     Expectation,
     MonteCarloSimulation, BoundConvergence,
-    solve,
+    solve, simulate,
     getbound
 
 include("typedefinitions.jl")
@@ -28,14 +28,15 @@ include("states.jl")
 include("scenarios.jl")
 include("cutoracles.jl")
 include("valuefunctions.jl")
+include("simulate.jl")
 include("MIT_licensedcode.jl")
 include("print.jl")
 
 include("pro/dematos_cutselection.jl")
 include("pro/avar_riskaversion.jl")
 include("pro/rib_valuefunction.jl")
-include("pro/historical_simulation.jl")
 include("pro/solve_asyncronous.jl")
+include("pro/visualiser/visualise.jl")
 
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
@@ -68,7 +69,7 @@ function SDDPModel(build!::Function;
 
     for t in 1:stages
         # todo: transition probabilities that vary by stage
-        stage = Stage(getel(Array{Float64, 2}, markov_transition, t))
+        stage = Stage(t, getel(Array{Float64, 2}, markov_transition, t))
         # check that
         if num_args == 2 && size(markov_transition[t], 2) > 1
             error("""Because you specified a scenario tree in the SDDPModel constructor, you need to use the
@@ -122,20 +123,42 @@ function SDDPModel(build!::Function;
     m
 end
 
+samplesubproblem(stage::Stage, last_markov_state::Int, solutionstore::Void) = samplesubproblem(stage, last_markov_state)
+
+function samplesubproblem(stage::Stage, last_markov_state, solutionstore::Dict{Symbol, Any})
+    if length(solutionstore[:scenario]) >= stage.t
+        idx = solutionstore[:markov][stage.t]
+        return idx, getsubproblem(stage, idx)
+    else
+        return samplesubproblem(stage, last_markov_state)
+    end
+end
+
+samplescenario(sp::JuMP.Model, solutionstore::Void) = samplescenario(sp)
+
+function samplescenario(sp::JuMP.Model, solutionstore::Dict{Symbol, Any})
+    if length(solutionstore[:scenario])>=ext(sp).stage
+        idx = solutionstore[:scenario][ext(sp).stage]
+        return idx, ext(sp).scenarios[idx]
+    else
+        return samplescenario(sp)
+    end
+end
+
 function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
     last_markov_state = 1
     scenarioidx = 0
     obj = 0.0
     for (t, stage) in enumerate(stages(m))
         # choose markov state
-        (last_markov_state, sp) = samplesubproblem(stage, last_markov_state)
+        (last_markov_state, sp) = samplesubproblem(stage, last_markov_state, solutionstore)
         if t > 1
             setstates!(m, sp)
         end
 
         # choose and set RHS scenario
         if hasscenarios(sp)
-            (scenarioidx, scenario) = samplescenario(sp)
+            (scenarioidx, scenario) = samplescenario(sp, solutionstore)
             setscenario!(sp, scenario)
         end
         # solve subproblem
@@ -145,7 +168,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         # store state
         savestates!(stage.state, sp)
         # save solution for simulations (defaults to no-op)
-        savesolution!(solutionstore, last_markov_state, scenarioidx, sp)
+        savesolution!(solutionstore, last_markov_state, scenarioidx, sp, t)
     end
     return obj
 end

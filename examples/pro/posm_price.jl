@@ -8,7 +8,7 @@
 # addprocs(Sys.CPU_CORES-1)
 
 # Load our favourite packages
-using SDDP, JuMP, Gurobi
+using SDDP, JuMP, Clp
 
 # These commands get run on all processors
 @everywhere begin
@@ -26,7 +26,8 @@ end
 m = SDDPModel(
     sense             = :Max,
     stages            = T,
-    solver            = GurobiSolver(OutputFlag=0),
+    # solver            = GurobiSolver(OutputFlag=0),
+    solver            = ClpSolver(),
     # solver            = CplexSolver(CPX_PARAM_SCRIND=0),
     objective_bound   = MAX_PROFIT,
     value_function    = InterpolatedValueFunction(
@@ -162,7 +163,7 @@ end
                         max       = 100,
                         step      = 50
                              ),
-    time_limit = 30.0,
+    time_limit = 60.0,
     solve_type = Asyncronous(step=15),
     log_file   = "posm.log"
 )
