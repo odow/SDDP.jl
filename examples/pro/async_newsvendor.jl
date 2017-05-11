@@ -4,8 +4,8 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-# Add all available procs for parallel speeeeeeed
-addprocs(Sys.CPU_CORES-1)
+# Add procs for parallel speeeeeeed
+addprocs(3)
 
 # only need this on master
 using Base.Test

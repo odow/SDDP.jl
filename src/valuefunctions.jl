@@ -7,13 +7,13 @@
 stageobjective!(vf::AbstractValueFunction, sp::JuMP.Model, obj...) = error("You need this method")
 getstageobjective(vf::AbstractValueFunction, sp::JuMP.Model) = error("You need this method")
 init!(vf::AbstractValueFunction, m::JuMP.Model, sense, bound, cutmanager) = error("You need this method")
-modifyvaluefunction!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = error("You need this method")
+modifyvaluefunction!(vf::AbstractValueFunction, m::SDDPModel, settings::Settings, sp::JuMP.Model) = error("You need this method")
 rebuildsubproblem!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = nothing
 summarise{T<:AbstractValueFunction}(::Type{T}) = "$T"
 
 stageobjective!(sp::JuMP.Model, obj...) = stageobjective!(valueoracle(sp), sp, obj...)
 getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
-modifyvaluefunction!(m::SDDPModel, sp::JuMP.Model) = modifyvaluefunction!(valueoracle(sp), m, sp)
+modifyvaluefunction!(m::SDDPModel, settings::Settings, sp::JuMP.Model) = modifyvaluefunction!(valueoracle(sp), m, settings, sp)
 rebuildsubproblem!(m::SDDPModel, sp::JuMP.Model) = rebuildsubproblem!(valueoracle(sp), m, sp)
 
 mutable struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
@@ -42,7 +42,39 @@ end
 
 getstageobjective(vf::DefaultValueFunction, sp::JuMP.Model) = getvalue(vf.stageobjective)
 
-function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, sp::JuMP.Model)
+function writecut!(filename::String, cut::Cut, stage::Int, markovstate::Int)
+    open(filename, "a") do file
+        write(file, "$(stage), $(markovstate), $(cut.intercept)")
+        for pi in cut.coefficients
+            write(file, ",$(pi)")
+        end
+        write(file, "\n")
+    end
+end
+
+function readcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
+    open(filename, "r") do file
+        while true
+            line      = readline(f)
+            items     = split(line, ",")
+            stage     = parse(Int, items[1])
+            ms        = parse(Int, items[2])
+            intercept = parse(Float64, items[3])
+            coefficients = [parse(Float64, i) for i in items[4:end]]
+            cut = Cut(intercept, coefficients)
+            sp = getsubproblem(m, stage, ms)
+            storecut!(valueoracle(sp).cutmanager, m, sp, cut)
+        end
+    end
+    for (t, stage) in enumerate(stages(m))
+        t == length(stages(m)) && continue
+        for sp in subproblems(stage)
+            rebuildsubproblem!(m, sp)
+        end
+    end
+end
+
+function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, settings::Settings, sp::JuMP.Model)
     ex = ext(sp)
     I = 1:length(m.storage.objective)
     for i in I
@@ -57,6 +89,11 @@ function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, sp::JuMP.M
         m.storage.objective.data[I]
     )
     cut = constructcut(m, sp)
+
+    if settings.cut_output_file != ""
+        writecut!(settings.cut_output_file, cut, ex.stage, ex.markovstate)
+    end
+
     storecut!(vf.cutmanager, m, sp, cut)
     addcut!(vf, sp, cut)
     storecut!(m, sp, cut)

@@ -206,6 +206,9 @@ function backwardpass!{C, T, T2}(m::SDDPModel{InterpolatedValueFunction{C, T, T2
                     m.storage.objective.data[I]
                 )
                 cut = constructcut(m, sp)
+                if settings.cut_output_file != ""
+                    writecut!(settings.cut_output_file, cut, ex.stage, ex.markovstate, i)
+                end
                 storecut!(cutoracle, m, sp, cut)
                 storecut!(m, sp, cut, i)
                 addcut!(vf, sp, theta, cut)
@@ -231,6 +234,16 @@ function backwardpass!{C, T, T2}(m::SDDPModel{InterpolatedValueFunction{C, T, T2
         end
     end
     mean(m.storage.objective)
+end
+
+function writecut!(filename::String, cut::Cut, stage::Int, markovstate::Int, rib::Int)
+    open(filename, "a") do file
+        write(file, "$(stage), $(markovstate), $(rib), $(cut.intercept)")
+        for pi in cut.coefficients
+            write(file, ",$(pi)")
+        end
+        write(file, "\n")
+    end
 end
 
 function addcut!(vf::InterpolatedValueFunction, sp::JuMP.Model, theta::JuMP.Variable, cut::Cut)

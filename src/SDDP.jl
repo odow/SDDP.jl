@@ -184,7 +184,7 @@ function backwardpass!(m::SDDPModel, settings::Settings)
         end
         # add appropriate cuts
         for sp in subproblems(m, t-1)
-            modifyvaluefunction!(m, sp)
+            modifyvaluefunction!(m, settings, sp)
         end
     end
 
@@ -312,7 +312,6 @@ function testconvergence(m::SDDPModel, settings::Settings)
     return :solving, true
 end
 
-
 function JuMP.solve(m::SDDPModel;
         max_iterations::Int       = 10,
         time_limit::Real          = 600, # seconds
@@ -330,10 +329,11 @@ function JuMP.solve(m::SDDPModel;
                 atol       = 0.0
             ),
         cut_selection_frequency::Int = 0,
-        print_level::Int          = 4,
-        log_file::String          = "",
-        solve_type::SDDPSolveType = Serial(),
-        reduce_memory_footprint = true
+        print_level::Int             = 4,
+        log_file::String             = "",
+        solve_type::SDDPSolveType    = Serial(),
+        reduce_memory_footprint      = true,
+        cut_output_file::String      = ""
     )
     settings = Settings(
         max_iterations,
@@ -343,7 +343,8 @@ function JuMP.solve(m::SDDPModel;
         cut_selection_frequency,
         print_level,
         log_file,
-        reduce_memory_footprint
+        reduce_memory_footprint,
+        cut_output_file
     )
 
     print(printheader, settings, m, solve_type)

@@ -143,3 +143,9 @@ function solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model
 end
 solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
 hasscenarios(sp::JuMP.Model) = length(ext(sp).scenarios) > 0
+
+function savemodel!(m::SDDPModel, filename::String)
+    open(filename, "w") do io
+        serialize(io, m)
+    end
+end
