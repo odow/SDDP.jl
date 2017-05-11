@@ -18,6 +18,7 @@ export SDDPModel,
     # risk measures
     Expectation,
     MonteCarloSimulation, BoundConvergence,
+    Serial,
     solve, simulate,
     getbound
 

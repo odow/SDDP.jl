@@ -2,7 +2,7 @@
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#############################################################################
+################################################################################
 
 #==
 
@@ -42,49 +42,66 @@ production risk.
 ==#
 
 # These are a few of my favourite things...
-using SDDP, JuMP, Clp, Base.Test
-
-# For repeatability
-srand(11111)
+using SDDP, JuMP, Gurobi
 
 #==
-    The spot price is a log-normal AR(1) model:
-
-        log(y(t)) = a + b * log(y(t-1)) + e,
-
-    where a and b are constants, log(x) is the natural logarithm function, and
-    e is a random noise.
+    To enable the asyncronous solver, we need to copy the data we have to all
+    the processors. To do that we can use the @everywhere macro.
 ==#
-const a = 1.01
-const b = 1.0
-const sampled_errors = [
-    -0.1290, -0.1010, -0.0814, -0.0661, -0.0530, -0.0412,
-    -0.0303, -0.0199, -0.00987, 0.0, 0.00987, 0.0199,
-    0.0303, 0.0412, 0.0530, 0.0661, 0.0814, 0.1010, 0.1290]
+@everywhere begin
 
-# A helper function to bind x in [lower, upper]
-box(x, lower, upper) = min(upper, max(lower, x))
+    #==
+        For repeatability we should set the random number seed. However, if we
+        choose the same seed on all processors, then we end up doing identical
+        things! myid() returns an integer of the pocessor id, so this way we get
+        a unique random seed for all processors.
+    ==#
+    srand(myid() * 10)
 
-# The log AR(1) model
-price_dynamics(p, w, t, i) = box(a * exp(log(p) + w), 3, 9)
+    #==
+        The spot price is a log-normal AR(1) model:
 
-# The spot price in period 0
-const initial_price = 4.50
+            log(y(t)) = a + b * log(y(t-1)) + e,
+
+        where a and b are constants, log(x) is the natural logarithm function, and
+        e is a random noise.
+    ==#
+    const a = 1.01
+    const b = 1.0
+    const sampled_errors = [
+        -0.1290, -0.1010, -0.0814, -0.0661, -0.0530, -0.0412,
+        -0.0303, -0.0199, -0.00987, 0.0, 0.00987, 0.0199,
+        0.0303, 0.0412, 0.0530, 0.0661, 0.0814, 0.1010, 0.1290]
+
+    # A helper function to bind x in [lower, upper]
+    box(x, lower, upper) = min(upper, max(lower, x))
+
+    # The log AR(1) model
+    price_dynamics(p, w, t, i) = box(a * exp(log(p) + w), 3, 9)
+
+    # The spot price in period 0
+    const initial_price = 4.50
+
+    # There is a transaction cost to trading in the forward contracts
+    const transaction_cost = 0.01
+
+    # forward contango as a multiple of the current spot
+    const forward_curve = [1.0, 1.025, 1.05, 1.075, 1.1, 1.125]
+    const forward_contracts = 1:length(forward_curve)
+
+    #==
+        We need to discretise the price domain into "ribs". Our price varies
+        between $3/widget and $9/widget, and we've chosen to have five ribs.
+        More ribs will give a more accurate solution, but result in more
+        computation.
+    ==#
+    ribs = collect(linspace(3, 9, 5))
+
+end # @everywhere
 
 #==
-    There is a transaction cost to trading in the forward contracts
+    Here is where we start the construction of our SDDP Model
 ==#
-const transaction_cost = 0.01
-
-#==
-    We need to discretise the price domain into "ribs". Our price varies between
-    $3/widget and $/widget, and we've chosen to have five ribs. More ribs will
-    give a more accurate solution, but result in more computation.
-==#
-ribs = collect(linspace(3, 9, 5))
-
-
-
 m = SDDPModel(
     # company is maximising profit
     sense             = :Max,
@@ -93,7 +110,17 @@ m = SDDPModel(
     # a large number to begin with
     objective_bound   = 1e9,
     # a LP solver
-    solver            = ClpSolver(),
+    solver            = GurobiSolver(OutputFlag=0),
+    #==
+        We use Nested Average Value @ Risk for our risk measure.
+
+            (1 - λ) * E[x] + λ * AV@R(1-β)[x]
+
+        Increasing values of lambda are more risk averse.
+        beta is the fraction of the tail we are worried about. Therefore,
+        decreasing values of beta are more risk averse.
+    ==#
+    risk_measure      = NestedAVaR(lambda=0.5, beta=0.25),
     # price risk magic
     value_function    = InterpolatedValueFunction(
                             #==
@@ -128,57 +155,148 @@ m = SDDPModel(
     @states(sp, begin
         #==
             The number of contracts due 1, 2, 3, 4, 5, and 6 months from now.
-            contacts0 is the number of contracts due at the end of the last
-            stage (so that contracts[1] is the number of widgets contracted for
-            sale in this month).
+            contacts0[1] is the number of contracts due for sale in this month).
         ==#
-        0 <= contracts[month = 1:6]  <= 1.5, contracts0 == 0
+        contracts[month = forward_contracts]  >= 0, contracts0 == 0
         #==
             The total number of unsold widgets we have in storage
         ==#
-        0 <= production <= 1.5, production0 == 0
+        storage >= 0, storage0 == 0
     end)
 
     # auxillary variables
     @variables(sp, begin
         # quantity of widgets to sell on spot
         sell_on_spot >= 0
-        # 
-        output >= 0
+        # quantity of contracts to forward sell
+        contract_sells[month = forward_contracts] >= 0
+        # quantity to purchase on spot to satisfy contract
+        buy_on_spot >= 0
+        # production
+        production >= 0
+        # dummy variables
+        widget_equivalent_sold
+        total_contracts_traded
     end)
 
     # constraints
     @constraints(sp, begin
-        contracts_sold  == contracts_sold0 + sell
-        production == production0 + output
-        contracts_sold0 + sell <= 1.2
+        #==
+            Each month we shift the contacts by 1 time period, and add any sells
+        ==#
+        dynamics[i=forward_contracts[1:end-1]], contracts[i] == contracts0[i+1] + contract_sells[i]
+
+        # In the last period, it's just how many we sell this month
+        contracts[forward_contracts[end]] == contract_sells[forward_contracts[end]]
+
+        # production dynamics
+        storage == storage0 - sell_on_spot - contracts0[1] +
+                        output + buy_on_spot
+
+        # a dummy variable to make the objective simpler to recalculate
+        widget_equivalent_sold == sell_on_spot - buy_on_spot +
+            sum(
+                forward_curve[i] * contract_sells[i]
+            for i in forward_contracts[end])
+
+        total_contracts_traded == sum(contract_sells[i] for i in forward_contracts)
+
+        # can't contract past end of year
+        end_of_year[i=forward_contracts; i > 12-t], contract_sells[i] == 0
     end)
 
     # a constraint with varying RHS (but we leverage the JuMP tooling to evaluate that)
     @scenario(sp,
         alpha = linspace(0., 0.05, 5),
-        output <= alpha
+        production <= alpha
     )
 
-    if t < 28
-        stageobjective!(sp,
-            price -> (sell * (price - transaction_cost)) # returns AffExpr for stage objective
-        )
-    else
-        stageobjective!(sp,
-            price -> (production - contracts_sold0) * price # objective
-        )
-    end
+    stageobjective!(sp, price -> price * widget_equivalent_sold -
+        transaction_cost * total_contracts_traded
+    )
+
 end
 
 SDDP.solve(m,
+    # maximum number of cuts
     max_iterations = 5,
+    # time limit for solver (seconds)
+    time_limit     = 3600,
+    # control the forward simulation part of the algorithm
     simulation = MonteCarloSimulation(
+        # how often should we test convergence?
         frequency = 5,
-        min       = 500,
-        max       = 500
-    )
+        #==
+            Simulation incrementation. Do min number of simulations, if there is
+            evidence of convergence, do step more. Re-test. If there isn't any
+            evidence of convergence keep going with the cutting iterations
+            sice more simulations will only refine the estimate.
+
+            If we reach max simulations and there is still evidence of
+            convergence, then we can terminate with termination=true.
+        ==#
+        min         = 500,
+        step        = 100,
+        max         = 500,
+        termination = false
+    ),
+    # if we have multiple processors loaded, use async solver
+    solve_type      = (nprocs()>2?Serial():Asyncronous()),
+    # write the log output to file
+    log_file        = "contracting.log"
+    # save all the discovered cuts to file as well
+    cut_output_file = "contracting.rib.cuts"
 )
 
-@test getbound(m) >= 4.1
-@test getbound(m) <= 4.3
+#==
+    Let's save the model to disk so we can come back to it later.
+==#
+SDDP.savemodel!(m, "contracting.sddpm")
+
+#==
+    Simulate the policy 200 times
+==#
+results = simulate(m,
+    200,               # number of monte carlo realisations
+    [
+        :contracts, :contracts0, :storage, :sell_on_spot,
+        :contract_sells, :buy_on_spot, :production
+    ]       # variables to return
+)
+
+#==
+    Plot everything
+==#
+@visualise(results, i, t, begin
+    results[i][:stageobjective][t], (title="Accumulated Profit",
+                            ylabel="Accumulated Profit (\$)", cumulative=true)
+
+    results[i][:contracts0][t][1], (title="Contracts0 1")
+    results[i][:contracts0][t][2], (title="Contracts0 2")
+    results[i][:contracts0][t][3], (title="Contracts0 3")
+    results[i][:contracts0][t][4], (title="Contracts0 4")
+    results[i][:contracts0][t][5], (title="Contracts0 5")
+    results[i][:contracts0][t][6], (title="Contracts0 6")
+
+    results[i][:contracts][t][1], (title="Contracts 1")
+    results[i][:contracts][t][2], (title="Contracts 2")
+    results[i][:contracts][t][3], (title="Contracts 3")
+    results[i][:contracts][t][4], (title="Contracts 4")
+    results[i][:contracts][t][5], (title="Contracts 5")
+    results[i][:contracts][t][6], (title="Contracts 6")
+
+    results[i][:contract_sells][t][1], (title="Contract Sells 1")
+    results[i][:contract_sells][t][2], (title="Contract Sells 2")
+    results[i][:contract_sells][t][3], (title="Contract Sells 3")
+    results[i][:contract_sells][t][4], (title="Contract Sells 4")
+    results[i][:contract_sells][t][5], (title="Contract Sells 5")
+    results[i][:contract_sells][t][6], (title="Contract Sells 6")
+
+    results[i][:storage][t], (title="Storage")
+
+    results[i][:sell_on_spot][t], (title="Spot Sells")
+    results[i][:buy_on_spot][t], (title="Spot Buys")
+
+    results[i][:production][t], (title="Production")
+
+end)
