@@ -45,14 +45,7 @@ function storecut!(o::DematosCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
     end
 end
 
-function dominates(sense, trial, incumbent)
-    if sense == :Min
-        return trial > incumbent
-    elseif sense == :Max
-        return trial < incumbent
-    end
-    error("Sense $sense not recognised")
-end
+
 
 function validcuts(o::DematosCutOracle)
     active_cuts = Cut[]

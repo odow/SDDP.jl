@@ -65,7 +65,7 @@ function SDDPModel(build!::Function;
     end
 
     # New SDDPModel
-    m = newSDDPModel(value_function, build!, solver)
+    m = newSDDPModel(sense, value_function, build!, solver)
 
     for t in 1:stages
         # todo: transition probabilities that vary by stage

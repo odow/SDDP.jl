@@ -137,6 +137,7 @@ end
 SolutionLog() = SolutionLog(0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0)
 
 struct SDDPModel{V<:AbstractValueFunction}
+    sense::Symbol
     stages::Vector{Stage}
     storage::Storage
     log::Vector{SolutionLog}
@@ -144,8 +145,8 @@ struct SDDPModel{V<:AbstractValueFunction}
     lpsolver::JuMP.MathProgBase.AbstractMathProgSolver
     ext::Dict # extension dictionary
 end
-newSDDPModel(v::AbstractValueFunction, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = newSDDPModel(typeof(v), build!, solver)
-newSDDPModel{V<:AbstractValueFunction}(v::Type{V}, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = SDDPModel{V}(Stage[], Storage(), SolutionLog[], build!, solver, Dict())
+newSDDPModel(sense::Symbol, v::AbstractValueFunction, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = newSDDPModel(sense, typeof(v), build!, solver)
+newSDDPModel{V<:AbstractValueFunction}(sense::Symbol, v::Type{V}, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = SDDPModel{V}(sense, Stage[], Storage(), SolutionLog[], build!, solver, Dict())
 
 struct BoundConvergence
     iterations::Int

@@ -70,7 +70,7 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
     start_time = time()
     cutting_time = 0.0
     simulation_time = 0.0
-    best_objective = Inf
+    best_objective = -worstcase(m.sense)
     objectives = CachedVector(Float64)
     simidx = 1
 
@@ -136,7 +136,7 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                         end
 
                         total_time = time() - start_time
-                        if objective_bound < best_objective
+                        if dominates(m.sense, objective_bound, best_objective)
                             setbestobjective!(objective_bound)
                         end
                         cutting_time += time() - cutting_timer

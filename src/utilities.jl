@@ -19,6 +19,13 @@ end
 getsense(::Type{Max}) = :Max
 getsense(::Type{Min}) = :Min
 getsense(m::JuMP.Model) = getsense(ext(m).sense)
+function worstcase(s)
+    if s==:Min
+        return Inf
+    elseif s == :Max
+        return -Inf
+    end
+end
 function optimisationsense(s::Symbol)
     if s==:Min
         return Min
@@ -148,4 +155,13 @@ function savemodel!(m::SDDPModel, filename::String)
     open(filename, "w") do io
         serialize(io, m)
     end
+end
+
+function dominates(sense, trial, incumbent)
+    if sense == :Min
+        return trial > incumbent
+    elseif sense == :Max
+        return trial < incumbent
+    end
+    error("Sense $sense not recognised")
 end
