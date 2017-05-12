@@ -333,7 +333,9 @@ function JuMP.solve(m::SDDPModel;
         print_level::Int             = 4,
         log_file::String             = "",
         solve_type::SDDPSolveType    = Serial(),
-        reduce_memory_footprint      = true,
+        # this reduces memory but you shouldn't use it if you want to save the
+        # sddp model since it throws away some information
+        reduce_memory_footprint      = false,
         cut_output_file::String      = ""
     )
     settings = Settings(
@@ -347,6 +349,12 @@ function JuMP.solve(m::SDDPModel;
         reduce_memory_footprint,
         cut_output_file
     )
+
+    if cut_output_file != ""
+        # clear it
+        open(cut_output_file, "w") do file
+        end
+    end
 
     print(printheader, settings, m, solve_type)
     status = solve(solve_type, m, settings)

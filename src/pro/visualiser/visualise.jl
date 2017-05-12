@@ -102,8 +102,9 @@ macro visualise(results, replication, stage, block)
 		for asset in $ASSETS
 			cp(joinpath(ASSET_DIR, asset), joinpath(dirname(temporary_html_file), asset), remove_destination=true)
 		end
+		json_data = json(plot_list)
 		open(temporary_html_file, "w") do f
-			write(f, replace(html_string, "<!--DATA-->", json(plot_list)))
+			write(f, replace(html_string, "<!--DATA-->", json_data))
 		end
 		launch_plot(temporary_html_file)
 	end)

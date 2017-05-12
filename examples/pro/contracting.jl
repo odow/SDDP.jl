@@ -91,11 +91,15 @@ using SDDP, JuMP, Gurobi
 
     #==
         We need to discretise the price domain into "ribs". Our price varies
-        between $3/widget and $9/widget, and we've chosen to have five ribs.
+        between $3/widget and $9/widget, and we've chosen to have seven ribs.
         More ribs will give a more accurate solution, but result in more
         computation.
     ==#
-    ribs = collect(linspace(3, 9, 5))
+    const ribs = collect(linspace(3, 9, 7))
+
+    # A large number that we are confident is more profit that could be made
+    # in the optimal solution
+    const objecitve_bound = 10.0
 
 end # @everywhere
 
@@ -108,7 +112,7 @@ m = SDDPModel(
     # there are 12 months
     stages            = 12,
     # a large number to begin with
-    objective_bound   = 1e9,
+    objective_bound   = objecitve_bound,
     # a LP solver
     solver            = GurobiSolver(OutputFlag=0),
     #==
@@ -166,10 +170,10 @@ m = SDDPModel(
 
     # auxillary variables
     @variables(sp, begin
-        # quantity of widgets to sell on spot
+        # Quantity of widgets to sell on spot. Goes negative they bug
         sell_on_spot >= 0
         # quantity of contracts to forward sell
-        contract_sells[month = forward_contracts] >= 0
+        0 <= contract_sells[month = forward_contracts] <= 10
         # quantity to purchase on spot to satisfy contract
         buy_on_spot >= 0
         # production
@@ -191,10 +195,10 @@ m = SDDPModel(
 
         # production dynamics
         storage == storage0 - sell_on_spot - contracts0[1] +
-                        output + buy_on_spot
+                        production + buy_on_spot
 
         # a dummy variable to make the objective simpler to recalculate
-        widget_equivalent_sold == sell_on_spot - buy_on_spot +
+        widget_equivalent_sold == sell_on_spot - 1.5 * buy_on_spot +
             sum(
                 forward_curve[i] * contract_sells[i]
             for i in forward_contracts[end])
@@ -207,7 +211,7 @@ m = SDDPModel(
 
     # a constraint with varying RHS (but we leverage the JuMP tooling to evaluate that)
     @scenario(sp,
-        alpha = linspace(0., 0.05, 5),
+        alpha = linspace(0., 0.05, 10),
         production <= alpha
     )
 
@@ -241,17 +245,13 @@ SDDP.solve(m,
         termination = false
     ),
     # if we have multiple processors loaded, use async solver
-    solve_type      = (nprocs()>2?Serial():Asyncronous()),
+    solve_type      = nprocs()>2?Asyncronous():Serial(),
+    reduce_memory_footprint = false,
     # write the log output to file
-    log_file        = "contracting.log"
+    log_file        = "contracting.log",
     # save all the discovered cuts to file as well
-    cut_output_file = "contracting.rib.cuts"
+    # cut_output_file = "contracting.rib.cuts"
 )
-
-#==
-    Let's save the model to disk so we can come back to it later.
-==#
-SDDP.savemodel!(m, "contracting.sddpm")
 
 #==
     Simulate the policy 200 times
@@ -300,3 +300,20 @@ results = simulate(m,
     results[i][:production][t], (title="Production")
 
 end)
+
+#==
+    Let's save the model to disk so we can come back to it later. Note this is
+    pretty fragile and is not guaranteed to break between Julia serialiser
+    versions.
+==#
+
+SDDP.savemodel!(m, "contracting.sddpm")
+
+m2 = SDDP.loadsddpmodel("contracting.sddpm")
+results2 = simulate(m2,
+    200,               # number of monte carlo realisations
+    [
+        :contracts, :contracts0, :storage, :sell_on_spot,
+        :contract_sells, :buy_on_spot, :production
+    ]       # variables to return
+)

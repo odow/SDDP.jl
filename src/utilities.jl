@@ -152,9 +152,40 @@ solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(dir
 hasscenarios(sp::JuMP.Model) = length(ext(sp).scenarios) > 0
 
 function savemodel!(m::SDDPModel, filename::String)
+    for stage in stages(m)
+        for sp in subproblems(stage)
+            sp.internalModelLoaded = false
+        end
+    end
+    m.ext[:serializer_version] = Base.Serializer.ser_version
     open(filename, "w") do io
         serialize(io, m)
     end
+end
+
+"""
+    Deserialize a serialized model. Not guaranteed to work or remain supported.
+    The Base serializer is subject to change at any point. Use the JLD package
+    if you want to save objects long-term.
+"""
+function loadsddpmodel(filename::String)
+    io = open(filename, "r")
+    m = deserialize(io)
+    close(io)
+    if Base.Serializer.ser_version != m.ext[:serializer_version]
+        error("The Base serializer has changed. You should use the JLD package
+        or similar to save models long-term.")
+    end
+    #==
+        Deepcopying (or serializing) an ObjectIdDict causes the hash table to
+        get out of whack. We should just rehash it once we've finished.
+    ==#
+    for stage in stages(m)
+        for sp in subproblems(stage)
+            Base.rehash!(sp.varData)
+        end
+    end
+    m
 end
 
 function dominates(sense, trial, incumbent)
