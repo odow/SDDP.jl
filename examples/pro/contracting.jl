@@ -8,9 +8,12 @@
 
 Example: The Widget Producer
 
-A company produces divisible widgets (i.e. a continuous product, rather than
-discrete units) for sale on a spot market each month. The quantity of widgets
-they produce is uncertain and comes from some finite distribution.
+A company produces perishable, divisible widgets (i.e. a continuous product,
+rather than discrete units) for sale on a spot market each month. The quantity
+of widgets they produce is uncertain and comes from some finite distribution.
+
+The company can store the widgets, but, over time, the value of the widgets
+decreases. Eventually the widgets perish and are worthless.
 
 The spot price is determined by an auction system, and so varies from month to
 month, but demonstates serial correlation. In each auction, there is sufficient
@@ -89,6 +92,10 @@ using SDDP, JuMP, Gurobi
     const forward_curve = [1.0, 1.025, 1.05, 1.075, 1.1, 1.125]
     const forward_contracts = 1:length(forward_curve)
 
+    # Perishability
+    const perishability = [1.0, 0.95, 0.9, 0.85, 0.8]
+    const perisability_periods = 1:length(perishability)
+
     #==
         We need to discretise the price domain into "ribs". Our price varies
         between $3/widget and $9/widget, and we've chosen to have seven ribs.
@@ -163,15 +170,19 @@ m = SDDPModel(
         ==#
         contracts[month = forward_contracts]  >= 0, contracts0 == 0
         #==
-            The total number of unsold widgets we have in storage
+            The total number of unsold widgets we have in storage at each
+            perishablity level.
         ==#
-        storage >= 0, storage0 == 0
+        storage[p=perisability_periods] >= 0, storage0 == 0
     end)
 
     # auxillary variables
     @variables(sp, begin
-        # Quantity of widgets to sell on spot. Goes negative they bug
-        sell_on_spot >= 0
+        # Quantity of widgets to sell on spot
+        sell_on_spot[p=perisability_periods]        >= 0
+        # Quantity of product to deliver on contract
+        deliver_to_contract[p=perisability_periods] >= 0
+
         # quantity of contracts to forward sell
         0 <= contract_sells[month = forward_contracts] <= 10
         # quantity to purchase on spot to satisfy contract
@@ -185,25 +196,32 @@ m = SDDPModel(
 
     # constraints
     @constraints(sp, begin
-        #==
-            Each month we shift the contacts by 1 time period, and add any sells
-        ==#
-        dynamics[i=forward_contracts[1:end-1]], contracts[i] == contracts0[i+1] + contract_sells[i]
-
+        # Each month we shift the contacts by 1 time period, and add any sells
+        [i=forward_contracts[1:end-1]], contracts[i] ==
+            contracts0[i+1] + contract_sells[i]
         # In the last period, it's just how many we sell this month
-        contracts[forward_contracts[end]] == contract_sells[forward_contracts[end]]
+        contracts[forward_contracts[end]] ==
+            contract_sells[forward_contracts[end]]
 
-        # production dynamics
-        storage == storage0 - sell_on_spot - contracts0[1] +
-                        production + buy_on_spot
+        # Each month unsold product perishes a bit more
+        [i=perisability_periods[2:end]], storage[i] == storage0[i-1] -
+            deliver_to_contract[i] - sell_on_spot[i]
+        storage[1] == production - deliver_to_contract[1] - sell_on_spot[1] +
+            buy_on_spot
+
+        # We have to deliver the contract
+        contracts[1] == sum(deliver_to_contract[p] for p in perisability_periods)
 
         # a dummy variable to make the objective simpler to recalculate
-        widget_equivalent_sold == sell_on_spot - 1.5 * buy_on_spot +
-            sum(
-                forward_curve[i] * contract_sells[i]
-            for i in forward_contracts[end])
+        widget_equivalent_sold ==
+            sum(perishability[p] * sell_on_spot[p]
+                for p in perisability_periods) -
+            1.5 * buy_on_spot +
+            sum(forward_curve[i] * contract_sells[i]
+                for i in forward_contracts[end])
 
-        total_contracts_traded == sum(contract_sells[i] for i in forward_contracts)
+        total_contracts_traded == sum(contract_sells[i]
+                                    for i in forward_contracts)
 
         # can't contract past end of year
         end_of_year[i=forward_contracts; i > 12-t], contract_sells[i] == 0
@@ -223,7 +241,7 @@ end
 
 SDDP.solve(m,
     # maximum number of cuts
-    max_iterations = 5,
+    max_iterations = 100,
     # time limit for solver (seconds)
     time_limit     = 3600,
     # control the forward simulation part of the algorithm
@@ -259,8 +277,8 @@ SDDP.solve(m,
 results = simulate(m,
     200,               # number of monte carlo realisations
     [
-        :contracts, :contracts0, :storage, :sell_on_spot,
-        :contract_sells, :buy_on_spot, :production
+        :contracts, :contracts0, :storage, :storage0, :sell_on_spot,
+        :contract_sells, :deliver_to_contract, :buy_on_spot, :production, :price
     ]       # variables to return
 )
 
@@ -270,6 +288,12 @@ results = simulate(m,
 @visualise(results, i, t, begin
     results[i][:stageobjective][t], (title="Accumulated Profit",
                             ylabel="Accumulated Profit (\$)", cumulative=true)
+
+    results[i][:price][t], (title="Price")
+
+    results[i][:buy_on_spot][t], (title="Spot Buys")
+
+    results[i][:production][t], (title="Production")
 
     results[i][:contracts0][t][1], (title="Contracts0 1")
     results[i][:contracts0][t][2], (title="Contracts0 2")
@@ -292,13 +316,29 @@ results = simulate(m,
     results[i][:contract_sells][t][5], (title="Contract Sells 5")
     results[i][:contract_sells][t][6], (title="Contract Sells 6")
 
-    results[i][:storage][t], (title="Storage")
+    results[i][:storage][t][1], (title="Storage 1")
+    results[i][:storage][t][2], (title="Storage 2")
+    results[i][:storage][t][3], (title="Storage 3")
+    results[i][:storage][t][4], (title="Storage 4")
+    results[i][:storage][t][5], (title="Storage 5")
 
-    results[i][:sell_on_spot][t], (title="Spot Sells")
-    results[i][:buy_on_spot][t], (title="Spot Buys")
+    results[i][:storage0][t][1], (title="Storage0 1")
+    results[i][:storage0][t][2], (title="Storage0 2")
+    results[i][:storage0][t][3], (title="Storage0 3")
+    results[i][:storage0][t][4], (title="Storage0 4")
+    results[i][:storage0][t][5], (title="Storage0 5")
 
-    results[i][:production][t], (title="Production")
+    results[i][:sell_on_spot][t][1], (title="Spot Sells 1")
+    results[i][:sell_on_spot][t][2], (title="Spot Sells 2")
+    results[i][:sell_on_spot][t][3], (title="Spot Sells 3")
+    results[i][:sell_on_spot][t][4], (title="Spot Sells 4")
+    results[i][:sell_on_spot][t][5], (title="Spot Sells 5")
 
+    results[i][:deliver_to_contract][t][1], (title="Contract Delivery 1")
+    results[i][:deliver_to_contract][t][2], (title="Contract Delivery 2")
+    results[i][:deliver_to_contract][t][3], (title="Contract Delivery 3")
+    results[i][:deliver_to_contract][t][4], (title="Contract Delivery 4")
+    results[i][:deliver_to_contract][t][5], (title="Contract Delivery 5")
 end)
 
 #==
@@ -306,14 +346,13 @@ end)
     pretty fragile and is not guaranteed to break between Julia serialiser
     versions.
 ==#
-
-SDDP.savemodel!(m, "contracting.sddpm")
-
-m2 = SDDP.loadsddpmodel("contracting.sddpm")
-results2 = simulate(m2,
-    200,               # number of monte carlo realisations
-    [
-        :contracts, :contracts0, :storage, :sell_on_spot,
-        :contract_sells, :buy_on_spot, :production
-    ]       # variables to return
-)
+# SDDP.savemodel!(m, "contracting.sddpm")
+#
+# m2 = SDDP.loadsddpmodel("contracting.sddpm")
+# results2 = simulate(m2,
+#     200,               # number of monte carlo realisations
+#     [
+#         :contracts, :contracts0, :storage, :sell_on_spot,
+#         :contract_sells, :buy_on_spot, :production
+#     ]       # variables to return
+# )

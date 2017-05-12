@@ -255,5 +255,9 @@ function addcut!(vf::InterpolatedValueFunction, sp::JuMP.Model, theta::JuMP.Vari
     _addcut!(ex.sense, sp, theta, affexpr)
 end
 
+function storekey!(::Type{Val{:price}}, store, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
+    push!(store, valueoracle(sp).location)
+end
+
 # function rebuildsubproblem!{C<:AbstractCutOracle}(vf::InterpolatedValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
 # end
