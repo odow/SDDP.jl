@@ -8,8 +8,8 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-struct NewCutOracle <: SDDP.AbstractCutOracle end
-struct NotACutOracle end
+immutable NewCutOracle <: SDDP.AbstractCutOracle end
+immutable NotACutOracle end
 
 @testset "Cut Oracles" begin
     @testset "New Cut Oracle" begin

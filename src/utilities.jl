@@ -4,6 +4,9 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
+const KW_SYM = (VERSION < v"0.6-")?(:kw):(:(=))
+const START  = (VERSION < v"0.6-")?(:start):(esc(:start))
+
 ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
 valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
@@ -54,11 +57,17 @@ function n_args(f::Function)
     @assert length(methods(f)) == 1
     return methods(f).mt.max_args-1
 end
-getel{A, T <: A}(::Type{A}, x::T, t::Int, i::Int) = x
-getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int, i::Int) = x[t]
-getel{A, T <: A}(::Type{A}, x::Vector{Vector{T}}, t::Int, i::Int) = x[t][i]
-getel{A, T <: A}(::Type{A}, x::T, t::Int) = x
-getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int) = x[t]
+# No triangular dispatch in v0.5
+# getel{A, T <: A}(::Type{A}, x::T, t::Int, i::Int) = x
+# getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int, i::Int) = x[t]
+# getel{A, T <: A}(::Type{A}, x::Vector{Vector{T}}, t::Int, i::Int) = x[t][i]
+# getel{A, T <: A}(::Type{A}, x::T, t::Int) = x
+# getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int) = x[t]
+getel{T}(::Type{T}, x::T, t::Int, i::Int) = x
+getel{T}(::Type{T}, x::Vector{T}, t::Int, i::Int) = x[t]
+getel{T}(::Type{T}, x::Vector{Vector{T}}, t::Int, i::Int) = x[t][i]
+getel{T}(::Type{T}, x::T, t::Int) = x
+getel{T}(::Type{T}, x::Vector{T}, t::Int) = x[t]
 
 # Construct a confidence interval
 function confidenceinterval(x, conf_level=0.95)

@@ -6,7 +6,7 @@
 
 export InterpolatedValueFunction, Noise
 
-struct Noise{T}
+immutable Noise{T}
     x::T
     probability::Float64
 end
@@ -38,7 +38,7 @@ function sample{T}(x::Vector{Noise{T}})
     error("x must be a discrete probablity distribution that sums to one. sum= $(sum(x))")
 end
 
-mutable struct InterpolatedValueFunction{C<:AbstractCutOracle, T, T2} <: AbstractValueFunction
+type InterpolatedValueFunction{C<:AbstractCutOracle, T, T2} <: AbstractValueFunction
     initial_price::T
     location::T
     rib_locations::Vector{T}

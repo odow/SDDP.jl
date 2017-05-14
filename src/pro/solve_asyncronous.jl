@@ -6,7 +6,7 @@
 
 export Asyncronous
 
-struct Asyncronous <: SDDPSolveType
+immutable Asyncronous <: SDDPSolveType
     slaves::Vector{Int} # pid of slave processors
     step::Float64       # number of iterations before introducing another slave
 end

@@ -4,49 +4,55 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-abstract type AbstractRiskMeasure end
-abstract type AbstractCutOracle end
-abstract type AbstractValueFunction end
+@compat abstract type AbstractRiskMeasure end
+@compat abstract type AbstractCutOracle end
+@compat abstract type AbstractValueFunction end
 
-abstract type OptimisationSense end
-struct Max <: OptimisationSense end
-struct Min <: OptimisationSense end
+@compat abstract type OptimisationSense end
+# struct Max <: OptimisationSense end
+# struct Min <: OptimisationSense end
+immutable Max <: OptimisationSense end
+immutable Min <: OptimisationSense end
 
-abstract type IterationDirection end
-struct ForwardPass <: IterationDirection end
-struct BackwardPass <: IterationDirection end
+@compat abstract type IterationDirection end
+# struct ForwardPass <: IterationDirection end
+# struct BackwardPass <: IterationDirection end
+immutable ForwardPass <: IterationDirection end
+immutable BackwardPass <: IterationDirection end
 
-
-abstract type SDDPSolveType end
-struct Serial <: SDDPSolveType end
+@compat abstract type SDDPSolveType end
+# struct Serial <: SDDPSolveType end
+immutable Serial <: SDDPSolveType end
 Base.show(io::IO, async::Serial) = print(io, "Serial solver")
 
 
 const LinearConstraint=JuMP.ConstraintRef{JuMP.Model, JuMP.GenericRangeConstraint{JuMP.GenericAffExpr{Float64, JuMP.Variable}}}
 
-mutable struct CachedVector{T} <: AbstractArray{T, 1}
+# mutable struct CachedVector{T} <: AbstractArray{T, 1}
+type CachedVector{T} <: AbstractArray{T, 1}
     data::Vector{T}
     n::Int
 end
 
-struct Cut
+# struct Cut
+immutable Cut
     intercept::Float64
     coefficients::Vector{Float64}
 end
 
-struct State
+immutable State
     variable::JuMP.Variable
     constraint::LinearConstraint
 end
 
-struct Scenario
+immutable Scenario
     # list of row indices
     constraints::Vector{LinearConstraint}
     # list of RHS values
     values::Vector{Float64}
 end
 
-struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:AbstractRiskMeasure}
+immutable SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:AbstractRiskMeasure}
     finalstage::Bool        # if final stage
     stage::Int              # stage index
     markovstate::Int        # index of the subproblem by markov state
@@ -83,7 +89,7 @@ function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound
     m
 end
 
-struct Stage
+immutable Stage
     t::Int
     # vector of subproblems in this stage
     subproblems::Vector{JuMP.Model}
@@ -97,7 +103,7 @@ struct Stage
 end
 Stage(t=1, transition=Array{Float64}(0,0)) = Stage(t, JuMP.Model[], transition, Float64[], Dict())
 
-struct Storage
+immutable Storage
     state::Vector{Float64}
     scenario::CachedVector{Int}
     markov::CachedVector{Int}
@@ -124,7 +130,7 @@ function reset!(s::Storage)
     reset!(s.modifiedprobability)
 end
 
-struct SolutionLog
+immutable SolutionLog
     iteration::Int
     bound::Float64
     lower_statistical_bound::Float64
@@ -136,7 +142,7 @@ struct SolutionLog
 end
 SolutionLog() = SolutionLog(0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0)
 
-struct SDDPModel{V<:AbstractValueFunction}
+immutable SDDPModel{V<:AbstractValueFunction}
     sense::Symbol
     stages::Vector{Stage}
     storage::Storage
@@ -148,13 +154,13 @@ end
 newSDDPModel(sense::Symbol, v::AbstractValueFunction, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = newSDDPModel(sense, typeof(v), build!, solver)
 newSDDPModel{V<:AbstractValueFunction}(sense::Symbol, v::Type{V}, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = SDDPModel{V}(sense, Stage[], Storage(), SolutionLog[], build!, solver, Dict())
 
-struct BoundConvergence
+immutable BoundConvergence
     iterations::Int
     rtol::Float64
     atol::Float64
 end
 BoundConvergence(;iterations=0,rtol=0.0,atol=0.0) = BoundConvergence(iterations,rtol,atol)
-struct MonteCarloSimulation
+immutable MonteCarloSimulation
     frequency::Int
     steps::Vector{Int}
     confidence::Float64
@@ -162,7 +168,7 @@ struct MonteCarloSimulation
 end
 MonteCarloSimulation(;frequency=0,min=20,max=0,step=1,confidence=0.95,termination=false) = MonteCarloSimulation(frequency,collect(min:step:max),confidence,termination)
 
-struct Settings
+immutable Settings
     max_iterations::Int
     time_limit::Float64
     simulation::MonteCarloSimulation

@@ -6,7 +6,7 @@
 
 module SDDP
 
-using JuMP, Distributions
+using JuMP, Distributions, Compat
 
 export SDDPModel,
     # inputs
@@ -39,7 +39,8 @@ include("pro/rib_valuefunction.jl")
 include("pro/solve_asyncronous.jl")
 include("pro/visualiser/visualise.jl")
 
-struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
+# struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
+immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
 function SDDPModel(build!::Function;
     sense                = :Min,

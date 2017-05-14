@@ -25,7 +25,7 @@ validcuts(oracle::AbstractCutOracle) = error("""You must define the function val
     oracle of type $(typeof(oracle)).""")
 
 
-struct DefaultCutOracle <: AbstractCutOracle
+immutable DefaultCutOracle <: AbstractCutOracle
     cuts::Vector{Cut}
 end
 DefaultCutOracle() = DefaultCutOracle(Cut[])

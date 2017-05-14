@@ -1,7 +1,7 @@
 # Copyright 2017, Oscar Dowson
 export DematosCutOracle
 
-struct DematosCutOracle <: AbstractCutOracle
+immutable DematosCutOracle <: AbstractCutOracle
     cuts::Vector{Cut}
     non_dominated_count::Vector{Int}
     statesvisited::Vector{Vector{Float64}}

@@ -4,7 +4,7 @@
 #   (1 - λ) * E[x] + λ * AV@R(1-β)[x]
 export NestedAVaR
 
-struct NestedAVaR <: AbstractRiskMeasure
+immutable NestedAVaR <: AbstractRiskMeasure
     lambda::Float64
     beta::Float64
     function NestedAVaR(lambda::Float64, beta::Float64)

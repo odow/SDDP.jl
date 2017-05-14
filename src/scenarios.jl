@@ -37,7 +37,7 @@ Usage:
 """
 macro scenario(sp, kw, c)
     sp = esc(sp)                                # escape the model
-    @assert kw.head == :(=)                     # check its a keyword
+    @assert kw.head == KW_SYM                   # check its a keyword
     scenariovalues = esc(kw.args[2])            # get the vector of values
     @assert c.head == :call               # check c is a comparison constraint
     @assert length(c.args) == 3                 # check that it has (LHS, (comparison), RHS)

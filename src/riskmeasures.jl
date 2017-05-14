@@ -31,7 +31,7 @@ modifyprobability!(
 #   The Expectation risk measure:
 #   In expectation, leave probabilities as they were
 
-struct Expectation <: AbstractRiskMeasure end
+immutable Expectation <: AbstractRiskMeasure end
 
 modifyprobability!(
     measure::Expectation,

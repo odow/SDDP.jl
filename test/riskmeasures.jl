@@ -8,7 +8,7 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
+immutable MyRiskMeasure <: SDDP.AbstractRiskMeasure end
 
 @testset "Risk Measures" begin
     @testset "Expectation" begin

@@ -96,8 +96,9 @@ macro state(sp, x, x0)
     else                                # its just a Symbol
         xin = symin                     # so change the Symbol
     end
+
     quote
-        stateout = $(Expr(:macrocall, Symbol("@variable"), sp, esc(x), Expr(:(=), esc(:start), esc(rhs))))
+        stateout = $(Expr(:macrocall, Symbol("@variable"), sp, esc(x), Expr(KW_SYM, START, esc(rhs))))
         statein  = $(Expr(:macrocall, Symbol("@variable"), sp, esc(xin)))
         statevariable!($sp, statein, stateout)
         stateout, statein

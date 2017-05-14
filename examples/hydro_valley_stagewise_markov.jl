@@ -9,12 +9,12 @@ using SDDP, JuMP, Clp, Base.Test
 # For repeatability
 srand(11111)
 
-struct TurbineD
+immutable TurbineD
     flowknots::Vector{Float64}
     powerknots::Vector{Float64}
 end
 
-struct ReservoirD
+immutable ReservoirD
     min::Float64
     max::Float64
     initial::Float64

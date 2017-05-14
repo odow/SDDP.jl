@@ -9,23 +9,23 @@ using SDDP, JuMP, Clp, Base.Test
 # For repeatability
 srand(11111)
 
-struct TurbineD
+immutable TurbineF
     flowknots::Vector{Float64}
     powerknots::Vector{Float64}
 end
 
-struct ReservoirD
+immutable ReservoirF
     min::Float64
     max::Float64
     initial::Float64
-    turbine::TurbineD
+    turbine::TurbineF
     spill_cost::Float64
     inflows::Vector{Float64}
 end
 
 valley_chain = [
-    ReservoirD(0, 200, 200, TurbineD([50, 60, 70], [55, 65, 70]), 1000, [0, 20, 50]),
-    ReservoirD(0, 200, 200, TurbineD([50, 60, 70], [55, 65, 70]), 1000, [0, 0,  20])
+    ReservoirF(0, 200, 200, TurbineF([50, 60, 70], [55, 65, 70]), 1000, [0, 20, 50]),
+    ReservoirF(0, 200, 200, TurbineF([50, 60, 70], [55, 65, 70]), 1000, [0, 0,  20])
 ]
 turbine(i) = valley_chain[i].turbine
 
