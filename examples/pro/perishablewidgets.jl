@@ -21,13 +21,13 @@ demand that the widget producer finds a buyer for all their widgets, regardless
 of the quantity they supply. Furthermore, the spot price is independent of the
 widget producer (they are a small player in the market).
 
-The spot price is highly volatile, and is the result of a
-process that is out of the control of the company. To counteract their price
-risk, the company wishes to engage in a forward contracting programme.
+The spot price is highly volatile, and is the result of a process that is out of
+the control of the company. To counteract their price risk, the company engages
+in a forward contracting programme.
 
-This forward contracting programme is a deal for physical widgets at a future
-date in time. The company can engage in contracts for sales two, three and six
-months in the future.
+The forward contracting programme is a deal for physical widgets at a future
+date in time. The company can engage in contracts for sales up to six months in
+the future.
 
 The futures price is the current spot price, plus some forward contango (the
 buyers gain certainty that they will receive the widgets in the future).
@@ -48,51 +48,38 @@ production risk.
 using SDDP, JuMP, Gurobi
 
 #==
-    To enable the asyncronous solver, we need to copy the data we have to all
-    the processors. To do that we can use the @everywhere macro.
+    For repeatability we should set the random number seed. However, if we
+    choose the same seed on all processors, then we end up doing identical
+    things! myid() returns an integer of the pocessor id, so this way we get
+    a unique random seed for all processors.
+==#
+@everywhere srand(myid() * 10)
+
+
+#==
+    Thanks yet again to Julia/#21799, we have to define our price dynamics here
+    because we can't serialize an anonymous function that makes anonymous
+    functions (most of the time).
+
+    This also means that we need to define transaction_cost here since we use it
+    in the stage objective.
+
+    We need this to be merged into Julia-0.6-rc2
+    https://github.com/JuliaLang/julia/pull/21878
 ==#
 @everywhere begin
-
-    #==
-        For repeatability we should set the random number seed. However, if we
-        choose the same seed on all processors, then we end up doing identical
-        things! myid() returns an integer of the pocessor id, so this way we get
-        a unique random seed for all processors.
-    ==#
-    srand(myid() * 10)
-
-    #==
-        The spot price is a mean reverting, log-normal, AR(1) model:
-
-            log(y(t)) = (1 - α) log(y(t-1)) + α * log(μ) + e,
-
-        where α is the rate at which the process reverts to the mean, and
-        μ is the mean that the process reverts to.
-    ==#
-    function mean_reverting_ar1(
-                            price,  # the incoming price
-                            noise,  # the observed noise
-                            t,      # the month of the year
-                            i,      # the markov state (don't worry for now)
-                            reversion_rate = 0.05, #
-                            process_mean = 6.0,     #
-                            lower = 3.0,     # You may want to truncate the
-                            upper = 9.0      # price to avoid extrapolation
-                        )
-        new_price = exp((1 - reversion_rate) * log(price) +
-                reversion_rate * log(process_mean) +
-                noise)
-        min(upper, max(lower, new_price))
+    function mean_reverting_ar1(price, noise, t, i)
+        reversion_rate = 0.05
+        process_mean = 6.0
+        lower = 3.0
+        upper = 9.0
+        new_price = exp(
+                    (1 - reversion_rate) * log(price) +
+                    reversion_rate * log(process_mean) +
+                    noise
+                )
+        return min(upper, max(lower, new_price))
     end
-
-    const sampled_errors = [
-        -0.1290, -0.1010, -0.0814, -0.0661, -0.0530, -0.0412,
-        -0.0303, -0.0199, -0.00987, 0.0, 0.00987, 0.0199,
-        0.0303, 0.0412, 0.0530, 0.0661, 0.0814, 0.1010, 0.1290]
-
-    # The spot price in period 0
-    const initial_price = 4.50
-
     #==
         There is a transaction cost to trading in the forward contracts
 
@@ -100,33 +87,7 @@ using SDDP, JuMP, Gurobi
         errors between the expected value of the S.A.A and the current price.
     ==#
     const transaction_cost = 0.01
-
-    # forward contango as a multiple of the current spot
-    const forward_curve = [1.0, 1.025, 1.05, 1.075, 1.1, 1.125]
-    const forward_contracts = 1:length(forward_curve)
-
-    # Perishability
-    const perishability = [1.0, 0.95, 0.9, 0.85, 0.8]
-    const perisability_periods = 1:length(perishability)
-
-    #==
-        We need to discretise the price domain into "ribs". Our price varies
-        between $3/widget and $9/widget, and we've chosen to have seven ribs.
-        More ribs will give a more accurate solution, but result in more
-        computation.
-    ==#
-    const ribs = collect(linspace(3, 9, 7))
-
-    # A large number that we are confident is more profit that could be made
-    # in the optimal solution
-    const objecitve_bound = 10.0
-
-    #==
-        Stochastic Production outcomes. Quantity of widgest produced in a stage.
-    ==#
-    const production_realisations = linspace(0.1, 0.2, 5)
-
-end # @everywhere
+end
 
 #==
     Here is where we start the construction of our SDDP Model
@@ -136,8 +97,9 @@ m = SDDPModel(
     sense             = :Max,
     # there are 12 months
     stages            = 12,
-    # a large number to begin with
-    objective_bound   = objecitve_bound,
+    # A large number that we are confident is more profit that could be made
+    # in the optimal solution
+    objective_bound   = 10.0,
     # a LP solver
     solver            = GurobiSolver(OutputFlag=0),
     #==
@@ -153,6 +115,15 @@ m = SDDPModel(
     # price risk magic
     value_function    = InterpolatedValueFunction(
                             #==
+                                The spot price is a mean reverting, log-normal,
+                                AR(1) model:
+
+                                log(y(t)) = (1 - α) log(y(t-1)) + α * log(μ) + e,
+
+                                where α is the rate at which the process reverts
+                                to the mean, and μ is the mean that the process
+                                reverts to.
+
                                 Note: dynamics can't depend on other things
                                     and you must supply a function
                                     f(price::Float64,
@@ -164,15 +135,27 @@ m = SDDPModel(
                                 add the input, but don't reference it. It won't
                                 matter.
                             ==#
-                            dynamics       = mean_reverting_ar1,
-                            # the initial price
-                            initial_price  = initial_price,
-                            # our rib discretisations
-                            rib_locations  = ribs,
+                            dynamics = mean_reverting_ar1,
+                            # The spot price in period 0
+                            initial_price  = 4.50,
+                            #==
+                                We need to discretise the price domain into
+                                "ribs". Our price varies between $3/widget and
+                                $9/widget, and we've chosen to have seven ribs.
+                                More ribs will give a more accurate solution,
+                                but result in more computation.
+                            ==#
+                            rib_locations  =  collect(linspace(3, 9, 7)),
                             # and the noise for our price process
-                            noise          = Noise(sampled_errors),
+                            noise          = Noise([-0.1290, -0.1010, -0.0814,
+                                                    -0.0661, -0.0530, -0.0412,
+                                                    -0.0303, -0.0199, -0.00987,
+                                                    0.0, 0.00987, 0.0199,
+                                                    0.0303, 0.0412, 0.0530,
+                                                    0.0661, 0.0814, 0.1010,
+                                                0.1290]),
                             # and include some cut selection
-                            # cut_oracle     = DematosCutOracle()
+                            cut_oracle     = DematosCutOracle()
                         )
                                             #==
                                                 so here 'sp' is a JuMP model
@@ -181,6 +164,24 @@ m = SDDPModel(
                                                 (the number of stages).
                                             ==#
                                             ) do sp, t
+    #==
+        We begin by creating initialising some data.
+        We're wrapping this inside the SDDPModel so that when we save it the
+        objects get saved as well. Otherwise they just hold references to global
+        objects and we'll need to initialise them each time as well.
+    ==#
+
+    # forward contango as a multiple of the current spot
+    forward_curve = [1.0, 1.025, 1.05, 1.075, 1.1, 1.125]
+    forward_contracts = 1:length(forward_curve)
+
+    # Perishability
+    perishability = [1.0, 0.95, 0.9, 0.85, 0.8]
+    perisability_periods = 1:length(perishability)
+    #==
+        Stochastic Production outcomes. Quantity of widgest produced in a stage.
+    ==#
+    production_realisations = linspace(0.1, 0.2, 5)
 
     # create state variables
     @states(sp, begin
@@ -219,30 +220,63 @@ m = SDDPModel(
 
     # constraints
     @constraints(sp, begin
-        # Each month we shift the contacts by 1 time period, and add any sells
+        #==
+            Each month we shift the contacts by 1 time period, and add any sells
+            Note: this doesn't include contracts0[1] since those are the
+            contracts to be delivered this month
+        ==#
         [i=forward_contracts[1:end-1]], contracts[i] ==
             contracts0[i+1] + contract_sells[i]
-        # In the last period, it's just how many we sell this month
+
+        #==
+            In the last period, it's just how many we sell this month
+        ==#
         contracts[forward_contracts[end]] ==
             contract_sells[forward_contracts[end]]
 
-        # Each month unsold product perishes a bit more
+        #==
+            Each month unsold product perishes a bit more
+        ==#
         [i=perisability_periods[2:end]], storage[i] == storage0[i-1] -
             deliver_to_contract[i] - sell_on_spot[i]
+        #==
+            But product made this period doesn't perish. This includes the
+            production, less that which we delivered as fresh, less sold as
+            fresh. We also assume that we buy fresh product on spot.
+        ==#
         storage[1] == production - deliver_to_contract[1] - sell_on_spot[1] +
             buy_on_spot
 
-        # We have to deliver the contract
-        contracts[1] == sum(deliver_to_contract[p] for p in perisability_periods)
+        #==
+            We have to deliver the contracts we agreed at the end of the last
+            period. We can deliver from any perishability state, but we'll earn
+            less (in the objective) for supplying more perished products.
+        ==#
+        contracts0[1] == sum(deliver_to_contract[p] for p in perisability_periods)
 
-        # a dummy variable to make the objective simpler to recalculate
+        #==
+            A dummy variable to make the objective simpler to recalculate.
+        ==#
         widget_equivalent_sold ==
-            sum(perishability[p] * sell_on_spot[p]
+            # we earn the perished product sold on spot
+            sum(perishability[p] * sell_on_spot[p] -
+                # plus the penalty on perished items sold on contract
+                (1 - perishability[p]) * deliver_to_contract[p]
                 for p in perisability_periods) -
+            #==
+                buying on spot incurrs some additional cost over and above
+                the actual spot price (i.e. due to faster shipment times)
+            ==#
             1.5 * buy_on_spot +
+            # and we earn the forward price of each contract
             sum(forward_curve[i] * contract_sells[i]
-                for i in forward_contracts[end])
+                for i in forward_contracts)
 
+        #==
+            We use this to sum up transaction costs. This could go in the
+            objective but then it'd make our stageobjective more complicated
+            (although still linear).
+        ==#
         total_contracts_traded == sum(contract_sells[i]
                                     for i in forward_contracts)
 
@@ -250,11 +284,11 @@ m = SDDPModel(
         end_of_year[i=forward_contracts; i > 12-t], contract_sells[i] == 0
     end)
 
-    # a constraint with varying RHS
-    @scenario(sp,
-        alpha = production_realisations,
-        production <= alpha
-    )
+    #==
+        Production of widgets is limited by some stochastic process
+    ==#
+    @scenario(sp, alpha = production_realisations, production <= alpha)
+
     # SDDP. needed until Julia 0.6-rc2
     SDDP.stageobjective!(sp, price -> price * widget_equivalent_sold -
         transaction_cost * total_contracts_traded
@@ -264,9 +298,9 @@ end
 
 SDDP.solve(m,
     # maximum number of cuts
-    max_iterations = 1000,
+    max_iterations = 300,
     # time limit for solver (seconds)
-    time_limit     = 3600,
+    time_limit     = 200,
     # control the forward simulation part of the algorithm
     simulation = MonteCarloSimulation(
         # how often should we test convergence?
@@ -365,17 +399,23 @@ results = simulate(m,
 end)
 
 #==
-    Let's save the model to disk so we can come back to it later. Note this is
-    pretty fragile and is not guaranteed to break between Julia serialiser
-    versions.
+
+    You can't do this yet until Julia/#21799 is merged into the Julia version
+    you're using (should be Julia-0.6-rc2)
+
+    # Let's save the model to disk so we can come back to it later. Note this is
+    # pretty fragile and is not guaranteed to break between Julia serialiser
+    # versions.
+    SDDP.savemodel!(m, "contracting.sddpm")
+
+    m2 = SDDP.loadsddpmodel("contracting.sddpm")
+
+    results2 = simulate(m2,
+        200,               # number of monte carlo realisations
+        [
+            :contracts, :contracts0, :storage, :sell_on_spot,
+            :contract_sells, :buy_on_spot, :production
+        ]       # variables to return
+    )
+
 ==#
-SDDP.savemodel!(m, "contracting.sddpm")
-#
-# m2 = SDDP.loadsddpmodel("contracting.sddpm")
-# results2 = simulate(m2,
-#     200,               # number of monte carlo realisations
-#     [
-#         :contracts, :contracts0, :storage, :sell_on_spot,
-#         :contract_sells, :buy_on_spot, :production
-#     ]       # variables to return
-# )

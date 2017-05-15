@@ -162,16 +162,26 @@ end
 solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
 hasscenarios(sp::JuMP.Model) = length(ext(sp).scenarios) > 0
 
-function savemodel!(m::SDDPModel, filename::String)
+function savemodel!(filename::String, m::SDDPModel)
     for stage in stages(m)
         for sp in subproblems(stage)
             sp.internalModelLoaded = false
         end
     end
     m.ext[:serializer_version] = Base.Serializer.ser_version
+    save!(filename, m)
+end
+
+function save!(filename::String, x)
     open(filename, "w") do io
-        serialize(io, m)
+        serialize(io, x)
     end
+end
+function load(filename::String)
+    io = open(filename, "r")
+    x = deserialize(io)
+    close(io)
+    x
 end
 
 """
@@ -179,10 +189,11 @@ end
     The Base serializer is subject to change at any point. Use the JLD package
     if you want to save objects long-term.
 """
-function loadsddpmodel(filename::String)
-    io = open(filename, "r")
-    m = deserialize(io)
-    close(io)
+function loadmodel(filename::String)
+    # We're going to need this to be merged into the copy of Julia that the user
+    # is running
+    # https://github.com/JuliaLang/julia/pull/21799
+    m = load(filename)
     if Base.Serializer.ser_version != m.ext[:serializer_version]
         error("The Base serializer has changed. You should use the JLD package
         or similar to save models long-term.")
