@@ -62,6 +62,17 @@ function async_forwardpass!(T, settings::Settings)
     forwardpass!(m, settings)
 end
 
+function rebuild!(T)
+    mm = SDDP.m::T
+    # run cut selection
+    for (t, stage) in enumerate(stages(mm))
+        t == length(stages(mm)) && continue
+        for sp in subproblems(stage)
+            rebuildsubproblem!(mm, sp)
+        end
+    end
+end
+
 function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=Settings())
     status = :solving
     iterationtype = :cutting
@@ -90,6 +101,10 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
         info("Took $(round(time() - t, 2)) seconds to copy model to all processes.")
     end
 
+
+    needs_rebuilding = fill(false, np)
+    iterations_since_cut_selection = 0
+
     nextiter() = (nidx=iteration;iteration+=1;nidx)
     getiter() = (iteration)
     # nextsim!() =(simidx+=1)
@@ -111,6 +126,7 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                         sleep(1.0)
                         continue
                     end
+
                     if iterationtype == :cutting
                         cutting_timer = time()
                         it = nextiter()
@@ -140,11 +156,21 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                             setbestobjective!(objective_bound)
                         end
                         cutting_time += time() - cutting_timer
+
+                        iterations_since_cut_selection += 1
+                        if applicable(iterations_since_cut_selection, settings.cut_selection_frequency)
+                            needs_rebuilding .= true
+                            iterations_since_cut_selection = 0
+                        end
+                        if needs_rebuilding[p]
+                            remotecall_fetch(rebuild!, p, typeof(m))
+                            needs_rebuilding[p] = false
+                        end
+
                         addsolutionlog!(m, settings, it, best_objective, simulation_objective, simulation_objective, cutting_time , simulations, simulation_time, total_time, true)
 
                         status, keep_iterating = testconvergence(m, settings)
                         !keep_iterating && break
-
 
                     elseif iterationtype == :simulation
 

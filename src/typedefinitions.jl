@@ -71,8 +71,7 @@ immutable SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:Abstr
 end
 
 function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound=-1e6,
-    risk_measure=Expectation(), cut_oracle=DefaultCutOracle(), value_function=DefaultValueFunction{typeof(cut_oracle)})
-
+    risk_measure=Expectation(), value_function=DefaultValueFunction(DefaultCutOracle()))
     m = Model()
     m.ext[:SDDP] = SDDP.SubproblemExt(
         finalstage,
@@ -81,7 +80,7 @@ function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound
         bound,
         sense,
         State[],
-        init!(value_function, m, sense, bound, cut_oracle),
+        init!(deepcopy(value_function), m, sense, bound),
         Scenario[],
         Float64[],
         risk_measure

@@ -6,7 +6,7 @@
 
 #==
 
-Example: The Widget Producer
+Example: The Perishable Widget Producer
 
 A company produces perishable, divisible widgets (i.e. a continuous product,
 rather than discrete units) for sale on a spot market each month. The quantity
@@ -62,30 +62,43 @@ using SDDP, JuMP, Gurobi
     srand(myid() * 10)
 
     #==
-        The spot price is a log-normal AR(1) model:
+        The spot price is a mean reverting, log-normal, AR(1) model:
 
-            log(y(t)) = a + b * log(y(t-1)) + e,
+            log(y(t)) = (1 - α) log(y(t-1)) + α * log(μ) + e,
 
-        where a and b are constants, log(x) is the natural logarithm function, and
-        e is a random noise.
+        where α is the rate at which the process reverts to the mean, and
+        μ is the mean that the process reverts to.
     ==#
-    const a = 1.01
-    const b = 1.0
+    function mean_reverting_ar1(
+                            price,  # the incoming price
+                            noise,  # the observed noise
+                            t,      # the month of the year
+                            i,      # the markov state (don't worry for now)
+                            reversion_rate = 0.05, #
+                            process_mean = 6.0,     #
+                            lower = 3.0,     # You may want to truncate the
+                            upper = 9.0      # price to avoid extrapolation
+                        )
+        new_price = exp((1 - reversion_rate) * log(price) +
+                reversion_rate * log(process_mean) +
+                noise)
+        min(upper, max(lower, new_price))
+    end
+
     const sampled_errors = [
         -0.1290, -0.1010, -0.0814, -0.0661, -0.0530, -0.0412,
         -0.0303, -0.0199, -0.00987, 0.0, 0.00987, 0.0199,
         0.0303, 0.0412, 0.0530, 0.0661, 0.0814, 0.1010, 0.1290]
 
-    # A helper function to bind x in [lower, upper]
-    box(x, lower, upper) = min(upper, max(lower, x))
-
-    # The log AR(1) model
-    price_dynamics(p, w, t, i) = box(a * exp(log(p) + w), 3, 9)
-
     # The spot price in period 0
     const initial_price = 4.50
 
-    # There is a transaction cost to trading in the forward contracts
+    #==
+        There is a transaction cost to trading in the forward contracts
+
+        A transaction cost also stops the model arbitraging numerical precision
+        errors between the expected value of the S.A.A and the current price.
+    ==#
     const transaction_cost = 0.01
 
     # forward contango as a multiple of the current spot
@@ -107,6 +120,11 @@ using SDDP, JuMP, Gurobi
     # A large number that we are confident is more profit that could be made
     # in the optimal solution
     const objecitve_bound = 10.0
+
+    #==
+        Stochastic Production outcomes. Quantity of widgest produced in a stage.
+    ==#
+    const production_realisations = linspace(0.1, 0.2, 5)
 
 end # @everywhere
 
@@ -146,13 +164,15 @@ m = SDDPModel(
                                 add the input, but don't reference it. It won't
                                 matter.
                             ==#
-                            dynamics       = price_dynamics,
+                            dynamics       = mean_reverting_ar1,
                             # the initial price
                             initial_price  = initial_price,
                             # our rib discretisations
                             rib_locations  = ribs,
                             # and the noise for our price process
-                            noise          = Noise(sampled_errors)
+                            noise          = Noise(sampled_errors),
+                            # and include some cut selection
+                            # cut_oracle     = DematosCutOracle()
                         )
                                             #==
                                                 so here 'sp' is a JuMP model
@@ -168,7 +188,7 @@ m = SDDPModel(
             The number of contracts due 1, 2, 3, 4, 5, and 6 months from now.
             contacts0[1] is the number of contracts due for sale in this month).
         ==#
-        contracts[month = forward_contracts]  >= 0, contracts0 == 0
+        contracts[month = forward_contracts] >= 0, contracts0 == 0
         #==
             The total number of unsold widgets we have in storage at each
             perishablity level.
@@ -183,7 +203,10 @@ m = SDDPModel(
         # Quantity of product to deliver on contract
         deliver_to_contract[p=perisability_periods] >= 0
 
-        # quantity of contracts to forward sell
+        #==
+            Quantity of contracts to forward sell
+            Put an upper bound on this to avoid the model arbitraging to Inf
+        ==#
         0 <= contract_sells[month = forward_contracts] <= 10
         # quantity to purchase on spot to satisfy contract
         buy_on_spot >= 0
@@ -227,13 +250,13 @@ m = SDDPModel(
         end_of_year[i=forward_contracts; i > 12-t], contract_sells[i] == 0
     end)
 
-    # a constraint with varying RHS (but we leverage the JuMP tooling to evaluate that)
+    # a constraint with varying RHS
     @scenario(sp,
-        alpha = linspace(0., 0.05, 10),
+        alpha = production_realisations,
         production <= alpha
     )
-
-    stageobjective!(sp, price -> price * widget_equivalent_sold -
+    # SDDP. needed until Julia 0.6-rc2
+    SDDP.stageobjective!(sp, price -> price * widget_equivalent_sold -
         transaction_cost * total_contracts_traded
     )
 
@@ -241,13 +264,13 @@ end
 
 SDDP.solve(m,
     # maximum number of cuts
-    max_iterations = 100,
+    max_iterations = 1000,
     # time limit for solver (seconds)
     time_limit     = 3600,
     # control the forward simulation part of the algorithm
     simulation = MonteCarloSimulation(
         # how often should we test convergence?
-        frequency = 5,
+        frequency = 100,
         #==
             Simulation incrementation. Do min number of simulations, if there is
             evidence of convergence, do step more. Re-test. If there isn't any
@@ -264,11 +287,11 @@ SDDP.solve(m,
     ),
     # if we have multiple processors loaded, use async solver
     solve_type      = nprocs()>2?Asyncronous():Serial(),
-    reduce_memory_footprint = false,
     # write the log output to file
     log_file        = "contracting.log",
     # save all the discovered cuts to file as well
     # cut_output_file = "contracting.rib.cuts"
+    cut_selection_frequency = 20
 )
 
 #==
@@ -346,7 +369,7 @@ end)
     pretty fragile and is not guaranteed to break between Julia serialiser
     versions.
 ==#
-# SDDP.savemodel!(m, "contracting.sddpm")
+SDDP.savemodel!(m, "contracting.sddpm")
 #
 # m2 = SDDP.loadsddpmodel("contracting.sddpm")
 # results2 = simulate(m2,

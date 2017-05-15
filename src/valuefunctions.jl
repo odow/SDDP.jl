@@ -6,7 +6,7 @@
 
 stageobjective!(vf::AbstractValueFunction, sp::JuMP.Model, obj...) = error("You need this method")
 getstageobjective(vf::AbstractValueFunction, sp::JuMP.Model) = error("You need this method")
-init!(vf::AbstractValueFunction, m::JuMP.Model, sense, bound, cutmanager) = error("You need this method")
+init!(vf::AbstractValueFunction, m::JuMP.Model, sense, bound) = error("You need this method")
 modifyvaluefunction!(vf::AbstractValueFunction, m::SDDPModel, settings::Settings, sp::JuMP.Model) = error("You need this method")
 rebuildsubproblem!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = nothing
 summarise{T<:AbstractValueFunction}(::Type{T}) = "$T"
@@ -22,15 +22,13 @@ type DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
     stageobjective::QuadExpr
     theta::JuMP.Variable
 end
-DefaultValueFunction(cutoracle=DefaultCutOracle()) = DefaultValueFunction{typeof(cutoracle)}
+DefaultValueFunction(cutoracle=DefaultCutOracle()) = DefaultValueFunction(cutoracle, QuadExpr(0.0), JuMP.Variable(JuMP.Model(), 0))
 
 summarise{C}(::Type{DefaultValueFunction{C}}) = "Default"
 
-init!{C}(::Type{DefaultValueFunction{C}}, m::JuMP.Model, sense, bound, cutmanager::C) = DefaultValueFunction(
-    cutmanager,
-    QuadExpr(0.0),
-    futureobjective!(sense, m, bound)
-)
+function init!{C}(vf::DefaultValueFunction{C}, m::JuMP.Model, sense, bound)
+    vf.theta = futureobjective!(sense, m, bound)
+end
 
 function stageobjective!(vf::DefaultValueFunction, sp::JuMP.Model, obj)
     append!(vf.stageobjective, QuadExpr(obj))

@@ -8,7 +8,6 @@ immutable DematosCutOracle <: AbstractCutOracle
     best_objectives::Vector{Float64}
     best_cut_idx::Vector{Int}
 end
-
 DematosCutOracle() = DematosCutOracle(Cut[], Int[], Vector{Float64}[], Float64[], Float64[])
 
 function storecut!(o::DematosCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
@@ -27,6 +26,11 @@ function storecut!(o::DematosCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
 
     # get the last state
     current_state = getstage(m, ext(sp).stage).state
+    if length(current_state) == 0
+        # probably in the async version
+        # where we're adding a cut but having seen a state yet
+        return
+    end
     # add to oracle, and assume last cut is the best
     push!(o.statesvisited, copy(current_state))
     push!(o.best_objectives, cut.intercept + dot(cut.coefficients, current_state))

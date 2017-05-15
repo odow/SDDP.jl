@@ -90,7 +90,6 @@ function SDDPModel(build!::Function;
                 sense          = optimisationsense(sense),
                 bound          = float(objective_bound),
                 risk_measure   = getel(AbstractRiskMeasure, risk_measure, t, i),
-                cut_oracle     = deepcopy(getel(AbstractCutOracle, cut_oracle, t, i)),
                 value_function = deepcopy(value_function)
             )
             setsolver(mod, solver)

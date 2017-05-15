@@ -85,44 +85,24 @@ end
 function interpolate{C<:AbstractCutOracle, T,T2}(vf::InterpolatedValueFunction{C, T,T2})
     y = AffExpr(0.0)
     _set = false
+    upper_idx = length(vf.rib_locations)
     for i in 2:length(vf.rib_locations)
-        if vf.location <= vf.rib_locations[i] || i == length(vf.rib_locations)
-            lambda = (vf.location - vf.rib_locations[i-1]) / (vf.rib_locations[i] - vf.rib_locations[i-1])
-            append!(y, vf.variables[i-1] * (1- lambda))
-            append!(y, vf.variables[i] * lambda)
-            _set = true
+        if vf.location <= vf.rib_locations[i]
+            upper_idx = i
             break
         end
     end
-    if !_set
-        error("Price must lie inside ribs. $(vf.location), $(vf.rib_locations)")
-    end
+    lower_idx = upper_idx - 1
+    lambda = (vf.location - vf.rib_locations[lower_idx]) / (vf.rib_locations[upper_idx] - vf.rib_locations[lower_idx])
+    append!(y, vf.variables[lower_idx] * (1- lambda))
+    append!(y, vf.variables[upper_idx] * lambda)
     y
 end
 
-function interpolate{C<:AbstractCutOracle,T2, N}(vf::InterpolatedValueFunction{C, NTuple{N, Float64},T2})
-    if size(vf.A, 1) == 0
-        vf.A = zeros(N + 1, length(vf.rib_locations))
-        for i in 1:length(vf.rib_locations)
-            vf.A[1, i] = 1.0
-            for j in 1:N
-                vf.A[j+1, i] = vf.rib_locations[i][j]
-                vf.A[j+1, i] = vf.rib_locations[i][j]
-            end
-        end
-    end
-    lambda = vf.A \ [1, vf.location...]
-    y = AffExpr(0.0)
-    for i in 1:length(lambda)
-        append!(y, vf.variables[i] * lambda[i])
-    end
-    y
-end
-
-function init!{C<:AbstractCutOracle, T, T2}(vf::InterpolatedValueFunction{C, T, T2}, m::JuMP.Model, sense, bound, cutmanager::C)
+function init!{C<:AbstractCutOracle, T, T2}(vf::InterpolatedValueFunction{C, T, T2}, m::JuMP.Model, sense, bound)
     for r in vf.rib_locations
         push!(vf.variables, futureobjective!(sense, m, bound))
-        push!(vf.cutoracles, deepcopy(cutmanager))
+        push!(vf.cutoracles, C())
     end
     vf
 end
@@ -136,7 +116,6 @@ function passpriceforward!(m::SDDPModel, sp::JuMP.Model)
         end
     end
 end
-
 
 function solvesubproblem!(::Type{ForwardPass}, vf::InterpolatedValueFunction, m::SDDPModel, sp::JuMP.Model)
     if ext(sp).stage == 1
@@ -259,5 +238,35 @@ function storekey!(::Type{Val{:price}}, store, markov::Int, scenarioidx::Int, sp
     push!(store, valueoracle(sp).location)
 end
 
-# function rebuildsubproblem!{C<:AbstractCutOracle}(vf::InterpolatedValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
-# end
+function rebuildsubproblem!{C<:AbstractCutOracle,T,T2}(vf::InterpolatedValueFunction{C,T,T2}, m::SDDPModel, sp::JuMP.Model)
+    n = n_args(m.build!)
+    ex = ext(sp)
+    for i in 1:nstates(sp)
+        pop!(ex.states)
+    end
+    for i in 1:length(ex.scenarios)
+        pop!(ex.scenarios)
+    end
+    sp = Model(solver = m.lpsolver)
+
+    empty!(vf.variables)
+    for r in vf.rib_locations
+        push!(vf.variables, futureobjective!(getsense(m.sense), sp, ex.problembound))
+    end
+
+    sp.ext[:SDDP] = ex
+    if n == 2
+        m.build!(sp, ex.stage)
+    elseif n == 3
+        m.build!(sp, ex.stage, ex.markovstate)
+    end
+
+    # re-add cuts
+    for i in 1:length(vf.variables)
+        for cut in validcuts(vf.cutoracles[i])
+            addcut!(vf, sp, vf.variables[i], cut)
+        end
+    end
+    m.stages[ex.stage].subproblems[ex.markovstate] = sp
+end
+rebuildsubproblem!{T,T2}(vf::InterpolatedValueFunction{DefaultCutOracle,T,T2}, m::SDDPModel, sp::JuMP.Model) = nothing
