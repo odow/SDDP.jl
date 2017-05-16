@@ -68,6 +68,27 @@ using SDDP, JuMP, Gurobi
     https://github.com/JuliaLang/julia/pull/21878
 ==#
 @everywhere begin
+    #==
+        The spot price is a mean reverting, log-normal,
+        AR(1) model:
+
+        log(y(t)) = (1 - α) log(y(t-1)) + α * log(μ) + e,
+
+        where α is the rate at which the process reverts
+        to the mean, and μ is the mean that the process
+        reverts to.
+
+        Note: dynamics can't depend on other things
+            and you must supply a function
+            f(price::Float64,
+                noise,
+                stage::Int,
+                markovstate::Int
+            )
+        If you don't know what the markov state is, just
+        add the input, but don't reference it. It won't
+        matter.
+    ==#
     function mean_reverting_ar1(price, noise, t, i)
         reversion_rate = 0.05
         process_mean = 6.0
@@ -80,6 +101,7 @@ using SDDP, JuMP, Gurobi
                 )
         return min(upper, max(lower, new_price))
     end
+
     #==
         There is a transaction cost to trading in the forward contracts
 
@@ -114,27 +136,7 @@ m = SDDPModel(
     risk_measure      = NestedAVaR(lambda=0.5, beta=0.25),
     # price risk magic
     value_function    = InterpolatedValueFunction(
-                            #==
-                                The spot price is a mean reverting, log-normal,
-                                AR(1) model:
-
-                                log(y(t)) = (1 - α) log(y(t-1)) + α * log(μ) + e,
-
-                                where α is the rate at which the process reverts
-                                to the mean, and μ is the mean that the process
-                                reverts to.
-
-                                Note: dynamics can't depend on other things
-                                    and you must supply a function
-                                    f(price::Float64,
-                                        noise,
-                                        stage::Int,
-                                        markovstate::Int
-                                    )
-                                If you don't know what the markov state is, just
-                                add the input, but don't reference it. It won't
-                                matter.
-                            ==#
+                            # see definition of mean_reverting_ar1 above
                             dynamics = mean_reverting_ar1,
                             # The spot price in period 0
                             initial_price  = 4.50,

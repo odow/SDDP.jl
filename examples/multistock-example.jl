@@ -5,7 +5,7 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
     This example comes from github.com/JuliaOpt/StochDynamicProgramming.jl/tree/
-        f68b9da541c2f811ce24fc76f6065803a0715c2f/examples/stock-example.jl
+        f68b9da541c2f811ce24fc76f6065803a0715c2f/examples/multistock-example.jl
 
     Vincent Leclere, Francois Pacaud and Henri Gerard
 
@@ -20,27 +20,33 @@
 
 using SDDP, JuMP, Clp, Base.Test
 
+XI = collect(Base.product([linspace(0, 0.3, 3) for i in 1:3]...))[:]
+
 m = SDDPModel(
                   sense = :Min,
                  stages = 5,
                  solver = ClpSolver(),
-        objective_bound = -2
+        objective_bound = -5
                                 ) do sp, stage
 
-    @state(sp, 0 <= state <= 1, state0 == 0.5)
+    @state(sp, 0 <= stock[i=1:3] <= 1, stock0 == 0.5)
 
-    @variable(sp, 0 <= control <= 0.5)
+    @variable(sp, 0 <= control[i=1:3] <= 0.5)
 
-    @scenario(sp,
-        noise = linspace(0, 0.3, 10),
-        state == state0 + control - noise
-    )
+    @constraint(sp, sum(control) - 0.5 * 3 <= 0)
 
-    stageobjective!(sp, (sin(3 * stage) - 1) * control)
+    @scenarios(sp, xi = XI, begin
+        stock[1] == stock0[1] + control[1] - xi[1]
+        stock[2] == stock0[2] + control[2] - xi[2]
+        stock[3] == stock0[3] + control[3] - xi[3]
+    end)
+
+    stageobjective!(sp, (sin(3 * stage) - 1) * sum(control))
 end
 
-@time status = SDDP.solve(m, max_iterations = 50)
-@test isapprox(SDDP.getbound(m), -1.471, atol=0.001)
+@time status = SDDP.solve(m, max_iterations = 100)
+@test isapprox(SDDP.getbound(m), -4.349, atol=0.01)
 
 results = simulate(m, 1000)
-@test isapprox(mean(r[:objective] for r in results), -1.471, atol=0.05)
+
+@test isapprox(mean(r[:objective] for r in results), -4.349, atol=0.02)

@@ -359,7 +359,16 @@ function JuMP.solve(m::SDDPModel;
     end
 
     print(printheader, settings, m, solve_type)
-    status = solve(solve_type, m, settings)
+    try
+        status = solve(solve_type, m, settings)
+    catch ex
+        if isa(ex, InterruptException)
+            warn("Terminating solve due to user interaction")
+            status = :Interrupt
+        else
+            rethrow(ex)
+        end
+    end
     print(printfooter, settings, m, status)
 
     status
