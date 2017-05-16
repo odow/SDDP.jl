@@ -45,7 +45,7 @@ immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 function SDDPModel(build!::Function;
     sense                = :Min,
     stages               = 1,
-    objective_bound      = -1e6,
+    objective_bound      = nothing,
     markov_transition    = [ones(Float64, (1,1)) for t in 1:stages],
     scenario_probability = Float64[],
     risk_measure         = Expectation(),
@@ -53,7 +53,9 @@ function SDDPModel(build!::Function;
     solver               = UnsetSolver(),
     value_function       = DefaultValueFunction(cut_oracle),
     )
-
+    if objective_bound == nothing
+        error("You must specify the objective_bound keyword")
+    end
     # check number of arguments to SDDPModel() do [args...] ...  model def ... end
     num_args = n_args(build!)
     if num_args < 2

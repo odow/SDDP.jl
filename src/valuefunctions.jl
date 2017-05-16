@@ -28,6 +28,7 @@ summarise{C}(::Type{DefaultValueFunction{C}}) = "Default"
 
 function init!{C}(vf::DefaultValueFunction{C}, m::JuMP.Model, sense, bound)
     vf.theta = futureobjective!(sense, m, bound)
+    vf
 end
 
 function stageobjective!(vf::DefaultValueFunction, sp::JuMP.Model, obj)
