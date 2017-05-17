@@ -48,3 +48,9 @@ The following arguments are optional:
 - `risk_measure`
 - `cut_oracle`
 - `value_function` Ignore this for now. Future proof's the extensibility of the library.
+
+### A Note on Value Functions
+
+You may notice we parameterise the SDDPModel by the DefaultValueFunction. Although
+this is the only value function provided in this package, it enables extensibility
+for some of our research codes that are not yet at the point for public release.
