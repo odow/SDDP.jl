@@ -35,11 +35,9 @@ include("print.jl")
 
 include("pro/dematos_cutselection.jl")
 include("pro/avar_riskaversion.jl")
-include("pro/rib_valuefunction.jl")
 include("pro/solve_asyncronous.jl")
 include("pro/visualiser/visualise.jl")
 
-# struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
 function SDDPModel(build!::Function;

@@ -31,9 +31,8 @@ end
     for example in [
             "risk_aversion.jl",
             "dematos_cutselection.jl",
-            "rib_basic.jl",
-            "rib_valuefunction.jl",
-            "async_newsvendor.jl"
+            "async_newsvendor.jl",
+            "visualisation.jl"
         ]
         @testset "$example" begin
             include(joinpath(examples_dir, "pro", example))
