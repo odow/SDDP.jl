@@ -359,6 +359,7 @@ function JuMP.solve(m::SDDPModel;
     end
 
     print(printheader, settings, m, solve_type)
+    status = :solving
     try
         status = solve(solve_type, m, settings)
     catch ex

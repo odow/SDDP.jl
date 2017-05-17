@@ -16,7 +16,7 @@ The company can store the widgets, but, over time, the value of the widgets
 decreases. Eventually the widgets perish and are worthless.
 
 The spot price is determined by an auction system, and so varies from month to
-month, but demonstates serial correlation. In each auction, there is sufficient
+month, but demonstrates serial correlation. In each auction, there is sufficient
 demand that the widget producer finds a buyer for all their widgets, regardless
 of the quantity they supply. Furthermore, the spot price is independent of the
 widget producer (they are a small player in the market).
