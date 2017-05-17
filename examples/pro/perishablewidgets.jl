@@ -42,6 +42,21 @@ The goal of the widget company is to choose the extent to which they forward
 contract in order to maximise (risk-adjusted) revenues, whilst managing their
 production risk.
 
+To run this example, there are two options.
+
+1. From the command line:
+
+    cmd> julia -p N perishablewidgets.jl
+
+    This will start Julia with N processors. It N > 2, SDDP.jl will choose to
+    solve using the Asyncronous solver. Upon completion, Julia will exit so make
+    sure you write to file (or save) any results.
+
+2. Interactively:
+    cmd> julia -p N
+    julia> include("perishablewidgets.jl")
+
+    Upon completion, the model and results will be available for inspection.
 ==#
 
 # These are a few of my favourite things...
@@ -66,28 +81,27 @@ using SDDP, JuMP, Gurobi
 
     We need this to be merged into Julia-0.6-rc2
     https://github.com/JuliaLang/julia/pull/21878
+
+    This might not apply on Julia-0.5.x
 ==#
 @everywhere begin
     #==
-        The spot price is a mean reverting, log-normal,
-        AR(1) model:
+        The spot price is a mean reverting, log-normal, AR(1) model:
 
         log(y(t)) = (1 - α) log(y(t-1)) + α * log(μ) + e,
 
-        where α is the rate at which the process reverts
-        to the mean, and μ is the mean that the process
-        reverts to.
+        where α is the rate at which the process reverts to the mean, and μ is
+        the mean that the process reverts to.
 
-        Note: dynamics can't depend on other things
-            and you must supply a function
+        Note: dynamics can't depend on other things and you must supply a
+        function
             f(price::Float64,
                 noise,
                 stage::Int,
                 markovstate::Int
             )
-        If you don't know what the markov state is, just
-        add the input, but don't reference it. It won't
-        matter.
+        If you don't know what the markov state is, just add the input, but
+        don't reference it. It won't matter.
     ==#
     function mean_reverting_ar1(price, noise, t, i)
         reversion_rate = 0.05
@@ -125,13 +139,13 @@ m = SDDPModel(
     # a LP solver
     solver            = GurobiSolver(OutputFlag=0),
     #==
-        We use Nested Average Value @ Risk for our risk measure.
+        We use Nested Average Value @ Risk for our risk measure:
 
-            (1 - λ) * E[x] + λ * AV@R(1-β)[x]
+            (1 - λ) * E[X] + λ * AV@R(β)[X].
 
-        Increasing values of lambda are more risk averse.
-        beta is the fraction of the tail we are worried about. Therefore,
-        decreasing values of beta are more risk averse.
+        Increasing values of lambda are more risk averse. beta is the fraction
+        of the tail we are worried about. Therefore, decreasing values of beta
+        are more risk averse.
     ==#
     risk_measure      = NestedAVaR(lambda=0.5, beta=0.25),
     # price risk magic
@@ -180,12 +194,26 @@ m = SDDPModel(
     # Perishability
     perishability = [1.0, 0.95, 0.9, 0.85, 0.8]
     perisability_periods = 1:length(perishability)
+    # initial stockpiles of product
+    initial_storage = fill(0, length(perishability))
+
     #==
         Stochastic Production outcomes. Quantity of widgest produced in a stage.
     ==#
     production_realisations = linspace(0.1, 0.2, 5)
 
-    # create state variables
+    #==
+        create state variables. These need have the syntax
+
+            outgoingstate, incomingstate == initial_value
+
+        outgoingstate can be any valid JuMP @variable syntax including things
+        such as
+            0 <= state[i=1:3, j=1:2; i<j] <= 1
+
+        incomingstate must be a single symbol, but the initial_value can use any
+        iterators created by the outgoingstate variable (see storage0 definition)
+    ==#
     @states(sp, begin
         #==
             The number of contracts due 1, 2, 3, 4, 5, and 6 months from now.
@@ -196,10 +224,10 @@ m = SDDPModel(
             The total number of unsold widgets we have in storage at each
             perishablity level.
         ==#
-        storage[p=perisability_periods] >= 0, storage0 == 0
+        storage[p=perisability_periods] >= 0, storage0 == initial_storage[p]
     end)
 
-    # auxillary variables
+    # any old JuMP variables
     @variables(sp, begin
         # Quantity of widgets to sell on spot
         sell_on_spot[p=perisability_periods]        >= 0
@@ -220,7 +248,7 @@ m = SDDPModel(
         total_contracts_traded
     end)
 
-    # constraints
+    # any old JuMP constraints
     @constraints(sp, begin
         #==
             Each month we shift the contacts by 1 time period, and add any sells
@@ -291,19 +319,36 @@ m = SDDPModel(
     ==#
     @scenario(sp, alpha = production_realisations, production <= alpha)
 
-    # SDDP. needed until Julia 0.6-rc2
-    SDDP.stageobjective!(sp, price -> price * widget_equivalent_sold -
+    #==
+        Set the stage objective. This should take function that maps the price
+        into an AffExpr using the variables defined in the subproblem above.
+
+
+    ==#
+    stageobjective!(sp, price -> price * widget_equivalent_sold -
         transaction_cost * total_contracts_traded
     )
 
 end
 
-SDDP.solve(m,
-    # maximum number of cuts
+@time status = SDDP.solve(m,
+    # maximum number of cuts to be added to any individual subproblem
     max_iterations = 300,
+
     # time limit for solver (seconds)
     time_limit     = 200,
-    # control the forward simulation part of the algorithm
+
+    #==
+        Instead of the typical forwarad/backward pass split of the algorithm,
+        I split it into cutting and simulation phases. In the cutting phase, we
+        do forward/backward pass pairs (one iteration). Each iteration generates
+        one cut at each subproblem.
+
+        When we wish to test for convergence we switch to the simulation phase.
+        This samples scenarios that have not, and are not, used in the cutting
+        phase. The simulation keyword controls the simulation phase of the
+        algorithm
+    ==#
     simulation = MonteCarloSimulation(
         # how often should we test convergence?
         frequency = 100,
@@ -321,28 +366,81 @@ SDDP.solve(m,
         max         = 500,
         termination = false
     ),
-    # if we have multiple processors loaded, use async solver
-    solve_type      = nprocs()>2?Asyncronous():Serial(),
+
+    #  SDDP.jl will automatically chose the best solver but we can orverride
+    # solve_type      = Serial(),
+    # solve_type      = Asyncronous(),
+
     # write the log output to file
     log_file        = "contracting.log",
-    # save all the discovered cuts to file as well
+
+    #==
+        Save all the discovered cuts to file as well. This can be useful if you
+        wish to analyse the cuts that are generated, or rebuild the model using
+        them later. Another option is to use the SDDP.savemodel! function
+        (discussed below).
+    ==#
     # cut_output_file = "contracting.rib.cuts"
+
+    #==
+        Frequency with which the problems are rebuilt. No good rule. Aggressive
+        cut selection reduces the size of the subproblems (good) but has
+        additional overhead. However, a high cut_selection_frequency allows the
+        subproblems to grow large which causes a big slow-down.
+    ==#
     cut_selection_frequency = 20
 )
 
 #==
-    Simulate the policy 200 times
+    Simulate the policy 200 times.
+
+    note: :price is a special variable that is only valid for the
+        InterpolatedValueFunction.
+
+    results is a vector containing a dictionary for each simulation. In addition
+    to the variables specified in the function call, other special keys are
+        :stageobjective - costs incurred during the stage (not future)
+        :obj            - :stageobjective + future value
+        :markov         - index of markov state visited
+        :scenario       - index of scenario visited
+        :objective      - Total objective of simulation
+
+    All values can be accessed as follows
+        results[simulation index][key][stage]
+
+    with the exception of :objective which is just
+        results[simulation index][:objective]
 ==#
 results = simulate(m,
-    200,               # number of monte carlo realisations
-    [
+    200,    # number of monte carlo realisations
+    [       # variables to return
         :contracts, :contracts0, :storage, :storage0, :sell_on_spot,
         :contract_sells, :deliver_to_contract, :buy_on_spot, :production, :price
-    ]       # variables to return
+    ]
 )
 
 #==
-    Plot everything
+    Plot everything using interactive javascript. This will launch an HTML page
+    to explore. Usage is
+
+        @visualise(results, i, t, begin
+            ... one line for each plot ...
+        end)
+
+    where results is the vector of result dictionaries from simulate(), i is the
+    simulation index (1:length(results)), and t is the stage index (1:T).
+
+    Each plot line gets transformed into an anonymous function
+        (results, i, t) -> ... plot line ...
+    so can be any valid Julia syntax that uses results, i, or t as an argument.
+
+    After the plot definition, keyword arguments can be used (in parenthesises):
+        title       - set the title of the plot
+        ylabel      - set the yaxis label
+        xlabel      - set the xaxis label
+        interoplate - interpolate lines between stages. Defaults to "linear"
+        see https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md
+            #line_interpolate for all options
 ==#
 @visualise(results, i, t, begin
     results[i][:stageobjective][t], (title="Accumulated Profit",
@@ -401,23 +499,21 @@ results = simulate(m,
 end)
 
 #==
-
-    You can't do this yet until Julia/#21799 is merged into the Julia version
-    you're using (should be Julia-0.6-rc2)
+    Note: This probably works on Julia-0.5.x On Julia-0.6.x we can't do this
+    until Julia/#21799 is merged (should be Julia-0.6-rc2).
 
     # Let's save the model to disk so we can come back to it later. Note this is
     # pretty fragile and is not guaranteed to break between Julia serialiser
     # versions.
-    SDDP.savemodel!(m, "contracting.sddpm")
+    SDDP.savemodel!("contracting.sddpm", m)
 
+    # load a saved model
     m2 = SDDP.loadsddpmodel("contracting.sddpm")
 
+    # simulate with the saved model
     results2 = simulate(m2,
         200,               # number of monte carlo realisations
-        [
-            :contracts, :contracts0, :storage, :sell_on_spot,
-            :contract_sells, :buy_on_spot, :production
-        ]       # variables to return
+        [   :contracts, :contracts0, :storage, :sell_on_spot,
+            :contract_sells, :buy_on_spot, :production         ]
     )
-
 ==#

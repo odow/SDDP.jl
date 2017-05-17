@@ -44,13 +44,13 @@ immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
 function SDDPModel(build!::Function;
     sense                = :Min,
-    stages               = 1,
+    stages::Int          = 1,
     objective_bound      = nothing,
     markov_transition    = [ones(Float64, (1,1)) for t in 1:stages],
     scenario_probability = Float64[],
-    risk_measure         = Expectation(),
-    cut_oracle           = DefaultCutOracle(),
-    solver               = UnsetSolver(),
+    risk_measure::AbstractRiskMeasure = Expectation(),
+    cut_oracle::AbstractCutOracle = DefaultCutOracle(),
+    solver::JuMP.MathProgBase.AbstractMathProgSolver = UnsetSolver(),
     value_function       = DefaultValueFunction(cut_oracle),
     )
     if objective_bound == nothing
@@ -334,7 +334,8 @@ function JuMP.solve(m::SDDPModel;
         cut_selection_frequency::Int = 0,
         print_level::Int             = 4,
         log_file::String             = "",
-        solve_type::SDDPSolveType    = Serial(),
+        # automatically chose Serial or Asyncronous
+        solve_type::SDDPSolveType    = nprocs()>2?Asyncronous():Serial(),
         # this reduces memory but you shouldn't use it if you want to save the
         # sddp model since it throws away some information
         reduce_memory_footprint      = false,
