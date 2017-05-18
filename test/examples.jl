@@ -22,8 +22,7 @@ const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
             "multistock-example.jl",
             "risk_aversion.jl",
             "dematos_cutselection.jl",
-            "async_newsvendor.jl",
-            "visualisation.jl"
+            "async_newsvendor.jl"
         ]
         @testset "$example" begin
             include(joinpath(examples_dir, example))
