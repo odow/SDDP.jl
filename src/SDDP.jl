@@ -33,10 +33,10 @@ include("simulate.jl")
 include("MIT_licensedcode.jl")
 include("print.jl")
 
-include("pro/dematos_cutselection.jl")
-include("pro/avar_riskaversion.jl")
-include("pro/solve_asyncronous.jl")
-include("pro/visualiser/visualise.jl")
+include("dematos_cutselection.jl")
+include("avar_riskaversion.jl")
+include("solve_asyncronous.jl")
+include("visualiser/visualise.jl")
 
 immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
