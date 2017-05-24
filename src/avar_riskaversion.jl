@@ -6,8 +6,6 @@
 
 #   Average Value at Risk
 #   (1 - λ) * E[x] + λ * AV@R(1-β)[x]
-export NestedAVaR
-
 immutable NestedAVaR <: AbstractRiskMeasure
     lambda::Float64
     beta::Float64

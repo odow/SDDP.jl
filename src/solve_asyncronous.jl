@@ -4,8 +4,6 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-export Asyncronous
-
 immutable Asyncronous <: SDDPSolveType
     slaves::Vector{Int} # pid of slave processors
     step::Float64       # number of iterations before introducing another slave

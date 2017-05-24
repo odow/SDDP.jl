@@ -4,10 +4,6 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-using JSON
-
-export @visualise
-
 const ASSET_DIR = dirname(@__FILE__)
 const HTML_FILE = joinpath(ASSET_DIR, "visualise.html")
 const ASSETS    = ["d3.v3.min.js", "visualise.js", "visualise.css"]
