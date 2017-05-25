@@ -117,7 +117,11 @@ function solvesubproblem!(::Type{BackwardPass}, vf::DefaultValueFunction, m::SDD
     if hasscenarios(sp)
         for i in 1:length(ex.scenarioprobability)
             setscenario!(sp, ex.scenarios[i])
-            @assert JuMP.solve(sp) == :Optimal
+            if sp.solvehook == nothing
+                @assert JuMP.solve(sp) == :Optimal
+            else
+                @assert JuMP.solve(sp, forward_pass = false) == :Optimal
+            end
             push!(m.storage.objective, getobjectivevalue(sp))
             push!(m.storage.scenario, i)
             push!(m.storage.probability, ex.scenarioprobability[i])
@@ -127,7 +131,11 @@ function solvesubproblem!(::Type{BackwardPass}, vf::DefaultValueFunction, m::SDD
             saveduals!(m.storage.duals[end], sp)
         end
     else
-        @assert JuMP.solve(sp) == :Optimal
+        if sp.solvehook == nothing
+            @assert JuMP.solve(sp) == :Optimal
+        else
+            @assert JuMP.solve(sp, forward_pass = false) == :Optimal
+        end
         push!(m.storage.objective, getobjectivevalue(sp))
         push!(m.storage.scenario, 0)
         push!(m.storage.probability, 1.0)
