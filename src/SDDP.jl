@@ -42,7 +42,33 @@ include("solve_asyncronous.jl")
 include("visualiser/visualise.jl")
 
 immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
+"""
+    SDDPModel(;kwargs...) do ...
 
+    end
+
+# Description
+
+This function constructs an SDDPModel.
+
+# Required Keyword arguments
+ * `stages::Int`
+ The number of stages in the problem. A stage is defined as each step in time at
+ which a decion can be made. Defaults to `1`.
+ * `objective_bound::Float64`
+
+ * `solver::MathProgBase.AbstractMathProgSolver`
+
+# Optional Keyword arguments
+
+ * `cut_oracle`
+ * `risk_measure`
+ * `scenario_probability`
+ * `markov_transition`
+
+# Returns
+    * `m`: the `SDDPModel`
+"""
 function SDDPModel(build!::Function;
     sense                = :Min,
     stages::Int          = 1,
