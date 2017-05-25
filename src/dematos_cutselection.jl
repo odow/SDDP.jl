@@ -4,8 +4,6 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-export DematosCutOracle
-
 immutable DematosCutOracle <: AbstractCutOracle
     cuts::Vector{Cut}
     non_dominated_count::Vector{Int}

@@ -5,15 +5,13 @@
 #############################################################################
 
 #   Average Value at Risk
-#   (1 - λ) * E[x] + λ * AV@R(1-β)[x]
-export NestedAVaR
-
+#   λ * E[x] + (1 - λ) * AV@R(1-β)[x]
 immutable NestedAVaR <: AbstractRiskMeasure
     lambda::Float64
     beta::Float64
     function NestedAVaR(lambda::Float64, beta::Float64)
         if lambda > 1.0 || lambda < 0.0
-            error("Lambda must be in the range [0, 1]. Increasing values of lambda are more risk averse. lambda=0 is identical to taking the expectation.")
+            error("Lambda must be in the range [0, 1]. Increasing values of lambda are less risk averse. lambda=1 is identical to taking the expectation.")
         end
         if beta > 1.0 || beta < 0.0
             error("Beta must be in the range [0, 1]. Increasing values of beta are less risk averse. beta=1 is identical to taking the expectation.")
@@ -21,7 +19,32 @@ immutable NestedAVaR <: AbstractRiskMeasure
         new(lambda, beta)
     end
 end
-NestedAVaR(;lambda=0.0, beta=0.0) = NestedAVaR(lambda, beta)
+
+"""
+    NestedAVaR(;lambda=0.0, beta=0.0)
+
+# Description
+
+A risk measure that is a convex combination of Expectation and Average Value @ Risk
+(also called Conditional Value @ Risk).
+
+    λ * E[x] + (1 - λ) * AV@R(1-β)[x]
+
+# Keyword Arguments
+
+ * `lambda`
+Convex weight on the expectation (`(1-lambda)` weight is put on the AV@R component.
+Inreasing values of `lambda` are less risk averse (more weight on expecattion)
+
+ * `beta`
+ The quantile at which to calculate the Average Value @ Risk. Increasing values
+ of `beta` are less risk averse. If `beta=0`, then the AV@R component is the
+ worst case risk measure.
+
+# Returns
+    `m::NestedAVaR<:AbstractRiskMeasure`
+"""
+NestedAVaR(;lambda=1.0, beta=0.0) = NestedAVaR(lambda, beta)
 
 function modifyprobability!(
     measure::NestedAVaR,                    # risk measure to be overloaded
@@ -34,9 +57,16 @@ function modifyprobability!(
     )
     ismax = getsense(m) == :Max
     @assert length(newp) == length(p) == length(theta)  # sanity
+    if measure.beta < 1e-8
+        # worst case
+        (mn, idx) = findmin(theta)
+        newp .= (1 - measure.lambda) * p
+        newp[idx] += measure.lambda
+        return
+    end
     q = 0.0                                         # Quantile collected so far
     for i in sortperm(theta, rev=!ismax)                # For each scenario in order
-        if q >=  measure.beta                               # We have collected the beta quantile
+        if q >  measure.beta                               # We have collected the beta quantile
             riskaverse  = 0.0                       # riskaverse contribution is zero
         else
             riskaverse  = min(p[i], measure.beta-q) / measure.beta  # risk averse contribution
