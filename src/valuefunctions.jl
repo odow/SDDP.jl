@@ -121,7 +121,7 @@ function solvesubproblem!(::Type{BackwardPass}, vf::DefaultValueFunction, m::SDD
             if sp.solvehook == nothing
                 @assert JuMP.solve(sp) == :Optimal
             else
-                @assert JuMP.solve(sp, forward_pass = false) == :Optimal
+                @assert JuMP.solve(sp, require_duals = true) == :Optimal
             end
             push!(m.storage.objective, getobjectivevalue(sp))
             push!(m.storage.scenario, i)
@@ -135,7 +135,7 @@ function solvesubproblem!(::Type{BackwardPass}, vf::DefaultValueFunction, m::SDD
         if sp.solvehook == nothing
             @assert JuMP.solve(sp) == :Optimal
         else
-            @assert JuMP.solve(sp, forward_pass = true) == :Optimal
+            @assert JuMP.solve(sp, require_duals = true) == :Optimal
         end
         push!(m.storage.objective, getobjectivevalue(sp))
         push!(m.storage.scenario, 0)
