@@ -38,7 +38,7 @@ function stageobjective!(vf::DefaultValueFunction, sp::JuMP.Model, obj)
     else
         JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
     end
-    sp.objSense = SDDP.getsense(sp)
+    JuMP.setobjectivesense(sp, getsense(sp))
 end
 
 getstageobjective(vf::DefaultValueFunction, sp::JuMP.Model) = getvalue(vf.stageobjective)
