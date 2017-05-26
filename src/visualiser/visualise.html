@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="visualise.css">
+</head>
+<body>
+    <div style="width:240px; margin:auto; text-align:center">
+        bincount = <span id="bincount-value">…</span><br>
+        <input type="range" value="10" min="1" max="30" step="1" id="bincount"><br>
+
+        <input type="checkbox" id="chk_histogram" value="true" checked> Add Histograms<br>
+    </div>
+    <div class="plots"></div>
+    <script src="d3.v3.min.js" charset="utf-8"></script>
+    <script src="visualise.js"></script>
+    <script>runmain(<!--DATA-->);</script>
+
+</body>
+</html>
