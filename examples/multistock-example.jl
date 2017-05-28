@@ -20,6 +20,8 @@
 
 using SDDP, JuMP, Clp, Base.Test
 
+srand(100)
+
 XI = collect(Base.product([linspace(0, 0.3, 3) for i in 1:3]...))[:]
 
 m = SDDPModel(
@@ -47,6 +49,6 @@ end
 @time status = SDDP.solve(m, max_iterations = 100)
 @test isapprox(SDDP.getbound(m), -4.349, atol=0.01)
 
-results = simulate(m, 1000)
+results = simulate(m, 5000)
 
 @test isapprox(mean(r[:objective] for r in results), -4.349, atol=0.02)
