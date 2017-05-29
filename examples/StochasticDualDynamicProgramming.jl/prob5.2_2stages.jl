@@ -5,7 +5,7 @@
 
 #==
     This example comes from
-        https://github.com/blegat/StochasticDualDynamicProgramming.jl/blob/fe5ef82db6befd7c8f11c023a639098ecb85737d/test/prob5.2_3stages.jl
+        https://github.com/blegat/StochasticDualDynamicProgramming.jl/blob/fe5ef82db6befd7c8f11c023a639098ecb85737d/test/prob5.2_2stages.jl
 ==#
 
 using SDDP, JuMP, Base.Test, Clp
@@ -20,7 +20,7 @@ p2 = [0.9, 0.1]
 
 mod = SDDPModel(
                   sense = :Min,
-                 stages = 3,
+                 stages = 2,
                  solver = ClpSolver(),
         objective_bound = 0,
         scenario_probability = [ Float64[], p2, p2 ]
@@ -46,14 +46,13 @@ mod = SDDPModel(
             @scenario(sp, s=1:size(D2, 2), sum(y[:,j]) + penalty >= D2[j,s])
         end
     end
-    if t == 3
-        # no investment in last stage
-        @constraint(sp, sum(v) == 0)
+    if t == 2
+        @constraint(sp, sum(v) == 0) # no investment in last stage
     end
 end
 
 @time status = SDDP.solve(mod,
-    max_iterations = 30,
+    max_iterations = 50,
     simulation = MonteCarloSimulation(
         frequency = 10,
         min       = 100,
@@ -62,6 +61,6 @@ end
     )
 )
 
-@test isapprox(getbound(mod), 406712.49, atol=0.1)
+@test isapprox(getbound(mod), 340315.52, atol=0.1)
 sim = simulate(mod, 1, [:x, :penalty])
-@test isapprox(sim[1][:x][1], [2986,0,7329,854])
+@test isapprox(sim[1][:x][1], [5085,1311,3919,854])

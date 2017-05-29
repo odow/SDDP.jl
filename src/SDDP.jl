@@ -130,7 +130,8 @@ function SDDPModel(build!::Function;
                 build!(mod, t)
             end
             # Uniform scenario probability for now
-            scenario_prob = getel(Vector, scenario_probability, t, i)
+            scenario_prob = getel(Vector{Float64}, scenario_probability, t, i)
+
             if length(scenario_prob) != 0 && length(scenario_prob) != length(ext(mod).scenarios)
                 error("Invalid number of scenarios.")
             end

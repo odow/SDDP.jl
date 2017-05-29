@@ -42,6 +42,7 @@ const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
 
     @testset "StochasticDualDynamicProgramming.jl" begin
         for example in [
+                "prob5.2_2stages.jl",
                 "prob5.2_3stages.jl"
             ]
             @testset "$example" begin
