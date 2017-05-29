@@ -4,4 +4,4 @@ JuMP 0.16
 Distributions
 Clp
 JSON
-Compat
+Compat 0.17
