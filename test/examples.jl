@@ -35,19 +35,29 @@ const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
                 "multistock-example.jl"
             ]
             @testset "$example" begin
-                include(joinpath(examples_dir, example))
+                include(joinpath(examples_dir, "StochDynamicProgramming.jl", example))
+            end
+        end
+    end
+
+    @testset "StochasticDualDynamicProgramming.jl" begin
+        for example in [
+                "prob5.2_3stages.jl"
+            ]
+            @testset "$example" begin
+                include(joinpath(examples_dir, "StochasticDualDynamicProgramming.jl", example))
             end
         end
     end
 
     @testset "FAST" begin
         for example in [
-                "FAST_hydro_thermal.jl",
-                "FAST_quickstart.jl",
-                "FAST_production_management_multiple_stages.jl"
+                "hydro_thermal.jl",
+                "quickstart.jl",
+                "production_management_multiple_stages.jl"
             ]
             @testset "$example" begin
-                include(joinpath(examples_dir, example))
+                include(joinpath(examples_dir, "FAST", example))
             end
         end
     end
