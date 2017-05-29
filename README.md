@@ -9,7 +9,8 @@ Pkg.clone("https://github.com/odow/SDDP.jl.git")
 ```
 
 ## Quick Start Guide
-See the `/examples` folder for example usage
+For now the best documentation is probably contained in the examples. There is
+quite a few and they provide a fairly comprehensive overview of the library.
 
 ### Initialising the model object
 The first step is to initialise the SDDP model object. We do this using the following syntax:

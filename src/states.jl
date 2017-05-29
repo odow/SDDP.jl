@@ -69,14 +69,15 @@ _copy(x::Expr) = copy(x)
 Define a new state variable in the subproblem `sp`.
 
 # Arguments
-    `sp`               the subproblem
-    `stateleaving`     any valid JuMP `@variable` syntax to define the value of the state variable at the end of the stage
-    `stateentering`    any valid JuMP `@variable` syntax to define the value of the state variable at the beginning of the stage
+ * `sp`               the subproblem
+ * `stateleaving`     any valid JuMP `@variable` syntax to define the value of the state variable at the end of the stage
+ * `stateentering`    any valid JuMP `@variable` syntax to define the value of the state variable at the beginning of the stage
 
 # Examples
-    @state(sp, 0 <= x[i=1:3] <= 1, x0==rand(3)[i] )
-    @state(sp,      y        <= 1, y0==0.5        )
-    @state(sp,      z            , z0==0.5        )
+ * `@state(sp, 0 <= x[i=1:3] <= 1, x0==rand(3)[i] )`
+ * `@state(sp,      y        <= 1, y0==0.5        )`
+ * `@state(sp,      z            , z0==0.5        )`
+
 """
 macro state(sp, x, x0)
     sp = esc(sp)                        # escape the model
@@ -113,19 +114,23 @@ end
         stateleaving2, stateentering2
     end)
 
+# Description
+
 Define a new state variables in the subproblem `sp`.
 
-Arguments:
-    sp               the subproblem
-    stateleaving     any valid JuMP `@variable` syntax to define the value of the state variable at the end of the stage
-    stateentering    any valid JuMP `@variable` syntax to define the value of the state variable at the beginning of the stage
+# Arguments
+* `sp`               the subproblem
+* `stateleaving`     any valid JuMP `@variable` syntax to define the value of the state variable at the end of the stage
+* `stateentering`    any valid JuMP `@variable` syntax to define the value of the state variable at the beginning of the stage
 
-Usage:
+# Usage
+
     @states(sp, begin
         0 <= x[i=1:3] <= 1, x0==rand(3)[i]
              y        <= 1, y0==0.5
              z            , z0==0.5
      end)
+
 """
 macro states(m, b)
     @assert b.head == :block || error("Invalid syntax for @states")
