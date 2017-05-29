@@ -94,4 +94,5 @@ end
 @test isapprox(getbound(m), 93.267, atol=1e-3)
 @test solvestatus == :max_iterations
 
-rmprocs(workers())
+# on Julia v0.5 waitfor defaults to 0.0 ...
+rmprocs(workers(), waitfor=60.0)
