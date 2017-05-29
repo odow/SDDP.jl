@@ -46,6 +46,7 @@ immutable State
 end
 
 immutable Scenario
+    # probability::Float64
     # list of row indices
     constraints::Vector{LinearConstraint}
     # list of RHS values

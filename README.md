@@ -83,25 +83,6 @@ Risk (also called Conditional Value @ Risk): λ * E[x] + (1 - λ) * AV@R(1-β)[x
          of `beta` are less risk averse. If `beta=0`, then the AV@R component is the
          worst case risk measure.
 
-
- * `scenario_probability`
- Support vector for the scenarios. Defaults to uniform distribution. This can
- either be
-
-    1. a vector that has the same length as the number of scenarios (identical
-    in each stage). In which case `scenario_probability[s]` is the probability
-    of scenario `s` occuring in each stage;
-
-    2. a vector containing a probability vector for each stage. In which case
-    `scenario_probability[t][s]` is the probability of scenario `s` occuring in
-    stage `t`;
-
-    3. a vector (with the same length as the number of stages) of vectors (where
-    `scenario_probability[t]` has the same length as the number of markov states
-    in stage `t`) of probability vectors. In which case
-    `scenario_probability[t][i][s]` is the probability of scenario `s` occurring
-    in markov state `i` in stage `t`.
-
  * `markov_transition`
 
 # Returns

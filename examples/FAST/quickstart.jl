@@ -18,9 +18,7 @@ m = SDDPModel(
                 solver = ClpSolver(),
                 objective_bound = -5
                     ) do sp, t
-
     @state(sp, x >= 0, x0==0)
-
     if t == 1
         stageobjective!(sp, x)
     else
@@ -29,7 +27,6 @@ m = SDDPModel(
         @scenario(sp, d = [2, 3], s <= d)
         stageobjective!(sp, -2s)
     end
-
 end
 
 status = solve(m, max_iterations = 3)

@@ -64,14 +64,16 @@ _copy(x::Expr) = copy(x)
 """
     @state(sp, stateleaving, stateentering)
 
+# Description
+
 Define a new state variable in the subproblem `sp`.
 
-Arguments:
-    sp               the subproblem
-    stateleaving     any valid JuMP `@variable` syntax to define the value of the state variable at the end of the stage
-    stateentering    any valid JuMP `@variable` syntax to define the value of the state variable at the beginning of the stage
+# Arguments
+    `sp`               the subproblem
+    `stateleaving`     any valid JuMP `@variable` syntax to define the value of the state variable at the end of the stage
+    `stateentering`    any valid JuMP `@variable` syntax to define the value of the state variable at the beginning of the stage
 
-Usage:
+# Examples
     @state(sp, 0 <= x[i=1:3] <= 1, x0==rand(3)[i] )
     @state(sp,      y        <= 1, y0==0.5        )
     @state(sp,      z            , z0==0.5        )

@@ -74,7 +74,6 @@ function SDDPModel(build!::Function;
     stages::Int          = 1,
     objective_bound      = nothing,
     markov_transition    = [ones(Float64, (1,1)) for t in 1:stages],
-    scenario_probability = Float64[],
     risk_measure::AbstractRiskMeasure = Expectation(),
     cut_oracle::AbstractCutOracle = DefaultCutOracle(),
     solver::JuMP.MathProgBase.AbstractMathProgSolver = UnsetSolver(),
@@ -129,23 +128,9 @@ function SDDPModel(build!::Function;
             else
                 build!(mod, t)
             end
-            # Uniform scenario probability for now
-            scenario_prob = getel(Vector{Float64}, scenario_probability, t, i)
-
-            if length(scenario_prob) != 0 && length(scenario_prob) != length(ext(mod).scenarios)
-                error("Invalid number of scenarios.")
-            end
-            if length(scenario_prob) == 0
-                for i in 1:length(ext(mod).scenarios)
-                    push!(ext(mod).scenarioprobability, 1 / length(ext(mod).scenarios))
-                end
-            else
-                if abs(sum(scenario_prob) - 1) > 1e-6 # check probability
-                    error("You must specify a discrete probability distribution that sums to 1.0")
-                end
-                for i in 1:length(ext(mod).scenarios)
-                    push!(ext(mod).scenarioprobability, scenario_prob[i])
-                end
+            # # Uniform scenario probability for now
+            if length(ext(mod).scenarios) != length(ext(mod).scenarioprobability)
+                setscenarioprobability!(mod, ones(length(ext(mod).scenarios)) / length(ext(mod).scenarios))
             end
             push!(stage.subproblems, mod)
         end

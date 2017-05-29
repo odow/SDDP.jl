@@ -45,8 +45,8 @@ macro scenario(sp, kw, c)
     constrexpr = :($(c.args[2]) - $(c.args[3])) # LHS - RHS
     quote
         rhs = Float64[]                         # intialise RHS vector
-        for scenariovalue in $scenariovalues    # for each scenario
-            $(esc(kw.args[1])) = scenariovalue  # set the scenariovalue
+        for val in $scenariovalues    # for each scenario
+            $(esc(kw.args[1])) = val  # set the scenariovalue
             push!(rhs, -$(esc(constrexpr)).constant)
          end
         $(esc(kw.args[1])) = $scenariovalues[1] # initialise with first scenario

@@ -24,21 +24,14 @@ m = SDDPModel(
                 objective_bound = -50
                     ) do sp, t
 
-    @state(sp, x[i=1:N] >= 0, x0==0)
-    @variables(sp, begin
-        s[i=1:N] >= 0
-        demand
-    end)
-
-    @constraints(sp, begin
-        [i=1:N], s[i] <= x0[i]
-        sum(s) <= demand
-    end)
+    @state(sp,    x[i=1:N] >= 0, x0==0)
+    @variable(sp, s[i=1:N] >= 0)
+    @constraint(sp, s .<= x0)
 
     if t == 1
-        @constraint(sp, demand ==  0)
+        @constraint(sp, sum(s) ==  0)
     else
-        @scenario(sp, d = DEMAND, demand == d)
+        @scenario(sp, d = DEMAND, sum(s) <= d)
     end
 
     stageobjective!(sp, dot(C, x) - dot(S, s))

@@ -22,8 +22,7 @@ mod = SDDPModel(
                   sense = :Min,
                  stages = 3,
                  solver = ClpSolver(),
-        objective_bound = 0,
-        scenario_probability = [ Float64[], p2, p2 ]
+        objective_bound = 0
                                 ) do sp, t
 
     @state(sp, x[i=1:n] >= 0, x0 == 0)
@@ -45,6 +44,7 @@ mod = SDDPModel(
         for j in 1:m
             @scenario(sp, s=1:size(D2, 2), sum(y[:,j]) + penalty >= D2[j,s])
         end
+        setscenarioprobability!(sp, p2)
     end
     if t == 3
         # no investment in last stage

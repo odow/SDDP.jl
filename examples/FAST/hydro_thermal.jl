@@ -19,30 +19,16 @@ m = SDDPModel(
                 solver = ClpSolver(),
                 objective_bound = 0.0
                     ) do sp, t
-
-    C = 5
-    V = 8
-    d = 6
-
-    @state(sp, 0 <= x <= V, x0==0)
-    @variables(sp, begin
-        y >= 0
-        p >= 0
-        rainfall
-    end)
-    @constraints(sp, begin
-        p + y >= d
-        x <= x0 + rainfall - y
-    end)
-
+    @state(sp, 0 <= x <= 8, x0==0)
+    @variable(sp, y >= 0)
+    @variable(sp, p >= 0)
+    @constraint(sp, p + y >= 6)
     if t == 1
-        @constraint(sp, rainfall ==  mean(RAINFALL))
+        @constraint(sp, x <= x0 + mean(RAINFALL) - y)
     else
-        @scenario(sp, r = RAINFALL, rainfall == r)
+        @scenario(sp, r = RAINFALL, x <= x0 + r - y)
     end
-
-    stageobjective!(sp, C * p)
-
+    stageobjective!(sp, 5 * p)
 end
 
 status = solve(m, max_iterations = 10)
