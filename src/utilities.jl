@@ -83,7 +83,7 @@ function rtol(x, y)
     if abs(y) < 1e-6
         return x - y
     else
-        (x - y) / y
+        (x - y) / abs(y)
     end
 end
 

@@ -40,9 +40,9 @@ function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)
             humanize(l.upper_statistical_bound, "8.3f")
         )
         if is_min
-            tol = -100*rtol(l.bound, l.lower_statistical_bound)
+            tol = 100*rtol(l.lower_statistical_bound, l.bound)
         else
-            tol = 100*rtol(l.bound, l.upper_statistical_bound)
+            tol = -100*rtol(l.upper_statistical_bound, l.bound)
         end
         rtol_string = humanize(tol, "5.1f")
     end
