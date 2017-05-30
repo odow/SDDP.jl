@@ -30,7 +30,7 @@ function printfooter(io::IO, m::SDDPModel, status)
     -------------------------------------------------------------------------------""")
 end
 
-function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)
+function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, ismiminisation=true)
     if printmean
         bound_string = string("     ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.3f"), "     ")
         rtol_string = "      "
@@ -39,7 +39,8 @@ function Base.print(io::IO, l::SolutionLog, printmean::Bool=false)
             humanize(l.lower_statistical_bound, "8.3f"), " ",
             humanize(l.upper_statistical_bound, "8.3f")
         )
-        rtol_string = humanize(100*rtol(l.bound, l.upper_statistical_bound), "5.1f")
+        comparison_bound = ismiminisation?l.lower_statistical_bound:l.upper_statistical_bound
+        rtol_string = humanize(100*rtol(l.bound, comparison_bound), "5.1f")
     end
 
     println(io,
@@ -71,9 +72,9 @@ function printtofile(foo::Function, filename::String, args...)
 end
 
 
-function Base.print(s::String, l::SolutionLog, printmean::Bool=false)
+function Base.print(s::String, l::SolutionLog, printmean::Bool=false, ismiminisation=true)
     open(s, "a") do file
-        print(file, l, printmean)
+        print(file, l, printmean, ismiminisation)
     end
 end
 

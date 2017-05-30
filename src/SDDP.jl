@@ -317,7 +317,7 @@ end
 
 function addsolutionlog!(m, settings, iteration, objective, lower, upper, cutting_time, simulations, simulation_time, total_time, printsingle)
     push!(m.log, SolutionLog(iteration, objective, lower, upper, cutting_time, simulations, simulation_time, total_time))
-    print(print, settings, m.log[end], printsingle)
+    print(print, settings, m.log[end], printsingle, m.sense == :Min)
 end
 
 function testconvergence(m::SDDPModel, settings::Settings)
