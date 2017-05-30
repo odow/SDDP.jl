@@ -39,8 +39,12 @@ function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, ismiminisatio
             humanize(l.lower_statistical_bound, "8.3f"), " ",
             humanize(l.upper_statistical_bound, "8.3f")
         )
-        comparison_bound = ismiminisation?l.lower_statistical_bound:l.upper_statistical_bound
-        rtol_string = humanize(100*rtol(l.bound, comparison_bound), "5.1f")
+        if isminimisation
+            tol = -100*rtol(l.bound, l.lower_statistical_bound)
+        else
+            tol = 100*rtol(l.bound, l.upper_statistical_bound)
+        end
+        rtol_string = humanize(tol, "5.1f")
     end
 
     println(io,
