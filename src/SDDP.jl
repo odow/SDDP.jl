@@ -10,6 +10,8 @@ module SDDP
 
 using JuMP, Distributions, JSON
 
+const JuMPVERSION = Pkg.installed("JuMP")
+
 using Compat
 
 export SDDPModel,

@@ -44,7 +44,11 @@ function storekey!(::Type{Val{:stageobjective}}, store, markov::Int, scenarioidx
 end
 
 function storekey!{T}(::Type{Val{T}}, store, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
-    push!(store, getvalue(getvariable(sp, T)))
+    if JuMPVERSION < v"0.17"
+        push!(store, getvalue(getvariable(sp, T)))
+    else
+        push!(store, getvalue(sp[T]))
+    end
 end
 
 function savesolution!(solutionstore::Dict{Symbol, Any}, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
