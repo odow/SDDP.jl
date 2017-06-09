@@ -42,9 +42,9 @@ mod = SDDPModel(
 
     if t != 1 # no uncertainty in first stage
         for j in 1:m
-            @scenario(sp, s=1:size(D2, 2), sum(y[:,j]) + penalty >= D2[j,s])
+            @noise(sp, s=1:size(D2, 2), sum(y[:,j]) + penalty >= D2[j,s])
         end
-        setscenarioprobability!(sp, p2)
+        setnoiseprobability!(sp, p2)
     end
     if t == 3
         # no investment in last stage

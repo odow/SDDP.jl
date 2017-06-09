@@ -65,13 +65,13 @@ function modifyprobability!(
         return
     end
     q = 0.0                                         # Quantile collected so far
-    for i in sortperm(theta, rev=!ismax)                # For each scenario in order
+    for i in sortperm(theta, rev=!ismax)                # For each noise in order
         if q >  measure.beta                               # We have collected the beta quantile
             riskaverse  = 0.0                       # riskaverse contribution is zero
         else
             riskaverse  = min(p[i], measure.beta-q) / measure.beta  # risk averse contribution
         end
-        newp[i] = (1-measure.lambda) * p[i] + measure.lambda * riskaverse  # take the biggest proportion of the scenario possible
+        newp[i] = (1-measure.lambda) * p[i] + measure.lambda * riskaverse  # take the biggest proportion of the noise possible
         q += riskaverse * measure.beta                      # Update total quantile collected
     end
 end

@@ -26,7 +26,7 @@ function add_to_output!(output::Dict{String, Any}, sym, value)
 	end
 end
 
-function adddata!(plot_dict::Dict{String, Any}, results::Vector{Dict{Symbol, Any}}, func::Function)
+function adddata!(plot_dict::Dict{String, Any}, results::Vector, func::Function)
 	plot_dict["data"] = Vector{Float64}[]
 	for replication=1:length(results)
 		push!(plot_dict["data"], Float64[])
@@ -41,7 +41,7 @@ function adddata!(plot_dict::Dict{String, Any}, results::Vector{Dict{Symbol, Any
 		end
 	end
 end
-adddata!(plot_dict::Dict{String, Any}, results::Dict{Symbol, Any}, func::Function) = adddata!(plot_dict, [results], func)
+adddata!(plot_dict::Dict{String, Any}, results::Dict, func::Function) = adddata!(plot_dict, [results], func)
 
 function launch_plot(html_file)
 	if is_windows()
@@ -52,7 +52,43 @@ function launch_plot(html_file)
         run(`xdg-open $(html_file)`)
     end
 end
+"""
+	@visualise(results, replication, stage, begin
+		... plot definitions ...
+	end)
 
+# Description
+	Plot everything using interactive javascript. This will launch an HTML page
+    to explore.
+
+# Usage
+
+        `@visualise(results, i, t, begin
+            ... one line for each plot ...
+        end)`
+
+    where results is the vector of result dictionaries from simulate(), i is the
+    simulation index (1:length(results)), and t is the stage index (1:T).
+
+    Each plot line gets transformed into an anonymous function
+        (results, i, t) -> ... plot line ...
+    so can be any valid Julia syntax that uses results, i, or t as an argument.
+
+    After the plot definition, keyword arguments can be used (in parenthesises):
+        `title`       - set the title of the plot
+        `ylabel`      - set the yaxis label
+        `xlabel`      - set the xaxis label
+        `interpolate` - interpolate lines between stages. Defaults to "linear"
+        see https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md
+            #line_interpolate for all options
+# Results Object
+
+	`results::Vector{Dict{Symbol, Any}}` is a vector of dictionaries where each
+	dictionary corresponds to one simulation (therefore there will be
+	`N = length(results)` lines plotted in each graph).
+
+
+"""
 macro visualise(results, replication, stage, block)
 	@assert block.head == :block || error("Invalid syntax for @visualise")
 	kw = Expr(:tuple,)

@@ -9,8 +9,8 @@
 
     This function assembles a new cut using the following inputs
     + measure::AbstractRiskMeasure - used to dispatch
-    + newprobabilities                  - the probability support of the scenarios. Should sum to one
-    + oldprobabilities::Vector{Float64} - the probability support of the scenarios. Should sum to one
+    + newprobabilities                  - the probability support of the noises. Should sum to one
+    + oldprobabilities::Vector{Float64} - the probability support of the noises. Should sum to one
     + x::Vector{Float64}                - objectives
 """
 modifyprobability!(measure::AbstractRiskMeasure, newprobabilities, oldprobabilities, x) = error("You need to overload a `modifyprobability` method for the measure of type $(typeof(measure)).")

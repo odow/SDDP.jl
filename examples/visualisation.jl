@@ -91,10 +91,10 @@ m = SDDPModel(
         dispatched[r=1:N], sum(dispatch[r, level] for level in 1:length(turbine(r).flowknots)) <= 1
     end)
 
-    # rainfall scenarios
+    # rainfall noises
     for i in 1:N
         if stage > 1 # in future stages random inflows
-            @scenario(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
+            @noise(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
         else # in the first stage deterministic inflow
             @constraint(sp, inflow[i] <= valley_chain[i].inflows[1])
         end

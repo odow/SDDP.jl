@@ -153,14 +153,14 @@ function samplesubproblem(stage::Stage, last_markov_state::Int)
     return newidx, getsubproblem(stage, newidx)
 end
 
-savesolution!(solutionstore::Void, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int) = nothing
+savesolution!(solutionstore::Void, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int) = nothing
 
 
 function solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model)
     @assert JuMP.solve(sp) == :Optimal
 end
 solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
-hasscenarios(sp::JuMP.Model) = length(ext(sp).scenarios) > 0
+hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
 
 function savemodel!(filename::String, m::SDDPModel)
     for stage in stages(m)

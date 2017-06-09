@@ -31,7 +31,7 @@ m = SDDPModel(
     if t == 1
         @constraint(sp, sum(s) ==  0)
     else
-        @scenario(sp, d = DEMAND, sum(s) <= d)
+        @noise(sp, d = DEMAND, sum(s) <= d)
     end
 
     stageobjective!(sp, dot(C, x) - dot(S, s))

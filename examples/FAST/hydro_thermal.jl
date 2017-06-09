@@ -26,7 +26,7 @@ m = SDDPModel(
     if t == 1
         @constraint(sp, x <= x0 + mean(RAINFALL) - y)
     else
-        @scenario(sp, r = RAINFALL, x <= x0 + r - y)
+        @noise(sp, r = RAINFALL, x <= x0 + r - y)
     end
     stageobjective!(sp, 5 * p)
 end
