@@ -17,7 +17,7 @@ using Compat
 export SDDPModel,
     # inputs
     @state, @states,
-    @scenario, @scenarios, setscenarioprobability!,
+    @noise, @noises, setnoiseprobability!,
     stageobjective!,
     # cut oracles
     DefaultCutOracle, DematosCutOracle,
@@ -33,14 +33,14 @@ include("typedefinitions.jl")
 include("utilities.jl")
 include("riskmeasures.jl")
 include("states.jl")
-include("scenarios.jl")
+include("noises.jl")
 include("cutoracles.jl")
 include("valuefunctions.jl")
 include("simulate.jl")
 include("MIT_licensedcode.jl")
 include("print.jl")
 
-include("dematos_cutselection.jl")
+include("dematos_cutoracle.jl")
 include("avar_riskaversion.jl")
 include("solve_asyncronous.jl")
 include("visualiser/visualise.jl")
@@ -67,7 +67,7 @@ This function constructs an SDDPModel.
 
  * `cut_oracle`
  * `risk_measure`
- * `scenario_probability`
+ * `noise_probability`
  * `markov_transition`
 
 # Returns
@@ -106,7 +106,7 @@ function SDDPModel(build!::Function;
         stage = Stage(t, getel(Array{Float64, 2}, markov_transition, t))
         # check that
         if num_args == 2 && size(markov_transition[t], 2) > 1
-            error("""Because you specified a scenario tree in the SDDPModel constructor, you need to use the
+            error("""Because you specified a noise tree in the SDDPModel constructor, you need to use the
 
                 SDDPModel() do sp, stage, markov_state
                     ... model definition ...
@@ -132,9 +132,9 @@ function SDDPModel(build!::Function;
             else
                 build!(mod, t)
             end
-            # # Uniform scenario probability for now
-            if length(ext(mod).scenarios) != length(ext(mod).scenarioprobability)
-                setscenarioprobability!(mod, ones(length(ext(mod).scenarios)) / length(ext(mod).scenarios))
+            # # Uniform noise probability for now
+            if length(ext(mod).noises) != length(ext(mod).noiseprobability)
+                setnoiseprobability!(mod, ones(length(ext(mod).noises)) / length(ext(mod).noises))
             end
             push!(stage.subproblems, mod)
         end
@@ -146,7 +146,7 @@ end
 samplesubproblem(stage::Stage, last_markov_state::Int, solutionstore::Void) = samplesubproblem(stage, last_markov_state)
 
 function samplesubproblem(stage::Stage, last_markov_state, solutionstore::Dict{Symbol, Any})
-    if length(solutionstore[:scenario]) >= stage.t
+    if length(solutionstore[:noise]) >= stage.t
         idx = solutionstore[:markov][stage.t]
         return idx, getsubproblem(stage, idx)
     else
@@ -154,20 +154,20 @@ function samplesubproblem(stage::Stage, last_markov_state, solutionstore::Dict{S
     end
 end
 
-samplescenario(sp::JuMP.Model, solutionstore::Void) = samplescenario(sp)
+samplenoise(sp::JuMP.Model, solutionstore::Void) = samplenoise(sp)
 
-function samplescenario(sp::JuMP.Model, solutionstore::Dict{Symbol, Any})
-    if length(solutionstore[:scenario])>=ext(sp).stage
-        idx = solutionstore[:scenario][ext(sp).stage]
-        return idx, ext(sp).scenarios[idx]
+function samplenoise(sp::JuMP.Model, solutionstore::Dict{Symbol, Any})
+    if length(solutionstore[:noise])>=ext(sp).stage
+        idx = solutionstore[:noise][ext(sp).stage]
+        return idx, ext(sp).noises[idx]
     else
-        return samplescenario(sp)
+        return samplenoise(sp)
     end
 end
 
 function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
     last_markov_state = 1
-    scenarioidx = 0
+    noiseidx = 0
     obj = 0.0
     for (t, stage) in enumerate(stages(m))
         # choose markov state
@@ -176,10 +176,10 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
             setstates!(m, sp)
         end
 
-        # choose and set RHS scenario
-        if hasscenarios(sp)
-            (scenarioidx, scenario) = samplescenario(sp, solutionstore)
-            setscenario!(sp, scenario)
+        # choose and set RHS noise
+        if hasnoises(sp)
+            (noiseidx, noise) = samplenoise(sp, solutionstore)
+            setnoise!(sp, noise)
         end
         # solve subproblem
         solvesubproblem!(ForwardPass, m, sp)
@@ -188,7 +188,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         # store state
         savestates!(stage.state, sp)
         # save solution for simulations (defaults to no-op)
-        savesolution!(solutionstore, last_markov_state, scenarioidx, sp, t)
+        savesolution!(solutionstore, last_markov_state, noiseidx, sp, t)
     end
     return obj
 end

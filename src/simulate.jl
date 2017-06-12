@@ -7,7 +7,7 @@
 function newsolutionstore(X::Vector{Symbol})
     d = Dict(
         :markov         => Int[],
-        :scenario       => Int[],
+        :noise       => Int[],
         :obj            => Float64[],
         :stageobjective => Float64[]
     )
@@ -17,9 +17,9 @@ function newsolutionstore(X::Vector{Symbol})
     d
 end
 
-storekey!(s::Symbol, store, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int) = storekey!(Val{s}, store, markov, scenarioidx, sp, t)
+storekey!(s::Symbol, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int) = storekey!(Val{s}, store, markov, noiseidx, sp, t)
 
-function storekey!(::Type{Val{:markov}}, store, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
+function storekey!(::Type{Val{:markov}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
     if length(store) < t
         push!(store, markov)
     else
@@ -27,23 +27,23 @@ function storekey!(::Type{Val{:markov}}, store, markov::Int, scenarioidx::Int, s
     end
 end
 
-function storekey!(::Type{Val{:scenario}}, store, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
+function storekey!(::Type{Val{:noise}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
     if length(store) < t
-        push!(store, scenarioidx)
+        push!(store, noiseidx)
     else
-        store[t] = scenarioidx
+        store[t] = noiseidx
     end
 end
 
-function storekey!(::Type{Val{:obj}}, store, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
+function storekey!(::Type{Val{:obj}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
     push!(store, getobjectivevalue(sp))
 end
 
-function storekey!(::Type{Val{:stageobjective}}, store, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
+function storekey!(::Type{Val{:stageobjective}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
     push!(store, getstageobjective(sp))
 end
 
-function storekey!{T}(::Type{Val{T}}, store, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
+function storekey!{T}(::Type{Val{T}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
     if JuMPVERSION < v"0.17"
         push!(store, getvalue(getvariable(sp, T)))
     else
@@ -51,9 +51,9 @@ function storekey!{T}(::Type{Val{T}}, store, markov::Int, scenarioidx::Int, sp::
     end
 end
 
-function savesolution!(solutionstore::Dict{Symbol, Any}, markov::Int, scenarioidx::Int, sp::JuMP.Model, t::Int)
+function savesolution!(solutionstore::Dict{Symbol, Any}, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
     for (key, store) in solutionstore
-        storekey!(key, store, markov, scenarioidx, sp, t)
+        storekey!(key, store, markov, noiseidx, sp, t)
     end
 end
 savevaluefunction!(store::Dict{Symbol, Any}, sp::JuMP.Model) = storevaluefunction!(store, valueoracle(sp), sp)
@@ -61,13 +61,13 @@ storevaluefunction!{C}(store::Dict{Symbol, Any}, ::DefaultValueFunction{C}, sp::
 
 function simulate{C}(m::SDDPModel{DefaultValueFunction{C}},
         variables::Vector{Symbol} = Symbol[];
-        scenarios::Vector{Int}    = zeros(Int, length(m.stages)),
+        noises::Vector{Int}    = zeros(Int, length(m.stages)),
         markovstates::Vector{Int} = ones(Int, length(m.stages))
     )
     store = newsolutionstore(variables)
     for t in 1:length(m.stages)
         push!(store[:markov], markovstates[t])
-        push!(store[:scenario], scenarios[t])
+        push!(store[:noise], noises[t])
     end
     obj = forwardpass!(m, Settings(), store)
     store[:objective] = obj

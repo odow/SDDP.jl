@@ -9,8 +9,8 @@ using SDDP, JuMP, Clp, Base.Test
 srand(11111)
 
 # Demand for newspapers
-# There are two equally probable scenarios in each stage
-#   Demand[stage, scenario]
+# There are two equally probable noises in each stage
+#   Demand[stage, noise]
 Demand = [
     10. 15.;
     12. 20.;
@@ -54,8 +54,8 @@ m = SDDPModel(
     end)
 
     # ====================
-    #   Scenarios
-    @scenarios(sp, D=Demand[stage,:], begin
+    #   Noises
+    @noises(sp, D=Demand[stage,:], begin
         sell <= D
         sell >= 0.5D
     end)
@@ -89,14 +89,14 @@ results = simulate(m, 500)
 
 historical_results = simulate(m, [:buy, :sell];
     markovstates = [1, 2, 1],
-    scenarios    = [1, 1, 1]
+    noises    = [1, 1, 1]
 )
 
 @test isapprox(historical_results[:objective], 85)
 
 historical_results2 = simulate(m, [:buy, :sell];
     markovstates = [1, 2, 1],
-    scenarios    = [2, 2, 2]
+    noises    = [2, 2, 2]
 )
 
 @test isapprox(historical_results2[:objective], 119)

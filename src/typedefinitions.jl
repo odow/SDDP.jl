@@ -45,7 +45,7 @@ immutable State
     constraint::LinearConstraint
 end
 
-immutable Scenario
+immutable Noise
     # probability::Float64
     # list of row indices
     constraints::Vector{LinearConstraint}
@@ -63,10 +63,10 @@ immutable SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:Abstr
     states::Vector{State}
     # an oracle to value function
     valueoracle::V
-    # vector of scenarios
-    scenarios::Vector{Scenario}
-    # probability[i] = probability of scenarios[i] occuring
-    scenarioprobability::Vector{Float64}
+    # vector of noises
+    noises::Vector{Noise}
+    # probability[i] = probability of noises[i] occuring
+    noiseprobability::Vector{Float64}
     # A risk measure to use for the subproblem
     riskmeasure::R
 end
@@ -82,7 +82,7 @@ function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound
         sense,
         State[],
         init!(deepcopy(value_function), m, sense, bound),
-        Scenario[],
+        Noise[],
         Float64[],
         risk_measure
     )
@@ -105,7 +105,7 @@ Stage(t=1, transition=Array{Float64}(0,0)) = Stage(t, JuMP.Model[], transition, 
 
 immutable Storage
     state::Vector{Float64}
-    scenario::CachedVector{Int}
+    noise::CachedVector{Int}
     markov::CachedVector{Int}
     duals::CachedVector{Vector{Float64}}
     objective::CachedVector{Float64}
@@ -122,7 +122,7 @@ Storage() = Storage(
     CachedVector(Float64)
 )
 function reset!(s::Storage)
-    reset!(s.scenario)
+    reset!(s.noise)
     reset!(s.markov)
     reset!(s.duals)
     reset!(s.objective)

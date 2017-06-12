@@ -31,7 +31,7 @@ m = SDDPModel(
 
     @variable(sp, 0 <= control <= 0.5)
 
-    @scenario(sp,
+    @noise(sp,
         noise = linspace(0, 0.3, 10),
         state == state0 + control - noise
     )

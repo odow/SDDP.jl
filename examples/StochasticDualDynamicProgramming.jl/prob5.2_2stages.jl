@@ -23,7 +23,7 @@ mod = SDDPModel(
                  stages = 2,
                  solver = ClpSolver(),
         objective_bound = 0,
-        # scenario_probability = [ Float64[], p2, p2 ]
+        # noise_probability = [ Float64[], p2, p2 ]
                                 ) do sp, t
 
     @state(sp, x[i=1:n] >= 0, x0 == 0)
@@ -43,9 +43,9 @@ mod = SDDPModel(
 
     if t != 1 # no uncertainty in first stage
         for j in 1:m
-            @scenario(sp, s=1:size(D2, 2), sum(y[:,j]) + penalty >= D2[j,s])
+            @noise(sp, s=1:size(D2, 2), sum(y[:,j]) + penalty >= D2[j,s])
         end
-        setscenarioprobability!(sp, p2)
+        setnoiseprobability!(sp, p2)
     end
     if t == 2
         @constraint(sp, sum(v) == 0) # no investment in last stage
