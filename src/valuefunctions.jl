@@ -56,7 +56,8 @@ end
 function readcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
     open(filename, "r") do file
         while true
-            line      = readline(f)
+            line      = readline(file)
+            line == nothing || line == "" && break
             items     = split(line, ",")
             stage     = parse(Int, items[1])
             ms        = parse(Int, items[2])
@@ -172,4 +173,3 @@ function rebuildsubproblem!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, m
     end
     m.stages[ex.stage].subproblems[ex.markovstate] = sp
 end
-rebuildsubproblem!(vf::DefaultValueFunction{DefaultCutOracle}, m::SDDPModel, sp::JuMP.Model) = nothing

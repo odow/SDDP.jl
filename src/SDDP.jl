@@ -27,7 +27,8 @@ export SDDPModel,
     Serial, Asyncronous,
     solve, simulate,
     @visualise,
-    getbound
+    getbound,
+    readcuts!
 
 include("typedefinitions.jl")
 include("utilities.jl")
