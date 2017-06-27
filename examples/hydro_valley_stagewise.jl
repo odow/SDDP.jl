@@ -73,7 +73,7 @@ m = SDDPModel(
         flow[i=2:N], reservoir[i] == reservoir0[i] + inflow[i] - outflow[i] - spill[i] + outflow[i-1] + spill[i-1]
 
         # Total quantity generated
-        generation_quantity == sum(turbine(r).powerknots[level] * dispatch[r,level] for r in 1:N for level in length(turbine(r).powerknots))
+        generation_quantity == sum(turbine(r).powerknots[level] * dispatch[r,level] for r in 1:N for level in 1:length(turbine(r).powerknots))
 
         # ------------------------------------------------------------------
         # Flow out
@@ -102,5 +102,5 @@ SDDP.solve(m,
     max_iterations = 20
 )
 
-@test isapprox(m.log[end].bound, 836.67, atol=1e-2)
-# objective value = 836.667
+@test isapprox(getbound(m), 838.33, atol=1e-2)
+# objective value = 838.33
