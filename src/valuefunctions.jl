@@ -1,4 +1,4 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2017, Oscar Dowson and contributors
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -53,10 +53,11 @@ function writecut!(filename::String, cut::Cut, stage::Int, markovstate::Int)
     end
 end
 
-function readcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
+function loadcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
     open(filename, "r") do file
         while true
-            line      = readline(f)
+            line      = readline(file)
+            line == nothing || line == "" && break
             items     = split(line, ",")
             stage     = parse(Int, items[1])
             ms        = parse(Int, items[2])
@@ -64,13 +65,11 @@ function readcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
             coefficients = [parse(Float64, i) for i in items[4:end]]
             cut = Cut(intercept, coefficients)
             sp = getsubproblem(m, stage, ms)
-            storecut!(valueoracle(sp).cutmanager, m, sp, cut)
-        end
-    end
-    for (t, stage) in enumerate(stages(m))
-        t == length(stages(m)) && continue
-        for sp in subproblems(stage)
-            rebuildsubproblem!(m, sp)
+            vf = valueoracle(sp)
+            # Add cut to the cut manager
+            storecut!(vf.cutmanager, m, sp, cut)
+            # Add cut as a constraint to the subproblem
+            addcut!(vf, sp, cut)
         end
     end
 end
@@ -104,7 +103,7 @@ function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, settings::
 end
 storecut!(m::SDDPModel, sp::JuMP.Model, cut::Cut, args...) = nothing
 
-function addcut!(vf::DefaultValueFunction, sp, cut::Cut)
+function addcut!(vf::DefaultValueFunction, sp::JuMP.Model, cut::Cut)
     ex = ext(sp)
     affexpr = AffExpr(cut.intercept)
     for i in 1:nstates(sp)
@@ -172,4 +171,5 @@ function rebuildsubproblem!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, m
     end
     m.stages[ex.stage].subproblems[ex.markovstate] = sp
 end
+
 rebuildsubproblem!(vf::DefaultValueFunction{DefaultCutOracle}, m::SDDPModel, sp::JuMP.Model) = nothing
