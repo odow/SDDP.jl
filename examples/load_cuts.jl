@@ -1,4 +1,4 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2017, Oscar Dowson and contributors
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -29,13 +29,14 @@ Transition = Array{Float64, 2}[
     [0.3 0.7; 0.3 0.7]
   ]
 
-function getmodel()
+function getmodel(;oracle=DefaultCutOracle())
     # Initialise SDDP Model
     m = SDDPModel(
             sense             = :Max,
             stages            = 3,
             objective_bound   = 1000,
             markov_transition = Transition,
+            cut_oracle        = oracle,
             risk_measure      = NestedAVaR(
                                  beta   = 0.6,
                                  lambda = 0.5
@@ -77,7 +78,7 @@ end
 m1 = getmodel()
 cuts_file_name = "newsvendor_cuts.csv"
 solvestatus = SDDP.solve(m1,
-    max_iterations = 50,
+    max_iterations = 30,
     cut_output_file = cuts_file_name)
 
 @assert solvestatus == :max_iterations
@@ -88,11 +89,21 @@ results = simulate(m1, 500)
 
 # Build a completely new model and load old cuts
 m2 = getmodel()
-readcuts!(m2, cuts_file_name)
+loadcuts!(m2, cuts_file_name)
 
 # Simulating the new model gives the same results as before
 srand(22222)
 results = simulate(m2, 500)
+@test isapprox(mean(r[:objective] for r in results), 97.92, atol=0.1)
+
+# Build a completely new model with a different cut manager
+m3 = getmodel(oracle=DematosCutOracle())
+# Even dominated cuts are added and kept
+loadcuts!(m3, cuts_file_name)
+
+# Check again that we have the same/very similar results
+srand(22222)
+results = simulate(m3, 500)
 @test isapprox(mean(r[:objective] for r in results), 97.92, atol=0.1)
 
 rm(cuts_file_name)

@@ -1,4 +1,4 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2017, Oscar Dowson and contributors
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -31,7 +31,8 @@ function storecut!(o::DematosCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
     current_state = getstage(m, ext(sp).stage).state
     if length(current_state) == 0
         # probably in the async version
-        # where we're adding a cut but having seen a state yet
+        # where we're adding a cut but haven't seen a state yet
+        # or loading cuts to a new model
         return
     end
     # add to oracle, and assume last cut is the best
