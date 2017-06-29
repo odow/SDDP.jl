@@ -120,7 +120,7 @@ function solvesubproblem!(::Type{BackwardPass}, vf::DefaultValueFunction, m::SDD
             if sp.solvehook == nothing
                 @assert JuMP.solve(sp) == :Optimal
             else
-                @assert JuMP.solve(sp, require_duals = true) == :Optimal
+                @assert JuMP.solve(sp, require_duals = true, iteration = length(m.log)) == :Optimal
             end
             push!(m.storage.objective, getobjectivevalue(sp))
             push!(m.storage.noise, i)
@@ -134,7 +134,7 @@ function solvesubproblem!(::Type{BackwardPass}, vf::DefaultValueFunction, m::SDD
         if sp.solvehook == nothing
             @assert JuMP.solve(sp) == :Optimal
         else
-            @assert JuMP.solve(sp, require_duals = true) == :Optimal
+            @assert JuMP.solve(sp, require_duals = true, iteration = length(m.log)) == :Optimal
         end
         push!(m.storage.objective, getobjectivevalue(sp))
         push!(m.storage.noise, 0)
