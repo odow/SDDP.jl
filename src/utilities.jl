@@ -162,7 +162,7 @@ end
 solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
 hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
 
-function JuMPsolve{T<:IterationDirection}(::Type{T}, m::SDDPModel, sp::JuMP.Model)
+function JuMPsolve{T<:IterationDirection}(::Type{T}, ::SDDPModel, sp::JuMP.Model)
     @assert JuMP.solve(sp) == :Optimal
 end
 
