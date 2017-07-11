@@ -157,10 +157,14 @@ savesolution!(solutionstore::Void, markov::Int, noiseidx::Int, sp::JuMP.Model, t
 
 
 function solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model)
-    @assert JuMP.solve(sp) == :Optimal
+    JuMPsolve(direction, m, sp)
 end
 solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
 hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
+
+function JuMPsolve{T<:IterationDirection}(::Type{T}, ::SDDPModel, sp::JuMP.Model)
+    @assert JuMP.solve(sp) == :Optimal
+end
 
 function savemodel!(filename::String, m::SDDPModel)
     for stage in stages(m)
