@@ -12,6 +12,10 @@ Pkg.clone("https://github.com/odow/SDDP.jl.git")
 
 The documentation is still very incomplete, and the internals of the library need a tidy and a refactor, however the user-facing API from the examples should be stable enough to use.
 
+## SDDiP
+
+[@lkapelevich](https://github.com/lkapelevich) wrote an extension for SDDP.jl to solve multi-stage stochastic programs with binary state variables. Check it out at https://github.com/lkapelevich/SDDiP.jl!
+
 ## Quick Start Guide
 For now the best documentation is probably contained in the examples. There is
 quite a few and they provide a fairly comprehensive overview of the library.
