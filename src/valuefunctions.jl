@@ -84,7 +84,7 @@ function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, settings::
         view(m.storage.modifiedprobability.data, I),
         m.storage.probability.data[I],
         sp,
-        m.storage.state,
+        getstage(m, ex.stage).state,
         m.storage.duals.data[I],
         m.storage.objective.data[I]
     )
