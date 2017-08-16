@@ -1,13 +1,33 @@
-#Managing booking requests for rooms in a hotel
+#  Copyright 2017, Eyob Zewdie, Oscar Dowson
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#############################################################################
+
+#=
+    This example concerns the acceptance of booking requests for rooms in a
+    hotel in the leadup to a large event.
+
+    Each stage, we receive a booking request and can choose to accept or decline
+    it. Once accepted, bookings cannot be terminated.
+
+    Properly formulated, this problem requires binary state variables. However,
+    SDDP.jl cannot solve such problems. Therefore we solve the LP relaxation.
+
+    Checkout github.com/lkapelevich/SDDiP.jl for a multi-stage stochastic
+    programming solver with binary state variables.
+=#
 using SDDP, JuMP, Clp
+using Base.Test
 
-srand(111111)
+# Number of days for the event
+const NUMBER_OF_DAYS      = 6
+# Number of rooms in the hotel
+const NUMBER_OF_ROOMS     = 4
+# Number of booking requests we consider in the lead-up
+const NUMBER_OF_REQUESTS  = 7
 
-const NUMBER_OF_DAYS      = 6 # Number of days
-const NUMBER_OF_ROOMS     = 4 # Number of rooms (room 1 cost 1 dollar, room 2 cost 2 dollar etc.)
-const NUMBER_OF_REQUESTS  = 7 # Number of requests (i.e. stages)
-
-# revenue
+# revenue accrued if room `room` is booked on day `day`
 const REVENUE = [
     room - 0.5 + (day-1)*0.2
     for room in 1:NUMBER_OF_ROOMS, day in 1:NUMBER_OF_DAYS
@@ -90,12 +110,16 @@ m = SDDPModel(
 end
 
 solution = solve(m,
-     max_iterations = 1000,
-        # simulate the lower bound of the policy
-         simulation = MonteCarloSimulation(
-                        frequency = 50,
-                              min = 100,
-                             step = 100,
-                              max = 500
-              ),
+     max_iterations = 50,
+     # simulate the lower bound of the policy
+     simulation = MonteCarloSimulation(
+                    frequency = 50,
+                          min = 100,
+                         step = 100,
+                          max = 500
+      )
 )
+
+srand(111)
+# I get different answers running this same file with Clp
+@test isapprox(getbound(m), 39.0, atol=1.0)
