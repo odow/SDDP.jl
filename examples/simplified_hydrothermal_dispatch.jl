@@ -65,7 +65,7 @@ solvestatus = solve(m,
                         max       = 100,
                         termination = false
                     ),
-     #print_level=0
+     print_level=0
 )
 
 @test solvestatus == :converged 
