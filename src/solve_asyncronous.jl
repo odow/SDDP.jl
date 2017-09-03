@@ -167,7 +167,7 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
 
                         addsolutionlog!(m, settings, it, best_objective, simulation_objective, simulation_objective, cutting_time , simulations, simulation_time, total_time, true)
 
-                        status, keep_iterating = testconvergence(m, settings)
+                        status, keep_iterating = testboundstall(m, settings, status, true)
                         !keep_iterating && break
 
                     elseif iterationtype == :simulation
