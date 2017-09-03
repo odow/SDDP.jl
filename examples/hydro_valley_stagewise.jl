@@ -99,7 +99,8 @@ m = SDDPModel(
 end
 
 SDDP.solve(m,
-    max_iterations = 20
+    max_iterations = 20,
+    print_level = 0
 )
 
 @test isapprox(getbound(m), 838.33, atol=1e-2)

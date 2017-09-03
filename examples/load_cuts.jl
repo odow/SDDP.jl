@@ -79,6 +79,7 @@ m1 = getmodel()
 cuts_file_name = "newsvendor_cuts.csv"
 solvestatus = SDDP.solve(m1,
     max_iterations = 30,
+    print_level = 0,
     cut_output_file = cuts_file_name)
 
 @assert solvestatus == :max_iterations

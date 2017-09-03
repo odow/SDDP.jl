@@ -301,7 +301,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
 
         addsolutionlog!(m, settings, iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
 
-        status, keep_iterating = testboundstall(m, settingsm status, keep_iterating)
+        status, keep_iterating = testboundstall(m, settings, status, keep_iterating)
 
         if total_time > settings.time_limit
             status = :time_limit

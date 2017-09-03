@@ -39,7 +39,8 @@ m = SDDPModel(
     stageobjective!(sp, (sin(3 * stage) - 1) * control)
 end
 
-@time status = SDDP.solve(m, max_iterations = 50)
+@time status = SDDP.solve(m, max_iterations = 50,
+print_level = 0)
 @test isapprox(SDDP.getbound(m), -1.471, atol=0.001)
 
 results = simulate(m, 1000)

@@ -31,6 +31,7 @@ m = SDDPModel(
     stageobjective!(sp, 5 * p)
 end
 
-status = solve(m, max_iterations = 10)
+status = solve(m, max_iterations = 10,
+print_level = 0)
 
 @test getbound(m) == 10

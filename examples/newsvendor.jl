@@ -68,6 +68,7 @@ end
 
 @time solvestatus = SDDP.solve(m,
     max_iterations = 20,
+    print_level = 0,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
                         min       = 10,
