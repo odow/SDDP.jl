@@ -75,4 +75,4 @@ solvestatus = solve(m,
 )
 
 @test solvestatus == :converged 
-@test isapprox(getbound(m), 57380, atol=1e-2)
+@test isapprox(getbound(m), 57295, atol=1e-2)
