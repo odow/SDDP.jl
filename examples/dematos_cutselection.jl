@@ -108,6 +108,7 @@ end
 
 SDDP.solve(m,
     max_iterations          = 10,
+    print_level = 0,
     cut_selection_frequency = 2
 )
 

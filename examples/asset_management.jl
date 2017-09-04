@@ -48,5 +48,6 @@ m = SDDPModel(
 end
 
 srand(111)
-@time solve(m, max_iterations = 25)
+@time solve(m, max_iterations = 25,
+print_level = 0)
 @test isapprox(getbound(m), 1.514, atol=1e-4)

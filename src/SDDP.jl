@@ -301,7 +301,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
 
         addsolutionlog!(m, settings, iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
 
-        status, keep_iterating = testconvergence(m, settings)
+        status, keep_iterating = testboundstall(m, settings, status, keep_iterating)
 
         if total_time > settings.time_limit
             status = :time_limit
@@ -323,14 +323,16 @@ function addsolutionlog!(m, settings, iteration, objective, lower, upper, cuttin
     print(print, settings, m.log[end], printsingle, m.sense == :Min)
 end
 
-function testconvergence(m::SDDPModel, settings::Settings)
-    if settings.bound_convergence.iterations > 1 && length(m.log) >= settings.bound_convergence.iterations
-        last_n = map(l->l.bound, m.log[end-settings.bound_convergence.iterations+1:end])
-        if all(last_n - mean(last_n) .< settings.bound_convergence.atol) || all(abs.(last_n / mean(last_n)-1) .<    settings.bound_convergence.rtol)
-            return :bound_convergence, false
+function testboundstall(m::SDDPModel, settings::Settings, status::Symbol, keep_iterating::Bool)
+    if keep_iterating
+        if settings.bound_convergence.iterations > 1 && length(m.log) >= settings.bound_convergence.iterations
+            last_n = map(l->l.bound, m.log[end-settings.bound_convergence.iterations+1:end])
+            if all(last_n - mean(last_n) .< settings.bound_convergence.atol) || all(abs.(last_n / mean(last_n)-1) .<    settings.bound_convergence.rtol)
+                return :bound_convergence, false
+            end
         end
     end
-    return :solving, true
+    return status, keep_iterating
 end
 
 """
