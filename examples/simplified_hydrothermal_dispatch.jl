@@ -12,8 +12,8 @@
 # & v_t + u_t + s_t = v_{t-1} + a_t \\
 # & 0 \leq v_t \leq 200 \\
 # & 0 \leq u_t \leq 150 \\
-# & 0 \leq g_{1,t} \leq 50 \\
-# & 0 \leq g_{2,t} \leq 50 \\
+# & 0 \leq g_{1,t} \leq 100 \\
+# & 0 \leq g_{2,t} \leq 100 \\
 # \end{array}
 
 # load some packages
@@ -69,10 +69,10 @@ solvestatus = solve(m,
                         min       = 10,
                         step      = 10,
                         max       = 100,
-                        termination = false
+                        termination = true
                     ),
      print_level=0
 )
 
 @test solvestatus == :converged 
-@test isapprox(getbound(m), 7500, atol=1e-2)
+@test isapprox(getbound(m), 57380, atol=1e-2)
