@@ -21,7 +21,7 @@ immutable NestedAVaR <: AbstractRiskMeasure
 end
 
 """
-    NestedAVaR(;lambda=0.0, beta=0.0)
+    NestedAVaR(;lambda=1.0, beta=1.0)
 
 # Description
 
@@ -44,7 +44,7 @@ Inreasing values of `lambda` are less risk averse (more weight on expecattion)
 # Returns
     `m::NestedAVaR<:AbstractRiskMeasure`
 """
-NestedAVaR(;lambda=1.0, beta=0.0) = NestedAVaR(lambda, beta)
+NestedAVaR(;lambda=1.0, beta=1.0) = NestedAVaR(lambda, beta)
 
 function modifyprobability!(
     measure::NestedAVaR,                    # risk measure to be overloaded
@@ -60,8 +60,8 @@ function modifyprobability!(
     if measure.beta < 1e-8
         # worst case
         (mn, idx) = findmin(theta)
-        newp .= (1 - measure.lambda) * p
-        newp[idx] += measure.lambda
+        newp .= measure.lambda * p
+        newp[idx] += (1 - measure.lambda)
         return
     end
     q = 0.0                                         # Quantile collected so far
@@ -71,7 +71,7 @@ function modifyprobability!(
         else
             riskaverse  = min(p[i], measure.beta-q) / measure.beta  # risk averse contribution
         end
-        newp[i] = (1-measure.lambda) * p[i] + measure.lambda * riskaverse  # take the biggest proportion of the noise possible
+        newp[i] = measure.lambda * p[i] + (1-measure.lambda) * riskaverse  # take the biggest proportion of the noise possible
         q += riskaverse * measure.beta                      # Update total quantile collected
     end
 end
