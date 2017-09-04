@@ -77,7 +77,7 @@ arguments. Some are required, and some are optional.
  * `risk_measure::SDDP.AbstractRiskMeasure`
  A `SDDP.AbstractRiskMeasure` to use. Currently only `Expectation()` and
  `NestedAVaR` are valid.
-    * `NestedAVaR(;lambda=0.0, beta=0.0)`
+    * `NestedAVaR(;lambda=1.0, beta=1.0)`
     A risk measure that is a convex combination of Expectation and Average Value @
 Risk (also called Conditional Value @ Risk): λ * E[x] + (1 - λ) * AV@R(1-β)[x]
 
