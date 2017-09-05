@@ -15,12 +15,16 @@
 
 # Description
 
-Perform a 'change-of-probabilities' transformation.
+Calculate the risk-adjusted probability of each scenario using the
+'change-of-probabilities' approach of Philpott, de Matos, and Finardi,(2013). On
+solving multistage stochastic programs with coherent risk measures. Operations
+Research 61(4), 957-970.
 
 # Arguments
  * `measure::AbstractRiskMeasure`
  The risk measure
  * `riskadjusted_distribution`
+ A new probability distribution
  * `original_distribution::Vector{Float64}`
  The original probability distribution.
  * `observations::Vector{Float64}`
