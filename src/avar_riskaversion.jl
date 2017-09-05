@@ -58,7 +58,11 @@ function modifyprobability!(measure::NestedAVaR,
     @assert length(riskadjusted_distribution) == length(original_distribution) == length(observations)
     if measure.beta < 1e-8
         # worst case
-        (mn, idx) = findmin(observations)
+        if ismax
+            idx = indmin(observations)
+        else
+            idx = indmax(observations)
+        end
         riskadjusted_distribution .= measure.lambda * original_distribution
         riskadjusted_distribution[idx] += (1 - measure.lambda)
         return
