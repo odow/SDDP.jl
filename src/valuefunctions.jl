@@ -83,10 +83,9 @@ function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, settings::
     modifyprobability!(ex.riskmeasure,
         view(m.storage.modifiedprobability.data, I),
         m.storage.probability.data[I],
-        sp,
-        getstage(m, ex.stage).state,
-        m.storage.duals.data[I],
-        m.storage.objective.data[I]
+        m.storage.objective.data[I],
+        m,
+        sp
     )
     cut = constructcut(m, sp)
 

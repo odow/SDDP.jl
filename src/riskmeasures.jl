@@ -5,27 +5,41 @@
 #############################################################################
 
 """
-    modifyprobability!(measure::AbstractRiskMeasure, newprobabilities, oldprobabilities, x)
+    modifyprobability!(measure::AbstractRiskMeasure,
+            riskadjusted_distribution,
+            original_distribution::Vector{Float64},
+            observations::Vector{Float64},
+            m::SDDPModel,
+            sp::JuMP.Model
+    )
 
-    This function assembles a new cut using the following inputs
-    + measure::AbstractRiskMeasure - used to dispatch
-    + newprobabilities                  - the probability support of the noises. Should sum to one
-    + oldprobabilities::Vector{Float64} - the probability support of the noises. Should sum to one
-    + x::Vector{Float64}                - objectives
+# Description
+
+Perform a 'change-of-probabilities' transformation.
+
+# Arguments
+ * `measure::AbstractRiskMeasure`
+ The risk measure
+ * `riskadjusted_distribution`
+ * `original_distribution::Vector{Float64}`
+ The original probability distribution.
+ * `observations::Vector{Float64}`
+ The vector of objective values from the next stage
+ problems (one for each scenario).
+ * `m::SDDPModel`
+ The full SDDP model
+ * `sp::JuMP.Model`
+ The stage problem that the cut will be added to.
 """
-modifyprobability!(measure::AbstractRiskMeasure, newprobabilities, oldprobabilities, x) = error("You need to overload a `modifyprobability` method for the measure of type $(typeof(measure)).")
-
-# a more expansive method that can be overloaded
-modifyprobability!(
-    measure::AbstractRiskMeasure,           # risk measure to be overloaded
-    newprobabilities,      # vector of new probabilities (to by modified in place)
-    oldprobabilities::Vector{Float64},      # vector of old probabilities
-    m::JuMP.Model,
-    x::Vector{Float64},                     # vector of state values
-    pi::Vector{Vector{Float64}},            # vector (for each outcome) of dual vectors (dual for each state)
-    theta::Vector{Float64}                  # vector of future value/cost values
-    ) = modifyprobability!(measure, newprobabilities, oldprobabilities, theta)
-
+function modifyprobability!(measure::AbstractRiskMeasure,
+        riskadjusted_distribution,
+        original_distribution::Vector{Float64},
+        observations::Vector{Float64},
+        m::SDDPModel,
+        sp::JuMP.Model
+    )
+    error("You need to overload a `modifyprobability!` method for the measure of type $(typeof(measure)).")
+end
 
 # ==============================================================================
 #   The Expectation risk measure:
@@ -33,9 +47,13 @@ modifyprobability!(
 
 immutable Expectation <: AbstractRiskMeasure end
 
-modifyprobability!(
-    measure::Expectation,
-    newprobabilities::AbstractVector,
-    oldprobabilities::Vector{Float64},
-    x::Vector{Float64}
-    ) = (newprobabilities .= oldprobabilities)
+function modifyprobability!(::Expectation,
+    riskadjusted_distribution::AbstractVector,
+    original_distribution::Vector{Float64},
+    observations::Vector{Float64},
+    m::SDDPModel,
+    sp::JuMP.Model
+    )
+    riskadjusted_distribution .= original_distribution
+    return nothing
+end
