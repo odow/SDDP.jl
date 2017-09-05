@@ -21,8 +21,6 @@ end
 
 getsense(::Type{Max}) = :Max
 getsense(::Type{Min}) = :Min
-getsense(s::Symbol) = (s==:Min)?Min:Max
-
 getsense(m::JuMP.Model) = getsense(ext(m).sense)
 function worstcase(s)
     if s==:Min

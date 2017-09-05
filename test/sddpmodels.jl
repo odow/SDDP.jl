@@ -10,10 +10,15 @@
 
 @testset "SDDPModel" begin
     @testset "Test kwargs" begin
-        @test_throws Exception SDDPModel(sense=:Minimisation) do sp, t
+        # bad sense
+        @test_throws Exception SDDPModel(sense=:Minimization, stages=3, objective_bound=10) do sp, t
         end
+        # test sp is subproblem
         m = SDDPModel(sense=:Max, stages=3, objective_bound=10) do sp, t
+            @test SDDP.isext(sp)
         end
         @test length(m.stages) == 3
+        # can't get bound of unsolved problem
+        @test_throws Exception getbound(m)
     end
 end
