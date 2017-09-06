@@ -156,10 +156,9 @@ end
 savesolution!(solutionstore::Void, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int) = nothing
 
 
-function solvesubproblem!(direction, valuefunction, m::SDDPModel, sp::JuMP.Model)
+function solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model)
     JuMPsolve(direction, m, sp)
 end
-solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model) = solvesubproblem!(direction, valueoracle(sp), m, sp)
 hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
 
 function JuMPsolve{T<:IterationDirection}(::Type{T}, ::SDDPModel, sp::JuMP.Model)
@@ -221,4 +220,12 @@ function dominates(sense, trial, incumbent)
         return trial < incumbent
     end
     error("Sense $sense not recognised")
+end
+
+function cuttoaffexpr(sp::Model, cut::Cut)
+    x = AffExpr(cut.intercept)
+    for (idx, coef) in enumerate(cut.coefficients)
+        append!(x, coef * states(sp)[idx].variable)
+    end
+    return x
 end
