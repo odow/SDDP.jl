@@ -8,6 +8,9 @@ function setnoise!(sp::JuMP.Model, noise::Noise)
     for (c, v) in zip(noise.constraints, noise.values)
         JuMP.setRHS(c, v)
     end
+    if noise.has_objective_noise
+        stageobjective!(valueoracle(sp), sp, noise.obj)
+    end
 end
 
 function samplenoise(sp::JuMP.Model)
@@ -63,7 +66,7 @@ end
 function registernoiseconstraint!(sp::JuMP.Model, con::LinearConstraint, rhs::Vector{Float64})
     if length(ext(sp).noises) == 0
         for r in rhs
-            push!(ext(sp).noises, Noise([con], [r]))
+            push!(ext(sp).noises, Noise(false, AffExpr(), [con], [r]))
         end
     else
         @assert length(ext(sp).noises) == length(rhs)
@@ -101,4 +104,46 @@ macro noises(m, kw, blk)
     end
     push!(code.args, :(nothing))
     return code
+end
+
+"""
+    @stageobjective!(sp, kw=noises, objective)
+
+# Description
+
+Define an objective with stagewise noise
+
+# Arguments
+
+# Examples
+
+    @stageobjective(sp, w=1:2, w * x)
+    @stageobjective(sp, i=1:2, w[i]^2 * x)
+    @stageobjective(sp, i=1:2, x[i])
+
+"""
+macro stageobjective!(sp, kw, obj)
+    sp = esc(sp)                                # escape the model
+    @assert kw.head == KW_SYM                   # check its a keyword
+    noisevalues = esc(kw.args[2])            # get the vector of values
+    quote
+        for (i, val) in enumerate($noisevalues)    # for each noise
+            $(esc(kw.args[1])) = val  # set the noisevalue
+            registernoiseobjective!($sp, $(esc(obj)), i)
+         end
+    end
+end
+
+function registernoiseobjective!(sp::JuMP.Model, objective, idx::Int)
+    # cases. noises exist. in which case go through
+    if length(ext(sp).noises) >= idx
+        ext(sp).noises[idx].has_objective_noise = true
+        ext(sp).noises[idx].obj = objective
+    elseif idx == length(ext(sp).noises) + 1
+        push!(ext(sp).noises, Noise(true, objective, [], []))
+        # check we haven't added any constraint noises yet
+        if length(ext(sp).noises[1].constraints) > 0
+            error("You must have the same number of noises in the objective function as the constraint RHS's.")
+        end
+    end
 end

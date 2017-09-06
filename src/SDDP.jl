@@ -18,7 +18,7 @@ export SDDPModel,
     # inputs
     @state, @states,
     @noise, @noises, setnoiseprobability!,
-    stageobjective!,
+    stageobjective!, @stageobjective!,
     # cut oracles
     DefaultCutOracle, DematosCutOracle,
     # risk measures

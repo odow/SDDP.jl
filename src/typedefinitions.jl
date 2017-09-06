@@ -45,8 +45,9 @@ immutable State
     constraint::LinearConstraint
 end
 
-immutable Noise
-    # probability::Float64
+type Noise
+    has_objective_noise::Bool
+    obj::AffExpr
     # list of row indices
     constraints::Vector{LinearConstraint}
     # list of RHS values

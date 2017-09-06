@@ -9,10 +9,9 @@ getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
 
 type DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
     cutmanager::C
-    stageobjective::QuadExpr
     theta::JuMP.Variable
 end
-DefaultValueFunction(cutoracle=DefaultCutOracle()) = DefaultValueFunction(cutoracle, QuadExpr(0.0), JuMP.Variable(JuMP.Model(), 0))
+DefaultValueFunction(cutoracle=DefaultCutOracle()) = DefaultValueFunction(cutoracle, JuMP.Variable(JuMP.Model(), 0))
 
 summarise{C}(::Type{DefaultValueFunction{C}}) = "Default"
 
@@ -22,7 +21,6 @@ function init!{C}(vf::DefaultValueFunction{C}, m::JuMP.Model, sense, bound)
 end
 
 function stageobjective!(vf::DefaultValueFunction, sp::JuMP.Model, obj)
-    append!(vf.stageobjective, QuadExpr(obj))
     if ext(sp).finalstage
         JuMP.setobjective(sp, getsense(sp), obj)
     else
@@ -31,7 +29,13 @@ function stageobjective!(vf::DefaultValueFunction, sp::JuMP.Model, obj)
     JuMP.setobjectivesense(sp, getsense(sp))
 end
 
-getstageobjective(vf::DefaultValueFunction, sp::JuMP.Model) = getvalue(vf.stageobjective)
+function getstageobjective(vf::DefaultValueFunction, sp::JuMP.Model)
+    if ext(sp).finalstage
+        return JuMP.getobjectivevalue(sp)
+    else
+        return JuMP.getobjectivevalue(sp) - JuMP.getvalue(vf.theta)
+    end
+end
 
 function writecut!(filename::String, cut::Cut, stage::Int, markovstate::Int)
     open(filename, "a") do file
@@ -140,7 +144,6 @@ function rebuildsubproblem!{C<:AbstractCutOracle}(m::SDDPModel{DefaultValueFunct
     end
     sp = Model(solver = m.lpsolver)
 
-    vf.stageobjective = QuadExpr(0.0)
     vf.theta = futureobjective!(ex.sense, sp, ex.problembound)
 
     sp.ext[:SDDP] = ex
