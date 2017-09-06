@@ -4,19 +4,9 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-stageobjective!(vf::AbstractValueFunction, sp::JuMP.Model, obj...) = error("You need this method")
-getstageobjective(vf::AbstractValueFunction, sp::JuMP.Model) = error("You need this method")
-init!(vf::AbstractValueFunction, m::JuMP.Model, sense, bound) = error("You need this method")
-modifyvaluefunction!(vf::AbstractValueFunction, m::SDDPModel, settings::Settings, sp::JuMP.Model) = error("You need this method")
-rebuildsubproblem!(vf::AbstractValueFunction, m::SDDPModel, sp::JuMP.Model) = nothing
-summarise{T<:AbstractValueFunction}(::Type{T}) = "$T"
-
 stageobjective!(sp::JuMP.Model, obj...) = stageobjective!(valueoracle(sp), sp, obj...)
 getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
-modifyvaluefunction!(m::SDDPModel, settings::Settings, sp::JuMP.Model) = modifyvaluefunction!(valueoracle(sp), m, settings, sp)
-rebuildsubproblem!(m::SDDPModel, sp::JuMP.Model) = rebuildsubproblem!(valueoracle(sp), m, sp)
 
-# mutable struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
 type DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
     cutmanager::C
     stageobjective::QuadExpr
@@ -74,8 +64,9 @@ function loadcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
     end
 end
 
-function modifyvaluefunction!(vf::DefaultValueFunction, m::SDDPModel, settings::Settings, sp::JuMP.Model)
+function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings::Settings, sp::JuMP.Model)
     ex = ext(sp)
+    vf = valueoracle(sp)
     I = 1:length(m.storage.objective)
     for i in I
         m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
@@ -111,7 +102,7 @@ function addcut!(vf::DefaultValueFunction, sp::JuMP.Model, cut::Cut)
     _addcut!(ex.sense, sp, vf.theta, affexpr)
 end
 
-function solvesubproblem!(::Type{BackwardPass}, vf::DefaultValueFunction, m::SDDPModel, sp::JuMP.Model)
+function solvesubproblem!{V<:DefaultValueFunction}(::Type{BackwardPass}, m::SDDPModel{V}, sp::JuMP.Model)
     ex = ext(sp)
     if hasnoises(sp)
         for i in 1:length(ex.noiseprobability)
@@ -137,7 +128,8 @@ function solvesubproblem!(::Type{BackwardPass}, vf::DefaultValueFunction, m::SDD
     end
 end
 
-function rebuildsubproblem!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, m::SDDPModel, sp::JuMP.Model)
+function rebuildsubproblem!{C<:AbstractCutOracle}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model)
+    vf = valueoracle(sp)
     n = n_args(m.build!)
     ex = ext(sp)
     for i in 1:nstates(sp)
@@ -163,4 +155,4 @@ function rebuildsubproblem!{C<:AbstractCutOracle}(vf::DefaultValueFunction{C}, m
     m.stages[ex.stage].subproblems[ex.markovstate] = sp
 end
 
-rebuildsubproblem!(vf::DefaultValueFunction{DefaultCutOracle}, m::SDDPModel, sp::JuMP.Model) = nothing
+rebuildsubproblem!(m::SDDPModel{DefaultValueFunction{DefaultCutOracle}}, sp::JuMP.Model) = nothing
