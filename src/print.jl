@@ -18,7 +18,7 @@ function printheader{T}(io::IO, m::SDDPModel{T}, solve_type)
             Value Function: $(summarise(T))
     -------------------------------------------------------------------------------""")
     println(io, "              Objective              |  Cut  Passes    Simulations   Total    ")
-    println(io, "      Expected        Bound   % Gap  |   #     Time     #    Time    Time     ")
+    println(io, "     Simulation       Bound   % Gap  |   #     Time     #    Time    Time     ")
     println(io, "-------------------------------------------------------------------------------")
 end
 
