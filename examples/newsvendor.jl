@@ -31,11 +31,12 @@ Transition = Array{Float64, 2}[
 
 # Initialise SDDP Model
 m = SDDPModel(
-        sense             = :Max,
+        sense             = :Min,
         stages            = 3,
-        objective_bound   = 1000,
+        objective_bound   = -1000,
         markov_transition = Transition,
-        solver          = ClpSolver()
+        solver            = ClpSolver(),
+        cut_oracle        = DematosCutOracle()
                                                 ) do sp, stage, markov_state
 
     # ====================
@@ -58,7 +59,7 @@ m = SDDPModel(
 
     # ====================
     #   Objective
-    stageobjective!(sp, sell * RetailPrice - buy * PurchasePrice[markov_state])
+    stageobjective!(sp, -sell * RetailPrice + buy * PurchasePrice[markov_state])
 
     # ====================
     #   Dynamics constraint
@@ -68,7 +69,7 @@ end
 
 @time solvestatus = SDDP.solve(m,
     max_iterations = 20,
-    print_level = 0,
+    cut_selection_frequency = 10,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
                         min       = 10,
@@ -81,5 +82,5 @@ end
                             )
 )
 
-@test isapprox(getbound(m), 97.9, atol=1e-3)
+@test isapprox(getbound(m), -97.9, atol=1e-3)
 @test solvestatus == :bound_convergence
