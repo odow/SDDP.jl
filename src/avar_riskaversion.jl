@@ -46,32 +46,42 @@ Inreasing values of `lambda` are less risk averse (more weight on expecattion)
 """
 NestedAVaR(;lambda=1.0, beta=1.0) = NestedAVaR(lambda, beta)
 
-function modifyprobability!(
-    measure::NestedAVaR,                    # risk measure to be overloaded
-    newp,      # vector of new probabilities (to by modified in place)
-    p::Vector{Float64},      # vector of old probabilities
-    m::JuMP.Model,
-    x::Vector{Float64},                     # vector of state values
-    pi::Vector{Vector{Float64}},            # vector (for each outcome) of dual vectors (dual for each state)
-    theta::Vector{Float64}                  # vector of future value/cost values
+function modifyprobability!(measure::NestedAVaR,
+    riskadjusted_distribution,
+    original_distribution::Vector{Float64},
+    observations::Vector{Float64},
+    m::SDDPModel,
+    sp::JuMP.Model
     )
-    ismax = getsense(m) == :Max
-    @assert length(newp) == length(p) == length(theta)  # sanity
+    ismax = getsense(sp) == :Max
+    # sanity
+    @assert length(riskadjusted_distribution) == length(original_distribution) == length(observations)
     if measure.beta < 1e-8
         # worst case
-        (mn, idx) = findmin(theta)
-        newp .= measure.lambda * p
-        newp[idx] += (1 - measure.lambda)
+        if ismax
+            idx = indmin(observations)
+        else
+            idx = indmax(observations)
+        end
+        riskadjusted_distribution .= measure.lambda * original_distribution
+        riskadjusted_distribution[idx] += (1 - measure.lambda)
         return
     end
-    q = 0.0                                         # Quantile collected so far
-    for i in sortperm(theta, rev=!ismax)                # For each noise in order
-        if q >  measure.beta                               # We have collected the beta quantile
-            riskaverse  = 0.0                       # riskaverse contribution is zero
+    # Quantile collected so far
+    q = 0.0
+    # For each noise in order
+    for i in sortperm(observations, rev=!ismax)
+        if q >  measure.beta
+            # We have collected the beta quantile, therefore
+            # AV@R contribution is zero
+            avar_prob  = 0.0
         else
-            riskaverse  = min(p[i], measure.beta-q) / measure.beta  # risk averse contribution
+            # AV@R
+            avar_prob  = min(original_distribution[i], measure.beta-q) / measure.beta
         end
-        newp[i] = measure.lambda * p[i] + (1-measure.lambda) * riskaverse  # take the biggest proportion of the noise possible
-        q += riskaverse * measure.beta                      # Update total quantile collected
+        # take the biggest proportion of the noise possible
+        riskadjusted_distribution[i] = measure.lambda * original_distribution[i] + (1-measure.lambda) * avar_prob
+        # Update total quantile collected
+        q += avar_prob * measure.beta
     end
 end
