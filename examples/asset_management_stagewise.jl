@@ -35,19 +35,19 @@ m = SDDPModel(
     @state(sp, bonds_out >= 0, bonds_in==0)
     if t == 1
         @constraint(sp, stock_out + bonds_out == 55)
-        stageobjective!(sp, 0)
+        @stageobjective!(sp, 0)
     elseif t > 1 && t < 4
-        @constraint(sp, rstock[i] * stock_in + rbonds[i] * bonds_in == stock_out + bonds_out)
-        @stageobjective!(sp, stock_penalty = [-0.01, 0.0, 0.01], stock_penalty * stock_out)
-        setnoiseprobability!(sp, [0.3, 0.3, 0.4])
+        @noise(sp, phi = [-1, 5], rstock[i] * stock_in + rbonds[i] * bonds_in + phi == stock_out + bonds_out)
+        @stageobjective!(sp, stock_penalty = [0.02, 0.0], -stock_penalty * stock_out)
+        setnoiseprobability!(sp, [0.6, 0.4])
     else
         @variable(sp, over  >= 0)
         @variable(sp, short >= 0)
         @constraint(sp, rstock[i] * stock_in + rbonds[i] * bonds_in - over + short == 80)
-        stageobjective!(sp, -over + 4*short)
+        @stageobjective!(sp, -over + 4*short)
     end
 end
 
 srand(111)
 @time solve(m, max_iterations = 25)
-@test isapprox(getbound(m), 1.602, atol=1e-4)
+@test isapprox(getbound(m), -4.491, atol=1e-3)

@@ -134,6 +134,12 @@ macro stageobjective!(sp, kw, obj)
     end
 end
 
+macro stageobjective!(sp, obj)
+    quote
+        stageobjective!($(esc(sp)), $(esc(obj)))
+    end
+end
+
 function registernoiseobjective!(sp::JuMP.Model, objective, idx::Int)
     # cases. noises exist. in which case go through
     if length(ext(sp).noises) >= idx
