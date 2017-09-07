@@ -79,7 +79,7 @@ function SDDPModel(build!::Function;
     stages::Int          = 1,
     objective_bound      = nothing,
     markov_transition    = [ones(Float64, (1,1)) for t in 1:stages],
-    risk_measure::AbstractRiskMeasure = Expectation(),
+    risk_measure = Expectation(),
     cut_oracle::AbstractCutOracle = DefaultCutOracle(),
     solver::JuMP.MathProgBase.AbstractMathProgSolver = UnsetSolver(),
     value_function       = DefaultValueFunction(cut_oracle),

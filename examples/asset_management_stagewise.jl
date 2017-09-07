@@ -28,8 +28,9 @@ m = SDDPModel(
         [0.5 0.5],
         [0.5 0.5; 0.5 0.5],
         [0.5 0.5; 0.5 0.5]
-    ]
-) do sp, t, i
+    ],
+    risk_measure = [Expectation(), Expectation(), NestedAVaR(lambda = 0.5, beta=0.5), Expectation()]
+                            ) do sp, t, i
 
     @state(sp, stock_out >= 0, stock_in==0)
     @state(sp, bonds_out >= 0, bonds_in==0)
@@ -49,5 +50,21 @@ m = SDDPModel(
 end
 
 srand(111)
-@time solve(m, max_iterations = 25)
-@test isapprox(getbound(m), -4.491, atol=1e-3)
+@time solve(m,
+    max_iterations = 30,
+    simulation = MonteCarloSimulation(
+        frequency = 5,
+        min  = 100,
+        step = 100,
+        max  = 500,
+        termination = false
+    ),
+    bound_convergence = BoundConvergence(
+        iterations = 5,
+        rtol       = 0.0,
+        atol       = 0.001
+    ),
+    log_file="asset.log"
+)
+rm("asset.log")
+@test isapprox(getbound(m), -1.278, atol=1e-3)
