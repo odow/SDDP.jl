@@ -4,7 +4,22 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
+"""
+    AbstractRiskMeasure
+
+# Description
+
+Abstract type for all risk measures.
+"""
 @compat abstract type AbstractRiskMeasure end
+
+"""
+    AbstractCutOracle
+
+# Description
+
+Abstract type for all cut oracles.
+"""
 @compat abstract type AbstractCutOracle end
 @compat abstract type AbstractValueFunction end
 
@@ -160,6 +175,25 @@ immutable BoundConvergence
     rtol::Float64
     atol::Float64
 end
+"""
+    BoundConvergence(;kwargs...)
+
+# Description
+
+Collection of settings to control the bound stalling convergence test.
+
+# Arguments
+* `iterations::Int`
+Terminate if the maximum deviation in the deterministic bound from the mean
+over the last `iterations` number of iterations is less than `rtol` (in
+relative terms) or `atol` (in absolute terms).
+* `rtol::Float64`
+Maximum allowed relative deviation from the mean.
+Defaults to `0.0`
+* `atol::Float64`
+Maximum allowed absolute deviation from the mean.
+Defaults to `0.0`
+"""
 BoundConvergence(;iterations=0,rtol=0.0,atol=0.0) = BoundConvergence(iterations,rtol,atol)
 immutable MonteCarloSimulation
     frequency::Int
@@ -167,6 +201,35 @@ immutable MonteCarloSimulation
     confidence::Float64
     termination::Bool
 end
+"""
+    MonteCarloSimulation(;kwargs...)
+
+# Description
+
+Collection of settings to control the simulation phase of the SDDP solution
+process.
+
+# Arguments
+* `frequency::Int`
+The frequency (by iteration) with which to run the policy simulation phase of
+the algorithm in order to construct a statistical bound for the policy. Defaults
+to `0` (never run).
+* `min::Float64`
+Minimum number of simulations to conduct before constructing a confidence interval
+for the bound. Defaults to `20`.
+* `step::Float64`
+Number of additional simulations to conduct before constructing a new confidence
+interval for the bound. Defaults to `1`.
+* `max::Float64`
+Maximum number of simulations to conduct in the policy simulation phase. Defaults
+to `min`.
+* `confidence::Float64`
+Confidence level of the confidence interval. Defaults to `0.95` (95% CI).
+* `termination::Bool`
+Whether to terminate the solution algorithm with the status `:converged` if the
+deterministic bound is with in the statistical bound after `max` simulations.
+Defaults to `false`.
+"""
 MonteCarloSimulation(;frequency=0,min=20,max=0,step=1,confidence=0.95,termination=false) = MonteCarloSimulation(frequency,collect(min:step:max),confidence,termination)
 
 immutable Settings

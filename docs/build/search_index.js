@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quick Start",
     "title": "JuMP.solve",
     "category": "Function",
-    "text": "solve(m::SDDPModel; kwargs...)\n\nDescription\n\nSolve the SDDPModel m using SDDP. Accepts a number of keyword arguments to control the solution process.\n\nPositional arguments\n\nm: the SDDPModel to solve\n\nKeyword arguments\n\nmax_iterations::Int:  The maximum number of cuts to add to a single stage problem before terminating.  Defaults to 10.\ntime_limit::Real:  The maximum number of seconds (in real time) to compute for before termination.  Defaults to Inf.\nsimulation::MonteCarloSimulation:  We control the behaviour of the policy simulation phase of the algorithm using  the MonteCarloSimulation(;kwargs...) constructor. This just groups a  series of related keyword arguments. The keywords are\nfrequency::Int\nThe frequency (by iteration) with which to run the policy simulation phase of  the algorithm in order to construct a statistical bound for the policy. Defaults  to 0 (never run).\nmin::Float64\nMinimum number of simulations to conduct before constructing a confidence interval  for the bound. Defaults to 20.\nstep::Float64\nNumber of additional simulations to conduct before constructing a new confidence  interval for the bound. Defaults to 1.\nmax::Float64\nMaximum number of simulations to conduct in the policy simulation phase. Defaults  to min.\nconfidence::Float64\nConfidence level of the confidence interval. Defaults to 0.95 (95% CI).\ntermination::Bool\nWhether to terminate the solution algorithm with the status :converged if the  deterministic bound is with in the statistical bound after max simulations.  Defaults to false.\nbound_convergence:  We may also wish to terminate the algorithm if the deterministic bound stalls  for a specified number of iterations (regardless of whether the policy has  converged). This can be controlled by the BoundConvergence(;kwargs...)  constructor. It has the following keywords:\niterations::Int\nTerminate if the maximum deviation in the deterministic bound from the mean  over the last iterations number of iterations is less than rtol (in  relative terms) or atol (in absolute terms).\nrtol::Float64\nMaximum allowed relative deviation from the mean.  Defaults to 0.0\natol::Float64\nMaximum allowed absolute deviation from the mean.  Defaults to 0.0\ncut_selection_frequency::Int:  Frequency (by iteration) with which to rebuild subproblems using a subset of  cuts. Frequent cut selection (i.e. cut_selection_frequency is small) reduces  the size of the subproblems that are solved, but incurrs the overhead of rebuilding  the subproblems. However, infrequent cut selection (i.e.  cut_selection_frequency is large) allows the subproblems to grow large (many  constraints) leading to an increase in the solve time of individual subproblems.  Defaults to 0 (never run).\nprint_level::Int:   0 - off: nothing logged to screen (still written to log file if specified).   1 - on: solve iterations written to screen.   Defaults to 1\nlog_file::String:  Relative filename to write the log to disk. Defaults to \"\" (no log written)\nsolve_type:  One of\nAsyncronous() - solve using a parallelised algorithm\nSerial() - solve using a serial algorithm\nDefault chooses automatically based on the number of available processors.\nreduce_memory_footprint::Bool:  Implements the idea proposed in https://github.com/JuliaOpt/JuMP.jl/issues/969#issuecomment-282191105  to reduce the memory consumption when running SDDP. This is an issue if you  wish to save the model m to disk since it discards important information.  Defaults to false.\ncut_output_file::String:  Relative filename to write discovered cuts to disk. Defaults to \"\" (no cuts written)\n\nReturns\n\nstatus::Symbol:  Reason for termination. One of\n:solving\n:interrupted\n:converged\n:max_iterations\n:bound_convergence\n:time_limit\n\n\n\n"
+    "text": "solve(m::SDDPModel; kwargs...)\n\nDescription\n\nSolve the SDDPModel m using SDDP. Accepts a number of keyword arguments to control the solution process.\n\nPositional arguments\n\nm: the SDDPModel to solve\n\nKeyword arguments\n\nmax_iterations::Int:  The maximum number of cuts to add to a single stage problem before terminating.  Defaults to 10.\ntime_limit::Real:  The maximum number of seconds (in real time) to compute for before termination.  Defaults to Inf.\nsimulation::MonteCarloSimulation: see MonteCarloSimulation\nbound_convergence::BoundConvergence: see BoundConvergence\ncut_selection_frequency::Int:  Frequency (by iteration) with which to rebuild subproblems using a subset of  cuts. Frequent cut selection (i.e. cut_selection_frequency is small) reduces  the size of the subproblems that are solved, but incurrs the overhead of rebuilding  the subproblems. However, infrequent cut selection (i.e.  cut_selection_frequency is large) allows the subproblems to grow large (many  constraints) leading to an increase in the solve time of individual subproblems.  Defaults to 0 (never run).\nprint_level::Int:   0 - off: nothing logged to screen (still written to log file if specified).   1 - on: solve iterations written to screen.   Defaults to 1\nlog_file::String:  Relative filename to write the log to disk. Defaults to \"\" (no log written)\nsolve_type:  One of\nAsyncronous() - solve using a parallelised algorithm\nSerial() - solve using a serial algorithm\nDefault chooses automatically based on the number of available processors.\nreduce_memory_footprint::Bool:  Implements the idea proposed in https://github.com/JuliaOpt/JuMP.jl/issues/969#issuecomment-282191105  to reduce the memory consumption when running SDDP. This is an issue if you  wish to save the model m to disk since it discards important information.  Defaults to false.\ncut_output_file::String:  Relative filename to write discovered cuts to disk. Defaults to \"\" (no cuts written)\n\nReturns\n\nstatus::Symbol:  Reason for termination. One of\n:solving\n:interrupted\n:converged\n:max_iterations\n:bound_convergence\n:time_limit\n\n\n\n"
 },
 
 {
@@ -102,6 +102,166 @@ var documenterSearchIndex = {"docs": [
     "title": "Visualise",
     "category": "section",
     "text": "@visualise"
+},
+
+{
+    "location": "apireference.html#",
+    "page": "Reference",
+    "title": "Reference",
+    "category": "page",
+    "text": "CurrentModule = SDDP"
+},
+
+{
+    "location": "apireference.html#API-Reference-1",
+    "page": "Reference",
+    "title": "API Reference",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "apireference.html#Defining-the-model-1",
+    "page": "Reference",
+    "title": "Defining the model",
+    "category": "section",
+    "text": "SDDPModel"
+},
+
+{
+    "location": "apireference.html#SDDP.@state",
+    "page": "Reference",
+    "title": "SDDP.@state",
+    "category": "Macro",
+    "text": "@state(sp, stateleaving, stateentering)\n\nDescription\n\nDefine a new state variable in the subproblem sp.\n\nArguments\n\nsp               the subproblem\nstateleaving     any valid JuMP @variable syntax to define the value of the state variable at the end of the stage\nstateentering    any valid JuMP @variable syntax to define the value of the state variable at the beginning of the stage\n\nExamples\n\n@state(sp, 0 <= x[i=1:3] <= 1, x0==rand(3)[i] )\n@state(sp,      y        <= 1, y0==0.5        )\n@state(sp,      z            , z0==0.5        )\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.@states",
+    "page": "Reference",
+    "title": "SDDP.@states",
+    "category": "Macro",
+    "text": "@states(sp, begin\n    stateleaving1, stateentering1\n    stateleaving2, stateentering2\nend)\n\nDescription\n\nDefine a new state variables in the subproblem sp.\n\nArguments\n\nsp               the subproblem\nstateleaving     any valid JuMP @variable syntax to define the value of the state variable at the end of the stage\nstateentering    any valid JuMP @variable syntax to define the value of the state variable at the beginning of the stage\n\nUsage\n\n@states(sp, begin\n    0 <= x[i=1:3] <= 1, x0==rand(3)[i]\n         y        <= 1, y0==0.5\n         z            , z0==0.5\n end)\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#States-1",
+    "page": "Reference",
+    "title": "States",
+    "category": "section",
+    "text": "@state\n@states"
+},
+
+{
+    "location": "apireference.html#SDDP.@noise",
+    "page": "Reference",
+    "title": "SDDP.@noise",
+    "category": "Macro",
+    "text": "@noise(sp, rhs, constraint)\n\nDescription\n\nAdd a constraint with a noise in the RHS vector to the subproblem sp.\n\nArguments\n\nsp         the subproblem\nrhs        keyword argument key=value where value is a one-dimensional array containing the noise realisations\nconstraint any valid JuMP @constraint syntax that includes the keyword defined by rhs\n\nExamples\n\n@noise(sp, i=1:2, x + y <= i )\n@noise(sp, i=1:2, x + y <= 3 * rand(2)[i] )\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.@noises",
+    "page": "Reference",
+    "title": "SDDP.@noises",
+    "category": "Macro",
+    "text": "@noises(sp, rhs, begin\n    constraint\nend)\n\nDescription\n\nThe plural form of @noise similar to the JuMP macro @constraints.\n\nArguments\n\nSee @noise.\n\nExamples\n\n@noises(sp, i=1:2, begin\n    x + y <= i\n    x + y <= 3 * rand(2)[i]\nend)\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.setnoiseprobability!",
+    "page": "Reference",
+    "title": "SDDP.setnoiseprobability!",
+    "category": "Function",
+    "text": "setnoiseprobability!(sp::JuMP.Model, distribution::Vector{Float64})\n\nDescription\n\nSet the probability distribution of the stagewise independent noise in the sp subproblem.\n\nArguments\n\nsp            the subproblem\ndistribution vector containing the probability of each outcome occuring.   Should sum to 1. Defaults to the uniform distribution.\n\nExamples\n\nIf there are two realizations:\n\nsetnoiseprobability!(sp, [0.3, 0.7])\nsetnoiseprobability!(sp, [0.5, 0.6]) will error!\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#Noises-1",
+    "page": "Reference",
+    "title": "Noises",
+    "category": "section",
+    "text": "@noise\n@noises\nsetnoiseprobability!"
+},
+
+{
+    "location": "apireference.html#Objective-1",
+    "page": "Reference",
+    "title": "Objective",
+    "category": "section",
+    "text": "stageobjective!"
+},
+
+{
+    "location": "apireference.html#SDDP.AbstractRiskMeasure",
+    "page": "Reference",
+    "title": "SDDP.AbstractRiskMeasure",
+    "category": "Type",
+    "text": "AbstractRiskMeasure\n\nDescription\n\nAbstract type for all risk measures.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.Expectation",
+    "page": "Reference",
+    "title": "SDDP.Expectation",
+    "category": "Type",
+    "text": "Expectation()\n\nDescription\n\nThe expectation risk measure.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.NestedAVaR",
+    "page": "Reference",
+    "title": "SDDP.NestedAVaR",
+    "category": "Type",
+    "text": "NestedAVaR(;lambda=1.0, beta=1.0)\n\nDescription\n\nA risk measure that is a convex combination of Expectation and Average Value @ Risk (also called Conditional Value @ Risk).\n\nλ * E[x] + (1 - λ) * AV@R(1-β)[x]\n\nKeyword Arguments\n\nlambda\n\nConvex weight on the expectation ((1-lambda) weight is put on the AV@R component. Inreasing values of lambda are less risk averse (more weight on expecattion)\n\nbeta\n\nThe quantile at which to calculate the Average Value @ Risk. Increasing values  of beta are less risk averse. If beta=0, then the AV@R component is the  worst case risk measure.\n\nReturns\n\n`m::NestedAVaR<:AbstractRiskMeasure`\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.modifyprobability!",
+    "page": "Reference",
+    "title": "SDDP.modifyprobability!",
+    "category": "Function",
+    "text": "modifyprobability!(measure::AbstractRiskMeasure,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n)\n\nDescription\n\nCalculate the risk-adjusted probability of each scenario using the 'change-of-probabilities' approach of Philpott, de Matos, and Finardi,(2013). On solving multistage stochastic programs with coherent risk measures. Operations Research 61(4), 957-970.\n\nArguments\n\nmeasure::AbstractRiskMeasure\n\nThe risk measure\n\nriskadjusted_distribution\n\nA new probability distribution\n\noriginal_distribution::Vector{Float64}\n\nThe original probability distribution.\n\nobservations::Vector{Float64}\n\nThe vector of objective values from the next stage  problems (one for each scenario).\n\nm::SDDPModel\n\nThe full SDDP model\n\nsp::JuMP.Model\n\nThe stage problem that the cut will be added to.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#Risk-Measures-1",
+    "page": "Reference",
+    "title": "Risk Measures",
+    "category": "section",
+    "text": "AbstractRiskMeasure\nExpectation\nNestedAVaR\nSDDP.modifyprobability!"
+},
+
+{
+    "location": "apireference.html#Cut-Oracles-1",
+    "page": "Reference",
+    "title": "Cut Oracles",
+    "category": "section",
+    "text": "AbstractCutOracle\nDefaultCutOracle\nLevelOneCutOracle\nSDDP.storecut!!\nSDDP.validcuts"
+},
+
+{
+    "location": "apireference.html#Solve-1",
+    "page": "Reference",
+    "title": "Solve",
+    "category": "section",
+    "text": "solve\nMonteCarloSimulation\nBoundConvergence\nSerial\nAsyncronous"
+},
+
+{
+    "location": "apireference.html#Results-1",
+    "page": "Reference",
+    "title": "Results",
+    "category": "section",
+    "text": "getbound\nsimulate\n@visualise"
+},
+
+{
+    "location": "apireference.html#Save/Load-1",
+    "page": "Reference",
+    "title": "Save/Load",
+    "category": "section",
+    "text": "loadcuts!"
 },
 
 ]}

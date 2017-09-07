@@ -352,44 +352,8 @@ control the solution process.
  * `time_limit::Real`:
     The maximum number of seconds (in real time) to compute for before termination.
     Defaults to `Inf`.
- * `simulation::MonteCarloSimulation`:
-    We control the behaviour of the policy simulation phase of the algorithm using
-    the `MonteCarloSimulation(;kwargs...)` constructor. This just groups a
-    series of related keyword arguments. The keywords are
-    * `frequency::Int`
-    The frequency (by iteration) with which to run the policy simulation phase of
-    the algorithm in order to construct a statistical bound for the policy. Defaults
-    to `0` (never run).
-    * `min::Float64`
-    Minimum number of simulations to conduct before constructing a confidence interval
-    for the bound. Defaults to `20`.
-    * `step::Float64`
-    Number of additional simulations to conduct before constructing a new confidence
-    interval for the bound. Defaults to `1`.
-    * `max::Float64`
-    Maximum number of simulations to conduct in the policy simulation phase. Defaults
-    to `min`.
-    * `confidence::Float64`
-    Confidence level of the confidence interval. Defaults to `0.95` (95% CI).
-    * `termination::Bool`
-    Whether to terminate the solution algorithm with the status `:converged` if the
-    deterministic bound is with in the statistical bound after `max` simulations.
-    Defaults to `false`.
- * `bound_convergence`:
-    We may also wish to terminate the algorithm if the deterministic bound stalls
-    for a specified number of iterations (regardless of whether the policy has
-    converged). This can be controlled by the `BoundConvergence(;kwargs...)`
-    constructor. It has the following keywords:
-    * `iterations::Int`
-    Terminate if the maximum deviation in the deterministic bound from the mean
-    over the last `iterations` number of iterations is less than `rtol` (in
-    relative terms) or `atol` (in absolute terms).
-    * `rtol::Float64`
-    Maximum allowed relative deviation from the mean.
-    Defaults to `0.0`
-    * `atol::Float64`
-    Maximum allowed absolute deviation from the mean.
-    Defaults to `0.0`
+ * `simulation::MonteCarloSimulation`: see `MonteCarloSimulation`
+ * `bound_convergence::BoundConvergence`: see `BoundConvergence`
  * `cut_selection_frequency::Int`:
     Frequency (by iteration) with which to rebuild subproblems using a subset of
     cuts. Frequent cut selection (i.e. `cut_selection_frequency` is small) reduces

@@ -13,6 +13,19 @@ immutable DematosCutOracle <: AbstractCutOracle
 end
 DematosCutOracle() = DematosCutOracle(Cut[], Int[], Vector{Float64}[], Float64[], Float64[])
 
+"""
+    LevelOneCutOracle()
+
+# Description
+
+Initialize the cut oracle for Level One cut selection. See:
+
+V. de Matos,A. Philpott, E. Finardi, Improving the performance of Stochastic
+Dual Dynamic Programming, Journal of Computational and Applied Mathematics
+290 (2015) 196–208.
+"""
+LevelOneCutOracle() = DematosCutOracle()
+
 function storecut!(o::DematosCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
     sense = getsense(sp)
     push!(o.cuts, cut)
