@@ -50,7 +50,7 @@ m = SDDPModel(
 end
 
 srand(111)
-@time solve(m,
+@time status = solve(m,
     max_iterations = 30,
     simulation = MonteCarloSimulation(
         frequency = 5,
@@ -67,4 +67,5 @@ srand(111)
     log_file="asset.log"
 )
 rm("asset.log")
+@test status = :bound_convergence
 @test isapprox(getbound(m), -1.278, atol=1e-3)
