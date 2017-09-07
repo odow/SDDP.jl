@@ -5,26 +5,34 @@
 #############################################################################
 
 """
-    storecut!(oracle::AbstractCutOracle, cut::Cut)
+    storecut!(oracle::AbstactCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
 
-    This function adds the cut to the CutOracle.
+# Description
+
+Store the cut `cut` in the Cut Oracle `oracle`. `oracle` will belong to the
+subproblem `sp` in the SDDPModel `m`.
 """
-storecut!(oracle::AbstractCutOracle, cut::Cut) = error("""
-    You must define the function
-        storecut!(oracle::$(typeof(oracle)), m::SDDPModel, stage::Int, markovstate::Int, pricestate::Int, cut)
-    that is overloaded for your oracle of type $(typeof(oracle)).
-""")
-# more expansive method that can also be overloaded
-storecut!(oracle::AbstractCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut) = storecut!(oracle, cut)
+function storecut! end
 
 """
     validcuts(oracle::AbstactCutOracle)
-    This function returns an iterable list of all the valid cuts contained within the oracle.
+
+# Description
+
+Return an iterable list of all the valid cuts contained within `oracle`.
 """
-validcuts(oracle::AbstractCutOracle) = error("""You must define the function validcuts(oracle::$(typeof(oracle))) that is overloaded for your
-    oracle of type $(typeof(oracle)).""")
+function validcuts end
 
 
+"""
+    DefaultCutOracle()
+
+# Description
+
+Initialize the default cut oracle.
+
+This oracle keeps every cut discovered and does not perform cut selection.
+"""
 immutable DefaultCutOracle <: AbstractCutOracle
     cuts::Vector{Cut}
 end

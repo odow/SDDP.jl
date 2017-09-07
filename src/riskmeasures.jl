@@ -48,7 +48,13 @@ end
 # ==============================================================================
 #   The Expectation risk measure:
 #   In expectation, leave probabilities as they were
+"""
+    Expectation()
 
+# Description
+
+The expectation risk measure.
+"""
 immutable Expectation <: AbstractRiskMeasure end
 
 function modifyprobability!(::Expectation,
