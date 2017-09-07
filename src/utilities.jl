@@ -11,6 +11,14 @@ ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
 valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
 
+"""
+    getbound(m)
+
+# Description
+
+Get the lower (if minimizing), or upper (if maximizing) bound of the solved SDDP
+model `m`.
+"""
 function getbound(m::SDDPModel)
     if length(m.log) > 0
         return m.log[end].bound

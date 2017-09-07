@@ -47,6 +47,7 @@ include("solve_asyncronous.jl")
 include("visualiser/visualise.jl")
 
 immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
+
 """
     SDDPModel(;kwargs...) do ...
 
@@ -54,25 +55,80 @@ immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
 # Description
 
-This function constructs an SDDPModel.
+This function constructs an SDDPModel. `SDDPModel` takes the following keyword
+arguments. Some are required, and some are optional.
 
 # Required Keyword arguments
+
  * `stages::Int`
  The number of stages in the problem. A stage is defined as each step in time at
  which a decion can be made. Defaults to `1`.
+
  * `objective_bound::Float64`
+ A valid bound on the initial value/cost to go. i.e. for maximisation this may
+ be some large positive number, for minimisation this may be some large negative
+ number.
 
  * `solver::MathProgBase.AbstractMathProgSolver`
+ MathProgBase compliant solver that returns duals from a linear program. If this
+ isn't specified then you must use `JuMP.setsolver(sp, solver)` in the stage
+ definition.
 
 # Optional Keyword arguments
 
- * `cut_oracle`
+ * `sense`
+ Must be either `:Max` or `:Min`. Defaults to `:Min`.
+
+ * `cut_oracle::SDDP.AbstractCutOracle`
+ The cut oracle is responsible for collecting and storing the cuts that define
+ a value function. The cut oracle may decide that only a subset of the total
+ discovered cuts are relevant, which improves solution speed by reducing the
+ size of the subproblems that need solving. Currently must be one of
+    * `DefaultCutOracle()` (see `DefaultCutOracle` for explanation)
+    * `LevelOneCutOracle()`(see `LevelOneCutOracle` for explanation)
+
  * `risk_measure`
- * `noise_probability`
+ If a single risk measure is given (i.e. `risk_measure = Expectation()`), then
+ this measure will be applied to every stage in the problem. Another option is
+ to provide a vector of risk measures. There must be one element for every
+ stage. For example:
+
+    risk_measure = [ NestedAVaR(lambda=0.5, beta=0.25), Expectation() ]
+
+will apply the `i`'th element of `risk_measure` to every Markov state in the
+`i`'th stage. The last option is to provide a vector (one element for each
+stage) of vectors of risk measures (one for each Markov state in the stage).
+For example:
+
+    risk_measure = [
+    # Stage 1 Markov 1 # Stage 1 Markov 2 #
+        [ Expectation(), Expectation() ],
+        # ------- Stage 2 Markov 1 ------- ## ------- Stage 2 Markov 2 ------- #
+        [ NestedAVaR(lambda=0.5, beta=0.25), NestedAVaR(lambda=0.25, beta=0.3) ]
+        ]
+
+Note that even though the last stage does not have a future cost function
+associated with it (as it has no children), we still have to specify a risk
+measure. This is necessary to simplify the implementation of the algorithm.
+
+For more help see `NestedAVaR` or `Expectation`.
+
  * `markov_transition`
+Define the transition probabilties of the stage graph. If a single array is
+given, it is assumed that there is an equal number of Markov states in each
+stage and the transition probabilities are stage invariant. Row indices
+represent the Markov state in the previous stage. Column indices represent the
+Markov state in the current stage. Therefore:
+
+    markov_transition = [0.1 0.9; 0.8 0.2]
+
+is the transition matrix when there is 10% chance of transitioning from Markov
+state 1 to Markov state 1, a 90% chance of transitioning from Markov state 1
+to Markov state 2, an 80% chance of transitioning from Markov state 2 to Markov
+state 1, and a 20% chance of transitioning from Markov state 2 to Markov state 2.
 
 # Returns
-    * `m`: the `SDDPModel`
+ * `m`: the `SDDPModel`
 """
 function SDDPModel(build!::Function;
     sense                = :Min,
@@ -345,6 +401,7 @@ control the solution process.
 
 # Positional arguments
  * `m`: the SDDPModel to solve
+
 # Keyword arguments
  * `max_iterations::Int`:
     The maximum number of cuts to add to a single stage problem before terminating.
@@ -352,44 +409,8 @@ control the solution process.
  * `time_limit::Real`:
     The maximum number of seconds (in real time) to compute for before termination.
     Defaults to `Inf`.
- * `simulation::MonteCarloSimulation`:
-    We control the behaviour of the policy simulation phase of the algorithm using
-    the `MonteCarloSimulation(;kwargs...)` constructor. This just groups a
-    series of related keyword arguments. The keywords are
-    * `frequency::Int`
-    The frequency (by iteration) with which to run the policy simulation phase of
-    the algorithm in order to construct a statistical bound for the policy. Defaults
-    to `0` (never run).
-    * `min::Float64`
-    Minimum number of simulations to conduct before constructing a confidence interval
-    for the bound. Defaults to `20`.
-    * `step::Float64`
-    Number of additional simulations to conduct before constructing a new confidence
-    interval for the bound. Defaults to `1`.
-    * `max::Float64`
-    Maximum number of simulations to conduct in the policy simulation phase. Defaults
-    to `min`.
-    * `confidence::Float64`
-    Confidence level of the confidence interval. Defaults to `0.95` (95% CI).
-    * `termination::Bool`
-    Whether to terminate the solution algorithm with the status `:converged` if the
-    deterministic bound is with in the statistical bound after `max` simulations.
-    Defaults to `false`.
- * `bound_convergence`:
-    We may also wish to terminate the algorithm if the deterministic bound stalls
-    for a specified number of iterations (regardless of whether the policy has
-    converged). This can be controlled by the `BoundConvergence(;kwargs...)`
-    constructor. It has the following keywords:
-    * `iterations::Int`
-    Terminate if the maximum deviation in the deterministic bound from the mean
-    over the last `iterations` number of iterations is less than `rtol` (in
-    relative terms) or `atol` (in absolute terms).
-    * `rtol::Float64`
-    Maximum allowed relative deviation from the mean.
-    Defaults to `0.0`
-    * `atol::Float64`
-    Maximum allowed absolute deviation from the mean.
-    Defaults to `0.0`
+ * `simulation::MonteCarloSimulation`: see `MonteCarloSimulation`
+ * `bound_convergence::BoundConvergence`: see `BoundConvergence`
  * `cut_selection_frequency::Int`:
     Frequency (by iteration) with which to rebuild subproblems using a subset of
     cuts. Frequent cut selection (i.e. `cut_selection_frequency` is small) reduces

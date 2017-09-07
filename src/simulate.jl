@@ -59,6 +59,23 @@ end
 savevaluefunction!(store::Dict{Symbol, Any}, sp::JuMP.Model) = storevaluefunction!(store, valueoracle(sp), sp)
 storevaluefunction!{C}(store::Dict{Symbol, Any}, ::DefaultValueFunction{C}, sp::JuMP.Model)= nothing
 
+"""
+    simulate(m::SDDPPModel,variables::Vector{Symbol};
+        noises::Vector{Int}, markovstates::Vector{Int})
+
+# Description
+
+Perform a historical simulation of the current policy in model  `m`.
+
+`noises` is a vector with one element for each stage giving the index of the
+(in-sample) stagewise independent noise to sample in each stage. `markovstates`
+is a vector with one element for each stage giving the index of the (in-sample)
+markov state to sample in each stage.
+
+# Examples
+
+    simulate(m, [:x, :u], noises=[1,2,2], markovstates=[1,1,2])
+"""
 function simulate{C}(m::SDDPModel{DefaultValueFunction{C}},
         variables::Vector{Symbol} = Symbol[];
         noises::Vector{Int}    = zeros(Int, length(m.stages)),
@@ -74,6 +91,38 @@ function simulate{C}(m::SDDPModel{DefaultValueFunction{C}},
     return store
 end
 
+"""
+    results = simulate(m::SDDPPModel, N::Int, variables::Vector{Symbol})
+
+# Description
+
+Perform `N` Monte-Carlo simulations of the current policy in model `m` saving
+the values of the variables named in `variables` at every stage.
+
+`results` is a vector containing a dictionary for each simulation. In addition
+to the variables specified in the function call, other special keys are:
+
+ - `:stageobjective` - costs incurred during the stage (not future)
+ - `:obj`            - objective of the stage including future cost
+ - `:markov`         - index of markov state visited
+ - `:noise`          - index of noise visited
+ - `:objective`      - Total objective of simulation
+
+All values can be accessed as follows
+
+    results[simulation index][key][stage]
+
+with the exception of `:objective` which is just
+
+    results[simulation index][:objective]
+
+# Examples
+
+    results = simulate(m, 10, [:x, :u])
+    results[1][:objective] # objective of simulation 1
+    mean(r[:objective] for r in results) # mean objective of the simulations
+    results[2][:x][3] # value of :x in stage 3 in second simulation
+"""
 function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
     y = Dict{Symbol, Any}[]
     for i in 1:N

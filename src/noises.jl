@@ -19,7 +19,22 @@ function samplenoise(sp::JuMP.Model)
 end
 
 """
-    setnoiseprobability!(sp::JuMP.Model, p::Vector{Float64})
+    setnoiseprobability!(sp::JuMP.Model, distribution::Vector{Float64})
+
+# Description
+
+Set the probability distribution of the stagewise independent noise in the
+`sp` subproblem.
+
+# Arguments
+* `sp`            the subproblem
+* `distribution` vector containing the probability of each outcome occuring.
+    Should sum to `1`. Defaults to the uniform distribution.
+
+# Examples
+If there are two realizations:
+* `setnoiseprobability!(sp, [0.3, 0.7])`
+* `setnoiseprobability!(sp, [0.5, 0.6])` will error!
 """
 function setnoiseprobability!(sp::JuMP.Model, p::Vector{Float64})
     if abs(sum(p) - 1.0) > 1e-4 # check sum to one
@@ -31,14 +46,19 @@ end
 
 """
     @noise(sp, rhs, constraint)
-Add a noise constraint (changes in RHS vector) to the subproblem `sp`.
-Arguments:
-    sp             the subproblem
-    rhs            keyword argument `key=value` where `value` is a one-dimensional array containing the noise realisations
-    constraint     any valid JuMP `@constraint` syntax that includes the keyword defined by `rhs`
-Usage:
-    @noise(sp, i=1:2, x + y <= i )
-    @noise(sp, i=1:2, x + y <= 3 * rand(2)[i] )
+
+# Description
+
+Add a constraint with a noise in the RHS vector to the subproblem `sp`.
+
+# Arguments
+* `sp`         the subproblem
+* `rhs`        keyword argument `key=value` where `value` is a one-dimensional array containing the noise realisations
+* `constraint` any valid JuMP `@constraint` syntax that includes the keyword defined by `rhs`
+
+# Examples
+* `@noise(sp, i=1:2, x + y <= i )`
+* `@noise(sp, i=1:2, x + y <= 3 * rand(2)[i] )`
 """
 macro noise(sp, kw, c)
     sp = esc(sp)                                # escape the model
@@ -83,11 +103,19 @@ end
     @noises(sp, rhs, begin
         constraint
     end)
+
+# Description
+
 The plural form of `@noise` similar to the JuMP macro `@constraints`.
-Usage:
+
+# Arguments
+
+See `@noise`.
+
+# Examples
     @noises(sp, i=1:2, begin
-               x + y <= i
-               x + y <= 3 * rand(2)[i]
+        x + y <= i
+        x + y <= 3 * rand(2)[i]
     end)
 """
 macro noises(m, kw, blk)
@@ -113,9 +141,10 @@ end
 
 # Description
 
-Define an objective with stagewise noise
-
-# Arguments
+Define an objective that depends on the realization of the stagewise noise.
+`objective` can be any valid third argument to the JuMP `@objective` macro (i.e.
+`@objective(sp, Min, objective)`) that utilises the variable `kw` that takes the
+realizations defined in `noises`.
 
 # Examples
 

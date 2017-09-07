@@ -42,7 +42,8 @@ Inreasing values of `lambda` are less risk averse (more weight on expecattion)
  worst case risk measure.
 
 # Returns
-    `m::NestedAVaR<:AbstractRiskMeasure`
+
+    m::NestedAVaR<:AbstractRiskMeasure
 """
 NestedAVaR(;lambda=1.0, beta=1.0) = NestedAVaR(lambda, beta)
 
