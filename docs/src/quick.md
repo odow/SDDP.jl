@@ -31,10 +31,6 @@ end
 To solve the SDDP model `m` we use `status = solve(m::SDDPModel; kwargs...)`.
 This accepts a number of keyword arguments to control the solution process.
 
-```@docs
-solve
-```
-
 ### Simulate
 
 ### Visualise

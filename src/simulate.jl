@@ -92,16 +92,36 @@ function simulate{C}(m::SDDPModel{DefaultValueFunction{C}},
 end
 
 """
-    simulate(m::SDDPPModel, N::Int, variables::Vector{Symbol})
+    results = simulate(m::SDDPPModel, N::Int, variables::Vector{Symbol})
 
 # Description
 
 Perform `N` Monte-Carlo simulations of the current policy in model `m` saving
 the values of the variables named in `variables` at every stage.
 
+`results` is a vector containing a dictionary for each simulation. In addition
+to the variables specified in the function call, other special keys are:
+
+ - `:stageobjective` - costs incurred during the stage (not future)
+ - `:obj`            - objective of the stage including future cost
+ - `:markov`         - index of markov state visited
+ - `:noise`          - index of noise visited
+ - `:objective`      - Total objective of simulation
+
+All values can be accessed as follows
+
+    results[simulation index][key][stage]
+
+with the exception of `:objective` which is just
+
+    results[simulation index][:objective]
+
 # Examples
 
-    simulate(m, 10, [:x, :u])
+    results = simulate(m, 10, [:x, :u])
+    results[1][:objective] # objective of simulation 1
+    mean(r[:objective] for r in results) # mean objective of the simulations
+    results[2][:x][3] # value of :x in stage 3 in second simulation
 """
 function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
     y = Dict{Symbol, Any}[]

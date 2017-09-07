@@ -78,18 +78,27 @@ Each plot line gets transformed into an anonymous function
 so can be any valid Julia syntax that uses `results`, `i`, or `t` as an argument.
 
 After the plot definition, keyword arguments can be used (in parenthesises):
-    `title`       - set the title of the plot
-    `ylabel`      - set the yaxis label
-    `xlabel`      - set the xaxis label
-    `interpolate` - interpolate lines between stages. Defaults to "linear"
-    see https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md
-        #line_interpolate for all options
+ * `title`       - set the title of the plot
+ * `ylabel`      - set the yaxis label
+ * `xlabel`      - set the xaxis label
+ * `interpolate` - interpolate lines between stages. Defaults to `"linear"`
+    see [the d3 docs](https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md#line_interpolate)
+	for all options.
 
 # Results Object
 
 `results::Vector{Dict{Symbol, Any}}` is a vector of dictionaries where each
 dictionary corresponds to one simulation (therefore there will be
 `N = length(results)` lines plotted in each graph).
+
+# Examples
+	@visualise(results, i, t, begin
+		results[i][:stageobjective][t], (title="Accumulated Obj.", ylabel="\$", cumulative=true)
+		results[i][:stageobjective][t], (title="Stage Objective",  ylabel="\$")
+		results[i][:x][t],              (title="State",            ylabel="Level")
+		results[i][:u][t],              (title="Control")
+		prices[t, results[i][:markov][t]], (ylabel="Price", interpolate="step-after")
+	end)
 """
 macro visualise(results, replication, stage, block)
 	@assert block.head == :block || error("Invalid syntax for @visualise")

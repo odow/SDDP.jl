@@ -128,7 +128,7 @@ to Markov state 2, an 80% chance of transitioning from Markov state 2 to Markov
 state 1, and a 20% chance of transitioning from Markov state 2 to Markov state 2.
 
 # Returns
-    * `m`: the `SDDPModel`
+ * `m`: the `SDDPModel`
 """
 function SDDPModel(build!::Function;
     sense                = :Min,

@@ -45,8 +45,8 @@ validcuts
 ```
 
 ## Solve
-<!-- SDDP.solve -->
 ```@docs
+solve
 MonteCarloSimulation
 BoundConvergence
 ```
