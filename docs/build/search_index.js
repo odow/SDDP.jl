@@ -125,7 +125,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Defining the model",
     "category": "section",
-    "text": "SDDPModel"
+    "text": "<!– SDDPModel –>"
 },
 
 {
@@ -189,7 +189,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Objective",
     "category": "section",
-    "text": "stageobjective!"
+    "text": "<!– stageobjective! –>"
 },
 
 {
@@ -229,7 +229,47 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Risk Measures",
     "category": "section",
-    "text": "AbstractRiskMeasure\nExpectation\nNestedAVaR\nSDDP.modifyprobability!"
+    "text": "AbstractRiskMeasure\nExpectation\nNestedAVaR\nmodifyprobability!"
+},
+
+{
+    "location": "apireference.html#SDDP.AbstractCutOracle",
+    "page": "Reference",
+    "title": "SDDP.AbstractCutOracle",
+    "category": "Type",
+    "text": "AbstractCutOracle\n\nDescription\n\nAbstract type for all cut oracles.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.DefaultCutOracle",
+    "page": "Reference",
+    "title": "SDDP.DefaultCutOracle",
+    "category": "Type",
+    "text": "DefaultCutOracle()\n\nDescription\n\nInitialize the default cut oracle.\n\nThis oracle keeps every cut discovered and does not perform cut selection.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.LevelOneCutOracle",
+    "page": "Reference",
+    "title": "SDDP.LevelOneCutOracle",
+    "category": "Function",
+    "text": "LevelOneCutOracle()\n\nDescription\n\nInitialize the cut oracle for Level One cut selection. See:\n\nV. de Matos,A. Philpott, E. Finardi, Improving the performance of Stochastic Dual Dynamic Programming, Journal of Computational and Applied Mathematics 290 (2015) 196–208.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.storecut!",
+    "page": "Reference",
+    "title": "SDDP.storecut!",
+    "category": "Function",
+    "text": "storecut!(oracle::AbstactCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)\n\nDescription\n\nStore the cut cut in the Cut Oracle oracle. oracle will belong to the subproblem sp in the SDDPModel m.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.validcuts",
+    "page": "Reference",
+    "title": "SDDP.validcuts",
+    "category": "Function",
+    "text": "validcuts(oracle::AbstactCutOracle)\n\nDescription\n\nReturn an iterable list of all the valid cuts contained within oracle.\n\n\n\n"
 },
 
 {
@@ -237,7 +277,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Cut Oracles",
     "category": "section",
-    "text": "AbstractCutOracle\nDefaultCutOracle\nLevelOneCutOracle\nSDDP.storecut!!\nSDDP.validcuts"
+    "text": "AbstractCutOracle\nDefaultCutOracle\nLevelOneCutOracle\nstorecut!\nvalidcuts"
+},
+
+{
+    "location": "apireference.html#SDDP.MonteCarloSimulation",
+    "page": "Reference",
+    "title": "SDDP.MonteCarloSimulation",
+    "category": "Type",
+    "text": "MonteCarloSimulation(;kwargs...)\n\nDescription\n\nCollection of settings to control the simulation phase of the SDDP solution process.\n\nArguments\n\nfrequency::Int\n\nThe frequency (by iteration) with which to run the policy simulation phase of the algorithm in order to construct a statistical bound for the policy. Defaults to 0 (never run).\n\nmin::Float64\n\nMinimum number of simulations to conduct before constructing a confidence interval for the bound. Defaults to 20.\n\nstep::Float64\n\nNumber of additional simulations to conduct before constructing a new confidence interval for the bound. Defaults to 1.\n\nmax::Float64\n\nMaximum number of simulations to conduct in the policy simulation phase. Defaults to min.\n\nconfidence::Float64\n\nConfidence level of the confidence interval. Defaults to 0.95 (95% CI).\n\ntermination::Bool\n\nWhether to terminate the solution algorithm with the status :converged if the deterministic bound is with in the statistical bound after max simulations. Defaults to false.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.BoundConvergence",
+    "page": "Reference",
+    "title": "SDDP.BoundConvergence",
+    "category": "Type",
+    "text": "BoundConvergence(;kwargs...)\n\nDescription\n\nCollection of settings to control the bound stalling convergence test.\n\nArguments\n\niterations::Int\n\nTerminate if the maximum deviation in the deterministic bound from the mean over the last iterations number of iterations is less than rtol (in relative terms) or atol (in absolute terms).\n\nrtol::Float64\n\nMaximum allowed relative deviation from the mean. Defaults to 0.0\n\natol::Float64\n\nMaximum allowed absolute deviation from the mean. Defaults to 0.0\n\n\n\n"
 },
 
 {
@@ -245,7 +301,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Solve",
     "category": "section",
-    "text": "solve\nMonteCarloSimulation\nBoundConvergence\nSerial\nAsyncronous"
+    "text": "<!– SDDP.solve –>MonteCarloSimulation\nBoundConvergence"
+},
+
+{
+    "location": "apireference.html#SDDP.getbound",
+    "page": "Reference",
+    "title": "SDDP.getbound",
+    "category": "Function",
+    "text": "getbound(m)\n\nDescription\n\nGet the lower (if minimizing), or upper (if maximizing) bound of the solved SDDP model m.\n\n\n\n"
 },
 
 {
@@ -253,7 +317,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Results",
     "category": "section",
-    "text": "getbound\nsimulate\n@visualise"
+    "text": "<!– simulate –> <!– @visualise –>getbound"
 },
 
 {
@@ -261,7 +325,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Save/Load",
     "category": "section",
-    "text": "loadcuts!"
+    "text": "<!– loadcuts! –>"
 },
 
 ]}

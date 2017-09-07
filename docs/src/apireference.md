@@ -6,9 +6,10 @@ CurrentModule = SDDP
 
 ## Defining the model
 
+<!-- SDDPModel -->
 ```@docs
-SDDPModel
 ```
+
 ### States
 ```@docs
 @state
@@ -22,8 +23,8 @@ setnoiseprobability!
 ```
 
 ### Objective
+<!-- stageobjective! -->
 ```@docs
-stageobjective!
 ```
 
 ### Risk Measures
@@ -31,7 +32,7 @@ stageobjective!
 AbstractRiskMeasure
 Expectation
 NestedAVaR
-SDDP.modifyprobability!
+modifyprobability!
 ```
 
 ### Cut Oracles
@@ -39,26 +40,24 @@ SDDP.modifyprobability!
 AbstractCutOracle
 DefaultCutOracle
 LevelOneCutOracle
-SDDP.storecut!!
-SDDP.validcuts
+storecut!
+validcuts
 ```
 
 ## Solve
+<!-- SDDP.solve -->
 ```@docs
-solve
 MonteCarloSimulation
 BoundConvergence
-Serial
-Asyncronous
 ```
 ## Results
+<!-- simulate -->
+<!-- @visualise -->
 ```@docs
 getbound
-simulate
-@visualise
 ```
 
 ## Save/Load
+<!-- loadcuts! -->
 ```@docs
-loadcuts!
 ```
