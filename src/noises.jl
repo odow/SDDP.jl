@@ -22,7 +22,9 @@ end
     setnoiseprobability!(sp::JuMP.Model, p::Vector{Float64})
 """
 function setnoiseprobability!(sp::JuMP.Model, p::Vector{Float64})
-    @assert abs(sum(p) - 1.0) < 1e-4 # check sum to one
+    if abs(sum(p) - 1.0) > 1e-4 # check sum to one
+        error("Discrete probability distribution of the noise must sum to one.")
+    end
     resize!(ext(sp).noiseprobability, length(p))
     ext(sp).noiseprobability .= p
 end
@@ -122,7 +124,7 @@ Define an objective with stagewise noise
     @stageobjective(sp, i=1:2, x[i])
 
 """
-macro stageobjective!(sp, kw, obj)
+macro stageobjective(sp, kw, obj)
     sp = esc(sp)                                # escape the model
     @assert kw.head == KW_SYM                   # check its a keyword
     noisevalues = esc(kw.args[2])            # get the vector of values
@@ -134,7 +136,7 @@ macro stageobjective!(sp, kw, obj)
     end
 end
 
-macro stageobjective!(sp, obj)
+macro stageobjective(sp, obj)
     quote
         stageobjective!($(esc(sp)), $(esc(obj)))
     end

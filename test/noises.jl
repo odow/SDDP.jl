@@ -64,6 +64,6 @@
         subproblem = SDDP.ext(m)
         setnoiseprobability!(m, [0.1, 0.2, 0.7])
         @test SDDP.ext(m).noiseprobability == [0.1, 0.2, 0.7]
-        @test_throws AssertionError setnoiseprobability!(m, [0.1, 0.2])
+        @test_throws Exception setnoiseprobability!(m, [0.1, 0.2])
     end
 end
