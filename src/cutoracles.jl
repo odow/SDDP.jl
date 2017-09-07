@@ -38,5 +38,5 @@ immutable DefaultCutOracle <: AbstractCutOracle
 end
 DefaultCutOracle() = DefaultCutOracle(Cut[])
 
-storecut!(oracle::DefaultCutOracle, cut::Cut) = push!(oracle.cuts, cut)
+storecut!(oracle::DefaultCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut) = push!(oracle.cuts, cut)
 validcuts(oracle::DefaultCutOracle) = oracle.cuts
