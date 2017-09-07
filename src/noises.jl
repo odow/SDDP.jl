@@ -141,9 +141,10 @@ end
 
 # Description
 
-Define an objective with stagewise noise
-
-# Arguments
+Define an objective that depends on the realization of the stagewise noise.
+`objective` can be any valid third argument to the JuMP `@objective` macro (i.e.
+`@objective(sp, Min, objective)`) that utilises the variable `kw` that takes the
+realizations defined in `noises`.
 
 # Examples
 

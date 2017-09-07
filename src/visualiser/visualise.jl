@@ -58,36 +58,38 @@ end
 	end)
 
 # Description
-	Plot everything using interactive javascript. This will launch an HTML page
-    to explore.
+
+Plot everything using interactive javascript. This will launch an HTML page
+to explore.
 
 # Usage
 
-        `@visualise(results, i, t, begin
-            ... one line for each plot ...
-        end)`
+    @visualise(results, i, t, begin
+        ... one line for each plot ...
+    end)
 
-    where results is the vector of result dictionaries from simulate(), i is the
-    simulation index (1:length(results)), and t is the stage index (1:T).
+where results is the vector of result dictionaries from `simulate()`, `i` is the
+simulation index (`1:length(results)`), and `t` is the stage index (`1:T`).
 
-    Each plot line gets transformed into an anonymous function
-        (results, i, t) -> ... plot line ...
-    so can be any valid Julia syntax that uses results, i, or t as an argument.
+Each plot line gets transformed into an anonymous function
 
-    After the plot definition, keyword arguments can be used (in parenthesises):
-        `title`       - set the title of the plot
-        `ylabel`      - set the yaxis label
-        `xlabel`      - set the xaxis label
-        `interpolate` - interpolate lines between stages. Defaults to "linear"
-        see https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md
-            #line_interpolate for all options
+	(results, i, t) -> ... plot line ...
+
+so can be any valid Julia syntax that uses `results`, `i`, or `t` as an argument.
+
+After the plot definition, keyword arguments can be used (in parenthesises):
+    `title`       - set the title of the plot
+    `ylabel`      - set the yaxis label
+    `xlabel`      - set the xaxis label
+    `interpolate` - interpolate lines between stages. Defaults to "linear"
+    see https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md
+        #line_interpolate for all options
+
 # Results Object
 
-	`results::Vector{Dict{Symbol, Any}}` is a vector of dictionaries where each
-	dictionary corresponds to one simulation (therefore there will be
-	`N = length(results)` lines plotted in each graph).
-
-
+`results::Vector{Dict{Symbol, Any}}` is a vector of dictionaries where each
+dictionary corresponds to one simulation (therefore there will be
+`N = length(results)` lines plotted in each graph).
 """
 macro visualise(results, replication, stage, block)
 	@assert block.head == :block || error("Invalid syntax for @visualise")

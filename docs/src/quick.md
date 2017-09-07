@@ -26,10 +26,6 @@ m = SDDPModel([;kwargs...]) do sp, stage
 end
 ```
 
-```@docs
-SDDPModel
-```
-
 ### Solve
 
 To solve the SDDP model `m` we use `status = solve(m::SDDPModel; kwargs...)`.
@@ -42,7 +38,3 @@ solve
 ### Simulate
 
 ### Visualise
-
-```@docs
-@visualise
-```

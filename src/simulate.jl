@@ -59,6 +59,23 @@ end
 savevaluefunction!(store::Dict{Symbol, Any}, sp::JuMP.Model) = storevaluefunction!(store, valueoracle(sp), sp)
 storevaluefunction!{C}(store::Dict{Symbol, Any}, ::DefaultValueFunction{C}, sp::JuMP.Model)= nothing
 
+"""
+    simulate(m::SDDPPModel,variables::Vector{Symbol};
+        noises::Vector{Int}, markovstates::Vector{Int})
+
+# Description
+
+Perform a historical simulation of the current policy in model  `m`.
+
+`noises` is a vector with one element for each stage giving the index of the
+(in-sample) stagewise independent noise to sample in each stage. `markovstates`
+is a vector with one element for each stage giving the index of the (in-sample)
+markov state to sample in each stage.
+
+# Examples
+
+    simulate(m, [:x, :u], noises=[1,2,2], markovstates=[1,1,2])
+"""
 function simulate{C}(m::SDDPModel{DefaultValueFunction{C}},
         variables::Vector{Symbol} = Symbol[];
         noises::Vector{Int}    = zeros(Int, length(m.stages)),
@@ -74,6 +91,18 @@ function simulate{C}(m::SDDPModel{DefaultValueFunction{C}},
     return store
 end
 
+"""
+    simulate(m::SDDPPModel, N::Int, variables::Vector{Symbol})
+
+# Description
+
+Perform `N` Monte-Carlo simulations of the current policy in model `m` saving
+the values of the variables named in `variables` at every stage.
+
+# Examples
+
+    simulate(m, 10, [:x, :u])
+"""
 function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
     y = Dict{Symbol, Any}[]
     for i in 1:N

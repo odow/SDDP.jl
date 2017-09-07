@@ -3,7 +3,30 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
+"""
+    Asyncrounous(; kwargs...)
 
+# Define
+
+Type used to dispatch and control the behaviour of the asyncronous solution
+algorithm.
+
+# Arguments
+
+ * `slaves::Vector{Int}` the pid's of the slave processes. Defaults to `workers()`
+ * `step::Float64` the number of iterations to complete before adding another
+    slave. Used to replicated the scenario incrementation behaviour of
+    V. de Matos,A. Philpott, E. Finardi, Improving the performance of Stochastic
+    Dual Dynamic Programming, Journal of Computational and Applied Mathematics
+    290 (2015) 196–208.
+
+# Examples
+
+    Asyncronous() # load on all workers
+    Asyncronous(slaves=[2,3,4]) # load slaves on processes 2, 3, and 4
+    Asyncronous(step=10) # perform 10 iterations before adding new slave
+
+"""
 immutable Asyncronous <: SDDPSolveType
     slaves::Vector{Int} # pid of slave processors
     step::Float64       # number of iterations before introducing another slave

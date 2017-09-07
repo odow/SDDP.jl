@@ -36,7 +36,13 @@ immutable ForwardPass <: IterationDirection end
 immutable BackwardPass <: IterationDirection end
 
 @compat abstract type SDDPSolveType end
-# struct Serial <: SDDPSolveType end
+"""
+    Serial()
+
+# Define
+
+Type used to dispatch the serial solution algorithm
+"""
 immutable Serial <: SDDPSolveType end
 Base.show(io::IO, async::Serial) = print(io, "Serial solver")
 
@@ -195,6 +201,7 @@ Maximum allowed absolute deviation from the mean.
 Defaults to `0.0`
 """
 BoundConvergence(;iterations=0,rtol=0.0,atol=0.0) = BoundConvergence(iterations,rtol,atol)
+
 immutable MonteCarloSimulation
     frequency::Int
     steps::Vector{Int}

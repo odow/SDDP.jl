@@ -49,19 +49,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "quick.html#SDDP.SDDPModel",
-    "page": "Quick Start",
-    "title": "SDDP.SDDPModel",
-    "category": "Type",
-    "text": "SDDPModel(;kwargs...) do ...\n\nend\n\nDescription\n\nThis function constructs an SDDPModel.\n\nRequired Keyword arguments\n\nstages::Int\n\nThe number of stages in the problem. A stage is defined as each step in time at  which a decion can be made. Defaults to 1.\n\nobjective_bound::Float64\nsolver::MathProgBase.AbstractMathProgSolver\n\nOptional Keyword arguments\n\ncut_oracle\nrisk_measure\nnoise_probability\nmarkov_transition\n\nReturns\n\n* `m`: the `SDDPModel`\n\n\n\n"
-},
-
-{
     "location": "quick.html#Initialising-the-model-object-1",
     "page": "Quick Start",
     "title": "Initialising the model object",
     "category": "section",
-    "text": "The first step is to initialise the SDDP model object. We do this using the following syntax:If we have more than one markov state:m = SDDPModel([;kwargs...]) do sp, stage, markov_state\n\n    # Stage problem definition where `sp` is a `JuMP.Model`object,\n\nendOtherwise if we have a single markov statem = SDDPModel([;kwargs...]) do sp, stage\n\n  # Stage problem definition\n\nendSDDPModel"
+    "text": "The first step is to initialise the SDDP model object. We do this using the following syntax:If we have more than one markov state:m = SDDPModel([;kwargs...]) do sp, stage, markov_state\n\n    # Stage problem definition where `sp` is a `JuMP.Model`object,\n\nendOtherwise if we have a single markov statem = SDDPModel([;kwargs...]) do sp, stage\n\n  # Stage problem definition\n\nend"
 },
 
 {
@@ -89,19 +81,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "quick.html#SDDP.@visualise",
-    "page": "Quick Start",
-    "title": "SDDP.@visualise",
-    "category": "Macro",
-    "text": "@visualise(results, replication, stage, begin\n	... plot definitions ...\nend)\n\nDescription\n\nPlot everything using interactive javascript. This will launch an HTML page\nto explore.\n\nUsage\n\n    `@visualise(results, i, t, begin\n        ... one line for each plot ...\n    end)`\n\nwhere results is the vector of result dictionaries from simulate(), i is the\nsimulation index (1:length(results)), and t is the stage index (1:T).\n\nEach plot line gets transformed into an anonymous function\n    (results, i, t) -> ... plot line ...\nso can be any valid Julia syntax that uses results, i, or t as an argument.\n\nAfter the plot definition, keyword arguments can be used (in parenthesises):\n    `title`       - set the title of the plot\n    `ylabel`      - set the yaxis label\n    `xlabel`      - set the xaxis label\n    `interpolate` - interpolate lines between stages. Defaults to \"linear\"\n    see https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md\n        #line_interpolate for all options\n\nResults Object\n\n`results::Vector{Dict{Symbol, Any}}` is a vector of dictionaries where each\ndictionary corresponds to one simulation (therefore there will be\n`N = length(results)` lines plotted in each graph).\n\n\n\n"
-},
-
-{
     "location": "quick.html#Visualise-1",
     "page": "Quick Start",
     "title": "Visualise",
     "category": "section",
-    "text": "@visualise"
+    "text": ""
 },
 
 {
@@ -121,11 +105,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "apireference.html#SDDP.SDDPModel",
+    "page": "Reference",
+    "title": "SDDP.SDDPModel",
+    "category": "Type",
+    "text": "SDDPModel(;kwargs...) do ...\n\nend\n\nDescription\n\nThis function constructs an SDDPModel. SDDPModel takes the following keyword arguments. Some are required, and some are optional.\n\nRequired Keyword arguments\n\nstages::Int\n\nThe number of stages in the problem. A stage is defined as each step in time at  which a decion can be made. Defaults to 1.\n\nobjective_bound::Float64\n\nA valid bound on the initial value/cost to go. i.e. for maximisation this may  be some large positive number, for minimisation this may be some large negative  number.\n\nsolver::MathProgBase.AbstractMathProgSolver\n\nMathProgBase compliant solver that returns duals from a linear program. If this  isn't specified then you must use JuMP.setsolver(sp, solver) in the stage  definition.\n\nOptional Keyword arguments\n\nsense\n\nMust be either :Max or :Min. Defaults to :Min.\n\ncut_oracle::SDDP.AbstractCutOracle\n\nThe cut oracle is responsible for collecting and storing the cuts that define  a value function. The cut oracle may decide that only a subset of the total  discovered cuts are relevant, which improves solution speed by reducing the  size of the subproblems that need solving. Currently must be one of     * DefaultCutOracle() (see DefaultCutOracle for explanation)     * LevelOneCutOracle()(see LevelOneCutOracle for explanation)\n\nrisk_measure\n\nIf a single risk measure is given (i.e. risk_measure = Expectation()), then  this measure will be applied to every stage in the problem. Another option is  to provide a vector of risk measures. There must be one element for every  stage. For example:\n\nrisk_measure = [ NestedAVaR(lambda=0.5, beta=0.25), Expectation() ]\n\nwill apply the i'th element of risk_measure to every Markov state in the i'th stage. The last option is to provide a vector (one element for each stage) of vectors of risk measures (one for each Markov state in the stage). For example:\n\nrisk_measure = [\n# Stage 1 Markov 1 # Stage 1 Markov 2 #\n    [ Expectation(), Expectation() ],\n    # ------- Stage 2 Markov 1 ------- ## ------- Stage 2 Markov 2 ------- #\n    [ NestedAVaR(lambda=0.5, beta=0.25), NestedAVaR(lambda=0.25, beta=0.3) ]\n    ]\n\nNote that even though the last stage does not have a future cost function associated with it (as it has no children), we still have to specify a risk measure. This is necessary to simplify the implementation of the algorithm.\n\nFor more help see NestedAVaR or Expectation.\n\nmarkov_transition\n\nDefine the transition probabilties of the stage graph. If a single array is given, it is assumed that there is an equal number of Markov states in each stage and the transition probabilities are stage invariant. Row indices represent the Markov state in the previous stage. Column indices represent the Markov state in the current stage. Therefore:\n\nmarkov_transition = [0.1 0.9; 0.8 0.2]\n\nis the transition matrix when there is 10% chance of transitioning from Markov state 1 to Markov state 1, a 90% chance of transitioning from Markov state 1 to Markov state 2, an 80% chance of transitioning from Markov state 2 to Markov state 1, and a 20% chance of transitioning from Markov state 2 to Markov state 2.\n\nReturns\n\n* `m`: the `SDDPModel`\n\n\n\n"
+},
+
+{
     "location": "apireference.html#Defining-the-model-1",
     "page": "Reference",
     "title": "Defining the model",
     "category": "section",
-    "text": "<!– SDDPModel –>"
+    "text": "SDDPModel"
 },
 
 {
@@ -185,11 +177,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "apireference.html#SDDP.@stageobjective",
+    "page": "Reference",
+    "title": "SDDP.@stageobjective",
+    "category": "Macro",
+    "text": "@stageobjective!(sp, kw=noises, objective)\n\nDescription\n\nDefine an objective that depends on the realization of the stagewise noise. objective can be any valid third argument to the JuMP @objective macro (i.e. @objective(sp, Min, objective)) that utilises the variable kw that takes the realizations defined in noises.\n\nExamples\n\n@stageobjective(sp, w=1:2, w * x)\n@stageobjective(sp, i=1:2, w[i]^2 * x)\n@stageobjective(sp, i=1:2, x[i])\n\n\n\n"
+},
+
+{
     "location": "apireference.html#Objective-1",
     "page": "Reference",
     "title": "Objective",
     "category": "section",
-    "text": "<!– stageobjective! –>"
+    "text": "@stageobjective"
 },
 
 {
@@ -305,6 +305,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "apireference.html#SDDP.simulate",
+    "page": "Reference",
+    "title": "SDDP.simulate",
+    "category": "Function",
+    "text": "simulate(m::SDDPPModel,variables::Vector{Symbol};\n    noises::Vector{Int}, markovstates::Vector{Int})\n\nDescription\n\nPerform a historical simulation of the current policy in model  m.\n\nnoises is a vector with one element for each stage giving the index of the (in-sample) stagewise independent noise to sample in each stage. markovstates is a vector with one element for each stage giving the index of the (in-sample) markov state to sample in each stage.\n\nExamples\n\nsimulate(m, [:x, :u], noises=[1,2,2], markovstates=[1,1,2])\n\n\n\nsimulate(m::SDDPPModel, N::Int, variables::Vector{Symbol})\n\nDescription\n\nPerform N Monte-Carlo simulations of the current policy in model m saving the values of the variables named in variables at every stage.\n\nExamples\n\nsimulate(m, 10, [:x, :u])\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.@visualise",
+    "page": "Reference",
+    "title": "SDDP.@visualise",
+    "category": "Macro",
+    "text": "@visualise(results, replication, stage, begin\n	... plot definitions ...\nend)\n\nDescription\n\nPlot everything using interactive javascript. This will launch an HTML page to explore.\n\nUsage\n\n@visualise(results, i, t, begin\n    ... one line for each plot ...\nend)\n\nwhere results is the vector of result dictionaries from simulate(), i is the simulation index (1:length(results)), and t is the stage index (1:T).\n\nEach plot line gets transformed into an anonymous function\n\n(results, i, t) -> ... plot line ...\n\nso can be any valid Julia syntax that uses results, i, or t as an argument.\n\nAfter the plot definition, keyword arguments can be used (in parenthesises):     title       - set the title of the plot     ylabel      - set the yaxis label     xlabel      - set the xaxis label     interpolate - interpolate lines between stages. Defaults to \"linear\"     see https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md         #line_interpolate for all options\n\nResults Object\n\nresults::Vector{Dict{Symbol, Any}} is a vector of dictionaries where each dictionary corresponds to one simulation (therefore there will be N = length(results) lines plotted in each graph).\n\n\n\n"
+},
+
+{
     "location": "apireference.html#SDDP.getbound",
     "page": "Reference",
     "title": "SDDP.getbound",
@@ -317,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Results",
     "category": "section",
-    "text": "<!– simulate –> <!– @visualise –>getbound"
+    "text": "simulate\n@visualise\ngetbound"
 },
 
 {

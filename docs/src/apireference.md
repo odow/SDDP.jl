@@ -6,8 +6,8 @@ CurrentModule = SDDP
 
 ## Defining the model
 
-<!-- SDDPModel -->
 ```@docs
+SDDPModel
 ```
 
 ### States
@@ -23,8 +23,8 @@ setnoiseprobability!
 ```
 
 ### Objective
-<!-- stageobjective! -->
 ```@docs
+@stageobjective
 ```
 
 ### Risk Measures
@@ -51,9 +51,9 @@ MonteCarloSimulation
 BoundConvergence
 ```
 ## Results
-<!-- simulate -->
-<!-- @visualise -->
 ```@docs
+simulate
+@visualise
 getbound
 ```
 
