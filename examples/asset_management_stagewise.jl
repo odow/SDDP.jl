@@ -67,5 +67,5 @@ srand(111)
     log_file="asset.log"
 )
 rm("asset.log")
-@test status = :bound_convergence
+@test status == :bound_convergence
 @test isapprox(getbound(m), -1.278, atol=1e-3)
