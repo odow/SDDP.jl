@@ -15,8 +15,10 @@ Modified version of the Asset Management problem taken from
 using SDDP, JuMP, Clp
 using Base.Test
 
-rstock = [1.25, 1.06]
-rbonds = [1.14, 1.12]
+ws = [1.25, 1.06]
+wb = [1.14, 1.12]
+Phi = [-1, 5]
+Psi = [0.02, 0.0]
 
 m = SDDPModel(
     sense = :Min,
@@ -31,27 +33,28 @@ m = SDDPModel(
     ],
     risk_measure = [Expectation(), Expectation(), NestedAVaR(lambda = 0.5, beta=0.5), Expectation()]
                             ) do sp, t, i
-
-    @state(sp, stock_out >= 0, stock_in==0)
-    @state(sp, bonds_out >= 0, bonds_in==0)
+    @state(sp, xs >= 0, xsbar==0)
+    @state(sp, xb >= 0, xbbar==0)
     if t == 1
-        @constraint(sp, stock_out + bonds_out == 55)
+        @constraint(sp, xs + xb == 55 + xsbar + xbbar)
         @stageobjective(sp, 0)
-    elseif t > 1 && t < 4
-        @noise(sp, phi = [-1, 5], rstock[i] * stock_in + rbonds[i] * bonds_in + phi == stock_out + bonds_out)
-        @stageobjective(sp, stock_penalty = [0.02, 0.0], -stock_penalty * stock_out)
+    elseif t == 2 || t == 3
+        @noise(sp, phi=Phi, ws[i] * xsbar +
+            wb[i] * xbbar + phi == xs + xb)
+        @stageobjective(sp, psi = Psi, -psi * xs)
         setnoiseprobability!(sp, [0.6, 0.4])
     else
-        @variable(sp, over  >= 0)
-        @variable(sp, short >= 0)
-        @constraint(sp, rstock[i] * stock_in + rbonds[i] * bonds_in - over + short == 80)
-        @stageobjective(sp, -over + 4*short)
+        @variable(sp, u  >= 0)
+        @variable(sp, v >= 0)
+        @constraint(sp, ws[i] * xsbar + wb[i] * xbbar +
+            u - v == 80)
+        @stageobjective(sp, 4u - v)
     end
 end
 
 srand(111)
 @time status = solve(m,
-    max_iterations = 30,
+    max_iterations = 100,
     simulation = MonteCarloSimulation(
         frequency = 5,
         min  = 100,
@@ -69,3 +72,15 @@ srand(111)
 rm("asset.log")
 @test status == :bound_convergence
 @test isapprox(getbound(m), -1.278, atol=1e-3)
+
+# results = simulate(m, 100, [:xs, :xb])
+#
+# @visualise(results, j, t, begin
+#     results[j][:stageobjective][t], (title="Accumulated Profit",
+#         ylabel="Profit (\$)", cumulative=true)
+#     results[j][:xs][t], (title="Stocks")
+#     results[j][:xb][t], (title="Bonds")
+#     (t==2||t==3)?Phi[results[j][:noise][t]]:NaN, (title="Phi")
+#     (t==2||t==3)?Psi[results[j][:noise][t]]:NaN, (title="Psi")
+#     results[j][:markov][t], (title="Markov State")
+# end)
