@@ -10,6 +10,7 @@ const START  = (VERSION < v"0.6-")?(:start):(esc(:start))
 ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
 valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
+cutoracle(sp::JuMP.Model) = cutoracle(valueoracle(sp))
 
 """
     getbound(m)

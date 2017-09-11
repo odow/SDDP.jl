@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Visualize Value Function</title>
+         <script src="plotly.v1.30.0.js" charset="utf-8"></script>
+    </head>
+    <body>
+            <div id="valuefunction" style="width:600px;height:400px;"></div>
+    <script type="text/javascript">
+    PLOT = document.getElementById('valuefunction');
+    Plotly.plot(PLOT, [
+        {
+            "xaxis":"x",
+            "yaxis":"y",
+            "x":<!--xdata-->,
+            "y":<!--ydata-->,
+            "z":<!--zdata-->,
+            "showlegend":false,
+            "mode":"markers",
+            "marker":{"symbol":"circle", "color":"rgba(0, 154, 250, 1.000)", "line":{"color":"rgba(0, 0, 0, 1.000)", "width":1}, "size":2},
+            "type":"scatter3d"
+        }
+    ],
+    {
+        "showlegend":false,
+        "height":400,
+        "width":600,
+        "margin":{"l":0, "b":20, "r":0, "t":20},
+        "plot_bgcolor":"rgba(255, 255, 255, 1.000)",
+        "scene":{
+            "xaxis":{
+                "title":"<!--xtitle-->",
+                "anchor":"y"
+            },
+            "yaxis":{
+                "title":"<!--ytitle-->",
+                "anchor":"x"
+            },
+            "zaxis":{
+                "title":"Future Cost"
+            }
+        }
+    });
+    </script>
+
+    </body>
+</html>
