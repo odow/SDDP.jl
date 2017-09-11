@@ -5,8 +5,8 @@
 #############################################################################
 
 const ASSET_DIR = dirname(@__FILE__)
-const HTML_FILE = joinpath(ASSET_DIR, "visualise.html")
-const ASSETS    = ["d3.v3.min.js", "visualise.js", "visualise.css"]
+const HTML_FILE = joinpath(ASSET_DIR, "simulation.template.html")
+const ASSETS    = ["d3.v3.min.js", "simulation.js", "simulation.css"]
 const PLOT_DATA = Dict{String, Any}(
 	"cumulative"  => false,
 	"title"       => "",

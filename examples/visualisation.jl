@@ -117,10 +117,15 @@ results = simulate(m,  # Simulate the policy
     [:reservoir]       # variables to return
     )
 
-@visualise(results, replication, stage, begin
-	results[replication][:stageobjective][stage],              (title="Accumulated Profit", ylabel="Accumulated Profit (\$)", cumulative=true)
-	results[replication][:stageobjective][stage],              (title="Weekly Income",      ylabel="Week Profit (\$)")
-	results[replication][:reservoir][stage][1],    (title="Upper Reservoir",    ylabel="Level")
-	results[replication][:reservoir][stage][2],    (title="Lower Reservoir")
-	prices[stage, results[replication][:markov][stage]], (ylabel="Price", interpolate="step-after")
-end)
+p = SDDP.newplot()
+SDDP.addplot!(p, 1:100, 1:3, (i, t)->results[i][:stageobjective][t],
+    title="Accumulated Profit", ylabel="Accumulated Profit (\$)", cumulative=true)
+SDDP.addplot!(p, 1:100, 1:3, (i, t)->results[i][:stageobjective][t],
+    title="Weekly Income", ylabel="Week Profit (\$)")
+SDDP.addplot!(p, 1:100, 1:3, (i, t)->results[i][:reservoir][t][1],
+    title="Upper Reservoir", ylabel="Level")
+SDDP.addplot!(p, 1:100, 1:3, (i, t)->results[i][:reservoir][t][2],
+    title="Lower Reservoir")
+SDDP.addplot!(p, 1:100, 1:3, (i, t)->prices[t, results[i][:markov][t]],
+    ylabel="Price", interpolate="step-after")
+SDDP.show(p)

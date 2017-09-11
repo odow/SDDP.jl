@@ -5,6 +5,9 @@
     function but I can't get JuliaPolhedra/Polyhedra.jl to install and work
     due to some dependency issues on Windows.
 =#
+const PLOTLY_ASSET_DIR = dirname(@__FILE__)
+const PLOTLY_HTML_FILE = joinpath(PLOTLY_ASSET_DIR, "plotly.valuefunction.template.html")
+const PLOTLY_ASSETS    = ["plotly.v1.30.0.js"]
 
 function getAb(cuts::Vector{Cut})
     b = zeros(length(cuts))
@@ -58,20 +61,5 @@ function visualizevaluefunction(m::SDDPModel, stage::Int, markovstate::Int, args
     html_string = replace(html_string, "<!--zdata-->", json(zdata))
     html_string = replace(html_string, "<!--xtitle-->", state1)
     html_string = replace(html_string, "<!--ytitle-->", state2)
-    launch_plotly(html_string)
-end
-
-const PLOTLY_ASSET_DIR = dirname(@__FILE__)
-const PLOTLY_HTML_FILE = joinpath(PLOTLY_ASSET_DIR, "plotly.template.html")
-const PLOTLY_ASSETS    = ["plotly.v1.30.0.js"]
-
-function launch_plotly(html_string)
-    temporary_html_file = replace(tempname(), ".tmp", ".html")
-    for asset in PLOTLY_ASSETS
-        cp(joinpath(PLOTLY_ASSET_DIR, asset), joinpath(dirname(temporary_html_file), asset), remove_destination=true)
-    end
-    open(temporary_html_file, "w") do f
-        write(f, html_string)
-    end
-    launch_plot(temporary_html_file)
+    launch_file(html_string, PLOTLY_ASSETS, PLOT_ASSET_DIR)
 end
