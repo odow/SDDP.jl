@@ -9,6 +9,22 @@
 const PLOTLY_HTML_FILE = "valuefunction.template.html"
 const PLOTLY_ASSETS    = ["plotly.v1.30.0.js"]
 
+const PLOTLY_DATA = Dict{String, Any}(
+    # "xaxis" => "x",
+    # "yaxis" => "y",
+    # "x" => <!--xdata-->,
+    # "y" => <!--ydata-->,
+    # "z" => <!--zdata-->,
+    "showlegend" => false,
+    "marker" => Dict(
+        "symbol"=>"circle",
+        "color"=>"rgba(0, 154, 250, 1.000)",
+        "size"=>2
+    )
+    # "type" => "scatter3d"
+)
+const PLOTLY_SCENE = Dict{String, Any}()
+
 function getAb(cuts::Vector{Cut})
     b = zeros(length(cuts))
     A = zeros(length(cuts), length(cuts[1].coefficients))
@@ -81,19 +97,41 @@ function plotvaluefunction(vf::DefaultValueFunction, states::Union{Float64, Abst
             push!(free_args, i)
         end
     end
-    @assert length(free_args) == 2
+    @assert length(free_args) == 1 || length(free_args) == 2
     A = A[:, free_args]
-    x = mesh(states[free_args[1]], states[free_args[2]])
+    if length(free_args) == 1
+        x = states[free_args[1]]'
+    else
+        x = mesh(states[free_args[1]], states[free_args[2]])
+    end
     y = b * ones(1, size(x, 2)) + A * x
     yi = Float64[maximum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
-    xdata = x[1,:]
-    ydata = x[2,:]
-    zdata = yi
+
+    plotly_data = deepcopy(PLOTLY_DATA)
+    plotly_data["x"] = x[1,:]
+
+    if length(free_args) == 1
+        plotly_data["y"] = yi
+        plotly_data["type"] = "scatter"
+        scene_text = "xaxis: {title: \"$(label1)\"}, yaxis: {title: \"Future Cost\"}"
+    else
+        plotly_data["xaxis"] = "x"
+        plotly_data["yaxis"] = "y"
+        plotly_data["type"] = "scatter3d"
+        plotly_data["y"] = x[2,:]
+        plotly_data["z"] = yi
+        plotly_data["mode"] = "markers"
+        
+        scene = Dict{String, Any}()
+        scene["xaxis"] = Dict("title"=>label1, "anchor"=>"y")
+        scene["yaxis"] = Dict("title" => label2, "anchor" => "x")
+        scene["zaxis"] = Dict("title" => "Future Cost")
+        scene_text = "scene: $(json(scene))"
+    end
+
+
     html_string = gethtmlstring(PLOTLY_HTML_FILE)
-    html_string = replace(html_string, "<!--xdata-->", json(xdata))
-    html_string = replace(html_string, "<!--ydata-->", json(ydata))
-    html_string = replace(html_string, "<!--zdata-->", json(zdata))
-    html_string = replace(html_string, "<!--xtitle-->", label1)
-    html_string = replace(html_string, "<!--ytitle-->", label2)
+    html_string = replace(html_string, "<!--DATA-->", json(plotly_data, 1))
+    html_string = replace(html_string, "<!--SCENE-->", scene_text)
     launch_file(html_string, PLOTLY_ASSETS)
 end
