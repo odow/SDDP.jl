@@ -34,15 +34,49 @@ function mesh(x, y)
     A
 end
 
-function visualizevaluefunction(m::SDDPModel, stage::Int, markovstate::Int, args::Union{Float64, AbstractVector{Float64}}...; state1="State 1", state2="State 2")
+"""
+     SDDP.plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
+
+# Description
+
+Plot the value function of stage `stage` and Markov state `markovstate` in the
+SDDPModel `m` at the points in the discretized state space given by `states`. If
+the value in `states` is a real number, the state is evaluated at that point. If
+the value is a vector, the state is evaluated at all the points in the vector.
+At most two states can be vectors.
+
+# Examples
+
+    SDDP.plotvaluefunction(m, 2, 1, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1="State 1", label2="State 3")
+"""
+function plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
     sp = SDDP.getsubproblem(m, stage, markovstate)
-    cuts = SDDP.validcuts(SDDP.cutoracle(sp))
+    vf = SDDP.valueoracle(sp)
+    plotvaluefunction(vf, states...; label1=label1, label2=label2)
+end
+
+"""
+     SDDP.plotvaluefunction(vf::DefaultValueFunction, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
+
+# Description
+
+Plot the value function `vf` at the points in the discretized state space given
+by `states`. If the value in `states` is a real number, the state is evaluated
+at that point. If the value is a vector, the state is evaluated at all the points
+in the vector. At most two states can be vectors.
+
+# Examples
+
+    SDDP.plotvaluefunction(vf, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1="State 1", label2="State 3")
+"""
+function plotvaluefunction(vf::DefaultValueFunction, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
+    cuts = SDDP.validcuts(SDDP.cutoracle(vf))
     A, b = getAb(cuts)
-    @assert length(args) == size(A, 2)
+    @assert length(states) == size(A, 2)
     free_args = Int[]
-    for (i, arg) in enumerate(args)
-        if isa(arg, Float64)
-            b += A[:, i] * arg
+    for (i, state) in enumerate(states)
+        if isa(state, Float64)
+            b += A[:, i] * state
         else
             push!(free_args, i)
         end
