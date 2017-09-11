@@ -121,7 +121,7 @@ function plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, stat
     x, yi  = processvaluefunctiondata(vf, is_minimization, states...)
     plotly_data = deepcopy(PLOTLY_DATA)
     plotly_data["x"] = x[1,:]
-    if length(free_args) == 1
+    if size(x, 1) == 1
         plotly_data["y"] = yi
         plotly_data["type"] = "scatter"
         scene_text = "xaxis: {title: \"$(label1)\"}, yaxis: {title: \"Future Cost\"}"
@@ -139,7 +139,7 @@ function plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, stat
         scene_text = "scene: $(json(scene))"
     end
     html_string = gethtmlstring(PLOTLY_HTML_FILE)
-    html_string = replace(html_string, "<!--DATA-->", json(plotly_data, 1))
+    html_string = replace(html_string, "<!--DATA-->", json(plotly_data))
     html_string = replace(html_string, "<!--SCENE-->", scene_text)
     launch_file(html_string, PLOTLY_ASSETS)
 end
