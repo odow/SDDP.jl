@@ -41,4 +41,4 @@ end
 srand(111)
 @time status = solve(m, max_iterations = 30)
 
-SDDP.plotvaluefunction(m, 3, 1, 0.0:2.0:100, 0.0:2.0:100, state1 = "Stocks", state2="Bonds")
+SDDP.plotvaluefunction(m, 3, 1, 0.0:2.0:100, 0.0:2.0:100, label1 = "Stocks", label2="Bonds")

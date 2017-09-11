@@ -5,8 +5,8 @@
     function but I can't get JuliaPolhedra/Polyhedra.jl to install and work
     due to some dependency issues on Windows.
 =#
-const PLOTLY_ASSET_DIR = dirname(@__FILE__)
-const PLOTLY_HTML_FILE = joinpath(PLOTLY_ASSET_DIR, "plotly.valuefunction.template.html")
+
+const PLOTLY_HTML_FILE = "valuefunction.template.html"
 const PLOTLY_ASSETS    = ["plotly.v1.30.0.js"]
 
 function getAb(cuts::Vector{Cut})
@@ -83,17 +83,17 @@ function plotvaluefunction(vf::DefaultValueFunction, states::Union{Float64, Abst
     end
     @assert length(free_args) == 2
     A = A[:, free_args]
-    x = mesh(args[free_args[1]], args[free_args[2]])
+    x = mesh(states[free_args[1]], states[free_args[2]])
     y = b * ones(1, size(x, 2)) + A * x
     yi = Float64[maximum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
     xdata = x[1,:]
     ydata = x[2,:]
     zdata = yi
-    html_string = readstring(PLOTLY_HTML_FILE)
+    html_string = gethtmlstring(PLOTLY_HTML_FILE)
     html_string = replace(html_string, "<!--xdata-->", json(xdata))
     html_string = replace(html_string, "<!--ydata-->", json(ydata))
     html_string = replace(html_string, "<!--zdata-->", json(zdata))
-    html_string = replace(html_string, "<!--xtitle-->", state1)
-    html_string = replace(html_string, "<!--ytitle-->", state2)
-    launch_file(html_string, PLOTLY_ASSETS, PLOT_ASSET_DIR)
+    html_string = replace(html_string, "<!--xtitle-->", label1)
+    html_string = replace(html_string, "<!--ytitle-->", label2)
+    launch_file(html_string, PLOTLY_ASSETS)
 end

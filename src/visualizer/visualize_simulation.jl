@@ -4,9 +4,17 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-const SIMULATION_ASSET_DIR = dirname(@__FILE__)
-const SIMULATION_HTML_FILE = joinpath(SIMULATION_ASSET_DIR, "simulation.template.html")
+const SIMULATION_HTML_FILE = "simulation.template.html"
 const SIMULATION_ASSETS    = ["d3.v3.min.js", "simulation.js", "simulation.css"]
+const PLOT_DATA = Dict{String, Any}(
+	"cumulative"  => false,
+	"title"       => "",
+	"ylabel"      => "",
+	"xlabel"      => "Stages",
+	"interpolate" => "linear",
+	"ymin"        => "",
+	"ymax"        => ""
+)
 
 immutable SimulationPlot
 	data::Vector{Dict{String, Any}}
@@ -74,18 +82,7 @@ end
 Launch a browser and render the SimulationPlot plot `p`.
 """
 function show(p::SimulationPlot)
-	html_string = readstring(SIMULATION_HTML_FILE)
+	html_string = gethtmlstring(SIMULATION_HTML_FILE)
 	html_string = replace(html_string, "<!--DATA-->", json(p))
-	launch_file(html_string, SIMULATION_ASSETS, SIMULATION_ASSET_DIR)
-end
-
-function launch_file(html_string, assets, asset_dir)
-	temporary_html_file = replace(tempname(), ".tmp", ".html")
-    for asset in assets
-        cp(joinpath(asset_dir, asset), joinpath(dirname(temporary_html_file), asset), remove_destination=true)
-    end
-    open(temporary_html_file, "w") do f
-        write(f, html_string)
-    end
-    launch_plot(temporary_html_file)
+	launch_file(html_string, SIMULATION_ASSETS)
 end
