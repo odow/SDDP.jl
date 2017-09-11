@@ -117,7 +117,7 @@ the subproblem is a minimization and false otherwise.
 
     SDDP.plotvaluefunction(vf, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1="State 1", label2="State 3")
 """
-function plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
+function plotvaluefunction(vf, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
     x, yi  = processvaluefunctiondata(vf, is_minimization, states...)
     plotly_data = deepcopy(PLOTLY_DATA)
     plotly_data["x"] = x[1,:]
@@ -133,10 +133,10 @@ function plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, stat
         plotly_data["z"] = yi
         plotly_data["mode"] = "markers"
         scene = Dict{String, Any}()
-        scene["xaxis"] = Dict("title"=>label1, "anchor"=>"y")
-        scene["yaxis"] = Dict("title" => label2, "anchor" => "x")
+        scene["xaxis"] = Dict("title"=>label1)
+        scene["yaxis"] = Dict("title" => label2)
         scene["zaxis"] = Dict("title" => "Future Cost")
-        scene_text = "scene: $(json(scene))"
+        scene_text = "\"scene\": $(json(scene))"
     end
     html_string = gethtmlstring(PLOTLY_HTML_FILE)
     html_string = replace(html_string, "<!--DATA-->", json(plotly_data))
