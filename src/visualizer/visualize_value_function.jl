@@ -50,6 +50,37 @@ function mesh(x, y)
     A
 end
 
+function processvaluefunctiondata(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...)
+    cuts = SDDP.validcuts(SDDP.cutoracle(vf))
+    processvaluefunctiondata(cuts, is_minimization, states...)
+end
+function processvaluefunctiondata(cuts::Vector{Cut}, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...)
+    A, b = getAb(cuts)
+    @assert length(states) == size(A, 2)
+    free_args = Int[]
+    for (i, state) in enumerate(states)
+        if isa(state, Float64)
+            b += A[:, i] * state
+        else
+            push!(free_args, i)
+        end
+    end
+    @assert length(free_args) == 1 || length(free_args) == 2
+    A = A[:, free_args]
+    if length(free_args) == 1
+        x = states[free_args[1]]'
+    else
+        x = mesh(states[free_args[1]], states[free_args[2]])
+    end
+    y = b * ones(1, size(x, 2)) + A * x
+    if is_minimization
+        yi = Float64[maximum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
+    else
+        yi = Float64[minimum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
+    end
+    return x, yi
+end
+
 """
      SDDP.plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
 
@@ -87,34 +118,9 @@ the subproblem is a minimization and false otherwise.
     SDDP.plotvaluefunction(vf, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1="State 1", label2="State 3")
 """
 function plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
-    cuts = SDDP.validcuts(SDDP.cutoracle(vf))
-    A, b = getAb(cuts)
-    @assert length(states) == size(A, 2)
-    free_args = Int[]
-    for (i, state) in enumerate(states)
-        if isa(state, Float64)
-            b += A[:, i] * state
-        else
-            push!(free_args, i)
-        end
-    end
-    @assert length(free_args) == 1 || length(free_args) == 2
-    A = A[:, free_args]
-    if length(free_args) == 1
-        x = states[free_args[1]]'
-    else
-        x = mesh(states[free_args[1]], states[free_args[2]])
-    end
-    y = b * ones(1, size(x, 2)) + A * x
-    if is_minimization
-        yi = Float64[maximum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
-    else
-        yi = Float64[minimum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
-    end
-
+    x, yi  = processvaluefunctiondata(vf, is_minimization, states...)
     plotly_data = deepcopy(PLOTLY_DATA)
     plotly_data["x"] = x[1,:]
-
     if length(free_args) == 1
         plotly_data["y"] = yi
         plotly_data["type"] = "scatter"
@@ -126,15 +132,12 @@ function plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, stat
         plotly_data["y"] = x[2,:]
         plotly_data["z"] = yi
         plotly_data["mode"] = "markers"
-
         scene = Dict{String, Any}()
         scene["xaxis"] = Dict("title"=>label1, "anchor"=>"y")
         scene["yaxis"] = Dict("title" => label2, "anchor" => "x")
         scene["zaxis"] = Dict("title" => "Future Cost")
         scene_text = "scene: $(json(scene))"
     end
-
-
     html_string = gethtmlstring(PLOTLY_HTML_FILE)
     html_string = replace(html_string, "<!--DATA-->", json(plotly_data, 1))
     html_string = replace(html_string, "<!--SCENE-->", scene_text)

@@ -55,19 +55,28 @@ for all `i` in `ivals` (one for each series) and `t` in `tvals` (one for each st
 	p = SDDP.newplot()
 	SDDP.addplot!(p, 1:10, 1:3, (i,t)->results[i][:stageobjective][t])
 """
-function addplot!(p::SimulationPlot, i::AbstractVector{Int}, t::AbstractVector{Int}, f::Function; xlabel="", ylabel="",
+function addplot!(p::SimulationPlot, i::AbstractVector{Int}, t::AbstractVector{Int}, f::Function; xlabel="Stages", ylabel="",
 	cumulative=false, title="", interpolate="linear", ymin="", ymax="")
 
-	plot_dict = deepcopy(PLOT_DATA)
+	plot_dict = Dict{String, Any}(
+		"xlabel" => xlabel,
+		"ylabel" => ylabel,
+		"title" => title,
+		"cumulative" => cumulative,
+		"interpolate" => interpolate ,
+		"ymin" => ymin,
+		"ymax" => ymax
+
+	)
 	plot_dict["data"] = Vector{Float64}[]
 	for ii in i
 		push!(plot_dict["data"], Float64[])
 		y = 0.0
 		for tt in t
 			if cumulative
-				y += f(ii, tt)
+				y += float(f(ii, tt))
 			else
-				y = f(ii, tt)
+				y = float(f(ii, tt))
 			end
 			push!(plot_dict["data"][ii], y)
 		end
