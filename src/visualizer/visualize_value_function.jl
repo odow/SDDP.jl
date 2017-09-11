@@ -68,24 +68,25 @@ At most two states can be vectors.
 function plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
     sp = SDDP.getsubproblem(m, stage, markovstate)
     vf = SDDP.valueoracle(sp)
-    plotvaluefunction(vf, states...; label1=label1, label2=label2)
+    plotvaluefunction(vf, getsense(sp) == :Min, states...; label1=label1, label2=label2)
 end
 
 """
-     SDDP.plotvaluefunction(vf::DefaultValueFunction, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
+     SDDP.plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
 
 # Description
 
 Plot the value function `vf` at the points in the discretized state space given
 by `states`. If the value in `states` is a real number, the state is evaluated
 at that point. If the value is a vector, the state is evaluated at all the points
-in the vector. At most two states can be vectors.
+in the vector. At most two states can be vectors. `is_minimization` is `true` if
+the subproblem is a minimization and false otherwise.
 
 # Examples
 
     SDDP.plotvaluefunction(vf, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1="State 1", label2="State 3")
 """
-function plotvaluefunction(vf::DefaultValueFunction, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
+function plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
     cuts = SDDP.validcuts(SDDP.cutoracle(vf))
     A, b = getAb(cuts)
     @assert length(states) == size(A, 2)
@@ -105,7 +106,11 @@ function plotvaluefunction(vf::DefaultValueFunction, states::Union{Float64, Abst
         x = mesh(states[free_args[1]], states[free_args[2]])
     end
     y = b * ones(1, size(x, 2)) + A * x
-    yi = Float64[maximum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
+    if is_minimization
+        yi = Float64[maximum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
+    else
+        yi = Float64[minimum(y[:, i]) for i in 1:size(y, 2)]::Vector{Float64}
+    end
 
     plotly_data = deepcopy(PLOTLY_DATA)
     plotly_data["x"] = x[1,:]
@@ -121,7 +126,7 @@ function plotvaluefunction(vf::DefaultValueFunction, states::Union{Float64, Abst
         plotly_data["y"] = x[2,:]
         plotly_data["z"] = yi
         plotly_data["mode"] = "markers"
-        
+
         scene = Dict{String, Any}()
         scene["xaxis"] = Dict("title"=>label1, "anchor"=>"y")
         scene["yaxis"] = Dict("title" => label2, "anchor" => "x")
