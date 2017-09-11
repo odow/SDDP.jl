@@ -20,7 +20,7 @@ export SDDPModel,
     @noise, @noises, setnoiseprobability!,
     stageobjective!, @stageobjective,
     # cut oracles
-    DefaultCutOracle, DematosCutOracle,
+    DefaultCutOracle, DematosCutOracle, LevelOneCutOracle,
     # risk measures
     Expectation, NestedAVaR,
     MonteCarloSimulation, BoundConvergence,
@@ -149,7 +149,7 @@ function SDDPModel(build!::Function;
         error("""Too few arguments in
             SDDPModel() do args...
             end""")
-    elseif num_args > 4
+    elseif num_args > 3
         error("""Too many arguments
             SDDPModel() do args...
             end""")
@@ -159,10 +159,9 @@ function SDDPModel(build!::Function;
     m = newSDDPModel(sense, value_function, build!, solver)
 
     for t in 1:stages
-        # todo: transition probabilities that vary by stage
-        stage = Stage(t, getel(Array{Float64, 2}, markov_transition, t))
+        markov_transition_matrix = getel(Array{Float64, 2}, markov_transition, t)
         # check that
-        if num_args == 2 && size(markov_transition[t], 2) > 1
+        if num_args == 2 && size(markov_transition_matrix, 2) > 1
             error("""Because you specified a noise tree in the SDDPModel constructor, you need to use the
 
                 SDDPModel() do sp, stage, markov_state
@@ -171,7 +170,8 @@ function SDDPModel(build!::Function;
 
             syntax.""")
         end
-        for i in 1:size(markov_transition[t], 2)
+        stage = Stage(t,markov_transition_matrix)
+        for i in 1:size(markov_transition_matrix, 2)
             mod = Subproblem(
                 finalstage     = (t == stages),
                 stage          = t,
