@@ -53,8 +53,11 @@ BoundConvergence
 ## Results
 ```@docs
 simulate
-@visualise
 getbound
+newplot
+addplot!
+show
+plotvaluefunction
 ```
 
 ## Save/Load

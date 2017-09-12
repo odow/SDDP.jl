@@ -26,7 +26,7 @@ export SDDPModel,
     MonteCarloSimulation, BoundConvergence,
     Serial, Asyncronous,
     solve, simulate,
-    @visualise,
+    # @visualise,
     getbound,
     loadcuts!
 
