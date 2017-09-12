@@ -88,8 +88,7 @@ end
                         min       = 5,
                         max       = 50,
                         step      = 5
-                             ),
-     print_level = 0
+                             )
 )
 
 @test isapprox(getbound(m), 93.267, atol=1e-3)

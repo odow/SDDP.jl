@@ -60,7 +60,6 @@ subproblems(m::SDDPModel, t) = subproblems(getstage(m, t))
 getsubproblem(m::SDDPModel, t, i) = getsubproblem(getstage(m, t), i)
 
 nstages(m::SDDPModel) = length(stages(m))
-nsubproblems(m::SDDPModel, t::Int) = length(subproblems(m, t))
 
 function n_args(f::Function)
     @assert length(methods(f)) == 1
