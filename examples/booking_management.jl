@@ -110,8 +110,8 @@ m = SDDPModel(
 end
 
 solution = solve(m,
-     max_iterations = 50,
-     print_level = 0,
+     max_iterations = 75,
+    #  print_level = 0,
      # simulate the lower bound of the policy
      simulation = MonteCarloSimulation(
                     frequency = 50,
@@ -122,5 +122,16 @@ solution = solve(m,
 )
 
 srand(111)
+
 # I get different answers running this same file with Clp
 @test isapprox(getbound(m), 37.0, atol=5.0)
+
+states = Union{Float64, Vector{Float64}}[0.0 for i in 1:NUMBER_OF_ROOMS, j in 1:NUMBER_OF_DAYS]
+# compare (room, day) = (1,1)
+states[1,1] = collect(linspace(0, 1, 51))
+# against (room, day) = (2,1)
+states[2,1] = collect(linspace(0, 1, 51))
+
+# ==============================================================================
+#   Uncomment to plot value function
+# SDDP.plotvaluefunction(m, 1, 1, states..., label1 = "Room (1,1)", label2 = "Room (2,1)")
