@@ -7,6 +7,13 @@ This package is unregistered so you will need to `Pkg.clone` it as follows:
 ```julia
 Pkg.clone("https://github.com/odow/SDDP.jl.git")
 ```
+## Development Notes
+
+This package is under development and some features may be changed or added.
+Most of the time, this will just be a renaming of minor parts of the code.
+
+For a time line of features, see NEWS.md. Items that require modification of
+existing codes are prefixed with `!!`.
 
 ## Documentation
 

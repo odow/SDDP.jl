@@ -10,6 +10,7 @@ const START  = (VERSION < v"0.6-")?(:start):(esc(:start))
 ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
 valueoracle(sp::JuMP.Model) = ext(sp).valueoracle
+cutoracle(sp::JuMP.Model) = cutoracle(valueoracle(sp))
 
 """
     getbound(m)
@@ -59,7 +60,6 @@ subproblems(m::SDDPModel, t) = subproblems(getstage(m, t))
 getsubproblem(m::SDDPModel, t, i) = getsubproblem(getstage(m, t), i)
 
 nstages(m::SDDPModel) = length(stages(m))
-nsubproblems(m::SDDPModel, t::Int) = length(subproblems(m, t))
 
 function n_args(f::Function)
     @assert length(methods(f)) == 1

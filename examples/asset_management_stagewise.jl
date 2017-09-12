@@ -75,12 +75,11 @@ rm("asset.log")
 
 # results = simulate(m, 100, [:xs, :xb])
 #
-# @visualise(results, j, t, begin
-#     results[j][:stageobjective][t], (title="Accumulated Profit",
-#         ylabel="Profit (\$)", cumulative=true)
-#     results[j][:xs][t], (title="Stocks")
-#     results[j][:xb][t], (title="Bonds")
-#     (t==2||t==3)?Phi[results[j][:noise][t]]:NaN, (title="Phi")
-#     (t==2||t==3)?Psi[results[j][:noise][t]]:NaN, (title="Psi")
-#     results[j][:markov][t], (title="Markov State")
-# end)
+# p = SDDP.newplot()
+# SDDP.addplot!(p, 1:100, 1:4, (i, t)->round(results[i][:stageobjective][t], 2),
+#     title="Objective", ylabel="Profit (\$)", cumulative=true)
+# SDDP.addplot!(p, 1:100, 1:4, (i, t)->round(results[i][:xs][t], 2),
+#     title="Stocks")
+# SDDP.addplot!(p, 1:100, 1:4, (i, t)->round(results[i][:xb][t], 2),
+#     title="Bonds")
+# SDDP.show(p)

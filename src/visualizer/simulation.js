@@ -12,15 +12,15 @@ var xAxis = d3.svg.axis().scale(x).orient("bottom");
 
 // Y axis
 var y = d3.scale.linear().range([height, 0]);
-var yAxis = d3.svg.axis().scale(y).orient("left")
-.tickFormat(function (d) {
-  var prefix = d3.formatPrefix(d);
-  if (Math.abs(d) >= 1000.) {
-    return prefix.scale(d) + prefix.symbol;
-  } else {
-    return d;
-  }
-});
+var yAxis = d3.svg.axis().scale(y).orient("left");
+// .tickFormat(function (d) {
+//   var prefix = d3.formatPrefix(d);
+//   if (Math.abs(d) >= 1000.) {
+//     return prefix.scale(d) + prefix.symbol;
+//   } else {
+//     return d;
+//   }
+// });
 
 // d3 line function
 var line = d3.svg.line()

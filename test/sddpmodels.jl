@@ -41,6 +41,6 @@
         end
         sp = SDDP.getsubproblem(m, 1, 1)
         @test SDDP.cuttoaffexpr(sp, SDDP.Cut(1.0, [0.5])) == 1.0 + 0.5*sp[:x]
-        # @test SDDP.cutoracle(sp) == SDDP.valueoracle(sp).cutmanager
+        @test SDDP.cutoracle(sp) == SDDP.valueoracle(sp).cutmanager
     end
 end

@@ -13,6 +13,8 @@ type DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
 end
 DefaultValueFunction(cutoracle=DefaultCutOracle()) = DefaultValueFunction(cutoracle, JuMP.Variable(JuMP.Model(), 0))
 
+cutoracle(vf::DefaultValueFunction) = vf.cutmanager
+
 summarise{C}(::Type{DefaultValueFunction{C}}) = "Default"
 
 function init!{C}(vf::DefaultValueFunction{C}, m::JuMP.Model, sense, bound)

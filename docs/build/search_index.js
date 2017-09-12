@@ -313,14 +313,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "apireference.html#SDDP.@visualise",
-    "page": "Reference",
-    "title": "SDDP.@visualise",
-    "category": "Macro",
-    "text": "@visualise(results, replication, stage, begin\n	... plot definitions ...\nend)\n\nDescription\n\nPlot everything using interactive javascript. This will launch an HTML page to explore.\n\nUsage\n\n@visualise(results, i, t, begin\n    ... one line for each plot ...\nend)\n\nwhere results is the vector of result dictionaries from simulate(), i is the simulation index (1:length(results)), and t is the stage index (1:T).\n\nEach plot line gets transformed into an anonymous function\n\n(results, i, t) -> ... plot line ...\n\nso can be any valid Julia syntax that uses results, i, or t as an argument.\n\nAfter the plot definition, keyword arguments can be used (in parenthesises):\n\ntitle       - set the title of the plot\nylabel      - set the yaxis label\nxlabel      - set the xaxis label\ninterpolate - interpolate lines between stages. Defaults to \"linear\"  see the d3 docs\n\nfor all options.\n\nResults Object\n\nresults::Vector{Dict{Symbol, Any}} is a vector of dictionaries where each dictionary corresponds to one simulation (therefore there will be N = length(results) lines plotted in each graph).\n\nExamples\n\n@visualise(results, i, t, begin\n	results[i][:stageobjective][t], (title=\"Accumulated Obj.\", ylabel=\"$\", cumulative=true)\n	results[i][:stageobjective][t], (title=\"Stage Objective\",  ylabel=\"$\")\n	results[i][:x][t],              (title=\"State\",            ylabel=\"Level\")\n	results[i][:u][t],              (title=\"Control\")\n	prices[t, results[i][:markov][t]], (ylabel=\"Price\", interpolate=\"step-after\")\nend)\n\n\n\n"
-},
-
-{
     "location": "apireference.html#SDDP.getbound",
     "page": "Reference",
     "title": "SDDP.getbound",
@@ -329,11 +321,43 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "apireference.html#SDDP.newplot",
+    "page": "Reference",
+    "title": "SDDP.newplot",
+    "category": "Function",
+    "text": "SDDP.newplot()\n\nDescription\n\nInitialize a new SimulationPlot.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.addplot!",
+    "page": "Reference",
+    "title": "SDDP.addplot!",
+    "category": "Function",
+    "text": "SDDP.addplot!(p::SimulationPlot, ivals::AbstractVector{Int}, tvals::AbstractVector{Int}, f::Function; kwargs...)\n\nDescription\n\nAdd a new figure to the SimulationPlot p, where the y-value is given by f(i, t) for all i in ivals (one for each series) and t in tvals (one for each stage).\n\nKeywords\n\nxlabel: set the xaxis label;\nylabel: set the yaxis label;\ntitle: set the title of the plot;\nymin: set the minimum y value;\nymax: set the maximum y value;\ncumulative: plot the additive accumulation of the value across the stages;\ninterpolate: interpolation method for lines between stages. Defaults to \"linear\"  see the d3 docs\n\nfor all options.\n\nExamples\n\nresults = simulate(m, 10)\np = SDDP.newplot()\nSDDP.addplot!(p, 1:10, 1:3, (i,t)->results[i][:stageobjective][t])\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.show",
+    "page": "Reference",
+    "title": "SDDP.show",
+    "category": "Function",
+    "text": "show(p::SimulationPlot)\n\nDescription\n\nLaunch a browser and render the SimulationPlot plot p.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.plotvaluefunction",
+    "page": "Reference",
+    "title": "SDDP.plotvaluefunction",
+    "category": "Function",
+    "text": " SDDP.plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1=\"State 1\", label2=\"State 2\")\n\nDescription\n\nPlot the value function of stage stage and Markov state markovstate in the SDDPModel m at the points in the discretized state space given by states. If the value in states is a real number, the state is evaluated at that point. If the value is a vector, the state is evaluated at all the points in the vector. At most two states can be vectors.\n\nExamples\n\nSDDP.plotvaluefunction(m, 2, 1, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1=\"State 1\", label2=\"State 3\")\n\n\n\n SDDP.plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1=\"State 1\", label2=\"State 2\")\n\nDescription\n\nPlot the value function vf at the points in the discretized state space given by states. If the value in states is a real number, the state is evaluated at that point. If the value is a vector, the state is evaluated at all the points in the vector. At most two states can be vectors. is_minimization is true if the subproblem is a minimization and false otherwise.\n\nExamples\n\nSDDP.plotvaluefunction(vf, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1=\"State 1\", label2=\"State 3\")\n\n\n\n"
+},
+
+{
     "location": "apireference.html#Results-1",
     "page": "Reference",
     "title": "Results",
     "category": "section",
-    "text": "simulate\n@visualise\ngetbound"
+    "text": "simulate\ngetbound\nnewplot\naddplot!\nshow\nplotvaluefunction"
 },
 
 {

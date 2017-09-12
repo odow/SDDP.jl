@@ -26,7 +26,7 @@ export SDDPModel,
     MonteCarloSimulation, BoundConvergence,
     Serial, Asyncronous,
     solve, simulate,
-    @visualise,
+    # @visualise,
     getbound,
     loadcuts!
 
@@ -44,8 +44,7 @@ include("print.jl")
 include("dematos_cutoracle.jl")
 include("avar_riskaversion.jl")
 include("solve_asyncronous.jl")
-include("visualiser/visualise.jl")
-
+include("visualizer/visualize.jl")
 immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
 """
