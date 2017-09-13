@@ -449,7 +449,7 @@ control the solution process.
 
 """
 function JuMP.solve(m::SDDPModel;
-        max_iterations::Int       = 10,
+        max_iterations::Int       = Int(1e9),
         time_limit::Real          = Inf, # seconds
         simulation = MonteCarloSimulation(
                 frequency   = 0,

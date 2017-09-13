@@ -76,10 +76,10 @@ markov state to sample in each stage.
 
     simulate(m, [:x, :u], noises=[1,2,2], markovstates=[1,1,2])
 """
-function simulate{C}(m::SDDPModel{DefaultValueFunction{C}},
+function simulate(m::SDDPModel,
         variables::Vector{Symbol} = Symbol[];
-        noises::Vector{Int}    = zeros(Int, length(m.stages)),
-        markovstates::Vector{Int} = ones(Int, length(m.stages))
+        noises::AbstractVector{Int}    = zeros(Int, length(m.stages)),
+        markovstates::AbstractVector{Int} = ones(Int, length(m.stages))
     )
     store = newsolutionstore(variables)
     for t in 1:length(m.stages)
