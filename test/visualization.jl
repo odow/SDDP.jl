@@ -62,7 +62,7 @@
             @test y == [0.5, -0.5]
 
             (plotly_data, scene_text) = SDDP.getplotlydata(x, y, "lab1", "lab2")
-            @test plotly_data["x"] == x'
+            @test plotly_data["x"] == x[:]
             @test plotly_data["y"] == y
             @test haskey(plotly_data, "z") == false
             @test plotly_data["type"] == "scatter"
