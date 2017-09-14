@@ -136,6 +136,7 @@ function plotvaluefunction(vf, is_minimization::Bool, states::Union{Float64, Abs
         scene["xaxis"] = Dict("title"=>label1)
         scene["yaxis"] = Dict("title" => label2)
         scene["zaxis"] = Dict("title" => "Future Cost")
+        scene["aspectratio"] = Dict("x" => 1, "y" => 1, "z" => 1)
         scene_text = "\"scene\": $(json(scene))"
     end
     html_string = gethtmlstring(PLOTLY_HTML_FILE)
