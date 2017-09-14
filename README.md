@@ -25,7 +25,7 @@ be stable enough to use.
 
 However, you can find some documentation at https://odow.github.io/SDDP.jl/build/index.html
 
-Or have a read of the [draft tutorial/paper](https://github.com/odow/SDDP.jl/draft_paper.pdf)
+Or have a read of the [draft tutorial/paper](https://github.com/odow/SDDP.jl/raw/master/draft_paper.pdf)
 which goes into a bit more depth.
 
 ## SDDiP
