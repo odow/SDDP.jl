@@ -299,6 +299,16 @@ function iteration!(m::SDDPModel, settings::Settings)
 
 end
 
+function rebuild!(m::SDDPModel)
+    for (t, stage) in enumerate(stages(m))
+        if t == length(stages(m))
+            continue
+        end
+        for sp in subproblems(stage)
+            rebuildsubproblem!(m, sp)
+        end
+    end
+end
 function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     status = :solving
     time_simulating, time_cutting = 0.0, 0.0
@@ -315,12 +325,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
         if applicable(iteration, settings.cut_selection_frequency)
             # run cut selection
             settings.print_level > 1 && info("Running Cut Selection")
-            for (t, stage) in enumerate(stages(m))
-                t == length(stages(m)) && continue
-                for sp in subproblems(stage)
-                    rebuildsubproblem!(m, sp)
-                end
-            end
+            rebuild!(m)
         end
 
         if applicable(iteration, settings.simulation.frequency)

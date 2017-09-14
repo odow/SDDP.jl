@@ -63,6 +63,9 @@ end
 
 function async_iteration!{C}(T, settings::Settings, slave::Vector{C})
     m = SDDP.m::T
+    async_iteration!(m, settings, slave)
+end
+function async_iteration!{C}(m::SDDPModel, settings::Settings, slave::Vector{C})
     while length(slave) > 0
         c = pop!(slave)
         addcut!(m, c)
@@ -85,13 +88,7 @@ end
 
 function rebuild!(T)
     mm = SDDP.m::T
-    # run cut selection
-    for (t, stage) in enumerate(stages(mm))
-        t == length(stages(mm)) && continue
-        for sp in subproblems(stage)
-            rebuildsubproblem!(mm, sp)
-        end
-    end
+    rebuild!(mm)
 end
 
 function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=Settings())
