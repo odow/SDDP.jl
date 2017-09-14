@@ -39,49 +39,50 @@ using Base.Test
 
 end
 
-# Initialise SDDP Model
-m = SDDPModel(
-        sense             = :Max,
-        stages            = 3,
-        objective_bound   = 1000,
-        markov_transition = Transition,
-        risk_measure      = NestedAVaR(
-                             beta   = 0.6,
-                             lambda = 0.5
-                             ),
-        solver          = ClpSolver()
-                                                ) do sp, stage, markov_state
+function createmodel(risk_measure)
+    # Initialise SDDP Model
+    m = SDDPModel(
+            sense             = :Max,
+            stages            = 3,
+            objective_bound   = 1000,
+            markov_transition = Transition,
+            risk_measure      = risk_measure,
+            solver          = ClpSolver()
+                                                    ) do sp, stage, markov_state
 
-    # ====================
-    #   State variable
-    @state(sp, 0 <= stock <= 100, stock0==5)
+        # ====================
+        #   State variable
+        @state(sp, 0 <= stock <= 100, stock0==5)
 
-    # ====================
-    #   Other variables
-    @variables(sp, begin
-        buy  >= 0  # Quantity to buy
-        sell >= 0  # Quantity to sell
-    end)
+        # ====================
+        #   Other variables
+        @variables(sp, begin
+            buy  >= 0  # Quantity to buy
+            sell >= 0  # Quantity to sell
+        end)
 
-    # ====================
-    #   Noises
-    @rhsnoises(sp, D=Demand[stage,:], begin
-        sell <= D
-        sell >= 0.5D
-    end)
+        # ====================
+        #   Noises
+        @rhsnoises(sp, D=Demand[stage,:], begin
+            sell <= D
+            sell >= 0.5D
+        end)
 
-    # ====================
-    #   Objective
-    stageobjective!(sp, sell * RetailPrice - buy * PurchasePrice[markov_state])
+        # ====================
+        #   Objective
+        @stageobjective(sp, sell * RetailPrice - buy * PurchasePrice[markov_state])
 
-    # ====================
-    #   Dynamics constraint
-    @constraint(sp, stock == stock0 + buy - sell)
+        # ====================
+        #   Dynamics constraint
+        @constraint(sp, stock == stock0 + buy - sell)
 
+    end
 end
 
-@time solvestatus = SDDP.solve(m,
-    max_iterations = 50,
+m = createmodel(NestedAVaR(beta   = 0.6, lambda = 0.5))
+
+solvestatus = SDDP.solve(m,
+    max_iterations = 30,
     solve_type     = Asyncronous(),
     simulation     = MonteCarloSimulation(
                         frequency = 10,
@@ -93,6 +94,33 @@ end
 
 @test isapprox(getbound(m), 93.267, atol=1e-3)
 @test solvestatus == :max_iterations
+
+m2 = createmodel(Expectation())
+
+solvestatus = SDDP.solve(m2,
+    max_iterations = 50, print_level=0,
+    solve_type     = Asyncronous(),
+    cut_selection_frequency = 5,
+    simulation     = MonteCarloSimulation(
+                        frequency = 10,
+                        min       = 5,
+                        max       = 50,
+                        step      = 5,
+                        termination = true
+                             )
+)
+
+@test solvestatus == :converged
+
+
+m3 = createmodel(Expectation())
+
+solvestatus = SDDP.solve(m3,
+    time_limit = 0.1, print_level=0,
+    solve_type     = Asyncronous(slaves=vcat(workers(), myid()))
+)
+
+@test solvestatus == :time_limit
 
 # on Julia v0.5 waitfor defaults to 0.0 ...
 rmprocs(workers(), waitfor=60.0)
