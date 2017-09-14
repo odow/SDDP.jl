@@ -28,8 +28,6 @@ Initialize a new `SimulationPlot`.
 """
 newplot() = SimulationPlot(Dict{String, Any}[])
 
-JSON.json(p::SimulationPlot) = json(p.data)
-
 """
 	SDDP.addplot!(p::SimulationPlot, ivals::AbstractVector{Int}, tvals::AbstractVector{Int}, f::Function; kwargs...)
 
@@ -92,6 +90,6 @@ Launch a browser and render the SimulationPlot plot `p`.
 """
 function show(p::SimulationPlot)
 	html_string = gethtmlstring(SIMULATION_HTML_FILE)
-	html_string = replace(html_string, "<!--DATA-->", json(p))
+	html_string = replace(html_string, "<!--DATA-->", json(p.data))
 	launch_file(html_string, SIMULATION_ASSETS)
 end

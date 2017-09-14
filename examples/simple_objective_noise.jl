@@ -12,6 +12,7 @@ function solve_model(noise_probability)
         sense = :Max,
         stages = 2,
         objective_bound = 5.0,
+        cut_oracle = LevelOneCutOracle(),
         solver = ClpSolver()
                                 ) do sp, t
 
@@ -25,7 +26,7 @@ function solve_model(noise_probability)
             setnoiseprobability!(sp, noise_probability)
         end
     end
-    solve(m,  max_iterations = 5, print_level=0)
+    solve(m,  max_iterations = 5, print_level=0, cut_selection_frequency = 5)
     m
 end
 
