@@ -162,7 +162,6 @@ immutable SolutionLog
     timesimulations::Float64
     timetotal::Float64
 end
-SolutionLog() = SolutionLog(0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0)
 
 immutable SDDPModel{V<:AbstractValueFunction}
     sense::Symbol

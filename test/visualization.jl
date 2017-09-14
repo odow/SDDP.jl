@@ -37,16 +37,52 @@
     end
 
     @testset "ValueFunction" begin
-        cuts = [
-            SDDP.Cut(1.0, [-1.0, -1.0]),
-            SDDP.Cut(0.5, [-0.25, 0.0])
-        ]
-        x, y = SDDP.processvaluefunctiondata(cuts, true, [0.0, 1.0], [0.0, 1.0])
-        @test x == [0.0 0.0 1.0 1.0; 0.0 1.0 0.0 1.0]
-        @test y == [1.0, 0.5, 0.25, 0.25]
+        @testset "Two prices" begin
+            cuts = [
+                SDDP.Cut(1.0, [-1.0, -1.0]),
+                SDDP.Cut(0.5, [-0.25, 0.0])
+            ]
+            x, y = SDDP.processvaluefunctiondata(cuts, true, [0.0, 1.0], [0.0, 1.0])
+            @test x == [0.0 0.0 1.0 1.0; 0.0 1.0 0.0 1.0]
+            @test y == [1.0, 0.5, 0.25, 0.25]
 
-        x, y = SDDP.processvaluefunctiondata(cuts, false, [0.0, 1.0], 0.5)
-        @test x == [0.0 1.0;]
-        @test y == [0.5, -0.5]
+            (plotly_data, scene_text) = SDDP.getplotlydata(x, y, "lab1", "lab2")
+            @test plotly_data["x"] == x[1,:]
+            @test plotly_data["y"] == x[2,:]
+            @test plotly_data["z"] == y
+            @test plotly_data["type"] == "scatter3d"
+        end
+        @testset "One price" begin
+            cuts = [
+                SDDP.Cut(1.0, [-1.0, -1.0]),
+                SDDP.Cut(0.5, [-0.25, 0.0])
+            ]
+            x, y = SDDP.processvaluefunctiondata(cuts, false, [0.0, 1.0], 0.5)
+            @test x == [0.0 1.0;]
+            @test y == [0.5, -0.5]
+
+            (plotly_data, scene_text) = SDDP.getplotlydata(x, y, "lab1", "lab2")
+            @test plotly_data["x"] == x'
+            @test plotly_data["y"] == y
+            @test haskey(plotly_data, "z") == false
+            @test plotly_data["type"] == "scatter"
+            @test scene_text == "xaxis: {title: \"lab1\"}, yaxis: {title: \"Future Cost\"}"
+        end
+        @testset "fallback" begin
+            cuts = [
+                SDDP.Cut(1.0, [-1.0, -1.0]),
+                SDDP.Cut(0.5, [-0.25, 0.0])
+            ]
+            vf = SDDP.DefaultValueFunction()
+            push!(vf.cutmanager.cuts, cuts[1])
+            push!(vf.cutmanager.cuts, cuts[2])
+
+            x, y = SDDP.processvaluefunctiondata(vf, false, [0.0, 1.0], 0.5)
+            @test x == [0.0 1.0;]
+            @test y == [0.5, -0.5]
+        end
+
+
+
     end
 end

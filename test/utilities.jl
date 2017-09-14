@@ -22,4 +22,6 @@ end
 
 @testset "Print" begin
     @test SDDP.humanize(2000) == "  2.0K"
+    @test SDDP.humanize(2000, "5.2f") == " 2.00K"
+    @test_throws Exception SDDP.humanize(2000, "5.3f")
 end

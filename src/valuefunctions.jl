@@ -97,7 +97,6 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
         m.storage.probability[i] /= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
 end
-storecut!(m::SDDPModel, sp::JuMP.Model, cut::Cut, args...) = nothing
 
 function addcut!(vf::DefaultValueFunction, sp::JuMP.Model, cut::Cut)
     ex = ext(sp)

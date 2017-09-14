@@ -75,13 +75,6 @@ function printtofile(foo::Function, filename::String, args...)
     end
 end
 
-
-function Base.print(s::String, l::SolutionLog, printmean::Bool=false, is_min=true)
-    open(s, "a") do file
-        print(file, l, printmean, is_min)
-    end
-end
-
 function Base.print(printfunc::Function, settings::Settings, args...)
     settings.print_level > 0 && printfunc(STDOUT, args...)
     settings.log_file != "" && printtofile(printfunc, settings.log_file, args...)

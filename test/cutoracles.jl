@@ -59,4 +59,8 @@ immutable NotACutOracle end
         SDDP.storecut!(oracle, m, SDDP.getsubproblem(m, 1, 1), cut)
         @test SDDP.validcuts(oracle) == [cut]
     end
+
+    @testset "Level One Oracle" begin
+        oracle = SDDP.LevelOneCutOracle()
+    end
 end
