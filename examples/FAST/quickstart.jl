@@ -24,7 +24,7 @@ m = SDDPModel(
     else
         @variable(sp, s >= 0)
         @constraint(sp, s <= x0)
-        @noise(sp, d = [2, 3], s <= d)
+        @rhsnoise(sp, d = [2, 3], s <= d)
         stageobjective!(sp, -2s)
     end
 end

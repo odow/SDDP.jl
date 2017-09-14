@@ -17,8 +17,8 @@ SDDPModel
 ```
 ### Noises
 ```@docs
-@noise
-@noises
+@rhsnoise
+@rhsnoises
 setnoiseprobability!
 ```
 

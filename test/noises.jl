@@ -13,7 +13,7 @@
         m = SDDP.Subproblem()
         subproblem = SDDP.ext(m)
         @variable(m, x)
-        c = @noise(m, i=1:2, x <= i)
+        c = @rhsnoise(m, i=1:2, x <= i)
         noises = SDDP.ext(m).noises
         @test length(noises) == 2
         @test noises[1].constraints == [c]
@@ -22,13 +22,20 @@
         @test noises[2].values == [2]
     end
 
+    @testset "Noise in constraint matrix" begin
+        m = SDDP.Subproblem()
+        subproblem = SDDP.ext(m)
+        @variable(m, x)
+        @test_throws Exception @rhsnoise(m, i=1:2, i * x <= i)
+    end
+
     @testset "Function RHS" begin
         Ω = [1.1, 1.2, 1.3]
         f = (w) -> 2w
         m = SDDP.Subproblem()
         subproblem = SDDP.ext(m)
         @variable(m, x)
-        c = @noise(m, i=Ω, x <= f(i))
+        c = @rhsnoise(m, i=Ω, x <= f(i))
         noises = SDDP.ext(m).noises
         @test length(noises) == length(Ω)
         for (i, ω) in enumerate(Ω)
@@ -41,15 +48,15 @@
         m = SDDP.Subproblem()
         subproblem = SDDP.ext(m)
         @variable(m, x)
-        c = @noise(m, i=1:2, x <= i)
-        @test_throws AssertionError @noise(m, i=1:3, x >= -i)
+        c = @rhsnoise(m, i=1:2, x <= i)
+        @test_throws AssertionError @rhsnoise(m, i=1:3, x >= -i)
     end
 
     @testset "Noises" begin
         m = SDDP.Subproblem()
         subproblem = SDDP.ext(m)
         @variable(m, x)
-        @noises(m, i=1:2, begin
+        @rhsnoises(m, i=1:2, begin
             x <= i
             x >= -i
         end)

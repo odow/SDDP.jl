@@ -37,7 +37,7 @@ m = SDDPModel(
 
     @constraint(sp, sum(control) - 0.5 * 3 <= 0)
 
-    @noises(sp, xi = XI, begin
+    @rhsnoises(sp, xi = XI, begin
         stock[1] == stock0[1] + control[1] - xi[1]
         stock[2] == stock0[2] + control[2] - xi[2]
         stock[3] == stock0[3] + control[3] - xi[3]

@@ -137,19 +137,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "apireference.html#SDDP.@noise",
+    "location": "apireference.html#SDDP.@rhsnoise",
     "page": "Reference",
-    "title": "SDDP.@noise",
+    "title": "SDDP.@rhsnoise",
     "category": "Macro",
-    "text": "@noise(sp, rhs, constraint)\n\nDescription\n\nAdd a constraint with a noise in the RHS vector to the subproblem sp.\n\nArguments\n\nsp         the subproblem\nrhs        keyword argument key=value where value is a one-dimensional array containing the noise realisations\nconstraint any valid JuMP @constraint syntax that includes the keyword defined by rhs\n\nExamples\n\n@noise(sp, i=1:2, x + y <= i )\n@noise(sp, i=1:2, x + y <= 3 * rand(2)[i] )\n\n\n\n"
+    "text": "@rhsnoise(sp, rhs, constraint)\n\nDescription\n\nAdd a constraint with a noise in the RHS vector to the subproblem sp.\n\nArguments\n\nsp         the subproblem\nrhs        keyword argument key=value where value is a one-dimensional array containing the noise realisations\nconstraint any valid JuMP @constraint syntax that includes the keyword defined by rhs\n\nExamples\n\n@rhsnoise(sp, i=1:2, x + y <= i )\n@rhsnoise(sp, i=1:2, x + y <= 3 * rand(2)[i] )\n\n\n\n"
 },
 
 {
-    "location": "apireference.html#SDDP.@noises",
+    "location": "apireference.html#SDDP.@rhsnoises",
     "page": "Reference",
-    "title": "SDDP.@noises",
+    "title": "SDDP.@rhsnoises",
     "category": "Macro",
-    "text": "@noises(sp, rhs, begin\n    constraint\nend)\n\nDescription\n\nThe plural form of @noise similar to the JuMP macro @constraints.\n\nArguments\n\nSee @noise.\n\nExamples\n\n@noises(sp, i=1:2, begin\n    x + y <= i\n    x + y <= 3 * rand(2)[i]\nend)\n\n\n\n"
+    "text": "@rhsnoises(sp, rhs, begin\n    constraint\nend)\n\nDescription\n\nThe plural form of @rhsnoise similar to the JuMP macro @constraints.\n\nArguments\n\nSee @rhsnoise.\n\nExamples\n\n@rhsnoises(sp, i=1:2, begin\n    x + y <= i\n    x + y <= 3 * rand(2)[i]\nend)\n\n\n\n"
 },
 
 {
@@ -165,7 +165,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Noises",
     "category": "section",
-    "text": "@noise\n@noises\nsetnoiseprobability!"
+    "text": "@rhsnoise\n@rhsnoises\nsetnoiseprobability!"
 },
 
 {

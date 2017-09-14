@@ -43,7 +43,7 @@ mod = SDDPModel(
 
     if t != 1 # no uncertainty in first stage
         for j in 1:m
-            @noise(sp, s=1:size(D2, 2), sum(y[:,j]) + penalty >= D2[j,s])
+            @rhsnoise(sp, s=1:size(D2, 2), sum(y[:,j]) + penalty >= D2[j,s])
         end
         setnoiseprobability!(sp, p2)
     end

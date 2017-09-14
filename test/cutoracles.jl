@@ -21,7 +21,7 @@ immutable NotACutOracle end
             cut_oracle = newcutoracle
             ) do sp, t
             @state(sp, x>=0, x0==0)
-            @noise(sp, w=1:2, x <= w)
+            @rhsnoise(sp, w=1:2, x <= w)
             @stageobjective(sp, x)
         end
         cut = SDDP.Cut(1, [1])
@@ -38,7 +38,7 @@ immutable NotACutOracle end
             cut_oracle = notacutoracle
             ) do sp, t
             @state(sp, x>=0, x0==0)
-            @noise(sp, w=1:2, x <= w)
+            @rhsnoise(sp, w=1:2, x <= w)
             @stageobjective(sp, x)
         end
     end
@@ -52,7 +52,7 @@ immutable NotACutOracle end
             cut_oracle = oracle
             ) do sp, t
             @state(sp, x>=0, x0==0)
-            @noise(sp, w=1:2, x <= w)
+            @rhsnoise(sp, w=1:2, x <= w)
             @stageobjective(sp, x)
         end
         cut = SDDP.Cut(1, [1])
