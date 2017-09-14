@@ -45,7 +45,7 @@ immutable MyRiskMeasure <: SDDP.AbstractRiskMeasure end
             ) do sp, t
             @state(sp, x>=0, x0==0)
             @rhsnoise(sp, w=1:2, x <= w)
-            stageobjective!(sp, x)
+            @stageobjective(sp, x)
         end
 
         y = zeros(4)
@@ -63,7 +63,7 @@ immutable MyRiskMeasure <: SDDP.AbstractRiskMeasure end
             ) do sp, t
             @state(sp, x>=0, x0==0)
             @rhsnoise(sp, w=1:2, x <= w)
-            stageobjective!(sp, x)
+            @stageobjective(sp, x)
         end
 
         y = zeros(4)
@@ -71,6 +71,23 @@ immutable MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         obj = [1.0,2.0,3.0,4.0]
         SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
         @test y == 0.25 * x + 0.75 * [0, 0, 0, 1.0]
+
+        measure = NestedAVaR(lambda=0.5, beta=0.0)
+        m = SDDPModel(
+            sense           = :Max,
+            stages          = 2,
+            objective_bound = 10,
+            risk_measure    = measure
+            ) do sp, t
+            @state(sp, x>=0, x0==0)
+            @noise(sp, w=1:2, x <= w)
+            @stageobjective(sp, x)
+        end
+        y = zeros(4)
+        x = [0.1, 0.2, 0.3, 0.4]
+        obj = [1.0,2.0,3.0,4.0]
+        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+        @test y == 0.5 * x + 0.5 * [1.0, 0, 0, 0]
     end
 
     @testset "User-defined MyRiskMeasure" begin
@@ -84,7 +101,7 @@ immutable MyRiskMeasure <: SDDP.AbstractRiskMeasure end
             ) do sp, t
             @state(sp, x>=0, x0==0)
             @rhsnoise(sp, w=1:2, x <= w)
-            stageobjective!(sp, x)
+            @stageobjective(sp, x)
         end
 
         y = zeros(4)

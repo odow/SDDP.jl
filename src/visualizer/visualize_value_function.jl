@@ -119,6 +119,14 @@ the subproblem is a minimization and false otherwise.
 """
 function plotvaluefunction(vf, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
     x, yi  = processvaluefunctiondata(vf, is_minimization, states...)
+    (plotly_data, scene_text) = getplotlydata(x, yi, label1, label2)
+    html_string = gethtmlstring(PLOTLY_HTML_FILE)
+    html_string = replace(html_string, "<!--DATA-->", json(plotly_data))
+    html_string = replace(html_string, "<!--SCENE-->", scene_text)
+    launch_file(html_string, PLOTLY_ASSETS)
+end
+
+function getplotlydata(x, yi, label1, label2)
     plotly_data = deepcopy(PLOTLY_DATA)
     plotly_data["x"] = x[1,:]
     if size(x, 1) == 1
@@ -139,8 +147,5 @@ function plotvaluefunction(vf, is_minimization::Bool, states::Union{Float64, Abs
         scene["aspectratio"] = Dict("x" => 1, "y" => 1, "z" => 1)
         scene_text = "\"scene\": $(json(scene))"
     end
-    html_string = gethtmlstring(PLOTLY_HTML_FILE)
-    html_string = replace(html_string, "<!--DATA-->", json(plotly_data))
-    html_string = replace(html_string, "<!--SCENE-->", scene_text)
-    launch_file(html_string, PLOTLY_ASSETS)
+    return plotly_data, scene_text
 end

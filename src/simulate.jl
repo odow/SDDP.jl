@@ -56,8 +56,6 @@ function savesolution!(solutionstore::Dict{Symbol, Any}, markov::Int, noiseidx::
         storekey!(key, store, markov, noiseidx, sp, t)
     end
 end
-savevaluefunction!(store::Dict{Symbol, Any}, sp::JuMP.Model) = storevaluefunction!(store, valueoracle(sp), sp)
-storevaluefunction!{C}(store::Dict{Symbol, Any}, ::DefaultValueFunction{C}, sp::JuMP.Model)= nothing
 
 """
     simulate(m::SDDPPModel,variables::Vector{Symbol};
