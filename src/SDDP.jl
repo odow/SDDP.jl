@@ -17,7 +17,7 @@ using Compat
 export SDDPModel,
     # inputs
     @state, @states,
-    @noise, @noises, setnoiseprobability!,
+    @rhsnoise, @rhsnoises, setnoiseprobability!,
     stageobjective!, @stageobjective,
     # cut oracles
     DefaultCutOracle, DematosCutOracle, LevelOneCutOracle,

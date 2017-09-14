@@ -86,7 +86,7 @@ m = SDDPModel(
     # rainfall noises
     for i in 1:N
         if stage > 1 # in future stages random inflows
-            @noise(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
+            @rhsnoise(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
         else # in the first stage deterministic inflow
             @constraint(sp, inflow[i] <= valley_chain[i].inflows[1])
         end

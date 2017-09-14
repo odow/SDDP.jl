@@ -39,7 +39,7 @@ m = SDDPModel(
         @constraint(sp, xs + xb == 55 + xsbar + xbbar)
         @stageobjective(sp, 0)
     elseif t == 2 || t == 3
-        @noise(sp, phi=Phi, ws[i] * xsbar +
+        @rhsnoise(sp, phi=Phi, ws[i] * xsbar +
             wb[i] * xbbar + phi == xs + xb)
         @stageobjective(sp, psi = Psi, -psi * xs)
         setnoiseprobability!(sp, [0.6, 0.4])

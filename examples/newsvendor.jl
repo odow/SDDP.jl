@@ -52,7 +52,7 @@ m = SDDPModel(
 
     # ====================
     #   Noises
-    @noises(sp, D=Demand[stage,:], begin
+    @rhsnoises(sp, D=Demand[stage,:], begin
         sell <= D
         sell >= 0.5D
     end)

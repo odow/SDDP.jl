@@ -45,7 +45,7 @@ function setnoiseprobability!(sp::JuMP.Model, p::Vector{Float64})
 end
 
 """
-    @noise(sp, rhs, constraint)
+    @rhsnoise(sp, rhs, constraint)
 
 # Description
 
@@ -57,10 +57,10 @@ Add a constraint with a noise in the RHS vector to the subproblem `sp`.
 * `constraint` any valid JuMP `@constraint` syntax that includes the keyword defined by `rhs`
 
 # Examples
-* `@noise(sp, i=1:2, x + y <= i )`
-* `@noise(sp, i=1:2, x + y <= 3 * rand(2)[i] )`
+* `@rhsnoise(sp, i=1:2, x + y <= i )`
+* `@rhsnoise(sp, i=1:2, x + y <= 3 * rand(2)[i] )`
 """
-macro noise(sp, kw, c)
+macro rhsnoise(sp, kw, c)
     sp = esc(sp)                                # escape the model
     @assert kw.head == KW_SYM                   # check its a keyword
     noisevalues = esc(kw.args[2])            # get the vector of values
@@ -70,8 +70,13 @@ macro noise(sp, kw, c)
     constrexpr = :($(c.args[2]) - $(c.args[3])) # LHS - RHS
     quote
         rhs = Float64[]                         # intialise RHS vector
+        $(esc(kw.args[1])) = $noisevalues[1] # initialise with first noise
+        aff = copy($(esc(constrexpr)).coeffs)
         for val in $noisevalues    # for each noise
             $(esc(kw.args[1])) = val  # set the noisevalue
+            if $(esc(constrexpr)).coeffs != aff
+                error("Noise in @rhsnoise must appear in the RHS only.")
+            end
             push!(rhs, -$(esc(constrexpr)).constant)
          end
         $(esc(kw.args[1])) = $noisevalues[1] # initialise with first noise
@@ -100,35 +105,35 @@ function registernoiseconstraint!(sp::JuMP.Model, con::LinearConstraint, rhs::Ve
 end
 
 """
-    @noises(sp, rhs, begin
+    @rhsnoises(sp, rhs, begin
         constraint
     end)
 
 # Description
 
-The plural form of `@noise` similar to the JuMP macro `@constraints`.
+The plural form of `@rhsnoise` similar to the JuMP macro `@constraints`.
 
 # Arguments
 
-See `@noise`.
+See `@rhsnoise`.
 
 # Examples
-    @noises(sp, i=1:2, begin
+    @rhsnoises(sp, i=1:2, begin
         x + y <= i
         x + y <= 3 * rand(2)[i]
     end)
 """
-macro noises(m, kw, blk)
-    @assert blk.head == :block || error("Invalid syntax for @noises")
+macro rhsnoises(m, kw, blk)
+    @assert blk.head == :block || error("Invalid syntax for @rhsnoises")
     code = quote end
     for line in blk.args
         if !Base.Meta.isexpr(line, :line)
             if line.head == :call && line.args[1] in comparison_symbols
                 push!(code.args,
-                    Expr(:macrocall, Symbol("@noise"), esc(m), esc(kw), esc(line))
+                    Expr(:macrocall, Symbol("@rhsnoise"), esc(m), esc(kw), esc(line))
                 )
             else
-                error("Unknown arguments in @noises")
+                error("Unknown arguments in @rhsnoises")
             end
         end
     end
@@ -184,3 +189,7 @@ function registernoiseobjective!(sp::JuMP.Model, objective, idx::Int)
         end
     end
 end
+
+include("deprecate.jl")
+@deprecate_macro noise rhsnoise
+@deprecate_macro noises rhsnoises

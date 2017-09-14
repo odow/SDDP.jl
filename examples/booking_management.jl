@@ -93,7 +93,7 @@ m = SDDPModel(
             room_request_accepted[room, day] <= accept_request
 
         end)
-        @noises(sp, booking_request = BOOKING_REQUESTS[stage], begin
+        @rhsnoises(sp, booking_request = BOOKING_REQUESTS[stage], begin
             # can't accept request if room not requested
             room_request_accepted[room, day] <= booking_request[room, day]
             # accept all individual rooms is entire request is accepted

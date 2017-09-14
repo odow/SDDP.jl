@@ -57,7 +57,7 @@ function getmodel(;oracle=DefaultCutOracle())
 
         # ====================
         #   Noises
-        @noises(sp, D=Demand[stage,:], begin
+        @rhsnoises(sp, D=Demand[stage,:], begin
             sell <= D
             sell >= 0.5D
         end)
