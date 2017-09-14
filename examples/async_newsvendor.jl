@@ -39,17 +39,14 @@ using Base.Test
 
 end
 
-function createmodel()
+function createmodel(risk_measure)
     # Initialise SDDP Model
     m = SDDPModel(
             sense             = :Max,
             stages            = 3,
             objective_bound   = 1000,
             markov_transition = Transition,
-            risk_measure      = NestedAVaR(
-                                 beta   = 0.6,
-                                 lambda = 0.5
-                                 ),
+            risk_measure      = risk_measure,
             solver          = ClpSolver()
                                                     ) do sp, stage, markov_state
 
@@ -82,10 +79,10 @@ function createmodel()
     end
 end
 
-m = createmodel()
+m = createmodel(NestedAVaR(beta   = 0.6, lambda = 0.5))
 
 solvestatus = SDDP.solve(m,
-    max_iterations = 50,
+    max_iterations = 30,
     solve_type     = Asyncronous(),
     simulation     = MonteCarloSimulation(
                         frequency = 10,
@@ -98,10 +95,10 @@ solvestatus = SDDP.solve(m,
 @test isapprox(getbound(m), 93.267, atol=1e-3)
 @test solvestatus == :max_iterations
 
-m2 = createmodel()
+m2 = createmodel(Expectation())
 
 solvestatus = SDDP.solve(m2,
-    max_iterations = 50,
+    max_iterations = 50, print_level=0,
     solve_type     = Asyncronous(),
     cut_selection_frequency = 5,
     simulation     = MonteCarloSimulation(
@@ -116,10 +113,10 @@ solvestatus = SDDP.solve(m2,
 @test solvestatus == :converged
 
 
-m3 = createmodel()
+m3 = createmodel(Expectation())
 
 solvestatus = SDDP.solve(m3,
-    time_limit = 0.0,
+    time_limit = 0.1, print_level=0,
     solve_type     = Asyncronous(slaves=vcat(workers(), myid()))
 )
 

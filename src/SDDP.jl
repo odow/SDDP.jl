@@ -325,7 +325,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
         if applicable(iteration, settings.cut_selection_frequency)
             # run cut selection
             settings.print_level > 1 && info("Running Cut Selection")
-
+            rebuild!(m)
         end
 
         if applicable(iteration, settings.simulation.frequency)
