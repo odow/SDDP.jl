@@ -1,8 +1,8 @@
 # SDDP
 
-[![Build Status](https://travis-ci.org/odow/SDDP.jl.svg?branch=master)](https://travis-ci.org/odow/SDDP.jl)
-
-[![codecov](https://codecov.io/gh/odow/SDDP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/odow/SDDP.jl)
+| **Documentation** | **Build Status** | **Coverage** |
+|:-----------------:|:--------------------:|:----------------:|
+| [![][docs-latest-img]][docs-latest-url] | [![Build Status][build-img]][build-url] | [![Codecov branch][codecov-img]][codecov-url]
 
 ## Installation
 This package is unregistered so you will need to `Pkg.clone` it as follows:
@@ -14,25 +14,31 @@ Pkg.clone("https://github.com/odow/SDDP.jl.git")
 This package is under development and some features may be changed or added.
 Most of the time, this will just be a renaming of minor parts of the code.
 
-For a time line of features, see NEWS.md. Items that require modification of
-existing codes are prefixed with `!!`.
+For a time line of features, see [NEWS.md](https://github.com/odow/SDDP.jl/NEWS.md).
+Items that require modification of existing codes are prefixed with `!!`.
 
 ## Documentation
 
-The documentation is still very incomplete, and the internals of the library need a tidy and a refactor, however the user-facing API from the examples should be stable enough to use.
+The documentation is still very incomplete, and the internals of the library
+need a tidy and a refactor, however the user-facing API from the examples should
+be stable enough to use.
 
-However, you can find the documentation at https://odow.github.io/SDDP.jl/build/index.html
+However, you can find some documentation at https://odow.github.io/SDDP.jl/build/index.html
+
+Or have a read of the [draft tutorial/paper](https://github.com/odow/SDDP.jl/draft_paper.pdf)
+which goes into a bit more depth.
 
 ## SDDiP
 
-[@lkapelevich](https://github.com/lkapelevich) wrote an extension for SDDP.jl to solve multi-stage stochastic programs with binary state variables. Check it out at https://github.com/lkapelevich/SDDiP.jl!
+[@lkapelevich](https://github.com/lkapelevich) wrote an extension for SDDP.jl to
+solve multi-stage stochastic programs with binary state variables. Check it out
+at https://github.com/lkapelevich/SDDiP.jl!
 
-## Quick Start Guide
-For now the best documentation is probably contained in the examples. There is
-quite a few and they provide a fairly comprehensive overview of the library.
+[build-img]: https://travis-ci.org/odow/SDDP.jl.svg?branch=master
+[build-url]: https://travis-ci.org/odow/SDDP.jl
 
-### A Note on Value Functions
+[codecov-img]: https://codecov.io/github/odow/SDDP.jl/coverage.svg?branch=master
+[codecov-url]: https://codecov.io/github/odow/SDDP.jl?branch=master
 
-You may notice we parameterise the SDDPModel by the DefaultValueFunction. Although
-this is the only value function provided in this package, it enables extensibility
-for some of our research codes that are not yet at the point for public release.
+[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
+[docs-latest-url]: https://odow.github.io/SDDP.jl/build/index.html
