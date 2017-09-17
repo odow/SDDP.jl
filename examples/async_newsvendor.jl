@@ -128,7 +128,7 @@ loadcuts!(m4, "async.cuts")
 rm("async.cuts")
 
 SDDP.solve(m4, max_iterations=1, print_level=0, solve_type=Serial())
-@test getbound(m3) == getbound(m4)
+@test isapprox(getbound(m3), getbound(m4), atol=1e-6)
 
 # on Julia v0.5 waitfor defaults to 0.0 ...
 rmprocs(workers(), waitfor=60.0)
