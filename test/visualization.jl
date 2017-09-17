@@ -85,13 +85,13 @@
         @testset "Simulation Example" begin
             include(joinpath(examples_dir, "visualize_simulation.jl"))
             html = SDDP.prephtml(p)
-            @test html == readstring(joinpath(@__DIR__, "visualize_examples", "simulation.html"))
+            @test html == readstring(joinpath(dirname(@__FILE__), "visualize_examples", "simulation.html"))
         end
 
         @testset "Value Function Example" begin
             include(joinpath(examples_dir, "visualize_value_function.jl"))
             html = SDDP.prepvaluefunctionplot(m, 3, 1, "Bonds", "", 50.0, 0.0:2.0:100)
-            @test html == readstring(joinpath(@__DIR__, "visualize_examples", "value_function.html"))
+            @test html == readstring(joinpath(dirname(@__FILE__), "visualize_examples", "value_function.html"))
         end
 
 
