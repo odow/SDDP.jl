@@ -70,7 +70,7 @@ function loadcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
     end
 end
 
-function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings::Settings, sp::JuMP.Model)
+function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings::Settings, sp::JuMP.Model, writecuts::Bool=true)
     ex = ext(sp)
     vf = valueoracle(sp)
     I = 1:length(m.storage.objective)
@@ -86,7 +86,7 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
     )
     cut = constructcut(m, sp)
 
-    if settings.cut_output_file != ""
+    if writecuts && settings.cut_output_file != ""
         writecut!(settings.cut_output_file, cut, ex.stage, ex.markovstate)
     end
 

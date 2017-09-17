@@ -117,10 +117,18 @@ m3 = createmodel(Expectation())
 
 solvestatus = SDDP.solve(m3,
     time_limit = 0.1, print_level=0,
-    solve_type     = Asyncronous(slaves=vcat(workers(), myid()))
+    solve_type     = Asyncronous(slaves=vcat(workers(), myid())),
+    cut_output_file = "async.cuts"
 )
 
 @test solvestatus == :time_limit
+
+m4 = createmodel(Expectation())
+loadcuts!(m4, "async.cuts")
+rm("async.cuts")
+
+SDDP.solve(m4, max_iterations=1, print_level=0, solve_type=Serial())
+@test isapprox(getbound(m3), getbound(m4), atol=1e-6)
 
 # on Julia v0.5 waitfor defaults to 0.0 ...
 rmprocs(workers(), waitfor=60.0)

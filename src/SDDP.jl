@@ -249,7 +249,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
     return obj
 end
 
-function backwardpass!(m::SDDPModel, settings::Settings)
+function backwardpass!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
     # walk backward through the stages
     for t in nstages(m):-1:2
         # solve all stage t problems
@@ -260,7 +260,7 @@ function backwardpass!(m::SDDPModel, settings::Settings)
         end
         # add appropriate cuts
         for sp in subproblems(m, t-1)
-            modifyvaluefunction!(m, settings, sp)
+            modifyvaluefunction!(m, settings, sp, writecuts)
         end
     end
 
@@ -274,13 +274,13 @@ function backwardpass!(m::SDDPModel, settings::Settings)
     return bound
 end
 
-function iteration!(m::SDDPModel, settings::Settings)
+function iteration!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
     t = time()
 
     simulation_objective = forwardpass!(m, settings)
     time_forwards = time() - t
 
-    objective_bound = backwardpass!(m, settings)
+    objective_bound = backwardpass!(m, settings, writecuts)
     time_backwards = time() - time_forwards - t
 
     # reduce memory footprint
