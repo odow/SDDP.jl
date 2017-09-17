@@ -80,7 +80,7 @@ immutable MyRiskMeasure <: SDDP.AbstractRiskMeasure end
             risk_measure    = measure
             ) do sp, t
             @state(sp, x>=0, x0==0)
-            @noise(sp, w=1:2, x <= w)
+            @rhsnoise(sp, w=1:2, x <= w)
             @stageobjective(sp, x)
         end
         y = zeros(4)

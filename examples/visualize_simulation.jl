@@ -113,19 +113,21 @@ SDDP.solve(m,
 @test isapprox(getbound(m), 855.0, atol=1e-3)
 
 results = simulate(m,  # Simulate the policy
-    100,               # number of monte carlo realisations
+    5,               # number of monte carlo realisations
     [:reservoir]       # variables to return
     )
 
 p = SDDP.newplot()
-SDDP.addplot!(p, 1:100, 1:3, (i, t)->results[i][:stageobjective][t],
+SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(results[i][:stageobjective][t], 2),
     title="Accumulated Profit", ylabel="Accumulated Profit (\$)", cumulative=true)
-SDDP.addplot!(p, 1:100, 1:3, (i, t)->results[i][:stageobjective][t],
+SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(results[i][:stageobjective][t], 2),
     title="Weekly Income", ylabel="Week Profit (\$)")
-SDDP.addplot!(p, 1:100, 1:3, (i, t)->results[i][:reservoir][t][1],
+SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(results[i][:reservoir][t][1], 2),
     title="Upper Reservoir", ylabel="Level")
-SDDP.addplot!(p, 1:100, 1:3, (i, t)->results[i][:reservoir][t][2],
+SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(results[i][:reservoir][t][2], 2),
     title="Lower Reservoir")
-SDDP.addplot!(p, 1:100, 1:3, (i, t)->prices[t, results[i][:markov][t]],
+SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(prices[t, results[i][:markov][t]], 2),
     ylabel="Price", interpolate="step-after")
-SDDP.show(p)
+
+# for real-world display, use
+# SDDP.show(p)

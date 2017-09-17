@@ -34,7 +34,7 @@ using Clp
         # no solver
         m = SDDPModel(sense=:Max, stages=3, objective_bound=10) do sp, t
             @state(sp, x>=0, x0==0.0)
-            @noise(sp, i=1:2, x <= i)
+            @rhsnoise(sp, i=1:2, x <= i)
             @stageobjective(sp, i=1:2, i * x)
         end
         @test_throws Exception solve(m, print_level=0)
@@ -58,7 +58,7 @@ using Clp
         # test sp is subproblem
         m = SDDPModel(sense=:Max, stages=3, objective_bound=10) do sp, t
             @state(sp, x>=0, x0==0.0)
-            @noise(sp, i=1:2, x <= i)
+            @rhsnoise(sp, i=1:2, x <= i)
             @stageobjective(sp, i=1:2, i * x)
         end
         SDDP.savemodel!("test.model", m)
@@ -84,7 +84,7 @@ using Clp
         # test sp is subproblem
         m = SDDPModel(sense=:Max, stages=3, objective_bound=10, solver=ClpSolver()) do sp, t
             @state(sp, x>=0, x0==0.0)
-            @noise(sp, i=1:2, x <= i)
+            @rhsnoise(sp, i=1:2, x <= i)
             @stageobjective(sp, i=1:2, i * x)
         end
         status = solve(m, time_limit=0.0, print_level=0)
@@ -95,7 +95,7 @@ using Clp
         # test sp is subproblem
         m = SDDPModel(sense=:Max, stages=3, objective_bound=10, solver=ClpSolver()) do sp, t
             @state(sp, x>=0, x0==0.0)
-            @noise(sp, i=1:2, x <= i)
+            @rhsnoise(sp, i=1:2, x <= i)
             @stageobjective(sp, i=1:2, i * x)
         end
         status = solve(m, max_iterations=1, print_level=0, reduce_memory_footprint=true)

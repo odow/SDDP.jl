@@ -89,7 +89,8 @@ end
 Launch a browser and render the SimulationPlot plot `p`.
 """
 function show(p::SimulationPlot)
-	html_string = gethtmlstring(SIMULATION_HTML_FILE)
-	html_string = replace(html_string, "<!--DATA-->", json(p.data))
-	launch_file(html_string, SIMULATION_ASSETS)
+	html = prephtml(p)
+	launch_file(html, SIMULATION_ASSETS)
 end
+
+prephtml(p::SimulationPlot) = prephtml(SIMULATION_HTML_FILE, ("<!--DATA-->", json(p.data)))

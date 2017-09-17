@@ -16,21 +16,21 @@ function launch_file(html_string, assets)
     open(temporary_html_file, "w") do f
         write(f, html_string)
     end
-    launch_plot(temporary_html_file)
-end
-
-function launch_plot(html_file)
 	if is_windows()
-		run(`$(ENV["COMSPEC"]) /c start $(html_file)`)
+		run(`$(ENV["COMSPEC"]) /c start $(temporary_html_file)`)
 	elseif is_apple()
-        run(`open $(html_file)`)
+        run(`open $(temporary_html_file)`)
     elseif is_linux() || is_bsd()
-        run(`xdg-open $(html_file)`)
+        run(`xdg-open $(temporary_html_file)`)
     end
 end
 
-function gethtmlstring(html_file)
-	readstring(joinpath(ASSET_DIR, html_file))
+function prephtml(html_template, args...)
+	html = readstring(joinpath(ASSET_DIR, html_template))
+	for (key, val) in args
+		html = replace(html, key, val)
+	end
+	html
 end
 
 include("visualize_simulation.jl")
