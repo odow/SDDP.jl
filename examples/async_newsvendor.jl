@@ -84,6 +84,7 @@ m = createmodel(NestedAVaR(beta   = 0.6, lambda = 0.5))
 solvestatus = SDDP.solve(m,
     max_iterations = 30,
     solve_type     = Asyncronous(),
+   cut_output_file = "async.cuts",
     simulation     = MonteCarloSimulation(
                         frequency = 10,
                         min       = 5,
@@ -94,6 +95,13 @@ solvestatus = SDDP.solve(m,
 
 @test isapprox(getbound(m), 93.267, atol=1e-3)
 @test solvestatus == :max_iterations
+
+m4 = createmodel(NestedAVaR(beta   = 0.6, lambda = 0.5))
+loadcuts!(m4, "async.cuts")
+rm("async.cuts")
+
+SDDP.solve(m4, max_iterations=1, solve_type=Asyncronous())
+@test isapprox(getbound(m), getbound(m4), atol=1e-3)
 
 m2 = createmodel(Expectation())
 
@@ -117,18 +125,10 @@ m3 = createmodel(Expectation())
 
 solvestatus = SDDP.solve(m3,
     time_limit = 0.1, print_level=0,
-    solve_type     = Asyncronous(slaves=vcat(workers(), myid())),
-    cut_output_file = "async.cuts"
+    solve_type     = Asyncronous(slaves=vcat(workers(), myid()))
 )
 
 @test solvestatus == :time_limit
-
-m4 = createmodel(Expectation())
-loadcuts!(m4, "async.cuts")
-rm("async.cuts")
-
-SDDP.solve(m4, max_iterations=1, solve_type=Serial())
-@test isapprox(getbound(m3), getbound(m4), atol=1e-3)
 
 # on Julia v0.5 waitfor defaults to 0.0 ...
 rmprocs(workers(), waitfor=60.0)
