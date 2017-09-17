@@ -75,7 +75,7 @@ function async_iteration!{C}(m::SDDPModel, settings::Settings, slave::Vector{C})
     else
         empty!(m.ext[:cuts])
     end
-    (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
+    (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings, false)
     y = similar(m.ext[:cuts])
     copy!(y, m.ext[:cuts])
     empty!(m.ext[:cuts])
@@ -136,10 +136,12 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
             p == myid() && continue
             @async begin
                 while true
+                    # test time limit
                     if time() - start_time > settings.time_limit
                         status = :time_limit
                         break
                     end
+                    # check if slave should be used
                     if !(p in async.slaves[1:min(end, ceil(Int, getiter() / async.step))])
                         sleep(1.0)
                         continue
@@ -162,6 +164,9 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                         empty!(slaves[p])
                         (cuts, objective_bound, simulation_objective) = remotecall_fetch(async_iteration!, p, typeof(m), settings, newcuts)
                         for cut in cuts
+                            if settings.cut_output_file != ""
+                                writeaynccut!(settings.cut_output_file, cut)
+                            end
                             addcut!(m, cut)
                             for p2 in async.slaves
                                 p == p2 && continue
@@ -242,4 +247,8 @@ function storecut!{C}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model, cut
         m.ext[:cuts] = Tuple{Int, Int, Cut}[]
     end
     push!(m.ext[:cuts], (ext(sp).stage, ext(sp).markovstate, cut))
+end
+
+function writeaynccut!(file::String, cut::Tuple{Int, Int, Cut})
+    writecut!(file, cut[3], cut[1], cut[2])
 end

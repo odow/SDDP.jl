@@ -117,7 +117,8 @@ m3 = createmodel(Expectation())
 
 solvestatus = SDDP.solve(m3,
     time_limit = 0.1, print_level=0,
-    solve_type     = Asyncronous(slaves=vcat(workers(), myid()))
+    solve_type     = Asyncronous(slaves=vcat(workers(), myid())),
+    cut_output_file = "async.cuts"
 )
 
 @test solvestatus == :time_limit
