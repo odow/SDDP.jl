@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="simulation.css">
+</head>
+<body>
+    <div style="width:240px; margin:auto; text-align:center">
+        bincount = <span id="bincount-value">…</span><br>
+        <input type="range" value="10" min="1" max="30" step="1" id="bincount"><br>
+
+        <input type="checkbox" id="chk_histogram" value="true" checked> Add Histograms<br>
+    </div>
+    <div class="plots"></div>
+    <script src="d3.v3.min.js" charset="utf-8"></script>
+    <script src="simulation.js"></script>
+    <script>runmain([{"ymin":"","interpolate":"linear","ymax":"","data":[[140.0,280.0,840.0],[140.0,419.99999999999994,980.0],[140.0,419.99999999999994,840.0],[140.0,419.99999999999994,980.0],[140.0,420.0,840.0]],"title":"Accumulated Profit","xlabel":"Stages","cumulative":true,"ylabel":"Accumulated Profit ($)"},{"ymin":"","interpolate":"linear","ymax":"","data":[[140.0,140.0,560.0],[140.0,279.99999999999994,560.0],[140.0,279.99999999999994,420.0],[140.0,279.99999999999994,560.0],[140.0,280.0,420.0]],"title":"Weekly Income","xlabel":"Stages","cumulative":false,"ylabel":"Week Profit ($)"},{"ymin":"","interpolate":"linear","ymax":"","data":[[130.0,70.0000000000039,0.0],[130.0,70.000000000004,0.0],[130.0,70.000000000004,0.0],[130.0,70.000000000004,0.0],[130.0,59.999999999999986,0.0]],"title":"Upper Reservoir","xlabel":"Stages","cumulative":false,"ylabel":"Level"},{"ymin":"","interpolate":"linear","ymax":"","data":[[200.0,200.0,200.00000000000387],[200.0,200.0,200.00000000000398],[200.0,200.0,200.00000000000398],[200.0,200.0,200.00000000000398],[200.0,200.0,200.00000000000003]],"title":"Lower Reservoir","xlabel":"Stages","cumulative":false,"ylabel":""},{"ymin":"","interpolate":"step-after","ymax":"","data":[[1.0,1.0,4.0],[1.0,2.0,4.0],[1.0,2.0,3.0],[1.0,2.0,4.0],[1.0,2.0,3.0]],"title":"","xlabel":"Stages","cumulative":false,"ylabel":"Price"}]);</script>
+
+</body>
+</html>

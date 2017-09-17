@@ -8,8 +8,6 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
-
 @testset "Examples" begin
     @testset "SDDP.jl" begin
         for example in [

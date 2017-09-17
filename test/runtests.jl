@@ -12,7 +12,8 @@ using SDDP
 using JuMP
 using Base.Test
 
-include("visualization.jl")
+const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
+
 include("cachevectors.jl")
 include("utilities.jl")
 include("riskmeasures.jl")
@@ -22,3 +23,4 @@ include("cutoracles.jl")
 include("stageobjectives.jl")
 include("sddpmodels.jl")
 include("examples.jl")
+include("visualization.jl")

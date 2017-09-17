@@ -97,33 +97,17 @@ At most two states can be vectors.
     SDDP.plotvaluefunction(m, 2, 1, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1="State 1", label2="State 3")
 """
 function plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
-    sp = SDDP.getsubproblem(m, stage, markovstate)
-    vf = SDDP.valueoracle(sp)
-    plotvaluefunction(vf, getsense(sp) == :Min, states...; label1=label1, label2=label2)
+    html = prepvaluefunctionplot(m, stage, markovstate, label1, label2, states...)
+    launch_file(html, PLOTLY_ASSETS)
 end
 
-"""
-     SDDP.plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
-
-# Description
-
-Plot the value function `vf` at the points in the discretized state space given
-by `states`. If the value in `states` is a real number, the state is evaluated
-at that point. If the value is a vector, the state is evaluated at all the points
-in the vector. At most two states can be vectors. `is_minimization` is `true` if
-the subproblem is a minimization and false otherwise.
-
-# Examples
-
-    SDDP.plotvaluefunction(vf, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1="State 1", label2="State 3")
-"""
-function plotvaluefunction(vf, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
+function prepvaluefunctionplot(m::SDDPModel, stage::Int, markovstate::Int, label1, label2, states::Union{Float64, AbstractVector{Float64}}...)
+    sp = SDDP.getsubproblem(m, stage, markovstate)
+    vf = SDDP.valueoracle(sp)
+    is_minimization = getsense(sp) == :Min
     x, yi  = processvaluefunctiondata(vf, is_minimization, states...)
     (plotly_data, scene_text) = getplotlydata(x, yi, label1, label2)
-    html_string = gethtmlstring(PLOTLY_HTML_FILE)
-    html_string = replace(html_string, "<!--DATA-->", json(plotly_data))
-    html_string = replace(html_string, "<!--SCENE-->", scene_text)
-    launch_file(html_string, PLOTLY_ASSETS)
+    return prephtml(PLOTLY_HTML_FILE, ("<!--DATA-->", json(plotly_data)), ("<!--SCENE-->", scene_text))
 end
 
 function getplotlydata(x, yi, label1, label2)

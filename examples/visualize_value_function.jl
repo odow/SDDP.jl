@@ -41,7 +41,16 @@ end
 srand(111)
 @time status = solve(m, max_iterations = 30)
 
-SDDP.plotvaluefunction(m, 3, 1, 50.0, 0.0:2.0:100, label1 = "Bonds")
-# wait for lock on files to be released
-sleep(1.0)
-SDDP.plotvaluefunction(m, 3, 1, 0.0:2.0:100, 0.0:2.0:100, label1 = "Stocks", label2="Bonds")
+#=
+    These lines are commented out for testing
+
+    To plot the value function against bonds when stock = 50
+=#
+
+# SDDP.plotvaluefunction(m, 3, 1, 50.0, 0.0:2.0:100, label1 = "Bonds")
+
+#=
+    To plot the value function against stocks and bonds
+=#
+
+# SDDP.plotvaluefunction(m, 3, 1, 0.0:2.0:100, 0.0:2.0:100, label1 = "Stocks", label2="Bonds")
