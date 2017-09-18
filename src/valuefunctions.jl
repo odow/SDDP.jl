@@ -143,20 +143,20 @@ function rebuildsubproblem!{C<:AbstractCutOracle}(m::SDDPModel{DefaultValueFunct
     for i in 1:length(ex.noises)
         pop!(ex.noises)
     end
-    sp = Model(solver = m.lpsolver)
+    sp2 = Model(solver = sp.solver)
 
-    vf.theta = futureobjective!(ex.sense, sp, ex.problembound)
+    vf.theta = futureobjective!(ex.sense, sp2, ex.problembound)
 
-    sp.ext[:SDDP] = ex
+    sp2.ext[:SDDP] = ex
     if n == 2
-        m.build!(sp, ex.stage)
+        m.build!(sp2, ex.stage)
     elseif n == 3
-        m.build!(sp, ex.stage, ex.markovstate)
+        m.build!(sp2, ex.stage, ex.markovstate)
     end
     for cut in validcuts(vf.cutmanager)
-        addcut!(vf, sp, cut)
+        addcut!(vf, sp2, cut)
     end
-    m.stages[ex.stage].subproblems[ex.markovstate] = sp
+    m.stages[ex.stage].subproblems[ex.markovstate] = sp2
 end
 
 rebuildsubproblem!(m::SDDPModel{DefaultValueFunction{DefaultCutOracle}}, sp::JuMP.Model) = nothing

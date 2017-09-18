@@ -134,9 +134,9 @@ function SDDPModel(build!::Function;
     stages::Int          = 1,
     objective_bound      = nothing,
     markov_transition    = [ones(Float64, (1,1)) for t in 1:stages],
-    risk_measure = Expectation(),
+    risk_measure         = Expectation(),
     cut_oracle::AbstractCutOracle = DefaultCutOracle(),
-    solver::JuMP.MathProgBase.AbstractMathProgSolver = UnsetSolver(),
+    solver               = UnsetSolver(),
     value_function       = DefaultValueFunction(cut_oracle),
     )
     if objective_bound == nothing
@@ -155,7 +155,7 @@ function SDDPModel(build!::Function;
     end
 
     # New SDDPModel
-    m = newSDDPModel(sense, value_function, build!, solver)
+    m = newSDDPModel(sense, value_function, build!)
 
     for t in 1:stages
         markov_transition_matrix = getel(Array{Float64, 2}, markov_transition, t)

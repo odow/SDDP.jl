@@ -50,6 +50,8 @@ transition = Array{Float64, 2}[
 
 N = length(valley_chain)
 
+solvers = [ [ClpSolver()], [ClpSolver(), ClpSolver()], [ClpSolver(), ClpSolver()] ]
+
 # Initialise SDDP Model
 m = SDDPModel(
             sense           = :Max,

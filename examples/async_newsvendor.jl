@@ -81,9 +81,20 @@ end
 
 m = createmodel(NestedAVaR(beta   = 0.6, lambda = 0.5))
 
+
+@test_throws Exception SDDP.solve(m, max_iterations=30, solve_type=Asyncronous(slaves=[2]))
+
+# slave processes
+slaves = workers()
+#=
+ Add 1 slave after every 2 iterations until all are used. i.e.
+    Iteration | 1 | 2 | 3 | 4 | 5 | 6 | 7 | ...
+    # Slaves  | 1 | 1 | 2 | 2 | 3 | 3 | 4 | ...
+=#
+slave_steps = 2.0
 solvestatus = SDDP.solve(m,
     max_iterations = 30,
-    solve_type     = Asyncronous(),
+    solve_type     = Asyncronous(slaves=slaves, step=slave_steps),
    cut_output_file = "async.cuts",
     simulation     = MonteCarloSimulation(
                         frequency = 10,
