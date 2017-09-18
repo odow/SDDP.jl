@@ -76,8 +76,7 @@ function async_iteration!{C}(m::SDDPModel, settings::Settings, slave::Vector{C})
         empty!(m.ext[:cuts])
     end
     (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings, false)
-    y = similar(m.ext[:cuts])
-    copy!(y, m.ext[:cuts])
+    y = copy(m.ext[:cuts])
     empty!(m.ext[:cuts])
     y, objective_bound, simulation_objective
 end
@@ -103,9 +102,9 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
     objectives = CachedVector(Float64)
     simidx = 1
 
-    np = nprocs()
+    np = length(async.slaves) + 1
     if np <= 2
-        error("You've only loaded two processes. You should solve using the Serial solver instead.")
+        error("You've only loaded one slave process. You should solve using the Serial solver instead.")
     end
     storage_type = getcutstoragetype(T)
     slaves = Dict{Int, Vector{storage_type}}()

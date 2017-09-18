@@ -72,7 +72,7 @@ function modifyprobability!(measure::NestedAVaR,
     q = 0.0
     # For each noise in order
     for i in sortperm(observations, rev=!ismax)
-        if q >  measure.beta
+        if q >=  measure.beta
             # We have collected the beta quantile, therefore
             # AV@R contribution is zero
             avar_prob  = 0.0

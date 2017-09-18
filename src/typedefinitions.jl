@@ -169,11 +169,10 @@ immutable SDDPModel{V<:AbstractValueFunction}
     storage::Storage
     log::Vector{SolutionLog}
     build!::Function
-    lpsolver::JuMP.MathProgBase.AbstractMathProgSolver
     ext::Dict # extension dictionary
 end
-newSDDPModel(sense::Symbol, v::AbstractValueFunction, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = newSDDPModel(sense, typeof(v), build!, solver)
-newSDDPModel{V<:AbstractValueFunction}(sense::Symbol, v::Type{V}, build!::Function, solver::JuMP.MathProgBase.AbstractMathProgSolver) = SDDPModel{V}(sense, Stage[], Storage(), SolutionLog[], build!, solver, Dict())
+newSDDPModel(sense::Symbol, v::AbstractValueFunction, build!::Function) = newSDDPModel(sense, typeof(v), build!)
+newSDDPModel{V<:AbstractValueFunction}(sense::Symbol, v::Type{V}, build!::Function) = SDDPModel{V}(sense, Stage[], Storage(), SolutionLog[], build!, Dict())
 
 immutable BoundConvergence
     iterations::Int
