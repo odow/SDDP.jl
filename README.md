@@ -14,8 +14,20 @@ Pkg.clone("https://github.com/odow/SDDP.jl.git")
 This package is under development and some features may be changed or added.
 Most of the time, this will just be a renaming of minor parts of the code.
 
-For a time line of features, see [NEWS.md](https://github.com/odow/SDDP.jl/NEWS.md).
+For a time line of features, see [NEWS.md](https://github.com/odow/SDDP.jl/blob/master/NEWS.md).
 Items that require modification of existing codes are prefixed with `!!`.
+
+## Examples
+
+We need your examples! We're trying to collate a large array of examples to test the
+correctness (and later, performance) of the package. Either make a PR or go to the
+examples folder and click [`Upload Files`](https://github.com/odow/SDDP.jl/upload/master/examples) and Github will walk you through the process.
+Bonus points for models where you know the optimal first stage objective value.
+
+## Bugs
+
+We need your bug reports! We've only stressed a few code paths on real-world models.
+If you run into any problems, [file an issue here](https://github.com/odow/SDDP.jl/issues/new).
 
 ## Documentation
 
