@@ -31,16 +31,16 @@ turbine(i) = valley_chain[i].turbine
 
 # Prices[stage, markov state]
 prices = [
-    1 2;
-    2 1;
-    3 4
+    1 2 0;
+    2 1 0;
+    3 4 0
 ]
 
 # Transition matrix
 transition = Array{Float64, 2}[
     [ 1.0 ]',
     [ 0.6 0.4 ],
-    [ 0.6 0.4; 0.3 0.7 ]
+    [ 0.6 0.4 0.0; 0.3 0.7 0.0]
 ]
 
 N = length(valley_chain)
