@@ -180,7 +180,7 @@ function SDDPModel(build!::Function;
                 risk_measure   = getel(AbstractRiskMeasure, risk_measure, t, i),
                 value_function = deepcopy(value_function)
             )
-            setsolver(mod, solver)
+            setsolver(mod, getel(JuMP.MathProgBase.AbstractMathProgSolver, solver, t, i))
             # dispatch to correct function
             # maybe we should do this with tuples
             if num_args == 3

@@ -60,7 +60,7 @@ m = SDDPModel(
             markov_transition = transition,
             risk_measure    = Expectation(),
             cut_oracle      = DefaultCutOracle(),
-            solver          = ClpSolver()
+            solver          = solvers
                                     ) do sp, stage, markov_state
 
     # ------------------------------------------------------------------
