@@ -15,6 +15,7 @@ using Base.Test
 const examples_dir = joinpath(dirname(dirname(@__FILE__)), "examples")
 
 include("cachevectors.jl")
+include("dispatch.jl")
 include("utilities.jl")
 include("riskmeasures.jl")
 include("states.jl")
