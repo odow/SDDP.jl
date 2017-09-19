@@ -40,6 +40,13 @@ However, you can find some documentation at https://odow.github.io/SDDP.jl/build
 Or have a read of the [draft tutorial/paper](https://github.com/odow/SDDP.jl/raw/master/draft_paper.pdf)
 which goes into a bit more depth.
 
+## Other Packages
+
+`SDDP.jl` isn't the only Julia package for solving multi-stage stochastic programs.
+You may want to checkout [StructDualDynProg.jl](https://github.com/blegat/StructDualDynProg.jl)
+or [StochDynamicProgramming.jl](https://github.com/JuliaOpt/StochDynamicProgramming.jl)
+to see if they better suit your needs.
+
 ## SDDiP
 
 [@lkapelevich](https://github.com/lkapelevich) wrote an extension for SDDP.jl to
