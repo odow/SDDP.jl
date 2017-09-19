@@ -74,6 +74,8 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
     ex = ext(sp)
     vf = valueoracle(sp)
     I = 1:length(m.storage.objective)
+    # TODO: improve this to reduce the extra memory usage
+    current_transition = copy(m.storage.probability.data[I])
     for i in I
         m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
@@ -94,7 +96,7 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
     addcut!(vf, sp, cut)
     storecut!(m, sp, cut)
     for i in I
-        m.storage.probability[i] /= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
+        m.storage.probability[i] = current_transition[i]
     end
 end
 
