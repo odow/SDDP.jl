@@ -238,7 +238,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
             setnoise!(sp, noise)
         end
         # solve subproblem
-        solvesubproblem!(ForwardPass, m, sp)
+        solvesubproblem!(ForwardPass, m, sp, solutionstore)
         # store stage obj
         obj += getstageobjective(sp)
         # store state

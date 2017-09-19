@@ -162,7 +162,7 @@ end
 savesolution!(solutionstore::Void, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int) = nothing
 
 
-function solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model)
+function solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model, solutionstore=nothing)
     JuMPsolve(direction, m, sp)
 end
 hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
