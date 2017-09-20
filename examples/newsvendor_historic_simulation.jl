@@ -85,6 +85,7 @@ end
 @test solvestatus == :max_iterations
 
 results = simulate(m, 500)
+@test length(results) == 500
 @test isapprox(mean(r[:objective] for r in results), 97, atol=2)
 
 
