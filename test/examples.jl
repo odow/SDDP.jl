@@ -26,7 +26,8 @@
                 "booking_management.jl",
                 "simplified_hydrothermal_dispatch.jl",
                 "simple_objective_noise.jl",
-                "worst_case.jl"
+                "worst_case.jl",
+                "vehicle_location.jl"
             ]
             @testset "$example" begin
                 include(joinpath(examples_dir, example))
