@@ -122,12 +122,12 @@ with the exception of `:objective` which is just
     results[2][:x][3] # value of :x in stage 3 in second simulation
 """
 function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
-    y = Dict{Symbol, Any}[]
-    for i in 1:N
-        store = newsolutionstore(variables)
-        obj = forwardpass!(m, Settings(), store)
-        store[:objective] = obj
-        push!(y, store)
-    end
-    y
+    pmap(i->randomsimulation(m, variables), 1:N)
+end
+
+function randomsimulation(m::SDDPModel, variables::Vector{Symbol})
+    store = newsolutionstore(variables)
+    obj = forwardpass!(m, Settings(), store)
+    store[:objective] = obj
+    return store
 end

@@ -65,4 +65,5 @@ end
 
 @test isapprox(getbound(mod), 340315.52, atol=0.1)
 sim = simulate(mod, 1, [:x, :penalty])
+@test length(sim) == 1
 @test isapprox(sim[1][:x][1], [5085,1311,3919,854])

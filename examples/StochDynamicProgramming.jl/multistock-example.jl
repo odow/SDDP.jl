@@ -51,5 +51,5 @@ print_level = 0)
 @test isapprox(SDDP.getbound(m), -4.349, atol=0.01)
 
 results = simulate(m, 5000)
-
+@test length(results) == 5000
 @test isapprox(mean(r[:objective] for r in results), -4.349, atol=0.02)

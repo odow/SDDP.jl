@@ -37,6 +37,10 @@ using Base.Test
         [0.3 0.7; 0.3 0.7]
       ]
 
+      # overload to check parallel
+      function SDDP.storekey!(::Type{Val{:pid}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
+          push!(store, myid())
+      end
 end
 
 function createmodel(risk_measure)
@@ -106,6 +110,13 @@ solvestatus = SDDP.solve(m,
 
 @test isapprox(getbound(m), 93.267, atol=1e-3)
 @test solvestatus == :max_iterations
+
+sim = simulate(m, 100, [:stock, :pid])
+@test length(sim) == 100
+
+# check pid's are not all 1 so that some were simulated on other cores
+pids = [s[:pid][1] for s in sim]
+@test !all(pids .== 1)
 
 m4 = createmodel(NestedAVaR(beta   = 0.6, lambda = 0.5))
 loadcuts!(m4, "async.cuts")
