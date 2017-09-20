@@ -30,6 +30,7 @@
                 "vehicle_location.jl"
             ]
             @testset "$example" begin
+                println("Running $(example)")
                 include(joinpath(examples_dir, example))
             end
         end
@@ -41,6 +42,7 @@
                 "multistock-example.jl"
             ]
             @testset "$example" begin
+                println("Running $(example)")
                 include(joinpath(examples_dir, "StochDynamicProgramming.jl", example))
             end
         end
@@ -52,6 +54,7 @@
                 "prob5.2_3stages.jl"
             ]
             @testset "$example" begin
+                println("Running $(example)")
                 include(joinpath(examples_dir, "StochasticDualDynamicProgramming.jl", example))
             end
         end
@@ -64,6 +67,7 @@
                 "production_management_multiple_stages.jl"
             ]
             @testset "$example" begin
+                println("Running $(example)")
                 include(joinpath(examples_dir, "FAST", example))
             end
         end

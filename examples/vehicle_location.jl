@@ -30,22 +30,20 @@ programming solver with binary state variables.
 =#
 using SDDP, JuMP, Clp, Base.Test
 
-const Vehicles = 1:3        # ambulances
-const Bases = 1:6           # base 1 = hostpital
-const Locations = [0,20,40,60,80,100] # Points on the number line where emergency bases are located
-const Requests = collect(0:2:100)     # Points on the number line where calls come from
+Vehicles = 1:3        # ambulances
+Bases = 1:6           # base 1 = hostpital
+Locations = [0,20,40,60,80,100] # Points on the number line where emergency bases are located
+Requests = collect(0:2:100)     # Points on the number line where calls come from
 
 shiftcost(src, dest) = abs(Locations[src] - Locations[dest])
 dispatchcost(request, base) = 2 * (request + abs(request-Locations[base]))
 
 #Initial State of emergency vehicles at bases
-const Q0 = zeros(Int64, (length(Bases), length(Vehicles)))
+Q0 = zeros(Int64, (length(Bases), length(Vehicles)))
 Q0[1,:] = 1 # all ambulances start at hospital
 
-const T = 10 # Number of requests (i.e. stages)
-
 m = SDDPModel(
-             stages = T,
+             stages = 10,
     objective_bound = 0.0,
               sense = :Min,
              solver = ClpSolver()
@@ -78,7 +76,7 @@ m = SDDPModel(
         # can't shift to same base
         [b in Bases, v in Vehicles], shift[b,v,b] == 0
         # Update states for non-home/non-hospital bases
-        [b in Depots, v in Vehicles], q[b, v] == basebalance[b,v]
+        [b in Bases[2:end], v in Vehicles], q[b, v] == basebalance[b,v]
         # Update states for home/hospital bases
         [v in Vehicles], q[1, v] == basebalance[1,v] + sum(dispatch[:,v])
     end)
