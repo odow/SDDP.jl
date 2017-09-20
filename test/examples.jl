@@ -26,9 +26,11 @@
                 "booking_management.jl",
                 "simplified_hydrothermal_dispatch.jl",
                 "simple_objective_noise.jl",
-                "worst_case.jl"
+                "worst_case.jl",
+                "vehicle_location.jl"
             ]
             @testset "$example" begin
+                println("Running $(example)")
                 include(joinpath(examples_dir, example))
             end
         end
@@ -40,6 +42,7 @@
                 "multistock-example.jl"
             ]
             @testset "$example" begin
+                println("Running $(example)")
                 include(joinpath(examples_dir, "StochDynamicProgramming.jl", example))
             end
         end
@@ -51,6 +54,7 @@
                 "prob5.2_3stages.jl"
             ]
             @testset "$example" begin
+                println("Running $(example)")
                 include(joinpath(examples_dir, "StochasticDualDynamicProgramming.jl", example))
             end
         end
@@ -63,6 +67,7 @@
                 "production_management_multiple_stages.jl"
             ]
             @testset "$example" begin
+                println("Running $(example)")
                 include(joinpath(examples_dir, "FAST", example))
             end
         end
