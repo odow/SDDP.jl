@@ -83,7 +83,32 @@
         end
 
         @testset "Simulation Example" begin
-            include(joinpath(examples_dir, "visualize_simulation.jl"))
+            include(joinpath(examples_dir, "HydroValleys", "hydro_valley.jl"))
+            # stagewise inflows and markov prices
+            srand(12345)
+            
+            markov_stagewise_model = hydrovalleymodel(hasstagewiseinflows=true, hasmarkovprice=true)
+            SDDP.solve(markov_stagewise_model, max_iterations=10, print_level=0)
+            @test isapprox(getbound(markov_stagewise_model), 855.0, atol=1e-3)
+
+            results = simulate(markov_stagewise_model, 5, [:reservoir])
+            @test length(results) == 5
+
+            p = SDDP.newplot()
+            SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(results[i][:stageobjective][t], 2),
+                title="Accumulated Profit", ylabel="Accumulated Profit (\$)", cumulative=true)
+            SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(results[i][:stageobjective][t], 2),
+                title="Weekly Income", ylabel="Week Profit (\$)")
+            SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(results[i][:reservoir][t][1], 2),
+                title="Upper Reservoir", ylabel="Level")
+            SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(results[i][:reservoir][t][2], 2),
+                title="Lower Reservoir")
+            prices = [1 2 0; 2 1 0; 3 4 0]
+            SDDP.addplot!(p, 1:5, 1:3, (i, t)->round(prices[t, results[i][:markov][t]], 2),
+                ylabel="Price", interpolate="step-after")
+            # for real-world display, use
+            # SDDP.show(p)
+
             html = SDDP.prephtml(p)
             @test html == readstring(joinpath(dirname(@__FILE__), "visualize_examples", "simulation.html"))
         end

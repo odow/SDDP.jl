@@ -23,15 +23,15 @@ using SDDP, JuMP, Clp, Base.Test
 m = SDDPModel(
                   sense = :Min,          
                  stages = 3,
-                 solver = ClpSolver(), 
-        objective_bound = 0             
+                 solver = ClpSolver(),
+        objective_bound = 0
                                         ) do sp, t
-    
+
     # ------------------------------------------------------------------
     #   SDDP State Variables
     # Level of upper reservoir
     @state(sp,    0 <= v <= 200, v0 == 50)
-    
+
     # ------------------------------------------------------------------
     #   Additional variables
     # Variables
@@ -43,19 +43,19 @@ m = SDDPModel(
     @variable(sp, 0 <= g[1:2] <= 100)
     @variable(sp, 0 <= u <= 150)
     @variable(sp, s >= 0 )
-    
+
     # ------------------------------------------------------------------
     #   Constraints
     # Demand
     @constraint(sp, g[1] + g[2] + u == 150)
-    
+
     # ------------------------------------------------------------------
     #   Noise
     # rainfall noises
-    @rhsnoise(sp, a = linspace(50, 0, 10), v + u + s == v0 + a) 
-    
-    # Objective function 
-    stageobjective!(sp, 100*g[1] + 1000*g[2] ) 
+    @rhsnoise(sp, a = linspace(50, 0, 10), v + u + s == v0 + a)
+
+    # Objective function
+    stageobjective!(sp, 100*g[1] + 1000*g[2] )
 end
 
 # For repeatability
@@ -63,7 +63,7 @@ srand(11111)
 
 solvestatus = solve(m,
     max_iterations = 20,
-    time_limit     = 600, 
+    time_limit     = 600,
     simulation     = MonteCarloSimulation(
                         frequency = 5,
                         min       = 10,
@@ -74,5 +74,5 @@ solvestatus = solve(m,
      print_level=0
 )
 
-@test solvestatus == :converged 
+@test solvestatus == :converged
 @test isapprox(getbound(m), 57295, atol=1e-2)

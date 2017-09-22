@@ -9,24 +9,28 @@
 #############################################################################
 
 @testset "Examples" begin
+    @testset "HydroValleys" begin
+        for example in [
+                "hydro_valley_tests.jl",
+                "simplified_hydrothermal_dispatch.jl"
+            ]
+            @testset "$example" begin
+                println("Running $(example)")
+                include(joinpath(examples_dir, "HydroValleys", example))
+            end
+        end
+    end
+
     @testset "SDDP.jl" begin
         for example in [
-                "hydro_valley_deterministic.jl",
-                "hydro_valley_stagewise.jl",
-                "hydro_valley_markov.jl",
-                "hydro_valley_stagewise_markov.jl",
                 "newsvendor.jl",
                 "newsvendor_historic_simulation.jl",
-                "risk_aversion.jl",
-                "dematos_cutselection.jl",
                 "async_newsvendor.jl",
                 "load_cuts.jl",
                 "asset_management_stagewise.jl",
                 "asset_management.jl",
                 "booking_management.jl",
-                "simplified_hydrothermal_dispatch.jl",
                 "simple_objective_noise.jl",
-                "worst_case.jl",
                 "vehicle_location.jl"
             ]
             @testset "$example" begin
