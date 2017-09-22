@@ -8,81 +8,55 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-@testset "Examples" begin
-    @testset "HydroValleys" begin
-        for example in [
-                "hydro_valley_tests.jl",
-                "simplified_hydrothermal_dispatch.jl"
-            ]
-            @testset "$example" begin
-                println("Running $(example)")
-                include(joinpath(examples_dir, "HydroValleys", example))
-            end
-        end
-    end
+const Examples = Dict(
+    "HydroValleys" => [
+            "hydro_valley_tests.jl",
+            "simplified_hydrothermal_dispatch.jl"
+        ],
+    "BinaryProblems" => [
+            "booking_management.jl",
+            "vehicle_location.jl"
+        ],
+    "Newsvendor" => [
+            "async_newsvendor.jl",
+            "newsvendor.jl"
+        ],
+    "StochDynamicProgramming.jl" => [
+            "stock-example.jl",
+            "multistock-example.jl"
+        ],
+    "StructDualDynProg.jl" => [
+            "prob5.2_2stages.jl",
+            "prob5.2_3stages.jl"
+        ],
+    "FAST" => [
+            "hydro_thermal.jl",
+            "quickstart.jl",
+            "production_management_multiple_stages.jl"
+        ],
+    "AssetManagement" => [
+            "asset_management_stagewise.jl",
+            "asset_management.jl"
+        ]
+)
 
-    @testset "Binary Problems" begin
-        for example in [
-                "booking_management.jl",
-                "vehicle_location.jl"
-            ]
-            @testset "$example" begin
-                println("Running $(example)")
-                include(joinpath(examples_dir, "BinaryProblems", example))
+@testset "Examples" begin
+    for (key, examples) in Examples
+        @testset "$(key)" begin
+            for example in examples
+                @testset "$example" begin
+                    println("Running $(example)")
+                    include(joinpath(examples_dir, key, example))
+                end
             end
         end
     end
 
     @testset "SDDP.jl" begin
-        for example in [
-                "newsvendor.jl",
-                "newsvendor_historic_simulation.jl",
-                "async_newsvendor.jl",
-                "load_cuts.jl",
-                "asset_management_stagewise.jl",
-                "asset_management.jl",
-                "simple_objective_noise.jl"
-            ]
+        for example in ["simple_objective_noise.jl"]
             @testset "$example" begin
                 println("Running $(example)")
                 include(joinpath(examples_dir, example))
-            end
-        end
-    end
-
-    @testset "StochDynamicProgramming.jl" begin
-        for example in [
-                "stock-example.jl",
-                "multistock-example.jl"
-            ]
-            @testset "$example" begin
-                println("Running $(example)")
-                include(joinpath(examples_dir, "StochDynamicProgramming.jl", example))
-            end
-        end
-    end
-
-    @testset "StructDualDynProg.jl" begin
-        for example in [
-                "prob5.2_2stages.jl",
-                "prob5.2_3stages.jl"
-            ]
-            @testset "$example" begin
-                println("Running $(example)")
-                include(joinpath(examples_dir, "StructDualDynProg.jl", example))
-            end
-        end
-    end
-
-    @testset "FAST" begin
-        for example in [
-                "hydro_thermal.jl",
-                "quickstart.jl",
-                "production_management_multiple_stages.jl"
-            ]
-            @testset "$example" begin
-                println("Running $(example)")
-                include(joinpath(examples_dir, "FAST", example))
             end
         end
     end
