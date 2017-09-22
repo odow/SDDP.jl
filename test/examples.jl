@@ -21,6 +21,18 @@
         end
     end
 
+    @testset "Binary Problems" begin
+        for example in [
+                "booking_management.jl",
+                "vehicle_location.jl"
+            ]
+            @testset "$example" begin
+                println("Running $(example)")
+                include(joinpath(examples_dir, "BinaryProblems", example))
+            end
+        end
+    end
+
     @testset "SDDP.jl" begin
         for example in [
                 "newsvendor.jl",
@@ -29,9 +41,7 @@
                 "load_cuts.jl",
                 "asset_management_stagewise.jl",
                 "asset_management.jl",
-                "booking_management.jl",
-                "simple_objective_noise.jl",
-                "vehicle_location.jl"
+                "simple_objective_noise.jl"
             ]
             @testset "$example" begin
                 println("Running $(example)")
@@ -52,14 +62,14 @@
         end
     end
 
-    @testset "StochasticDualDynamicProgramming.jl" begin
+    @testset "StructDualDynProg.jl" begin
         for example in [
                 "prob5.2_2stages.jl",
                 "prob5.2_3stages.jl"
             ]
             @testset "$example" begin
                 println("Running $(example)")
-                include(joinpath(examples_dir, "StochasticDualDynamicProgramming.jl", example))
+                include(joinpath(examples_dir, "StructDualDynProg.jl", example))
             end
         end
     end

@@ -1,3 +1,30 @@
+#  Copyright 2017,  Oscar Dowson
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#############################################################################
+
+#=
+This problem is a version of the hydro-thermal scheduling problem. The goal is
+to operate two hydro-dams in a valley chain over time in the face of inflow
+and price uncertainty.
+
+Turbine response curves are modelled by piecewise linear functions which map the
+flow rate into a power. These can be controlled by specifying the breakpoints
+in the piecewise linear function as the knots in the Turbine struct.
+
+The model can be created using the hydrovalleymodel function. It has a few
+keyword arguments to allow automated testing of the library.
+`hasstagewiseinflows` determines if the RHS noise constraint should be added.
+`hasmarkovprice` determines if the price uncertainty (modelled by a markov
+chain) should be added.
+
+In the third stage, the markov chain has some unreachable states to test
+some code-paths in the library.
+
+We can also set the sense to :Min or :Max (the objective and bound are
+flipped appropriately).
+=#
 using SDDP, JuMP, Clp
 
 immutable Turbine
@@ -17,9 +44,9 @@ end
 function hydrovalleymodel(;
         riskmeasure=Expectation(),
         cutoracle=DefaultCutOracle(),
-        hasstagewiseinflows=true,
-        hasmarkovprice=true,
-        sense=:Max
+        hasstagewiseinflows::Bool=true,
+        hasmarkovprice::Bool=true,
+        sense::Symbol=:Max
     )
 
     valley_chain = [
