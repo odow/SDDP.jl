@@ -12,8 +12,7 @@ Modified version of the Asset Management problem taken from
     Springer New York, New York, NY, 2011
 ==#
 
-using SDDP, JuMP, Clp
-using Base.Test
+using SDDP, JuMP, Clp, Base.Test
 
 ws = [1.25, 1.06]
 wb = [1.14, 1.12]

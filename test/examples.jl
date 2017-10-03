@@ -8,67 +8,55 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
+const Examples = Dict(
+    "HydroValleys" => [
+            "hydro_valley_tests.jl",
+            "simplified_hydrothermal_dispatch.jl"
+        ],
+    "BinaryProblems" => [
+            "booking_management.jl",
+            "vehicle_location.jl"
+        ],
+    "Newsvendor" => [
+            "async_newsvendor.jl",
+            "newsvendor.jl"
+        ],
+    "StochDynamicProgramming.jl" => [
+            "stock-example.jl",
+            "multistock-example.jl"
+        ],
+    "StructDualDynProg.jl" => [
+            "prob5.2_2stages.jl",
+            "prob5.2_3stages.jl"
+        ],
+    "FAST" => [
+            "hydro_thermal.jl",
+            "quickstart.jl",
+            "production_management_multiple_stages.jl"
+        ],
+    "AssetManagement" => [
+            "asset_management_stagewise.jl",
+            "asset_management.jl"
+        ]
+)
+
 @testset "Examples" begin
+    for (key, examples) in Examples
+        @testset "$(key)" begin
+            for example in examples
+                @testset "$example" begin
+                    println("Running $(example)")
+                    include(joinpath(examples_dir, key, example))
+                end
+            end
+        end
+    end
+
     @testset "SDDP.jl" begin
-        for example in [
-                "hydro_valley_deterministic.jl",
-                "hydro_valley_stagewise.jl",
-                "hydro_valley_markov.jl",
-                "hydro_valley_stagewise_markov.jl",
-                "newsvendor.jl",
-                "newsvendor_historic_simulation.jl",
-                "risk_aversion.jl",
-                "dematos_cutselection.jl",
-                "async_newsvendor.jl",
-                "load_cuts.jl",
-                "asset_management_stagewise.jl",
-                "asset_management.jl",
-                "booking_management.jl",
-                "simplified_hydrothermal_dispatch.jl",
-                "simple_objective_noise.jl",
-                "worst_case.jl",
-                "vehicle_location.jl"
-            ]
+        for example in ["simple_objective_noise.jl"]
             @testset "$example" begin
                 println("Running $(example)")
                 include(joinpath(examples_dir, example))
-            end
-        end
-    end
-
-    @testset "StochDynamicProgramming.jl" begin
-        for example in [
-                "stock-example.jl",
-                "multistock-example.jl"
-            ]
-            @testset "$example" begin
-                println("Running $(example)")
-                include(joinpath(examples_dir, "StochDynamicProgramming.jl", example))
-            end
-        end
-    end
-
-    @testset "StochasticDualDynamicProgramming.jl" begin
-        for example in [
-                "prob5.2_2stages.jl",
-                "prob5.2_3stages.jl"
-            ]
-            @testset "$example" begin
-                println("Running $(example)")
-                include(joinpath(examples_dir, "StochasticDualDynamicProgramming.jl", example))
-            end
-        end
-    end
-
-    @testset "FAST" begin
-        for example in [
-                "hydro_thermal.jl",
-                "quickstart.jl",
-                "production_management_multiple_stages.jl"
-            ]
-            @testset "$example" begin
-                println("Running $(example)")
-                include(joinpath(examples_dir, "FAST", example))
             end
         end
     end
