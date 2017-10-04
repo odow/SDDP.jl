@@ -8,7 +8,9 @@ __precompile__()
 
 module SDDP
 
-using JuMP, Distributions, JSON
+using JuMP, Distributions, JSON, TimerOutputs
+
+const TIMER = TimerOutput()
 
 const JuMPVERSION = Pkg.installed("JuMP")
 
@@ -260,10 +262,11 @@ function backwardpass!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
         end
         # add appropriate cuts
         for sp in subproblems(m, t-1)
-            modifyvaluefunction!(m, settings, sp, writecuts)
+            @timeit TIMER "Cut addition" begin
+                modifyvaluefunction!(m, settings, sp, writecuts)
+            end
         end
     end
-
     reset!(m.storage)
     for sp in subproblems(m, 1)
         solvesubproblem!(BackwardPass, m, sp)
@@ -276,11 +279,13 @@ end
 
 function iteration!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
     t = time()
-
-    simulation_objective = forwardpass!(m, settings)
+    @timeit TIMER "Forward Pass" begin
+        simulation_objective = forwardpass!(m, settings)
+    end
     time_forwards = time() - t
-
-    objective_bound = backwardpass!(m, settings, writecuts)
+    @timeit TIMER "Backward Pass" begin
+        objective_bound = backwardpass!(m, settings, writecuts)
+    end
     time_backwards = time() - time_forwards - t
 
     # reduce memory footprint
@@ -317,41 +322,48 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     start_time = time()
     while keep_iterating
         # add cuts
-        (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
+        @timeit TIMER "Iteration Phase" begin
+            (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
+        end
         # update timers and bounds
         time_cutting += time_backwards + time_forwards
         lower, upper = simulation_objective, simulation_objective
 
         if applicable(iteration, settings.cut_selection_frequency)
-            # run cut selection
-            settings.print_level > 1 && info("Running Cut Selection")
-            rebuild!(m)
+            @timeit TIMER "Cut Selection" begin
+                # run cut selection
+                settings.print_level > 1 && info("Running Cut Selection")
+                rebuild!(m)
+            end
         end
 
         if applicable(iteration, settings.simulation.frequency)
-            # simulate policy
-            settings.print_level > 1 && info("Running Monte-Carlo Simulation")
             t = time()
-            simidx = 1
-            # reuse store for objectives
-            reset!(objectives)
-            for i in 1:settings.simulation.steps[end]
-                # forwardpass! returns objective
-                push!(objectives, forwardpass!(m, settings))
-                nsimulations += 1
-                if i == settings.simulation.steps[simidx]
-                    # simulation incrementation
-                    (lower, upper) = confidenceinterval(objectives, settings.simulation.confidence)
-                    if contains(objective_bound, lower, upper)
-                        if settings.simulation.termination && simidx == length(settings.simulation.steps)
-                            # max simulations
-                            status = :converged
-                            keep_iterating = false
+            @timeit TIMER "Simulation Phase" begin
+                # simulate policy
+                settings.print_level > 1 && info("Running Monte-Carlo Simulation")
+                simidx = 1
+                # reuse store for objectives
+                reset!(objectives)
+                for i in 1:settings.simulation.steps[end]
+                    # forwardpass! returns objective
+
+                    push!(objectives, forwardpass!(m, settings))
+                    nsimulations += 1
+                    if i == settings.simulation.steps[simidx]
+                        # simulation incrementation
+                        (lower, upper) = confidenceinterval(objectives, settings.simulation.confidence)
+                        if contains(objective_bound, lower, upper)
+                            if settings.simulation.termination && simidx == length(settings.simulation.steps)
+                                # max simulations
+                                status = :converged
+                                keep_iterating = false
+                            end
+                        else
+                            break
                         end
-                    else
-                        break
+                        simidx += 1
                     end
-                    simidx += 1
                 end
             end
             time_simulating += time() - t
@@ -479,6 +491,8 @@ function JuMP.solve(m::SDDPModel;
         reduce_memory_footprint      = false,
         cut_output_file::String      = ""
     )
+    reset_timer!(TIMER)
+
     settings = Settings(
         max_iterations,
         time_limit,
@@ -500,7 +514,9 @@ function JuMP.solve(m::SDDPModel;
     print(printheader, settings, m, solve_type)
     status = :solving
     try
-        status = solve(solve_type, m, settings)
+        timeit(TIMER, "Solve") do
+            status = solve(solve_type, m, settings)
+        end
     catch ex
         if isa(ex, InterruptException)
             warn("Terminating solve due to user interaction")
@@ -509,8 +525,8 @@ function JuMP.solve(m::SDDPModel;
             rethrow(ex)
         end
     end
-    print(printfooter, settings, m, status)
-
+    print(printfooter, settings, m, status, TIMER)
+    # print(print_timer, settings)
     status
 end
 

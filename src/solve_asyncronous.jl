@@ -113,9 +113,9 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
     end
 
     begin
-        t=time()
-        sendto(async.slaves, m=m)
-        info("Took $(round(time() - t, 2)) seconds to copy model to all processes.")
+        @timeit TIMER "Remote Initialization" begin
+            sendto(async.slaves, m=m)
+        end
     end
 
 
@@ -161,7 +161,9 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                         end
                         newcuts = deepcopy(slaves[p])
                         empty!(slaves[p])
-                        (cuts, objective_bound, simulation_objective) = remotecall_fetch(async_iteration!, p, typeof(m), settings, newcuts)
+                        @timeit TIMER "Iteration Phase" begin
+                            (cuts, objective_bound, simulation_objective) = remotecall_fetch(async_iteration!, p, typeof(m), settings, newcuts)
+                        end
                         for cut in cuts
                             if settings.cut_output_file != ""
                                 writeaynccut!(settings.cut_output_file, cut)
@@ -185,7 +187,9 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                             iterations_since_cut_selection = 0
                         end
                         if needs_rebuilding[p]
-                            remotecall_fetch(rebuild!, p, typeof(m))
+                            @timeit TIMER "Cut Selection" begin
+                                remotecall_fetch(rebuild!, p, typeof(m))
+                            end
                             needs_rebuilding[p] = false
                         end
 
@@ -202,7 +206,9 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                         end
                         simulation_timer = time()
 
-                        push!(objectives, remotecall_fetch(async_forwardpass!, p, typeof(m), settings))
+                        @timeit TIMER "Simulation Phase" begin
+                            push!(objectives, remotecall_fetch(async_forwardpass!, p, typeof(m), settings))
+                        end
                         nsimulations = addsimulation!()
 
                         simulation_time += time() - simulation_timer
