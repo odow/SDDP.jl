@@ -30,6 +30,7 @@ export SDDPModel,
     getbound,
     loadcuts!
 
+include("JuMPfunctions.jl")
 include("typedefinitions.jl")
 include("utilities.jl")
 include("riskmeasures.jl")

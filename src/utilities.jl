@@ -187,7 +187,8 @@ end
 hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
 
 function JuMPsolve{T<:IterationDirection}(::Type{T}, ::SDDPModel, sp::JuMP.Model)
-    @assert JuMP.solve(sp) == :Optimal
+    # @assert JuMP.solve(sp) == :Optimal
+    @assert jumpsolve(sp) == :Optimal
 end
 
 function savemodel!(filename::String, m::SDDPModel)
