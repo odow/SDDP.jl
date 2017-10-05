@@ -101,6 +101,12 @@ function plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::U
     launch_file(html, PLOTLY_ASSETS)
 end
 
+function plotvaluefunction(filename::String, m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
+    html = prepvaluefunctionplot(m, stage, markovstate, label1, label2, states...)
+    launch_file(html, PLOTLY_ASSETS, filename)
+end
+
+
 function prepvaluefunctionplot(m::SDDPModel, stage::Int, markovstate::Int, label1, label2, states::Union{Float64, AbstractVector{Float64}}...)
     sp = SDDP.getsubproblem(m, stage, markovstate)
     vf = SDDP.valueoracle(sp)

@@ -93,4 +93,9 @@ function show(p::SimulationPlot)
 	launch_file(html, SIMULATION_ASSETS)
 end
 
+function show(filename::String, p::SimulationPlot)
+	html = prephtml(p)
+	launch_file(html, SIMULATION_ASSETS, filename)
+end
+
 prephtml(p::SimulationPlot) = prephtml(SIMULATION_HTML_FILE, ("<!--DATA-->", json(p.data)))

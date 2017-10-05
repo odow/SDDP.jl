@@ -8,20 +8,19 @@
 
 const ASSET_DIR = dirname(@__FILE__)
 
-function launch_file(html_string, assets)
-	temporary_html_file = replace(tempname(), ".tmp", ".html")
+function launch_file(html_string, assets, outputfile=replace(tempname(), ".tmp", ".html"))
     for asset in assets
-        cp(joinpath(ASSET_DIR, asset), joinpath(dirname(temporary_html_file), asset), remove_destination=true)
+        cp(joinpath(ASSET_DIR, asset), joinpath(dirname(outputfile), asset), remove_destination=true)
     end
-    open(temporary_html_file, "w") do f
+    open(outputfile, "w") do f
         write(f, html_string)
     end
 	if is_windows()
-		run(`$(ENV["COMSPEC"]) /c start $(temporary_html_file)`)
+		run(`$(ENV["COMSPEC"]) /c start $(outputfile)`)
 	elseif is_apple()
-        run(`open $(temporary_html_file)`)
+        run(`open $(outputfile)`)
     elseif is_linux() || is_bsd()
-        run(`xdg-open $(temporary_html_file)`)
+        run(`xdg-open $(outputfile)`)
     end
 end
 
