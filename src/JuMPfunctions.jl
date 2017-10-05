@@ -41,7 +41,7 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
         unset = m.solver == JuMP.UnsetSolver()
 
         # Analyze the problems traits to determine what solvers we can use
-        traits = JuMP.ProblemTraits(m, relaxation)
+        traits = JuMP.ProblemTraits(m, relaxation=relaxation)
 
         # Build the MathProgBase model from the JuMP model
         JuMP.build(m, traits=traits, suppress_warnings=suppress_warnings, relaxation=relaxation)
