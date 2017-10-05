@@ -79,13 +79,15 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
     for i in I
         m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
-    modifyprobability!(ex.riskmeasure,
-        view(m.storage.modifiedprobability.data, I),
-        m.storage.probability.data[I],
-        m.storage.objective.data[I],
-        m,
-        sp
-    )
+    @timeit TIMER "risk measure" begin
+        modifyprobability!(ex.riskmeasure,
+            view(m.storage.modifiedprobability.data, I),
+            m.storage.probability.data[I],
+            m.storage.objective.data[I],
+            m,
+            sp
+        )
+    end
     cut = constructcut(m, sp)
 
     if writecuts && settings.cut_output_file != ""

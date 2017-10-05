@@ -437,8 +437,9 @@ control the solution process.
     constraints) leading to an increase in the solve time of individual subproblems.
     Defaults to `0` (never run).
  * `print_level::Int`:
-     0 - off: nothing logged to screen (still written to log file if specified).
-     1 - on: solve iterations written to screen.
+     0 - off: nothing logged.
+     1 - on: solve iterations logged.
+     2 - verbose: detailed timing information is also logged.
      Defaults to `1`
  * `log_file::String`:
     Relative filename to write the log to disk. Defaults to `""` (no log written)
@@ -526,7 +527,7 @@ function JuMP.solve(m::SDDPModel;
             rethrow(ex)
         end
     end
-    print(printfooter, settings, m, status, TIMER)
+    print(printfooter, settings, m, settings, status, TIMER)
     # print(print_timer, settings)
     status
 end

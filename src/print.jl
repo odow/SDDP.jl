@@ -22,10 +22,12 @@ function printheader{T}(io::IO, m::SDDPModel{T}, solve_type)
     println(io, "--------------------------------------------------------------------------------")
 end
 
-function printfooter(io::IO, m::SDDPModel, status, timer)
+function printfooter(io::IO, m::SDDPModel, settings, status, timer)
     println(io, "--------------------------------------------------------------------------------")
-    print_timer(io, timer, title="Timing statistics")
-    print(io, "\n")
+    if settings.print_level > 1
+        print_timer(io, timer, title="Timing statistics")
+        print(io, "\n")
+    end
     println(io, """    Other Statistics:
             Iterations:         $(m.log[end].iteration)
             Termination Status: $(status)
