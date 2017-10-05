@@ -75,7 +75,15 @@ macro rhsnoise(sp, kw, c)
         for val in $noisevalues    # for each noise
             $(esc(kw.args[1])) = val  # set the noisevalue
             if $(esc(constrexpr)).coeffs != aff
-                error("Noise in @rhsnoise must appear in the RHS only.")
+                error("""Uh oh! It looks like you've included the noise term in
+                    constraint matrix. Unfortunately, the noise in @rhsnoise
+                    can only appear in the RHS of the constraint. Upcoming
+                    versions of JuMP may let us revisit this restriction in the
+                    future.
+
+                    As a work around, have a look at the asset_management.jl
+                    example to see how constraint coefficients can be randomised
+                    using a markov process.""")
             end
             push!(rhs, -$(esc(constrexpr)).constant)
          end

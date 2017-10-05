@@ -40,6 +40,21 @@ However, you can find some documentation at https://odow.github.io/SDDP.jl/build
 Or have a read of the [draft tutorial/paper](https://github.com/odow/SDDP.jl/raw/master/draft_paper.pdf)
 which goes into a bit more depth.
 
+## FAQ
+
+**Q.** How do I make the constraint coefficients random?
+
+**A.** Due to the design of JuMP, it's difficult to efficiently modify constraint
+coefficients. Therefore, you can only vary the right-hand-side of a constraint
+using the `@rhsnoise` macro.
+
+As a work around, we suggest you either reformulate the model so the uncertainty
+appears in the RHS, or model the uncertainty as a markov process. Take a look at
+the [asset management example](https://github.com/odow/SDDP.jl/blob/master/examples/AssetManagement/asset_management.jl)
+to see an example of this. Make sure you keep in mind that a new value function
+is built at each markov state which increases the computation time and memory
+requirements.
+
 ## Other Packages
 
 `SDDP.jl` isn't the only Julia package for solving multi-stage stochastic programs.
