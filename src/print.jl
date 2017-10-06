@@ -6,9 +6,9 @@
 
 function printheader{T}(io::IO, m::SDDPModel{T}, solve_type)
     n = length(m.stages)
-    println(io, """-------------------------------------------------------------------------------
+    println(io, """--------------------------------------------------------------------------------
                           SDDP Solver. © Oscar Dowson, 2017.
-    -------------------------------------------------------------------------------""")
+    --------------------------------------------------------------------------------""")
     println(io, """    Solver:
             $(solve_type)
         Model:
@@ -16,18 +16,22 @@ function printheader{T}(io::IO, m::SDDPModel{T}, solve_type)
             States:         $(nstates(getsubproblem(m, 1, 1)))
             Subproblems:    $(sum(length(subproblems(s)) for s in stages(m)))
             Value Function: $(summarise(T))
-    -------------------------------------------------------------------------------""")
+    --------------------------------------------------------------------------------""")
     println(io, "              Objective              |  Cut  Passes    Simulations   Total    ")
     println(io, "     Simulation       Bound   % Gap  |   #     Time     #    Time    Time     ")
-    println(io, "-------------------------------------------------------------------------------")
+    println(io, "--------------------------------------------------------------------------------")
 end
 
-function printfooter(io::IO, m::SDDPModel, status)
-    println(io, "-------------------------------------------------------------------------------")
-    println(io, """    Statistics:
+function printfooter(io::IO, m::SDDPModel, settings, status, timer)
+    println(io, "--------------------------------------------------------------------------------")
+    if settings.print_level > 1
+        print_timer(io, timer, title="Timing statistics")
+        print(io, "\n")
+    end
+    println(io, """    Other Statistics:
             Iterations:         $(m.log[end].iteration)
             Termination Status: $(status)
-    -------------------------------------------------------------------------------""")
+    ================================================================================""")
 end
 
 function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)

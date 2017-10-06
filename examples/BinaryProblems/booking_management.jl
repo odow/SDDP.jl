@@ -88,5 +88,5 @@ m_1_2_5 = bookingmanagementmodel(1, 2, 5)
 
 srand(1234)
 m_2_2_3 = bookingmanagementmodel(2, 2, 3)
-@test solve(m_2_2_3, max_iterations = 40, print_level = 1) == :max_iterations
+@test solve(m_2_2_3, max_iterations = 40, print_level = 2) == :max_iterations
 @test isapprox(getbound(m_2_2_3), 6.13, atol=0.001)
