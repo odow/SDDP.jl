@@ -272,10 +272,7 @@ function backwardpass!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
     for sp in subproblems(m, 1)
         solvesubproblem!(BackwardPass, m, sp)
     end
-    # TODO: improve over just taking mean of first stage subproblems
-    bound = mean(m.storage.objective)
-
-    return bound
+    return dot(m.storage.objective, m.storage.probability)
 end
 
 function iteration!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
