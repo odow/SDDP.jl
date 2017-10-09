@@ -39,7 +39,7 @@ function statevariable!(m::JuMP.Model, xin::JuMP.Variable, xout::JuMP.Variable)
     push!(states(m),
             State(
                 xout,
-                @constraint(m, xin == getvalue(xout))
+                @constraint(m, xin == getvalue(xin))
             )
     )
 end
@@ -101,8 +101,8 @@ macro state(sp, x, x0)
     end
 
     quote
-        stateout = $(Expr(:macrocall, Symbol("@variable"), sp, esc(x), Expr(KW_SYM, START, esc(rhs))))
-        statein  = $(Expr(:macrocall, Symbol("@variable"), sp, esc(xin)))
+        stateout = $(Expr(:macrocall, Symbol("@variable"), sp, esc(x)))
+        statein  = $(Expr(:macrocall, Symbol("@variable"), sp, esc(xin), Expr(KW_SYM, START, esc(rhs))))
         statevariable!($sp, statein, stateout)
         stateout, statein
     end
