@@ -6,6 +6,7 @@ makedocs(
     sitename = "SDDP.jl",
     pages = [
         "Manual" => "index.md",
+        "Readings" => "readings.md",
         # "Quick Start" => "quick.md",
         "Reference" => "apireference.md"
     ],

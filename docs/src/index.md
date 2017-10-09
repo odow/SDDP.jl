@@ -5,19 +5,37 @@ CurrentModule = SDDP
 ## Overview
 *SDDP.jl - Stochastic Dual Dynamic Programming in Julia.*
 
-Solving a mathematical optimization problem requires four steps:
+SDDP.jl is a package for solving large multi-stage convex stocastic optimization
+problems. In this manual, we're going to assume a reasonable amount of background
+knowledge about stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 
-1. Formulating the problem;
-2. Communicating the problem to the solver;
-3. Solving the problem efficiently;
-4. Understanding the solution.
+!!! note
+    If you don't have that background, you may want to brush up on some
+    [reading material](readings.html).
 
-For deterministic problems, [JuMP.jl](https://github.com/JuliaOpt/JuMP.jl)
-provides a first-in-class solution to each of these steps.
 
-SDDP.jl builds upon JuMP to provide a high-level interface to the current
-state-of-the-art in order to make solving large multi-stage convex stochastic
-optimization problems easy.
+### Types of problems SDDP.jl can solve
+
+To start, lets discuss the types of problems SDDP.jl can solve, since it has a
+few features that are non-standard, and it is missing some features that are
+standard.
+
+SDDP.jl can solve multi-stage convex stochastic optimizations problems with
+ - a finite discrete number of states;
+ - continuous state and control variables;
+ - Hazard-Decision (Wait-and-See) uncertainty realization;
+ - stagewise independent uncertainty in the RHS of the constraints that is
+    drawn from a finite discrete distribution;
+ - stagewise independent uncertainty in the objective function that is
+    drawn from a finite discrete distribution;
+ - a markov chain for temporal dependence. The markov chain forms a directed,
+    acyclic, feed-forward graph with a finite (and at least one) number of
+    markov states in each stage.
+
+!!! note
+    Stagewise independent uncertainty in the constraint coefficients is **not**
+    supported. You should reformulate the problem, or model the uncertainty as
+    a markov chain.
 
 In this manual, we detail the many features of SDDP.jl through the classic
 example of balancing a portfolio of stocks and bonds over time.
@@ -64,6 +82,12 @@ end
 ```
 We draw the readers attention to three sections in the SDDPModel constructor.
 
+#### do sp, t, i ... end
+
+#### Keyword Metadata
+
+#### JuMP Subproblem
+
 ### State Variables
 
 We can define a new state variable in the stage problem `sp` using the `@state`
@@ -72,18 +96,33 @@ macro:
 ```julia
 @state(sp, x >= 0.5, x0==1)
 ```
+The second argument (`x`) refers to the outgoing state variable (i.e. the value
+at the end of the stage). The third argument (`x0`) refers to the incoming state
+variable (i.e. the value at the beginning of the stage). For users familiar with
+SDDP, SDDP.jl handles all the calculation of the dual variables needed to evaluate
+the cuts automatically behind the scenes.
 
-We can also use indexing just as we would in a JuMP `@variable` macro:
+The `@state` macro is just short-hand for writing:
+```julia
+@variable(sp, x >= 0.5)
+@variable(sp, x0, start=1)
+SDDP.statevariable!(sp, x0, x)
+```
+
+This illustrates how we can use indexing just as we would in a JuMP `@variable`
+macro:
+
 ```julia
 X0 = [3.0, 2.0]
 @state(sp, x[i=1:2], x0==X0[i])
 ```
+
 In this case, both `x` and `x0` are JuMP dicts that can be indexed with the keys
 `1` and `2`. All the indices must be specified in the second argument, but they
 can be referred to in the third argument. The indexing of `x0` will be identical
 to that of `x.`
 
-There is also a plural version of the `@state` macro
+There is also a plural version of the `@state` macro:
 ```julia
 @states(sp, begin
     x >= 0.0, x0==1
@@ -103,19 +142,82 @@ can be specified using `@constraint` or `@constraints`.
 
 ### The stage objective
 
+If there is no stagewise independent uncertainty in the objective, then the
+stage objective (i.e. ignoring the future cost) can be set via the
+`@stageobjective` macro. This is similar to the JuMP `@objective` macro, but
+without the sense argument. For example:
+
 ```julia
 @stageobjective(sp, obj)
 ```
+
+If there is stagewise independent noise in the objective, we add an additional
+argument to `@stageobjective` that has the form `kw=realizations`.
+
+`kw` is a symbol that can appear anywhere in `obj`, and `realizations` is a
+vector of realizations of the uncertainty. For example:
 
 ```julia
 @stageobjective(sp, kw=realizations, obj)
 setnoiseprobability!(sp, [0.2, 0.3, 0.5])
 ```
+`setnoiseprobability!` can be used to specify the finite discrete distribution
+of the realizations (it must sum to 1.0). If you don't explicitly call
+`setnoiseprobability!`, the distribution is assumed to be uniform.
+
+Other examples include:
+```julia
+# noise is a coefficient
+@stageobjective(sp, c=[1.0, 2.0, 3.0], c * x)
+# noise is used to index a variable
+@stageobjective(sp, i=[1,2,3], 2 * x[i])
+```
 
 ### Dynamics with Linear Noise
 
+SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead
+of using the JuMP `@constraint` macro, we need to use the `@rhsnoise` macro:
+
 ```julia
 @rhsnoise(sp, w=[1,2,3], x <= w)
+setnoiseprobability!(sp, [0.2, 0.3, 0.5])
+```
+
+Compared to `@constraint`, there are a couple of notable differences:
+ - indexing is **not** supported;
+ - the second argument is a `kw=realizations` key-value pair like the `@stageobjective`;
+ - the `kw` can on either side of the constraint as written, but when normalised
+    to an Ax <= b form, it must only appear in the b vector.
+
+Multiple `@rhsnoise` constraints can be added, however they must have an identical
+number of elements in the `realizations` vector.
+
+For example, the following are invalid in SDDP:
+
+```julia
+# noise appears as a variable coefficient
+@rhsnoise(sp, w=[1,2,3], w * x <= 1)
+
+# JuMP style indexing
+@rhsnoise(sp, w=[1,2,3], [i=1:10; mod(i, 2) == 0], x[i] <= w)
+
+# noises have different number of realizations
+@rhsnoise(sp, w=[1,2,3], x <= w)
+@rhsnoise(sp, w=[2,3],   x >= w-1)
+```
+
+!!! note
+    Noises in the constraints are sampled with the noise in the objective.
+    Therefore, there should be the same number of elements in the realizations
+    for the stage objective, as there are in the constraint noise.
+
+There is also a plural form of the `@rhsnoise` macro:
+
+```julia
+@rhsnoises(sp, w=[1,2,3], begin
+    x <= w
+    x >= w-1
+end)
 setnoiseprobability!(sp, [0.2, 0.3, 0.5])
 ```
 
@@ -223,7 +325,7 @@ of `riskadjusted_distribution` to represent the risk-adjusted probabilities of
 the distribution.
 
 To illustrate this, we shall define the worst-case riskmeasure (which places all
-the probability on the worst outcome).
+the probability on the worst outcome):
 
 ```julia
 immutable WorstCase <: SDDP.AbstractRiskMeasure end
@@ -251,5 +353,8 @@ end
 ```
 
 The risk measure `WorstCase()` can now be used in any SDDP model.
+
+!!! note
+    This method gets called a lot, so the usual Julia performance tips apply.
 
 ### New cut oracles

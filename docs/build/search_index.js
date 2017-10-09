@@ -13,7 +13,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Overview",
     "category": "section",
-    "text": "SDDP.jl - Stochastic Dual Dynamic Programming in Julia.Solving a mathematical optimization problem requires four steps:Formulating the problem;\nCommunicating the problem to the solver;\nSolving the problem efficiently;\nUnderstanding the solution.For deterministic problems, JuMP.jl provides a first-in-class solution to each of these steps.SDDP.jl builds upon JuMP to provide a high-level interface to the current state-of-the-art in order to make solving large multi-stage convex stochastic optimization problems easy.In this manual, we detail the many features of SDDP.jl through the classic example of balancing a portfolio of stocks and bonds over time."
+    "text": "SDDP.jl - Stochastic Dual Dynamic Programming in Julia.SDDP.jl is a package for solving large multi-stage convex stocastic optimization problems. In this manual, we're going to assume a reasonable amount of background knowledge about stochastic optimization, the SDDP algorithm, Julia, and JuMP.note: Note\nIf you don't have that background, you may want to brush up on some reading material."
+},
+
+{
+    "location": "index.html#Types-of-problems-SDDP.jl-can-solve-1",
+    "page": "Manual",
+    "title": "Types of problems SDDP.jl can solve",
+    "category": "section",
+    "text": "To start, lets discuss the types of problems SDDP.jl can solve, since it has a few features that are non-standard, and it is missing some features that are standard.SDDP.jl can solve multi-stage convex stochastic optimizations problems witha finite discrete number of states;\ncontinuous state and control variables;\nHazard-Decision (Wait-and-See) uncertainty realization;\nstagewise independent uncertainty in the RHS of the constraints that is  drawn from a finite discrete distribution;\nstagewise independent uncertainty in the objective function that is  drawn from a finite discrete distribution;\na markov chain for temporal dependence. The markov chain forms a directed,  acyclic, feed-forward graph with a finite (and at least one) number of  markov states in each stage.note: Note\nStagewise independent uncertainty in the constraint coefficients is not supported. You should reformulate the problem, or model the uncertainty as a markov chain.In this manual, we detail the many features of SDDP.jl through the classic example of balancing a portfolio of stocks and bonds over time."
 },
 
 {
@@ -57,11 +65,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#do-sp,-t,-i-...-end-1",
+    "page": "Manual",
+    "title": "do sp, t, i ... end",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "index.html#Keyword-Metadata-1",
+    "page": "Manual",
+    "title": "Keyword Metadata",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "index.html#JuMP-Subproblem-1",
+    "page": "Manual",
+    "title": "JuMP Subproblem",
+    "category": "section",
+    "text": ""
+},
+
+{
     "location": "index.html#State-Variables-1",
     "page": "Manual",
     "title": "State Variables",
     "category": "section",
-    "text": "We can define a new state variable in the stage problem sp using the @state macro:@state(sp, x >= 0.5, x0==1)We can also use indexing just as we would in a JuMP @variable macro:X0 = [3.0, 2.0]\n@state(sp, x[i=1:2], x0==X0[i])In this case, both x and x0 are JuMP dicts that can be indexed with the keys 1 and 2. All the indices must be specified in the second argument, but they can be referred to in the third argument. The indexing of x0 will be identical to that of x.There is also a plural version of the @state macro@states(sp, begin\n    x >= 0.0, x0==1\n    y >= 0.0, y0==1\nend)"
+    "text": "We can define a new state variable in the stage problem sp using the @state macro:@state(sp, x >= 0.5, x0==1)The second argument (x) refers to the outgoing state variable (i.e. the value at the end of the stage). The third argument (x0) refers to the incoming state variable (i.e. the value at the beginning of the stage). For users familiar with SDDP, SDDP.jl handles all the calculation of the dual variables needed to evaluate the cuts automatically behind the scenes.The @state macro is just short-hand for writing:@variable(sp, x >= 0.5)\n@variable(sp, x0, start=1)\nSDDP.statevariable!(sp, x0, x)This illustrates how we can use indexing just as we would in a JuMP @variable macro:X0 = [3.0, 2.0]\n@state(sp, x[i=1:2], x0==X0[i])In this case, both x and x0 are JuMP dicts that can be indexed with the keys 1 and 2. All the indices must be specified in the second argument, but they can be referred to in the third argument. The indexing of x0 will be identical to that of x.There is also a plural version of the @state macro:@states(sp, begin\n    x >= 0.0, x0==1\n    y >= 0.0, y0==1\nend)"
 },
 
 {
@@ -77,7 +109,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "The stage objective",
     "category": "section",
-    "text": "@stageobjective(sp, obj)@stageobjective(sp, kw=realizations, obj)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
+    "text": "If there is no stagewise independent uncertainty in the objective, then the stage objective (i.e. ignoring the future cost) can be set via the @stageobjective macro. This is similar to the JuMP @objective macro, but without the sense argument. For example:@stageobjective(sp, obj)If there is stagewise independent noise in the objective, we add an additional argument to @stageobjective that has the form kw=realizations.kw is a symbol that can appear anywhere in obj, and realizations is a vector of realizations of the uncertainty. For example:@stageobjective(sp, kw=realizations, obj)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])setnoiseprobability! can be used to specify the finite discrete distribution of the realizations (it must sum to 1.0). If you don't explicitly call setnoiseprobability!, the distribution is assumed to be uniform.Other examples include:# noise is a coefficient\n@stageobjective(sp, c=[1.0, 2.0, 3.0], c * x)\n# noise is used to index a variable\n@stageobjective(sp, i=[1,2,3], 2 * x[i])"
 },
 
 {
@@ -85,7 +117,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Dynamics with Linear Noise",
     "category": "section",
-    "text": "@rhsnoise(sp, w=[1,2,3], x <= w)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
+    "text": "SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead of using the JuMP @constraint macro, we need to use the @rhsnoise macro:@rhsnoise(sp, w=[1,2,3], x <= w)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])Compared to @constraint, there are a couple of notable differences:indexing is not supported;\nthe second argument is a kw=realizations key-value pair like the @stageobjective;\nthe kw can on either side of the constraint as written, but when normalised  to an Ax <= b form, it must only appear in the b vector.Multiple @rhsnoise constraints can be added, however they must have an identical number of elements in the realizations vector.For example, the following are invalid in SDDP:# noise appears as a variable coefficient\n@rhsnoise(sp, w=[1,2,3], w * x <= 1)\n\n# JuMP style indexing\n@rhsnoise(sp, w=[1,2,3], [i=1:10; mod(i, 2) == 0], x[i] <= w)\n\n# noises have different number of realizations\n@rhsnoise(sp, w=[1,2,3], x <= w)\n@rhsnoise(sp, w=[2,3],   x >= w-1)note: Note\nNoises in the constraints are sampled with the noise in the objective. Therefore, there should be the same number of elements in the realizations for the stage objective, as there are in the constraint noise.There is also a plural form of the @rhsnoise macro:@rhsnoises(sp, w=[1,2,3], begin\n    x <= w\n    x >= w-1\nend)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
 },
 
 {
@@ -125,7 +157,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "New risk measures",
     "category": "section",
-    "text": "SDDP.jl makes it easy to create new risk measures. First, create a new subtype of the abstract type SDDP.AbstractRiskMeasure:immutable MyNewRiskMeasure <: SDDP.AbstractRiskMeasure\nendThen, overload the method SDDP.modifyprobability! for your new type. SDDP.modifyprobability! has the following signature:SDDP.modifyprobability!(\n        measure::AbstractRiskMeasure,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n)where original_distribution contains the risk netural probability of each outcome in observations occurring (so that the probability of observations[i] is original_distribution[i]). The method should modify (in-place) the elements of riskadjusted_distribution to represent the risk-adjusted probabilities of the distribution.To illustrate this, we shall define the worst-case riskmeasure (which places all the probability on the worst outcome).immutable WorstCase <: SDDP.AbstractRiskMeasure end\nfunction SDDP.modifyprobability!(measure::WorstCase,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n    )\n    if JuMP.getobjectivesense(sp) == :Min\n        # if minimizing, worst is the maximum outcome\n        idx = indmax(observations)\n    else\n        # if maximizing, worst is the minimum outcome\n        idx = indmin(observations)\n    end\n    # zero all probabilities\n    riskadjusted_distribution .= 0.0\n    # set worst to 1.0\n    riskadjusted_distribution[idx] = 1.0\n    # return\n    return nothing\nendThe risk measure WorstCase() can now be used in any SDDP model."
+    "text": "SDDP.jl makes it easy to create new risk measures. First, create a new subtype of the abstract type SDDP.AbstractRiskMeasure:immutable MyNewRiskMeasure <: SDDP.AbstractRiskMeasure\nendThen, overload the method SDDP.modifyprobability! for your new type. SDDP.modifyprobability! has the following signature:SDDP.modifyprobability!(\n        measure::AbstractRiskMeasure,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n)where original_distribution contains the risk netural probability of each outcome in observations occurring (so that the probability of observations[i] is original_distribution[i]). The method should modify (in-place) the elements of riskadjusted_distribution to represent the risk-adjusted probabilities of the distribution.To illustrate this, we shall define the worst-case riskmeasure (which places all the probability on the worst outcome):immutable WorstCase <: SDDP.AbstractRiskMeasure end\nfunction SDDP.modifyprobability!(measure::WorstCase,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n    )\n    if JuMP.getobjectivesense(sp) == :Min\n        # if minimizing, worst is the maximum outcome\n        idx = indmax(observations)\n    else\n        # if maximizing, worst is the minimum outcome\n        idx = indmin(observations)\n    end\n    # zero all probabilities\n    riskadjusted_distribution .= 0.0\n    # set worst to 1.0\n    riskadjusted_distribution[idx] = 1.0\n    # return\n    return nothing\nendThe risk measure WorstCase() can now be used in any SDDP model.note: Note\n"
 },
 
 {
@@ -134,6 +166,46 @@ var documenterSearchIndex = {"docs": [
     "title": "New cut oracles",
     "category": "section",
     "text": ""
+},
+
+{
+    "location": "readings.html#",
+    "page": "Readings",
+    "title": "Readings",
+    "category": "page",
+    "text": "CurrentModule = SDDPOn this page, we've collated a variety of papers and books we think are helpful readings that cover knowledge needed to use SDDP.jl."
+},
+
+{
+    "location": "readings.html#Stochastic-Optimization-1",
+    "page": "Readings",
+    "title": "Stochastic Optimization",
+    "category": "section",
+    "text": "A general primer on Stochastic ProgrammingBirge, J.R., Louveaux, F., 2011. Introduction to Stochastic Programming,  Springer Series in Operations Research and Financial Engineering. Springer New  York, New York, NY.  doi:10.1007/978-1-4614-0237-4Some overviews of Stochastic Optimization and where it sits in relation to other fieldsPowell, W.B., 2014. Clearing the Jungle of Stochastic Optimization, in: Newman,  A.M., Leung, J., Smith, J.C., Greenberg, H.J. (Eds.), Bridging Data and  Decisions. INFORMS, pp. 109–137. linkPowell, W.B., 2016. A Unified Framework for Optimization under Uncertainty  TutORials in Operations Research, in: Optimization Challenges in Complex,  Networked and Risky Systems. pp. 45–83. link"
+},
+
+{
+    "location": "readings.html#Stochastic-Dual-Dynamic-Programming-1",
+    "page": "Readings",
+    "title": "Stochastic Dual Dynamic Programming",
+    "category": "section",
+    "text": "The original paper presenting SDDPPereira, M.V.F., Pinto, L.M.V.G., 1991. Multi-stage stochastic optimization  applied to energy planning. Mathematical Programming 52, 359–375. doi:10.1007/BF01582895The paper presenting the Markov version of SDDP implemented in this libraryPhilpott, A.B., de Matos, V.L., 2012. Dynamic sampling algorithms for multi-stage  stochastic programs with risk aversion. European Journal of Operational Research  218, 470–483. doi:10.1016/j.ejor.2011.10.056"
+},
+
+{
+    "location": "readings.html#Julia-1",
+    "page": "Readings",
+    "title": "Julia",
+    "category": "section",
+    "text": "The organisation's websitehttps://julialang.org/The paper describing JuliaBezanson, J., Edelman, A., Karpinski, S., Shah, V.B., 2017. Julia: A Fresh  Approach to Numerical Computing. SIAM Review 59, 65–98. doi:10.1137/141000671"
+},
+
+{
+    "location": "readings.html#JuMP-1",
+    "page": "Readings",
+    "title": "JuMP",
+    "category": "section",
+    "text": "Source code on Github[www.github.com/JuliaOpt/JuMP.jl]((https://www.github.com/JuliaOpt/JuMP.jl)The paper describing JuMPDunning, I., Huchette, J., Lubin, M., 2017. JuMP: A Modeling Language for  Mathematical Optimization. SIAM Review 59, 295–320. doi:10.1137/15M1020575"
 },
 
 {
