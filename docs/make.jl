@@ -1,11 +1,13 @@
 using Documenter, SDDP
 
 makedocs(
+    clean = false,
     format = :html,
     sitename = "SDDP.jl",
     pages = [
-        "Introduction" => "index.md",
-        "Quick Start" => "quick.md",
+        "Manual" => "index.md",
+        # "Quick Start" => "quick.md",
         "Reference" => "apireference.md"
-    ]
+    ],
+    assets = ["assets/custom.css"]
 )

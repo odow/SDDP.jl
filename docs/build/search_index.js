@@ -2,80 +2,136 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "index.html#",
-    "page": "Introduction",
-    "title": "Introduction",
+    "page": "Manual",
+    "title": "Manual",
     "category": "page",
-    "text": ""
-},
-
-{
-    "location": "index.html#SDDP-1",
-    "page": "Introduction",
-    "title": "SDDP",
-    "category": "section",
-    "text": "(Image: Build Status)"
-},
-
-{
-    "location": "index.html#Installation-1",
-    "page": "Introduction",
-    "title": "Installation",
-    "category": "section",
-    "text": "This package is unregistered so you will need to Pkg.clone it as follows:Pkg.clone(\"https://github.com/odow/SDDP.jl.git\")"
-},
-
-{
-    "location": "index.html#Note-1",
-    "page": "Introduction",
-    "title": "Note",
-    "category": "section",
-    "text": "The documentation is still very incomplete, and the internals of the library need a tidy and a refactor, however the user-facing API from the examples should be stable enough to use."
-},
-
-{
-    "location": "quick.html#",
-    "page": "Quick Start",
-    "title": "Quick Start",
-    "category": "page",
-    "text": ""
-},
-
-{
-    "location": "quick.html#Quick-Start-1",
-    "page": "Quick Start",
-    "title": "Quick Start",
-    "category": "section",
     "text": "CurrentModule = SDDP"
 },
 
 {
-    "location": "quick.html#Initialising-the-model-object-1",
-    "page": "Quick Start",
-    "title": "Initialising the model object",
+    "location": "index.html#Overview-1",
+    "page": "Manual",
+    "title": "Overview",
     "category": "section",
-    "text": "The first step is to initialise the SDDP model object. We do this using the following syntax:If we have more than one markov state:m = SDDPModel([;kwargs...]) do sp, stage, markov_state\n\n    # Stage problem definition where `sp` is a `JuMP.Model`object,\n\nendOtherwise if we have a single markov statem = SDDPModel([;kwargs...]) do sp, stage\n\n  # Stage problem definition\n\nend"
+    "text": "SDDP.jl - Stochastic Dual Dynamic Programming in Julia.Solving a mathematical optimization problem requires four steps:Formulating the problem;\nCommunicating the problem to the solver;\nSolving the problem efficiently;\nUnderstanding the solution.For deterministic problems, JuMP.jl provides a first-in-class solution to each of these steps.SDDP.jl builds upon JuMP to provide a high-level interface to the current state-of-the-art in order to make solving large multi-stage convex stochastic optimization problems easy.In this manual, we detail the many features of SDDP.jl through the classic example of balancing a portfolio of stocks and bonds over time."
 },
 
 {
-    "location": "quick.html#Solve-1",
-    "page": "Quick Start",
-    "title": "Solve",
+    "location": "index.html#Getting-started-1",
+    "page": "Manual",
+    "title": "Getting started",
     "category": "section",
-    "text": "To solve the SDDP model m we use status = solve(m::SDDPModel; kwargs...). This accepts a number of keyword arguments to control the solution process."
+    "text": "This package is unregistered so you will need to Pkg.clone it as follows:Pkg.clone(\"https://github.com/odow/SDDP.jl.git\")If you want to use the parallel features of SDDP.jl, you should start Julia with some worker processes (julia -p N), or add by running julia> addprocs(N) in a running Julia session."
 },
 
 {
-    "location": "quick.html#Simulate-1",
-    "page": "Quick Start",
-    "title": "Simulate",
+    "location": "index.html#Formulating-the-problem-1",
+    "page": "Manual",
+    "title": "Formulating the problem",
     "category": "section",
     "text": ""
 },
 
 {
-    "location": "quick.html#Visualise-1",
-    "page": "Quick Start",
-    "title": "Visualise",
+    "location": "index.html#The-Asset-Management-Problem-1",
+    "page": "Manual",
+    "title": "The Asset Management Problem",
+    "category": "section",
+    "text": "The goal of the asset management problem is to choose an investment portfolio that is composed of stocks and bonds in order to meet a target wealth goal at the end of the time horizon. After five, and ten years, the agent observes the portfolio and is able to re-balance their wealth between the two asset classes. As an extension to the original problem, we introduce two new random variables. The first that represents a source of additional wealth in years 5 and 10. The second is an immediate reward that the agent incurs for holding stocks at the end of years 5 and 10. This can be though of as a dividend that cannot be reinvested."
+},
+
+{
+    "location": "index.html#Communicating-the-problem-to-the-solver-1",
+    "page": "Manual",
+    "title": "Communicating the problem to the solver",
+    "category": "section",
+    "text": "The second step in the optimization process is communicating the problem to the solver. To do this, we are going to build each subproblem as a JuMP model, and provide some metadata that describes how the JuMP subproblems inter-relate."
+},
+
+{
+    "location": "index.html#The-Model-Constructor-1",
+    "page": "Manual",
+    "title": "The Model Constructor",
+    "category": "section",
+    "text": "The core type of SDDP.jl is the SDDPModel object. It can be constructed withm = SDDPModel( ... metadata as keyword arguments ... ) do sp, t, i\n    ... JuMP subproblem definition ...\nendWe draw the readers attention to three sections in the SDDPModel constructor."
+},
+
+{
+    "location": "index.html#State-Variables-1",
+    "page": "Manual",
+    "title": "State Variables",
+    "category": "section",
+    "text": "We can define a new state variable in the stage problem sp using the @state macro:@state(sp, x >= 0.5, x0==1)We can also use indexing just as we would in a JuMP @variable macro:X0 = [3.0, 2.0]\n@state(sp, x[i=1:2], x0==X0[i])In this case, both x and x0 are JuMP dicts that can be indexed with the keys 1 and 2. All the indices must be specified in the second argument, but they can be referred to in the third argument. The indexing of x0 will be identical to that of x.There is also a plural version of the @state macro@states(sp, begin\n    x >= 0.0, x0==1\n    y >= 0.0, y0==1\nend)"
+},
+
+{
+    "location": "index.html#Standard-JuMP-machinery-1",
+    "page": "Manual",
+    "title": "Standard JuMP machinery",
+    "category": "section",
+    "text": "Remember that sp is just a normal JuMP model, and so (almost) anything you can do in JuMP, you can do in SDDP.jl. The one exception is the objective, which we detail in the next section.However,, control variables are just normal JuMP variables and can be created using @variable or @variables. Dynamical constraints, and feasiblity sets can be specified using @constraint or @constraints."
+},
+
+{
+    "location": "index.html#The-stage-objective-1",
+    "page": "Manual",
+    "title": "The stage objective",
+    "category": "section",
+    "text": "@stageobjective(sp, obj)@stageobjective(sp, kw=realizations, obj)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
+},
+
+{
+    "location": "index.html#Dynamics-with-Linear-Noise-1",
+    "page": "Manual",
+    "title": "Dynamics with Linear Noise",
+    "category": "section",
+    "text": "@rhsnoise(sp, w=[1,2,3], x <= w)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
+},
+
+{
+    "location": "index.html#Asset-Management-Example-1",
+    "page": "Manual",
+    "title": "Asset Management Example",
+    "category": "section",
+    "text": "We now have all the information necessary to define the Asset Management example in SDDP.jl:using SDDP, JuMP, Clp\n\nm = SDDPModel(\n               # we are minimizing\n                sense = :Min,\n               # there are 4 stages\n               stages = 4,\n               # a large negative value\n      objective_bound = -1000.0,\n               # a MathOptBase compatible solver\n               solver = ClpSolver(),\n               # transition probabilities of the lattice\n    markov_transition = Array{Float64, 2}[\n                        [1.0]',\n                        [0.5 0.5],\n                        [0.5 0.5; 0.5 0.5],\n                        [0.5 0.5; 0.5 0.5]\n                    ],\n               # risk measures for each stage\n         risk_measure = [\n                        Expectation(),\n                        Expectation(),\n                        NestedAVaR(lambda = 0.5, beta=0.5),\n                        Expectation()\n                    ]\n                            ) do sp, t, i\n    # Data used in the problem\n    ωs = [1.25, 1.06]\n    ωb = [1.14, 1.12]\n    Φ  = [-1, 5]\n    Ψ  = [0.02, 0.0]\n\n    # state variables\n    @states(sp, begin\n        xs >= 0, xsbar==0\n        xb >= 0, xbbar==0\n    end)\n\n    if t == 1 # we can switch based on the stage\n        # a constraint without noise\n        @constraint(sp, xs + xb == 55 + xsbar + xbbar)\n        # an objective without noise\n        @stageobjective(sp, 0)\n    elseif t == 2 || t == 3\n        # a constraint with noisein the RHS\n        @rhsnoise(sp, φ=Φ, ωs[i] * xsbar + ωb[i] * xbbar + φ == xs + xb)\n        # an objective with noise\n        @stageobjective(sp, ψ = Ψ, -ψ * xs)\n        # noise will be sampled as (Φ[1], Ψ[1]) w.p. 0.6, (Φ[2], Ψ[2]) w.p. 0.4\n        setnoiseprobability!(sp, [0.6, 0.4])\n    else # when t == 4\n        # some control variables\n        @variable(sp, u >= 0)\n        @variable(sp, v >= 0)\n        # dynamics constraint\n        @constraint(sp, ωs[i] * xsbar + ωb[i] * xbbar + u - v == 80)\n        # an objective without noise\n        @stageobjective(sp, 4u - v)\n    end\nend"
+},
+
+{
+    "location": "index.html#Solving-the-problem-efficiently-1",
+    "page": "Manual",
+    "title": "Solving the problem efficiently",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "index.html#Understanding-the-solution-1",
+    "page": "Manual",
+    "title": "Understanding the solution",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "index.html#Extras-for-experts-1",
+    "page": "Manual",
+    "title": "Extras for experts",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "index.html#New-risk-measures-1",
+    "page": "Manual",
+    "title": "New risk measures",
+    "category": "section",
+    "text": "SDDP.jl makes it easy to create new risk measures. First, create a new subtype of the abstract type SDDP.AbstractRiskMeasure:immutable MyNewRiskMeasure <: SDDP.AbstractRiskMeasure\nendThen, overload the method SDDP.modifyprobability! for your new type. SDDP.modifyprobability! has the following signature:SDDP.modifyprobability!(\n        measure::AbstractRiskMeasure,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n)where original_distribution contains the risk netural probability of each outcome in observations occurring (so that the probability of observations[i] is original_distribution[i]). The method should modify (in-place) the elements of riskadjusted_distribution to represent the risk-adjusted probabilities of the distribution.To illustrate this, we shall define the worst-case riskmeasure (which places all the probability on the worst outcome).immutable WorstCase <: SDDP.AbstractRiskMeasure end\nfunction SDDP.modifyprobability!(measure::WorstCase,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n    )\n    if JuMP.getobjectivesense(sp) == :Min\n        # if minimizing, worst is the maximum outcome\n        idx = indmax(observations)\n    else\n        # if maximizing, worst is the minimum outcome\n        idx = indmin(observations)\n    end\n    # zero all probabilities\n    riskadjusted_distribution .= 0.0\n    # set worst to 1.0\n    riskadjusted_distribution[idx] = 1.0\n    # return\n    return nothing\nendThe risk measure WorstCase() can now be used in any SDDP model."
+},
+
+{
+    "location": "index.html#New-cut-oracles-1",
+    "page": "Manual",
+    "title": "New cut oracles",
     "category": "section",
     "text": ""
 },
@@ -105,11 +161,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "apireference.html#Defining-the-model-1",
+    "location": "apireference.html#SDDP.Expectation",
     "page": "Reference",
-    "title": "Defining the model",
-    "category": "section",
-    "text": "SDDPModel"
+    "title": "SDDP.Expectation",
+    "category": "Type",
+    "text": "Expectation()\n\nDescription\n\nThe expectation risk measure.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.NestedAVaR",
+    "page": "Reference",
+    "title": "SDDP.NestedAVaR",
+    "category": "Type",
+    "text": "NestedAVaR(;lambda=1.0, beta=1.0)\n\nDescription\n\nA risk measure that is a convex combination of Expectation and Average Value @ Risk (also called Conditional Value @ Risk).\n\nλ * E[x] + (1 - λ) * AV@R(1-β)[x]\n\nKeyword Arguments\n\nlambda\n\nConvex weight on the expectation ((1-lambda) weight is put on the AV@R component. Inreasing values of lambda are less risk averse (more weight on expecattion)\n\nbeta\n\nThe quantile at which to calculate the Average Value @ Risk. Increasing values  of beta are less risk averse. If beta=0, then the AV@R component is the  worst case risk measure.\n\nReturns\n\nm::NestedAVaR<:AbstractRiskMeasure\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.DefaultCutOracle",
+    "page": "Reference",
+    "title": "SDDP.DefaultCutOracle",
+    "category": "Type",
+    "text": "DefaultCutOracle()\n\nDescription\n\nInitialize the default cut oracle.\n\nThis oracle keeps every cut discovered and does not perform cut selection.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.LevelOneCutOracle",
+    "page": "Reference",
+    "title": "SDDP.LevelOneCutOracle",
+    "category": "Function",
+    "text": "LevelOneCutOracle()\n\nDescription\n\nInitialize the cut oracle for Level One cut selection. See:\n\nV. de Matos,A. Philpott, E. Finardi, Improving the performance of Stochastic Dual Dynamic Programming, Journal of Computational and Applied Mathematics 290 (2015) 196–208.\n\n\n\n"
 },
 
 {
@@ -126,14 +206,6 @@ var documenterSearchIndex = {"docs": [
     "title": "SDDP.@states",
     "category": "Macro",
     "text": "@states(sp, begin\n    stateleaving1, stateentering1\n    stateleaving2, stateentering2\nend)\n\nDescription\n\nDefine a new state variables in the subproblem sp.\n\nArguments\n\nsp               the subproblem\nstateleaving     any valid JuMP @variable syntax to define the value of the state variable at the end of the stage\nstateentering    any valid JuMP @variable syntax to define the value of the state variable at the beginning of the stage\n\nUsage\n\n@states(sp, begin\n    0 <= x[i=1:3] <= 1, x0==rand(3)[i]\n         y        <= 1, y0==0.5\n         z            , z0==0.5\n end)\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#States-1",
-    "page": "Reference",
-    "title": "States",
-    "category": "section",
-    "text": "@state\n@states"
 },
 
 {
@@ -161,14 +233,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "apireference.html#Noises-1",
-    "page": "Reference",
-    "title": "Noises",
-    "category": "section",
-    "text": "@rhsnoise\n@rhsnoises\nsetnoiseprobability!"
-},
-
-{
     "location": "apireference.html#SDDP.@stageobjective",
     "page": "Reference",
     "title": "SDDP.@stageobjective",
@@ -177,99 +241,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "apireference.html#Objective-1",
+    "location": "apireference.html#Communicating-the-problem-to-the-solver-1",
     "page": "Reference",
-    "title": "Objective",
+    "title": "Communicating the problem to the solver",
     "category": "section",
-    "text": "@stageobjective"
-},
-
-{
-    "location": "apireference.html#SDDP.AbstractRiskMeasure",
-    "page": "Reference",
-    "title": "SDDP.AbstractRiskMeasure",
-    "category": "Type",
-    "text": "AbstractRiskMeasure\n\nDescription\n\nAbstract type for all risk measures.\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#SDDP.Expectation",
-    "page": "Reference",
-    "title": "SDDP.Expectation",
-    "category": "Type",
-    "text": "Expectation()\n\nDescription\n\nThe expectation risk measure.\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#SDDP.NestedAVaR",
-    "page": "Reference",
-    "title": "SDDP.NestedAVaR",
-    "category": "Type",
-    "text": "NestedAVaR(;lambda=1.0, beta=1.0)\n\nDescription\n\nA risk measure that is a convex combination of Expectation and Average Value @ Risk (also called Conditional Value @ Risk).\n\nλ * E[x] + (1 - λ) * AV@R(1-β)[x]\n\nKeyword Arguments\n\nlambda\n\nConvex weight on the expectation ((1-lambda) weight is put on the AV@R component. Inreasing values of lambda are less risk averse (more weight on expecattion)\n\nbeta\n\nThe quantile at which to calculate the Average Value @ Risk. Increasing values  of beta are less risk averse. If beta=0, then the AV@R component is the  worst case risk measure.\n\nReturns\n\nm::NestedAVaR<:AbstractRiskMeasure\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#SDDP.modifyprobability!",
-    "page": "Reference",
-    "title": "SDDP.modifyprobability!",
-    "category": "Function",
-    "text": "modifyprobability!(measure::AbstractRiskMeasure,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n)\n\nDescription\n\nCalculate the risk-adjusted probability of each scenario using the 'change-of-probabilities' approach of Philpott, de Matos, and Finardi,(2013). On solving multistage stochastic programs with coherent risk measures. Operations Research 61(4), 957-970.\n\nArguments\n\nmeasure::AbstractRiskMeasure\n\nThe risk measure\n\nriskadjusted_distribution\n\nA new probability distribution\n\noriginal_distribution::Vector{Float64}\n\nThe original probability distribution.\n\nobservations::Vector{Float64}\n\nThe vector of objective values from the next stage  problems (one for each scenario).\n\nm::SDDPModel\n\nThe full SDDP model\n\nsp::JuMP.Model\n\nThe stage problem that the cut will be added to.\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#Risk-Measures-1",
-    "page": "Reference",
-    "title": "Risk Measures",
-    "category": "section",
-    "text": "AbstractRiskMeasure\nExpectation\nNestedAVaR\nmodifyprobability!"
-},
-
-{
-    "location": "apireference.html#SDDP.AbstractCutOracle",
-    "page": "Reference",
-    "title": "SDDP.AbstractCutOracle",
-    "category": "Type",
-    "text": "AbstractCutOracle\n\nDescription\n\nAbstract type for all cut oracles.\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#SDDP.DefaultCutOracle",
-    "page": "Reference",
-    "title": "SDDP.DefaultCutOracle",
-    "category": "Type",
-    "text": "DefaultCutOracle()\n\nDescription\n\nInitialize the default cut oracle.\n\nThis oracle keeps every cut discovered and does not perform cut selection.\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#SDDP.LevelOneCutOracle",
-    "page": "Reference",
-    "title": "SDDP.LevelOneCutOracle",
-    "category": "Function",
-    "text": "LevelOneCutOracle()\n\nDescription\n\nInitialize the cut oracle for Level One cut selection. See:\n\nV. de Matos,A. Philpott, E. Finardi, Improving the performance of Stochastic Dual Dynamic Programming, Journal of Computational and Applied Mathematics 290 (2015) 196–208.\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#SDDP.storecut!",
-    "page": "Reference",
-    "title": "SDDP.storecut!",
-    "category": "Function",
-    "text": "storecut!(oracle::AbstactCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)\n\nDescription\n\nStore the cut cut in the Cut Oracle oracle. oracle will belong to the subproblem sp in the SDDPModel m.\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#SDDP.validcuts",
-    "page": "Reference",
-    "title": "SDDP.validcuts",
-    "category": "Function",
-    "text": "validcuts(oracle::AbstactCutOracle)\n\nDescription\n\nReturn an iterable list of all the valid cuts contained within oracle.\n\n\n\n"
-},
-
-{
-    "location": "apireference.html#Cut-Oracles-1",
-    "page": "Reference",
-    "title": "Cut Oracles",
-    "category": "section",
-    "text": "AbstractCutOracle\nDefaultCutOracle\nLevelOneCutOracle\nstorecut!\nvalidcuts"
+    "text": "SDDPModel\nExpectation\nNestedAVaR\nDefaultCutOracle\nLevelOneCutOracle\n@state\n@states\n@rhsnoise\n@rhsnoises\nsetnoiseprobability!\n@stageobjective"
 },
 
 {
@@ -277,7 +253,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "JuMP.solve",
     "category": "Function",
-    "text": "solve(m::SDDPModel; kwargs...)\n\nDescription\n\nSolve the SDDPModel m using SDDP. Accepts a number of keyword arguments to control the solution process.\n\nPositional arguments\n\nm: the SDDPModel to solve\n\nKeyword arguments\n\nmax_iterations::Int:  The maximum number of cuts to add to a single stage problem before terminating.  Defaults to 10.\ntime_limit::Real:  The maximum number of seconds (in real time) to compute for before termination.  Defaults to Inf.\nsimulation::MonteCarloSimulation: see MonteCarloSimulation\nbound_convergence::BoundConvergence: see BoundConvergence\ncut_selection_frequency::Int:  Frequency (by iteration) with which to rebuild subproblems using a subset of  cuts. Frequent cut selection (i.e. cut_selection_frequency is small) reduces  the size of the subproblems that are solved, but incurrs the overhead of rebuilding  the subproblems. However, infrequent cut selection (i.e.  cut_selection_frequency is large) allows the subproblems to grow large (many  constraints) leading to an increase in the solve time of individual subproblems.  Defaults to 0 (never run).\nprint_level::Int:   0 - off: nothing logged to screen (still written to log file if specified).   1 - on: solve iterations written to screen.   Defaults to 1\nlog_file::String:  Relative filename to write the log to disk. Defaults to \"\" (no log written)\nsolve_type:  One of\nAsyncronous() - solve using a parallelised algorithm\nSerial() - solve using a serial algorithm\nDefault chooses automatically based on the number of available processors.\nreduce_memory_footprint::Bool:  Implements the idea proposed in https://github.com/JuliaOpt/JuMP.jl/issues/969#issuecomment-282191105  to reduce the memory consumption when running SDDP. This is an issue if you  wish to save the model m to disk since it discards important information.  Defaults to false.\ncut_output_file::String:  Relative filename to write discovered cuts to disk. Defaults to \"\" (no cuts written)\n\nReturns\n\nstatus::Symbol:  Reason for termination. One of\n:solving\n:interrupted\n:converged\n:max_iterations\n:bound_convergence\n:time_limit\n\n\n\n"
+    "text": "solve(m::SDDPModel; kwargs...)\n\nDescription\n\nSolve the SDDPModel m using SDDP. Accepts a number of keyword arguments to control the solution process.\n\nPositional arguments\n\nm: the SDDPModel to solve\n\nKeyword arguments\n\nmax_iterations::Int:  The maximum number of cuts to add to a single stage problem before terminating.  Defaults to 10.\ntime_limit::Real:  The maximum number of seconds (in real time) to compute for before termination.  Defaults to Inf.\nsimulation::MonteCarloSimulation: see MonteCarloSimulation\nbound_convergence::BoundConvergence: see BoundConvergence\ncut_selection_frequency::Int:  Frequency (by iteration) with which to rebuild subproblems using a subset of  cuts. Frequent cut selection (i.e. cut_selection_frequency is small) reduces  the size of the subproblems that are solved, but incurrs the overhead of rebuilding  the subproblems. However, infrequent cut selection (i.e.  cut_selection_frequency is large) allows the subproblems to grow large (many  constraints) leading to an increase in the solve time of individual subproblems.  Defaults to 0 (never run).\nprint_level::Int:   0 - off: nothing logged.   1 - on: solve iterations logged.   2 - verbose: detailed timing information is also logged.   Defaults to 1\nlog_file::String:  Relative filename to write the log to disk. Defaults to \"\" (no log written)\nsolve_type:  One of\nAsyncronous() - solve using a parallelised algorithm\nSerial() - solve using a serial algorithm\nDefault chooses automatically based on the number of available processors.\nreduce_memory_footprint::Bool:  Implements the idea proposed in https://github.com/JuliaOpt/JuMP.jl/issues/969#issuecomment-282191105  to reduce the memory consumption when running SDDP. This is an issue if you  wish to save the model m to disk since it discards important information.  Defaults to false.\ncut_output_file::String:  Relative filename to write discovered cuts to disk. Defaults to \"\" (no cuts written)\n\nReturns\n\nstatus::Symbol:  Reason for termination. One of\n:solving\n:interrupted\n:converged\n:max_iterations\n:bound_convergence\n:time_limit\n\n\n\n"
 },
 
 {
@@ -297,9 +273,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "apireference.html#Solve-1",
+    "location": "apireference.html#Solving-the-problem-efficiently-1",
     "page": "Reference",
-    "title": "Solve",
+    "title": "Solving the problem efficiently",
     "category": "section",
     "text": "solve\nMonteCarloSimulation\nBoundConvergence"
 },
@@ -349,23 +325,95 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "SDDP.plotvaluefunction",
     "category": "Function",
-    "text": " SDDP.plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1=\"State 1\", label2=\"State 2\")\n\nDescription\n\nPlot the value function of stage stage and Markov state markovstate in the SDDPModel m at the points in the discretized state space given by states. If the value in states is a real number, the state is evaluated at that point. If the value is a vector, the state is evaluated at all the points in the vector. At most two states can be vectors.\n\nExamples\n\nSDDP.plotvaluefunction(m, 2, 1, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1=\"State 1\", label2=\"State 3\")\n\n\n\n SDDP.plotvaluefunction(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...; label1=\"State 1\", label2=\"State 2\")\n\nDescription\n\nPlot the value function vf at the points in the discretized state space given by states. If the value in states is a real number, the state is evaluated at that point. If the value is a vector, the state is evaluated at all the points in the vector. At most two states can be vectors. is_minimization is true if the subproblem is a minimization and false otherwise.\n\nExamples\n\nSDDP.plotvaluefunction(vf, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1=\"State 1\", label2=\"State 3\")\n\n\n\n"
+    "text": " SDDP.plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1=\"State 1\", label2=\"State 2\")\n\nDescription\n\nPlot the value function of stage stage and Markov state markovstate in the SDDPModel m at the points in the discretized state space given by states. If the value in states is a real number, the state is evaluated at that point. If the value is a vector, the state is evaluated at all the points in the vector. At most two states can be vectors.\n\nExamples\n\nSDDP.plotvaluefunction(m, 2, 1, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1=\"State 1\", label2=\"State 3\")\n\n\n\n"
 },
 
 {
-    "location": "apireference.html#Results-1",
+    "location": "apireference.html#Understanding-the-solution-1",
     "page": "Reference",
-    "title": "Results",
+    "title": "Understanding the solution",
     "category": "section",
     "text": "simulate\ngetbound\nnewplot\naddplot!\nshow\nplotvaluefunction"
 },
 
 {
-    "location": "apireference.html#Save/Load-1",
+    "location": "apireference.html#SDDP.loadcuts!",
     "page": "Reference",
-    "title": "Save/Load",
+    "title": "SDDP.loadcuts!",
+    "category": "Function",
+    "text": "loadcuts!(m::SDDPModel, filename::String)\n\nLoad cuts from the file created using the cut_output_file argument in solve.\n\nExample\n\nm = SDDPModel() do ... end\nstatus = solve(m; cut_output_file=\"path/to/m.cuts\")`\nm2 = SDDPModel() do ... end\nloadcuts!(m2, \"path/to/m.cuts\")\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.savemodel!",
+    "page": "Reference",
+    "title": "SDDP.savemodel!",
+    "category": "Function",
+    "text": "SDDP.savemodel!(filename::String, m::SDDPModel)\n\nSave the SDDPModel m to the location filename. Can be loaded at a later date with m = SDDP.loadmodel(filename).\n\nNote: this function relies in the internal Julia Base.serializefunction. It should not be relied on to save an load models between versions of Julia (i.e between v0.5 and v0.6). For a longer-term solution, see SDDP.loadcuts! for help.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.loadmodel",
+    "page": "Reference",
+    "title": "SDDP.loadmodel",
+    "category": "Function",
+    "text": "loadmodel(filename::String)\n\nLoad a model from the location filename that was saved using SDDP.savemodel!.\n\nNote: this function relies in the internal Julia Base.serializefunction. It should not be relied on to save an load models between versions of Julia (i.e between v0.5 and v0.6). For a longer-term solution, see SDDP.loadcuts! for help.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#Read-and-write-the-model-to-disk-1",
+    "page": "Reference",
+    "title": "Read and write the model to disk",
     "category": "section",
-    "text": "<!– loadcuts! –>"
+    "text": "    loadcuts!\n    savemodel!\n    loadmodel"
+},
+
+{
+    "location": "apireference.html#SDDP.AbstractCutOracle",
+    "page": "Reference",
+    "title": "SDDP.AbstractCutOracle",
+    "category": "Type",
+    "text": "AbstractCutOracle\n\nDescription\n\nAbstract type for all cut oracles.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.storecut!",
+    "page": "Reference",
+    "title": "SDDP.storecut!",
+    "category": "Function",
+    "text": "storecut!(oracle::AbstactCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)\n\nDescription\n\nStore the cut cut in the Cut Oracle oracle. oracle will belong to the subproblem sp in the SDDPModel m.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.validcuts",
+    "page": "Reference",
+    "title": "SDDP.validcuts",
+    "category": "Function",
+    "text": "validcuts(oracle::AbstactCutOracle)\n\nDescription\n\nReturn an iterable list of all the valid cuts contained within oracle.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.AbstractRiskMeasure",
+    "page": "Reference",
+    "title": "SDDP.AbstractRiskMeasure",
+    "category": "Type",
+    "text": "AbstractRiskMeasure\n\nDescription\n\nAbstract type for all risk measures.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#SDDP.modifyprobability!",
+    "page": "Reference",
+    "title": "SDDP.modifyprobability!",
+    "category": "Function",
+    "text": "modifyprobability!(measure::AbstractRiskMeasure,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n)\n\nDescription\n\nCalculate the risk-adjusted probability of each scenario using the 'change-of-probabilities' approach of Philpott, de Matos, and Finardi,(2013). On solving multistage stochastic programs with coherent risk measures. Operations Research 61(4), 957-970.\n\nArguments\n\nmeasure::AbstractRiskMeasure\n\nThe risk measure\n\nriskadjusted_distribution\n\nA new probability distribution\n\noriginal_distribution::Vector{Float64}\n\nThe original probability distribution.\n\nobservations::Vector{Float64}\n\nThe vector of objective values from the next stage  problems (one for each scenario).\n\nm::SDDPModel\n\nThe full SDDP model\n\nsp::JuMP.Model\n\nThe stage problem that the cut will be added to.\n\n\n\n"
+},
+
+{
+    "location": "apireference.html#Extras-for-Experts-1",
+    "page": "Reference",
+    "title": "Extras for Experts",
+    "category": "section",
+    "text": "AbstractCutOracle\nstorecut!\nvalidcutsAbstractRiskMeasure\nmodifyprobability!"
 },
 
 ]}

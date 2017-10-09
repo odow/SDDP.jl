@@ -4,53 +4,29 @@ CurrentModule = SDDP
 
 # API Reference
 
-## Defining the model
+## Communicating the problem to the solver
 
 ```@docs
 SDDPModel
-```
-
-### States
-```@docs
+Expectation
+NestedAVaR
+DefaultCutOracle
+LevelOneCutOracle
 @state
 @states
-```
-### Noises
-```@docs
 @rhsnoise
 @rhsnoises
 setnoiseprobability!
-```
-
-### Objective
-```@docs
 @stageobjective
 ```
 
-### Risk Measures
-```@docs
-AbstractRiskMeasure
-Expectation
-NestedAVaR
-modifyprobability!
-```
-
-### Cut Oracles
-```@docs
-AbstractCutOracle
-DefaultCutOracle
-LevelOneCutOracle
-storecut!
-validcuts
-```
-
-## Solve
+## Solving the problem efficiently
 ```@docs
 solve
 MonteCarloSimulation
 BoundConvergence
 ```
-## Results
+## Understanding the solution
 ```@docs
 simulate
 getbound
@@ -60,7 +36,22 @@ show
 plotvaluefunction
 ```
 
-## Save/Load
-<!-- loadcuts! -->
+## Read and write the model to disk
+
 ```@docs
+    loadcuts!
+    savemodel!
+    loadmodel
+```
+
+## Extras for Experts
+```@docs
+AbstractCutOracle
+storecut!
+validcuts
+```
+
+```@docs
+AbstractRiskMeasure
+modifyprobability!
 ```

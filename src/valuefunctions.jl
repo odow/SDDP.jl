@@ -49,6 +49,20 @@ function writecut!(filename::String, cut::Cut, stage::Int, markovstate::Int)
     end
 end
 
+"""
+    loadcuts!(m::SDDPModel, filename::String)
+
+Load cuts from the file created using the `cut_output_file` argument
+in `solve`.
+
+### Example
+
+    m = SDDPModel() do ... end
+    status = solve(m; cut_output_file="path/to/m.cuts")`
+    m2 = SDDPModel() do ... end
+    loadcuts!(m2, "path/to/m.cuts")
+
+"""
 function loadcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
     open(filename, "r") do file
         while true
