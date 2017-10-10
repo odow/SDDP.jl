@@ -74,7 +74,7 @@ provide some metadata that describes how the JuMP subproblems inter-relate.
 
 ### The Model Constructor
 
-The core type of SDDP.jl is the `SDDPModel` object. It can be constructed with
+The core type of SDDP.jl is the [`SDDPModel`](@ref) object. It can be constructed with
 ```julia
 m = SDDPModel( ... metadata as keyword arguments ... ) do sp, t, i
     ... JuMP subproblem definition ...
@@ -82,15 +82,133 @@ end
 ```
 We draw the readers attention to three sections in the SDDPModel constructor.
 
+#### Keyword Metadata
+
+For a comprehensive list of options, checkout the [SDDPModel API](apireference.html#SDDP.SDDPModel)
+or type `julia> ? SDDPModel` into a Julia REPL. However, we'll briefly list the
+important ones here.
+
+**Required Keyword arguments**
+
+ * `stages::Int`: the number of stages in the problem. A stage is defined as
+    each step in time at which a decion can be made. Defaults to `1`.
+
+ * `objective_bound::Float64`: a valid bound on the initial value/cost to go.
+   i.e. for maximisation this may be some large positive number, for
+   minimisation this may be some large negative number.
+
+ * `solver::MathProgBase.AbstractMathProgSolver`: any MathProgBase compliant
+   solver that returns duals from a linear program. If this isn't specified then
+   you must use `JuMP.setsolver(sp, solver)` in the stage definition.
+
+**Optional Keyword arguments**
+
+ * `sense`: must be either `:Max` or `:Min`. Defaults to `:Min`.
+
+ * `cut_oracle`: the cut oracle is responsible for collecting and storing the
+   cuts that define a value function. The cut oracle may decide that only a
+   subset of the total discovered cuts are relevant, which improves solution
+   speed by reducing the size of the subproblems that need solving. Currently
+   must be one of
+     * `DefaultCutOracle()` (see [`DefaultCutOracle`](@ref) for explanation)
+     * `LevelOneCutOracle()`(see [`LevelOneCutOracle`](@ref) for explanation)
+
+ * `risk_measure`: if a single risk measure is given (i.e.
+    `risk_measure = Expectation()`), then this measure will be applied to every
+    stage in the problem. Another option is to provide a vector of risk
+    measures. There must be one element for every stage. For example:
+
+```julia
+risk_measure = [ NestedAVaR(lambda=0.5, beta=0.25), Expectation() ]
+```
+
+   will apply the `i`'th element of `risk_measure` to every Markov state in the
+   `i`'th stage. The last option is to provide a vector (one element for each
+   stage) of vectors of risk measures (one for each Markov state in the stage).
+   For example:
+
+```julia
+risk_measure = [
+# Stage 1 Markov 1 # Stage 1 Markov 2 #
+   [ Expectation(), Expectation() ],
+   # ------- Stage 2 Markov 1 ------- ## ------- Stage 2 Markov 2 ------- #
+   [ NestedAVaR(lambda=0.5, beta=0.25), NestedAVaR(lambda=0.25, beta=0.3) ]
+   ]
+```
+
+   Note that even though the last stage does not have a future cost function
+   associated with it (as it has no children), we still have to specify a risk
+   measure. This is necessary to simplify the implementation of the algorithm.
+
+   For more help see [`NestedAVaR`](@ref) or [`Expectation`](@ref).
+
+ * `markov_transition`: define the transition probabilties of the stage graph.
+   If a single array is given, it is assumed that there is an equal number of
+   Markov states in each stage and the transition probabilities are stage
+   invariant. Row indices represent the Markov state in the previous stage.
+   Column indices represent the Markov state in the current stage. Therefore:
+
+```julia
+markov_transition = [0.1 0.9; 0.8 0.2]
+```
+
+   is the transition matrix when there is 10% chance of transitioning from Markov
+   state 1 to Markov state 1, a 90% chance of transitioning from Markov state 1
+   to Markov state 2, an 80% chance of transitioning from Markov state 2 to Markov
+   state 1, and a 20% chance of transitioning from Markov state 2 to Markov state 2.
+
 #### do sp, t, i ... end
 
-#### Keyword Metadata
+This constructor is just syntactic sugar to make the process of defining a model
+a little tidier. It's nothing special to SDDP.jl and many users will be familiar
+with it (for example, the `open(file, "w") do io ... end` syntax for file IO).
+
+An anonymous function with three arguments (`sp`, `t` and `i`, although these
+can be named arbitrarily) is constructed. The body of the function should build
+the subproblem as the JuMP model `sp` for stage `t` and markov state `i`. `t` is
+an integer that ranges from 1 to the number of stages. `i` is also an integer
+that ranges from 1 to the number of markov states in stage `t`.
+
+Users are also free to explicitly construct a function that
+takes three arguments, and pass that as the first argument to [`SDDPModel`](@ref), along
+with the keyword arguments. For example:
+
+```julia
+function buildsubproblem!(sp::JuMP.Model, t::Int, i::Int)
+    ... define states etc. ...
+end
+m = SDDPModel(buildsubproblem!; ... metadata as keyword arguments ...)
+```
+
+!!! note
+    If you don't have any markov states in the model, you don't have to include
+    the third argument in the constructor. `SDDPModel() do sp, t ... end` is
+    also valid syntax.
 
 #### JuMP Subproblem
 
+In the next sections, we explain in detail how for model state variables,
+constraints, the stage objective, and any uncertainties in the model. However,
+you should keep a few things in mind:
+
+1. the body of the `do sp, t, i ... end` block is just a normal Julia function
+   body. As such, standard scoping rules apply.
+2. you can use `t` and `i` whenever, and however, you like. For example:
+```julia
+m = SDDPModel() do sp, t, i
+    if t == 1
+        # do something in the first stage only
+    else
+        # do something in the other stages
+    end
+end
+```
+ 3. `sp` is just a normal JuMP model. You could (if so desired), set the solve
+    hook, or add quadratic constraints (provided you have a quadratic solver).
+
 ### State Variables
 
-We can define a new state variable in the stage problem `sp` using the `@state`
+We can define a new state variable in the stage problem `sp` using the [`@state`](@ref)
 macro:
 
 ```julia
@@ -102,12 +220,17 @@ variable (i.e. the value at the beginning of the stage). For users familiar with
 SDDP, SDDP.jl handles all the calculation of the dual variables needed to evaluate
 the cuts automatically behind the scenes.
 
-The `@state` macro is just short-hand for writing:
+The [`@state`](@ref) macro is just short-hand for writing:
 ```julia
 @variable(sp, x >= 0.5)
 @variable(sp, x0, start=1)
 SDDP.statevariable!(sp, x0, x)
 ```
+
+!!! note
+    The `start=1` is only every used behind the scenes by the first stage problem.
+    It's really just a nice syntatic trick we use to make specifying the model a
+    bit more compact.
 
 This illustrates how we can use indexing just as we would in a JuMP `@variable`
 macro:
@@ -122,7 +245,7 @@ In this case, both `x` and `x0` are JuMP dicts that can be indexed with the keys
 can be referred to in the third argument. The indexing of `x0` will be identical
 to that of `x.`
 
-There is also a plural version of the `@state` macro:
+There is also a plural version of the [`@state`](@ref) macro:
 ```julia
 @states(sp, begin
     x >= 0.0, x0==1
@@ -136,7 +259,7 @@ Remember that `sp` is just a normal JuMP model, and so (almost) anything you can
 do in JuMP, you can do in SDDP.jl. The one exception is the objective, which we
 detail in the next section.
 
-However,, control variables are just normal JuMP variables and can be created
+However, control variables are just normal JuMP variables and can be created
 using `@variable` or `@variables`. Dynamical constraints, and feasiblity sets
 can be specified using `@constraint` or `@constraints`.
 
@@ -144,7 +267,7 @@ can be specified using `@constraint` or `@constraints`.
 
 If there is no stagewise independent uncertainty in the objective, then the
 stage objective (i.e. ignoring the future cost) can be set via the
-`@stageobjective` macro. This is similar to the JuMP `@objective` macro, but
+[`@stageobjective`](@ref) macro. This is similar to the JuMP `@objective` macro, but
 without the sense argument. For example:
 
 ```julia
@@ -152,7 +275,7 @@ without the sense argument. For example:
 ```
 
 If there is stagewise independent noise in the objective, we add an additional
-argument to `@stageobjective` that has the form `kw=realizations`.
+argument to [`@stageobjective`](@ref) that has the form `kw=realizations`.
 
 `kw` is a symbol that can appear anywhere in `obj`, and `realizations` is a
 vector of realizations of the uncertainty. For example:
@@ -161,9 +284,9 @@ vector of realizations of the uncertainty. For example:
 @stageobjective(sp, kw=realizations, obj)
 setnoiseprobability!(sp, [0.2, 0.3, 0.5])
 ```
-`setnoiseprobability!` can be used to specify the finite discrete distribution
+[`setnoiseprobability!`](@ref) can be used to specify the finite discrete distribution
 of the realizations (it must sum to 1.0). If you don't explicitly call
-`setnoiseprobability!`, the distribution is assumed to be uniform.
+[`setnoiseprobability!`](@ref), the distribution is assumed to be uniform.
 
 Other examples include:
 ```julia
@@ -176,7 +299,7 @@ Other examples include:
 ### Dynamics with Linear Noise
 
 SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead
-of using the JuMP `@constraint` macro, we need to use the `@rhsnoise` macro:
+of using the JuMP `@constraint` macro, we need to use the [`@rhsnoise`](@ref) macro:
 
 ```julia
 @rhsnoise(sp, w=[1,2,3], x <= w)
@@ -189,7 +312,7 @@ Compared to `@constraint`, there are a couple of notable differences:
  - the `kw` can on either side of the constraint as written, but when normalised
     to an Ax <= b form, it must only appear in the b vector.
 
-Multiple `@rhsnoise` constraints can be added, however they must have an identical
+Multiple [``@rhsnoise`](@ref) constraints can be added, however they must have an identical
 number of elements in the `realizations` vector.
 
 For example, the following are invalid in SDDP:
@@ -211,7 +334,7 @@ For example, the following are invalid in SDDP:
     Therefore, there should be the same number of elements in the realizations
     for the stage objective, as there are in the constraint noise.
 
-There is also a plural form of the `@rhsnoise` macro:
+There is also a plural form of the [`@rhsnoise`](@ref) macro:
 
 ```julia
 @rhsnoises(sp, w=[1,2,3], begin
@@ -293,20 +416,33 @@ end
 
 ## Understanding the solution
 
+### Visualizing the Value Function
+
+Another way to understand the solution is to project the value function into 3
+dimensions. This can be done using the method [`SDDP.plotvaluefunction`](@ref).
+
+```julia
+SDDP.plotvaluefunction(m, 1, 1, 0:1.0:100, 0:1.0:100;
+    label1="Stocks", label2="Bonds")
+```
+
+This will open up a web browser and display a Plotly figure that looks similar to
+![3-Dimensional visualisation of Value Function](assets/3d.gif)
+
 ## Extras for experts
 
 ### New risk measures
 
 SDDP.jl makes it easy to create new risk measures. First, create a new subtype
-of the abstract type `SDDP.AbstractRiskMeasure`:
+of the abstract type [`SDDP.AbstractRiskMeasure`](@ref):
 
 ```julia
 immutable MyNewRiskMeasure <: SDDP.AbstractRiskMeasure
 end
 ```
 
-Then, overload the method `SDDP.modifyprobability!` for your new type.
-`SDDP.modifyprobability!` has the following signature:
+Then, overload the method [`SDDP.modifyprobability!`](@ref) for your new type.
+[`SDDP.modifyprobability!`](@ref) has the following signature:
 
 ```julia
 SDDP.modifyprobability!(

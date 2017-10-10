@@ -10,5 +10,5 @@ makedocs(
         # "Quick Start" => "quick.md",
         "Reference" => "apireference.md"
     ],
-    assets = ["assets/custom.css"]
+    assets = ["assets/custom.css", "3d.gif"]
 )

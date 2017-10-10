@@ -65,19 +65,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#do-sp,-t,-i-...-end-1",
-    "page": "Manual",
-    "title": "do sp, t, i ... end",
-    "category": "section",
-    "text": ""
-},
-
-{
     "location": "index.html#Keyword-Metadata-1",
     "page": "Manual",
     "title": "Keyword Metadata",
     "category": "section",
-    "text": ""
+    "text": "For a comprehensive list of options, checkout the SDDPModel API or type julia> ? SDDPModel into a Julia REPL. However, we'll briefly list the important ones here.Required Keyword argumentsstages::Int: the number of stages in the problem. A stage is defined as  each step in time at which a decion can be made. Defaults to 1.objective_bound::Float64: a valid bound on the initial value/cost to go. i.e. for maximisation this may be some large positive number, for minimisation this may be some large negative number.solver::MathProgBase.AbstractMathProgSolver: any MathProgBase compliant solver that returns duals from a linear program. If this isn't specified then you must use JuMP.setsolver(sp, solver) in the stage definition.Optional Keyword argumentssense: must be either :Max or :Min. Defaults to :Min.cut_oracle: the cut oracle is responsible for collecting and storing the cuts that define a value function. The cut oracle may decide that only a subset of the total discovered cuts are relevant, which improves solution speed by reducing the size of the subproblems that need solving. Currently must be one of\nDefaultCutOracle() (see DefaultCutOracle for explanation)\nLevelOneCutOracle()(see LevelOneCutOracle for explanation)risk_measure: if a single risk measure is given (i.e.  risk_measure = Expectation()), then this measure will be applied to every  stage in the problem. Another option is to provide a vector of risk  measures. There must be one element for every stage. For example:risk_measure = [ NestedAVaR(lambda=0.5, beta=0.25), Expectation() ]will apply the i'th element of risk_measure to every Markov state in the    i'th stage. The last option is to provide a vector (one element for each    stage) of vectors of risk measures (one for each Markov state in the stage).    For example:risk_measure = [\n# Stage 1 Markov 1 # Stage 1 Markov 2 #\n   [ Expectation(), Expectation() ],\n   # ------- Stage 2 Markov 1 ------- ## ------- Stage 2 Markov 2 ------- #\n   [ NestedAVaR(lambda=0.5, beta=0.25), NestedAVaR(lambda=0.25, beta=0.3) ]\n   ]Note that even though the last stage does not have a future cost function    associated with it (as it has no children), we still have to specify a risk    measure. This is necessary to simplify the implementation of the algorithm.For more help see NestedAVaR or Expectation.markov_transition: define the transition probabilties of the stage graph. If a single array is given, it is assumed that there is an equal number of Markov states in each stage and the transition probabilities are stage invariant. Row indices represent the Markov state in the previous stage. Column indices represent the Markov state in the current stage. Therefore:markov_transition = [0.1 0.9; 0.8 0.2]is the transition matrix when there is 10% chance of transitioning from Markov    state 1 to Markov state 1, a 90% chance of transitioning from Markov state 1    to Markov state 2, an 80% chance of transitioning from Markov state 2 to Markov    state 1, and a 20% chance of transitioning from Markov state 2 to Markov state 2."
+},
+
+{
+    "location": "index.html#do-sp,-t,-i-...-end-1",
+    "page": "Manual",
+    "title": "do sp, t, i ... end",
+    "category": "section",
+    "text": "This constructor is just syntactic sugar to make the process of defining a model a little tidier. It's nothing special to SDDP.jl and many users will be familiar with it (for example, the open(file, \"w\") do io ... end syntax for file IO).An anonymous function with three arguments (sp, t and i, although these can be named arbitrarily) is constructed. The body of the function should build the subproblem as the JuMP model sp for stage t and markov state i. t is an integer that ranges from 1 to the number of stages. i is also an integer that ranges from 1 to the number of markov states in stage t.Users are also free to explicitly construct a function that takes three arguments, and pass that as the first argument to SDDPModel, along with the keyword arguments. For example:function buildsubproblem!(sp::JuMP.Model, t::Int, i::Int)\n    ... define states etc. ...\nend\nm = SDDPModel(buildsubproblem!; ... metadata as keyword arguments ...)note: Note\nIf you don't have any markov states in the model, you don't have to include the third argument in the constructor. SDDPModel() do sp, t ... end is also valid syntax."
 },
 
 {
@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "JuMP Subproblem",
     "category": "section",
-    "text": ""
+    "text": "In the next sections, we explain in detail how for model state variables, constraints, the stage objective, and any uncertainties in the model. However, you should keep a few things in mind:the body of the do sp, t, i ... end block is just a normal Julia function body. As such, standard scoping rules apply.\nyou can use t and i whenever, and however, you like. For example:m = SDDPModel() do sp, t, i\n    if t == 1\n        # do something in the first stage only\n    else\n        # do something in the other stages\n    end\nendsp is just a normal JuMP model. You could (if so desired), set the solve hook, or add quadratic constraints (provided you have a quadratic solver)."
 },
 
 {
@@ -93,7 +93,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "State Variables",
     "category": "section",
-    "text": "We can define a new state variable in the stage problem sp using the @state macro:@state(sp, x >= 0.5, x0==1)The second argument (x) refers to the outgoing state variable (i.e. the value at the end of the stage). The third argument (x0) refers to the incoming state variable (i.e. the value at the beginning of the stage). For users familiar with SDDP, SDDP.jl handles all the calculation of the dual variables needed to evaluate the cuts automatically behind the scenes.The @state macro is just short-hand for writing:@variable(sp, x >= 0.5)\n@variable(sp, x0, start=1)\nSDDP.statevariable!(sp, x0, x)This illustrates how we can use indexing just as we would in a JuMP @variable macro:X0 = [3.0, 2.0]\n@state(sp, x[i=1:2], x0==X0[i])In this case, both x and x0 are JuMP dicts that can be indexed with the keys 1 and 2. All the indices must be specified in the second argument, but they can be referred to in the third argument. The indexing of x0 will be identical to that of x.There is also a plural version of the @state macro:@states(sp, begin\n    x >= 0.0, x0==1\n    y >= 0.0, y0==1\nend)"
+    "text": "We can define a new state variable in the stage problem sp using the @state macro:@state(sp, x >= 0.5, x0==1)The second argument (x) refers to the outgoing state variable (i.e. the value at the end of the stage). The third argument (x0) refers to the incoming state variable (i.e. the value at the beginning of the stage). For users familiar with SDDP, SDDP.jl handles all the calculation of the dual variables needed to evaluate the cuts automatically behind the scenes.The @state macro is just short-hand for writing:@variable(sp, x >= 0.5)\n@variable(sp, x0, start=1)\nSDDP.statevariable!(sp, x0, x)note: Note\nThe start=1 is only every used behind the scenes by the first stage problem. It's really just a nice syntatic trick we use to make specifying the model a bit more compact.This illustrates how we can use indexing just as we would in a JuMP @variable macro:X0 = [3.0, 2.0]\n@state(sp, x[i=1:2], x0==X0[i])In this case, both x and x0 are JuMP dicts that can be indexed with the keys 1 and 2. All the indices must be specified in the second argument, but they can be referred to in the third argument. The indexing of x0 will be identical to that of x.There is also a plural version of the @state macro:@states(sp, begin\n    x >= 0.0, x0==1\n    y >= 0.0, y0==1\nend)"
 },
 
 {
@@ -101,7 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Standard JuMP machinery",
     "category": "section",
-    "text": "Remember that sp is just a normal JuMP model, and so (almost) anything you can do in JuMP, you can do in SDDP.jl. The one exception is the objective, which we detail in the next section.However,, control variables are just normal JuMP variables and can be created using @variable or @variables. Dynamical constraints, and feasiblity sets can be specified using @constraint or @constraints."
+    "text": "Remember that sp is just a normal JuMP model, and so (almost) anything you can do in JuMP, you can do in SDDP.jl. The one exception is the objective, which we detail in the next section.However, control variables are just normal JuMP variables and can be created using @variable or @variables. Dynamical constraints, and feasiblity sets can be specified using @constraint or @constraints."
 },
 
 {
@@ -117,7 +117,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Dynamics with Linear Noise",
     "category": "section",
-    "text": "SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead of using the JuMP @constraint macro, we need to use the @rhsnoise macro:@rhsnoise(sp, w=[1,2,3], x <= w)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])Compared to @constraint, there are a couple of notable differences:indexing is not supported;\nthe second argument is a kw=realizations key-value pair like the @stageobjective;\nthe kw can on either side of the constraint as written, but when normalised  to an Ax <= b form, it must only appear in the b vector.Multiple @rhsnoise constraints can be added, however they must have an identical number of elements in the realizations vector.For example, the following are invalid in SDDP:# noise appears as a variable coefficient\n@rhsnoise(sp, w=[1,2,3], w * x <= 1)\n\n# JuMP style indexing\n@rhsnoise(sp, w=[1,2,3], [i=1:10; mod(i, 2) == 0], x[i] <= w)\n\n# noises have different number of realizations\n@rhsnoise(sp, w=[1,2,3], x <= w)\n@rhsnoise(sp, w=[2,3],   x >= w-1)note: Note\nNoises in the constraints are sampled with the noise in the objective. Therefore, there should be the same number of elements in the realizations for the stage objective, as there are in the constraint noise.There is also a plural form of the @rhsnoise macro:@rhsnoises(sp, w=[1,2,3], begin\n    x <= w\n    x >= w-1\nend)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
+    "text": "SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead of using the JuMP @constraint macro, we need to use the @rhsnoise macro:@rhsnoise(sp, w=[1,2,3], x <= w)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])Compared to @constraint, there are a couple of notable differences:indexing is not supported;\nthe second argument is a kw=realizations key-value pair like the @stageobjective;\nthe kw can on either side of the constraint as written, but when normalised  to an Ax <= b form, it must only appear in the b vector.Multiple `@rhsnoise constraints can be added, however they must have an identical number of elements in the realizations vector.For example, the following are invalid in SDDP:# noise appears as a variable coefficient\n@rhsnoise(sp, w=[1,2,3], w * x <= 1)\n\n# JuMP style indexing\n@rhsnoise(sp, w=[1,2,3], [i=1:10; mod(i, 2) == 0], x[i] <= w)\n\n# noises have different number of realizations\n@rhsnoise(sp, w=[1,2,3], x <= w)\n@rhsnoise(sp, w=[2,3],   x >= w-1)note: Note\nNoises in the constraints are sampled with the noise in the objective. Therefore, there should be the same number of elements in the realizations for the stage objective, as there are in the constraint noise.There is also a plural form of the @rhsnoise macro:@rhsnoises(sp, w=[1,2,3], begin\n    x <= w\n    x >= w-1\nend)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
 },
 
 {
@@ -145,6 +145,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#Visualizing-the-Value-Function-1",
+    "page": "Manual",
+    "title": "Visualizing the Value Function",
+    "category": "section",
+    "text": "Another way to understand the solution is to project the value function into 3 dimensions. This can be done using the method SDDP.plotvaluefunction.SDDP.plotvaluefunction(m, 1, 1, 0:1.0:100, 0:1.0:100;\n    label1=\"Stocks\", label2=\"Bonds\")This will open up a web browser and display a Plotly figure that looks similar to (Image: 3-Dimensional visualisation of Value Function)"
+},
+
+{
     "location": "index.html#Extras-for-experts-1",
     "page": "Manual",
     "title": "Extras for experts",
@@ -157,7 +165,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "New risk measures",
     "category": "section",
-    "text": "SDDP.jl makes it easy to create new risk measures. First, create a new subtype of the abstract type SDDP.AbstractRiskMeasure:immutable MyNewRiskMeasure <: SDDP.AbstractRiskMeasure\nendThen, overload the method SDDP.modifyprobability! for your new type. SDDP.modifyprobability! has the following signature:SDDP.modifyprobability!(\n        measure::AbstractRiskMeasure,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n)where original_distribution contains the risk netural probability of each outcome in observations occurring (so that the probability of observations[i] is original_distribution[i]). The method should modify (in-place) the elements of riskadjusted_distribution to represent the risk-adjusted probabilities of the distribution.To illustrate this, we shall define the worst-case riskmeasure (which places all the probability on the worst outcome):immutable WorstCase <: SDDP.AbstractRiskMeasure end\nfunction SDDP.modifyprobability!(measure::WorstCase,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n    )\n    if JuMP.getobjectivesense(sp) == :Min\n        # if minimizing, worst is the maximum outcome\n        idx = indmax(observations)\n    else\n        # if maximizing, worst is the minimum outcome\n        idx = indmin(observations)\n    end\n    # zero all probabilities\n    riskadjusted_distribution .= 0.0\n    # set worst to 1.0\n    riskadjusted_distribution[idx] = 1.0\n    # return\n    return nothing\nendThe risk measure WorstCase() can now be used in any SDDP model.note: Note\n"
+    "text": "SDDP.jl makes it easy to create new risk measures. First, create a new subtype of the abstract type SDDP.AbstractRiskMeasure:immutable MyNewRiskMeasure <: SDDP.AbstractRiskMeasure\nendThen, overload the method SDDP.modifyprobability! for your new type. SDDP.modifyprobability! has the following signature:SDDP.modifyprobability!(\n        measure::AbstractRiskMeasure,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n)where original_distribution contains the risk netural probability of each outcome in observations occurring (so that the probability of observations[i] is original_distribution[i]). The method should modify (in-place) the elements of riskadjusted_distribution to represent the risk-adjusted probabilities of the distribution.To illustrate this, we shall define the worst-case riskmeasure (which places all the probability on the worst outcome):immutable WorstCase <: SDDP.AbstractRiskMeasure end\nfunction SDDP.modifyprobability!(measure::WorstCase,\n        riskadjusted_distribution,\n        original_distribution::Vector{Float64},\n        observations::Vector{Float64},\n        m::SDDPModel,\n        sp::JuMP.Model\n    )\n    if JuMP.getobjectivesense(sp) == :Min\n        # if minimizing, worst is the maximum outcome\n        idx = indmax(observations)\n    else\n        # if maximizing, worst is the minimum outcome\n        idx = indmin(observations)\n    end\n    # zero all probabilities\n    riskadjusted_distribution .= 0.0\n    # set worst to 1.0\n    riskadjusted_distribution[idx] = 1.0\n    # return\n    return nothing\nendThe risk measure WorstCase() can now be used in any SDDP model.note: Note\nThis method gets called a lot, so the usual Julia performance tips apply."
 },
 
 {
