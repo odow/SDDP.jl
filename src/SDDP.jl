@@ -491,10 +491,13 @@ function JuMP.solve(m::SDDPModel;
         cut_output_file::String      = ""
     )
     reset_timer!(TIMER)
+
     f = if cut_output_file != ""
         open(cut_output_file, "w")
     else
-        IOStream("")
+        ff = IOStream("")
+        close(ff)
+        ff
     end
     settings = Settings(
         max_iterations,

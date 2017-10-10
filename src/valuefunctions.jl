@@ -108,7 +108,7 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
     end
     cut = constructcut(m, sp)
 
-    if writecuts && settings.cut_output_file != ""
+    if writecuts && isopen(settings.cut_output_file)
         @timeit TIMER "cut to file" begin
             writecut!(settings.cut_output_file, cut, ex.stage, ex.markovstate)
         end
