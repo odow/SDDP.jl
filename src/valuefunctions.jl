@@ -45,9 +45,9 @@ function writecut!(filename::String, cut::Cut, stage::Int, markovstate::Int)
     end
 end
 function writecut!(io::IO, cut::Cut, stage::Int, markovstate::Int)
-    write(io, stage, ",", markovstate, ",", cut.intercept)
+    write(io, string(stage), ",", string(markovstate), ",", string(cut.intercept))
     for pi in cut.coefficients
-        write(io, ",", pi)
+        write(io, ",", string(pi))
     end
     write(io, "\n")
 end
