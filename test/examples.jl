@@ -37,6 +37,9 @@ const Examples = Dict(
     "AssetManagement" => [
             "asset_management_stagewise.jl",
             "asset_management.jl"
+        ],
+    "Agriculture" => [
+            "mccardle_farm.jl"
         ]
 )
 
