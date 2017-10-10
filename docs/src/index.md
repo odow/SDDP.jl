@@ -54,6 +54,10 @@ a running Julia session.
 
 ## Formulating the problem
 
+... still to do ...
+
+For now, go look at the examples.
+
 ### The Asset Management Problem
 
 The goal of the asset management problem is to choose an investment portfolio
@@ -296,7 +300,7 @@ Other examples include:
 @stageobjective(sp, i=[1,2,3], 2 * x[i])
 ```
 
-### Dynamics with Linear Noise
+### Dynamics with linear noise
 
 SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead
 of using the JuMP `@constraint` macro, we need to use the [`@rhsnoise`](@ref) macro:
@@ -312,7 +316,7 @@ Compared to `@constraint`, there are a couple of notable differences:
  - the `kw` can on either side of the constraint as written, but when normalised
     to an Ax <= b form, it must only appear in the b vector.
 
-Multiple [``@rhsnoise`](@ref) constraints can be added, however they must have an identical
+Multiple [`@rhsnoise`](@ref) constraints can be added, however they must have an identical
 number of elements in the `realizations` vector.
 
 For example, the following are invalid in SDDP:
@@ -416,6 +420,36 @@ end
 
 ## Understanding the solution
 
+### Simulating the policy
+
+You can perform a Monte-Carlo simulation of the policy using the [`simulate`](@ref)
+function:
+```julia
+simulationresults = simulate(m, 100, [:xs, :xb])
+```
+
+`simulationresults` is a vector of dictionaries (one for each simulation). It has,
+as keys, a vector (with one element for each stage) of the optimal solution of
+`xs` and `xb`. For example, to query the value of `xs` in the third stage of the
+tenth simulation, we can call:
+
+```julia
+simulationresults[10][:xs][3]
+```
+
+Alternatively, you can peform one simulation with a given realization for the
+Markov and stagewise independent noises:
+```julia
+simulationresults = simulate(m, [:xs], markov=[1,2,1,1], noise=[1,2,2,3])
+```
+
+### Visualizing the policy simulation
+First, we create a new plotting object with [`SDDP.newplot()`](@ref). Next, we
+can add any number of subplots to the visualization via the [`SDDP.addplot!`](@ref)
+function. Finally, we can launch a web browser to display the plot with [`SDDP.show`](@ref).
+
+See the [`SDDP.addplot!`](@ref) documentation for more detail.
+
 ### Visualizing the Value Function
 
 Another way to understand the solution is to project the value function into 3
@@ -428,6 +462,33 @@ SDDP.plotvaluefunction(m, 1, 1, 0:1.0:100, 0:1.0:100;
 
 This will open up a web browser and display a Plotly figure that looks similar to
 ![3-Dimensional visualisation of Value Function](assets/3d.gif)
+
+## Saving models
+
+Saving a model is as simple as calling:
+```julia
+SDDP.savemodel!("<filename>", m)
+```
+
+Later, you can run:
+```julia
+m = SDDP.loadmodel("<filename>")
+```
+
+!!! note
+    [`SDDP.savemodel!`](@ref) relies on the base Julia `serialize` function. This
+    is not backwards compatible with previous versions of Julia, or guaranteed to
+    be forward compatible with future versions. You should only use this to save
+    models for short periods of time. Don't save a model you want to come back to
+    in a year.
+
+Another (more persistent) method is to use the `cut_output_file` keyword option
+in [`SDDP.solve`](@ref). This will create a csv file containing a list of all
+the cuts. These can be loaded at a later date using
+
+```julia
+SDDP.loadcuts!(m, "<filename>")
+```
 
 ## Extras for experts
 

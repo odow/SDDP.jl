@@ -37,7 +37,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Formulating the problem",
     "category": "section",
-    "text": ""
+    "text": "... still to do ...For now, go look at the examples."
 },
 
 {
@@ -113,11 +113,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#Dynamics-with-Linear-Noise-1",
+    "location": "index.html#Dynamics-with-linear-noise-1",
     "page": "Manual",
-    "title": "Dynamics with Linear Noise",
+    "title": "Dynamics with linear noise",
     "category": "section",
-    "text": "SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead of using the JuMP @constraint macro, we need to use the @rhsnoise macro:@rhsnoise(sp, w=[1,2,3], x <= w)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])Compared to @constraint, there are a couple of notable differences:indexing is not supported;\nthe second argument is a kw=realizations key-value pair like the @stageobjective;\nthe kw can on either side of the constraint as written, but when normalised  to an Ax <= b form, it must only appear in the b vector.Multiple `@rhsnoise constraints can be added, however they must have an identical number of elements in the realizations vector.For example, the following are invalid in SDDP:# noise appears as a variable coefficient\n@rhsnoise(sp, w=[1,2,3], w * x <= 1)\n\n# JuMP style indexing\n@rhsnoise(sp, w=[1,2,3], [i=1:10; mod(i, 2) == 0], x[i] <= w)\n\n# noises have different number of realizations\n@rhsnoise(sp, w=[1,2,3], x <= w)\n@rhsnoise(sp, w=[2,3],   x >= w-1)note: Note\nNoises in the constraints are sampled with the noise in the objective. Therefore, there should be the same number of elements in the realizations for the stage objective, as there are in the constraint noise.There is also a plural form of the @rhsnoise macro:@rhsnoises(sp, w=[1,2,3], begin\n    x <= w\n    x >= w-1\nend)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
+    "text": "SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead of using the JuMP @constraint macro, we need to use the @rhsnoise macro:@rhsnoise(sp, w=[1,2,3], x <= w)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])Compared to @constraint, there are a couple of notable differences:indexing is not supported;\nthe second argument is a kw=realizations key-value pair like the @stageobjective;\nthe kw can on either side of the constraint as written, but when normalised  to an Ax <= b form, it must only appear in the b vector.Multiple @rhsnoise constraints can be added, however they must have an identical number of elements in the realizations vector.For example, the following are invalid in SDDP:# noise appears as a variable coefficient\n@rhsnoise(sp, w=[1,2,3], w * x <= 1)\n\n# JuMP style indexing\n@rhsnoise(sp, w=[1,2,3], [i=1:10; mod(i, 2) == 0], x[i] <= w)\n\n# noises have different number of realizations\n@rhsnoise(sp, w=[1,2,3], x <= w)\n@rhsnoise(sp, w=[2,3],   x >= w-1)note: Note\nNoises in the constraints are sampled with the noise in the objective. Therefore, there should be the same number of elements in the realizations for the stage objective, as there are in the constraint noise.There is also a plural form of the @rhsnoise macro:@rhsnoises(sp, w=[1,2,3], begin\n    x <= w\n    x >= w-1\nend)\nsetnoiseprobability!(sp, [0.2, 0.3, 0.5])"
 },
 
 {
@@ -145,11 +145,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#Simulating-the-policy-1",
+    "page": "Manual",
+    "title": "Simulating the policy",
+    "category": "section",
+    "text": "You can perform a Monte-Carlo simulation of the policy using the simulate function:simulationresults = simulate(m, 100, [:xs, :xb])simulationresults is a vector of dictionaries (one for each simulation). It has, as keys, a vector (with one element for each stage) of the optimal solution of xs and xb. For example, to query the value of xs in the third stage of the tenth simulation, we can call:simulationresults[10][:xs][3]Alternatively, you can peform one simulation with a given realization for the Markov and stagewise independent noises:simulationresults = simulate(m, [:xs], markov=[1,2,1,1], noise=[1,2,2,3])"
+},
+
+{
+    "location": "index.html#Visualizing-the-policy-simulation-1",
+    "page": "Manual",
+    "title": "Visualizing the policy simulation",
+    "category": "section",
+    "text": "First, we create a new plotting object with SDDP.newplot(). Next, we can add any number of subplots to the visualization via the SDDP.addplot! function. Finally, we can launch a web browser to display the plot with SDDP.show.See the SDDP.addplot! documentation for more detail."
+},
+
+{
     "location": "index.html#Visualizing-the-Value-Function-1",
     "page": "Manual",
     "title": "Visualizing the Value Function",
     "category": "section",
     "text": "Another way to understand the solution is to project the value function into 3 dimensions. This can be done using the method SDDP.plotvaluefunction.SDDP.plotvaluefunction(m, 1, 1, 0:1.0:100, 0:1.0:100;\n    label1=\"Stocks\", label2=\"Bonds\")This will open up a web browser and display a Plotly figure that looks similar to (Image: 3-Dimensional visualisation of Value Function)"
+},
+
+{
+    "location": "index.html#Saving-models-1",
+    "page": "Manual",
+    "title": "Saving models",
+    "category": "section",
+    "text": "Saving a model is as simple as calling:SDDP.savemodel!(\"<filename>\", m)Later, you can run:m = SDDP.loadmodel(\"<filename>\")note: Note\nSDDP.savemodel! relies on the base Julia serialize function. This is not backwards compatible with previous versions of Julia, or guaranteed to be forward compatible with future versions. You should only use this to save models for short periods of time. Don't save a model you want to come back to in a year.Another (more persistent) method is to use the cut_output_file keyword option in SDDP.solve. This will create a csv file containing a list of all the cuts. These can be loaded at a later date usingSDDP.loadcuts!(m, \"<filename>\")"
 },
 
 {
