@@ -246,6 +246,6 @@ immutable Settings
     print_level::Int
     log_file::String
     reduce_memory_footprint::Bool
-    cut_output_file::String
+    cut_output_file::IOStream
 end
-Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, "")
+Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, IOStream("Cuts"))

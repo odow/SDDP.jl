@@ -62,28 +62,42 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
         numRows, numCols = length(m.linconstr), m.numCols
         m.objBound = NaN
         m.objVal = NaN
-        m.colVal = fill(NaN, numCols)
-        m.linconstrDuals = Array{Float64}(0)
+        if length(m.colVal) != numCols
+            m.colVal = fill(NaN, numCols)
+        else
+            m.colVal .= NaN
+        end
+        if length(m.linconstrDuals) != numRows
+            m.linconstrDuals = fill(NaN, numRows)
+        else
+            m.linconstrDuals .= NaN
+        end
+        if length(m.redCosts) != numCols
+            m.redCosts = fill(NaN, numCols)
+        else
+            m.redCosts .= NaN
+        end
+        # m.linconstrDuals = Array{Float64}(0)
 
         discrete = !relaxation && (traits.int || traits.sos)
         if stat == :Optimal
             # If we think dual information might be available, try to get it
             # If not, return an array of the correct length
             if discrete
-                m.redCosts = fill(NaN, numCols)
-                m.linconstrDuals = fill(NaN, numRows)
+                # m.redCosts = fill(NaN, numCols)
+                # m.linconstrDuals = fill(NaN, numRows)
             else
                 if !traits.conic
-                    m.redCosts = try
+                    m.redCosts .= try
                         JuMP.MathProgBase.getreducedcosts(m.internalModel)[1:numCols]
                     catch
-                        fill(NaN, numCols)
+                        # fill(NaN, numCols)
                     end
 
-                    m.linconstrDuals = try
+                    m.linconstrDuals .= try
                         JuMP.MathProgBase.getconstrduals(m.internalModel)[1:numRows]
                     catch
-                        fill(NaN, numRows)
+                        # fill(NaN, numRows)
                     end
                 elseif !traits.qp && !traits.qc
                     fillConicDuals(m)
@@ -98,22 +112,22 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
             # if the exist.
             if traits.lin
                 if stat == :Infeasible
-                    m.linconstrDuals = try
+                    m.linconstrDuals .= try
                         infray = JuMP.MathProgBase.getinfeasibilityray(m.internalModel)
                         @assert length(infray) == numRows
                         infray
                     catch
                         suppress_warnings || warn("Infeasibility ray (Farkas proof) not available")
-                        fill(NaN, numRows)
+                        # fill(NaN, numRows)
                     end
                 elseif stat == :Unbounded
-                    m.colVal = try
+                    m.colVal .= try
                         unbdray = JuMP.MathProgBase.getunboundedray(m.internalModel)
                         @assert length(unbdray) == numCols
                         unbdray
                     catch
                         suppress_warnings || warn("Unbounded ray not available")
-                        fill(NaN, numCols)
+                        # fill(NaN, numCols)
                     end
                 end
             end
@@ -146,7 +160,7 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
                 end
                 # Don't corrupt the answers if one of the above two calls fails
                 m.objVal = objVal
-                m.colVal = colVal
+                m.colVal .= colVal
             end
         end
 

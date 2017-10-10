@@ -41,13 +41,17 @@ end
 
 function writecut!(filename::String, cut::Cut, stage::Int, markovstate::Int)
     open(filename, "a") do file
-        write(file, "$(stage), $(markovstate), $(cut.intercept)")
-        for pi in cut.coefficients
-            write(file, ",$(pi)")
-        end
-        write(file, "\n")
+        writecut!(file, cut, stage, markovstate)
     end
 end
+function writecut!(io::IO, cut::Cut, stage::Int, markovstate::Int)
+    write(io, stage, ",", markovstate, ",", cut.intercept)
+    for pi in cut.coefficients
+        write(io, ",", pi)
+    end
+    write(io, "\n")
+end
+
 
 """
     loadcuts!(m::SDDPModel, filename::String)
@@ -105,7 +109,9 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
     cut = constructcut(m, sp)
 
     if writecuts && settings.cut_output_file != ""
-        writecut!(settings.cut_output_file, cut, ex.stage, ex.markovstate)
+        @timeit TIMER "cut to file" begin
+            writecut!(settings.cut_output_file, cut, ex.stage, ex.markovstate)
+        end
     end
 
     storecut!(vf.cutmanager, m, sp, cut)
