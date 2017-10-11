@@ -492,13 +492,14 @@ function JuMP.solve(m::SDDPModel;
     )
     reset_timer!(TIMER)
 
-    f = if cut_output_file != ""
+    cut_output_file_handle = if cut_output_file != ""
         open(cut_output_file, "w")
     else
         ff = IOStream("")
         close(ff)
         ff
     end
+
     settings = Settings(
         max_iterations,
         time_limit,
@@ -508,14 +509,8 @@ function JuMP.solve(m::SDDPModel;
         print_level,
         log_file,
         reduce_memory_footprint,
-        f
+        cut_output_file_handle
     )
-
-    # if cut_output_file != ""
-        # clear it
-        # open(cut_output_file, "w") do file
-        # end
-    # end
 
     print(printheader, settings, m, solve_type)
     status = :solving
@@ -531,10 +526,9 @@ function JuMP.solve(m::SDDPModel;
             rethrow(ex)
         end
     finally
-        close(f)
+        close(cut_output_file_handle)
     end
     print(printfooter, settings, m, settings, status, TIMER)
-    # print(print_timer, settings)
     status
 end
 
