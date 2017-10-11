@@ -20,6 +20,142 @@ https://github.com/JuliaOpt/JuMP.jl/blob/223103c36e976ef670cce15591cb337d5d475a6
 # that representation if supported by the solver.
 #############################################################################
 
+ENABLE_WARMSTART = false
+ENABLE_SETVARTYPE = false
+
+set_ENABLE_WARMSTART(x::Bool) = (global ENABLE_WARMSTART = x)
+set_ENABLE_SETVARTYPE(x::Bool) = (global ENABLE_SETVARTYPE = x)
+
+function jumpbuild(m::Model, suppress_warnings=false, relaxation=false, traits=ProblemTraits(m,relaxation=relaxation))
+    if isa(m.solver, UnsetSolver)
+        JuMP.no_solver_error(traits)
+    end
+
+    # If the model is nonlinear, use different logic in nlp.jl
+    # to build the problem
+    traits.nlp && return JuMP._buildInternalModel_nlp(m, traits)
+
+    if traits.conic
+        # If there are semicontinuous/semi-integer variables, we will have to
+        # adjust the b vector below to construct a valid relaxation. This seems
+        # like a pretty marginal case, so let's punt on it for now.
+        if relaxation && any(x -> (x == :SemiCont || x == :SemiInt), m.colCat)
+            error("Relaxations of conic problem with semi-integer/semicontinuous variables are not currently supported.")
+        end
+
+        traits.qp && error("JuMP does not support quadratic objectives for conic problems")
+        traits.qc && error("JuMP does not support mixing quadratic and conic constraints")
+
+        # Obtain a fresh MPB model for the solver
+        # If the problem is conic, we rebuild the problem from
+        # scratch every time
+        m.internalModel = JuMP.MathProgBase.ConicModel(m.solver)
+
+        # Build up the objective, LHS, RHS and cones from the JuMP Model...
+        f, A, b, var_cones, con_cones = JuMP.conicdata(m)
+        # ... and pass to the solver
+        JuMP.MathProgBase.loadproblem!(m.internalModel, f, A, b, con_cones, var_cones)
+    else
+        # Extract objective coefficients and linear constraint bounds
+        f = JuMP.prepAffObjective(m)
+        rowlb, rowub = JuMP.prepConstrBounds(m)
+        # If we already have an MPB model for the solver...
+        if m.internalModelLoaded
+            # ... and if the solver supports updating bounds/objective
+            if Base.applicable(JuMP.MathProgBase.setvarLB!, m.internalModel, m.colLower) &&
+               Base.applicable(JuMP.MathProgBase.setvarUB!, m.internalModel, m.colUpper) &&
+               Base.applicable(JuMP.MathProgBase.setconstrLB!, m.internalModel, rowlb) &&
+               Base.applicable(JuMP.MathProgBase.setconstrUB!, m.internalModel, rowub) &&
+               Base.applicable(JuMP.MathProgBase.setobj!, m.internalModel, f) &&
+               Base.applicable(JuMP.MathProgBase.setsense!, m.internalModel, m.objSense)
+                JuMP.MathProgBase.setvarLB!(m.internalModel, copy(m.colLower))
+                JuMP.MathProgBase.setvarUB!(m.internalModel, copy(m.colUpper))
+                JuMP.MathProgBase.setconstrLB!(m.internalModel, rowlb)
+                JuMP.MathProgBase.setconstrUB!(m.internalModel, rowub)
+                JuMP.MathProgBase.setobj!(m.internalModel, f)
+                JuMP.MathProgBase.setsense!(m.internalModel, m.objSense)
+            else
+                # The solver doesn't support changing bounds/objective
+                # We need to build the model from scratch
+                if !suppress_warnings
+                    Base.warn_once("Solver does not appear to support hot-starts. Model will be built from scratch.")
+                end
+                m.internalModelLoaded = false
+            end
+        end
+        # If we don't already have a MPB model
+        if !m.internalModelLoaded
+            # Obtain a fresh MPB model for the solver
+            m.internalModel = JuMP.MathProgBase.LinearQuadraticModel(m.solver)
+            # Construct a LHS matrix from the linear constraints
+            A = JuMP.prepConstrMatrix(m)
+            # Load the problem data into the model...
+            collb = copy(m.colLower)
+            colub = copy(m.colUpper)
+            if relaxation
+                for i in 1:m.numCols
+                    if m.colCat[i] in (:SemiCont,:SemiInt)
+                        collb[i] = min(0.0, collb[i])
+                        colub[i] = max(0.0, colub[i])
+                    end
+                end
+            end
+            JuMP.MathProgBase.loadproblem!(m.internalModel, A, collb, colub, f, rowlb, rowub, m.objSense)
+            # ... and add quadratic and SOS constraints separately
+            JuMP.addQuadratics(m)
+            if !relaxation
+                JuMP.addSOS(m)
+            end
+        end
+
+    end
+    # Update solver callbacks, if any
+    if !relaxation
+        JuMP.registercallbacks(m)
+    end
+
+    # Update the type of each variable
+    # if ENABLE_SETVARTYPE
+    #     @timeit TIMER "setvartype!" begin
+    #     if Base.applicable(JuMP.MathProgBase.setvartype!, m.internalModel, Symbol[])
+    #         if relaxation
+    #             JuMP.MathProgBase.setvartype!(m.internalModel, fill(:Cont, m.numCols))
+    #         else
+    #             colCats = JuMP.vartypes_without_fixed(m)
+    #             JuMP.MathProgBase.setvartype!(m.internalModel, colCats)
+    #         end
+    #     elseif traits.int
+    #         # Solver that do not implement anything other than continuous
+    #         # variables do not need to implement this method, so throw an
+    #         # error if the model has anything but continuous
+    #         error("Solver does not support discrete variables")
+    #     end
+    #     end
+    # end
+
+    # Provide a primal solution to the solver,
+    # if the user has provided a solution or a partial solution.
+    # if ENABLE_WARMSTART
+    #     @timeit TIMER "setwarmstart!" begin
+    #     if !all(isnan,m.colVal)
+    #         if Base.applicable(JuMP.MathProgBase.setwarmstart!, m.internalModel, m.colVal)
+    #             if !traits.int || relaxation
+    #                 JuMP.MathProgBase.setwarmstart!(m.internalModel, JuMP.tidy_warmstart(m))
+    #             else
+    #                 # we can pass NaNs through
+    #                 JuMP.MathProgBase.setwarmstart!(m.internalModel, m.colVal)
+    #             end
+    #         else
+    #             suppress_warnings || Base.warn_once("Solver does not appear to support providing initial feasible solutions.")
+    #         end
+    #     end
+    #     end
+    # end
+    # Record that we have a MPB model constructed
+    m.internalModelLoaded = true
+    nothing
+end
+
 function jumpsolve(m::JuMP.Model; suppress_warnings=false,
                 ignore_solve_hook=(m.solvehook===nothing),
                 relaxation=false,
@@ -44,7 +180,8 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
         traits = JuMP.ProblemTraits(m, relaxation=relaxation)
 
         # Build the MathProgBase model from the JuMP model
-        JuMP.build(m, traits=traits, suppress_warnings=suppress_warnings, relaxation=relaxation)
+        # JuMP.build(m, traits=traits, suppress_warnings=suppress_warnings, relaxation=relaxation)
+        jumpbuild(m, suppress_warnings, relaxation, traits)
 
         # If the model is a general nonlinear, use different logic in
         # nlp.jl to solve the problem
@@ -62,28 +199,42 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
         numRows, numCols = length(m.linconstr), m.numCols
         m.objBound = NaN
         m.objVal = NaN
-        m.colVal = fill(NaN, numCols)
-        m.linconstrDuals = Array{Float64}(0)
+        if length(m.colVal) != numCols
+            m.colVal = fill(NaN, numCols)
+        else
+            m.colVal .= NaN
+        end
+        if length(m.redCosts) != numCols
+            m.redCosts = fill(NaN, numCols)
+        else
+            m.redCosts .= NaN
+        end
+        if length(m.linconstrDuals) != numRows
+            m.linconstrDuals = fill(NaN, numRows)
+        else
+            m.linconstrDuals .= NaN
+        end
+        # m.linconstrDuals = Array{Float64}(0)
 
         discrete = !relaxation && (traits.int || traits.sos)
         if stat == :Optimal
             # If we think dual information might be available, try to get it
             # If not, return an array of the correct length
             if discrete
-                m.redCosts = fill(NaN, numCols)
-                m.linconstrDuals = fill(NaN, numRows)
+                # m.redCosts .= fill(NaN, numCols)
+                # m.linconstrDuals .= fill(NaN, numRows)
             else
                 if !traits.conic
-                    m.redCosts = try
+                    m.redCosts .= try
                         JuMP.MathProgBase.getreducedcosts(m.internalModel)[1:numCols]
                     catch
-                        fill(NaN, numCols)
+                        # fill(NaN, numCols)
                     end
 
-                    m.linconstrDuals = try
+                    m.linconstrDuals .= try
                         JuMP.MathProgBase.getconstrduals(m.internalModel)[1:numRows]
                     catch
-                        fill(NaN, numRows)
+                        # fill(NaN, numRows)
                     end
                 elseif !traits.qp && !traits.qc
                     fillConicDuals(m)
@@ -98,13 +249,13 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
             # if the exist.
             if traits.lin
                 if stat == :Infeasible
-                    m.linconstrDuals = try
+                    m.linconstrDuals .= try
                         infray = JuMP.MathProgBase.getinfeasibilityray(m.internalModel)
                         @assert length(infray) == numRows
                         infray
                     catch
                         suppress_warnings || warn("Infeasibility ray (Farkas proof) not available")
-                        fill(NaN, numRows)
+                        # fill(NaN, numRows)
                     end
                 elseif stat == :Unbounded
                     m.colVal = try
@@ -113,7 +264,7 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
                         unbdray
                     catch
                         suppress_warnings || warn("Unbounded ray not available")
-                        fill(NaN, numCols)
+                        # fill(NaN, numCols)
                     end
                 end
             end
@@ -146,7 +297,7 @@ function jumpsolve(m::JuMP.Model; suppress_warnings=false,
                 end
                 # Don't corrupt the answers if one of the above two calls fails
                 m.objVal = objVal
-                m.colVal = colVal
+                m.colVal .= colVal
             end
         end
 
