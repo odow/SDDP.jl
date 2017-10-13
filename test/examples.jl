@@ -15,7 +15,8 @@ const Examples = Dict(
         ],
     "BinaryProblems" => [
             "booking_management.jl",
-            "vehicle_location.jl"
+            "vehicle_location.jl",
+            "airconditioning.jl"
         ],
     "Newsvendor" => [
             "async_newsvendor.jl",
