@@ -158,7 +158,7 @@ function SDDPModel(build!::Function;
     end
 
     # New SDDPModel
-    m = newSDDPModel(sense, value_function, build!)
+    m = newSDDPModel(sense, getel(AbstractValueFunction, value_function, 1, 1), build!)
 
     for t in 1:stages
         markov_transition_matrix = getel(Array{Float64, 2}, markov_transition, t)
@@ -181,7 +181,7 @@ function SDDPModel(build!::Function;
                 sense          = optimisationsense(sense),
                 bound          = float(objective_bound),
                 risk_measure   = getel(AbstractRiskMeasure, risk_measure, t, i),
-                value_function = deepcopy(value_function)
+                value_function = deepcopy(getel(AbstractValueFunction, value_function, t, i))
             )
             setsolver(mod, getel(JuMP.MathProgBase.AbstractMathProgSolver, solver, t, i))
             # dispatch to correct function
