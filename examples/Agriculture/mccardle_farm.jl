@@ -6,8 +6,8 @@
 
 #
 #    Inspired by
-#       R. McCardle,  Farm management optimization.,  Master’s thesis,  University
-#       of Louisville,  Louisville,  Kentucky, United States of America (2009)
+#       R. McCardle, Farm management optimization. Masters thesis, University
+#       of Louisville, Louisville, Kentucky, United States of America (2009)
 #
 
 using SDDP, JuMP, Clp
