@@ -66,10 +66,12 @@ arguments. Some are required, and some are optional.
  The number of stages in the problem. A stage is defined as each step in time at
  which a decion can be made. Defaults to `1`.
 
- * `objective_bound::Float64`
+ * `objective_bound`
  A valid bound on the initial value/cost to go. i.e. for maximisation this may
  be some large positive number, for minimisation this may be some large negative
- number.
+ number. Users can pass either a single value (which bounds the cost-to-go in all
+ stages), or a vector of values (one for each stage), or a vector (one element
+ for each stage) of vectors of values (one value for each markov state in the stage).
 
  * `solver::MathProgBase.AbstractMathProgSolver`
  MathProgBase compliant solver that returns duals from a linear program. If this
@@ -179,7 +181,7 @@ function SDDPModel(build!::Function;
                 stage          = t,
                 markov_state   = i,
                 sense          = optimisationsense(sense),
-                bound          = float(objective_bound),
+                bound          = float(getel(Real, objective_bound, t, i)),
                 risk_measure   = getel(AbstractRiskMeasure, risk_measure, t, i),
                 value_function = deepcopy(getel(AbstractValueFunction, value_function, t, i))
             )

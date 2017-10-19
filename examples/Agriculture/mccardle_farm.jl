@@ -68,7 +68,7 @@ function mccardle_farm_model()
 
     m = SDDPModel(
                  stages = 4,
-        objective_bound = 0.0,
+        objective_bound = [0.0, 0.0, 0.0, 0.0],
                   sense = :Min,
       markov_transition = transition,
                  solver = ClpSolver()
