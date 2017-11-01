@@ -94,6 +94,8 @@ else
     end
 end
 
+# Issue #64
+getel(T, f::Function, t::Int, i::Int=1) = f(t, i)::T
 
 
 # Construct a confidence interval

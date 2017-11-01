@@ -24,7 +24,8 @@ using SDDP, JuMP, Clp, Base.Test
 function airconditioningmodel()
     m = SDDPModel(
                  stages = 3,
-        objective_bound = 0.0,
+                 # example for issue #64
+        objective_bound = (t, i) -> 0.0,
                   sense = :Min,
                  solver = ClpSolver()
                             ) do sp, stage
