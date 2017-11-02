@@ -75,7 +75,6 @@ if VERSION >= v"0.6"
 else
     # fake triangular dispatch
     singleelement(x, t::Int, i::Int=1) = x
-    singleelement(x::Function, t::Int, i::Int=1) = x(t, i)
     vectorelement(x, t::Int, i::Int=1) = x[t]
     jaggedelement(x, t::Int, i::Int)   = x[t][i]
 
@@ -84,7 +83,9 @@ else
     typecompare{T1, T2}(::Type{T1}, t2::Vector{Vector{T2}}) = T2 <: T1?(:jagged):(:false)
     function getel{T1, T2}(typ::Type{T1}, x::T2, t::Int, i::Int=1)
         sym = typecompare(typ, x)
-        if sym == :single
+        if sym == :false && isa(x, Function)
+            return x(t, i)::T1
+        elseif sym == :single
             return singleelement(x, t, i)::T1
         elseif sym == :vector
             return vectorelement(x, t, i)::T1
