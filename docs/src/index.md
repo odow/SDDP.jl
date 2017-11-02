@@ -97,9 +97,14 @@ important ones here.
  * `stages::Int`: the number of stages in the problem. A stage is defined as
     each step in time at which a decion can be made. Defaults to `1`.
 
- * `objective_bound::Float64`: a valid bound on the initial value/cost to go.
+ * `objective_bound`: a valid bound on the initial value/cost to go.
    i.e. for maximisation this may be some large positive number, for
-   minimisation this may be some large negative number.
+   minimisation this may be some large negative number. You can ether pass a
+   single value (used for all stages), a vector of values (one for each stage),
+   or a vector of vectors of values (one vector for each stage, containing a
+   vector with one element for each markov stage). Another option is to pass a
+   function that takes two inputs so that `f(t, i)` returns the valid bound for
+   stage `t` and markov state `i`.
 
  * `solver::MathProgBase.AbstractMathProgSolver`: any MathProgBase compliant
    solver that returns duals from a linear program. If this isn't specified then
@@ -139,6 +144,8 @@ risk_measure = [
    [ NestedAVaR(lambda=0.5, beta=0.25), NestedAVaR(lambda=0.25, beta=0.3) ]
    ]
 ```
+    Like the objective bound, another option is to pass a function that takes
+    as arguments the stage and markov state and returns a risk measure.
 
    Note that even though the last stage does not have a future cost function
    associated with it (as it has no children), we still have to specify a risk
