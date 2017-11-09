@@ -27,7 +27,19 @@ end
 function setstates!(m, sp)
     s = getstage(m, ext(sp).stage-1)
     for (st, v) in zip(states(sp), s.state)
-        setvalue!(st, v)
+        # Deal with numerical issues that can lead to occasional
+        # infeasibilities. Ref discussions at
+        # https://github.com/odow/SDDP.jl/issues/6#issuecomment-343022931
+        # https://groups.google.com/forum/#!topic/gurobi/sON4xm7DMGA
+        lb = JuMP.getlowerbound(st.variable)
+        ub = JuMP.getupperbound(st.variable)
+        if v < lb
+            setvalue!(st, lb)
+        elseif v > ub
+            setvalue!(st, ub)
+        else
+            setvalue!(st, v)
+        end
     end
 end
 
