@@ -190,7 +190,18 @@ hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
 function JuMPsolve{T<:IterationDirection}(::Type{T}, ::SDDPModel, sp::JuMP.Model)
     @timeit TIMER "JuMP.solve" begin
         # @assert JuMP.solve(sp) == :Optimal
-        @assert jumpsolve(sp) == :Optimal
+        status = jumpsolve(sp)
+        if status != :Optimal
+            filepath = joinpath(pwd(), "infeasible_subproblem.mps")
+            JuMP.writeMPS(sp, filepath)
+            error("""Model in stage $(ext(sp).stage) and markov state $(ext(sp).markovstate)
+            was not solved to Optimality. I wrote the offending MPS file to
+            $(filepath).
+
+            This is most commonly caused by numerical issues with the solver.
+            Consider reformulating the model or try different solver parameters.
+            """)
+        end
     end
 end
 
