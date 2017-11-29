@@ -65,3 +65,7 @@ SDDP.solve(cutselection_model,
 
 @test length(SDDP.getsubproblem(cutselection_model, 2, 1).linconstr) < 10 + 11
 @test isapprox(getbound(cutselection_model), 855.0, atol=1e-3)
+
+# Distributionally robust Optimization
+# TODO: match format to others
+include(joinpath(dirname(@__FILE__), "hydro_valley_DRO.jl"))

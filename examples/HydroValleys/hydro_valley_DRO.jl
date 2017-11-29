@@ -83,7 +83,7 @@ function buildmodel(measure::SDDP.AbstractRiskMeasure)
         # rainfall noises
         for i in 1:N
             if stage > 1 # in future stages random inflows
-                @noise(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
+                @rhsnoise(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
             else # in the first stage deterministic inflow
                 @constraint(sp, inflow[i] <= valley_chain[i].inflows[1])
             end
@@ -91,7 +91,7 @@ function buildmodel(measure::SDDP.AbstractRiskMeasure)
 
         # ------------------------------------------------------------------
         #   Objective Function
-        stageobjective!(sp, prices[stage]*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N))
+        @stageobjective(sp, prices[stage]*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N))
 
     end
 

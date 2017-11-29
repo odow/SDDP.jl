@@ -20,5 +20,5 @@ end
     @test isapprox(newprobabilities, [0.324162,0.472486,0.175838,0.027514,0.0], atol=1e-6)
     r = sqrt(0.8)
     SDDP.updateprobabilities!(newprobabilities, DRO(r), :Min, theta, S)
-    @test isapprox(newprobabilities, [0,1,0,0,0.0], atol=1e-6)
+    @test isapprox(newprobabilities, [0.0,1.0,0.0,0.0,0.0], atol=1e-6)
 end

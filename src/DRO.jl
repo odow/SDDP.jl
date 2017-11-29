@@ -8,7 +8,7 @@ export DRO
 
 #==
 This file relates to distributionally robust SDDP, see:
-http://www.epoc.org.nz/papers/DROPaperv52.pdf
+http://www.epoc.org.nz/publications.html
 
 In a Distributionally Robust Optimization (DRO) approach, we modify the
 probabilities we associate with all future scenarios so that the resulting
