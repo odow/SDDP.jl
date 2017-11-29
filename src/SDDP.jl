@@ -46,6 +46,7 @@ include("print.jl")
 
 include("dematos_cutoracle.jl")
 include("avar_riskaversion.jl")
+include("DRO.jl")
 include("solve_asyncronous.jl")
 include("visualizer/visualize.jl")
 immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
