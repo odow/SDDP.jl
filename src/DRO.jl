@@ -71,7 +71,7 @@ function getconstadditive(S::Int, k::Int, const_factor, permuted_observations)
     1 / (S-k) + const_factor * avgz
 end
 
-function updateprobabilities!(newprobabilities, dro, sense, observations, S)
+function modifyprobability!(newprobabilities, dro::DRO, sense::Symbol, observations::Vector{Float64}, S::Int)
 
     # Don't do any DRO reweighting if we aren't distributionally robust or the variance is too low
     r = dro.radius
@@ -106,7 +106,7 @@ function updateprobabilities!(newprobabilities, dro, sense, observations, S)
 
 end
 
-function SDDP.modifyprobability!(
+function modifyprobability!(
         measure::DRO,
         newprobabilities,
         original_distribution::Vector{Float64},
@@ -118,5 +118,5 @@ function SDDP.modifyprobability!(
      # Number of noises
     S = length(observations)
 
-    updateprobabilities!(newprobabilities, measure, getsense(sp), observations, S)
+    modifyprobability!(newprobabilities, measure, getsense(sp), observations, S)
 end
