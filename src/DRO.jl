@@ -8,7 +8,9 @@ export DRO
 
 #==
 This file relates to distributionally robust SDDP, see:
-http://www.epoc.org.nz/publications.html
+    Philpott, A., de Matos, V., Kapelevich, L. (2017).
+    Distributionally robust SDDP.
+    Tech Report. Electric Power Optimisation Centre. http://www.epoc.org.nz.
 
 In a Distributionally Robust Optimization (DRO) approach, we modify the
 probabilities we associate with all future scenarios so that the resulting
@@ -43,6 +45,7 @@ type DRO <: SDDP.AbstractRiskMeasure
     radius::Float64
 end
 
+# Helper to calculate population standard deviation, avoid type instability
 function popvar(x::Vector{Float64})::Float64
     ninv = 1 / length(x)
     ninv * sum(x.^2) - (ninv * sum(x))^2
