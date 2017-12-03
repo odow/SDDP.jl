@@ -65,3 +65,21 @@ SDDP.solve(cutselection_model,
 
 @test length(SDDP.getsubproblem(cutselection_model, 2, 1).linconstr) < 10 + 11
 @test isapprox(getbound(cutselection_model), 855.0, atol=1e-3)
+
+# Distributionally robust Optimization
+dro_model = hydrovalleymodel(hasmarkovprice=false, riskmeasure=DRO(sqrt(2/3)-1e-6))
+SDDP.solve(dro_model, max_iterations = 10)
+@test isapprox(getbound(dro_model), 835.0, atol=1e-3)
+dro_model = hydrovalleymodel(hasmarkovprice=false, riskmeasure=DRO(1/6))
+SDDP.solve(dro_model, max_iterations = 20)
+@test isapprox(getbound(dro_model), 836.695, atol=1e-3)
+# (Note) radius ≈ sqrt(2/3), will set all noise probabilities to zero except the worst case noise
+# (Why?):
+# The distance from the uniform distribution (the assumed "true" distribution)
+# to a corner of a unit simplex is sqrt(S-1)/sqrt(S) if we have S scenarios. The corner
+# of a unit simplex is just a unit vector, i.e.: [0 ... 0 1 0 ... 0]. With this probability
+# vector, only one noise has a non-zero probablity.
+# In the worst case rhsnoise (0 inflows) the profit is:
+#  Reservoir1: 70 * $3 + 70 * $2 + 65 * $1 +
+#  Reservoir2: 70 * $3 + 70 * $2 + 70 * $1
+#  = $835
