@@ -122,7 +122,7 @@ with the exception of `:objective` which is just
     results[2][:x][3] # value of :x in stage 3 in second simulation
 """
 function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
-    pmap(i->randomsimulation(m, variables), 1:N)
+    map(i->randomsimulation(m, variables), 1:N)
 end
 
 function randomsimulation(m::SDDPModel, variables::Vector{Symbol})
