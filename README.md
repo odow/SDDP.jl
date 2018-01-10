@@ -68,6 +68,19 @@ to see if they better suit your needs.
 solve multi-stage stochastic programs with binary state variables. Check it out
 at https://github.com/lkapelevich/SDDiP.jl!
 
+## Citing SDDP.jl
+
+If you use SDDP.jl, we ask that you please cite the following [paper](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf):
+```
+@article{dowson_sddp.jl,
+	title = {{SDDP}.jl: a {Julia} package for {Stochastic} {Dual} {Dynamic} {Programming}},
+	url = {http://www.optimization-online.org/DB_HTML/2017/12/6388.html},
+	journal = {Optimization Online},
+	author = {Dowson, Oscar and Kapelevich, Lea},
+	year = {2017}
+}
+```
+
 [build-img]: https://travis-ci.org/odow/SDDP.jl.svg?branch=master
 [build-url]: https://travis-ci.org/odow/SDDP.jl
 
