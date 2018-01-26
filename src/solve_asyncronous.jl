@@ -238,10 +238,14 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
     status
 end
 
-function storeasynccut!(m::SDDPModel, sp::JuMP.Model, cut::Cut)
+function storeasynccut!(m::SDDPModel, sp::JuMP.Model, args...)
     vf = valueoracle(sp)
     if !haskey(m.ext, :cuts)
         m.ext[:cuts] = asynccutstoragetype(typeof(vf))[]
     end
-    push!(m.ext[:cuts], asynccutstorage(m, sp, cut))
+    push!(m.ext[:cuts], asynccutstorage(m, sp, args...))
+end
+
+function asynccutstorage(m::SDDPModel, sp::JuMP.Model, args...)
+    (ext(sp).stage, ext(sp).markovstate, args...)
 end

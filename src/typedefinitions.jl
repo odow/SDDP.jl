@@ -97,7 +97,7 @@ function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min(), bou
         bound,
         sense,
         State[],
-        init!(deepcopy(value_function), m, sense, bound),
+        initializevaluefunction(deepcopy(value_function), m, sense, bound),
         Noise[],
         Float64[],
         risk_measure

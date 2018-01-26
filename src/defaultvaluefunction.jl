@@ -32,13 +32,13 @@ function summarise end
 summarise{C}(::Type{DefaultValueFunction{C}}) = "Default"
 
 """
-    init!(vf::V, sp::JuMP.Model, sense::OptimisationSense, bound::Real)
+    initialise_value_function(vf::V, sp::JuMP.Model, sense::OptimisationSense, bound::Real)
 
 Initialize a value function
 """
-function init! end
+function initializevaluefunction end
 
-function init!{C}(vf::DefaultValueFunction{C}, m::JuMP.Model, sense::OptimisationSense, bound::Real)
+function initializevaluefunction{C}(vf::DefaultValueFunction{C}, m::JuMP.Model, sense::OptimisationSense, bound::Real)
     vf.theta = futureobjective!(sense, m, bound)
     vf
 end
@@ -134,10 +134,7 @@ function addcuttoJuMPModel!(sp::JuMP.Model, cut::Cut)
     # add constraint to JuMP model
     ex = ext(sp)
     vf = valueoracle(sp)
-    affexpr = AffExpr(cut.intercept)
-    for i in 1:nstates(sp)
-        append!(affexpr, cut.coefficients[i] * ex.states[i].variable)
-    end
+    affexpr = cuttoaffexpr(sp, cut)
     addcutconstraint!(ex.sense, sp, vf.theta, affexpr)
 end
 
@@ -249,17 +246,6 @@ Used to pass cuts between processors
 function asynccutstoragetype end
 
 asynccutstoragetype{C}(::Type{DefaultValueFunction{C}}) = Tuple{Int, Int, Cut}
-
-"""
-    asynccutstorage(m::SDDPModel{V}, sp::JuMP.Model, cut::Cut)
-
-Return a type that encapsulates the cut.
-"""
-function asynccutstorage end
-
-function asynccutstorage{C}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model, cut::Cut)
-    (ext(sp).stage, ext(sp).markovstate, cut)
-end
 
 """
     addasynccut!(m::SDDPModel{V}, cut::T)
