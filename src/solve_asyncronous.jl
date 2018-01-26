@@ -166,7 +166,7 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                         end
                         for cut in cuts
                             if isopen(settings.cut_output_file)
-                                writeaynccut!(settings.cut_output_file, cut)
+                                writeasynccut!(settings.cut_output_file, cut)
                             end
                             addcut!(m, cut)
                             for p2 in async.slaves
@@ -254,6 +254,6 @@ function storecut!{C}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model, cut
     push!(m.ext[:cuts], (ext(sp).stage, ext(sp).markovstate, cut))
 end
 
-function writeaynccut!(file, cut::Tuple{Int, Int, Cut})
+function writeasynccut!(file, cut::Tuple{Int, Int, Cut})
     writecut!(file, cut[3], cut[1], cut[2])
 end

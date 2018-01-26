@@ -23,3 +23,5 @@ macro deprecate_macro(oldmacro,newmacro)
     eval(Expr(:export,oldmac))
     return
 end
+
+@deprecate writeaynccut! writeasynccut!
