@@ -28,8 +28,8 @@ function getbound(m::SDDPModel)
     end
 end
 
-getsense(::Type{Max}) = :Max
-getsense(::Type{Min}) = :Min
+getsense(::Max) = :Max
+getsense(::Min) = :Min
 getsense(m::JuMP.Model) = getsense(ext(m).sense)
 function worstcase(s)
     if s==:Min
@@ -40,16 +40,16 @@ function worstcase(s)
 end
 function optimisationsense(s::Symbol)
     if s==:Min
-        return Min
+        return Min()
     elseif s==:Max
-        return Max
+        return Max()
     else
         error("Unknown optimisation sense $s. Must be :Max or :Min")
     end
 end
 
-futureobjective!(::Type{Max}, m::JuMP.Model, bound) = @variable(m, upperbound = bound)
-futureobjective!(::Type{Min}, m::JuMP.Model, bound) = @variable(m, lowerbound = bound)
+futureobjective!(::Max, m::JuMP.Model, bound) = @variable(m, upperbound = bound)
+futureobjective!(::Min, m::JuMP.Model, bound) = @variable(m, lowerbound = bound)
 
 stages(m::SDDPModel) = m.stages
 getstage(m::SDDPModel, t) = stages(m)[t]
@@ -141,8 +141,8 @@ function constructcut(m::SDDPModel, sp::JuMP.Model)
     Cut(intercept, coefficients)
 end
 
-_addcut!(::Type{Min}, sp, theta, affexpr) = @constraint(sp, theta >= affexpr)
-_addcut!(::Type{Max}, sp, theta, affexpr) = @constraint(sp, theta <= affexpr)
+addcutconstraint!(sense::Min, sp, theta, affexpr) = @constraint(sp, theta >= affexpr)
+addcutconstraint!(sense::Max, sp, theta, affexpr) = @constraint(sp, theta <= affexpr)
 
 
 Base.size{T}(x::CachedVector{T}) = (x.n,)
@@ -177,6 +177,16 @@ end
 function samplesubproblem(stage::Stage, last_markov_state::Int)
     newidx = sample(stage.transitionprobabilities[last_markov_state, :])
     return newidx, getsubproblem(stage, newidx)
+end
+samplesubproblem(stage::Stage, last_markov_state::Int, solutionstore::Void) = samplesubproblem(stage, last_markov_state)
+
+function samplesubproblem(stage::Stage, last_markov_state, solutionstore::Dict{Symbol, Any})
+    if length(solutionstore[:noise]) >= stage.t
+        idx = solutionstore[:markov][stage.t]
+        return idx, getsubproblem(stage, idx)
+    else
+        return samplesubproblem(stage, last_markov_state)
+    end
 end
 
 savesolution!(solutionstore::Void, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int) = nothing
@@ -282,4 +292,19 @@ function cuttoaffexpr(sp::Model, cut::Cut)
         append!(x, coef * states(sp)[idx].variable)
     end
     return x
+end
+
+writecut!(io, cut::Cut, stage::Int, markovstate::Int) = writecut!(io, stage, markovstate, cut)
+
+function writecut!(filename::String, stage::Int, markovstate::Int, cut::Cut)
+    open(filename, "a") do file
+        writecut!(file, cut, stage, markovstate)
+    end
+end
+function writecut!(io::IO, stage::Int, markovstate::Int, cut::Cut)
+    write(io, string(stage), ",", string(markovstate), ",", string(cut.intercept))
+    for pi in cut.coefficients
+        write(io, ",", string(pi))
+    end
+    write(io, "\n")
 end

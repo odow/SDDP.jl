@@ -33,7 +33,7 @@ Initialize the default cut oracle.
 
 This oracle keeps every cut discovered and does not perform cut selection.
 """
-immutable DefaultCutOracle <: AbstractCutOracle
+struct DefaultCutOracle <: AbstractCutOracle
     cuts::Vector{Cut}
 end
 DefaultCutOracle() = DefaultCutOracle(Cut[])

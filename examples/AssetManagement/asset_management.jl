@@ -35,15 +35,15 @@ m = SDDPModel(
     @state(sp, bonds_out >= 0, bonds_in==0)
     if t == 1
         @constraint(sp, stock_out + bonds_out == 55)
-        stageobjective!(sp, 0)
+        @stageobjective(sp, 0)
     elseif t > 1 && t < 4
         @constraint(sp, rstock[i] * stock_in + rbonds[i] * bonds_in == stock_out + bonds_out)
-        stageobjective!(sp, 0)
+        @stageobjective(sp, 0)
     else
         @variable(sp, over  >= 0)
         @variable(sp, short >= 0)
         @constraint(sp, rstock[i] * stock_in + rbonds[i] * bonds_in - over + short == 80)
-        stageobjective!(sp, -over + 4*short)
+        @stageobjective(sp, -over + 4*short)
     end
 end
 

@@ -28,7 +28,7 @@ m = SDDPModel(
     else
         @rhsnoise(sp, r = RAINFALL, x <= x0 + r - y)
     end
-    stageobjective!(sp, 5 * p)
+    @stageobjective(sp, 5 * p)
 end
 
 status = solve(m, max_iterations = 10,

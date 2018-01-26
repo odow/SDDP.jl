@@ -55,7 +55,7 @@ m = SDDPModel(
     @rhsnoise(sp, a = linspace(50, 0, 10), v + u + s == v0 + a)
 
     # Objective function
-    stageobjective!(sp, 100*g[1] + 1000*g[2] )
+    @stageobjective(sp, 100*g[1] + 1000*g[2] )
 end
 
 # For repeatability

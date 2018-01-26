@@ -41,7 +41,7 @@ The distributionally robust SDDP risk measure.
 Constructs a DRO risk measure object that allows probabilities to deviate by
 `radius` away from the uniform distribution.
 """
-type DRO <: SDDP.AbstractRiskMeasure
+struct DRO <: SDDP.AbstractRiskMeasure
     radius::Float64
 end
 

@@ -8,7 +8,7 @@
 # See http://github.com/odow/SDDP.jl
 #############################################################################
 
-immutable MyRiskMeasure <: SDDP.AbstractRiskMeasure end
+struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
 
 @testset "Risk Measures" begin
     @testset "Expectation" begin
@@ -21,7 +21,7 @@ immutable MyRiskMeasure <: SDDP.AbstractRiskMeasure end
             ) do sp, t
             @state(sp, x>=0, x0==0)
             @rhsnoise(sp, w=1:2, x <= w)
-            stageobjective!(sp, x)
+            @stageobjective(sp, x)
         end
 
         y = zeros(4)
