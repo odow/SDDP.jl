@@ -25,7 +25,7 @@ function launch_file(html_string, assets, outputfile=replace(tempname(), ".tmp",
 end
 
 function prephtml(html_template, args...)
-	html = readstring(joinpath(ASSET_DIR, html_template))
+	html = read(joinpath(ASSET_DIR, html_template), String)
 	for (key, val) in args
 		html = replace(html, key, val)
 	end

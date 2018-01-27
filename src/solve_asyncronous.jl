@@ -61,11 +61,11 @@ function sendto(procs;args...)
     end
 end
 
-function async_iteration!{C}(T, settings::Settings, slave::Vector{C})
+function async_iteration!(T, settings::Settings, slave::Vector{C}) where C
     m = SDDP.m::T
     async_iteration!(m, settings, slave)
 end
-function async_iteration!{C}(m::SDDPModel, settings::Settings, slave::Vector{C})
+function async_iteration!(m::SDDPModel, settings::Settings, slave::Vector{C}) where C
     while length(slave) > 0
         c = pop!(slave)
         addasynccut!(m, c)
@@ -90,7 +90,7 @@ function rebuild!(T)
     rebuild!(mm)
 end
 
-function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=Settings())
+function JuMP.solve(async::Asyncronous, m::SDDPModel{T}, settings::Settings=Settings()) where T
     status = :solving
     iterationtype = :cutting
     iteration = 1

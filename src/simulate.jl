@@ -43,7 +43,7 @@ function storekey!(::Type{Val{:stageobjective}}, store, markov::Int, noiseidx::I
     push!(store, getstageobjective(sp))
 end
 
-function storekey!{T}(::Type{Val{T}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
+function storekey!(::Type{Val{T}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int) where T
     if JuMPVERSION < v"0.17"
         push!(store, getvalue(getvariable(sp, T)))
     else

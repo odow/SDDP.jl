@@ -166,7 +166,7 @@ struct SDDPModel{V<:AbstractValueFunction}
     ext::Dict # extension dictionary
 end
 newSDDPModel(sense::Symbol, v::AbstractValueFunction, build!::Function) = newSDDPModel(sense, typeof(v), build!)
-newSDDPModel{V<:AbstractValueFunction}(sense::Symbol, v::Type{V}, build!::Function) = SDDPModel{V}(sense, Stage[], Storage(), SolutionLog[], build!, Dict())
+newSDDPModel(sense::Symbol, v::Type{V}, build!::Function) where {V<:AbstractValueFunction} = SDDPModel{V}(sense, Stage[], Storage(), SolutionLog[], build!, Dict())
 
 struct BoundConvergence
     iterations::Int

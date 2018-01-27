@@ -466,7 +466,7 @@ function JuMP.solve(m::SDDPModel;
         print_level::Int             = 1,
         log_file::String             = "",
         # automatically chose Serial or Asyncronous
-        solve_type::SDDPSolveType    = nprocs()>2?Asyncronous():Serial(),
+        solve_type::SDDPSolveType    = nprocs()>2 ? Asyncronous() : Serial(),
         # this reduces memory but you shouldn't use it if you want to save the
         # sddp model since it throws away some information
         reduce_memory_footprint      = false,
