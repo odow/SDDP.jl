@@ -168,9 +168,7 @@ end
     rebuildsubproblem!(m::SDDPModel, sp::JuMP.Model)
 
 """
-function rebuildsubproblem!(m::SDDPModel, sp::JuMP.Model)
-    nothing
-end
+function rebuildsubproblem! end
 
 function rebuildsubproblem!{C<:AbstractCutOracle}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model)
     vf = valueoracle(sp)
