@@ -14,8 +14,6 @@ const TIMER = TimerOutput()
 
 const JuMPVERSION = Pkg.installed("JuMP")
 
-using Compat
-
 export SDDPModel,
     # inputs
     @state, @states,
