@@ -20,12 +20,12 @@ m = SDDPModel(
                     ) do sp, t
     @state(sp, x >= 0, x0==0)
     if t == 1
-        stageobjective!(sp, x)
+        @stageobjective(sp, x)
     else
         @variable(sp, s >= 0)
         @constraint(sp, s <= x0)
         @rhsnoise(sp, d = [2, 3], s <= d)
-        stageobjective!(sp, -2s)
+        @stageobjective(sp, -2s)
     end
 end
 

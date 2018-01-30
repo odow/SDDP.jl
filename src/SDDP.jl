@@ -14,8 +14,6 @@ const TIMER = TimerOutput()
 
 const JuMPVERSION = Pkg.installed("JuMP")
 
-using Compat
-
 export SDDPModel,
     # inputs
     @state, @states,
@@ -39,7 +37,7 @@ include("riskmeasures.jl")
 include("states.jl")
 include("noises.jl")
 include("cutoracles.jl")
-include("valuefunctions.jl")
+include("defaultvaluefunction.jl")
 include("simulate.jl")
 include("MIT_licensedcode.jl")
 include("print.jl")
@@ -49,7 +47,10 @@ include("avar_riskaversion.jl")
 include("DRO.jl")
 include("solve_asyncronous.jl")
 include("visualizer/visualize.jl")
-immutable UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
+
+include("deprecate.jl")
+
+struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
 """
     SDDPModel(;kwargs...) do ...
@@ -205,28 +206,6 @@ function SDDPModel(build!::Function;
     m
 end
 
-samplesubproblem(stage::Stage, last_markov_state::Int, solutionstore::Void) = samplesubproblem(stage, last_markov_state)
-
-function samplesubproblem(stage::Stage, last_markov_state, solutionstore::Dict{Symbol, Any})
-    if length(solutionstore[:noise]) >= stage.t
-        idx = solutionstore[:markov][stage.t]
-        return idx, getsubproblem(stage, idx)
-    else
-        return samplesubproblem(stage, last_markov_state)
-    end
-end
-
-samplenoise(sp::JuMP.Model, solutionstore::Void) = samplenoise(sp)
-
-function samplenoise(sp::JuMP.Model, solutionstore::Dict{Symbol, Any})
-    if length(solutionstore[:noise])>=ext(sp).stage
-        idx = solutionstore[:noise][ext(sp).stage]
-        return idx, ext(sp).noises[idx]
-    else
-        return samplenoise(sp)
-    end
-end
-
 function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
     last_markov_state = 1
     noiseidx = 0
@@ -255,7 +234,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
     return obj
 end
 
-function backwardpass!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
+function backwardpass!(m::SDDPModel, settings::Settings)
     # walk backward through the stages
     for t in nstages(m):-1:2
         # solve all stage t problems
@@ -267,7 +246,7 @@ function backwardpass!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
         # add appropriate cuts
         for sp in subproblems(m, t-1)
             @timeit TIMER "Cut addition" begin
-                modifyvaluefunction!(m, settings, sp, writecuts)
+                modifyvaluefunction!(m, settings, sp)
             end
         end
     end
@@ -278,14 +257,14 @@ function backwardpass!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
     return dot(m.storage.objective, m.storage.probability)
 end
 
-function iteration!(m::SDDPModel, settings::Settings, writecuts::Bool=true)
+function iteration!(m::SDDPModel, settings::Settings)
     t = time()
     @timeit TIMER "Forward Pass" begin
         simulation_objective = forwardpass!(m, settings)
     end
     time_forwards = time() - t
     @timeit TIMER "Backward Pass" begin
-        objective_bound = backwardpass!(m, settings, writecuts)
+        objective_bound = backwardpass!(m, settings)
     end
     time_backwards = time() - time_forwards - t
 
@@ -512,7 +491,8 @@ function JuMP.solve(m::SDDPModel;
         print_level,
         log_file,
         reduce_memory_footprint,
-        cut_output_file_handle
+        cut_output_file_handle,
+        isa(solve_type, Asyncronous)
     )
 
     print(printheader, settings, m, solve_type)

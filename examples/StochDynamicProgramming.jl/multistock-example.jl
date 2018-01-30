@@ -43,7 +43,7 @@ m = SDDPModel(
         stock[3] == stock0[3] + control[3] - xi[3]
     end)
 
-    stageobjective!(sp, (sin(3 * stage) - 1) * sum(control))
+    @stageobjective(sp, (sin(3 * stage) - 1) * sum(control))
 end
 
 @time status = SDDP.solve(m, max_iterations = 100,

@@ -9,8 +9,8 @@
 #############################################################################
 
 @testset "Utilities" begin
-    @test SDDP.getsense(SDDP.Max) == :Max
-    @test SDDP.getsense(SDDP.Min) == :Min
+    @test SDDP.getsense(SDDP.Max()) == :Max
+    @test SDDP.getsense(SDDP.Min()) == :Min
     m=SDDP.Subproblem()
     @test SDDP.getsense(m) == :Min
     @test_throws Exception SDDP.dominates(:Minimize, 1.0, 2.0)

@@ -55,7 +55,7 @@ end
 
 The expectation risk measure.
 """
-immutable Expectation <: AbstractRiskMeasure end
+struct Expectation <: AbstractRiskMeasure end
 
 function modifyprobability!(::Expectation,
     riskadjusted_distribution::AbstractVector,

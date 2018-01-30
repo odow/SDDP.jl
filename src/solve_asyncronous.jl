@@ -27,7 +27,7 @@ algorithm.
     Asyncronous(step=10) # perform 10 iterations before adding new slave
 
 """
-immutable Asyncronous <: SDDPSolveType
+struct Asyncronous <: SDDPSolveType
     slaves::Vector{Int} # pid of slave processors
     step::Float64       # number of iterations before introducing another slave
 end
@@ -68,14 +68,14 @@ end
 function async_iteration!{C}(m::SDDPModel, settings::Settings, slave::Vector{C})
     while length(slave) > 0
         c = pop!(slave)
-        addcut!(m, c)
+        addasynccut!(m, c)
     end
     if !haskey(m.ext, :cuts)
         m.ext[:cuts] = C[]
     else
         empty!(m.ext[:cuts])
     end
-    (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings, false)
+    (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
     y = copy(m.ext[:cuts])
     empty!(m.ext[:cuts])
     y, objective_bound, simulation_objective
@@ -106,7 +106,7 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
     if np <= 2
         error("You've only loaded one slave process. You should solve using the Serial solver instead.")
     end
-    storage_type = getcutstoragetype(T)
+    storage_type = asynccutstoragetype(T)
     slaves = Dict{Int, Vector{storage_type}}()
     for i in workers()
         slaves[i] = storage_type[]
@@ -145,7 +145,6 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                         sleep(1.0)
                         continue
                     end
-
                     if iterationtype == :cutting
                         cutting_timer = time()
                         it = nextiter()
@@ -168,7 +167,7 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
                             if isopen(settings.cut_output_file)
                                 writeasynccut!(settings.cut_output_file, cut)
                             end
-                            addcut!(m, cut)
+                            addasynccut!(m, cut)
                             for p2 in async.slaves
                                 p == p2 && continue
                                 push!(slaves[p2], cut)
@@ -239,21 +238,14 @@ function JuMP.solve{T}(async::Asyncronous, m::SDDPModel{T}, settings::Settings=S
     status
 end
 
-
-getcutstoragetype{C}(::Type{DefaultValueFunction{C}}) = Tuple{Int, Int, Cut}
-function addcut!{C}(m::SDDPModel{DefaultValueFunction{C}}, cut::Tuple{Int, Int, Cut})
-    sp = getsubproblem(m, cut[1], cut[2])
+function storeasynccut!(m::SDDPModel, sp::JuMP.Model, args...)
     vf = valueoracle(sp)
-    storecut!(vf.cutmanager, m, sp, cut[3])
-    addcut!(vf, sp, cut[3])
-end
-function storecut!{C}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model, cut::Cut)
     if !haskey(m.ext, :cuts)
-        m.ext[:cuts] = Tuple{Int, Int, Cut}[]
+        m.ext[:cuts] = asynccutstoragetype(typeof(vf))[]
     end
-    push!(m.ext[:cuts], (ext(sp).stage, ext(sp).markovstate, cut))
+    push!(m.ext[:cuts], asynccutstorage(m, sp, args...))
 end
 
-function writeasynccut!(file, cut::Tuple{Int, Int, Cut})
-    writecut!(file, cut[3], cut[1], cut[2])
+function asynccutstorage(m::SDDPModel, sp::JuMP.Model, args...)
+    (ext(sp).stage, ext(sp).markovstate, args...)
 end

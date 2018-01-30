@@ -505,7 +505,7 @@ SDDP.jl makes it easy to create new risk measures. First, create a new subtype
 of the abstract type [`SDDP.AbstractRiskMeasure`](@ref):
 
 ```julia
-immutable MyNewRiskMeasure <: SDDP.AbstractRiskMeasure
+struct MyNewRiskMeasure <: SDDP.AbstractRiskMeasure
 end
 ```
 
@@ -532,7 +532,7 @@ To illustrate this, we shall define the worst-case riskmeasure (which places all
 the probability on the worst outcome):
 
 ```julia
-immutable WorstCase <: SDDP.AbstractRiskMeasure end
+struct WorstCase <: SDDP.AbstractRiskMeasure end
 function SDDP.modifyprobability!(measure::WorstCase,
         riskadjusted_distribution,
         original_distribution::Vector{Float64},

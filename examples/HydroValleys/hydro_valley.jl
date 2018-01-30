@@ -27,12 +27,12 @@ flipped appropriately).
 =#
 using SDDP, JuMP, Clp
 
-immutable Turbine
+struct Turbine
     flowknots::Vector{Float64}
     powerknots::Vector{Float64}
 end
 
-immutable Reservoir
+struct Reservoir
     min::Float64
     max::Float64
     initial::Float64

@@ -9,13 +9,22 @@ function setnoise!(sp::JuMP.Model, noise::Noise)
         JuMP.setRHS(c, v)
     end
     if noise.has_objective_noise
-        stageobjective!(valueoracle(sp), sp, noise.obj)
+        setstageobjective!(valueoracle(sp), sp, noise.obj)
     end
 end
 
 function samplenoise(sp::JuMP.Model)
     noiseidx = sample(ext(sp).noiseprobability)
     return noiseidx, ext(sp).noises[noiseidx]
+end
+samplenoise(sp::JuMP.Model, solutionstore::Void) = samplenoise(sp)
+function samplenoise(sp::JuMP.Model, solutionstore::Dict{Symbol, Any})
+    if length(solutionstore[:noise])>=ext(sp).stage
+        idx = solutionstore[:noise][ext(sp).stage]
+        return idx, ext(sp).noises[idx]
+    else
+        return samplenoise(sp)
+    end
 end
 
 """
@@ -150,7 +159,7 @@ macro rhsnoises(m, kw, blk)
 end
 
 """
-    @stageobjective!(sp, kw=noises, objective)
+    @stageobjective(sp, kw=noises, objective)
 
 # Description
 
@@ -180,7 +189,7 @@ end
 
 macro stageobjective(sp, obj)
     quote
-        stageobjective!($(esc(sp)), $(esc(obj)))
+        setstageobjective!($(esc(sp)), $(esc(obj)))
     end
 end
 
@@ -197,7 +206,3 @@ function registernoiseobjective!(sp::JuMP.Model, objective, idx::Int)
         end
     end
 end
-
-include("deprecate.jl")
-@deprecate_macro noise rhsnoise
-@deprecate_macro noises rhsnoises

@@ -13,7 +13,7 @@
         m = SDDP.Subproblem()
         @variable(m, x)
         @test typeof(SDDP.valueoracle(m)) == SDDP.DefaultValueFunction{SDDP.DefaultCutOracle}
-        stageobjective!(m, x)
+        @stageobjective(m, x)
         @test getobjective(m) == convert(QuadExpr, x + SDDP.ext(m).valueoracle.theta)
     end
 end

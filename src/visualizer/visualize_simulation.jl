@@ -16,7 +16,7 @@ const PLOT_DATA = Dict{String, Any}(
 	"ymax"        => ""
 )
 
-immutable SimulationPlot
+struct SimulationPlot
 	data::Vector{Dict{String, Any}}
 end
 """

@@ -36,7 +36,7 @@ m = SDDPModel(
         state == state0 + control - noise
     )
 
-    stageobjective!(sp, (sin(3 * stage) - 1) * control)
+    @stageobjective(sp, (sin(3 * stage) - 1) * control)
 end
 
 @time status = SDDP.solve(m, max_iterations = 50,

@@ -38,7 +38,7 @@ mod = SDDPModel(
         [i=1:n], sum(y[i, :]) <= x0[i]
     end)
 
-    stageobjective!(sp, dot(ic, v) +  dot(C, y * T) + 1e6 * penalty)
+    @stageobjective(sp, dot(ic, v) +  dot(C, y * T) + 1e6 * penalty)
 
     if t != 1 # no uncertainty in first stage
         for j in 1:m

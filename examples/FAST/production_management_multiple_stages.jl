@@ -34,7 +34,7 @@ m = SDDPModel(
         @rhsnoise(sp, d = DEMAND, sum(s) <= d)
     end
 
-    stageobjective!(sp, dot(C, x) - dot(S, s))
+    @stageobjective(sp, dot(C, x) - dot(S, s))
 
 end
 

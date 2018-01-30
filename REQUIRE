@@ -1,8 +1,7 @@
-julia 0.5
+julia 0.6
 
 JuMP 0.16
 Distributions
 Clp
 JSON
-Compat 0.17
 TimerOutputs

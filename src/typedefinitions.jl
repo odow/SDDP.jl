@@ -11,7 +11,7 @@
 
 Abstract type for all risk measures.
 """
-@compat abstract type AbstractRiskMeasure end
+abstract type AbstractRiskMeasure end
 
 """
     AbstractCutOracle
@@ -20,22 +20,18 @@ Abstract type for all risk measures.
 
 Abstract type for all cut oracles.
 """
-@compat abstract type AbstractCutOracle end
-@compat abstract type AbstractValueFunction end
+abstract type AbstractCutOracle end
+abstract type AbstractValueFunction end
 
-@compat abstract type OptimisationSense end
-# struct Max <: OptimisationSense end
-# struct Min <: OptimisationSense end
-immutable Max <: OptimisationSense end
-immutable Min <: OptimisationSense end
+abstract type OptimisationSense end
+struct Max <: OptimisationSense end
+struct Min <: OptimisationSense end
 
-@compat abstract type IterationDirection end
-# struct ForwardPass <: IterationDirection end
-# struct BackwardPass <: IterationDirection end
-immutable ForwardPass <: IterationDirection end
-immutable BackwardPass <: IterationDirection end
+abstract type IterationDirection end
+struct ForwardPass <: IterationDirection end
+struct BackwardPass <: IterationDirection end
 
-@compat abstract type SDDPSolveType end
+abstract type SDDPSolveType end
 """
     Serial()
 
@@ -43,30 +39,28 @@ immutable BackwardPass <: IterationDirection end
 
 Type used to dispatch the serial solution algorithm
 """
-immutable Serial <: SDDPSolveType end
+struct Serial <: SDDPSolveType end
 Base.show(io::IO, async::Serial) = print(io, "Serial solver")
 
 
 const LinearConstraint=JuMP.ConstraintRef{JuMP.Model, JuMP.GenericRangeConstraint{JuMP.GenericAffExpr{Float64, JuMP.Variable}}}
 
-# mutable struct CachedVector{T} <: AbstractArray{T, 1}
-type CachedVector{T} <: AbstractArray{T, 1}
+mutable struct CachedVector{T} <: AbstractArray{T, 1}
     data::Vector{T}
     n::Int
 end
 
-# struct Cut
-immutable Cut
+struct Cut
     intercept::Float64
     coefficients::Vector{Float64}
 end
 
-immutable State
+struct State
     variable::JuMP.Variable
     constraint::LinearConstraint
 end
 
-type Noise
+mutable struct Noise
     has_objective_noise::Bool
     obj::AffExpr
     # list of row indices
@@ -75,12 +69,12 @@ type Noise
     values::Vector{Float64}
 end
 
-immutable SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:AbstractRiskMeasure}
+struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:AbstractRiskMeasure}
     finalstage::Bool        # if final stage
     stage::Int              # stage index
     markovstate::Int        # index of the subproblem by markov state
     problembound::Float64   # objective bound
-    sense::Type{S}          # optimisation sense (max or min)
+    sense::S          # optimisation sense (max or min)
     # a vector of states
     states::Vector{State}
     # an oracle to value function
@@ -93,7 +87,7 @@ immutable SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:Abstr
     riskmeasure::R
 end
 
-function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound=-1e6,
+function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min(), bound=-1e6,
     risk_measure=Expectation(), value_function=DefaultValueFunction(DefaultCutOracle()))
     m = Model()
     m.ext[:SDDP] = SDDP.SubproblemExt(
@@ -103,7 +97,7 @@ function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound
         bound,
         sense,
         State[],
-        init!(deepcopy(value_function), m, sense, bound),
+        initializevaluefunction(deepcopy(value_function), m, sense, bound),
         Noise[],
         Float64[],
         risk_measure
@@ -111,7 +105,7 @@ function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min, bound
     m
 end
 
-immutable Stage
+struct Stage
     t::Int
     # vector of subproblems in this stage
     subproblems::Vector{JuMP.Model}
@@ -125,7 +119,7 @@ immutable Stage
 end
 Stage(t=1, transition=Array{Float64}(0,0)) = Stage(t, JuMP.Model[], transition, Float64[], Dict())
 
-immutable Storage
+struct Storage
     state::Vector{Float64}
     noise::CachedVector{Int}
     markov::CachedVector{Int}
@@ -152,7 +146,7 @@ function reset!(s::Storage)
     reset!(s.modifiedprobability)
 end
 
-immutable SolutionLog
+struct SolutionLog
     iteration::Int
     bound::Float64
     lower_statistical_bound::Float64
@@ -163,7 +157,7 @@ immutable SolutionLog
     timetotal::Float64
 end
 
-immutable SDDPModel{V<:AbstractValueFunction}
+struct SDDPModel{V<:AbstractValueFunction}
     sense::Symbol
     stages::Vector{Stage}
     storage::Storage
@@ -174,7 +168,7 @@ end
 newSDDPModel(sense::Symbol, v::AbstractValueFunction, build!::Function) = newSDDPModel(sense, typeof(v), build!)
 newSDDPModel{V<:AbstractValueFunction}(sense::Symbol, v::Type{V}, build!::Function) = SDDPModel{V}(sense, Stage[], Storage(), SolutionLog[], build!, Dict())
 
-immutable BoundConvergence
+struct BoundConvergence
     iterations::Int
     rtol::Float64
     atol::Float64
@@ -200,7 +194,7 @@ Defaults to `0.0`
 """
 BoundConvergence(;iterations=0,rtol=0.0,atol=0.0) = BoundConvergence(iterations,rtol,atol)
 
-immutable MonteCarloSimulation
+struct MonteCarloSimulation
     frequency::Int
     steps::Vector{Int}
     confidence::Float64
@@ -237,7 +231,7 @@ Defaults to `false`.
 """
 MonteCarloSimulation(;frequency=0,min=20,max=0,step=1,confidence=0.95,termination=false) = MonteCarloSimulation(frequency,collect(min:step:max),confidence,termination)
 
-immutable Settings
+struct Settings
     max_iterations::Int
     time_limit::Float64
     simulation::MonteCarloSimulation
@@ -247,5 +241,6 @@ immutable Settings
     log_file::String
     reduce_memory_footprint::Bool
     cut_output_file::IOStream
+    is_asyncronous::Bool
 end
-Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, IOStream("Cuts"))
+Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, IOStream("Cuts"), false)
