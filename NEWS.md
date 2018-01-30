@@ -1,3 +1,7 @@
+#### 30/January/2018
+- !! Removed support for Julia v0.5 (#77)
+- Made changes on the backend that will impact developers of new value-functions.
+
 #### 14/September/2017
 - !! Deprecated `@noise` in favour of `@rhsnoise` (#40)
 - !! Using `@noise` with the random variable in the constraint matrix will now error. (#40)
