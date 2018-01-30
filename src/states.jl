@@ -43,7 +43,7 @@ function setstates!(m, sp)
     end
 end
 
-function padvec!{T}(x::AbstractVector{T}, n::Int)
+function padvec!(x::AbstractVector{T}, n::Int) where T
     append!(x, zeros(T, max(0, n - length(x))))
 end
 
@@ -63,7 +63,7 @@ function statevariable!(m::JuMP.Model, xin::Array{JuMP.Variable}, xout::Array{Ju
     end
 end
 
-function statevariable!{T<:Union{JuMP.JuMPArray, JuMP.JuMPDict}}(sp::JuMP.Model, xin::T, xout::T)
+function statevariable!(sp::JuMP.Model, xin::T, xout::T) where T<:Union{JuMP.JuMPArray, JuMP.JuMPDict}
     @assert length(keys(xin)) == length(keys(xout))
     for key in keys(xin)
         statevariable!(sp, xin[key...], xout[key...])

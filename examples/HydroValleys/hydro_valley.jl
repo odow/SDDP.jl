@@ -73,7 +73,7 @@ function hydrovalleymodel(;
         transition = [ones(Float64, (1,1)) for t in 1:3]
     end
 
-    flipobj = (sense == :Max)?1.0:-1.0
+    flipobj = (sense == :Max) ? 1.0 : -1.0
 
     N = length(valley_chain)
 

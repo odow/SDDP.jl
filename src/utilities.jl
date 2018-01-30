@@ -4,8 +4,8 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-const KW_SYM = (VERSION < v"0.6-")?(:kw):(:(=))
-const START  = (VERSION < v"0.6-")?(:start):(esc(:start))
+const KW_SYM = (VERSION < v"0.6-") ? (:kw) : (:(=))
+const START  = (VERSION < v"0.6-") ? (:start) : (esc(:start))
 
 ext(m::JuMP.Model) = m.ext[:SDDP]::SubproblemExt
 isext(m::JuMP.Model) = isa(m.ext[:SDDP], SubproblemExt)
@@ -66,9 +66,9 @@ function n_args(f::Function)
     return methods(f).mt.max_args-1
 end
 
-getel{A, T <: A}(::Type{A}, x::T, t::Int, i::Int=1) = x
-getel{A, T <: A}(::Type{A}, x::Vector{T}, t::Int, i::Int=1) = x[t]
-getel{A, T <: A}(::Type{A}, x::Vector{Vector{T}}, t::Int, i::Int) = x[t][i]
+getel(::Type{A}, x::T, t::Int, i::Int=1) where {A, T <: A} = x
+getel(::Type{A}, x::Vector{T}, t::Int, i::Int=1) where {A, T <: A} = x[t]
+getel(::Type{A}, x::Vector{Vector{T}}, t::Int, i::Int) where {A, T <: A} = x[t][i]
 # Issue #64
 getel(T, f::Function, t::Int, i::Int=1) = f(t, i)::T
 
@@ -120,21 +120,21 @@ addcutconstraint!(sense::Min, sp, theta, affexpr) = @constraint(sp, theta >= aff
 addcutconstraint!(sense::Max, sp, theta, affexpr) = @constraint(sp, theta <= affexpr)
 
 
-Base.size{T}(x::CachedVector{T}) = (x.n,)
-function Base.getindex{T}(x::CachedVector{T}, i)
+Base.size(x::CachedVector{T}) where {T} = (x.n,)
+function Base.getindex(x::CachedVector{T}, i) where T
     if i > x.n
         throw(BoundsError(x, i))
     end
     x.data[i]
 end
 
-function Base.setindex!{T}(x::CachedVector{T}, y::T, i)
+function Base.setindex!(x::CachedVector{T}, y::T, i) where T
     if i > x.n
         throw(BoundsError(x, i))
     end
     x.data[i] = y
 end
-function Base.push!{T}(x::CachedVector{T}, y::T)
+function Base.push!(x::CachedVector{T}, y::T) where T
     x.n += 1
     if x.n <= length(x.data)
         x.data[x.n] = y
@@ -144,7 +144,7 @@ function Base.push!{T}(x::CachedVector{T}, y::T)
 end
 CachedVector(T) = CachedVector{T}(T[], 0)
 
-function reset!{T}(x::CachedVector{T})
+function reset!(x::CachedVector{T}) where T
     x.n = 0
 end
 
@@ -172,7 +172,7 @@ function solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model, solutionstore
 end
 hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
 
-function JuMPsolve{T<:IterationDirection}(::Type{T}, ::SDDPModel, sp::JuMP.Model)
+function JuMPsolve(::Type{T}, ::SDDPModel, sp::JuMP.Model) where T<:IterationDirection
     @timeit TIMER "JuMP.solve" begin
         # @assert JuMP.solve(sp) == :Optimal
         status = jumpsolve(sp)

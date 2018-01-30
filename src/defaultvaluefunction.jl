@@ -29,7 +29,7 @@ Return a short string describing the value function
 """
 function summarise end
 
-summarise{C}(::Type{DefaultValueFunction{C}}) = "Default"
+summarise(::Type{DefaultValueFunction{C}}) where {C} = "Default"
 
 """
     initialise_value_function(vf::V, sp::JuMP.Model, sense::OptimisationSense, bound::Real)
@@ -38,7 +38,7 @@ Initialize a value function
 """
 function initializevaluefunction end
 
-function initializevaluefunction{C}(vf::DefaultValueFunction{C}, m::JuMP.Model, sense::OptimisationSense, bound::Real)
+function initializevaluefunction(vf::DefaultValueFunction{C}, m::JuMP.Model, sense::OptimisationSense, bound::Real) where C
     vf.theta = futureobjective!(sense, m, bound)
     vf
 end
@@ -80,7 +80,7 @@ end
 """
 function modifyvaluefunction! end
 
-function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings::Settings, sp::JuMP.Model)
+function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Model) where V<:DefaultValueFunction
     ex = ext(sp)
     vf = valueoracle(sp)
     I = 1:length(m.storage.objective)
@@ -123,7 +123,7 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
     end
 end
 
-function addcut!{V<:DefaultValueFunction}(m::SDDPModel{V}, sp::JuMP.Model, cut::Cut)
+function addcut!(m::SDDPModel{V}, sp::JuMP.Model, cut::Cut) where V<:DefaultValueFunction
     vf = valueoracle(sp)
     # store cut in oracle
     storecut!(cutoracle(vf), m, sp, cut)
@@ -170,7 +170,7 @@ end
 """
 function rebuildsubproblem! end
 
-function rebuildsubproblem!{C<:AbstractCutOracle}(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model)
+function rebuildsubproblem!(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Model) where C<:AbstractCutOracle
     vf = valueoracle(sp)
     n = n_args(m.build!)
     ex = ext(sp)
@@ -212,7 +212,7 @@ in `solve`.
 """
 function loadcuts! end
 
-function loadcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
+function loadcuts!(m::SDDPModel{DefaultValueFunction{C}}, filename::String) where C
     open(filename, "r") do file
         while true
             line      = readline(file)
@@ -243,7 +243,7 @@ Used to pass cuts between processors
 """
 function asynccutstoragetype end
 
-asynccutstoragetype{C}(::Type{DefaultValueFunction{C}}) = Tuple{Int, Int, Cut}
+asynccutstoragetype(::Type{DefaultValueFunction{C}}) where {C} = Tuple{Int, Int, Cut}
 
 """
     addasynccut!(m::SDDPModel{V}, cut::T)
@@ -252,7 +252,7 @@ Where T is asyncutstoragetype(V)
 """
 function addasynccut end
 
-function addasynccut!{C}(m::SDDPModel{DefaultValueFunction{C}}, cut::Tuple{Int, Int, Cut})
+function addasynccut!(m::SDDPModel{DefaultValueFunction{C}}, cut::Tuple{Int, Int, Cut}) where C
     sp = getsubproblem(m, cut[1], cut[2])
     addcut!(m, sp, cut[3])
 end

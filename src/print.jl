@@ -4,7 +4,7 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-function printheader{T}(io::IO, m::SDDPModel{T}, solve_type)
+function printheader(io::IO, m::SDDPModel{T}, solve_type) where T
     n = length(m.stages)
     println(io, """-------------------------------------------------------------------------------
                               SDDP.jl © Oscar Dowson, 2017-2018
