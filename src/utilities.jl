@@ -172,9 +172,17 @@ function solvesubproblem!(direction, m::SDDPModel, sp::JuMP.Model, solutionstore
 end
 hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
 
+function presolve!(direction, m, sp)
+    nothing
+end
+function postsolve!(direction, m, sp)
+    nothing
+end
+
 function JuMPsolve(::Type{T}, ::SDDPModel, sp::JuMP.Model) where T<:IterationDirection
     @timeit TIMER "JuMP.solve" begin
         # @assert JuMP.solve(sp) == :Optimal
+        presolve!(direction, m, sp)
         status = jumpsolve(sp)
         if status != :Optimal
             filepath = joinpath(pwd(), "infeasible_subproblem.mps")
@@ -187,8 +195,11 @@ function JuMPsolve(::Type{T}, ::SDDPModel, sp::JuMP.Model) where T<:IterationDir
             Consider reformulating the model or try different solver parameters.
             """)
         end
+        postsolve!(direction, m, sp)
     end
 end
+
+
 
 """
     SDDP.savemodel!(filename::String, m::SDDPModel)
