@@ -179,7 +179,7 @@ function postsolve!(direction, m, sp)
     nothing
 end
 
-function JuMPsolve(::Type{T}, ::SDDPModel, sp::JuMP.Model) where T<:IterationDirection
+function JuMPsolve(direction::Type{T}, m::SDDPModel, sp::JuMP.Model) where T<:IterationDirection
     @timeit TIMER "JuMP.solve" begin
         # @assert JuMP.solve(sp) == :Optimal
         presolve!(direction, m, sp)
