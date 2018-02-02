@@ -88,12 +88,12 @@ end
 
 Launch a browser and render the SimulationPlot plot `p`.
 """
-function show(p::SimulationPlot)
+function Base.show(p::SimulationPlot)
 	html = prephtml(p)
 	launch_file(html, SIMULATION_ASSETS)
 end
 
-function show(filename::String, p::SimulationPlot)
+function Base.show(filename::String, p::SimulationPlot)
 	html = prephtml(p)
 	launch_file(html, SIMULATION_ASSETS, filename)
 end
