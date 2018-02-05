@@ -116,7 +116,7 @@ status = SDDP.solve(m,
 @test status == :time_limit
 results = simulate(m, 1000, [:C, :S, :price, :s, :d, :b])
 @test length(results) == 1000
-@test getbound(m) <= 11.43
+@test getbound(m) <= 12.0
 
 # SDDP.save!("results.julia", results)
 # plt = SDDP.newplot()
