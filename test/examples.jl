@@ -46,7 +46,6 @@ const Examples = Dict(
             "contracting.jl",
             "newsvendor.jl",
             "widget_producer.jl"
-            # "mccardle_farm.jl"
         ]
 
 )

@@ -62,6 +62,7 @@ function newsvendor_example(DISCRETIZATION = 1)
 end
 
 m = newsvendor_example()
+srand(123)
 status = SDDP.solve(m, max_iterations = 50, time_limit     = 20.0)
 @test status == :max_iterations
 @test getbound(m) .<= 4.098

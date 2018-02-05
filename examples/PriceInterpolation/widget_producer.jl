@@ -107,6 +107,7 @@ function widget_producer_example(DISCRETIZATION = 1)
 end
 
 m = widget_producer_example()
+srand(123)
 status = SDDP.solve(m,
     time_limit     = 20.0,
     simulation = MonteCarloSimulation(
