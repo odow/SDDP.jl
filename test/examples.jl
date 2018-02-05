@@ -41,7 +41,14 @@ const Examples = Dict(
         ],
     "Agriculture" => [
             "mccardle_farm.jl"
+        ],
+    "PriceInterpolation" => [
+            "contracting.jl",
+            "newsvendor.jl",
+            "widget_producer.jl"
+            # "mccardle_farm.jl"
         ]
+
 )
 
 @testset "Examples" begin
@@ -49,7 +56,7 @@ const Examples = Dict(
         @testset "$(key)" begin
             for example in examples
                 @testset "$example" begin
-                    println("Running $(example)")
+                    println("Running $(key):$(example)")
                     include(joinpath(examples_dir, key, example))
                 end
             end
