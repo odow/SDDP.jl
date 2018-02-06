@@ -32,16 +32,16 @@ simulate
 getbound
 newplot
 addplot!
-show
+show(::SDDP.SimulationPlot)
 plotvaluefunction
 ```
 
 ## Read and write the model to disk
 
 ```@docs
-    loadcuts!
-    savemodel!
-    loadmodel
+loadcuts!
+savemodel!
+loadmodel
 ```
 
 ## Extras for Experts
