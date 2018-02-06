@@ -51,37 +51,51 @@ function _processvaluefunctiondata(prices, cuts::Vector{Cut}, minprice::Float64,
     if length(states) != size(A, 2) + 1
         error("Incorrect number of states specified")
     end
-    free_args = Int[]
+    free_states = Int[]
     for (i, state) in enumerate(states[1:(end-1)])
         if isa(state, Float64)
             fix_state!(m, i, state)
         else
-            push!(free_args, i)
+            push!(free_states, i)
         end
     end
     sense = JuMP.getobjectivesense(m)
     yi = Float64[]
     if isa(states[end], Real)
+        # price is fixed. Check one or two convex state is free
+        @assert 1 <= length(free_states) <= 2
+        # fix the objective
         JuMP.setobjective(m, sense, states[end] * m[:mu] + m[:phi])
-        # free states
-        if length(free_args) == 1
-            x = states[free_args[1]]'
+        # build x array
+        if length(free_states) == 1
+            # one-dimensional
+            x = states[free_states[1]]'
         else
-            x = mesh(states[free_args[1]], states[free_args[2]])
+            @assert length(free_states) == 2
+            # two-dimensional
+            x = mesh(states[free_states[1]], states[free_states[2]])
         end
         for i in 1:size(x, 2)
-            get_best_value!(yi, m, free_args, x[:, i])
+            get_best_value!(yi, m, free_states, x[:, i])
         end
     else
-        # Must be one other free state
-        if length(free_args) == 1
-            x = mesh(states[free_args[1]], states[end])
+        # price is free. Check 0 or 1 convex state is free
+        @assert 0 <= length(free_states) <= 1
+        @assert length(states[end]) > 1
+        # build x array
+        if length(free_states) == 1
+            x = mesh(states[free_states[1]], states[end])
+            for i in 1:size(x, 2)
+                get_best_value!(yi, m, free_states, x[1,i], x[2,i])
+            end
         else
-            x = zeros(Float64, (0, length(states[end])))
+            @assert length(free_states) == 0
+            x = states[end]'
+            for pi in x
+                get_best_value!(yi, m, [], [], pi)
+            end
         end
-        for i in 1:size(x, 2)
-            get_best_value!(yi, m, free_args, x[1, i], x[2, i])
-        end
+
     end
     return x, yi
 end

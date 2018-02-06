@@ -58,10 +58,6 @@ function setstageobjective!(vf::PriceInterpolationMethods, sp::JuMP.Model, obj::
     vf.objective = obj
 end
 
-function writeasynccut!{T}(io, cut::Tuple{Int, Int, T, Cut})
-    writecut!(io, cut...)#[1], cut[2], cut[3], cut[4])
-end
-
 # ==============================================================================
 
 samplepricenoise{T}(stage::Int, noises::DiscreteDistribution{T}, solutionstore::Void) = sample(noises)
@@ -69,7 +65,8 @@ samplepricenoise{T}(stage::Int, noises::DiscreteDistribution{T}, solutionstore::
 function samplepricenoise{T}(stage::Int, noises::DiscreteDistribution{T}, solutionstore::Dict{Symbol, Any})
     if haskey(solutionstore, :pricenoise)
         @assert length(solutionstore[:pricenoise])>=stage
-        return observation(getnoise(noises, solutionstore[:pricenoise][stage]))
+        noiseidx = solutionstore[:pricenoise][stage]
+        return observation(noises[noiseidx])
     else
         return sample(noises)
     end

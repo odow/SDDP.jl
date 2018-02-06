@@ -127,16 +127,40 @@ srand(123)
 SDDP.solve(m, max_iterations = 50, cut_selection_frequency=10, print_level=2)
 @test SDDP.getbound(m) <= 175.0
 
+# historical simulation
+results = simulate(m, [:production, :contracts],
+    noises=fill(2, 24), pricenoises=fill(10, 24)
+)
+@test isapprox(results[:objective], 181, atol=1)
+results = simulate(m, 500)
+@test isapprox(mean(r[:objective] for r in results), 171.0, atol=1.0)
+
 # 3 fixed ribs
 m3 = contracting_example(3)
 srand(123)
-SDDP.solve(m3, max_iterations = 10, cut_selection_frequency=5)
+SDDP.solve(m3, max_iterations = 10, cut_selection_frequency=5, print_level=0)
 @test SDDP.getbound(m3) <= 150.0
+
+# historical simulation
+results = simulate(m3, [:production, :contracts],
+    noises=fill(2, 24), pricenoises=fill(10, 24)
+)
+@test isapprox(results[:objective], 181.0, atol=1)
+results = simulate(m3, 500)
+@test isapprox(mean(r[:objective] for r in results), 177.0, atol=1.0)
 
 # 5 fixed ribs
 m5 = contracting_example(5)
 srand(123)
 SDDP.solve(m5, max_iterations = 10)
 @test SDDP.getbound(m5) <= 150.0
+
+# historical simulation
+results = simulate(m5, [:production, :contracts],
+    noises=fill(2, 24), pricenoises=fill(10, 24)
+)
+@test isapprox(results[:objective], 182.0, atol=1)
+results = simulate(m5, 500)
+@test isapprox(mean(r[:objective] for r in results), 179.0, atol=1.0)
 
 @test SDDP.getbound(m5) <= SDDP.getbound(m3)
