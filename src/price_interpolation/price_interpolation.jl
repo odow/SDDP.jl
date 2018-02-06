@@ -22,6 +22,7 @@ mutable struct StaticPriceInterpolation{C<:AbstractCutOracle, T, T2} <: Abstract
     noises::DiscreteDistribution{T2}
     objective::Function
     dynamics::Function
+    bound::Float64
 end
 
 #=

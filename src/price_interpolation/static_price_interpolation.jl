@@ -53,13 +53,15 @@ function StaticPriceInterpolation{T}(;
         typeof(cut_oracle)[],
         noise,
         (p)->QuadExpr(p),
-        dynamics
+        dynamics,
+        0.0
     )
 end
 
 summarise{V<:StaticPriceInterpolation}(::Type{V}) = "Static Price Interpolation"
 
 function initializevaluefunction{C<:AbstractCutOracle, T, T2}(vf::StaticPriceInterpolation{C, T, T2}, m::JuMP.Model, sense, bound)
+    vf.bound = bound
     for r in vf.rib_locations
         push!(vf.variables, futureobjective!(sense, m, bound))
         push!(vf.cutoracles, C())
@@ -177,5 +179,5 @@ function processvaluefunctiondata{C,T2}(vf::StaticPriceInterpolation{C,Float64,T
             push!(prices, price)
         end
     end
-    _processvaluefunctiondata(prices, cuts, minimum(prices), maximum(prices), is_minimization, states...)
+    _processvaluefunctiondata(prices, cuts, minimum(prices), maximum(prices), is_minimization, Inf, vf.bound, states...)
 end

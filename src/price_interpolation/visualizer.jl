@@ -6,20 +6,20 @@
 
 using Clp
 
-function initialize_minimizer(p::Vector{Float64}, b::Vector{Float64}, A::Array{Float64, 2}, is_minimization::Bool, pmin::Float64, pmax::Float64)
+function initialize_minimizer(p::Vector{Float64}, b::Vector{Float64}, A::Array{Float64, 2}, is_minimization::Bool, pmin::Float64, pmax::Float64, lipschitz_constant::Float64, bound::Float64)
     m = Model(solver=ClpSolver())
-    @variable(m, mu)
+    @variable(m, -lipschitz_constant <= mu <= lipschitz_constant)
     @variable(m, phi)
     @variable(m, x[1:size(A, 2)])
     if is_minimization
         @constraint(m, [i=1:size(A, 1)], p[i] * mu + phi >= b[i] + dot(A[i,:], x))
-        @constraint(m, pmin * mu + phi >= -1e9)
-        @constraint(m, pmax * mu + phi >= -1e9)
+        @constraint(m, pmin * mu + phi >= bound)
+        @constraint(m, pmax * mu + phi >= bound)
         @objective(m, Min, 0 * mu + phi)
     else
         @constraint(m, [i=1:size(A, 1)], p[i] * mu + phi <= b[i] + dot(A[i,:], x))
-        @constraint(m, pmin * mu + phi <= 1e9)
-        @constraint(m, pmax * mu + phi <= 1e9)
+        @constraint(m, pmin * mu + phi <= bound)
+        @constraint(m, pmax * mu + phi <= bound)
         @objective(m, Max, 0 * mu + phi)
     end
     @constraint(m, rhs, x .== zeros(size(A, 2)))
@@ -44,10 +44,10 @@ function get_best_value!(yi::Vector{Float64}, m, args, x, price)
 end
 
 
-function _processvaluefunctiondata(prices, cuts::Vector{Cut}, minprice::Float64, maxprice::Float64, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...)
+function _processvaluefunctiondata(prices, cuts::Vector{Cut}, minprice::Float64, maxprice::Float64, is_minimization::Bool, lipschitz_constant, bound, states::Union{Float64, AbstractVector{Float64}}...)
 
     A, b = getAb(cuts)
-    m = initialize_minimizer(prices, b, A, is_minimization, minprice, maxprice)
+    m = initialize_minimizer(prices, b, A, is_minimization, minprice, maxprice, lipschitz_constant, bound)
     if length(states) != size(A, 2) + 1
         error("Incorrect number of states specified")
     end

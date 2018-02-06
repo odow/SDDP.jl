@@ -220,14 +220,13 @@ end
 function processvaluefunctiondata{C,T2}(vf::DynamicPriceInterpolation{C,Float64, T2}, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...)
     cuts = [c[1] for c in vf.oracle.cuts]
     prices = [c[2] for c in vf.oracle.cuts]
-    _processvaluefunctiondata(prices, cuts, vf.minprice, vf.maxprice, is_minimization, states...)
+    _processvaluefunctiondata(prices, cuts, vf.minprice, vf.maxprice, is_minimization, vf.lipschitz_constant, vf.bound, states...)
 end
 
 function postsolve!(::Type{ForwardPass}, m::SDDPModel{DynamicPriceInterpolation{V,T,T2}}, sp::JuMP.Model) where V <: NanniciniOracle where T where T2
-    # we also need to overload the solve on the backward pass to record when
-    # cuts are utilized. Alternatively, we could do this on the forward pass
-    # and only increment cuts when the get used there, but this samples more
-    # widely.
+    # we also need to overload the solve on the forward pass to record when
+    # cuts are utilized. Alternatively, we could do this on the backward pass
+    # to sample more widely.
     oracle = valueoracle(sp).oracle
     for i in 0:(oracle.cutsinmodel-1)
         if abs(sp.linconstrDuals[end-i]) > 1e-6

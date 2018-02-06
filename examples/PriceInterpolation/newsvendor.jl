@@ -116,3 +116,79 @@ for discretization in [1, 3]
     @test_throws Exception SDDP.processvaluefunctiondata(vf, false, 0:0.1:3)
 
 end
+
+#
+#   The following code makes a pretty nifty animation that demonstrates the
+#   steps in the algorithm.
+#   https://user-images.githubusercontent.com/8177701/35888751-bf215ff4-0bfd-11e8-90a8-320aa4f84f70.gif
+#
+# using Plots, StatPlots
+# const mm = Plots.mm
+# const pt = Plots.pt
+# fntsm = Plots.font("times", 10.0pt)
+# fntlg = Plots.font("times", 12.0pt)
+# default(titlefont=fntlg, guidefont=fntlg, tickfont=fntsm, legendfont=fntsm,left_margin=10mm,bottom_margin=7.5mm)
+# default(size=(800,600),top_margin=0mm, right_margin=0mm)
+#
+# function make_a_cool_plot()
+#     m = newsvendor_example()
+#     X = 0:0.1:3
+#     Z = 1:0.05:2
+#
+#     # process points
+#     vf = SDDP.valueoracle(SDDP.getsubproblem(m, 2, 1))
+#     push!(vf.oracle.cuts, (SDDP.Cut(6.0, [0.0]), 1.0))
+#     push!(vf.oracle.cuts, (SDDP.Cut(6.0, [0.0]), 2.0))
+#     x, oldy = SDDP.processvaluefunctiondata(vf, false, X, Z)
+#
+#     plot(
+#         legend=false,
+#         camera=(60, 50),
+#         xlims=(1,2),
+#         ylims=(0,3),
+#         zlims=(0, 6)
+#     )
+#
+#     # add wireframe
+#     wireframe!(unique(x[2,:]), unique(x[1,:]),oldy)
+#
+#     # save initial frame
+#     savefig("frame_0.png")
+#
+#     for i in 1:200
+#         # add a cut
+#         status = SDDP.solve(m, max_iterations = 1, print_level=0)
+#
+#         # process points
+#         vf = SDDP.valueoracle(SDDP.getsubproblem(m, 2, 1))
+#         x, y = SDDP.processvaluefunctiondata(vf, false, X, Z)
+#
+#         plot(
+#             legend=false,
+#             camera=(60, 50),
+#             xlims=(1,2),
+#             ylims=(0,3),
+#             zlims=(0, i<=5 ? 6 : 3)
+#         )
+#
+#         # add wireframe
+#         wireframe!(unique(x[2,:]), unique(x[1,:]),y)
+#
+#         # add changed points
+#         diffheights = .!(isapprox.(oldy, y, atol=1e-4))
+#         scatter!(x[2,diffheights], x[1,diffheights],y[diffheights], c="red")
+#
+#         # add cut
+#         plot!(
+#             fill(vf.oracle.cuts[end][2], length(X)),
+#             X,
+#             vf.oracle.cuts[end][1].intercept + vf.oracle.cuts[end][1].coefficients[1] .* X,
+#             c="blue",w=4
+#         )
+#
+#
+#         savefig("frame_$(i).png")
+#         oldy .= y
+#     end
+# end
+# make_a_cool_plot()
