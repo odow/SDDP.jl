@@ -130,7 +130,7 @@ SDDP.solve(m, max_iterations = 50, cut_selection_frequency=10, print_level=2)
 # 3 fixed ribs
 m3 = contracting_example(3)
 srand(123)
-SDDP.solve(m3, max_iterations = 10)
+SDDP.solve(m3, max_iterations = 10, cut_selection_frequency=5)
 @test SDDP.getbound(m3) <= 150.0
 
 # 5 fixed ribs

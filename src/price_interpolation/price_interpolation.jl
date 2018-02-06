@@ -223,7 +223,7 @@ function parsemultipriceline(pricebegin, line)
     price_items = split(line[pricebegin+1:priceend-1], ",")
     price = tuple([parse(Float64, p) for p in price_items]...)
     items = split(line[priceend+2:end], ",")
-    ms = parse(Int, items[1])
+    markov_state = parse(Int, items[1])
     intercept = parse(Float64, items[2])
     coefficients = [parse(Float64, i) for i in items[3:end]]
     cut = Cut(intercept, coefficients)
@@ -247,3 +247,4 @@ end
 
 include("static_price_interpolation.jl")
 include("dynamic_price_interpolation.jl")
+include("visualizer.jl")

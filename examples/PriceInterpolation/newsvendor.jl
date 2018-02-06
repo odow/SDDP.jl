@@ -73,7 +73,7 @@ end
 for discretization in [1, 3]
     m = newsvendor_example(discretization)
     srand(123)
-    status = SDDP.solve(m, max_iterations = 50, cut_output_file="price.cuts")
+    status = SDDP.solve(m, max_iterations = 50, cut_output_file="price.cuts", print_level=0)
     @test status == :max_iterations
     @test getbound(m) .<= 4.098
 
@@ -85,6 +85,18 @@ for discretization in [1, 3]
     end
     SDDP.solve(m2, max_iterations=0, print_level=0)
     @test isapprox(getbound(m2), getbound(m), atol=1e-4)
+
+    # test value function plotting without launching a plot
+    sp = SDDP.getsubproblem(m, 2, 1)
+    vf = SDDP.valueoracle(sp)
+    x, y = SDDP.processvaluefunctiondata(vf, false, 0:0.1:3, 1:0.05:2)
+    @test size(x) == (2,651)
+    @test size(y) == (651,)
+    # SDDP.plotvaluefunction(m, 2, 1, 0:0.1:3, 1:0.05:2)
+
+    x, y = SDDP.processvaluefunctiondata(vf, false, 0:0.1:3, 1.5)
+    @test size(x) == (1,31)
+    @test size(y) == (31,)
+    # SDDP.plotvaluefunction(m, 2, 1, 0:0.1:3, 1.5)
+
 end
-# SDDP.plotvaluefunction(m, 2, 1, linspace(0.0, 1, 50), linspace(1, 2, 50), label1 = "x", label2="price")
-# SDDP.plotvaluefunction(m, 2, 1, 0.0:0.25:3, label1 = "x")

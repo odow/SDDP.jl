@@ -78,7 +78,7 @@ end
 function buildmodel(USE_AR1, valley_chain)
     valuefunction = priceprocess(USE_AR1)
     return SDDPModel(
-                sense           = :Max,
+                sense           = :Min,
                 stages          = 12,
                 objective_bound = 50_000.0,
                 solver          = ClpSolver(),
@@ -109,9 +109,17 @@ function buildmodel(USE_AR1, valley_chain)
             maxflow[i=1:N], outflow[i] <= reservoir0[i]
         end)
         if USE_AR1
-            @stageobjective(sp, (price)-> price*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N))
+            @stageobjective(sp,
+                price -> sum(
+                    valley_chain[i].spill_cost * spill[i] for i in 1:N
+                    ) - price * generation_quantity
+            )
         else
-            @stageobjective(sp, (price)-> price[1]*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N))
+            @stageobjective(sp,
+                price -> sum(
+                    valley_chain[i].spill_cost * spill[i] for i in 1:N
+                    ) - price[1] * generation_quantity
+            )
         end
     end
 end
@@ -135,6 +143,9 @@ function runpaper(USE_AR1, valley_chain, name)
     SDDP.show("$(name).html", plt)
 end
 
+#=
+    These were the commands used to run the examples in the paper
+=#
 # runpaper(
 #     true,
 #     [
@@ -163,5 +174,23 @@ m = buildmodel(false, [
     ]
 )
 srand(123)
-solve(m, max_iterations = 20, print_level=0)
-@test getbound(m) <= 40_000
+solve(m, max_iterations = 20, print_level=0, cut_output_file="river.cuts")
+@test getbound(m) >= -40_000
+
+# test cut round trip with multiple price dimensions
+srand(123)
+m2 = buildmodel(false, [
+        PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+        PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0])
+    ]
+)
+try
+    SDDP.loadcuts!(m2, "river.cuts")
+finally
+    rm("river.cuts")
+end
+srand(123)
+SDDP.solve(m, max_iterations=1, print_level=0)
+srand(123)
+SDDP.solve(m2, max_iterations=1, print_level=0)
+@test isapprox(getbound(m2), getbound(m), atol=1e-4)
