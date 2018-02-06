@@ -7,7 +7,7 @@
 function newsolutionstore(X::Vector{Symbol})
     d = Dict(
         :markov         => Int[],
-        :noise       => Int[],
+        :noiseidx       => Int[],
         :obj            => Float64[],
         :stageobjective => Float64[]
     )
@@ -27,7 +27,7 @@ function storekey!(::Type{Val{:markov}}, store, markov::Int, noiseidx::Int, sp::
     end
 end
 
-function storekey!(::Type{Val{:noise}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
+function storekey!(::Type{Val{:noiseidx}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
     if length(store) < t
         push!(store, noiseidx)
     else
@@ -82,7 +82,7 @@ function simulate(m::SDDPModel,
     store = newsolutionstore(variables)
     for t in 1:length(m.stages)
         push!(store[:markov], markovstates[t])
-        push!(store[:noise], noises[t])
+        push!(store[:noiseidx], noises[t])
     end
     obj = forwardpass!(m, Settings(), store)
     store[:objective] = obj
@@ -103,7 +103,7 @@ to the variables specified in the function call, other special keys are:
  - `:stageobjective` - costs incurred during the stage (not future)
  - `:obj`            - objective of the stage including future cost
  - `:markov`         - index of markov state visited
- - `:noise`          - index of noise visited
+ - `:noiseidx`       - index of noise visited
  - `:objective`      - Total objective of simulation
 
 All values can be accessed as follows

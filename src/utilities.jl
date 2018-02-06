@@ -156,7 +156,7 @@ end
 samplesubproblem(stage::Stage, last_markov_state::Int, solutionstore::Void) = samplesubproblem(stage, last_markov_state)
 
 function samplesubproblem(stage::Stage, last_markov_state, solutionstore::Dict{Symbol, Any})
-    if length(solutionstore[:noise]) >= stage.t
+    if length(solutionstore[:noiseidx]) >= stage.t
         idx = solutionstore[:markov][stage.t]
         return idx, getsubproblem(stage, idx)
     else

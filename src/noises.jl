@@ -19,8 +19,8 @@ function samplenoise(sp::JuMP.Model)
 end
 samplenoise(sp::JuMP.Model, solutionstore::Void) = samplenoise(sp)
 function samplenoise(sp::JuMP.Model, solutionstore::Dict{Symbol, Any})
-    if length(solutionstore[:noise])>=ext(sp).stage
-        idx = solutionstore[:noise][ext(sp).stage]
+    if length(solutionstore[:noiseidx])>=ext(sp).stage
+        idx = solutionstore[:noiseidx][ext(sp).stage]
         return idx, ext(sp).noises[idx]
     else
         return samplenoise(sp)
