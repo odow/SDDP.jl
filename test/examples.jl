@@ -45,7 +45,8 @@ const Examples = Dict(
     "PriceInterpolation" => [
             "simple_contracting.jl",
             "newsvendor.jl",
-            "widget_producer.jl"
+            "widget_producer.jl",
+            "riverchain.jl"
         ]
 
 )

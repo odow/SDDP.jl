@@ -67,8 +67,8 @@ function initializevaluefunction{C<:AbstractCutOracle, T, T2}(vf::StaticPriceInt
     vf
 end
 
-# stage, markov, price idx, cut
-asynccutstoragetype{V<:StaticPriceInterpolation}(::Type{V}) = Tuple{Int, Int, Int, Cut}
+# stage, markov, price, cut
+asynccutstoragetype{C<:AbstractCutOracle, T, T2}(::Type{StaticPriceInterpolation{C, T, T2}}) = Tuple{Int, Int, T, Cut}
 
 function interpolate(vf::StaticPriceInterpolation)
     y = AffExpr(0.0)
@@ -85,7 +85,6 @@ function interpolate(vf::StaticPriceInterpolation)
         lower_idx = upper_idx - 1
         lambda = (vf.location - vf.rib_locations[lower_idx]) / (vf.rib_locations[upper_idx] - vf.rib_locations[lower_idx])
         if (lambda < 0.0) || (lambda > 1.0)
-            @show lambda
             error("The location $(vf.location) is outside the interpolated region.")
         end
 
@@ -101,14 +100,14 @@ function updatevaluefunction!{V<:StaticPriceInterpolation}(m::SDDPModel{V}, sett
     for (i, (rib, theta, cutoracle)) in enumerate(zip(vf.rib_locations, vf.variables, vf.cutoracles))
         cut = constructcut(m, sp, ex, t, rib)
         if !settings.is_asyncronous && isopen(settings.cut_output_file)
-            writecut!(settings.cut_output_file, cut, ex.stage, ex.markovstate, i)
+            writecut!(settings.cut_output_file, ex.stage, ex.markovstate, rib, cut)
         end
 
         storecut!(cutoracle, m, sp, cut)
         addcuttoJuMPmodel!(vf, sp, theta, cut)
 
         if settings.is_asyncronous
-            storeasynccut!(m, sp, i, cut)
+            storeasynccut!(m, sp, rib, cut)
         end
     end
 end
@@ -118,11 +117,15 @@ function addcuttoJuMPmodel!(vf::StaticPriceInterpolation, sp::JuMP.Model, theta:
     addcutconstraint!(ext(sp).sense, sp, theta, affexpr)
 end
 
-function addasynccut!{V<:StaticPriceInterpolation}(m::SDDPModel{V}, cut::Tuple{Int, Int, Int, Cut})
+function addasynccut!{C<:AbstractCutOracle, T, T2}(m::SDDPModel{StaticPriceInterpolation{C,T,T2}}, cut::Tuple{Int, Int, T, Cut})
     sp = getsubproblem(m, cut[1], cut[2])
     vf = valueoracle(sp)
-    storecut!(vf.cutoracles[cut[3]], m, sp, cut[4])
-    addcuttoJuMPmodel!(vf, sp, vf.variables[cut[3]], cut[4])
+    price_idx = findfirst(vf.rib_locations, cut[3])
+    if price_idx < 1
+        error("Attempting to add a cut at the price $(cut[3]), but there is no rib in the value function. Rib locations are $(vf.rib_locations).")
+    end
+    storecut!(vf.cutoracles[price_idx], m, sp, cut[4])
+    addcuttoJuMPmodel!(vf, sp, vf.variables[price_idx], cut[4])
 end
 
 # ==============================================================================
@@ -175,24 +178,4 @@ function processvaluefunctiondata{C,T2}(vf::StaticPriceInterpolation{C,Float64,T
         end
     end
     _processvaluefunctiondata(prices, cuts, minimum(prices), maximum(prices), is_minimization, states...)
-end
-
-function loadcuts!{V<:StaticPriceInterpolation}(m::SDDPModel{V}, filename::String)
-    open(filename, "r") do file
-        while true
-            line      = readline(file)
-            line == nothing || line == "" && break
-            # stage, price, markovstate, intercept, coefficients...
-            items = split(line, ",")
-            stage = parse(Int, items[1])
-            price = parse(Float64, items[2])
-            ms = parse(Int, items[3])
-            intercept = parse(Float64, items[4])
-            coefficients = [parse(Float64, i) for i in items[5:end]]
-            cut = Cut(intercept, coefficients)
-            vf = valueoracle(getsubproblem(m, stage, ms))
-            price_idx = findfirst(vf.rib_locations, price)
-            addcut!(m, (stage, ms, price_idx, cut))
-        end
-    end
 end

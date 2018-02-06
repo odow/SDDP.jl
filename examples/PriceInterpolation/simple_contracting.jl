@@ -81,7 +81,8 @@ function contracting_example(DISCRETIZATION = 1)
             dynamics       = pricedynamics,
             initial_price  = INITIAL_PRICE,
             rib_locations  =  collect(linspace(MIN_PRICE, MAX_PRICE, DISCRETIZATION)),
-            noise          = NOISES
+            noise          = NOISES,
+                cut_oracle = LevelOneCutOracle(),
         )
     end
 

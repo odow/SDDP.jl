@@ -38,13 +38,9 @@ mutable struct DynamicPriceInterpolation{C<:DynamicCutOracle, T, T2} <: Abstract
     dynamics::Function
     mu::Vector{JuMP.Variable}
     oracle::C
-    # prices::Vector{T}
-    # cuts::Vector{Cut}
     lipschitz_constant::Float64
     bound::Float64
 end
-
-
 
 # methods used by both types
 
@@ -63,9 +59,8 @@ function setstageobjective!(vf::PriceInterpolationMethods, sp::JuMP.Model, obj::
 end
 
 function writeasynccut!{T}(io, cut::Tuple{Int, Int, T, Cut})
-    writecut!(io, cut[1], cut[2], cut[3], cut[4])
+    writecut!(io, cut...)#[1], cut[2], cut[3], cut[4])
 end
-
 
 # ==============================================================================
 
@@ -112,7 +107,6 @@ function setobjective!(sp::JuMP.Model, price, noise)
     end
 end
 
-
 function passpriceforward!{V<:PriceInterpolationMethods}(m::SDDPModel{V}, sp::JuMP.Model)
     stage = ext(sp).stage
     if stage < length(m.stages)
@@ -124,9 +118,9 @@ function passpriceforward!{V<:PriceInterpolationMethods}(m::SDDPModel{V}, sp::Ju
 end
 
 function storekey!(::Type{Val{:price}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
-    # println("During save: $(valueoracle(sp).location)")
     push!(store, valueoracle(sp).location)
 end
+
 function storekey!(::Type{Val{:pricenoise}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int)
     nothing
 end
@@ -207,6 +201,48 @@ function simulate{V<:PriceInterpolationMethods}(m::SDDPModel{V},
     obj = forwardpass!(m, Settings(), store)
     store[:objective] = obj
     return store
+end
+
+# ==============================================================================
+#   loadcuts!
+function parsesinglepriceline(line)
+    # stage, price, markovstate, intercept, coefficients...
+    items = split(line, ",")
+    stage = parse(Int, items[1])
+    price = parse(Float64, items[2])
+    markov_state = parse(Int, items[3])
+    intercept = parse(Float64, items[4])
+    coefficients = [parse(Float64, i) for i in items[5:end]]
+    cut = Cut(intercept, coefficients)
+    return stage, markov_state, price, cut
+end
+function parsemultipriceline(pricebegin, line)
+    # stage, (price1, price2, ...), markovstate, intercept, coefficients...
+    stage = parse(Int, split(line[1:pricebegin], ",")[1])
+    priceend = findfirst(line, ')')
+    price_items = split(line[pricebegin+1:priceend-1], ",")
+    price = tuple([parse(Float64, p) for p in price_items]...)
+    items = split(line[priceend+2:end], ",")
+    ms = parse(Int, items[1])
+    intercept = parse(Float64, items[2])
+    coefficients = [parse(Float64, i) for i in items[3:end]]
+    cut = Cut(intercept, coefficients)
+    return stage, markov_state, price, cut
+end
+
+function loadcuts!{V<:PriceInterpolationMethods}(m::SDDPModel{V}, filename::String)
+    open(filename, "r") do file
+        while true
+            line      = readline(file)
+            line == nothing || line == "" && break
+            pricebegin = findfirst(line, '(')
+            if pricebegin == 0
+                addasynccut!(m, parsesinglepriceline(line))
+            else
+                addasynccut!(m, parsemultipriceline(pricebegin, line))
+            end
+        end
+    end
 end
 
 include("static_price_interpolation.jl")

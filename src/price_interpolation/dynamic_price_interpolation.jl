@@ -79,8 +79,6 @@ function DynamicPriceInterpolation(;
         dynamics,
         JuMP.Variable[],
         cut_oracle,
-        # typeof(initial_price)[],
-        # Cut[],
         lipschitz_constant,
         0.0
     )
@@ -166,9 +164,6 @@ function updatevaluefunction!{V<:DynamicPriceInterpolation}(m::SDDPModel{V}, set
 end
 
 # ==============================================================================
-#   addcut!
-
-
 
 function addcut!{V<:DynamicPriceInterpolation}(m::SDDPModel{V}, sp::JuMP.Model, current_price, cut::Cut)
     # get the value oracle
@@ -218,44 +213,6 @@ function rebuildsubproblem!(m::SDDPModel{DynamicPriceInterpolation{NanniciniOrac
         addpricecut!(ext(sp2).sense, sp2, cut[2], vf, affexpr)
     end
     m.stages[ex.stage].subproblems[ex.markovstate] = sp2
-end
-
-# ==============================================================================
-#   loadcuts!
-
-function loadcuts!{V<:DynamicPriceInterpolation}(m::SDDPModel{V}, filename::String)
-    open(filename, "r") do file
-        while true
-            line      = readline(file)
-            line == nothing || line == "" && break
-            pricebegin = findfirst(line, '(')
-            if pricebegin == 0
-                # single price
-                # stage, price, markovstate, intercept, coefficients...
-                items = split(line, ",")
-                stage = parse(Int, items[1])
-                price = parse(Float64, items[2])
-                ms = parse(Int, items[3])
-                intercept = parse(Float64, items[4])
-                coefficients = [parse(Float64, i) for i in items[5:end]]
-                cut = Cut(intercept, coefficients)
-                addcut!(m, (stage, ms, price, cut))
-            else
-                # multiple prices
-                # stage, (price1, price2, ...), markovstate, intercept, coefficients...
-                stage = parse(Int, split(line[1:pricebegin], ",")[1])
-                priceend = findfirst(line, ')')
-                price_items = split(line[pricebegin+1:priceend-1], ",")
-                price = tuple([parse(Float64, p) for p in price_items]...)
-                items = split(line[priceend+2:end], ",")
-                ms = parse(Int, items[1])
-                intercept = parse(Float64, items[2])
-                coefficients = [parse(Float64, i) for i in items[3:end]]
-                cut = Cut(intercept, coefficients)
-                addasynccut!(m, (stage, ms, price, cut))
-            end
-        end
-    end
 end
 
 # ==============================================================================

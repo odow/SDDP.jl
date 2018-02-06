@@ -22,7 +22,6 @@
     ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.
 =#
 
-
 using SDDP, JuMP, Clp, Base.Test
 
 function newsvendor_example(DISCRETIZATION = 1)
@@ -35,7 +34,7 @@ function newsvendor_example(DISCRETIZATION = 1)
     NOISES        = DiscreteDistribution([-0.25, -0.125, 0.125, 0.25])
 
     function pricedynamics(price, noise, stage, markov)
-        price + noise
+        clamp(price + noise, MIN_PRICE, MAX_PRICE)
     end
 
     value_function = if DISCRETIZATION == 1
@@ -71,10 +70,21 @@ function newsvendor_example(DISCRETIZATION = 1)
     return m
 end
 
-m = newsvendor_example()
-srand(123)
-status = SDDP.solve(m, max_iterations = 50)
-@test status == :max_iterations
-@test getbound(m) .<= 4.098
+for discretization in [1, 3]
+    m = newsvendor_example(discretization)
+    srand(123)
+    status = SDDP.solve(m, max_iterations = 50, cut_output_file="price.cuts")
+    @test status == :max_iterations
+    @test getbound(m) .<= 4.098
+
+    m2 = newsvendor_example(discretization)
+    try
+        SDDP.loadcuts!(m2,"price.cuts")
+    finally
+        rm("price.cuts")
+    end
+    SDDP.solve(m2, max_iterations=0, print_level=0)
+    @test isapprox(getbound(m2), getbound(m), atol=1e-4)
+end
 # SDDP.plotvaluefunction(m, 2, 1, linspace(0.0, 1, 50), linspace(1, 2, 50), label1 = "x", label2="price")
 # SDDP.plotvaluefunction(m, 2, 1, 0.0:0.25:3, label1 = "x")

@@ -12,18 +12,18 @@
     stagewise dependent price uncertainty. Optimization Online.
 =#
 
-using JuMP, SDDP, Clp
+using JuMP, SDDP, Clp, Base.Test
 
-struct Turbine
+struct PriceTurbine
     flowknots::Vector{Float64}
     powerknots::Vector{Float64}
 end
 
-struct Reservoir
+struct PriceReservoir
     min::Float64
     max::Float64
     initial::Float64
-    turbine::Turbine
+    turbine::PriceTurbine
     spill_cost::Float64
     inflows::Vector{Float64}
 end
@@ -138,8 +138,8 @@ end
 # runpaper(
 #     true,
 #     [
-#         Reservoir(0, 200, 100, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
-#         Reservoir(0, 200, 100, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0])
+#         PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+#         PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0])
 #     ],
 #     "example_one"
 # )
@@ -147,11 +147,21 @@ end
 # runpaper(
 #     false,
 #     [
-#         Reservoir(0, 200, 100, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
-#         Reservoir(0, 200, 100, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
-#         Reservoir(0, 200, 100, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
-#         Reservoir(0, 200, 100, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
-#         Reservoir(0, 200, 100, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0])
+#         PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+#         PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+#         PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+#         PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+#         PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0])
 #     ],
 #     "example_two"
 # )
+
+srand(123)
+m = buildmodel(false, [
+        PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+        PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0])
+    ]
+)
+srand(123)
+solve(m, max_iterations = 20, print_level=0)
+@test getbound(m) <= 40_000
