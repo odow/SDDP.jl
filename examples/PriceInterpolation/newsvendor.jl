@@ -8,7 +8,7 @@
     Example: newsvendor.
 
     This example is based on the classical newsvendor problem, but features
-    and AR(1) spot-price.
+    an AR(1) spot-price.
 
     V(x[t-1], ω[t]) =         max p[t] × u[t]
                        subject to x[t] = x[t-1] - u[t] + ω[t]

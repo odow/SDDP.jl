@@ -6,19 +6,33 @@
 
 using SDDP, JuMP, Clp, Base.Test
 
+"""
+    widget_producer_example(DISCRETIZATION = 1)
+
+Create an instance of the widget producer example. `DISCRETIZATION` sets the
+number of static ribs in the price dimension. The default, `DISCRETIZATION`=1`
+uses the dynamic method instead.
+"""
 function widget_producer_example(DISCRETIZATION = 1)
 
     srand(10)
-
+    # number of stages
+    T = 12
+    # Initial Price
     P₀ = 1.0
+    # Long-run mean
     μ = 1.0
+    # Mean-reversion factor
     ρ = 0.05
+    # distribution of price noises
     Φ = DiscreteDistribution([-0.050, -0.025, 0.0, 0.025, 0.050])
+    # Minimum price
     Pₗ  = 0.0
+    # Maximum price
     Pᵤ = 2.0
-
+    # Price dynamics
     function pricedynamics(price, noise, stage, markov)
-        if stage == 1
+        if stage == 1 # Stage 1 is deterministic
             return price
         end
         return price - ρ * (price - μ) + noise
@@ -47,7 +61,7 @@ function widget_producer_example(DISCRETIZATION = 1)
 
     m = SDDPModel(
         sense             = :Max,
-        stages            = 12,
+        stages            = T,
         objective_bound   = 50.0,
         solver            = ClpSolver(),
         # risk_measure      = NestedAVaR(lambda=0.5, beta=0.25),
@@ -68,38 +82,60 @@ function widget_producer_example(DISCRETIZATION = 1)
         ψ = 0.01
         # spot premium to buy
         κ = 5.0
+        # max contracts to sell
+        cₘ = 10
 
         @states(sp, begin
-            C[1:M] >= 0, C0 == 0
-            S[1:P] >= 0, S0 == 0
-            w      >= 0, w0 == 1
+            C[1:M] >= 0, C0 == 0 # number of contracts in future months 1,2,M
+            S[1:P] >= 0, S0 == 0 # stock levels in perishability levels
+            w      >= 0, w0 == 1 # factory is operating 1=true, 0=false
         end)
         @variables(sp, begin
-            d[1:P] >= 0
-            s[1:P] >= 0
-            c[1:M] >= 0
-            b      >= 0
+            d[1:P] >= 0 # deliver to contracts from perishability level p
+            s[1:P] >= 0 # sell on spot market from perishability level p
+            c[1:M] >= 0 # sell contracts m months in the future
+            b      >= 0 # buy widgets from spot
         end)
         @constraints(sp, begin
+            # age contracts + new sales
             [m=1:(M-1)], C[m] == C0[m+1] + c[m]
+            # in final month, only new sales
             C[M] == c[M]
-            c .<= 10
+            # cannot sell more than cₘ
+            c .<= cₘ
 
+            # factory cannot restart once shut
             w <= w0
+
+            # initial stock is production plus buys,
+            # less spot sales and deliveries.
+            # if factory is operating (w=1), one unit is produced, otherwise,
+            # 0 units are produced.
             S[1] == w - s[1] - d[1] + b
+            # age the stock less spot sales and deliveries
             [p=2:P], S[p] == λ[p] * S0[p-1] - s[p] - d[p]
 
+            # ensure deliveries meet contracted amount
             C0[1] == sum(d[p] for p in 1:P)
-            [m=1:M; m>12-t], c[m] == 0
+
+            # can't offer a contract past final stage
+            [m=1:M; m>T-t], c[m] == 0
         end)
         if t != 1
+            # first stage is deterministic
+            # otherwise there is a smal probabilty of shut-down
             @rhsnoise(sp, ω=Ω, w <= SDDP.observation(ω))
             setnoiseprobability!(sp, [SDDP.probability(ω) for ω in Ω])
         end
+
         @stageobjective(sp, price -> price * (
+                # spot sales
                 sum(s[p] for p in 1:P) +
+                # contracts with contango
                 sum(γ[m] * c[m] for m in 1:M) -
+                # spot buys
                 κ * b
+                # transaction cost
             ) - ψ * sum(c[m] for m in 1:M)
         )
     end

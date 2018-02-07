@@ -29,7 +29,8 @@
     1, or 2 with equal probability.
 
     In addition, the producer can sell contracts in the futures market (this
-    incurs a transaction cost for each contract). We introduce a state variable `contracts[t]` which counts the number of contracts sold at the end of
+    incurs a transaction cost for each contract). We introduce a state variable
+    `contracts[t]` which counts the number of contracts sold at the end of
     stage `t`.
         contracts[t] = contracts[t-1] + sell[t].
 
