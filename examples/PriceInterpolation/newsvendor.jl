@@ -129,6 +129,7 @@ end
 # fntlg = Plots.font("times", 12.0pt)
 # default(titlefont=fntlg, guidefont=fntlg, tickfont=fntsm, legendfont=fntsm,left_margin=10mm,bottom_margin=7.5mm)
 # default(size=(800,600),top_margin=0mm, right_margin=0mm)
+# gr()
 #
 # function make_a_cool_plot()
 #     m = newsvendor_example()
