@@ -1,3 +1,6 @@
+#### 7/February/2018
+- Added price interpolation value functions (#86)
+
 #### 30/January/2018
 - !! Removed support for Julia v0.5 (#77)
 - Made changes on the backend that will impact developers of new value-functions.
