@@ -425,7 +425,11 @@ end
 
 ## Solving the problem efficiently
 
+... still to do ...
+
 ## Understanding the solution
+
+... still to do ...
 
 ### Simulating the policy
 
@@ -562,3 +566,38 @@ The risk measure `WorstCase()` can now be used in any SDDP model.
     This method gets called a lot, so the usual Julia performance tips apply.
 
 ### New cut oracles
+
+SDDP.jl makes it easy to create new cut oracles. In the following example, we
+give the code to implmeent a cut-selection heuristic that only stores the `N`
+most recently discovered cuts. First, we define a new Julia type that is a
+sub-type of the abstract type [`SDDP.AbstractCutOracle`](@ref) defined by
+SDDP.jl:
+```julia
+struct LastCutOracle{N} <: SDDP.AbstractCutOracle
+    cuts::Vector{SDDP.Cut}
+end
+LastCutOracle(N::Int) = LastCutOracle{N}(SDDP.Cut[])
+```
+`LastCutOracle` has the type parameter `N` to store the maximum number of
+most-recent cuts to return. The type has the field `cuts` to store a vector of
+discovered cuts. More elaborate cut-selection heuristics may need additional
+fields to store other information. Next, we overload the
+[`SDDP.storecut!`](@ref) method. This method should store the cut `c` in the
+oracle `o` so that it can be queried later. In our example, we append the cut to
+the list of discovered cuts inside the oracle:
+```julia
+function SDDP.storecut!{N}(o::LastCutOracle{N},
+        m::SDDPModel, sp::JuMP.Model, c::SDDP.Cut)
+    push!(o.cuts, c)
+end
+```
+
+Lastly, we overload the [`SDDP.validcuts`](@ref) method. In our example, the
+strategy is to return the `N` most recent cuts. Therefore:
+```julia
+function SDDP.validcuts{N}(o::LastCutOracle{N})
+    return o.cuts[max(1,end-N+1):end]
+end
+```
+
+The cut oracle `LastCutOracle(N)` can now be used in any SDDP model.

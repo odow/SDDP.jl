@@ -187,6 +187,18 @@ macro stageobjective(sp, kw, obj)
     end
 end
 
+"""
+    @stageobjective(sp, objective)
+
+# Description
+
+Define a deterministic objective.
+
+# Examples
+
+    @stageobjective(sp, x + y)
+
+"""
 macro stageobjective(sp, obj)
     quote
         setstageobjective!($(esc(sp)), $(esc(obj)))

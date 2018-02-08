@@ -39,6 +39,17 @@ The paper presenting the Markov version of SDDP implemented in this library
     stochastic programs with risk aversion. European Journal of Operational Research
     218, 470–483. [doi:10.1016/j.ejor.2011.10.056](http://www.sciencedirect.com/science/article/pii/S0377221711010332)
 
+## SDDP.jl
+
+Two papers about SDDP.jl
+
+- Dowson, O., Kapelevich, L. (2017). SDDP.jl: a Julia package for Stochastic
+    Dual Dynamic Programming. Optimization Online. [link](http://www.optimization-online.org/DB_HTML/2017/12/6388.html)
+
+- Downward, A., Dowson, O., and Baucke, R. (2018). On the convergence of a
+    cutting plane method for multistage stochastic programming problems with
+    stagewise dependent price uncertainty. Optimization Online. [link](http://www.optimization-online.org/DB_FILE/2018/02/6454.pdf)
+
 ## Julia
 
 The organisation's website

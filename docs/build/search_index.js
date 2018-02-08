@@ -133,7 +133,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Solving the problem efficiently",
     "category": "section",
-    "text": ""
+    "text": "... still to do ..."
 },
 
 {
@@ -141,7 +141,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Understanding the solution",
     "category": "section",
-    "text": ""
+    "text": "... still to do ..."
 },
 
 {
@@ -197,7 +197,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "New cut oracles",
     "category": "section",
-    "text": ""
+    "text": "SDDP.jl makes it easy to create new cut oracles. In the following example, we give the code to implmeent a cut-selection heuristic that only stores the N most recently discovered cuts. First, we define a new Julia type that is a sub-type of the abstract type SDDP.AbstractCutOracle defined by SDDP.jl:struct LastCutOracle{N} <: SDDP.AbstractCutOracle\n    cuts::Vector{SDDP.Cut}\nend\nLastCutOracle(N::Int) = LastCutOracle{N}(SDDP.Cut[])LastCutOracle has the type parameter N to store the maximum number of most-recent cuts to return. The type has the field cuts to store a vector of discovered cuts. More elaborate cut-selection heuristics may need additional fields to store other information. Next, we overload the SDDP.storecut! method. This method should store the cut c in the oracle o so that it can be queried later. In our example, we append the cut to the list of discovered cuts inside the oracle:function SDDP.storecut!{N}(o::LastCutOracle{N},\n        m::SDDPModel, sp::JuMP.Model, c::SDDP.Cut)\n    push!(o.cuts, c)\nendLastly, we overload the SDDP.validcuts method. In our example, the strategy is to return the N most recent cuts. Therefore:function SDDP.validcuts{N}(o::LastCutOracle{N})\n    return o.cuts[max(1,end-N+1):end]\nendThe cut oracle LastCutOracle(N) can now be used in any SDDP model."
 },
 
 {
@@ -222,6 +222,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Stochastic Dual Dynamic Programming",
     "category": "section",
     "text": "The original paper presenting SDDPPereira, M.V.F., Pinto, L.M.V.G., 1991. Multi-stage stochastic optimization  applied to energy planning. Mathematical Programming 52, 359–375. doi:10.1007/BF01582895The paper presenting the Markov version of SDDP implemented in this libraryPhilpott, A.B., de Matos, V.L., 2012. Dynamic sampling algorithms for multi-stage  stochastic programs with risk aversion. European Journal of Operational Research  218, 470–483. doi:10.1016/j.ejor.2011.10.056"
+},
+
+{
+    "location": "readings.html#SDDP.jl-1",
+    "page": "Readings",
+    "title": "SDDP.jl",
+    "category": "section",
+    "text": "Two papers about SDDP.jlDowson, O., Kapelevich, L. (2017). SDDP.jl: a Julia package for Stochastic   Dual Dynamic Programming. Optimization Online. linkDownward, A., Dowson, O., and Baucke, R. (2018). On the convergence of a   cutting plane method for multistage stochastic programming problems with   stagewise dependent price uncertainty. Optimization Online. link"
 },
 
 {
@@ -341,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "SDDP.@stageobjective",
     "category": "Macro",
-    "text": "@stageobjective(sp, kw=noises, objective)\n\nDescription\n\nDefine an objective that depends on the realization of the stagewise noise. objective can be any valid third argument to the JuMP @objective macro (i.e. @objective(sp, Min, objective)) that utilises the variable kw that takes the realizations defined in noises.\n\nExamples\n\n@stageobjective(sp, w=1:2, w * x)\n@stageobjective(sp, i=1:2, w[i]^2 * x)\n@stageobjective(sp, i=1:2, x[i])\n\n\n\n"
+    "text": "@stageobjective(sp, kw=noises, objective)\n\nDescription\n\nDefine an objective that depends on the realization of the stagewise noise. objective can be any valid third argument to the JuMP @objective macro (i.e. @objective(sp, Min, objective)) that utilises the variable kw that takes the realizations defined in noises.\n\nExamples\n\n@stageobjective(sp, w=1:2, w * x)\n@stageobjective(sp, i=1:2, w[i]^2 * x)\n@stageobjective(sp, i=1:2, x[i])\n\n\n\n@stageobjective(sp, objective)\n\nDescription\n\nDefine a deterministic objective.\n\nExamples\n\n@stageobjective(sp, x + y)\n\n\n\n"
 },
 
 {
@@ -417,10 +425,10 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "apireference.html#SDDP.show",
+    "location": "apireference.html#Base.show-Tuple{SDDP.SimulationPlot}",
     "page": "Reference",
-    "title": "SDDP.show",
-    "category": "Function",
+    "title": "Base.show",
+    "category": "Method",
     "text": "show(p::SimulationPlot)\n\nDescription\n\nLaunch a browser and render the SimulationPlot plot p.\n\n\n\n"
 },
 
@@ -437,7 +445,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Understanding the solution",
     "category": "section",
-    "text": "simulate\ngetbound\nnewplot\naddplot!\nshow\nplotvaluefunction"
+    "text": "simulate\ngetbound\nnewplot\naddplot!\nshow(::SDDP.SimulationPlot)\nplotvaluefunction"
 },
 
 {
@@ -469,7 +477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Read and write the model to disk",
     "category": "section",
-    "text": "    loadcuts!\n    savemodel!\n    loadmodel"
+    "text": "loadcuts!\nsavemodel!\nloadmodel"
 },
 
 {

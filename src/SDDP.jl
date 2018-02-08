@@ -47,7 +47,7 @@ include("avar_riskaversion.jl")
 include("DRO.jl")
 include("solve_asyncronous.jl")
 include("visualizer/visualize.jl")
-
+include("price_interpolation/price_interpolation.jl")
 include("deprecate.jl")
 
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
