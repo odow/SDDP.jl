@@ -60,9 +60,9 @@ end
 
 # ==============================================================================
 
-samplepricenoise{T}(stage::Int, noises::DiscreteDistribution{T}, solutionstore::Void) = sample(noises)
+samplepricenoise(stage::Int, noises::DiscreteDistribution{T}, solutionstore::Void) where {T} = sample(noises)
 
-function samplepricenoise{T}(stage::Int, noises::DiscreteDistribution{T}, solutionstore::Dict{Symbol, Any})
+function samplepricenoise(stage::Int, noises::DiscreteDistribution{T}, solutionstore::Dict{Symbol, Any}) where T
     if haskey(solutionstore, :pricenoise)
         @assert length(solutionstore[:pricenoise])>=stage
         noiseidx = solutionstore[:pricenoise][stage]
@@ -72,7 +72,7 @@ function samplepricenoise{T}(stage::Int, noises::DiscreteDistribution{T}, soluti
     end
 end
 
-function solvesubproblem!{V<:PriceInterpolationMethods}(::Type{ForwardPass}, m::SDDPModel{V}, sp::JuMP.Model, solutionstore)
+function solvesubproblem!(::Type{ForwardPass}, m::SDDPModel{V}, sp::JuMP.Model, solutionstore) where V<:PriceInterpolationMethods
     vf = valueoracle(sp)
     if ext(sp).stage == 1
         vf.location = vf.initial_price
@@ -104,7 +104,7 @@ function setobjective!(sp::JuMP.Model, price, noise)
     end
 end
 
-function passpriceforward!{V<:PriceInterpolationMethods}(m::SDDPModel{V}, sp::JuMP.Model)
+function passpriceforward!(m::SDDPModel{V}, sp::JuMP.Model) where V<:PriceInterpolationMethods
     stage = ext(sp).stage
     if stage < length(m.stages)
         # pass price forward
@@ -132,7 +132,7 @@ function solvepricenoises!(m::SDDPModel, sp::JuMP.Model, last_markov_state, pric
     end
 end
 
-function constructcut{V<:PriceInterpolationMethods}(m::SDDPModel{V}, sp::JuMP.Model, ex, t, price)
+function constructcut(m::SDDPModel{V}, sp::JuMP.Model, ex, t, price) where V<:PriceInterpolationMethods
     reset!(m.storage)
     for sp2 in subproblems(m, t+1)
         setstates!(m, sp2)
@@ -159,7 +159,7 @@ function calculatefirststagebound(m::SDDPModel)
     dot(m.storage.objective, m.storage.probability)
 end
 
-function backwardpass!{V<:PriceInterpolationMethods}(m::SDDPModel{V}, settings::Settings)
+function backwardpass!(m::SDDPModel{V}, settings::Settings) where V<:PriceInterpolationMethods
     for t in (nstages(m)-1):-1:1
         for sp in subproblems(m, t)
             updatevaluefunction!(m, settings, t, sp)
@@ -182,12 +182,12 @@ function writecut!(io::IO, stage::Int, markovstate::Int, price, cut::Cut)
     write(io, "\n")
 end
 
-function simulate{V<:PriceInterpolationMethods}(m::SDDPModel{V},
+function simulate(m::SDDPModel{V},
         variables::Vector{Symbol}         = Symbol[];
         noises::AbstractVector{Int}       = zeros(Int, length(m.stages)),
         markovstates::AbstractVector{Int} = ones(Int, length(m.stages)),
         pricenoises::AbstractVector{Int}  = zeros(Int, length(m.stages))
-    )
+    ) where V<:PriceInterpolationMethods
     store = newsolutionstore(variables)
     store[:pricenoise] = Int[]
     for t in 1:length(m.stages)
@@ -227,7 +227,7 @@ function parsemultipriceline(pricebegin, line)
     return stage, markov_state, price, cut
 end
 
-function loadcuts!{V<:PriceInterpolationMethods}(m::SDDPModel{V}, filename::String)
+function loadcuts!(m::SDDPModel{V}, filename::String) where V<:PriceInterpolationMethods
     open(filename, "r") do file
         while true
             line      = readline(file)

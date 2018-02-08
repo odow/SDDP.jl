@@ -586,8 +586,8 @@ fields to store other information. Next, we overload the
 oracle `o` so that it can be queried later. In our example, we append the cut to
 the list of discovered cuts inside the oracle:
 ```julia
-function SDDP.storecut!{N}(o::LastCutOracle{N},
-        m::SDDPModel, sp::JuMP.Model, c::SDDP.Cut)
+function SDDP.storecut!(o::LastCutOracle{N},
+        m::SDDPModel, sp::JuMP.Model, c::SDDP.Cut) where N
     push!(o.cuts, c)
 end
 ```
@@ -595,7 +595,7 @@ end
 Lastly, we overload the [`SDDP.validcuts`](@ref) method. In our example, the
 strategy is to return the `N` most recent cuts. Therefore:
 ```julia
-function SDDP.validcuts{N}(o::LastCutOracle{N})
+function SDDP.validcuts(o::LastCutOracle{N}) where N
     return o.cuts[max(1,end-N+1):end]
 end
 ```

@@ -39,13 +39,13 @@ Board of the 13th Power Systems Computation Conference, 1999.
         noise = DiscreteDistribution([-10.0, 40.0], [0.8, 0.2]),
     )
 """
-function StaticPriceInterpolation{T}(;
+function StaticPriceInterpolation(;
                cut_oracle = DefaultCutOracle(),
                  dynamics = (p,w,t,i)->p,
             initial_price::T = 0.0,
             rib_locations::AbstractVector{T} = [0.0, 1.0],
                     noise = DiscreteDistribution([0.0])
-        )
+        ) where T
     StaticPriceInterpolation(
         initial_price,
         initial_price,
@@ -59,9 +59,9 @@ function StaticPriceInterpolation{T}(;
     )
 end
 
-summarise{V<:StaticPriceInterpolation}(::Type{V}) = "Static Price Interpolation"
+summarise(::Type{V}) where {V<:StaticPriceInterpolation} = "Static Price Interpolation"
 
-function initializevaluefunction{C<:AbstractCutOracle, T, T2}(vf::StaticPriceInterpolation{C, T, T2}, m::JuMP.Model, sense, bound)
+function initializevaluefunction(vf::StaticPriceInterpolation{C, T, T2}, m::JuMP.Model, sense, bound) where {C<:AbstractCutOracle, T, T2}
     vf.bound = bound
     for r in vf.rib_locations
         push!(vf.variables, futureobjective!(sense, m, bound))
@@ -71,7 +71,7 @@ function initializevaluefunction{C<:AbstractCutOracle, T, T2}(vf::StaticPriceInt
 end
 
 # stage, markov, price, cut
-asynccutstoragetype{C<:AbstractCutOracle, T, T2}(::Type{StaticPriceInterpolation{C, T, T2}}) = Tuple{Int, Int, T, Cut}
+asynccutstoragetype(::Type{StaticPriceInterpolation{C, T, T2}}) where {C<:AbstractCutOracle, T, T2} = Tuple{Int, Int, T, Cut}
 
 function interpolate(vf::StaticPriceInterpolation)
     y = AffExpr(0.0)
@@ -97,7 +97,7 @@ function interpolate(vf::StaticPriceInterpolation)
     y
 end
 
-function updatevaluefunction!{V<:StaticPriceInterpolation}(m::SDDPModel{V}, settings::Settings, t::Int, sp::JuMP.Model)
+function updatevaluefunction!(m::SDDPModel{V}, settings::Settings, t::Int, sp::JuMP.Model) where V<:StaticPriceInterpolation
     vf = valueoracle(sp)
     ex = ext(sp)
     for (i, (rib, theta, cutoracle)) in enumerate(zip(vf.rib_locations, vf.variables, vf.cutoracles))
@@ -120,7 +120,7 @@ function addcuttoJuMPmodel!(vf::StaticPriceInterpolation, sp::JuMP.Model, theta:
     addcutconstraint!(ext(sp).sense, sp, theta, affexpr)
 end
 
-function addasynccut!{C<:AbstractCutOracle, T, T2}(m::SDDPModel{StaticPriceInterpolation{C,T,T2}}, cut::Tuple{Int, Int, T, Cut})
+function addasynccut!(m::SDDPModel{StaticPriceInterpolation{C,T,T2}}, cut::Tuple{Int, Int, T, Cut}) where {C<:AbstractCutOracle, T, T2}
     sp = getsubproblem(m, cut[1], cut[2])
     vf = valueoracle(sp)
     price_idx = findfirst(vf.rib_locations, cut[3])
@@ -134,7 +134,7 @@ end
 # ==============================================================================
 #   rebuildsubproblem!
 
-function rebuildsubproblem!{V<:StaticPriceInterpolation}(m::SDDPModel{V}, sp::JuMP.Model)
+function rebuildsubproblem!(m::SDDPModel{V}, sp::JuMP.Model) where V<:StaticPriceInterpolation
     vf = valueoracle(sp)
     n = n_args(m.build!)
     ex = ext(sp)
@@ -166,12 +166,12 @@ function rebuildsubproblem!{V<:StaticPriceInterpolation}(m::SDDPModel{V}, sp::Ju
     end
     m.stages[ex.stage].subproblems[ex.markovstate] = sp2
 end
-rebuildsubproblem!{T,T2}(m::SDDPModel{StaticPriceInterpolation{DefaultCutOracle,T,T2}}, sp::JuMP.Model) = nothing
+rebuildsubproblem!(m::SDDPModel{StaticPriceInterpolation{DefaultCutOracle,T,T2}}, sp::JuMP.Model) where {T,T2} = nothing
 
 # ==============================================================================
 #   Plotting
 
-function processvaluefunctiondata{C,T2}(vf::StaticPriceInterpolation{C,Float64,T2}, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...)
+function processvaluefunctiondata(vf::StaticPriceInterpolation{C,Float64,T2}, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...) where {C,T2}
     prices = Float64[]
     cuts   = Cut[]
     for (price, oracle) in zip(vf.rib_locations, vf.cutoracles)

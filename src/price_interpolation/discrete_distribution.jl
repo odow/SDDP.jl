@@ -38,7 +38,7 @@ end
 Create a finite discrete distribution of `observations` supported with probability
 `probabilities`.
 """
-function DiscreteDistribution{T}(observations::AbstractVector{T}, probabilities::AbstractVector{Float64})
+function DiscreteDistribution(observations::AbstractVector{T}, probabilities::AbstractVector{Float64}) where T
     if !isapprox(sum(probabilities), 1.0, atol=1e-6)
         error("Finite discrete distribution must sum to 1.0")
     end
@@ -55,7 +55,7 @@ end
 Create a finite discrete distribution of `observations` supported with
 uniform probability.
 """
-function DiscreteDistribution{T}(observations::AbstractVector{T})
+function DiscreteDistribution(observations::AbstractVector{T}) where T
     DiscreteDistribution(observations, fill(1.0 / length(observations), length(observations)))
 end
 
@@ -65,7 +65,7 @@ Base.done(d::DiscreteDistribution, state) = (state > length(d.noises))
 Base.getindex(d::DiscreteDistribution, idx::Int) = d.noises[idx]
 Base.length(d::DiscreteDistribution) = length(d.noises)
 
-function sample{T}(d::DiscreteDistribution{T})
+function sample(d::DiscreteDistribution{T}) where T
     r = rand()
     for noise in d
         @inbounds r -= probability(noise)
