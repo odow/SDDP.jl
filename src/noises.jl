@@ -13,19 +13,34 @@ function setnoise!(sp::JuMP.Model, noise::Noise)
     end
 end
 
-function samplenoise(sp::JuMP.Model)
-    noiseidx = sample(ext(sp).noiseprobability)
-    return noiseidx, ext(sp).noises[noiseidx]
-end
-samplenoise(sp::JuMP.Model, solutionstore::Void) = samplenoise(sp)
-function samplenoise(sp::JuMP.Model, solutionstore::Dict{Symbol, Any})
+function samplenoise(oracle::SamplingOracle, sp::JuMP.Model, solutionstore::Dict{Symbol, Any})
     if length(solutionstore[:noiseidx])>=ext(sp).stage
         idx = solutionstore[:noiseidx][ext(sp).stage]
         return idx, ext(sp).noises[idx]
     else
-        return samplenoise(sp)
+        return samplenoise(oracle, sp)
     end
 end
+
+function samplenoise(oracle::DefaultSamplingOracle, sp::JuMP.Model)
+    ex = ext(sp)
+    noiseidx = sample(ex.noiseprobability)
+    return ex.noises[noiseidx]
+end
+
+function samplenoise(oracle::UniformSamplingOracle, sp::JuMP.Model)
+    return rand(ext(sp).noises)
+end
+
+function samplenoise(oracle::DeterministicSamplingOracle{T}, sp::JuMP.Model) where T
+    oracle.data[ext(sp).stage]
+end
+
+function samplenoise(oracle::CustomSamplingOracle, sp::JuMP.Model)
+    oracle.f(sp)
+end
+
+samplenoise(oracle::SamplingOracle, sp::JuMP.Model, solutionstore::Void) = samplenoise(oracle, sp)
 
 """
     setnoiseprobability!(sp::JuMP.Model, distribution::Vector{Float64})

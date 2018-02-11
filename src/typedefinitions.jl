@@ -32,6 +32,8 @@ struct ForwardPass <: IterationDirection end
 struct BackwardPass <: IterationDirection end
 
 abstract type SDDPSolveType end
+abstract type SamplingOracle end
+
 """
     Serial()
 
@@ -231,6 +233,37 @@ Defaults to `false`.
 """
 MonteCarloSimulation(;frequency=0,min=20,max=0,step=1,confidence=0.95,termination=false) = MonteCarloSimulation(frequency,collect(min:step:max),confidence,termination)
 
+struct DefaultSamplingOracle <: SamplingOracle end
+
+struct UniformSamplingOracle <: SamplingOracle end
+
+struct DeterministicSamplingOracle{T} <: SamplingOracle 
+    data::Vector{T}
+end
+
+"""
+    CustomSamplingOracle(f::Function)
+
+# Description
+
+Type used to define a custom sampling method as a function of a subproblem.
+The function `f` must have a method of the form
+    f(::JuMP.Model)
+and it must return a Noise object.
+
+# Example
+
+To make a CustomSamplingOracle that is a function of the stage, write
+    f(sp::JuMP.Model) = g(sp.ext[:SDDP].stage)
+where `g` is the desired function. In particular, writing
+    f(sp::JuMP.Model) = data[sp.ext[:SDDP].stage]
+where `data` is a Vector would produce the same result as using a
+DeterministicSamplingOracle.
+"""
+struct CustomSamplingOracle <: SamplingOracle
+    f::Function
+end
+
 struct Settings
     max_iterations::Int
     time_limit::Float64
@@ -242,5 +275,7 @@ struct Settings
     reduce_memory_footprint::Bool
     cut_output_file::IOStream
     is_asyncronous::Bool
+    oracle::SamplingOracle
 end
-Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, IOStream("Cuts"), false)
+Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, IOStream("Cuts"), false, DefaultSamplingOracle())
+Settings(oracle::SamplingOracle) = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, IOStream("Cuts"), false, oracle)

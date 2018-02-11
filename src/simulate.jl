@@ -77,14 +77,15 @@ markov state to sample in each stage.
 function simulate(m::SDDPModel,
         variables::Vector{Symbol} = Symbol[];
         noises::AbstractVector{Int}    = zeros(Int, length(m.stages)),
-        markovstates::AbstractVector{Int} = ones(Int, length(m.stages))
-    )
+        markovstates::AbstractVector{Int} = ones(Int, length(m.stages)),
+        oracle::SamplingOracle = DefaultSamplingOracle()
+        )
     store = newsolutionstore(variables)
     for t in 1:length(m.stages)
         push!(store[:markov], markovstates[t])
         push!(store[:noiseidx], noises[t])
     end
-    obj = forwardpass!(m, Settings(), store)
+    obj = forwardpass!(m, Settings(oracle), store)
     store[:objective] = obj
     return store
 end
@@ -121,24 +122,27 @@ with the exception of `:objective` which is just
     mean(r[:objective] for r in results) # mean objective of the simulations
     results[2][:x][3] # value of :x in stage 3 in second simulation
 """
-function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
+function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[];
+                oracle::SamplingOracle=DefaultSamplingOracle())
     number_workers = length(workers())
     sims_per_processor = ceil(Int, N / number_workers)
     # map step
-    parallel_sims = pmap(i->mappedsimulation(m, sims_per_processor, variables), 1:number_workers)
+    parallel_sims = pmap(i->mappedsimulation(m, sims_per_processor, variables, oracle), 1:number_workers)
     # reduce step
     reduced_sims = vcat(parallel_sims...)
     @assert length(reduced_sims) >= N
     return reduced_sims[1:N]
 end
 
-function mappedsimulation(m::SDDPModel, N::Int, variables::Vector{Symbol})
-    map(i->randomsimulation(m, variables), 1:N)
+function mappedsimulation(m::SDDPModel, N::Int, variables::Vector{Symbol};
+                oracle::SamplingOracle=DefaultSamplingOracle())
+    map(i->randomsimulation(m, variables, oracle), 1:N)
 end
 
-function randomsimulation(m::SDDPModel, variables::Vector{Symbol})
+function randomsimulation(m::SDDPModel, variables::Vector{Symbol};
+                oracle::SamplingOracle=DefaultSamplingOracle())
     store = newsolutionstore(variables)
-    obj = forwardpass!(m, Settings(), store)
+    obj = forwardpass!(m, Settings(oracle), store)
     store[:objective] = obj
     return store
 end

@@ -219,7 +219,8 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
 
         # choose and set RHS noise
         if hasnoises(sp)
-            (noiseidx, noise) = samplenoise(sp, solutionstore)
+            noise = samplenoise(settings.oracle, sp, solutionstore)
+            noiseidx = 0
             setnoise!(sp, noise)
         end
         # solve subproblem
@@ -281,7 +282,6 @@ function iteration!(m::SDDPModel, settings::Settings)
         end
     end
     return objective_bound, time_backwards, simulation_objective, time_forwards
-
 end
 
 function rebuild!(m::SDDPModel)
@@ -434,6 +434,8 @@ control the solution process.
     Defaults to `false`.
  * `cut_output_file::String`:
     Relative filename to write discovered cuts to disk. Defaults to `""` (no cuts written)
+ * `oracle::SamplingOracle`
+    Scenario sampling method. Defaults to `DefaultSamplingOracle()`.
 
 # Returns
  * `status::Symbol`:
@@ -470,7 +472,8 @@ function JuMP.solve(m::SDDPModel;
         # this reduces memory but you shouldn't use it if you want to save the
         # sddp model since it throws away some information
         reduce_memory_footprint      = false,
-        cut_output_file::String      = ""
+        cut_output_file::String      = "",
+        oracle::SamplingOracle       = DefaultSamplingOracle()
     )
     reset_timer!(TIMER)
 
@@ -492,7 +495,8 @@ function JuMP.solve(m::SDDPModel;
         log_file,
         reduce_memory_footprint,
         cut_output_file_handle,
-        isa(solve_type, Asyncronous)
+        isa(solve_type, Asyncronous),
+        oracle
     )
 
     print(printheader, settings, m, solve_type)
