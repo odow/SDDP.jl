@@ -87,12 +87,12 @@ end
 
 # ==============================================================================
 
-summarise{V<:DynamicPriceInterpolation}(::Type{V}) = "Dynamic Value Function"
+summarise(::Type{V}) where {V<:DynamicPriceInterpolation} = "Dynamic Value Function"
 
 # ==============================================================================
 
 # stage, markov, price, cut
-asynccutstoragetype{C,T,T2}(::Type{DynamicPriceInterpolation{C,T,T2}}) = Tuple{Int, Int, T, Cut}
+asynccutstoragetype(::Type{DynamicPriceInterpolation{C,T,T2}}) where {C,T,T2} = Tuple{Int, Int, T, Cut}
 
 # ==============================================================================
 
@@ -102,11 +102,11 @@ function interpolate(price, mu)
 end
 innerproduct(p::Float64, v::JuMP.Variable) = p * v
 innerproduct(p::Float64, v::Vector{JuMP.Variable}) = (@assert length(v) == 1; p * v[1])
-innerproduct{N,T}(p::NTuple{N,T}, v::Vector{JuMP.Variable}) = sum(p[i] * v[i] for i in 1:length(v))
+innerproduct(p::NTuple{N,T}, v::Vector{JuMP.Variable}) where {N,T} = sum(p[i] * v[i] for i in 1:length(v))
 
 # ==============================================================================
 
-function _initializevaluefunction{V<:DynamicPriceInterpolation}(vf::V, m::JuMP.Model, sense, bound, N::Int)
+function _initializevaluefunction(vf::V, m::JuMP.Model, sense, bound, N::Int) where V<:DynamicPriceInterpolation
     vf.bound = bound
     push!(vf.mu, @variable(m))
     for i in 1:N
@@ -124,11 +124,11 @@ function _initializevaluefunction{V<:DynamicPriceInterpolation}(vf::V, m::JuMP.M
 end
 
 # one-dimensional case
-function initializevaluefunction{C,T<:Real, T2}(vf::DynamicPriceInterpolation{C,T, T2}, m::JuMP.Model, sense, bound)
+function initializevaluefunction(vf::DynamicPriceInterpolation{C,T, T2}, m::JuMP.Model, sense, bound) where {C,T<:Real, T2}
     _initializevaluefunction(vf, m, sense, bound, 1)
 end
 # multi-dimensional case
-function initializevaluefunction{C,N,T, T2}(vf::DynamicPriceInterpolation{C,NTuple{N,T}, T2}, m::JuMP.Model, sense, bound)
+function initializevaluefunction(vf::DynamicPriceInterpolation{C,NTuple{N,T}, T2}, m::JuMP.Model, sense, bound) where {C,N,T, T2}
     _initializevaluefunction(vf, m, sense, bound, N)
 end
 
@@ -140,7 +140,7 @@ addpricecut!(::Min, sp, price, vf, affexpr) = @constraint(sp, interpolate(price,
 # ==============================================================================
 #   updatevaluefunction!
 
-function updatevaluefunction!{V<:DynamicPriceInterpolation}(m::SDDPModel{V}, settings::Settings, t::Int, sp::JuMP.Model)
+function updatevaluefunction!(m::SDDPModel{V}, settings::Settings, t::Int, sp::JuMP.Model) where V<:DynamicPriceInterpolation
 
     vf = valueoracle(sp)
     ex = ext(sp)
@@ -166,7 +166,7 @@ end
 
 # ==============================================================================
 
-function addcut!{V<:DynamicPriceInterpolation}(m::SDDPModel{V}, sp::JuMP.Model, current_price, cut::Cut)
+function addcut!(m::SDDPModel{V}, sp::JuMP.Model, current_price, cut::Cut) where V<:DynamicPriceInterpolation
     # get the value oracle
     vf = valueoracle(sp)
 
@@ -181,7 +181,7 @@ function addcut!{V<:DynamicPriceInterpolation}(m::SDDPModel{V}, sp::JuMP.Model, 
 end
 
 # add the cut from parallel
-function addasynccut!{V<:DynamicPriceInterpolation,T}(m::SDDPModel{V}, cut::Tuple{Int, Int, T, Cut})
+function addasynccut!(m::SDDPModel{V}, cut::Tuple{Int, Int, T, Cut}) where {V<:DynamicPriceInterpolation,T}
     sp = getsubproblem(m, cut[1], cut[2])
     addcut!(m, sp, cut[3], cut[4])
 end
@@ -218,7 +218,7 @@ end
 
 # ==============================================================================
 
-function processvaluefunctiondata{C,T2}(vf::DynamicPriceInterpolation{C,Float64, T2}, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...)
+function processvaluefunctiondata(vf::DynamicPriceInterpolation{C,Float64, T2}, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...) where {C,T2}
     cuts = [c[1] for c in vf.oracle.cuts]
     prices = [c[2] for c in vf.oracle.cuts]
     _processvaluefunctiondata(prices, cuts, vf.minprice, vf.maxprice, is_minimization, vf.lipschitz_constant, vf.bound, states...)
