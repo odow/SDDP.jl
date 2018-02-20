@@ -294,3 +294,4 @@ function writecut!(io::IO, stage::Int, markovstate::Int, cut::Cut)
     end
     write(io, "\n")
 end
+writecut!(io, cut::Tuple) = writecut!(io, cut...)

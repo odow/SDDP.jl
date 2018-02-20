@@ -165,7 +165,7 @@ function JuMP.solve(async::Asyncronous, m::SDDPModel{T}, settings::Settings=Sett
                         end
                         for cut in cuts
                             if isopen(settings.cut_output_file)
-                                writeasynccut!(settings.cut_output_file, cut)
+                                writecut!(settings.cut_output_file, cut)
                             end
                             addasynccut!(m, cut)
                             for p2 in async.slaves
