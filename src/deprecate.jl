@@ -26,6 +26,5 @@ end
 
 @deprecate_macro noise rhsnoise
 @deprecate_macro noises rhsnoises
-@deprecate writeaynccut! writeasynccut!
 @deprecate stageobjective! setstageobjective!
 @deprecate init! initializevaluefunction

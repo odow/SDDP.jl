@@ -234,7 +234,6 @@ end
         asynccutstoragetype(::Type{V})::Type{T}
         asynccutstorage(m::SDDPModel{V}, sp::JuMP.Model, cut::Cut)::T
         addasynccut!(m::SDDPModel{V}, cut::T)
-        writeasynccut!(m::SDDPModel{V}, cut::T)
 =#
 """
     asynccutstoragetype(::Type{V})
@@ -255,15 +254,4 @@ function addasynccut end
 function addasynccut!(m::SDDPModel{DefaultValueFunction{C}}, cut::Tuple{Int, Int, Cut}) where C
     sp = getsubproblem(m, cut[1], cut[2])
     addcut!(m, sp, cut[3])
-end
-
-"""
-    writeasynccut!(file, cut::T)
-
-T should be same type as that returned be asynccutstoragetype.
-"""
-function writeasynccut! end
-
-function writeasynccut!(file, cut::Tuple{Int, Int, Cut})
-    writecut!(file, cut[1], cut[2], cut[3])
 end
