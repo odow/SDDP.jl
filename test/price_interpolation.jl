@@ -8,10 +8,10 @@
     @test_throws Exception DiscreteDistribution([1,2], [0.2, 0.9])
 end
 
-@testset "StaticPriceInterpolation" begin
-    @test_throws Exception StaticPriceInterpolation(dynamics=(p,w,t,i)->0.0, initial_price=0.0, rib_locations=[0.0, 1.0])
-    @test_throws Exception StaticPriceInterpolation(dynamics=(p,w,t,i)->0.0, initial_price=0.0, noise=DiscreteDistribution([1.0]))
-    @test_throws Exception StaticPriceInterpolation(dynamics=(p,w,t,i)->0.0, rib_locations=[0.0, 1.0], noise=DiscreteDistribution([1.0]))
-    @test_throws Exception StaticPriceInterpolation(initial_price=0.0, rib_locations=[0.0, 1.0], noise=DiscreteDistribution([1.0]))
-    @test_throws Exception StaticPriceInterpolation(dynamics=(p,w,t,i)->0.0, initial_price=(1,1), rib_locations=[0.0, 1.0], noise=DiscreteDistribution([1.0]))
-end
+# @testset "StaticPriceInterpolation" begin
+#     @test_throws Exception StaticPriceInterpolation(dynamics=(p,w,t,i)->0.0, initial_price=0.0, rib_locations=[0.0, 1.0])
+#     @test_throws Exception StaticPriceInterpolation(dynamics=(p,w,t,i)->0.0, initial_price=0.0, noise=DiscreteDistribution([1.0]))
+#     @test_throws Exception StaticPriceInterpolation(dynamics=(p,w,t,i)->0.0, rib_locations=[0.0, 1.0], noise=DiscreteDistribution([1.0]))
+#     @test_throws Exception StaticPriceInterpolation(initial_price=0.0, rib_locations=[0.0, 1.0], noise=DiscreteDistribution([1.0]))
+#     @test_throws Exception StaticPriceInterpolation(dynamics=(p,w,t,i)->0.0, initial_price=(1,1), rib_locations=[0.0, 1.0], noise=DiscreteDistribution([1.0]))
+# end
