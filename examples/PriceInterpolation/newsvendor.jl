@@ -33,7 +33,7 @@ function newsvendor_example(DISCRETIZATION = 1)
     MAX_PRICE     = 2.25
     NOISES        = DiscreteDistribution([-0.25, -0.125, 0.125, 0.25])
 
-    function pricedynamics(price, noise, stage, markov)
+    function pricedynamics(price, noise)
         clamp(price + noise, MIN_PRICE, MAX_PRICE)
     end
 

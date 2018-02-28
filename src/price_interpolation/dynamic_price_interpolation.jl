@@ -13,13 +13,11 @@ plane method for multistage stochastic programming problems with stagewise
 dependent price uncertainty. Optimization Online.
 
 ### Keyword arguments
- - `dynamics`: a function that takes four arguments
+ - `dynamics`: a function that takes two arguments
         1. `price`: a Float64 (if uni-variate) or NTuple{N,Float64} if multi-variate
             that gives the price in the previous stage.
         2. `noise`: a single `NoiseRealization` of the price noise observed at
             the start of the stage.
-        3. `t::Int`: the index of the stage of the problem t=1, 2, ..., T.
-        4. `i::Int`: the markov state index of the problem i=1, 2, ..., S(t).
         The function should return a Float64 (if uni-variate) or NTuple{N,Float64}
         if multi-variate that gives the price for the current stage.
  - `initial_price`: a Float64 (if uni-variate) or NTuple{N,Float64} if multi-variate
@@ -38,7 +36,7 @@ dependent price uncertainty. Optimization Online.
 A uni-variate price process:
 
     DynamicPriceInterpolation(
-        dynamics = (price, noise, t, i) -> begin
+        dynamics = (price, noise) -> begin
                 return price + noise - t
             end,
         initial_price = 50.0
@@ -51,7 +49,7 @@ A uni-variate price process:
 A multi-variate price process:
 
     DynamicPriceInterpolation(
-        dynamics = (price, noise, t, i) -> begin
+        dynamics = (price, noise) -> begin
                 return (noise * price[1], noise * price[2] - noise)
             end,
         initial_price = (50.0, 50.0),
@@ -62,7 +60,7 @@ A multi-variate price process:
     )
 """
 function DynamicPriceInterpolation(;
-    dynamics = (p,w,t,i)->p,
+    dynamics = (p,w)->p,
     initial_price = 0.0,
     min_price = 0.0,
     max_price = 1.0,

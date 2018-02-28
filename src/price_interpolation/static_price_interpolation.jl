@@ -15,12 +15,10 @@ Power Systems Computation Conference : Proceedings P. 1328. Trondheim: Executi
 Board of the 13th Power Systems Computation Conference, 1999.
 
 ### Keyword arguments
- - `dynamics`: a function that takes four arguments
+ - `dynamics`: a function that takes two arguments
         1. `price`: a Float64 that gives the price in the previous stage.
         2. `noise`: a single `NoiseRealization` of the price noise observed at
             the start of the stage.
-        3. `t::Int`: the index of the stage of the problem t=1, 2, ..., T.
-        4. `i::Int`: the markov state index of the problem i=1, 2, ..., S(t).
         The function should return a Float64 of the price for the current stage.
  - `initial_price`: a Float64 for the an initial value for each dimension of the price states.
  - `rib_locations`: an `AbstractVector{Float64}` giving the points at which to
@@ -31,7 +29,7 @@ Board of the 13th Power Systems Computation Conference, 1999.
 # Example
 
     StaticPriceInterpolation(
-        dynamics = (price, noise, t, i) -> begin
+        dynamics = (price, noise) -> begin
                 return price + noise - t
             end,
         initial_price = 50.0
@@ -41,7 +39,7 @@ Board of the 13th Power Systems Computation Conference, 1999.
 """
 function StaticPriceInterpolation(;
                cut_oracle = DefaultCutOracle(),
-                 dynamics = (p,w,t,i)->p,
+                 dynamics = (p,w)->p,
             initial_price::T = 0.0,
             rib_locations::AbstractVector{T} = [0.0, 1.0],
                     noise = DiscreteDistribution([0.0])
