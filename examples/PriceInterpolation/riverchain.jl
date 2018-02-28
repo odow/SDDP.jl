@@ -80,7 +80,7 @@ function buildmodel(USE_AR1, valley_chain)
     return SDDPModel(
                 sense           = :Min,
                 stages          = 12,
-                objective_bound = 50_000.0,
+                objective_bound = -50_000.0,
                 solver          = ClpSolver(),
                 value_function   = valuefunction
                                         ) do sp, stage
