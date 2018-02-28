@@ -86,7 +86,7 @@
             include(joinpath(examples_dir, "HydroValleys", "hydro_valley.jl"))
             # stagewise inflows and markov prices
             srand(12345)
-            
+
             markov_stagewise_model = hydrovalleymodel(hasstagewiseinflows=true, hasmarkovprice=true)
             SDDP.solve(markov_stagewise_model, max_iterations=10, print_level=0)
             @test isapprox(getbound(markov_stagewise_model), 855.0, atol=1e-3)
