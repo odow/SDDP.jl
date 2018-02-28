@@ -145,7 +145,23 @@ risk_measure = [
    ]
 ```
     Like the objective bound, another option is to pass a function that takes
-    as arguments the stage and markov state and returns a risk measure.
+    as arguments the stage and markov state and returns a risk measure:
+
+```julia
+function stagedependentrisk(stage, markov_state)
+    if state == 1
+        return Expectation()
+    else
+        if markov_state == 1
+            return NestedAVaR(lambda=0.5, beta=0.25)
+        else
+            return NestedAVaR(lambda=0.25, beta=0.3)
+        end
+    end
+end
+
+risk_measure = stagedependentrisk
+```    
 
    Note that even though the last stage does not have a future cost function
    associated with it (as it has no children), we still have to specify a risk
