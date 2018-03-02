@@ -62,7 +62,7 @@ end
 
 mutable struct Noise
     has_objective_noise::Bool
-    obj::AffExpr
+    obj::Union{QuadExpr, AffExpr}
     # list of row indices
     constraints::Vector{LinearConstraint}
     # list of RHS values
