@@ -88,4 +88,4 @@ If you use SDDP.jl, we ask that you please cite the following [paper](http://www
 [codecov-url]: https://codecov.io/github/odow/SDDP.jl?branch=master
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: https://odow.github.io/SDDP.jl/build/index.html
+[docs-latest-url]: https://odow.github.io/SDDP.jl/latest/
