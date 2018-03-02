@@ -68,8 +68,8 @@ function contracting_example(DISCRETIZATION = 1)
     end
 
     value_function = if DISCRETIZATION == 1
-        DynamicPriceInterpolation(
-            dynamics       = pricedynamics,
+        (t,i) -> DynamicPriceInterpolation(
+            dynamics       = (p,w) -> pricedynamics(p,w,t,i),
             initial_price  = INITIAL_PRICE,
             min_price      = MIN_PRICE,
             max_price      = MAX_PRICE,
@@ -78,8 +78,8 @@ function contracting_example(DISCRETIZATION = 1)
             lipschitz_constant = 75.0
         )
     else
-        StaticPriceInterpolation(
-            dynamics       = pricedynamics,
+        (t,i) -> StaticPriceInterpolation(
+            dynamics       = (p,w) -> pricedynamics(p,w,t,i),
             initial_price  = INITIAL_PRICE,
             rib_locations  =  collect(linspace(MIN_PRICE, MAX_PRICE, DISCRETIZATION)),
             noise          = NOISES,

@@ -89,7 +89,7 @@ end
 
 function setobjective!(sp::JuMP.Model, price, noise)
     vf = valueoracle(sp)
-    p = vf.dynamics(price, noise, ext(sp).stage, ext(sp).markovstate)
+    p = vf.dynamics(price, noise)
     vf.location = p
     # stage objective obj
     stageobj = vf.objective(p)

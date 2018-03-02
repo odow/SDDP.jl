@@ -39,16 +39,16 @@ function widget_producer_example(DISCRETIZATION = 1)
     end
 
     value_function = if DISCRETIZATION == 1
-        DynamicPriceInterpolation(
-            dynamics       = pricedynamics,
+        (t,i) -> DynamicPriceInterpolation(
+            dynamics       = (p,w) -> pricedynamics(p,w,t,i),
             initial_price  = P₀,
             min_price      = Pₗ,
             max_price      = Pᵤ,
             noise          = Φ
         )
     else
-        StaticPriceInterpolation(
-            dynamics       = pricedynamics,
+        (t,i) -> StaticPriceInterpolation(
+            dynamics       = (p,w) -> pricedynamics(p,w,t,i),
             initial_price  = P₀,
             # we need to ensure the ribs are not binding on the edge of the
             # price domain because sometimes the duals can be weird / numeric

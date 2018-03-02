@@ -117,7 +117,7 @@ m = SDDPModel(
                                 add the input, but don't reference it. It won't
                                 matter.
                             ==#
-                            dynamics = (price, noise, t, i) -> begin
+                            dynamics = (price, noise) -> begin
                                 reversion_rate = 0.05
                                 process_mean = 6.0
                                 lower = 3.0

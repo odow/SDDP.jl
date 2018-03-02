@@ -57,16 +57,16 @@ function priceprocess(USE_AR1)
     end
 
     if USE_AR1
-        return DynamicPriceInterpolation(
-            dynamics       = ar1price,
+        return (t,i) -> DynamicPriceInterpolation(
+            dynamics       = (p,w) -> ar1price(p, w, t, i),
             initial_price  = pbar,
             min_price      = minprice,
             max_price      = maxprice,
             noise          = NOISES
         )
     else
-        return DynamicPriceInterpolation(
-            dynamics       = ar2price,
+        return (t,i) -> DynamicPriceInterpolation(
+            dynamics       = (p,w) -> ar2price(p, w, t, i),
             initial_price  = (pbar, pbar),
             min_price      = (minprice, minprice),
             max_price      = (maxprice, maxprice),
@@ -76,13 +76,12 @@ function priceprocess(USE_AR1)
 end
 
 function buildmodel(USE_AR1, valley_chain)
-    valuefunction = priceprocess(USE_AR1)
     return SDDPModel(
                 sense           = :Min,
                 stages          = 12,
                 objective_bound = -50_000.0,
                 solver          = ClpSolver(),
-                value_function   = valuefunction
+                value_function   = priceprocess(USE_AR1)
                                         ) do sp, stage
         N = length(valley_chain)
         turbine(i) = valley_chain[i].turbine
