@@ -1,6 +1,4 @@
-```@meta
-CurrentModule = SDDP
-```
+# Readings
 
 On this page, we've collated a variety of papers and books we think are helpful
 readings that cover knowledge needed to use SDDP.jl.
