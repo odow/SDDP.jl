@@ -27,6 +27,45 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         @test y == x
     end
 
+    @testset "WorstCase" begin
+        measure = WorstCase()
+        m = SDDPModel(
+            sense           = :Max,
+            stages          = 2,
+            objective_bound = 10,
+            risk_measure    = measure
+            ) do sp, t
+            @state(sp, x>=0, x0==0)
+            @rhsnoise(sp, w=1:2, x <= w)
+            @stageobjective(sp, x)
+        end
+
+        y = zeros(4)
+        x = [0.1, 0.2, 0.3, 0.4]
+        obj = [1.1, 1.2, 0.6, 1.3]
+        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+        @test y == [0.0, 0.0, 1.0, 0.0]
+
+        measure = WorstCase()
+        m = SDDPModel(
+            sense           = :Min,
+            stages          = 2,
+            objective_bound = 10,
+            risk_measure    = measure
+            ) do sp, t
+            @state(sp, x>=0, x0==0)
+            @rhsnoise(sp, w=1:2, x <= w)
+            @stageobjective(sp, x)
+        end
+
+        y = zeros(4)
+        x = [0.1, 0.2, 0.3, 0.4]
+        obj = [1.1, 1.2, 0.6, 1.3]
+        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+        @test y == [0.0, 0.0, 0.0, 1.0]
+    end
+
+
     @testset "AV@R" begin
         @test_throws Exception NestedAVaR(lambda=1.1)
         @test_throws Exception NestedAVaR(lambda=-0.1)
@@ -48,7 +87,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         x = [0.1, 0.2, 0.3, 0.4]
         obj = [1.0,2.0,3.0,4.0]
         SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test y == 0.25 * x + 0.75 * [1/2, 1/2, 0, 0]
+        @test isapprox(y, 0.25 * x + 0.75 * [1/2, 1/2, 0, 0], atol=1e-6)
 
         measure = NestedAVaR(lambda=0.25, beta=0.2)
         m = SDDPModel(
@@ -66,7 +105,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         x = [0.1, 0.2, 0.3, 0.4]
         obj = [1.0,2.0,3.0,4.0]
         SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test y == 0.25 * x + 0.75 * [0, 0, 0, 1.0]
+        @test isapprox(y, 0.25 * x + 0.75 * [0, 0, 0, 1.0], atol=1e-6)
 
         measure = NestedAVaR(lambda=0.5, beta=0.0)
         m = SDDPModel(
@@ -83,7 +122,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         x = [0.1, 0.2, 0.3, 0.4]
         obj = [1.0,2.0,3.0,4.0]
         SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test y == 0.5 * x + 0.5 * [1.0, 0, 0, 0]
+        @test isapprox(y, 0.5 * x + 0.5 * [1.0, 0, 0, 0], atol=1e-6)
 
         measure = NestedAVaR(lambda=0.5, beta=0.0)
         m = SDDPModel(
@@ -100,7 +139,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         x = [0.0, 0.2, 0.4, 0.4]
         obj = [1.0,2.0,3.0,4.0]
         SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test y == 0.5 * x + 0.5 * [0.0, 1.0, 0, 0]
+        @test isapprox(y, 0.5 * x + 0.5 * [0.0, 1.0, 0, 0], atol=1e-6)
     end
 
     @testset "User-defined MyRiskMeasure" begin

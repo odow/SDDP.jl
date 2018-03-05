@@ -4,6 +4,8 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
+export Expectation, AVaR, NestedAVaR, WorstCase
+
 """
     modifyprobability!(measure::AbstractRiskMeasure,
             riskadjusted_distribution,
@@ -46,5 +48,7 @@ function modifyprobability!(measure::AbstractRiskMeasure,
 end
 
 include("Expectation.jl")
-include("NestedAVaR.jl")
+include("WorstCase.jl")
+include("AVaR.jl")
+include("ConvexCombination.jl")
 include("DRO.jl")
