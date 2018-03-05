@@ -7,8 +7,6 @@
 """
     Expectation()
 
-# Description
-
 The expectation risk measure.
 """
 struct Expectation <: AbstractRiskMeasure end

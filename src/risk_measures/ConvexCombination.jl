@@ -4,9 +4,33 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-struct ConvexCombination <: AbstractRiskMeasure
-    measures::Vector{Tuple{Float64, AVaR}}
+import Base: +, *
+
+"""
+    ConvexCombination( (weight::Float64, measure::AbstractRiskMeasure) ... )
+
+Create a weighted combination of risk measures.
+
+### Examples
+
+    ConvexCombination(
+        (0.5, Expectation()),
+        (0.5, AVaR(0.25))
+    )
+
+Convex combinations can also be constructed by adding weighted risk measures
+together as follows:
+
+    0.5 * Expectation() + 0.5 * AVaR(0.5)
+
+"""
+struct ConvexCombination{T<:Tuple} <: AbstractRiskMeasure
+    measures::T
 end
+ConvexCombination(args::Tuple...) = ConvexCombination(args)
+
+(+)(a::ConvexCombination, b::ConvexCombination) = ConvexCombination(a.measures..., b.measures...)
+(*)(lhs::Float64, rhs::AbstractRiskMeasure) = ConvexCombination( ( (lhs, rhs), ) )
 
 function modifyprobability!(riskmeasure::ConvexCombination,
     riskadjusted_distribution,
@@ -45,10 +69,6 @@ Inreasing values of `lambda` are less risk averse (more weight on expecattion)
  The quantile at which to calculate the Average Value @ Risk. Increasing values
  of `beta` are less risk averse. If `beta=0`, then the AV@R component is the
  worst case risk measure.
-
-# Returns
-
-    m::NestedAVaR<:AbstractRiskMeasure
 """
 function NestedAVaR(;lambda::Float64=1.0, beta::Float64=1.0)
     if lambda > 1.0 || lambda < 0.0
@@ -57,5 +77,5 @@ function NestedAVaR(;lambda::Float64=1.0, beta::Float64=1.0)
     if beta > 1.0 || beta < 0.0
         error("Beta must be in the range [0, 1]. Increasing values of beta are less risk averse. beta=1 is identical to taking the expectation.")
     end
-    ConvexCombination([(lambda, AVaR(1.0)), ((1-lambda), AVaR(beta))])
+    return lambda * Expectation() + (1 - lambda) * AVaR(beta)
 end

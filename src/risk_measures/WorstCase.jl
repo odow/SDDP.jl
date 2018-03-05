@@ -7,7 +7,7 @@
 """
     WorstCase()
 
-The worstcase risk measure.
+The worst-case risk measure.
 """
 struct WorstCase <: AbstractRiskMeasure end
 

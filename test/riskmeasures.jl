@@ -6,7 +6,22 @@
 
 struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
 
+
 @testset "Risk Measures" begin
+    @testset "Constructors" begin
+        a = Expectation()
+        b = AVaR(0.5)
+        c = WorstCase()
+        d = 0.5a + 0.3b + 0.2c
+        @test d.measures[1] == (0.5, a)
+        @test d.measures[2] == (0.3, b)
+        @test d.measures[3] == (0.2, c)
+
+        aa = NestedAVaR(lambda=0.5, beta=0.25)
+        @test aa.measures[1] == (0.5, Expectation())
+        @test aa.measures[2] == (0.5, AVaR(0.25))
+    end
+
     @testset "Expectation" begin
         measure = Expectation()
         m = SDDPModel(

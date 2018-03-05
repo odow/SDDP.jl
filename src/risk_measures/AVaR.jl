@@ -4,6 +4,12 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
+"""
+    AVaR(beta::Float64)
+
+The Average Value @ Risk measure. When `beta=0`, the measure is the is worst-case,
+when `beta=1` the measure is equivalent to expectation.
+"""
 struct AVaR <: AbstractRiskMeasure
     beta::Float64
     function AVaR(beta::Float64)
