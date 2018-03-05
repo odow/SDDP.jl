@@ -45,25 +45,6 @@ function modifyprobability!(measure::AbstractRiskMeasure,
     error("You need to overload a `modifyprobability!` method for the measure of type $(typeof(measure)).")
 end
 
-# ==============================================================================
-#   The Expectation risk measure:
-#   In expectation, leave probabilities as they were
-"""
-    Expectation()
-
-# Description
-
-The expectation risk measure.
-"""
-struct Expectation <: AbstractRiskMeasure end
-
-function modifyprobability!(::Expectation,
-    riskadjusted_distribution::AbstractVector,
-    original_distribution::Vector{Float64},
-    observations::Vector{Float64},
-    m::SDDPModel,
-    sp::JuMP.Model
-    )
-    riskadjusted_distribution .= original_distribution
-    return nothing
-end
+include("Expectation.jl")
+include("NestedAVaR.jl")
+include("DRO.jl")
