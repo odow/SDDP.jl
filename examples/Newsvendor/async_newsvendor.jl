@@ -118,7 +118,7 @@ sim = simulate(m, 100, [:stock, :pid])
 pids = [s[:pid][1] for s in sim]
 @test !all(pids .== 1)
 
-m4 = createmodel(NestedAVaR(beta   = 0.6, lambda = 0.5))
+m4 = createmodel(0.5Expectation() + 0.5AVaR(0.6))
 loadcuts!(m4, "async.cuts")
 rm("async.cuts")
 

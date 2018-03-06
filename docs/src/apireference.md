@@ -8,16 +8,33 @@ CurrentModule = SDDP
 
 ```@docs
 SDDPModel
-Expectation
-NestedAVaR
-DefaultCutOracle
-LevelOneCutOracle
 @state
 @states
 @rhsnoise
 @rhsnoises
 setnoiseprobability!
 @stageobjective
+```
+
+### Risk Measures
+```@docs
+AbstractRiskMeasure
+modifyprobability!
+AVaR
+ConvexCombination
+Expectation
+DRO
+NestedAVaR
+WorstCase
+```
+
+### Cut Oracles
+```@docs
+AbstractCutOracle
+storecut!
+validcuts
+DefaultCutOracle
+LevelOneCutOracle
 ```
 
 ## Solving the problem efficiently
@@ -42,16 +59,4 @@ plotvaluefunction
 loadcuts!
 savemodel!
 loadmodel
-```
-
-## Extras for Experts
-```@docs
-AbstractCutOracle
-storecut!
-validcuts
-```
-
-```@docs
-AbstractRiskMeasure
-modifyprobability!
 ```

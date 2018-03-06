@@ -11,7 +11,7 @@ knowledge about stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 
 !!! note
     If you don't have that background, you may want to brush up on some
-    [reading material](readings.html).
+    [Readings](@ref).
 
 
 ### Types of problems SDDP.jl can solve
@@ -88,7 +88,7 @@ We draw the readers attention to three sections in the SDDPModel constructor.
 
 #### Keyword Metadata
 
-For a comprehensive list of options, checkout the [SDDPModel API](apireference.html#SDDP.SDDPModel)
+For a comprehensive list of options, checkout [`SDDPModel`](@ref)
 or type `julia> ? SDDPModel` into a Julia REPL. However, we'll briefly list the
 important ones here.
 

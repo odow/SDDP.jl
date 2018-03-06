@@ -21,8 +21,6 @@ export SDDPModel,
     stageobjective!, @stageobjective,
     # cut oracles
     DefaultCutOracle, DematosCutOracle, LevelOneCutOracle,
-    # risk measures
-    Expectation, NestedAVaR,
     MonteCarloSimulation, BoundConvergence,
     Serial, Asyncronous,
     solve, simulate,
