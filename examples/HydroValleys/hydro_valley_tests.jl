@@ -32,7 +32,7 @@ SDDP.solve(markov_stagewise_model, max_iterations=10, print_level=0)
 @test isapprox(getbound(markov_stagewise_model), 855.0, atol=1e-3)
 
 # risk averse stagewise inflows and markov prices
-riskaverse_model = hydrovalleymodel(riskmeasure = NestedAVaR(lambda=0.5, beta=0.66))
+riskaverse_model = hydrovalleymodel(riskmeasure = EAVaR(lambda=0.5, beta=0.66))
 SDDP.solve(riskaverse_model,
     max_iterations = 10,
     print_level = 0
@@ -42,7 +42,7 @@ SDDP.solve(riskaverse_model,
 
 # stagewise inflows and markov prices
 worst_case_model = hydrovalleymodel(
-    riskmeasure = NestedAVaR(lambda=0.5, beta=0.0), sense=:Min)
+    riskmeasure = EAVaR(lambda=0.5, beta=0.0), sense=:Min)
 SDDP.solve(worst_case_model,
     max_iterations = 10,
     simulation = MonteCarloSimulation(

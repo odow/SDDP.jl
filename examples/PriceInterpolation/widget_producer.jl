@@ -64,7 +64,7 @@ function widget_producer_example(DISCRETIZATION = 1)
         stages            = T,
         objective_bound   = 50.0,
         solver            = ClpSolver(),
-        # risk_measure      = NestedAVaR(lambda=0.5, beta=0.25),
+        # risk_measure      = EAVaR(lambda=0.5, beta=0.25),
         value_function    = value_function
                                             ) do sp, t
         #=

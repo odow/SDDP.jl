@@ -22,9 +22,9 @@ AbstractRiskMeasure
 modifyprobability!
 AVaR
 ConvexCombination
+EAVaR
 Expectation
 DRO
-NestedAVaR
 WorstCase
 ```
 

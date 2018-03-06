@@ -23,7 +23,7 @@ m = SDDPModel(
         [0.5 0.5; 0.5 0.5],
         [0.5 0.5; 0.5 0.5]
     ],
-    risk_measure = [Expectation(), Expectation(), NestedAVaR(lambda = 0.5, beta=0.5), Expectation()]
+    risk_measure = [Expectation(), Expectation(), EAVaR(lambda = 0.5, beta=0.5), Expectation()]
                             ) do sp, t, i
     @state(sp, xs >= 0, xsbar==0)
     @state(sp, xb >= 0, xbbar==0)

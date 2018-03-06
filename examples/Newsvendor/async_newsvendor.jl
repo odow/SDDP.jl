@@ -83,7 +83,7 @@ function createmodel(risk_measure)
     end
 end
 
-m = createmodel(NestedAVaR(beta   = 0.6, lambda = 0.5))
+m = createmodel(EAVaR(beta   = 0.6, lambda = 0.5))
 
 
 @test_throws Exception SDDP.solve(m, max_iterations=30, solve_type=Asyncronous(slaves=[2]))

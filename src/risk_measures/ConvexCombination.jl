@@ -6,6 +6,8 @@
 
 import Base: +, *
 
+export EAVaR
+
 """
     ConvexCombination( (weight::Float64, measure::AbstractRiskMeasure) ... )
 
@@ -50,7 +52,7 @@ function modifyprobability!(riskmeasure::ConvexCombination,
 end
 
 """
-    NestedAVaR(;lambda=1.0, beta=1.0)
+    EAVaR(;lambda=1.0, beta=1.0)
 
 # Description
 
@@ -70,7 +72,7 @@ Inreasing values of `lambda` are less risk averse (more weight on expecattion)
  of `beta` are less risk averse. If `beta=0`, then the AV@R component is the
  worst case risk measure.
 """
-function NestedAVaR(;lambda::Float64=1.0, beta::Float64=1.0)
+function EAVaR(;lambda::Float64=1.0, beta::Float64=1.0)
     if lambda > 1.0 || lambda < 0.0
         error("Lambda must be in the range [0, 1]. Increasing values of lambda are less risk averse. lambda=1 is identical to taking the expectation.")
     end

@@ -17,7 +17,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         @test d.measures[2] == (0.3, b)
         @test d.measures[3] == (0.2, c)
 
-        aa = NestedAVaR(lambda=0.5, beta=0.25)
+        aa = EAVaR(lambda=0.5, beta=0.25)
         @test aa.measures[1] == (0.5, Expectation())
         @test aa.measures[2] == (0.5, AVaR(0.25))
     end
@@ -82,11 +82,11 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
 
 
     @testset "AV@R" begin
-        @test_throws Exception NestedAVaR(lambda=1.1)
-        @test_throws Exception NestedAVaR(lambda=-0.1)
-        @test_throws Exception NestedAVaR(beta=1.1)
-        @test_throws Exception NestedAVaR(beta=-0.1)
-        measure = NestedAVaR(lambda=0.25, beta=0.2)
+        @test_throws Exception EAVaR(lambda=1.1)
+        @test_throws Exception EAVaR(lambda=-0.1)
+        @test_throws Exception EAVaR(beta=1.1)
+        @test_throws Exception EAVaR(beta=-0.1)
+        measure = EAVaR(lambda=0.25, beta=0.2)
         m = SDDPModel(
             sense           = :Max,
             stages          = 2,
@@ -104,7 +104,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
         @test isapprox(y, 0.25 * x + 0.75 * [1/2, 1/2, 0, 0], atol=1e-6)
 
-        measure = NestedAVaR(lambda=0.25, beta=0.2)
+        measure = EAVaR(lambda=0.25, beta=0.2)
         m = SDDPModel(
             sense           = :Min,
             stages          = 2,
@@ -122,7 +122,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
         @test isapprox(y, 0.25 * x + 0.75 * [0, 0, 0, 1.0], atol=1e-6)
 
-        measure = NestedAVaR(lambda=0.5, beta=0.0)
+        measure = EAVaR(lambda=0.5, beta=0.0)
         m = SDDPModel(
             sense           = :Max,
             stages          = 2,
@@ -139,7 +139,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
         SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
         @test isapprox(y, 0.5 * x + 0.5 * [1.0, 0, 0, 0], atol=1e-6)
 
-        measure = NestedAVaR(lambda=0.5, beta=0.0)
+        measure = EAVaR(lambda=0.5, beta=0.0)
         m = SDDPModel(
             sense           = :Max,
             stages          = 2,
