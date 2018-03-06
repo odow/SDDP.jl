@@ -92,7 +92,7 @@ function contracting_example(DISCRETIZATION = 1)
         stages            = T,
         objective_bound   = 200.0,
         solver            = ClpSolver(),
-        risk_measure      = NestedAVaR(lambda=0.8, beta=0.5),
+        risk_measure      = EAVaR(lambda=0.8, beta=0.5),
         value_function    = value_function
                                             ) do sp, t
         @states(sp, begin

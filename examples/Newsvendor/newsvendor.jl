@@ -92,7 +92,7 @@ news1 = newsvendormodel()
 ) == :bound_convergence
 @test isapprox(getbound(news1), -97.9, atol=1e-3)
 
-news2 = newsvendormodel(riskmeasure=NestedAVaR(beta=0.6,lambda=0.5))
+news2 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5))
 @test SDDP.solve(news2,
     max_iterations = 50,
     print_level = 0,
@@ -123,7 +123,7 @@ historical_results2 = simulate(news2, [:buy, :sell];
 
 
 # Build and solve a model
-news3 = newsvendormodel(riskmeasure=NestedAVaR(beta=0.6,lambda=0.5))
+news3 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5))
 cuts_file_name = "newsvendor_cuts.csv"
 @test SDDP.solve(news3,
     max_iterations = 30,
@@ -135,7 +135,7 @@ results3 = simulate(news3, 500)
 @test isapprox(mean(r[:objective] for r in results3), -97.9, atol=0.1)
 
 # Build a completely new model and load old cuts
-news4 = newsvendormodel(riskmeasure=NestedAVaR(beta=0.6,lambda=0.5))
+news4 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5))
 loadcuts!(news4, cuts_file_name)
 
 # Simulating the new model gives the same results as before
@@ -144,7 +144,7 @@ results4 = simulate(news4, 500)
 @test isapprox(mean(r[:objective] for r in results4), -97.9, atol=0.1)
 
 # Build a completely new model with a different cut manager
-news5 = newsvendormodel(riskmeasure=NestedAVaR(beta=0.6,lambda=0.5), oracle=DematosCutOracle())
+news5 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5), oracle=DematosCutOracle())
 # Even dominated cuts are added and kept
 loadcuts!(news5, cuts_file_name)
 

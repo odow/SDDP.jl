@@ -28,3 +28,4 @@ end
 @deprecate_macro noises rhsnoises
 @deprecate stageobjective! setstageobjective!
 @deprecate init! initializevaluefunction
+@deprecate NestedAVaR(;lambda=1.0,beta=1.0) EAVaR(;lambda=lambda,beta=beta)

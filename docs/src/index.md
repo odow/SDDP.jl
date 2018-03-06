@@ -128,7 +128,7 @@ important ones here.
     measures. There must be one element for every stage. For example:
 
 ```julia
-risk_measure = [ NestedAVaR(lambda=0.5, beta=0.25), Expectation() ]
+risk_measure = [ EAVaR(lambda=0.5, beta=0.25), Expectation() ]
 ```
 
    will apply the `i`'th element of `risk_measure` to every Markov state in the
@@ -141,7 +141,7 @@ risk_measure = [
 # Stage 1 Markov 1 # Stage 1 Markov 2 #
    [ Expectation(), Expectation() ],
    # ------- Stage 2 Markov 1 ------- ## ------- Stage 2 Markov 2 ------- #
-   [ NestedAVaR(lambda=0.5, beta=0.25), NestedAVaR(lambda=0.25, beta=0.3) ]
+   [ EAVaR(lambda=0.5, beta=0.25), EAVaR(lambda=0.25, beta=0.3) ]
    ]
 ```
     Like the objective bound, another option is to pass a function that takes
@@ -153,9 +153,9 @@ function stagedependentrisk(stage, markov_state)
         return Expectation()
     else
         if markov_state == 1
-            return NestedAVaR(lambda=0.5, beta=0.25)
+            return EAVaR(lambda=0.5, beta=0.25)
         else
-            return NestedAVaR(lambda=0.25, beta=0.3)
+            return EAVaR(lambda=0.25, beta=0.3)
         end
     end
 end
@@ -167,7 +167,7 @@ risk_measure = stagedependentrisk
    associated with it (as it has no children), we still have to specify a risk
    measure. This is necessary to simplify the implementation of the algorithm.
 
-   For more help see [`NestedAVaR`](@ref) or [`Expectation`](@ref).
+   For more help see [`EAVaR`](@ref) or [`Expectation`](@ref).
 
  * `markov_transition`: define the transition probabilties of the stage graph.
    If a single array is given, it is assumed that there is an equal number of
@@ -399,7 +399,7 @@ m = SDDPModel(
          risk_measure = [
                         Expectation(),
                         Expectation(),
-                        NestedAVaR(lambda = 0.5, beta=0.5),
+                        EAVaR(lambda = 0.5, beta=0.5),
                         Expectation()
                     ]
                             ) do sp, t, i

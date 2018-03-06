@@ -1,3 +1,6 @@
+#### 6/March/2018
+- Deprecated `NestedAVaR` in favour of `EAVaR` (#106)
+
 #### 7/February/2018
 - Added price interpolation value functions (#86)
 

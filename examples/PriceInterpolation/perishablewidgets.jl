@@ -93,7 +93,7 @@ m = SDDPModel(
         of the tail we are worried about. Therefore, decreasing values of beta
         are more risk averse.
     ==#
-    risk_measure      = NestedAVaR(lambda=0.5, beta=0.25),
+    risk_measure      = EAVaR(lambda=0.5, beta=0.25),
     # price risk magic
     value_function    = StaticPriceInterpolation(
                             #==
