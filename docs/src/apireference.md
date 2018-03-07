@@ -37,6 +37,13 @@ DefaultCutOracle
 LevelOneCutOracle
 ```
 
+### Price Interpolation
+```@docs
+StaticPriceInterpolation
+DynamicPriceInterpolation
+```
+
+
 ## Solving the problem efficiently
 ```@docs
 solve
