@@ -85,8 +85,8 @@ function interpolate(vf::StaticPriceInterpolation)
         end
         lower_idx = upper_idx - 1
         lambda = (vf.location - vf.rib_locations[lower_idx]) / (vf.rib_locations[upper_idx] - vf.rib_locations[lower_idx])
-        if (lambda < 0.0) || (lambda > 1.0)
-            error("The location $(vf.location) is outside the interpolated region.")
+        if (lambda < -1e-6) || (lambda > 1.0 + 1e-6)
+            error("The location $(vf.location) is outside the interpolated region. lambda = $(lambda)")
         end
 
         append!(y, vf.variables[lower_idx] * (1-lambda))
