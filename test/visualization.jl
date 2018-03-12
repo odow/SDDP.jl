@@ -118,7 +118,37 @@
             html = SDDP.prepvaluefunctionplot(m, 3, 1, "Bonds", "", 50.0, 0.0:2.0:100)
             @test html == readstring(joinpath(dirname(@__FILE__), "visualize_examples", "value_function.html"))
         end
-
-
     end
+
+    # This needs a dependency on Plots.jl to test. Seems a bit overkill.
+    # @testset "PlotRecipes" begin
+    #     a = Dict{Symbol, Any}()
+    #     p = [
+    #         Dict{Symbol, Any}(:x => rand() * [1,2,3,4])
+    #         for i in 1:100
+    #     ]
+    #     plt = SDDP.RecipesBase.apply_recipe(
+    #         a,
+    #         SDDP.PublicationPlot(
+    #             (p, :x)
+    #         )
+    #     )
+    #     @test a[:size] == (500, 300)
+    #     @test a[:xlabel] == "Stage\n"
+    #     @test length(plt) == 4 # four series
+    #     for plti in plt[1:3]
+    #         for key in [
+    #             :x, :y, :label, :size, :xlabel, :c,
+    #             :alpha, :ribbon, :fillalpha
+    #             ]
+    #             @test haskey(plti.d, key)
+    #         end
+    #     end
+    #     for key in [:x, :y, :label, :size, :xlabel, :c]
+    #         @test haskey(plt[4].d, key)
+    #     end
+    #     for key in [:alpha, :ribbon, :fillalpha]
+    #         @test !haskey(plt[4].d, key)
+    #     end
+    # end
 end
