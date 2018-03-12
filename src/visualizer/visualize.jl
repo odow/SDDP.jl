@@ -34,3 +34,4 @@ end
 
 include("visualize_simulation.jl")
 include("visualize_value_function.jl")
+include("publication_plots.jl")

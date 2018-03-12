@@ -19,7 +19,7 @@
     x[0] = 2.0
     p[0] = 1.5
     ω[t] ~ {0, 0.05, 0.10, ..., 0.45, 0.5} with uniform probability.
-    ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.
+    ϕ[t] ~ {0.9, 0.95, 0.99, 1.0, 1.01, 1.05, 1.1} with uniform probability.
 =#
 
 using SDDP, JuMP, Clp, Base.Test
@@ -74,6 +74,31 @@ end
 
 if length(ARGS) > 0
     if ARGS[1] == "static"
+        m = newsvendor_example(15)
+        srand(123)
+        status = SDDP.solve(m,
+            max_iterations = 10
+        )
+        s = simulate(m, 1_000, [:x, :x0, :u, :price])
+
+        using Plots
+        gr()
+        Ω = 0:0.05:0.5
+        plot(
+            SDDP.publicationplot(s, :x, title="Outgoing State", ylabel="Widgets"),
+            SDDP.publicationplot(s, x->exp.(x[:price]), title="Price", ylabel="\$/Widget"),
+            SDDP.publicationplot(s, x->Ω[x[:noise]], title="Noise", ylabel="Widgets"),
+            SDDP.publicationplot(s, :u, title="Control", ylabel="Widgets"),
+            layout        = (2,2),
+            size          = (1000, 600),
+            titlefont     = Plots.font("times", 14),
+            guidefont     = Plots.font("times", 14),
+            tickfont      = Plots.font("times", 14),
+            bottom_margin = 7.5Plots.mm,
+            left_margin   = 5Plots.mm
+        )
+        savefig("static.pdf")
+
         bounds = Float64[]
         for N in 2:20
             m = newsvendor_example(N)
@@ -89,6 +114,7 @@ if length(ARGS) > 0
                 println(io, b)
             end
         end
+
     elseif ARGS[1] == "dynamic"
         m = newsvendor_example(1)
         srand(123)
