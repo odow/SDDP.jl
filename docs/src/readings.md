@@ -64,7 +64,7 @@ The paper describing Julia
 
 Source code on Github
 
- - [https://www.github.com/JuliaOpt/JuMP.jl]((https://www.github.com/JuliaOpt/JuMP.jl)
+ - [https://www.github.com/JuliaOpt/JuMP.jl](https://www.github.com/JuliaOpt/JuMP.jl)
 
 The paper describing JuMP
 
