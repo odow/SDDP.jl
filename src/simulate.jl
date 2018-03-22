@@ -127,3 +127,10 @@ function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
         pmap(wp, (i) -> randomsimulation(m, variables), 1:N)
     end
 end
+
+function randomsimulation(m::SDDPModel, variables::Vector{Symbol})
+    store = newsolutionstore(variables)
+    obj = forwardpass!(m, Settings(), store)
+    store[:objective] = obj
+    return store
+end
