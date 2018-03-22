@@ -122,23 +122,8 @@ with the exception of `:objective` which is just
     results[2][:x][3] # value of :x in stage 3 in second simulation
 """
 function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
-    number_workers = length(workers())
-    sims_per_processor = ceil(Int, N / number_workers)
-    # map step
-    parallel_sims = pmap(i->mappedsimulation(m, sims_per_processor, variables), 1:number_workers)
-    # reduce step
-    reduced_sims = vcat(parallel_sims...)
-    @assert length(reduced_sims) >= N
-    return reduced_sims[1:N]
-end
-
-function mappedsimulation(m::SDDPModel, N::Int, variables::Vector{Symbol})
-    map(i->randomsimulation(m, variables), 1:N)
-end
-
-function randomsimulation(m::SDDPModel, variables::Vector{Symbol})
-    store = newsolutionstore(variables)
-    obj = forwardpass!(m, Settings(), store)
-    store[:objective] = obj
-    return store
+    wp = CachingPool(workers())
+    let m=m
+        pmap(wp, (i) -> randomsimulation(m, variables), 1:N)
+    end
 end
