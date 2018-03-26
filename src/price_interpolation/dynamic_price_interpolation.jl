@@ -149,7 +149,7 @@ function updatevaluefunction!(m::SDDPModel{V}, settings::Settings, t::Int, sp::J
     cut = constructcut(m, sp, ex, t, current_price)
 
     # if necessary, write to file
-    if !settings.is_asyncronous && isopen(settings.cut_output_file)
+    if !settings.is_asynchronous && isopen(settings.cut_output_file)
         writecut!(settings.cut_output_file, ex.stage, ex.markovstate, current_price, cut)
     end
 
@@ -157,7 +157,7 @@ function updatevaluefunction!(m::SDDPModel{V}, settings::Settings, t::Int, sp::J
     addcut!(m, sp, current_price, cut)
 
     # store this cut in m.ext[:cuts] for parallel if necessary
-    if settings.is_asyncronous
+    if settings.is_asynchronous
         storeasynccut!(m, sp, current_price, cut)
     end
 end

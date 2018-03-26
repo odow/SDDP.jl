@@ -100,7 +100,7 @@ function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Mode
     end
     cut = constructcut(m, sp)
 
-    if !settings.is_asyncronous && isopen(settings.cut_output_file)
+    if !settings.is_asynchronous && isopen(settings.cut_output_file)
         # only write the cut to file if it is open and
         # we are in serial mode. Async cut writing happens on
         # master thread
@@ -112,9 +112,9 @@ function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Mode
     # add the cut to value function and JuMP model
     addcut!(m, sp, cut)
 
-    # if we are solving asyncronously, need to save it
+    # if we are solving asynchronously, need to save it
     # for passing
-    if settings.is_asyncronous
+    if settings.is_asynchronous
         storeasynccut!(m, sp, cut)
     end
 
@@ -230,7 +230,7 @@ function loadcuts!(m::SDDPModel{DefaultValueFunction{C}}, filename::String) wher
 end
 
 #=
-    To enable asyncronous solutions, it is necessary to implement
+    To enable asynchronous solutions, it is necessary to implement
         asynccutstoragetype(::Type{V})::Type{T}
         asynccutstorage(m::SDDPModel{V}, sp::JuMP.Model, cut::Cut)::T
         addasynccut!(m::SDDPModel{V}, cut::T)

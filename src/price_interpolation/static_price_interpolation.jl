@@ -100,14 +100,14 @@ function updatevaluefunction!(m::SDDPModel{V}, settings::Settings, t::Int, sp::J
     ex = ext(sp)
     for (i, (rib, theta, cutoracle)) in enumerate(zip(vf.rib_locations, vf.variables, vf.cutoracles))
         cut = constructcut(m, sp, ex, t, rib)
-        if !settings.is_asyncronous && isopen(settings.cut_output_file)
+        if !settings.is_asynchronous && isopen(settings.cut_output_file)
             writecut!(settings.cut_output_file, ex.stage, ex.markovstate, rib, cut)
         end
 
         storecut!(cutoracle, m, sp, cut)
         addcuttoJuMPmodel!(vf, sp, theta, cut)
 
-        if settings.is_asyncronous
+        if settings.is_asynchronous
             storeasynccut!(m, sp, rib, cut)
         end
     end

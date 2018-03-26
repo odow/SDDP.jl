@@ -22,7 +22,7 @@ export SDDPModel,
     # cut oracles
     DefaultCutOracle, DematosCutOracle, LevelOneCutOracle,
     MonteCarloSimulation, BoundConvergence,
-    Serial, Asyncronous,
+    Serial, Asynchronous,
     solve, simulate,
     # @visualise,
     getbound,
@@ -39,7 +39,7 @@ include("defaultvaluefunction.jl")
 include("simulate.jl")
 include("MIT_licensedcode.jl")
 include("print.jl")
-include("solve_asyncronous.jl")
+include("solve_asynchronous.jl")
 include("visualizer/visualize.jl")
 include("price_interpolation/price_interpolation.jl")
 include("deprecate.jl")
@@ -418,7 +418,7 @@ control the solution process.
     Relative filename to write the log to disk. Defaults to `""` (no log written)
  * `solve_type`:
     One of
-    * `Asyncronous()` - solve using a parallelised algorithm
+    * `Asynchronous()` - solve using a parallelised algorithm
     * `Serial()` - solve using a serial algorithm
     Default chooses automatically based on the number of available processors.
  * `reduce_memory_footprint::Bool`:
@@ -459,8 +459,8 @@ function JuMP.solve(m::SDDPModel;
         cut_selection_frequency::Int = 0,
         print_level::Int             = 1,
         log_file::String             = "",
-        # automatically chose Serial or Asyncronous
-        solve_type::SDDPSolveType    = nprocs()>2 ? Asyncronous() : Serial(),
+        # automatically chose Serial or Asynchronous
+        solve_type::SDDPSolveType    = nprocs()>2 ? Asynchronous() : Serial(),
         # this reduces memory but you shouldn't use it if you want to save the
         # sddp model since it throws away some information
         reduce_memory_footprint      = false,
@@ -486,7 +486,7 @@ function JuMP.solve(m::SDDPModel;
         log_file,
         reduce_memory_footprint,
         cut_output_file_handle,
-        isa(solve_type, Asyncronous)
+        isa(solve_type, Asynchronous)
     )
 
     print(printheader, settings, m, solve_type)

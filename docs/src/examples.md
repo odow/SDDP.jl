@@ -47,7 +47,7 @@ application. Here we categorize the examples by functionality.
 - [Asset Management Stagewise](https://github.com/odow/SDDP.jl/tree/master/examples/AssetManagement/asset_management_stagewise.jl)
 - [Newsvendor](https://github.com/odow/SDDP.jl/tree/master/examples/Newsvendor/async_newsvendor.jl)
 
-## Asyncronous
+## Asynchronous
 - [Newsvendor](https://github.com/odow/SDDP.jl/tree/master/examples/Newsvendor/async_newsvendor.jl)
 
 ## Saving and Loading Cuts

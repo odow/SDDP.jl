@@ -8,7 +8,7 @@
 
 # Define
 
-Type used to dispatch and control the behaviour of the asyncronous solution
+Type used to dispatch and control the behaviour of the asynchronous solution
 algorithm.
 
 # Arguments
@@ -22,27 +22,27 @@ algorithm.
 
 # Examples
 
-    Asyncronous() # load on all workers
-    Asyncronous(slaves=[2,3,4]) # load slaves on processes 2, 3, and 4
-    Asyncronous(step=10) # perform 10 iterations before adding new slave
+    Asynchronous() # load on all workers
+    Asynchronous(slaves=[2,3,4]) # load slaves on processes 2, 3, and 4
+    Asynchronous(step=10) # perform 10 iterations before adding new slave
 
 """
-struct Asyncronous <: SDDPSolveType
+struct Asynchronous <: SDDPSolveType
     slaves::Vector{Int} # pid of slave processors
     step::Float64       # number of iterations before introducing another slave
 end
-function Asyncronous(;slaves=workers(), step=1/(1 + length(slaves)))
+function Asynchronous(;slaves=workers(), step=1/(1 + length(slaves)))
     sl = Int[]
     for s in slaves
         if s == myid()
-            warn("Current process passed to Asyncronous() as slave. Ignoring.")
+            warn("Current process passed to Asynchronous() as slave. Ignoring.")
         else
             push!(sl, s)
         end
     end
-    Asyncronous(sl, step)
+    Asynchronous(sl, step)
 end
-Base.show(io::IO, async::Asyncronous) = print(io, "Asyncronous solver with $(length(async.slaves)) slave processors and a step of $(async.step)")
+Base.show(io::IO, async::Asynchronous) = print(io, "Asynchronous solver with $(length(async.slaves)) slave processors and a step of $(async.step)")
 
 function sendto(procs;args...)
     for p in procs
@@ -90,7 +90,7 @@ function rebuild!(T)
     rebuild!(mm)
 end
 
-function JuMP.solve(async::Asyncronous, m::SDDPModel{T}, settings::Settings=Settings()) where T
+function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Settings()) where T
     status = :solving
     iterationtype = :cutting
     iteration = 1
