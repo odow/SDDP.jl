@@ -49,7 +49,7 @@ To run this example, there are two options.
     cmd> julia -p N perishablewidgets.jl
 
     This will start Julia with N processors. It N > 2, SDDP.jl will choose to
-    solve using the Asyncronous solver. Upon completion, Julia will exit so make
+    solve using the Asynchronous solver. Upon completion, Julia will exit so make
     sure you write to file (or save) any results.
 
 2. Interactively:
@@ -354,7 +354,7 @@ end
 
     #  SDDP.jl will automatically chose the best solver but we can orverride
     # solve_type      = Serial(),
-    # solve_type      = Asyncronous(),
+    # solve_type      = Asynchronous(),
 
     # write the log output to file
     log_file        = "perishablewidgets.log",

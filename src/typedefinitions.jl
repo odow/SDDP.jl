@@ -241,6 +241,6 @@ struct Settings
     log_file::String
     reduce_memory_footprint::Bool
     cut_output_file::IOStream
-    is_asyncronous::Bool
+    is_asynchronous::Bool
 end
 Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, IOStream("Cuts"), false)
