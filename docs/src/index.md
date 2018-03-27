@@ -441,7 +441,56 @@ end
 
 ## Solving the problem efficiently
 
-... still to do ...
+During the solution process, SDDP.jl outputs some logging information (an example of this
+is given below). We briefly describe the columns:
+- `Objective (Simulation)`: If this consists of one value, it is the objective value of the
+forward simulation. If it is a pair, it correspond to the confidence interval estimate as a
+result of a simulation phase;
+- `Objective (Bound)`: is the deterministic bound of the problem (lower if minimizing, upper
+if maximizing);
+- `Objective (% Gap)`: the relative percentage gap between the closest edge of the confidence
+interval and the deterministic bound;
+- `Cut Passes (#)`: the number of iterations (one forward pass, one backward pass) con-
+ducted;
+- `Cut Passes (Time)`: the number seconds spent iterating to discover cuts;
+- `Simulations (#)`: the number of forward passes conducted in order to estimate the upper
+(if minimizing, otherwise lower) bound;
+- `Simulations (Time)`: the number of seconds spent conducting forward passes in order to
+estimate the upper (if minimizing, otherwise lower) bound;
+- `Total (Time)`: total time (in seconds) of the solution process (including initialization).
+Logging can be turned off by setting print level to 0. It can also be written to the file
+specified by the log file keyword.
+```
+-------------------------------------------------------------------------------
+                      SDDP Solver. © Oscar Dowson, 2017.
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         4
+        States:         2
+        Subproblems:    7
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total    
+    Simulation        Bound   % Gap  |   #     Time     #    Time    Time     
+-------------------------------------------------------------------------------
+      -41.484         -9.722         |     1    0.0      0    0.0    0.0 
+       -2.172         -7.848         |     2    0.0      0    0.0    0.0 
+        4.284         -7.550         |     3    0.0      0    0.0    0.0 
+      -10.271         -6.398         |     4    0.0      0    0.0    0.0 
+  -7.782    -4.760    -6.346  -22.6  |     5    0.0    500    0.4    0.4 
+
+                        ... some lines omitted ...
+
+      -30.756         -5.570         |    29    0.1    1.9K   1.6    1.8 
+  -7.716    -4.601    -5.570  -38.5  |    30    0.1    2.4K   2.0    2.2
+  -------------------------------------------------------------------------------
+    Statistics:
+        Iterations:         30
+        Termination Status: max_iterations
+---------------------------------------------------------------------------------
+```
 
 ## Understanding the solution
 
