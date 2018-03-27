@@ -443,21 +443,15 @@ end
 
 During the solution process, SDDP.jl outputs some logging information (an example of this
 is given below). We briefly describe the columns:
-- `Objective (Simulation)`: If this consists of one value, it is the objective value of the
-forward simulation. If it is a pair, it correspond to the confidence interval estimate as a
-result of a simulation phase;
-- `Objective (Bound)`: is the deterministic bound of the problem (lower if minimizing, upper
-if maximizing);
-- `Objective (% Gap)`: the relative percentage gap between the closest edge of the confidence
-interval and the deterministic bound;
-- `Cut Passes (#)`: the number of iterations (one forward pass, one backward pass) con-
-ducted;
-- `Cut Passes (Time)`: the number seconds spent iterating to discover cuts;
-- `Simulations (#)`: the number of forward passes conducted in order to estimate the upper
-(if minimizing, otherwise lower) bound;
-- `Simulations (Time)`: the number of seconds spent conducting forward passes in order to
-estimate the upper (if minimizing, otherwise lower) bound;
-- `Total (Time)`: total time (in seconds) of the solution process (including initialization).
+
+The first column (`Objective (Simulation)`) is either a single value or a confidence interval from a Monte Carlo simulation (see [`MonteCarloSimulation`](@ref)). When the entry is a single value, its is the objective from a single (and the most recent) forward pass in SDDP. The single value is not an average. The second column (`Objective (Bound)`) is the deterministic bound of the problem (lower if minimizing, upper if maximizing). This is calculated every iteration. If a Monte Carlo simulation has been conducted this iteration, then the `Objective (% Gap)` will also be display. The objective gap is the relative percentage gap between the closest edge of the confidence interval and the deterministic bound.
+
+The next two columns relate to the number of iterations (`#`) and time spend conducting them (`Time`). This information is printed every iteration. It does not include the time spent simulating the policy as part of the Monte Carlo simulation (i.e. to estimate the upper bound), or the time spent initializing the model.
+
+The sixth and seventh columns relate to the Monte Carlo simulations. Specifically the number (`#`) of replications conducted, and time spent conducting them (`Time`). You can use these data to determine how often to perform the Monte Carlo simulations. For example, if the time is high relative to the iteration `Cut Passes: Time`, then you should perform the simulations less frequently. 
+
+Finally, `Total (Time)` is the total time (in seconds) of the solution process (including initialization).
+
 Logging can be turned off by setting print level to 0. It can also be written to the file
 specified by the log file keyword.
 ```
