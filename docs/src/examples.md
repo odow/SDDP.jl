@@ -36,7 +36,7 @@ application. Here we categorize the examples by functionality.
 - [Simple Conic](https://github.com/odow/SDDP.jl/tree/master/examples/Conic/simple_conic.jl)
 
 ## Conic
-- [Simple Conic](https://github.com/odow/SDDP.jl/tree/master/examples/Conic/simple_conic.jl)
+- [Simple Conic](https://github.com/odow/SDDP.jl/tree/master/examples/Nonlinear/simple_conic.jl)
 
 ## Termination Criteria
 

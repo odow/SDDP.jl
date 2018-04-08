@@ -1,5 +1,5 @@
 #==
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2018, Oscar Dowson
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -39,7 +39,7 @@ m = SDDPModel(
     @stageobjective(sp, (sin(3 * stage) - 1) * control)
 end
 
-@time status = SDDP.solve(m, max_iterations = 50,
+status = SDDP.solve(m, max_iterations = 50,
 print_level = 0)
 @test isapprox(SDDP.getbound(m), -1.471, atol=0.001)
 

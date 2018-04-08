@@ -1,4 +1,4 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2018, Oscar Dowson
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -48,6 +48,8 @@ m = SDDPModel(
 end
 
 srand(111)
-@time solve(m, max_iterations = 25,
-print_level = 0)
+solve(m,
+    max_iterations = 25,
+    print_level    = 0
+)
 @test isapprox(getbound(m), 1.514, atol=1e-4)

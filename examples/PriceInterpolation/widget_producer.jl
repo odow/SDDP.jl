@@ -145,15 +145,16 @@ end
 m = widget_producer_example()
 srand(123)
 status = SDDP.solve(m,
-    time_limit     = 20.0,
+    time_limit     = 5.0,
     simulation = MonteCarloSimulation(
         frequency = 100, min=100, step=100,max=1000
-    )
+    ),
+    print_level = 0
 )
 @test status == :time_limit
 results = simulate(m, 1000, [:C, :S, :price, :s, :d, :b])
 @test length(results) == 1000
-@test getbound(m) <= 12.0
+@test getbound(m) <= 15.0
 
 # SDDP.save!("results.julia", results)
 # plt = SDDP.newplot()

@@ -10,12 +10,12 @@
         Volume I (3rd ed.). Bellmont, MA: Athena Scientific.
 =#
 
-using SDDP, JuMP, Gurobi, Base.Test
+using SDDP, JuMP, Ipopt, Base.Test
 
 m = SDDPModel(
         stages          = 3,
         sense           = :Min,
-        solver          = GurobiSolver(OutputFlag=0),
+        solver          = IpoptSolver(print_level=0),
         objective_bound = 0.0
             ) do sp, t
     @state(sp, 0 <= x <= 2, x0 == 0)
