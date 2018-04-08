@@ -1,4 +1,4 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2018, Oscar Dowson
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -95,7 +95,7 @@ news1 = newsvendormodel()
 news2 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5))
 @test SDDP.solve(news2,
     max_iterations = 50,
-    print_level = 0,
+    print_level    = 0,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
                         min       = 500,

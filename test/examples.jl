@@ -40,6 +40,10 @@ const Examples = Dict(
     "Agriculture" => [
             "mccardle_farm.jl"
         ],
+    "Nonlinear" => [
+            "logs.jl",
+            "inventory-control.jl",
+        ],
     "PriceInterpolation" => [
             "simple_contracting.jl",
             "newsvendor.jl",

@@ -1,10 +1,10 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2018, Oscar Dowson
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-using SDDP, JuMP, Gurobi, Base.Test
+using SDDP, JuMP, Ipopt, Base.Test
 
 """
 A trivial two-stage stochastic programming problem to work out the
@@ -13,11 +13,11 @@ and the second-stage evaluates the decision.
 """
 function least_squares(data::Vector{Float64},radius=0.0)
     m = SDDPModel(
-        stages = 2,
-        sense = :Min,
+        stages          = 2,
+        sense           = :Min,
         objective_bound = 0.0,
-        solver=GurobiSolver(OutputFlag=0),
-        risk_measure = DRO(radius)
+        solver          = IpoptSolver(print_level=0),
+        risk_measure    = DRO(radius)
             ) do sp, t
 
         @state(sp, x′>=0, x==0)

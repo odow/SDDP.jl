@@ -1,4 +1,4 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2018, Oscar Dowson
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -51,5 +51,5 @@ end
 
 srand(1234)
 m = airconditioningmodel()
-solve(m, max_iterations=16, print_level=1)
+solve(m, max_iterations=16, print_level=2)
 @test isapprox(getbound(m), 62_500.0)

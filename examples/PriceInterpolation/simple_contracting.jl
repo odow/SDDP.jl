@@ -125,7 +125,7 @@ end
 # dynamic interpolation
 m = contracting_example()
 srand(123)
-SDDP.solve(m, max_iterations = 50, cut_selection_frequency=10, print_level=2)
+SDDP.solve(m, max_iterations = 50, cut_selection_frequency=10, print_level=0)
 @test SDDP.getbound(m) <= 175.0
 
 # historical simulation
@@ -153,7 +153,7 @@ results = simulate(m3, 500)
 # 5 fixed ribs
 m5 = contracting_example(5)
 srand(123)
-SDDP.solve(m5, max_iterations = 10)
+SDDP.solve(m5, max_iterations = 10, print_level=0)
 @test SDDP.getbound(m5) <= 150.0
 
 # historical simulation

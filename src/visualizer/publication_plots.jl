@@ -20,7 +20,7 @@ preparedata(s::Vector{Dict{Symbol, Any}}, key::Symbol, quantiles::Vector{Float64
 
 @recipe function f(h::PublicationPlot; quantile=[0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
     dataset, func = h.args
-    xlabel --> "Stage\n"
+    # xlabel --> "Stage\n"
     size --> (500, 300)
     Q = preparedata(dataset, func, sort(quantile))
     for i in 1:floor(Int, size(Q, 1) / 2)

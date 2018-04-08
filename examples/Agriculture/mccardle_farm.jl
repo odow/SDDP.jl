@@ -1,4 +1,4 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2018, Oscar Dowson
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -137,7 +137,7 @@ end
 
 srand(111)
 m = mccardle_farm_model()
-solution = solve(m, max_iterations=20)
+solution = solve(m, max_iterations=20, print_level=0)
 @test isapprox(getbound(m), 4074.1391, atol=1e-5)
 
 # results = simulate(m,  # Simulate the policy

@@ -1,4 +1,4 @@
-#  Copyright 2017, Eyob Zewdie, Oscar Dowson
+#  Copyright 2018, Eyob Zewdie, Oscar Dowson
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -88,5 +88,5 @@ m_1_2_5 = bookingmanagementmodel(1, 2, 5)
 
 srand(1234)
 m_2_2_3 = bookingmanagementmodel(2, 2, 3)
-@test solve(m_2_2_3, max_iterations = 40, print_level = 2) == :max_iterations
+@test solve(m_2_2_3, max_iterations = 40, print_level = 0) == :max_iterations
 @test isapprox(getbound(m_2_2_3), 6.13, atol=0.001)

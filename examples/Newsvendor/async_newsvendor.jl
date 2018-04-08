@@ -86,7 +86,7 @@ end
 m = createmodel(EAVaR(beta   = 0.6, lambda = 0.5))
 
 
-@test_throws Exception SDDP.solve(m, max_iterations=30, solve_type=Asynchronous(slaves=[2]))
+@test_throws Exception SDDP.solve(m, print_level=0, max_iterations=30, solve_type=Asynchronous(slaves=[2]))
 
 # slave processes
 slaves = workers()
