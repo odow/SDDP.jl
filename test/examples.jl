@@ -48,7 +48,8 @@ const Examples = Dict(
             "simple_contracting.jl",
             "newsvendor.jl",
             "widget_producer.jl",
-            "riverchain.jl"
+            "riverchain.jl",
+            "simple_markov.jl"
         ]
 
 )
