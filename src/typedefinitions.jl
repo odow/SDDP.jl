@@ -232,7 +232,7 @@ Defaults to `false`.
 MonteCarloSimulation(;frequency=0,min=20,max=0,step=1,confidence=0.95,termination=false) = MonteCarloSimulation(frequency,collect(min:step:max),confidence,termination)
 
 struct Settings
-    max_iterations::Int
+    iteration_limit::Int
     time_limit::Float64
     simulation::MonteCarloSimulation
     bound_convergence::BoundConvergence
