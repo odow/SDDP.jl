@@ -93,7 +93,7 @@ function vehiclelocationmodel(nvehicles, baselocations, requestlocations)
 end
 
 ambulancemodel = vehiclelocationmodel(3, [0, 20, 40, 60, 80, 100], 0:2:100)
-@test solve(ambulancemodel, max_iterations=50, print_level=0) == :max_iterations
+@test solve(ambulancemodel, iteration_limit=50, print_level=0) == :iteration_limit
 @test isapprox(getbound(ambulancemodel), 1700.0, atol=5)
 # N = 100
 # results = simulate(m, N, [:dispatch, :q, :shift])

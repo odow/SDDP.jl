@@ -137,7 +137,7 @@ end
 
 srand(111)
 m = mccardle_farm_model()
-solution = solve(m, max_iterations=20, print_level=0)
+solution = solve(m, iteration_limit=20, print_level=0)
 @test isapprox(getbound(m), 4074.1391, atol=1e-5)
 
 # results = simulate(m,  # Simulate the policy

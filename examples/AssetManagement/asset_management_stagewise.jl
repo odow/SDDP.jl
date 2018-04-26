@@ -53,7 +53,7 @@ end
 
 srand(111)
 status = solve(m,
-    max_iterations = 100,
+    iteration_limit = 100,
     simulation = MonteCarloSimulation(
         frequency = 5,
         min  = 100,

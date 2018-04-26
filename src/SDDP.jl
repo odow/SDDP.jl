@@ -355,8 +355,8 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
         end
 
         iteration += 1
-        if iteration > settings.max_iterations
-            status = :max_iterations
+        if iteration > settings.iteration_limit
+            status = :iteration_limit
             keep_iterating = false
         end
 
@@ -393,9 +393,9 @@ control the solution process.
  * `m`: the SDDPModel to solve
 
 # Keyword arguments
- * `max_iterations::Int`:
+ * `iteration_limit::Int`:
     The maximum number of cuts to add to a single stage problem before terminating.
-    Defaults to `10`.
+    Defaults to `1e9`.
  * `time_limit::Real`:
     The maximum number of seconds (in real time) to compute for before termination.
     Defaults to `Inf`.
@@ -435,13 +435,13 @@ control the solution process.
     * `:solving`
     * `:interrupted`
     * `:converged`
-    * `:max_iterations`
+    * `:iteration_limit`
     * `:bound_convergence`
     * `:time_limit`
 
 """
 function JuMP.solve(m::SDDPModel;
-        max_iterations::Int       = Int(1e9),
+        iteration_limit::Int      = Int(1e9),
         time_limit::Real          = Inf, # seconds
         simulation = MonteCarloSimulation(
                 frequency   = 0,
@@ -464,8 +464,14 @@ function JuMP.solve(m::SDDPModel;
         # this reduces memory but you shouldn't use it if you want to save the
         # sddp model since it throws away some information
         reduce_memory_footprint      = false,
-        cut_output_file::String      = ""
+        cut_output_file::String      = "",
+        # Deprecated arguments
+        max_iterations = nothing
     )
+    if max_iterations != nothing
+        warn("Keyword argument `max_iterations` is deprecated. Use `iteration_limit` instead.")
+        iteration_limit = max_iterations
+    end
     reset_timer!(TIMER)
 
     cut_output_file_handle = if cut_output_file != ""
@@ -477,7 +483,7 @@ function JuMP.solve(m::SDDPModel;
     end
 
     settings = Settings(
-        max_iterations,
+        iteration_limit,
         time_limit,
         simulation,
         bound_convergence,

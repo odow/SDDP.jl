@@ -32,5 +32,5 @@ m = SDDPModel(
     @stageobjective(sp, u + (x0 + u - w)^2)
 end
 
-solve(m, max_iterations=20, print_level=0)
+solve(m, iteration_limit=20, print_level=0)
 @test isapprox(getbound(m), 1.375)
