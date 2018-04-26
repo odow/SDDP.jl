@@ -88,7 +88,7 @@
             srand(12345)
 
             markov_stagewise_model = hydrovalleymodel(hasstagewiseinflows=true, hasmarkovprice=true)
-            SDDP.solve(markov_stagewise_model, max_iterations=10, print_level=0)
+            SDDP.solve(markov_stagewise_model, iteration_limit=10, print_level=0)
             @test isapprox(getbound(markov_stagewise_model), 855.0, atol=1e-3)
 
             results = simulate(markov_stagewise_model, 5, [:reservoir])

@@ -318,7 +318,7 @@ end
 
 @time status = SDDP.solve(m,
     # maximum number of cuts to be added to any individual subproblem
-    max_iterations = 300,
+    iteration_limit = 300,
 
     # time limit for solver (seconds)
     time_limit     = 20,

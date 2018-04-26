@@ -448,7 +448,7 @@ The first column (`Objective (Simulation)`) is either a single value or a confid
 
 The next two columns relate to the number of iterations (`#`) and time spend conducting them (`Time`). This information is printed every iteration. It does not include the time spent simulating the policy as part of the Monte Carlo simulation (i.e. to estimate the upper bound), or the time spent initializing the model.
 
-The sixth and seventh columns relate to the Monte Carlo simulations. Specifically the number (`#`) of replications conducted, and time spent conducting them (`Time`). You can use these data to determine how often to perform the Monte Carlo simulations. For example, if the time is high relative to the iteration `Cut Passes: Time`, then you should perform the simulations less frequently. 
+The sixth and seventh columns relate to the Monte Carlo simulations. Specifically the number (`#`) of replications conducted, and time spent conducting them (`Time`). You can use these data to determine how often to perform the Monte Carlo simulations. For example, if the time is high relative to the iteration `Cut Passes: Time`, then you should perform the simulations less frequently.
 
 Finally, `Total (Time)` is the total time (in seconds) of the solution process (including initialization).
 
@@ -469,20 +469,20 @@ specified by the log file keyword.
               Objective              |  Cut  Passes    Simulations   Total    
     Simulation        Bound   % Gap  |   #     Time     #    Time    Time     
 -------------------------------------------------------------------------------
-      -41.484         -9.722         |     1    0.0      0    0.0    0.0 
-       -2.172         -7.848         |     2    0.0      0    0.0    0.0 
-        4.284         -7.550         |     3    0.0      0    0.0    0.0 
-      -10.271         -6.398         |     4    0.0      0    0.0    0.0 
-  -7.782    -4.760    -6.346  -22.6  |     5    0.0    500    0.4    0.4 
+      -41.484         -9.722         |     1    0.0      0    0.0    0.0
+       -2.172         -7.848         |     2    0.0      0    0.0    0.0
+        4.284         -7.550         |     3    0.0      0    0.0    0.0
+      -10.271         -6.398         |     4    0.0      0    0.0    0.0
+  -7.782    -4.760    -6.346  -22.6  |     5    0.0    500    0.4    0.4
 
                         ... some lines omitted ...
 
-      -30.756         -5.570         |    29    0.1    1.9K   1.6    1.8 
+      -30.756         -5.570         |    29    0.1    1.9K   1.6    1.8
   -7.716    -4.601    -5.570  -38.5  |    30    0.1    2.4K   2.0    2.2
   -------------------------------------------------------------------------------
     Statistics:
         Iterations:         30
-        Termination Status: max_iterations
+        Termination Status: iteration_limit
 ---------------------------------------------------------------------------------
 ```
 
