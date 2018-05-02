@@ -45,9 +45,17 @@ end
 
 function storekey!(::Type{Val{T}}, store, markov::Int, noiseidx::Int, sp::JuMP.Model, t::Int) where T
     if JuMPVERSION < v"0.17"
-        push!(store, getvalue(getvariable(sp, T)))
+        try
+            push!(store, getvalue(getvariable(sp, T)))
+        catch
+            push!(store, getdual(getconstraint(sp, T)))
+        end
     else
-        push!(store, getvalue(sp[T]))
+        try
+            push!(store, getvalue(sp[T]))
+        catch
+            push!(store, getdual(sp[T]))
+        end
     end
 end
 

@@ -47,7 +47,7 @@ m = SDDPModel(
     # ------------------------------------------------------------------
     #   Constraints
     # Demand
-    @constraint(sp, g[1] + g[2] + u == 150)
+    @constraint(sp, demand_eq, g[1] + g[2] + u == 150)
 
     # ------------------------------------------------------------------
     #   Noise
@@ -76,3 +76,12 @@ solvestatus = solve(m,
 
 @test solvestatus == :converged
 @test isapprox(getbound(m), 57295, atol=1e-2)
+
+result = simulate(m, [:g, :u, :s, :demand_eq], noises=[1,1,1])
+@test result[:g] == [[100.0, 0.0], [100.0, 0.0], [50.0, 0.0]]
+@test result[:u] == [50.0, 50.0, 100.0]
+@test result[:s] == [0, 0, 0]
+@test result[:stageobjective] == [10000.0, 10000.0, 5000.0]
+@test result[:objective] == 25000.0
+
+@test result[:demand_eq] == [541.0, 190.0, 100.0]
