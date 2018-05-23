@@ -185,8 +185,8 @@ function JuMPsolve(direction::Type{T}, m::SDDPModel, sp::JuMP.Model) where T<:It
         presolve!(direction, m, sp)
         status = jumpsolve(sp)
         if status != :Optimal
-            filepath = joinpath(pwd(), "infeasible_subproblem.mps")
-            JuMP.writeMPS(sp, filepath)
+            filepath = joinpath(pwd(), "infeasible_subproblem.lp")
+            JuMP.writeLP(sp, filepath; genericnames=false)
             error("""Model in stage $(ext(sp).stage) and markov state $(ext(sp).markovstate)
             was not solved to Optimality. I wrote the offending MPS file to
             $(filepath).
