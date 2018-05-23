@@ -21,3 +21,14 @@ end
     @test SDDP.humanize(2000, "5.2f") == " 2.00K"
     @test_throws Exception SDDP.humanize(2000, "5.3f")
 end
+
+@testset "Test infeasible subproblem" begin
+    m = SDDPModel(solver=ClpSolver(), stages=2) do sp, t
+        @state(m, x>=0, x0==1)
+        @constraint(m, x <= -1)
+        @stageobjective(m, 0.0)
+    end
+    @test_throws Exception solve(m, max_iterations=1)
+    @test isfile("infeasible_subproblem.lp")
+    rm("infeasible_subproblem.lp")
+end
