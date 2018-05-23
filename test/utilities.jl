@@ -3,6 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
+using Clp
 
 @testset "Utilities" begin
     @test SDDP.getsense(SDDP.Max()) == :Max
@@ -23,11 +24,12 @@ end
 end
 
 @testset "Test infeasible subproblem" begin
-    m = SDDPModel(solver=ClpSolver(), stages=2) do sp, t
-        @state(m, x>=0, x0==1)
-        @constraint(m, x <= -1)
-        @stageobjective(m, 0.0)
+    m = SDDPModel(sense=:Max, stages=2, objective_bound=0, solver=ClpSolver()) do sp, t
+        @state(sp, x>=0, x0==1)
+        @constraint(sp, x <= -1)
+        @stageobjective(sp, i=1:2, i * x)
     end
+    
     @test_throws Exception solve(m, max_iterations=1)
     @test isfile("infeasible_subproblem.lp")
     rm("infeasible_subproblem.lp")
