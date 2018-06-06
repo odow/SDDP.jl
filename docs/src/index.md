@@ -40,3 +40,16 @@ Pages = [
 ]
 Depth = 2
 ```
+
+## Citing SDDP.jl
+
+If you use SDDP.jl, we ask that you please cite the following [paper](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf):
+```
+@article{dowson_sddp.jl,
+	title = {{SDDP}.jl: a {Julia} package for {Stochastic} {Dual} {Dynamic} {Programming}},
+	url = {http://www.optimization-online.org/DB_HTML/2017/12/6388.html},
+	journal = {Optimization Online},
+	author = {Dowson, Oscar and Kapelevich, Lea},
+	year = {2017}
+}
+```
