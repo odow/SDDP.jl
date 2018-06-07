@@ -1,8 +1,4 @@
-```@meta
-CurrentModule = SDDP
-```
-
-## Introduction to SDDP
+# Introduction to SDDP
 
 Introduce SDDP from first two chapters of thesis
 - stages

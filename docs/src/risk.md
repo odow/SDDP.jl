@@ -1,5 +1,0 @@
-```@meta
-CurrentModule = SDDP
-```
-
-## Risk

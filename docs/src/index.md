@@ -1,8 +1,7 @@
 ```@meta
 CurrentModule = SDDP
 ```
-
-## Overview
+# SDDP.jl Documentation
 *SDDP.jl - Stochastic Dual Dynamic Programming in Julia.*
 
 SDDP.jl is a package for solving large multistage convex stochastic optimization
@@ -25,28 +24,12 @@ If you want to use the parallel features of SDDP.jl, you should start Julia with
 some worker processes (`julia -p N`), or add by running `julia> addprocs(N)` in
 a running Julia session.
 
-## Contents
-
-```@contents
-Pages = [
-    "introduction_to_sddp.md",
-    "first_model.md",
-    "simulation.md",
-    "rhs_noise.md",
-    "objective_noise.md",
-    "markovian_policygraphs.md"
-    "risk.md",
-    "cut_selection.md"
-]
-Depth = 2
-```
-
 ## Citing SDDP.jl
 
 If you use SDDP.jl, we ask that you please cite the following [paper](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf):
 ```
 @article{dowson_sddp.jl,
-	title = {{SDDP}.jl: a {Julia} package for {Stochastic} {Dual} {Dynamic} {Programming}},
+	title = {{SDDP}.jl: a {Julia} package for stochastic dual dynamic programming},
 	url = {http://www.optimization-online.org/DB_HTML/2017/12/6388.html},
 	journal = {Optimization Online},
 	author = {Dowson, Oscar and Kapelevich, Lea},

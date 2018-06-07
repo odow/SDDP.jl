@@ -1,15 +1,11 @@
-```@meta
-CurrentModule = SDDP
-```
-
-## Example: simple hydrothermal scheduling
+# First steps
 
 Hydrothermal scheduling is the most common application of stochastic dual
 dynamic programming. To illustrate some of the basic functionality of SDDP.jl,
 we implement a very simple model of the hydrothermal scheduling problem.
 
 In this model, where are two generators: a thermal generator (with a cost of
-$100/MWh), and a hydro-generator (with a cost of $0/MWh). We consider the
+100/MWh), and a hydro-generator (with a cost of 0/MWh). We consider the
 problem of scheduling the generation over three time periods in order to meet a
 known demand of 150 MWh in each period.
 
@@ -23,7 +19,7 @@ over-topping the dam. We assume that there is no cost of spillage.
 The objective of the optimization is to minimize the expected cost of generation
 over the three time periods.
 
-### Initialization
+## Initialization
 
 First, we need to load some packages. For this example, we are going to use the
 [Clp.jl](https://github.com/JuliaOpt/Clp.jl) package; however, you are free to
@@ -67,26 +63,38 @@ arguments to `SDDPModel` should be obvious; however, the `objective_bound` is
 worth explaining.
 
 In order to solve a model using SDDP, we need to define a valid lower bound for
-every subproblem. (See [Introduction to SDDP](@ref) for details.) In this
+every subproblem. (See REF for details.) In this
 example, the least-cost solution is to meet demand entirely from the
-hydro-generator, incurring a cost of $0. Therefore, we set
+hydro-generator, incurring a cost of \$0. Therefore, we set
 `objective_bound=0.0`.
 
 Now we need to define build each subproblem using a mix of JuMP and SDDP.jl
 syntax.
 
-### State variables
+## State variables
 
-There is one state variable in our model: the quantity of water in the
-reservoir at the end of stage `t`.
+There is one state variable in our model: the quantity of water in the reservoir
+at the end of stage `t`. Two add this state variable to the model, SDDP.jl
+defines the `@state` macro.  This macro takes three arguments:
+1. `sp` - the JuMP model;
+2. an expression for the outgoing state variable; and
+3. an expression for the incoming state variable.
 
+The 2ⁿᵈ argument can be any valid JuMP `@variable` syntax and can include, for
+example, upper and lower bounds. The 3ʳᵈ argument must be the name of the
+incoming state variable, followed by `==`, and then the value of the state
+variable at the root node of the policy graph. For our hydrothermal example, the
+state variable can be constructed as:
 ```julia
 @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
 ```
 
-### Control variables
+## Control variables
 
-We define some JuMP variables:
+We now need to define some control variables. In SDDP.jl, control variables are
+just normal JuMP variables. Therefore, we can define the three variables in the
+hydrothermal scheduling problem (thermal generation, hydro generation, and the
+quantity of water to spill) as follows:
 ```julia
 @variables(sp, begin
     thermal_generation >= 0
@@ -95,12 +103,15 @@ We define some JuMP variables:
  end)
 ```
 
-### Constraints
+## Constraints
 
-
+Before we specify the constraints, we need to create some data. For this
+problem, we need the inflow to the reservoir in each stage `t=1, 2, 3`.
+Therefore, we create the vector:
 ```julia
 inflow = [50.0, 50.0, 50.0]
 ```
+The inflow in stage `t` can be accessed as `inflow[t]`.
 
 First, we have the water balance constraint: the volume of water at
 the end of the stage must equal the volume of water at the start of the stage,
@@ -110,26 +121,26 @@ plus any inflows, less that used for generation or spilled down the spillway.
     incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
 )
 ```
-
-There is also a constraint that total generation must equal demand of 150 MWh:
+Note that we use `t` defined by the `SDDPModel` constructor. There is also a constraint that total generation must equal demand of 150 MWh:
 ```julia
 @constraint(sp,
     thermal_generation + hydro_generation == 150
 )
 ```
 
-### The stage objective    
+## The stage objective    
 
-Finally, there is a cost on thermal generation of $100/MWh:
+Finally, there is a cost on thermal generation of \$100 MWh:
 ```julia
 @stageobjective(sp, 100 * thermal_generation )
 ```
 
-### All together
+## All together
 
 Putting all that we have discussed above together, we
 get:
 ```julia
+using SDDP, JuMP, Clp
 m = SDDPModel(
                   sense = :Min,
                  stages = 3,
@@ -147,6 +158,45 @@ m = SDDPModel(
         incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
         thermal_generation + hydro_generation == 150
     end)
-    @stageobjective(sp, 100 * thermal_generation )
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, fuel_cost[t] * thermal_generation )
 end
+```
+
+To solve this problem, we call:
+
+```julia
+status = solve(m; max_iterations=5)
+```
+
+The return value `status` is a symbol describing why the SDDP algorithm
+terminated. In this case, the value is `:max_iterations`. We discuss other
+arguments to the `solve` method and other possible values for `status` in future
+sections of this manual.
+
+```
+-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         3
+        States:         1
+        Subproblems:    3
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+       15.000K         5.000K        |     1    0.0      0    0.0    0.0
+        5.000K         5.000K        |     2    0.0      0    0.0    0.0
+        5.000K         5.000K        |     3    0.0      0    0.0    0.0
+        5.000K         5.000K        |     4    0.0      0    0.0    0.0
+        5.000K         5.000K        |     5    0.0      0    0.0    0.0
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         5
+        Termination Status: max_iterations
+===============================================================================
 ```
