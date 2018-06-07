@@ -22,7 +22,7 @@ over-topping the dam. We assume that there is no cost of spillage.
 The objective of the optimization is to minimize the expected cost of generation
 over the three time periods.
 
-## Initialization
+## Formulating the problem
 
 First, we need to load some packages. For this example, we are going to use the
 [Clp.jl](https://github.com/JuliaOpt/Clp.jl) package; however, you are free to
@@ -33,7 +33,7 @@ using SDDP, JuMP, Clp
 
 Next, we need to initialize our model. In our example, we are minimizing, there
 are three stages, and we know a lower bound of `0.0`. Therefore, we can
-initialize our model using the `SDDPModel` constructor:
+initialize our model using the [`SDDPModel`](@ref) constructor:
 ```julia
 m = SDDPModel(
                   sense = :Min,          
@@ -66,18 +66,19 @@ arguments to `SDDPModel` should be obvious; however, the `objective_bound` is
 worth explaining.
 
 In order to solve a model using SDDP, we need to define a valid lower bound for
-every subproblem. (See REF for details.) In this example, the least-cost
-solution is to meet demand entirely from the hydro generator, incurring a cost
-of \\\$0/MWh. Therefore, we set `objective_bound=0.0`.
+every subproblem. (See [Introduction to SDDP](@ref) for details.) In this
+example, the least-cost solution is to meet demand entirely from the hydro
+generator, incurring a cost of \\\$0/MWh. Therefore, we set
+`objective_bound=0.0`.
 
 Now we need to define build each subproblem using a mix of JuMP and SDDP.jl
 syntax.
 
-## State variables
+### State variables
 
 There is one state variable in our model: the quantity of water in the reservoir
 at the end of stage `t`. Two add this state variable to the model, SDDP.jl
-defines the `@state` macro.  This macro takes three arguments:
+defines the [`@state`](@ref) macro.  This macro takes three arguments:
 1. `sp` - the JuMP model;
 2. an expression for the outgoing state variable; and
 3. an expression for the incoming state variable.
@@ -91,7 +92,7 @@ state variable can be constructed as:
 @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
 ```
 
-## Control variables
+### Control variables
 
 We now need to define some control variables. In SDDP.jl, control variables are
 just normal JuMP variables. Therefore, we can define the three variables in the
@@ -105,7 +106,7 @@ quantity of water to spill) as follows:
  end)
 ```
 
-## Constraints
+### Constraints
 
 Before we specify the constraints, we need to create some data. For this
 problem, we need the inflow to the reservoir in each stage `t=1, 2, 3`.
@@ -131,7 +132,7 @@ constraint that total generation must equal demand of 150 MWh:
 )
 ```
 
-## The stage objective    
+### The stage objective    
 
 Finally, there is a cost on thermal generation of \\\$50/MWh in the first stage,
 \\\$100/MWh in the second stage, and \\\$150/MWh in the third stage:
@@ -142,8 +143,7 @@ fuel_cost = [50.0, 100.0, 150.0]
 
 ## Solving the problem
 
-Putting all that we have discussed above together, we
-get:
+Putting all that we have discussed above together, we get:
 ```julia
 using SDDP, JuMP, Clp
 m = SDDPModel(
@@ -168,7 +168,7 @@ m = SDDPModel(
 end
 ```
 
-To solve this problem, we call:
+To solve this problem, we use the [`solve`](@ref) method:
 
 ```julia
 status = solve(m; max_iterations=5)
@@ -176,8 +176,8 @@ status = solve(m; max_iterations=5)
 
 The return value `status` is a symbol describing why the SDDP algorithm
 terminated. In this case, the value is `:max_iterations`. We discuss other
-arguments to the `solve` method and other possible values for `status` in future
-sections of this manual.
+arguments to the [`solve`](@ref) method and other possible values for `status`
+in future sections of this manual.
 
 During the solve, the following log is printed to the screen.
 ```
@@ -215,13 +215,13 @@ The left half of the log relates to the objective of the problem. In the
 _Simulation_ column, we give the cumulative cost of each forward pass. In the
 _Bound_ column, we give the lower bound (upper if maximizing) obtained after the
 backward pass has completed in each iteration. Ignore the _% Gap_ column for
-now, that is addressed in Tutorial REF.
+now, that is addressed in Tutorial [RHS noise](@ref).
 
 The right half of the log displays timing statistics. _Cut Passes_ displays the
 number of cutting iterations conducted (in _#_) and the time it took to (in
 _Time_). Ignore the _Simulations_ columns for now, they are addressed in
-Tutorial REF. Finally, the _Total Time_ column records the total time spent
-solving the problem.
+Tutorial [RHS noise](@ref). Finally, the _Total Time_ column records the total
+time spent solving the problem.
 
 This log can be silenced by setting the `print_level` keyword argument to
 `solve` to `0`. In addition, the log will be written to the file given by the
@@ -230,18 +230,19 @@ This log can be silenced by setting the `print_level` keyword argument to
 ## Understanding the solution
 
 The first thing we want to do is to query the lower (upper if maximizing) bound
-of the solution. This can be done via the `getbound` function:
+of the solution. This can be done via the [`getbound`](@ref) function:
 ```julia
 getbound(m)
 ```
 This returns the value of the Bound_ column in the last row in the output table
 above. In this example, the bound is `5000.0`.
 
-When, we can perform a Monte Carlo simulation of the policy using the `simulate`
-function. It takes three arguments. The first is the `SDDPModel` `m`. The second
-is the number of replications to perform. The third is a vector of variable
-names to record the value of at each stage and replication. Since our example is
-deterministic, it is sufficient to perform a single replication:
+Then, we can perform a Monte Carlo simulation of the policy using the
+[`simulate`](@ref) function. It takes three arguments. The first is the
+[`SDDPModel`](@ref) `m`. The second is the number of replications to perform.
+The third is a vector of variable names to record the value of at each stage and
+replication. Since our example is deterministic, it is sufficient to perform a
+single replication:
 ```julia
 simulation_result = simulate(m,
     1,
@@ -264,4 +265,4 @@ julia> simulation_result[1][:hydro_generation]
 ```
 
 This concludes our first very simple tutorial for SDDP.jl. In the next tutorial,
-[RHS Noise](@ref), we introduce stagewise-independent noise into the model.
+[RHS noise](@ref), we introduce stagewise-independent noise into the model.

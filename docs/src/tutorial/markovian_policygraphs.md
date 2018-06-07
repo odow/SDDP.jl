@@ -1,1 +1,1 @@
-# Markovian Policy Graphs
+# Markovian policy graphs
