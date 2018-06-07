@@ -14,7 +14,6 @@ makedocs(
             "tutorial/rhs_noise.md",
             "tutorial/objective_noise.md",
             "tutorial/markovian_policygraphs.md",
-            "tutorial/simulation.md",
             "tutorial/risk.md",
             "tutorial/cut_selection.md"
         ],

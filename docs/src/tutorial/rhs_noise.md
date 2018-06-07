@@ -2,7 +2,7 @@
 
 In the previous tutorial, [First steps](@ref), we formulated a simple
 hydrothermal scheduling problem. In this tutorial, we extend the model to
-include stagewise-independent noise in the righ-hand side of the constraints.
+include stagewise-independent noise in the right-hand side of the constraints.
 
 !!! note
     Notably, SDDP.jl does not allow stagewise-independent noise terms in the
@@ -43,7 +43,7 @@ model, we need to use the [`@rhsnoise`](@ref) macro provided by SDDP.jl.
 
 [`@rhsnoise`](@ref) is similar to the JuMP `@constraint` macro. It takes three
 arguments. The first is the subproblem `sp`. The second argument is of the form
-`name = [realizations]`, where `name` is a descriptive name, and `realizations`
+`name=[realizations]`, where `name` is a descriptive name, and `realizations`
 is a vector of elements in the sample space. The third argument is any valid
 JuMP constraint that utilizes `name` in the right-hand side. For our example, we
 have:
@@ -205,20 +205,10 @@ simulation_result = simulate(m,
     [:outgoing_volume, :thermal_generation, :hydro_generation, :hydro_spill]
 )
 ```
-This time, `length(simulation_result) = 500`. We can query the optimal quantity
-of hydro generation in each stage of the 100'th replication as follows:
-```julia
-julia> simulation_result[100][:hydro_generation]
-3-element Array{Any, 1}:
- 100.0
- 150.0
- 150.0
-```
-
-In addition to the variables, we also record some additional fields. This
-includes `:stageobjective`, the value of the stage-objective in each stage. We
-can calculate the cumulative objective of each replication by summing the
-stage-objectives as follows:
+This time, `length(simulation_result) = 500`. In addition to the variables, we
+also record some additional fields. This includes `:stageobjective`, the value
+of the stage-objective in each stage. We can calculate the cumulative objective
+of each replication by summing the stage-objectives as follows:
 ```julia
 julia> sum(simulation_result[100][:stageobjective])
 2500.0
@@ -237,6 +227,17 @@ Then, we can calculate the mean and standard deviation of these objectives:
 ```julia
 julia> mean(objectives), std(objectives)
 (8025.0, 5567.66)
+```
+
+We can query the noise that was sampled in each stage using the `:noise` key.
+This returns the index of the noise from the vector of `realizations`. For
+example:
+```julia
+julia> simulation_result[100][:noise]
+3-element Array{Int, 1}:
+ 1
+ 3
+ 2
 ```
 
 This concludes our second tutorial for SDDP.jl. In the next tutorial,
