@@ -8,7 +8,7 @@ makedocs(
     authors  = "Oscar Dowson",
     pages = [
         "Home" => "index.md",
-        "Introduction" => "introduction.md",
+        # "Introduction" => "introduction.md",
         "Tutorials" => Any[
             "tutorial/first_example.md",
             "tutorial/rhs_noise.md",

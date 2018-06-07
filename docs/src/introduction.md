@@ -23,4 +23,4 @@ Introduce SDDP from first two chapters of my thesis.
 
 ### Cut selection
 
-### Risk
+### Risk measures

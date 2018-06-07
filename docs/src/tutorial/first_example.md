@@ -135,7 +135,23 @@ constraint that total generation must equal demand of 150 MWh:
 ### The stage objective    
 
 Finally, there is a cost on thermal generation of \\\$50/MWh in the first stage,
-\\\$100/MWh in the second stage, and \\\$150/MWh in the third stage:
+\\\$100/MWh in the second stage, and \\\$150/MWh in the third stage. To add
+the stage-objective, we use the aptly named `@stageobjective` macro provided by
+SDDP.jl:
+```julia
+if t == 1
+    @stageobjective(sp,  50.0 * thermal_generation )
+elseif t == 2
+    @stageobjective(sp, 100.0 * thermal_generation )
+elseif t == 3
+    @stageobjective(sp, 150.0 * thermal_generation )
+end
+```
+!!! info
+    `if` statements can be used more broadly in the subproblem definition to
+    conditionally and variables and constraints into different subproblems.
+
+We can also implement the stage-objective more succinctly using a vector:
 ```julia
 fuel_cost = [50.0, 100.0, 150.0]
 @stageobjective(sp, fuel_cost[t] * thermal_generation )

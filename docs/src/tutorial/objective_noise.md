@@ -154,9 +154,9 @@ now:
         2.000K         9.167K        |     6    0.0      0    0.0    0.0
        14.000K         9.167K        |     7    0.0      0    0.0    0.0
 -------------------------------------------------------------------------------
-Other Statistics:
-    Iterations:         7
-    Termination Status: bound_convergence
+    Other Statistics:
+        Iterations:         7
+        Termination Status: bound_convergence
 ===============================================================================
 ```
 
