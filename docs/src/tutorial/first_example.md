@@ -4,15 +4,18 @@ Hydrothermal scheduling is the most common application of stochastic dual
 dynamic programming. To illustrate some of the basic functionality of SDDP.jl,
 we implement a very simple model of the hydrothermal scheduling problem.
 
-In this model, where are two generators: a thermal generator (with a cost of
-\\\$100/MWh), and a hydro-generator (with a cost of \\\$0/MWh). We consider the
-problem of scheduling the generation over three time periods in order to meet a
-known demand of 150 MWh in each period.
+In this model, where are two generators: a thermal generator, and a hydro
+generator. The thermal generator has a short-run marginal cost of \\\$50/MWh in
+the first stage, \\\$100/MWh in the second stage, and \\\$150/MWh in the third
+stage. The hydro generator has a short-run marginal cost of \\\$0/MWh.
 
-The hydro-generator draws water from a reservoir which has a maximum capacity of
+We consider the problem of scheduling the generation over three time periods in
+order to meet a known demand of 150 MWh in each period.
+
+The hydro generator draws water from a reservoir which has a maximum capacity of
 200 units. We assume that at the start of the first time period, the reservoir
 is full. In addition to the ability to generate electricity by passing water
-through the hydroelectric turbine, the hydro-generator can also spill water down
+through the hydroelectric turbine, the hydro generator can also spill water down
 a spillway (bypassing the turbine) in order to prevent the water from
 over-topping the dam. We assume that there is no cost of spillage.
 
@@ -63,10 +66,9 @@ arguments to `SDDPModel` should be obvious; however, the `objective_bound` is
 worth explaining.
 
 In order to solve a model using SDDP, we need to define a valid lower bound for
-every subproblem. (See REF for details.) In this
-example, the least-cost solution is to meet demand entirely from the
-hydro-generator, incurring a cost of \\\$0/MWh. Therefore, we set
-`objective_bound=0.0`.
+every subproblem. (See REF for details.) In this example, the least-cost
+solution is to meet demand entirely from the hydro generator, incurring a cost
+of \\\$0/MWh. Therefore, we set `objective_bound=0.0`.
 
 Now we need to define build each subproblem using a mix of JuMP and SDDP.jl
 syntax.
@@ -131,12 +133,14 @@ constraint that total generation must equal demand of 150 MWh:
 
 ## The stage objective    
 
-Finally, there is a cost on thermal generation of \\\$100/MWh:
+Finally, there is a cost on thermal generation of \\\$50/MWh in the first stage,
+\\\$100/MWh in the second stage, and \\\$150/MWh in the third stage:
 ```julia
-@stageobjective(sp, 100 * thermal_generation )
+fuel_cost = [50.0, 100.0, 150.0]
+@stageobjective(sp, fuel_cost[t] * thermal_generation )
 ```
 
-## All together
+## Solving the problem
 
 Putting all that we have discussed above together, we
 get:
@@ -175,6 +179,7 @@ terminated. In this case, the value is `:max_iterations`. We discuss other
 arguments to the `solve` method and other possible values for `status` in future
 sections of this manual.
 
+During the solve, the following log is printed to the screen.
 ```
 -------------------------------------------------------------------------------
                           SDDP.jl © Oscar Dowson, 2017-2018
@@ -201,3 +206,62 @@ sections of this manual.
         Termination Status: max_iterations
 ===============================================================================
 ```
+
+The header and footer of the output log contain self-explanatory statistics
+about the problem. The numeric columns are worthy of description. Each row
+corresponds to one iteration of the SDDP algorithm.
+
+The left half of the log relates to the objective of the problem. In the
+_Simulation_ column, we give the cumulative cost of each forward pass. In the
+_Bound_ column, we give the lower bound (upper if maximizing) obtained after the
+backward pass has completed in each iteration. Ignore the _% Gap_ column for
+now, that is addressed in Tutorial REF.
+
+The right half of the log displays timing statistics. _Cut Passes_ displays the
+number of cutting iterations conducted (in _#_) and the time it took to (in
+_Time_). Ignore the _Simulations_ columns for now, they are addressed in
+Tutorial REF. Finally, the _Total Time_ column records the total time spent
+solving the problem.
+
+This log can be silenced by setting the `print_level` keyword argument to
+`solve` to `0`. In addition, the log will be written to the file given by the
+`log_file` keyword argument (this is off by default).
+
+## Understanding the solution
+
+The first thing we want to do is to query the lower (upper if maximizing) bound
+of the solution. This can be done via the `getbound` function:
+```julia
+getbound(m)
+```
+This returns the value of the Bound_ column in the last row in the output table
+above. In this example, the bound is `5000.0`.
+
+When, we can perform a Monte Carlo simulation of the policy using the `simulate`
+function. It takes three arguments. The first is the `SDDPModel` `m`. The second
+is the number of replications to perform. The third is a vector of variable
+names to record the value of at each stage and replication. Since our example is
+deterministic, it is sufficient to perform a single replication:
+```julia
+simulation_result = simulate(m,
+    1,
+    [:outgoing_volume, :thermal_generation, :hydro_generation, :hydro_spill]
+)
+```
+The return value, `simulation_result`, is a vector of dictionaries containing
+one element for each Monte Carlo replication. In this case,
+`length(simulation_result) = 1`. The keys of the dictionary are the variable
+symbols given in the `simulate` function, and their associated values are
+vectors, with one element for each stage, or the variable value in the simulated
+solution. For example, we can query the optimal quantity of hydro generation in
+each stage as follows:
+```julia
+julia> simulation_result[1][:hydro_generation]
+3-element Array{Any, 1}:
+  50.0
+ 150.0
+ 150.0
+```
+
+This concludes our first very simple tutorial for SDDP.jl. In the next tutorial,
+[RHS Noise](@ref), we introduce stagewise-independent noise into the model.
