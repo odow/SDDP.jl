@@ -1,7 +1,7 @@
 # Tutorial Five: risk
 
 Over the previous four tutorials, we formulated a simple hydrothermal scheduling
-problem. Now, in this tutorial, we introduce some _risk_ into the model using
+problem. Now, in this tutorial, we introduce some *risk* into the model using
 nested risk measures.
 
 Recall that our model for the hydrothermal scheduling problem from
@@ -12,7 +12,7 @@ m = SDDPModel(
                   sense = :Min,
                  stages = 3,
                  solver = ClpSolver(),
-        objective_bound = 0.0,  
+        objective_bound = 0.0,
       markov_transition = Array{Float64, 2}[
           [ 1.0 ]',
           [ 0.75 0.25 ],
@@ -70,7 +70,7 @@ m = SDDPModel(
                   sense = :Min,
                  stages = 3,
                  solver = ClpSolver(),
-        objective_bound = 0.0,  
+        objective_bound = 0.0,
       markov_transition = Array{Float64, 2}[
           [ 1.0 ]',
           [ 0.75 0.25 ],

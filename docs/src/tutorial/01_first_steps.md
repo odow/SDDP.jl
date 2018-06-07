@@ -36,7 +36,7 @@ are three stages, and we know a lower bound of `0.0`. Therefore, we can
 initialize our model using the [`SDDPModel`](@ref) constructor:
 ```julia
 m = SDDPModel(
-                  sense = :Min,          
+                  sense = :Min,
                  stages = 3,
                  solver = ClpSolver(),
         objective_bound = 0.0
@@ -52,7 +52,7 @@ function define_subproblem(sp::JuMP.Model, t::Int)
 end
 m = SDDPModel(
     define_subproblem,
-    sense           = :Min,          
+    sense           = :Min,
     stages          = 3,
     solver          = ClpSolver(),
     objective_bound = 0.0
@@ -228,15 +228,15 @@ about the problem. The numeric columns are worthy of description. Each row
 corresponds to one iteration of the SDDP algorithm.
 
 The left half of the log relates to the objective of the problem. In the
-_Simulation_ column, we give the cumulative cost of each forward pass. In the
-_Bound_ column, we give the lower bound (upper if maximizing) obtained after the
-backward pass has completed in each iteration. Ignore the _% Gap_ column for
+*Simulation* column, we give the cumulative cost of each forward pass. In the
+*Bound* column, we give the lower bound (upper if maximizing) obtained after the
+backward pass has completed in each iteration. Ignore the *% Gap* column for
 now, that is addressed in [Tutorial Two: RHS noise](@ref).
 
-The right half of the log displays timing statistics. _Cut Passes_ displays the
-number of cutting iterations conducted (in _#_) and the time it took to (in
-_Time_). Ignore the _Simulations_ columns for now, they are addressed in
-Tutorial [Tutorial Two: RHS noise](@ref). Finally, the _Total Time_ column
+The right half of the log displays timing statistics. *Cut Passes* displays the
+number of cutting iterations conducted (in *#*) and the time it took to (in
+*Time*). Ignore the *Simulations* columns for now, they are addressed in
+Tutorial [Tutorial Two: RHS noise](@ref). Finally, the *Total Time* column
 records the total time spent solving the problem.
 
 This log can be silenced by setting the `print_level` keyword argument to
@@ -250,7 +250,7 @@ of the solution. This can be done via the [`getbound`](@ref) function:
 ```julia
 getbound(m)
 ```
-This returns the value of the Bound_ column in the last row in the output table
+This returns the value of the *Bound* column in the last row in the output table
 above. In this example, the bound is `5000.0`.
 
 Then, we can perform a Monte Carlo simulation of the policy using the

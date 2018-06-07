@@ -1,14 +1,14 @@
 # Tutorial Four: Markovian policy graphs
 
-In our three tutorials ([Tutorial One: first steps](@ref), [Tutorial Two: RHS
-noise](@ref), and [Tutorial Three: objective noise](@ref)), we formulated a
-simple hydrothermal scheduling problem with stagewise-independent noise in the
-right-hand side of the constraints and in the objective function. Now, in this
-tutorial, we introduce some _stagewise-dependent_ uncertainty using a Markov
-chain.
+In our three tutorials ([Tutorial One: first steps](@ref),
+[Tutorial Two: RHS noise](@ref), and [Tutorial Three: objective noise](@ref)),
+we formulated a simple hydrothermal scheduling problem with
+stagewise-independent noise in the right-hand side of the constraints and in the
+objective function. Now, in this tutorial, we introduce some
+_stagewise-dependent_ uncertainty using a Markov chain.
 
 Recall that our model for the hydrothermal scheduling problem  from
-[Tutorial Two: RHS noise](@ref) is:
+[Tutorial Three: objective noise](@ref) is:
 ```julia
 m = SDDPModel(
                   sense = :Min,
@@ -38,7 +38,7 @@ end
 
 ## Formulating the problem
 
-In this tutorial we consider a Markov chain with two _climate_ states: wet and
+In this tutorial we consider a Markov chain with two *climate* states: wet and
 dry. Each Markov state is associated with an integer, in this case the wet
 climate state  is Markov state `1` and the dry climate state is Markov state
 `2`. In the wet climate state, the probability of the high inflow increases to
@@ -46,7 +46,7 @@ climate state  is Markov state `1` and the dry climate state is Markov state
 state, the converse happens. There is also persistence in the climate state: the
 probability of remaining in the current state is 75%, and the probability of
 transitioning to the other climate state is 25%. We assume that the first stage
-starts in the _wet_ climate state.
+starts in the wet climate state.
 
 For each stage, we need to provide a Markov transition matrix. This is an
 `M`x`N` matrix, where the element `A[i,j]` gives the probability of transitioning
@@ -167,7 +167,7 @@ now:
 ## Understanding the solution
 
 Instead of performing a Monte Carlo simulation, you may want to simulate one
-particular sequence of noise realizations. This _historical_ simulation can
+particular sequence of noise realizations. This *historical* simulation can
 also be conducted using the [`simulate`](@ref) function.
 ```julia
 simulation_result = simulate(m,

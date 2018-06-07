@@ -162,7 +162,7 @@ now:
 ## Understanding the solution
 
 Instead of performing a Monte Carlo simulation, you may want to simulate one
-particular sequence of noise realizations. This _historical_ simulation can
+particular sequence of noise realizations. This *historical* simulation can
 also be conducted using the [`simulate`](@ref) function.
 ```julia
 simulation_result = simulate(m,
