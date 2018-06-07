@@ -1,16 +1,16 @@
-# RHS noise
+# Tutorial Two: RHS noise
 
-In the previous tutorial, [First steps](@ref), we formulated a simple
-hydrothermal scheduling problem. In this tutorial, we extend the model to
-include stagewise-independent noise in the right-hand side of the constraints.
+In [Tutorial One: first steps](@ref), we formulated a simple hydrothermal
+scheduling problem. In this tutorial, we extend the model to include
+stagewise-independent noise in the right-hand side of the constraints.
 
 !!! note
     Notably, SDDP.jl does not allow stagewise-independent noise terms in the
     constraint matrix. However, this can be modelled using a Markovian policy
-    graph like the one in [Markovian policy graphs](@ref).
+    graph like the one in [Tutorial Four: Markovian policy graphs](@ref).
 
 Recall that our model for the hydrothermal scheduling problem  from
-[First steps](@ref) is:
+[Tutorial One: first steps](@ref) is:
 ```julia
 m = SDDPModel(
                   sense = :Min,
@@ -96,8 +96,8 @@ end
 
 ## Solving the problem
 
-Now we need to solve the problem. As in the [First steps](@ref) tutorial, we use
-the [`solve`](@ref) function. However, this time we utilize some additional
+Now we need to solve the problem. As in [Tutorial One: first steps](@ref), we
+use the [`solve`](@ref) function. However, this time we utilize some additional
 arguments.
 
 Since our problem is stochastic, we often want to simulate the policy in order
@@ -198,7 +198,7 @@ above. In this example, the bound is `8333.0`.
 
 Then, we can perform a Monte Carlo simulation of the policy using the
 [`simulate`](@ref) function. We perform 500 replications and record the same
-variables as we did in [First steps](@ref).
+variables as we did in [Tutorial One: first steps](@ref).
 ```julia
 simulation_result = simulate(m,
     500,
@@ -241,5 +241,5 @@ julia> simulation_result[100][:noise]
 ```
 
 This concludes our second tutorial for SDDP.jl. In the next tutorial,
-[Objective noise](@ref), we introduce stagewise-independent noise into the
-objective function.
+[Tutorial Three: objective noise](@ref), we introduce stagewise-independent
+noise into the objective function.

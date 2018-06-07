@@ -10,12 +10,12 @@ makedocs(
         "Home" => "index.md",
         # "Introduction" => "introduction.md",
         "Tutorials" => Any[
-            "tutorial/first_example.md",
-            "tutorial/rhs_noise.md",
-            "tutorial/objective_noise.md",
-            "tutorial/markovian_policygraphs.md",
-            "tutorial/risk.md",
-            "tutorial/cut_selection.md"
+            "tutorial/01_first_steps.md",
+            "tutorial/02_rhs_noise.md",
+            "tutorial/03_objective_noise.md",
+            "tutorial/04_markovian_policygraphs.md",
+            "tutorial/05_risk.md",
+            "tutorial/06_cut_selection.md"
         ],
         "Readings" => "readings.md",
         "Old Manual" => "oldindex.md",

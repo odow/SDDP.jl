@@ -1,18 +1,18 @@
-# Objective noise
+# Tutorial Three: objective noise
 
-In our first tutorial, [First steps](@ref), we formulated a simple,
-deterministic hydrothermal scheduling problem. Then, in the previous tutorial,
-[RHS noise](@ref), we extended this model to include stagewise-independent noise
-to the right-hand side of a constraint. Now, in this tutorial, we extend the
-model to include stagewise-independent noise in the objective function.
+In [Tutorial One: first steps](@ref), we formulated a simple, deterministic
+hydrothermal scheduling problem. Then, [Tutorial Two: RHS noise](@ref), we
+extended this model to include stagewise-independent noise to the right-hand
+side of a constraint. Now, in this tutorial, we extend the model to include
+stagewise-independent noise in the objective function.
 
 !!! note
     Notably, SDDP.jl does not allow stagewise-independent noise terms in the
     constraint matrix. However, this can be modelled using a Markovian policy
-    graph like the one in [Markovian policy graphs](@ref).
+    graph like the one in [Tutorial Four: Markovian policy graphs](@ref).
 
 Recall that our model for the hydrothermal scheduling problem  from
-[RHS noise](@ref) is:
+[Tutorial Two: RHS noise](@ref) is:
 ```julia
 m = SDDPModel(
                   sense = :Min,
@@ -49,11 +49,11 @@ we need to use a modified version of the [`@stageobjective`](@ref) macro
 provided by SDDP.jl.
 
 This version of [`@stageobjective`](@ref) is similar to the [`@rhsnoise`](@ref)
-macro that we discussed in [RHS noise](@ref). It takes three arguments. The
-first is the subproblem `sp`. The second argument is of the form
-`name=[realizations]`, where `name` is a descriptive name, and `realizations`
-is a vector of elements in the sample space. The third argument is any valid
-input to the normal `@stageobjective` macro.
+macro that we discussed in [Tutorial Two: RHS noise](@ref). It takes three
+arguments. The first is the subproblem `sp`. The second argument is of the form
+`name=[realizations]`, where `name` is a descriptive name, and `realizations` is
+a vector of elements in the sample space. The third argument is any valid input
+to the normal `@stageobjective` macro.
 
 It is important to note that there must be the same number of realizations in
 the objective as there are realizations in the right-hand-side random variable
@@ -72,8 +72,8 @@ fuel_cost = [50.0, 100.0, 150.0]
     mupliplier * fuel_cost[t] * thermal_generation
 )
 ```
-As in [RHS noise](@ref), the noise terms are sampled using the probability
-distribution set by the [`setnoiseprobability!`](@ref) function.
+As in [Tutorial Two: RHS noise](@ref), the noise terms are sampled using the
+probability distribution set by the [`setnoiseprobability!`](@ref) function.
 
 Our model is now:
 ```julia
@@ -107,10 +107,9 @@ end
 
 Now we need to solve the problem. As in the previous two tutorials, we use the
 [`solve`](@ref) function. However, this time we use the bound stalling stopping
-rule. This can be controlled via
-the `bound_convergence` keyword to [`solve`](@ref). The syntax has a lot going on so
-we're going to give an example of how it is used, and then walk through the
-different components.
+rule. This can be controlled via the `bound_convergence` keyword to
+[`solve`](@ref). The syntax has a lot going on so we're going to give an example
+of how it is used, and then walk through the different components.
 ```julia
 status = solve(m,
     bound_convergence = BoundConvergence(
@@ -188,5 +187,5 @@ julia> simulation_result[:thermal_generation]
 ```
 
 This concludes our third tutorial for SDDP.jl. In the next tutorial,
-[Markovian policy graphs](@ref), we introduce stagewise-dependent noise via a
-Markov chain.
+[Tutorial Four: Markovian policy graphs](@ref), we introduce stagewise-dependent
+noise via a Markov chain.

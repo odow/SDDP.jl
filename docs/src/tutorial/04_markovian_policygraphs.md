@@ -1,13 +1,14 @@
-# Markovian policy graphs
+# Tutorial Four: Markovian policy graphs
 
-In our three tutorials ([First steps](@ref), [RHS noise](@ref), and [Objective
-noise](@ref)), we formulated a simple hydrothermal scheduling problem with
-stagewise-independent noise in the right-hand side of the constraints and in the
-objective function. Now, in this tutorial, we introduce some
-_stagewise-dependent_ uncertainty using a Markov chain.
+In our three tutorials ([Tutorial One: first steps](@ref), [Tutorial Two: RHS
+noise](@ref), and [Tutorial Three: objective noise](@ref)), we formulated a
+simple hydrothermal scheduling problem with stagewise-independent noise in the
+right-hand side of the constraints and in the objective function. Now, in this
+tutorial, we introduce some _stagewise-dependent_ uncertainty using a Markov
+chain.
 
 Recall that our model for the hydrothermal scheduling problem  from
-[RHS noise](@ref) is:
+[Tutorial Two: RHS noise](@ref) is:
 ```julia
 m = SDDPModel(
                   sense = :Min,
@@ -189,4 +190,4 @@ julia> simulation_result[:markov]
 ```
 
 This concludes our fourth tutorial for SDDP.jl. In the next tutorial,
-[Risk](@ref), we introduce risk into the problem.
+[Tutorial Five: risk](@ref), we introduce risk into the problem.

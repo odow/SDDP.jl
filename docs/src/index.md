@@ -28,7 +28,7 @@ some worker processes (`julia -p N`), or add by running `julia> addprocs(N)` in
 a running Julia session.
 
 Once you've got SDDP.jl installed, you should read some tutorials, beginnng with
-[First steps](@ref).
+[Tutorial One: first steps](@ref).
 
 ## Citing SDDP.jl
 
