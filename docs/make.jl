@@ -18,6 +18,7 @@ makedocs(
             "tutorial/cut_selection.md"
         ],
         "Readings" => "readings.md",
+        "Old Manual" => "oldindex.md",
         "Reference" => "apireference.md"
     ],
     assets = ["3d.gif"]

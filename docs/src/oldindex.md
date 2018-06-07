@@ -1,3 +1,7 @@
+# Old Manual
+
+## Types of problems SDDP.jl can solve
+
 To start, lets discuss the types of problems SDDP.jl can solve, since it has a
 few features that are non-standard, and it is missing some features that are
 standard.
