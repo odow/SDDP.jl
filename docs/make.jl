@@ -1,16 +1,27 @@
 using Documenter, SDDP
 
 makedocs(
-    clean = false,
-    format = :html,
+    doctest  = false,
+    clean    = true,
+    format   = :html,
     sitename = "SDDP.jl",
+    authors  = "Oscar Dowson",
     pages = [
-        "Manual" => "index.md",
-        "Examples" => "examples.md",
+        "Home" => "index.md",
+        # "Introduction" => "introduction.md",
+        "Tutorials" => Any[
+            "tutorial/first_example.md",
+            "tutorial/rhs_noise.md",
+            "tutorial/objective_noise.md",
+            "tutorial/markovian_policygraphs.md",
+            "tutorial/risk.md",
+            "tutorial/cut_selection.md"
+        ],
         "Readings" => "readings.md",
+        "Old Manual" => "oldindex.md",
         "Reference" => "apireference.md"
     ],
-    assets = ["assets/custom.css", "3d.gif"]
+    assets = ["3d.gif"]
 )
 
 deploydocs(
