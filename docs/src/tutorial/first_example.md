@@ -5,7 +5,7 @@ dynamic programming. To illustrate some of the basic functionality of SDDP.jl,
 we implement a very simple model of the hydrothermal scheduling problem.
 
 In this model, where are two generators: a thermal generator (with a cost of
-100/MWh), and a hydro-generator (with a cost of 0/MWh). We consider the
+\\\$100/MWh), and a hydro-generator (with a cost of \\\$0/MWh). We consider the
 problem of scheduling the generation over three time periods in order to meet a
 known demand of 150 MWh in each period.
 
@@ -65,7 +65,7 @@ worth explaining.
 In order to solve a model using SDDP, we need to define a valid lower bound for
 every subproblem. (See REF for details.) In this
 example, the least-cost solution is to meet demand entirely from the
-hydro-generator, incurring a cost of \$0. Therefore, we set
+hydro-generator, incurring a cost of \\\$0/MWh. Therefore, we set
 `objective_bound=0.0`.
 
 Now we need to define build each subproblem using a mix of JuMP and SDDP.jl
@@ -121,7 +121,8 @@ plus any inflows, less that used for generation or spilled down the spillway.
     incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
 )
 ```
-Note that we use `t` defined by the `SDDPModel` constructor. There is also a constraint that total generation must equal demand of 150 MWh:
+Note that we use `t` defined by the `SDDPModel` constructor. There is also a
+constraint that total generation must equal demand of 150 MWh:
 ```julia
 @constraint(sp,
     thermal_generation + hydro_generation == 150
@@ -130,7 +131,7 @@ Note that we use `t` defined by the `SDDPModel` constructor. There is also a con
 
 ## The stage objective    
 
-Finally, there is a cost on thermal generation of \$100 MWh:
+Finally, there is a cost on thermal generation of \\\$100/MWh:
 ```julia
 @stageobjective(sp, 100 * thermal_generation )
 ```
