@@ -53,7 +53,7 @@ For each stage, we need to provide a Markov transition matrix. This is an
 from Markov state `i` in the previous stage to Markov state `j` in the current
 stage. The first stage is special because we assume there is a "zero'th" stage
 which has one Markov state. Furthermore, the number of columns in the transition
-matrix of a stage (i.e., the number of Markov states) must equal the number of
+matrix of a stage (i.e. the number of Markov states) must equal the number of
 rows in the next stage's transition matrix. For our example, the vector of
 Markov transition matrices is given by:
 ```julia

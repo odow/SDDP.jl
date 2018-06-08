@@ -58,6 +58,7 @@ newplot
 addplot!
 show(::SDDP.SimulationPlot)
 plotvaluefunction
+getsubproblem
 ```
 
 ## Read and write the model to disk

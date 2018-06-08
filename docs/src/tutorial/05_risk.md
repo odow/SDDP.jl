@@ -47,7 +47,7 @@ end
 
 For this problem, we are going to use a convex combination of the expectation
 (\$\\\mathbb{E}\$) and average value-at-risk measures (AV@R\${}_{1-\\beta}\$).
-In particular, we use AV@R at the β=0.1 quantile (i.e., the worst 10% of
+In particular, we use AV@R at the β=0.1 quantile (i.e. the worst 10% of
 outcomes). This can be constructed as:
 ```julia
 risk_measure = 0.5 * Expectation() + 0.5 * AVaR(0.1)
@@ -60,7 +60,7 @@ risk_measure = EAVaR(lambda=0.5, beta=0.1)
 ```
 This is short-hand for `lambda * Expectation() + (1-lambda) * AVaR(beta)`. As
 `lambda` and `beta` tend toward `1.0`, the measure becomes more risk-neutral
-(i.e., less risk averse).
+(i.e. less risk averse).
 
 Risk measures are set in the model using the `risk_measure` keyword in the
 [`SDDPModel`](@ref) constructor. For example, our model is now:
@@ -178,7 +178,7 @@ struct TheWorstCase <: SDDP.AbstractRiskMeasure end
 
 Then, we need to overload the [`SDDP.modifyprobability!`](@ref) function
 provided by SDDP.jl. This function takes six arguments:
- 1. an instance of the risk measure (e.g., `TheWorstCase()`);
+ 1. an instance of the risk measure (e.g. `TheWorstCase()`);
  2. a vector of the risk-adjusted probability distribution that the function
     modifies in-place;
  3. a vector of the original probability distribution;

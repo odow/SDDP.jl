@@ -161,7 +161,7 @@ The output from the log is now:
 ```
 
 Compared with the log of a solve without using the `simulation` keyword, a few
-things have changed. First, in the second and fourth rows (i.e., the iterations
+things have changed. First, in the second and fourth rows (i.e. the iterations
 in which a Monte Carlo simulation was conducted) the *Simulation* column now
 gives two values. This pair is the confidence interval for the estimate of the
 upper bound.
