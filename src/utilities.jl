@@ -57,6 +57,12 @@ getstage(m::SDDPModel, t) = stages(m)[t]
 subproblems(s::Stage) = s.subproblems
 getsubproblem(s::Stage, i::Int) = subproblems(s)[i]
 subproblems(m::SDDPModel, t) = subproblems(getstage(m, t))
+
+"""
+    getsubproblem(m::SDDPModel, t::Int, i::Int)
+
+Get the subproblem in stage `t` and Markov state `i` from the SDDPModel `m`.
+"""
 getsubproblem(m::SDDPModel, t, i) = getsubproblem(getstage(m, t), i)
 
 nstages(m::SDDPModel) = length(stages(m))

@@ -1,16 +1,16 @@
-# RHS noise
+# Tutorial Two: RHS noise
 
-In the previous tutorial, [First steps](@ref), we formulated a simple
-hydrothermal scheduling problem. In this tutorial, we extend the model to
-include stagewise-independent noise in the right-hand side of the constraints.
+In [Tutorial One: first steps](@ref), we formulated a simple hydrothermal
+scheduling problem. In this tutorial, we extend the model to include
+stagewise-independent noise in the right-hand side of the constraints.
 
 !!! note
     Notably, SDDP.jl does not allow stagewise-independent noise terms in the
     constraint matrix. However, this can be modelled using a Markovian policy
-    graph like the one in [Markovian policy graphs](@ref).
+    graph like the one in [Tutorial Four: Markovian policy graphs](@ref).
 
 Recall that our model for the hydrothermal scheduling problem  from
-[First steps](@ref) is:
+[Tutorial One: first steps](@ref) is:
 ```julia
 m = SDDPModel(
                   sense = :Min,
@@ -96,8 +96,8 @@ end
 
 ## Solving the problem
 
-Now we need to solve the problem. As in the [First steps](@ref) tutorial, we use
-the [`solve`](@ref) function. However, this time we utilize some additional
+Now we need to solve the problem. As in [Tutorial One: first steps](@ref), we
+use the [`solve`](@ref) function. However, this time we utilize some additional
 arguments.
 
 Since our problem is stochastic, we often want to simulate the policy in order
@@ -125,7 +125,7 @@ which to conduct the confidence interval. In this example, we construct a 95%
 confidence interval. Third, the `termination` argument is a Boolean defining if
 we should terminate the method if the lower limit of the confidence interval is
 less than the lower bound (upper limit and bound for maximization problems). The
-final three arguments implement the method of _sequential sampling_: `min` gives
+final three arguments implement the method of *sequential sampling*: `min` gives
 the minimum number of replications to conduct before the construction of a
 confidence interval. If there is evidence of convergence, another `step`
 replications are conducted. This continues until either: (1) `max` number of
@@ -161,27 +161,27 @@ The output from the log is now:
 ```
 
 Compared with the log of a solve without using the `simulation` keyword, a few
-things have changed. First, in the second and fourth rows (i.e., the iterations
-in which a Monte Carlo simulation was conducted) the _Simulation_ column now
+things have changed. First, in the second and fourth rows (i.e. the iterations
+in which a Monte Carlo simulation was conducted) the *Simulation* column now
 gives two values. This pair is the confidence interval for the estimate of the
 upper bound.
 
 Second, in iterations in which a Monte Carlo simulation is
-conducted, there is an entry in the _% Gap_ column. This gaps measures the
+conducted, there is an entry in the *% Gap* column. This gaps measures the
 difference between the lower limit of the simulated confidence interval and the
-lower bound (given in the _Bound_) column. If the gap is positive, there is
+lower bound (given in the *Bound*) column. If the gap is positive, there is
 evidence that the model has not converged. Once the gap is negative, the lower
 bound lies above the lower limit of the confidence interval and we can terminate
 the algorithm.
 
-The third difference is that the _Simulations_ column now records
-the number of Monte Replications conducted to estimate the upper bound (in _#_)
-and time performing those Monte Carlo replications (in _Time_). You can use this
+The third difference is that the *Simulations* column now records
+the number of Monte Replications conducted to estimate the upper bound (in *#*)
+and time performing those Monte Carlo replications (in *Time*). You can use this
 information to tune the frequency at which the policy is tested for convergence.
 
 Also observe that the first time we performed the Monte Carlo simulation, we
 only conducted 50 replications; however, the second time we conducted 100. This
-demonstrates the _sequential sampling_ method at work.
+demonstrates the *sequential sampling* method at work.
 
 Finally, the termination status is now `:converged` instead of
 `:max_iterations`.
@@ -193,12 +193,12 @@ of the solution. This can be done via the [`getbound`](@ref) function:
 ```julia
 getbound(m)
 ```
-This returns the value of the Bound_ column in the last row in the output table
+This returns the value of the *Bound* column in the last row in the output table
 above. In this example, the bound is `8333.0`.
 
 Then, we can perform a Monte Carlo simulation of the policy using the
 [`simulate`](@ref) function. We perform 500 replications and record the same
-variables as we did in [First steps](@ref).
+variables as we did in [Tutorial One: first steps](@ref).
 ```julia
 simulation_result = simulate(m,
     500,
@@ -241,5 +241,5 @@ julia> simulation_result[100][:noise]
 ```
 
 This concludes our second tutorial for SDDP.jl. In the next tutorial,
-[Objective noise](@ref), we introduce stagewise-independent noise into the
-objective function.
+[Tutorial Three: objective noise](@ref), we introduce stagewise-independent
+noise into the objective function.

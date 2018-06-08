@@ -1,13 +1,14 @@
-# Markovian policy graphs
+# Tutorial Four: Markovian policy graphs
 
-In our three tutorials ([First steps](@ref), [RHS noise](@ref), and [Objective
-noise](@ref)), we formulated a simple hydrothermal scheduling problem with
+In our three tutorials ([Tutorial One: first steps](@ref),
+[Tutorial Two: RHS noise](@ref), and [Tutorial Three: objective noise](@ref)),
+we formulated a simple hydrothermal scheduling problem with
 stagewise-independent noise in the right-hand side of the constraints and in the
 objective function. Now, in this tutorial, we introduce some
-_stagewise-dependent_ uncertainty using a Markov chain.
+*stagewise-dependent* uncertainty using a Markov chain.
 
 Recall that our model for the hydrothermal scheduling problem  from
-[RHS noise](@ref) is:
+[Tutorial Three: objective noise](@ref) is:
 ```julia
 m = SDDPModel(
                   sense = :Min,
@@ -37,7 +38,7 @@ end
 
 ## Formulating the problem
 
-In this tutorial we consider a Markov chain with two _climate_ states: wet and
+In this tutorial we consider a Markov chain with two *climate* states: wet and
 dry. Each Markov state is associated with an integer, in this case the wet
 climate state  is Markov state `1` and the dry climate state is Markov state
 `2`. In the wet climate state, the probability of the high inflow increases to
@@ -45,14 +46,14 @@ climate state  is Markov state `1` and the dry climate state is Markov state
 state, the converse happens. There is also persistence in the climate state: the
 probability of remaining in the current state is 75%, and the probability of
 transitioning to the other climate state is 25%. We assume that the first stage
-starts in the _wet_ climate state.
+starts in the wet climate state.
 
 For each stage, we need to provide a Markov transition matrix. This is an
 `M`x`N` matrix, where the element `A[i,j]` gives the probability of transitioning
 from Markov state `i` in the previous stage to Markov state `j` in the current
 stage. The first stage is special because we assume there is a "zero'th" stage
 which has one Markov state. Furthermore, the number of columns in the transition
-matrix of a stage (i.e., the number of Markov states) must equal the number of
+matrix of a stage (i.e. the number of Markov states) must equal the number of
 rows in the next stage's transition matrix. For our example, the vector of
 Markov transition matrices is given by:
 ```julia
@@ -86,7 +87,7 @@ m = SDDPModel(
                   sense = :Min,
                  stages = 3,
                  solver = ClpSolver(),
-        objective_bound = 0.0,  
+        objective_bound = 0.0,
       markov_transition = Array{Float64, 2}[
           [ 1.0 ]',
           [ 0.75 0.25 ],
@@ -166,7 +167,7 @@ now:
 ## Understanding the solution
 
 Instead of performing a Monte Carlo simulation, you may want to simulate one
-particular sequence of noise realizations. This _historical_ simulation can
+particular sequence of noise realizations. This *historical* simulation can
 also be conducted using the [`simulate`](@ref) function.
 ```julia
 simulation_result = simulate(m,
@@ -189,4 +190,4 @@ julia> simulation_result[:markov]
 ```
 
 This concludes our fourth tutorial for SDDP.jl. In the next tutorial,
-[Risk](@ref), we introduce risk into the problem.
+[Tutorial Five: risk](@ref), we introduce risk into the problem.

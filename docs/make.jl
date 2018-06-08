@@ -10,18 +10,25 @@ makedocs(
         "Home" => "index.md",
         # "Introduction" => "introduction.md",
         "Tutorials" => Any[
-            "tutorial/first_example.md",
-            "tutorial/rhs_noise.md",
-            "tutorial/objective_noise.md",
-            "tutorial/markovian_policygraphs.md",
-            "tutorial/risk.md",
-            "tutorial/cut_selection.md"
+            "tutorial/01_first_steps.md",
+            "tutorial/02_rhs_noise.md",
+            "tutorial/03_objective_noise.md",
+            "tutorial/04_markovian_policygraphs.md",
+            "tutorial/05_risk.md",
+            "tutorial/06_cut_selection.md",
+            "tutorial/07_plotting.md",
+            "tutorial/08_odds_and_ends.md"
         ],
         "Readings" => "readings.md",
         "Old Manual" => "oldindex.md",
         "Reference" => "apireference.md"
     ],
-    assets = ["3d.gif"]
+    assets = [
+        "clicked_trajectory.png",
+        "single_trajectory.png",
+        "publication_plot.png",
+        "plot_value_function.png"
+    ]
 )
 
 deploydocs(
