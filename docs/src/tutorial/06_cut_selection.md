@@ -159,4 +159,6 @@ end
 Now, the cut oracle `LastCuts(500)` can be used just like any other cut oracle
 defined by SDDP.jl.
 
-This concludes our sixth tutorial for SDDP.jl.
+This concludes our sixth tutorial for SDDP.jl. In our next tutorial,
+[Tutorial Seven: plotting](@ref), we discuss some of the plotting utilities of
+SDDP.jl

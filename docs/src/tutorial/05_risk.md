@@ -46,7 +46,7 @@ end
 ## Formulating the problem
 
 For this problem, we are going to use a convex combination of the expectation
-(\$\\\mathbb{E}\$) and average value-at-risk measures (AV@R\${}_{1-\\beta}\$).
+(\$\\mathbb{E}\$) and average value-at-risk measures (AV@R\${}_{1-\\beta}\$).
 In particular, we use AV@R at the β=0.1 quantile (i.e. the worst 10% of
 outcomes). This can be constructed as:
 ```julia

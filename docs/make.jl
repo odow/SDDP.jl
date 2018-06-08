@@ -15,13 +15,19 @@ makedocs(
             "tutorial/03_objective_noise.md",
             "tutorial/04_markovian_policygraphs.md",
             "tutorial/05_risk.md",
-            "tutorial/06_cut_selection.md"
+            "tutorial/06_cut_selection.md",
+            "tutorial/07_plotting.md"
         ],
         "Readings" => "readings.md",
         "Old Manual" => "oldindex.md",
         "Reference" => "apireference.md"
     ],
-    assets = ["3d.gif"]
+    assets = [
+        "clicked_trajectory.png",
+        "single_trajectory.png",
+        "publication_plot.png",
+        "plot_value_function.png"
+    ]
 )
 
 deploydocs(
