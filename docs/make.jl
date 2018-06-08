@@ -16,7 +16,8 @@ makedocs(
             "tutorial/04_markovian_policygraphs.md",
             "tutorial/05_risk.md",
             "tutorial/06_cut_selection.md",
-            "tutorial/07_plotting.md"
+            "tutorial/07_plotting.md",
+            "tutorial/08_odds_and_ends.md"
         ],
         "Readings" => "readings.md",
         "Old Manual" => "oldindex.md",

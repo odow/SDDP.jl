@@ -172,4 +172,6 @@ SDDP.plotvaluefunction(m, 2, 1,
 )
 ```
 
-That concludes our seventh tutorial for SDDP.jl
+That concludes our seventh tutorial for SDDP.jl. In our next tutorial,
+[Tutorial Eight: odds and ends](@ref), we  discuss some odds and ends relating
+to SDDP now that we have a basic  understanding of it's functionality.
