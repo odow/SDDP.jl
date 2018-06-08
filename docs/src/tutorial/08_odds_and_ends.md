@@ -30,6 +30,30 @@ This will create JuMP variables that can be accessed as `volume[:upper]` and
 end)
 ```
 
+## Multiple RHS noise constraints
+
+In [Tutorial Two: RHS noise](@ref), we added a single constraint with noise in
+the RHS term; however, you probably want to add many of these constraints. There
+are two ways to do this. First, you can just add multiple calls like:
+```julia
+@rhsnoise(sp, w=[1,2,3], x <= w)
+@rhsnoise(sp, w=[4,5,6], y >= w)
+```
+If you have multiple calls to `@rhsnoise`, they must have the same number of
+elements in their sample space. For example, the following will not work:
+```julia
+@rhsnoise(sp, w=[1,2,3], x <= w)    # 3 elements
+@rhsnoise(sp, w=[4,5,6,7], y >= w)  # 4 elements
+```
+Another option is to use the [`@rhsnoises`](@ref) macro. It is very similar to
+[`@states`](@ref) and JuMP's `@consraints` macro:
+```julia
+@rhsnoises(sp, w=[1,2,3], begin
+    x <= w
+    y >= w + 3
+end)
+```
+
 ## `if` statements in more detail
 
 In [Tutorial Four: Markovian policy graphs](@ref), we used an `if` statement to
