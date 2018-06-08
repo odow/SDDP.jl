@@ -5,7 +5,7 @@ In our three tutorials ([Tutorial One: first steps](@ref),
 we formulated a simple hydrothermal scheduling problem with
 stagewise-independent noise in the right-hand side of the constraints and in the
 objective function. Now, in this tutorial, we introduce some
-_stagewise-dependent_ uncertainty using a Markov chain.
+*stagewise-dependent* uncertainty using a Markov chain.
 
 Recall that our model for the hydrothermal scheduling problem  from
 [Tutorial Three: objective noise](@ref) is:
@@ -87,7 +87,7 @@ m = SDDPModel(
                   sense = :Min,
                  stages = 3,
                  solver = ClpSolver(),
-        objective_bound = 0.0,  
+        objective_bound = 0.0,
       markov_transition = Array{Float64, 2}[
           [ 1.0 ]',
           [ 0.75 0.25 ],
