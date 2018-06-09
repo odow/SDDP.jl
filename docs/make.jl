@@ -25,6 +25,7 @@ makedocs(
         "Reference" => "apireference.md"
     ],
     assets = [
+        "dowson_thesis.pdf",
         "clicked_trajectory.png",
         "single_trajectory.png",
         "publication_plot.png",

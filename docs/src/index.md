@@ -4,13 +4,16 @@ CurrentModule = SDDP
 # SDDP.jl Documentation
 
 SDDP.jl is a package for solving large multistage convex stochastic optimization
-problems using _stochastic dual dynamic programming_. In this manual, we're
+problems using *stochastic dual dynamic programming*. In this manual, we're
 going to assume a reasonable amount of background knowledge about stochastic
 optimization, the SDDP algorithm, Julia, and JuMP.
 
 !!! note
     If you don't have that background, you may want to brush up on some
-    [Readings](@ref).
+    [Readings](@ref). Part I of my [thesis](assets/dowson_thesis.pdf) may also
+    be useful as it contains a primer on how to formulate multistage stochastic
+    optimization problems (Chapter One), as well as an introduction and
+    literature review of the SDDP algorithm (Chapter Two).
 
 ## Getting started
 
