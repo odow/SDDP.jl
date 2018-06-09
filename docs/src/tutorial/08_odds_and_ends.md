@@ -30,6 +30,30 @@ This will create JuMP variables that can be accessed as `volume[:upper]` and
 end)
 ```
 
+## Multiple RHS noise constraints
+
+In [Tutorial Two: RHS noise](@ref), we added a single constraint with noise in
+the RHS term; however, you probably want to add many of these constraints. There
+are two ways to do this. First, you can just add multiple calls like:
+```julia
+@rhsnoise(sp, w=[1,2,3], x <= w)
+@rhsnoise(sp, w=[4,5,6], y >= w)
+```
+If you have multiple calls to `@rhsnoise`, they must have the same number of
+elements in their sample space. For example, the following will not work:
+```julia
+@rhsnoise(sp, w=[1,2,3], x <= w)    # 3 elements
+@rhsnoise(sp, w=[4,5,6,7], y >= w)  # 4 elements
+```
+Another option is to use the [`@rhsnoises`](@ref) macro. It is very similar to
+[`@states`](@ref) and JuMP's `@consraints` macro:
+```julia
+@rhsnoises(sp, w=[1,2,3], begin
+    x <= w
+    y >= w + 3
+end)
+```
+
 ## `if` statements in more detail
 
 In [Tutorial Four: Markovian policy graphs](@ref), we used an `if` statement to
@@ -129,3 +153,68 @@ This cut file can be read back into a model using [`loadcuts!`](@ref):
 m2 = build_model()
 loadcuts!(m2, "cuts.csv")
 ```
+
+## Timer outputs
+
+SDDP.jl embeds the great [TimerOutputs.jl](https://github.com/KristofferC/TimerOutputs.jl)
+package to help profile where time is spent during the solution process. You can
+print the timing statistics by setting `print_level=2` in a [`solve`](@ref)
+call. This produces a log like:
+
+```
+-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         3
+        States:         1
+        Subproblems:    5
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+       27.000K         5.818K        |     1    0.0      0    0.0    0.0
+        2.000K         6.952K        |     2    0.0      0    0.0    0.0
+        2.000K         6.952K        |     3    0.0      0    0.0    0.0
+       11.000K         7.135K        |     4    0.0      0    0.0    0.0
+        2.000K         7.135K        |     5    0.0      0    0.0    0.0
+        2.000K         7.135K        |     6    0.0      0    0.0    0.0
+        5.000K         7.135K        |     7    0.0      0    0.0    0.0
+        2.000K         7.135K        |     8    0.0      0    0.0    0.0
+        5.000K         7.135K        |     9    0.0      0    0.0    0.0
+       12.500K         7.135K        |    10    0.0      0    0.0    0.0
+-------------------------------------------------------------------------------
+ ─────────────────────────────────────────────────────────────────────────────────
+         Timing statistics                Time                   Allocations
+                                  ──────────────────────   ───────────────────────
+         Tot / % measured:            40.8ms / 98.0%           0.97MiB / 100%
+
+ Section                  ncalls     time   %tot     avg     alloc   %tot      avg
+ ─────────────────────────────────────────────────────────────────────────────────
+ Solve                         1   40.0ms   100%  40.0ms   0.96MiB  100%   0.96MiB
+   Iteration Phase            10   38.3ms  95.6%  3.83ms    950KiB  96.3%  95.0KiB
+     Backward Pass            10   30.5ms  76.3%  3.05ms    784KiB  79.4%  78.4KiB
+       JuMP.solve            150   23.8ms  59.4%   159μs    423KiB  42.9%  2.82KiB
+         optimize!           150   19.7ms  49.2%   131μs         -  0.00%        -
+         prep JuMP model     150   2.69ms  6.72%  17.9μs    193KiB  19.6%  1.29KiB
+         getsolution         150   1.09ms  2.71%  7.23μs    209KiB  21.1%  1.39KiB
+       Cut addition           30   1.12ms  2.81%  37.4μs   69.1KiB  7.01%  2.30KiB
+         risk measure         30   27.5μs  0.07%   917ns   8.91KiB  0.90%        -
+     Forward Pass             10   7.68ms  19.2%   768μs    163KiB  16.5%  16.3KiB
+       JuMP.solve             30   5.89ms  14.7%   196μs   93.4KiB  9.47%  3.11KiB
+         optimize!            30   4.59ms  11.5%   153μs         -  0.00%        -
+         prep JuMP model      30    909μs  2.27%  30.3μs   45.6KiB  4.62%  1.52KiB
+         getsolution          30    303μs  0.76%  10.1μs   41.6KiB  4.21%  1.39KiB
+ ─────────────────────────────────────────────────────────────────────────────────
+    Other Statistics:
+        Iterations:         10
+        Termination Status: max_iterations
+===============================================================================
+```
+
+That concludes our eighth tutorial for SDDP.jl. In our next tutorial,
+[Tutorial Nine: nonlinear models](@ref), we discuss how SDDP.jl can be used to
+solve problems that have nonlinear transition functions.

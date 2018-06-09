@@ -12,9 +12,6 @@ optimization, the SDDP algorithm, Julia, and JuMP.
     If you don't have that background, you may want to brush up on some
     [Readings](@ref).
 
-!!! note
-    You can find the old, terribly incomplete documentation at [Old Manual](@ref).
-
 ## Getting started
 
 This package is unregistered so you will need to `Pkg.clone` it as follows:
@@ -27,7 +24,7 @@ If you want to use the parallel features of SDDP.jl, you should start Julia with
 some worker processes (`julia -p N`), or add by running `julia> addprocs(N)` in
 a running Julia session.
 
-Once you've got SDDP.jl installed, you should read some tutorials, beginnng with
+Once you've got SDDP.jl installed, you should read some tutorials, beginning with
 [Tutorial One: first steps](@ref).
 
 ## Citing SDDP.jl
@@ -42,3 +39,19 @@ If you use SDDP.jl, we ask that you please cite the following [paper](http://www
 	year = {2017}
 }
 ```
+
+## FAQ
+
+**Q.** How do I make the constraint coefficients random?
+
+**A.** Due to the design of JuMP, it's difficult to efficiently modify constraint
+coefficients. Therefore, you can only vary the right hand-side of a constraint
+using the `@rhsnoise` macro.
+
+As a work around, we suggest you either reformulate the model so the uncertainty
+appears in the RHS, or model the uncertainty as a Markov process.
+[Tutorial Four: Markovian policy graphs](@ref) explains how to implement this.
+You might also want to take a look at the [asset management example](https://github.com/odow/SDDP.jl/blob/master/examples/AssetManagement/asset_management.jl)
+to see an example of this. Make sure you keep in mind that a new value function
+is built at each Markov state which increases the computation time and memory
+requirements.

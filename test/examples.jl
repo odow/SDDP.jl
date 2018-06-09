@@ -43,6 +43,7 @@ const Examples = Dict(
     "Nonlinear" => [
             "logs.jl",
             "inventory-control.jl",
+            "log_auto_regressive.jl"
         ],
     "PriceInterpolation" => [
             "simple_contracting.jl",
