@@ -125,7 +125,7 @@ end
 
 function runpaper(USE_AR1, valley_chain, name)
     m = buildmodel(USE_AR1, valley_chain)
-    solve(m, max_iterations = 2_000, log_file="$(name).log")
+    solve(m, iteration_limit = 2_000, log_file="$(name).log")
 
     SIMN = 1_000
     sim = simulate(m, SIMN, [:reservoir, :price, :generation_quantity])
@@ -173,7 +173,7 @@ m = buildmodel(false, [
     ]
 )
 srand(123)
-solve(m, max_iterations = 20, print_level=0, cut_output_file="river.cuts")
+solve(m, iteration_limit = 20, print_level=0, cut_output_file="river.cuts")
 @test getbound(m) >= -40_000
 
 # test cut round trip with multiple price dimensions
@@ -189,7 +189,7 @@ finally
     rm("river.cuts")
 end
 srand(123)
-SDDP.solve(m, max_iterations=1, print_level=0)
+SDDP.solve(m, iteration_limit=1, print_level=0)
 srand(123)
-SDDP.solve(m2, max_iterations=1, print_level=0)
+SDDP.solve(m2, iteration_limit=1, print_level=0)
 @test isapprox(getbound(m2), getbound(m), atol=1e-4)

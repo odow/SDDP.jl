@@ -77,7 +77,7 @@ if length(ARGS) > 0
         m = newsvendor_example(15)
         srand(123)
         status = SDDP.solve(m,
-            max_iterations = 10
+            iteration_limit = 10
         )
         s = simulate(m, 1_000, [:x, :x0, :u, :price])
 
@@ -104,7 +104,7 @@ if length(ARGS) > 0
             m = newsvendor_example(N)
             srand(123)
             status = SDDP.solve(m,
-                max_iterations = 50,
+                iteration_limit = 50,
                 print_level=0
             )
             push!(bounds , getbound(m))
@@ -119,7 +119,7 @@ if length(ARGS) > 0
         m = newsvendor_example(1)
         srand(123)
         status = SDDP.solve(m,
-            max_iterations = 500
+            iteration_limit = 500
         )
         bound = [l.bound for l in m.log]
         open("dynamic.bound.csv", "w") do io
@@ -130,9 +130,9 @@ if length(ARGS) > 0
     elseif ARGS[1] == "hybrid"
         # warm up Julia JIT
         m = newsvendor_example(1)
-        SDDP.solve(m, max_iterations = 1)
+        SDDP.solve(m, iteration_limit = 1)
         m = newsvendor_example(3)
-        SDDP.solve(m, max_iterations = 1)
+        SDDP.solve(m, iteration_limit = 1)
 
         # Dynamic Only
         m = newsvendor_example(1)

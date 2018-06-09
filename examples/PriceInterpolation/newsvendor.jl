@@ -74,13 +74,13 @@ for discretization in [1, 3]
     m = newsvendor_example(discretization)
     srand(123)
     status = SDDP.solve(m,
-        max_iterations = 50,
+        iteration_limit = 50,
         cut_output_file="price.cuts",
         print_level=0,
         # test cut selection with default oracle
         cut_selection_frequency = 25
     )
-    @test status == :max_iterations
+    @test status == :iteration_limit
     @test getbound(m) .<= 4.098
 
     # test round-tripping the cuts
@@ -91,8 +91,8 @@ for discretization in [1, 3]
         rm("price.cuts")
     end
     # we have to solve once more to initialize the second model
-    SDDP.solve(m, max_iterations=1, print_level=0)
-    SDDP.solve(m2, max_iterations=1, print_level=0)
+    SDDP.solve(m, iteration_limit=1, print_level=0)
+    SDDP.solve(m2, iteration_limit=1, print_level=0)
     @test isapprox(getbound(m2), getbound(m), atol=1e-4)
 
     # test value function plotting without launching a plot
@@ -158,7 +158,7 @@ end
 #
 #     for i in 1:200
 #         # add a cut
-#         status = SDDP.solve(m, max_iterations = 1, print_level=0)
+#         status = SDDP.solve(m, iteration_limit = 1, print_level=0)
 #
 #         # process points
 #         vf = SDDP.valueoracle(SDDP.getsubproblem(m, 2, 1))

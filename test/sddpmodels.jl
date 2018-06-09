@@ -94,8 +94,8 @@ using Clp
             @rhsnoise(sp, i=1:2, x <= i)
             @stageobjective(sp, i=1:2, i * x)
         end
-        status = solve(m, max_iterations=1, print_level=0, reduce_memory_footprint=true)
-        @test status == :max_iterations
+        status = solve(m, iteration_limit=1, print_level=0, reduce_memory_footprint=true)
+        @test status == :iteration_limit
         sp = SDDP.getsubproblem(m, 1, 1)
         for con in sp.linconstr
             @test con.terms == JuMP.AffExpr(0.0)

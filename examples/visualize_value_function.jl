@@ -45,7 +45,7 @@ m = SDDPModel(
 end
 
 srand(111)
-@time status = solve(m, max_iterations = 30)
+@time status = solve(m, iteration_limit = 30)
 
 #=
     These lines are commented out for testing

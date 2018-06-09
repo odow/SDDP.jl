@@ -29,8 +29,8 @@ end
         @constraint(sp, x <= -1)
         @stageobjective(sp, i=1:2, i * x)
     end
-    
-    @test_throws Exception solve(m, max_iterations=1)
+
+    @test_throws Exception solve(m, iteration_limit=1)
     @test isfile("infeasible_subproblem.lp")
     rm("infeasible_subproblem.lp")
 end

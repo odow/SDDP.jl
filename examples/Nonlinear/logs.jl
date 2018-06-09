@@ -23,5 +23,5 @@ m = SDDPModel(
         @stageobjective(sp, y)
     end
 end
-solve(m, max_iterations=10, print_level=0)
+solve(m, iteration_limit=10, print_level=0)
 @test isapprox(getbound(m), log(6) / 3, atol=1e-4)

@@ -154,8 +154,8 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
                             reset!(objectives)
                             simidx = 1
                         end
-                        if it > settings.max_iterations
-                            status = :max_iterations
+                        if it > settings.iteration_limit
+                            status = :iteration_limit
                             break
                         end
                         newcuts = deepcopy(slaves[p])

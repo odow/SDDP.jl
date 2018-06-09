@@ -48,7 +48,7 @@ end
 We're going to solve this for 20 iterations and then simulate 100 Monte Carlo
 realizations of the solution.
 ```julia
-status = solve(m, max_iterations = 20)
+status = solve(m, iteration_limit = 20)
 simulation_result = simulate(m,
     100,
     [:outgoing_volume, :thermal_generation, :hydro_generation, :hydro_spill]

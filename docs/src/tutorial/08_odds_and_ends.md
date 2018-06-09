@@ -139,7 +139,7 @@ the `cut_output_file` to [`solve`](@ref):
 ```julia
 m = build_model()
 SDDP.solve(m
-    max_iterations  = 10,
+    iteration_limit = 10,
     cut_output_file = "cuts.csv"
 )
 ```
@@ -211,7 +211,7 @@ call. This produces a log like:
  ─────────────────────────────────────────────────────────────────────────────────
     Other Statistics:
         Iterations:         10
-        Termination Status: max_iterations
+        Termination Status: iteration_limit
 ===============================================================================
 ```
 

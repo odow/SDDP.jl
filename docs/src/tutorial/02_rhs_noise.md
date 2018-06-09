@@ -184,7 +184,7 @@ only conducted 50 replications; however, the second time we conducted 100. This
 demonstrates the *sequential sampling* method at work.
 
 Finally, the termination status is now `:converged` instead of
-`:max_iterations`.
+`:iteration_limit`.
 
 ## Understanding the solution
 
