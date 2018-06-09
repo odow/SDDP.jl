@@ -91,8 +91,8 @@ m = SDDPModel(
     end
 end
 ```
-We can solve this using SDDP.jl's asynchronous feature by passing
-[`Asynchronous()`](@ref) to the `solve_type` keyword in [`solve`](@ref):
+We can solve this using SDDP.jl's asynchronous feature by passing an instance of
+[`Asynchronous`](@ref) to the `solve_type` keyword in [`solve`](@ref):
 ```julia
 status = solve(m,
     max_iterations = 10,
@@ -100,8 +100,8 @@ status = solve(m,
 )
 ```
 If you have multiple processes, SDDP.jl will detect this and choose asynchronous
-by default. You can force the serial solution by passing [`Serial()`](@ref) to
-`solve_type`.
+by default. You can force the serial solution by passing an instance of
+[`Serial`](@ref) to `solve_type`.
 
 The log is:
 ```

@@ -90,4 +90,4 @@ julia> simulaton_result[1][:inflow′]
 ```
 
 That concludes our ninth tutorial for SDDP.jl. In our next tutorial,
-[Tutorial Ten: parallel](@ref), we explain how to solve SDDP models in parallel.
+[Tutorial Ten: parallelism](@ref), we explain how to solve SDDP models in parallel.

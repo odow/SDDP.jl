@@ -39,3 +39,19 @@ If you use SDDP.jl, we ask that you please cite the following [paper](http://www
 	year = {2017}
 }
 ```
+
+## FAQ
+
+**Q.** How do I make the constraint coefficients random?
+
+**A.** Due to the design of JuMP, it's difficult to efficiently modify constraint
+coefficients. Therefore, you can only vary the right hand-side of a constraint
+using the `@rhsnoise` macro.
+
+As a work around, we suggest you either reformulate the model so the uncertainty
+appears in the RHS, or model the uncertainty as a Markov process.
+[Tutorial Four: Markovian policy graphs](@ref) explains how to implement this.
+You might also want to take a look at the [asset management example](https://github.com/odow/SDDP.jl/blob/master/examples/AssetManagement/asset_management.jl)
+to see an example of this. Make sure you keep in mind that a new value function
+is built at each Markov state which increases the computation time and memory
+requirements.

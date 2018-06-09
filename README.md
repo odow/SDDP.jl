@@ -4,32 +4,11 @@
 |:-----------------:|:--------------------:|:----------------:|
 | [![][docs-latest-img]][docs-latest-url] | [![Build Status][build-img]][build-url] | [![Codecov branch][codecov-img]][codecov-url]
 
-## Installation
-This package is unregistered so you will need to `Pkg.clone` it as follows:
-```julia
-Pkg.clone("https://github.com/odow/SDDP.jl.git")
-```
-
 ## Documentation
 
-The documentation is still very incomplete, however the user-facing API from the examples should
-be stable enough to use.
+You can find the documentation at https://odow.github.io/SDDP.jl/latest/.
 
-**If you are stuggling to figure out how to use something, raise a Github issue!**
-
-However, you can find some documentation at https://odow.github.io/SDDP.jl/latest/
-
-In addition, most functions are documented, and this can be accessed via the Julia
-help. e.g.:
-```julia
-julia>? @state
-```
-
-Some other resources include:
- - many examples: https://github.com/odow/SDDP.jl/tree/master/examples
- - a paper on Optimization-Online:
-http://www.optimization-online.org/DB_HTML/2017/12/6388.html 
- - an example of a large-scale model here: https://github.com/odow/MilkPOWDER
+**If you are struggling to figure out how to use something, raise a Github issue!**
 
 ## Examples
 
@@ -42,21 +21,6 @@ Bonus points for models where you know the optimal first stage objective value.
 
 We need your bug reports! We've only stressed a few code paths on real-world models.
 If you run into any problems, [file an issue here](https://github.com/odow/SDDP.jl/issues/new).
-
-## FAQ
-
-**Q.** How do I make the constraint coefficients random?
-
-**A.** Due to the design of JuMP, it's difficult to efficiently modify constraint
-coefficients. Therefore, you can only vary the right-hand-side of a constraint
-using the `@rhsnoise` macro.
-
-As a work around, we suggest you either reformulate the model so the uncertainty
-appears in the RHS, or model the uncertainty as a markov process. Take a look at
-the [asset management example](https://github.com/odow/SDDP.jl/blob/master/examples/AssetManagement/asset_management.jl)
-to see an example of this. Make sure you keep in mind that a new value function
-is built at each markov state which increases the computation time and memory
-requirements.
 
 ## Other Packages
 
