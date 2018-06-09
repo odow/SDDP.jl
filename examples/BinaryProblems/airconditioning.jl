@@ -51,5 +51,5 @@ end
 
 srand(1234)
 m = airconditioningmodel()
-solve(m, max_iterations=16, print_level=2)
+solve(m, iteration_limit=16, print_level=2)
 @test isapprox(getbound(m), 62_500.0)

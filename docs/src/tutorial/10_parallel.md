@@ -95,8 +95,8 @@ We can solve this using SDDP.jl's asynchronous feature by passing an instance of
 [`Asynchronous`](@ref) to the `solve_type` keyword in [`solve`](@ref):
 ```julia
 status = solve(m,
-    max_iterations = 10,
-    solve_type     = Asynchronous()
+    iteration_limit = 10,
+    solve_type      = Asynchronous()
 )
 ```
 If you have multiple processes, SDDP.jl will detect this and choose asynchronous
@@ -132,7 +132,7 @@ The log is:
 -------------------------------------------------------------------------------
     Other Statistics:
         Iterations:         10
-        Termination Status: max_iterations
+        Termination Status: iteration_limit
 ===============================================================================
 ```
 Note that the order of the *Cut #* column is not sequential because they are

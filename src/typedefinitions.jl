@@ -229,10 +229,29 @@ Whether to terminate the solution algorithm with the status `:converged` if the
 deterministic bound is with in the statistical bound after `max` simulations.
 Defaults to `false`.
 """
-MonteCarloSimulation(;frequency=0,min=20,max=0,step=1,confidence=0.95,termination=false) = MonteCarloSimulation(frequency,collect(min:step:max),confidence,termination)
+function MonteCarloSimulation(;
+    frequency   = 0,
+    min         = 20,
+    max         = 0,
+    step        = 1,
+    confidence  = 0.95,
+    terminate   = false,
+    termination = nothing
+    )
+    if termination != nothing
+        warn("The keyword `termination` is deprecated. Use `terminate` instead.")
+        terminate = termination
+    end
+    MonteCarloSimulation(
+        frequency,
+        collect(min:step:max),
+        confidence,
+        terminate
+    )
+end
 
 struct Settings
-    max_iterations::Int
+    iteration_limit::Int
     time_limit::Float64
     simulation::MonteCarloSimulation
     bound_convergence::BoundConvergence

@@ -29,7 +29,7 @@ m = SDDPModel(
     end
 end
 
-status = solve(m, max_iterations = 3,
+status = solve(m, iteration_limit = 3,
 print_level = 0)
 
 @test getbound(m) == -2

@@ -38,7 +38,7 @@ m = SDDPModel(
 
 end
 
-status = solve(m, max_iterations = 10,
+status = solve(m, iteration_limit = 10,
 print_level = 0)
 
 @test isapprox(getbound(m), -23.96, atol=1e-2)

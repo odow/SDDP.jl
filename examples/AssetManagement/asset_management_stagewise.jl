@@ -53,13 +53,13 @@ end
 
 srand(111)
 status = solve(m,
-    max_iterations = 100,
+    iteration_limit = 100,
     simulation = MonteCarloSimulation(
         frequency = 5,
         min  = 100,
         step = 100,
         max  = 500,
-        termination = false
+        terminate = false
     ),
     bound_convergence = BoundConvergence(
         iterations = 5,

@@ -108,12 +108,12 @@ different components.
 ```julia
 status = solve(m,
     simulation = MonteCarloSimulation(
-        frequency   = 2,
-        confidence  = 0.95,
-        termination = true
-        min         = 50,
-        step        = 50,
-        max         = 100,
+        frequency  = 2,
+        confidence = 0.95,
+        terminate  = true
+        min        = 50,
+        step       = 50,
+        max        = 100,
     )
 )
 ```
@@ -122,8 +122,8 @@ First, the `frequency` argument specifies how often the  Monte Carlo simulation
 is conducted (iterations/simulation). For this example, we conduct a Monte Carlo
 simulation every two iterations. Second, the `confidence` specifies the level at
 which to conduct the confidence interval. In this example, we construct a 95%
-confidence interval. Third, the `termination` argument is a Boolean defining if
-we should terminate the method if the lower limit of the confidence interval is
+confidence interval. Third, the `terminate` argument is a Boolean defining if we
+should terminate the method if the lower limit of the confidence interval is
 less than the lower bound (upper limit and bound for maximization problems). The
 final three arguments implement the method of *sequential sampling*: `min` gives
 the minimum number of replications to conduct before the construction of a
@@ -184,7 +184,7 @@ only conducted 50 replications; however, the second time we conducted 100. This
 demonstrates the *sequential sampling* method at work.
 
 Finally, the termination status is now `:converged` instead of
-`:max_iterations`.
+`:iteration_limit`.
 
 ## Understanding the solution
 

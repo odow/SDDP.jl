@@ -81,7 +81,7 @@ complicated (i.e. many variables and constraints) models.
 
 ```julia
 status = solve(m,
-    max_iterations          = 10,
+    iteration_limit         = 10,
     cut_selection_frequency = 5
 )
 ```

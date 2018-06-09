@@ -13,28 +13,28 @@ include(joinpath(dirname(@__FILE__), "hydro_valley.jl"))
 
 # deterministic
 deterministic_model = hydrovalleymodel(hasmarkovprice=false,hasstagewiseinflows=false)
-SDDP.solve(deterministic_model, max_iterations=10, cut_selection_frequency=1, print_level=0)
+SDDP.solve(deterministic_model, iteration_limit=10, cut_selection_frequency=1, print_level=0)
 @test isapprox(getbound(deterministic_model), 835.0, atol=1e-3)
 
 # stagewise inflows
 stagewise_model = hydrovalleymodel(hasmarkovprice=false)
-SDDP.solve(stagewise_model, max_iterations=20, print_level=0)
+SDDP.solve(stagewise_model, iteration_limit=20, print_level=0)
 @test isapprox(getbound(stagewise_model), 838.33, atol=1e-2)
 
 # markov prices
 markov_model = hydrovalleymodel(hasstagewiseinflows=false)
-SDDP.solve(markov_model, max_iterations=10, print_level=0)
+SDDP.solve(markov_model, iteration_limit=10, print_level=0)
 @test isapprox(getbound(markov_model), 851.8, atol=1e-2)
 
 # stagewise inflows and markov prices
 markov_stagewise_model = hydrovalleymodel(hasstagewiseinflows=true, hasmarkovprice=true)
-SDDP.solve(markov_stagewise_model, max_iterations=10, print_level=0)
+SDDP.solve(markov_stagewise_model, iteration_limit=10, print_level=0)
 @test isapprox(getbound(markov_stagewise_model), 855.0, atol=1e-3)
 
 # risk averse stagewise inflows and markov prices
 riskaverse_model = hydrovalleymodel(riskmeasure = EAVaR(lambda=0.5, beta=0.66))
 SDDP.solve(riskaverse_model,
-    max_iterations = 10,
+    iteration_limit = 10,
     print_level = 0
 )
 
@@ -44,7 +44,7 @@ SDDP.solve(riskaverse_model,
 worst_case_model = hydrovalleymodel(
     riskmeasure = EAVaR(lambda=0.5, beta=0.0), sense=:Min)
 SDDP.solve(worst_case_model,
-    max_iterations = 10,
+    iteration_limit = 10,
     simulation = MonteCarloSimulation(
         frequency = 2,
         min  = 20,
@@ -59,7 +59,7 @@ SDDP.solve(worst_case_model,
 # stagewise inflows and markov prices
 cutselection_model = hydrovalleymodel(cutoracle = LevelOneCutOracle(), sense=:Max)
 SDDP.solve(cutselection_model,
-    max_iterations          = 10,
+    iteration_limit          = 10,
     print_level = 0,
     cut_selection_frequency = 2
 )
@@ -69,10 +69,10 @@ SDDP.solve(cutselection_model,
 
 # Distributionally robust Optimization
 dro_model = hydrovalleymodel(hasmarkovprice=false, riskmeasure=DRO(sqrt(2/3)-1e-6))
-SDDP.solve(dro_model, max_iterations = 10, print_level=0)
+SDDP.solve(dro_model, iteration_limit = 10, print_level=0)
 @test isapprox(getbound(dro_model), 835.0, atol=1e-3)
 dro_model = hydrovalleymodel(hasmarkovprice=false, riskmeasure=DRO(1/6))
-SDDP.solve(dro_model, max_iterations = 20, print_level=0)
+SDDP.solve(dro_model, iteration_limit = 20, print_level=0)
 @test isapprox(getbound(dro_model), 836.695, atol=1e-3)
 # (Note) radius ≈ sqrt(2/3), will set all noise probabilities to zero except the worst case noise
 # (Why?):

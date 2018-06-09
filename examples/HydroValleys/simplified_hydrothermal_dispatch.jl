@@ -21,7 +21,7 @@ using SDDP, JuMP, Clp, Base.Test
 
 # Initialise SDDP Model
 m = SDDPModel(
-                  sense = :Min,          
+                  sense = :Min,
                  stages = 3,
                  solver = ClpSolver(),
         objective_bound = 0
@@ -62,14 +62,14 @@ end
 srand(11111)
 
 solvestatus = solve(m,
-    max_iterations = 20,
+    iteration_limit = 20,
     time_limit     = 600,
     simulation     = MonteCarloSimulation(
                         frequency = 5,
                         min       = 10,
                         step      = 10,
                         max       = 100,
-                        termination = true
+                        terminate = true
                     ),
      print_level=0
 )

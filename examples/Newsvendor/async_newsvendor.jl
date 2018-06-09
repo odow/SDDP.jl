@@ -86,7 +86,7 @@ end
 m = createmodel(EAVaR(beta   = 0.6, lambda = 0.5))
 
 
-@test_throws Exception SDDP.solve(m, print_level=0, max_iterations=30, solve_type=Asynchronous(slaves=[2]))
+@test_throws Exception SDDP.solve(m, print_level=0, iteration_limit=30, solve_type=Asynchronous(slaves=[2]))
 
 # slave processes
 slaves = workers()
@@ -97,7 +97,7 @@ slaves = workers()
 =#
 slave_steps = 2.0
 solvestatus = SDDP.solve(m,
-    max_iterations = 30,
+    iteration_limit = 30,
     solve_type     = Asynchronous(slaves=slaves, step=slave_steps),
    cut_output_file = "async.cuts",
     simulation     = MonteCarloSimulation(
@@ -109,7 +109,7 @@ solvestatus = SDDP.solve(m,
 )
 
 @test isapprox(getbound(m), 93.267, atol=1e-3)
-@test solvestatus == :max_iterations
+@test solvestatus == :iteration_limit
 
 sim = simulate(m, 100, [:stock, :pid])
 @test length(sim) == 100
@@ -122,13 +122,13 @@ m4 = createmodel(0.5Expectation() + 0.5AVaR(0.6))
 loadcuts!(m4, "async.cuts")
 rm("async.cuts")
 
-SDDP.solve(m4, max_iterations=1, solve_type=Asynchronous())
+SDDP.solve(m4, iteration_limit=1, solve_type=Asynchronous())
 @test isapprox(getbound(m), getbound(m4), atol=1e-3)
 
 m2 = createmodel(Expectation())
 
 solvestatus = SDDP.solve(m2,
-    max_iterations = 50, print_level=0,
+    iteration_limit = 50, print_level=0,
     solve_type     = Asynchronous(),
     cut_selection_frequency = 5,
     simulation     = MonteCarloSimulation(
@@ -136,7 +136,7 @@ solvestatus = SDDP.solve(m2,
                         min       = 5,
                         max       = 50,
                         step      = 5,
-                        termination = true
+                        terminate = true
                              )
 )
 

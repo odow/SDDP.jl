@@ -53,7 +53,7 @@ mod = SDDPModel(
 end
 
 status = SDDP.solve(mod,
-    max_iterations = 50,
+    iteration_limit = 50,
     print_level    = 0,
     simulation     = MonteCarloSimulation(
         frequency = 10,

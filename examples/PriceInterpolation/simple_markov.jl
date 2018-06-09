@@ -50,7 +50,7 @@ m = SDDPModel(
     @stageobjective(sp, price -> price * u)
 end
 
-solve(m, max_iterations = 50, print_level = 0)
+solve(m, iteration_limit = 50, print_level = 0)
 s = simulate(m, 100, [:price, :x, :u])
 for si in s
     if si[:markov][2] == 1

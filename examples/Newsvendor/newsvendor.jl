@@ -77,7 +77,7 @@ end
 news1 = newsvendormodel()
 
 @test SDDP.solve(news1,
-    max_iterations = 20,
+    iteration_limit = 20,
     cut_selection_frequency = 10,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
@@ -94,7 +94,7 @@ news1 = newsvendormodel()
 
 news2 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5))
 @test SDDP.solve(news2,
-    max_iterations = 50,
+    iteration_limit = 50,
     print_level    = 0,
     simulation     = MonteCarloSimulation(
                         frequency = 10,
@@ -102,7 +102,7 @@ news2 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5))
                         max       = 500,
                         step      = 1
                              )
-) == :max_iterations
+) == :iteration_limit
 @test isapprox(getbound(news2), -93.267, atol=1e-3)
 results2 = simulate(news2, 500)
 @test length(results2) == 500
@@ -126,9 +126,9 @@ historical_results2 = simulate(news2, [:buy, :sell];
 news3 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5))
 cuts_file_name = "newsvendor_cuts.csv"
 @test SDDP.solve(news3,
-    max_iterations = 30,
+    iteration_limit = 30,
     print_level = 0,
-    cut_output_file = cuts_file_name) == :max_iterations
+    cut_output_file = cuts_file_name) == :iteration_limit
 
 srand(22222)
 results3 = simulate(news3, 500)

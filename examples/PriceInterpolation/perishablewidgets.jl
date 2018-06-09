@@ -318,7 +318,7 @@ end
 
 @time status = SDDP.solve(m,
     # maximum number of cuts to be added to any individual subproblem
-    max_iterations = 300,
+    iteration_limit = 300,
 
     # time limit for solver (seconds)
     time_limit     = 20,
@@ -344,12 +344,12 @@ end
             sice more simulations will only refine the estimate.
 
             If we reach max simulations and there is still evidence of
-            convergence, then we can terminate with termination=true.
+            convergence, then we can terminate with terminate=true.
         ==#
-        min         = 500,
-        step        = 100,
-        max         = 500,
-        termination = false
+        min       = 500,
+        step      = 100,
+        max       = 500,
+        terminate = false
     ),
 
     #  SDDP.jl will automatically chose the best solver but we can orverride

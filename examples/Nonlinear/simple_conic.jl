@@ -33,8 +33,8 @@ end
 Solve the model `m` and return the estimator for `data`.
 """
 function solvemodel!(m)
-    status = solve(m, max_iterations=20, print_level=0)
-    @test status == :max_iterations
+    status = solve(m, iteration_limit=20, print_level=0)
+    @test status == :iteration_limit
     d = simulate(m, 1, [:x′])
     return d[1][:x′][1]
 end

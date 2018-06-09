@@ -25,7 +25,7 @@ function solve_model(noise_probability)
             setnoiseprobability!(sp, noise_probability)
         end
     end
-    solve(m,  max_iterations = 5, print_level=0, cut_selection_frequency = 5)
+    solve(m,  iteration_limit = 5, print_level=0, cut_selection_frequency = 5)
     m
 end
 

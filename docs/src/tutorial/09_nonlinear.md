@@ -77,7 +77,7 @@ end
 
 This problem can be solved just like any other SDDP model:
 ```julia
-status = solve(m, max_iterations = 10)
+status = solve(m, iteration_limit = 10)
 simulation_result = simulate(m, 1, [:inflow′])
 ```
 Then, we can check that the inflows do indeed follow a log auto-regressive

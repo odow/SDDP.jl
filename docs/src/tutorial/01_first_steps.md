@@ -185,15 +185,13 @@ end
 ```
 
 To solve this problem, we use the [`solve`](@ref) method:
-
 ```julia
-status = solve(m; max_iterations=5)
+status = solve(m; iteration_limit=5)
 ```
-
-The return value `status` is a symbol describing why the SDDP algorithm
-terminated. In this case, the value is `:max_iterations`. We discuss other
-arguments to the [`solve`](@ref) method and other possible values for `status`
-in future sections of this manual.
+The argument `iteration_limit` is self-explanatory. The return value `status` is
+a symbol describing why the SDDP algorithm terminated. In this case, the value
+is `:iteration_limit`. We discuss other arguments to the [`solve`](@ref) method
+and other possible values for `status` in future sections of this manual.
 
 During the solve, the following log is printed to the screen.
 ```
@@ -219,7 +217,7 @@ During the solve, the following log is printed to the screen.
 -------------------------------------------------------------------------------
     Other Statistics:
         Iterations:         5
-        Termination Status: max_iterations
+        Termination Status: iteration_limit
 ===============================================================================
 ```
 

@@ -49,7 +49,7 @@ end
 
 srand(111)
 solve(m,
-    max_iterations = 25,
+    iteration_limit = 25,
     print_level    = 0
 )
 @test isapprox(getbound(m), 1.514, atol=1e-4)

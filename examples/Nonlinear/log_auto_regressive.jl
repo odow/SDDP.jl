@@ -35,7 +35,7 @@ m = SDDPModel(
 end
 
 srand(123)
-solve(m, max_iterations=10, print_level=0)
+solve(m, iteration_limit=10, print_level=0)
 @test isapprox(getbound(m), 5585.8, atol=1e-1)
 s = simulate(m, 1, [:inflow′])
 ω = [0.9, 1.0, 1.1]
