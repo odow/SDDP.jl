@@ -30,3 +30,4 @@ end
 @deprecate init! initializevaluefunction
 @deprecate NestedAVaR(;lambda=1.0,beta=1.0) EAVaR(;lambda=lambda,beta=beta)
 @deprecate_macro Asyncronous Asynchronous
+@deprecate BoundConvergence BoundStalling

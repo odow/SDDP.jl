@@ -166,7 +166,7 @@ if length(ARGS) > 0
         m = newsvendor_example(5)
         srand(123)
         status = SDDP.solve(m,
-            bound_convergence = BoundConvergence(iterations = 5, atol=1e-4),
+            bound_stalling = BoundStalling(iterations = 5, atol=1e-4),
             cut_output_file = "hybrid.cuts"
         )
 

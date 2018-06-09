@@ -85,11 +85,11 @@ news1 = newsvendormodel()
                         max       = 500,
                         step      = 10
                              ),
-    bound_convergence = BoundConvergence(
+    bound_stalling = BoundStalling(
                         iterations = 5,
                         atol       = 1e-3
                             )
-) == :bound_convergence
+) == :bound_stalling
 @test isapprox(getbound(news1), -97.9, atol=1e-3)
 
 news2 = newsvendormodel(riskmeasure=EAVaR(beta=0.6,lambda=0.5))
