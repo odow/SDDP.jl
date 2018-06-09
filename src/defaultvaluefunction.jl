@@ -11,6 +11,7 @@ getstageobjective(sp::JuMP.Model) = getstageobjective(valueoracle(sp), sp)
 mutable struct DefaultValueFunction{C<:AbstractCutOracle} <: AbstractValueFunction
     cutmanager::C
     theta::JuMP.Variable
+    discount_rate::Float64
 end
 
 """
@@ -18,7 +19,7 @@ end
 
 The default value function.
 """
-DefaultValueFunction(cutoracle=DefaultCutOracle()) = DefaultValueFunction(cutoracle, JuMP.Variable(JuMP.Model(), 0))
+DefaultValueFunction(cutoracle=DefaultCutOracle(), discount_rate=1.0) = DefaultValueFunction(cutoracle, JuMP.Variable(JuMP.Model(), 0), discount_rate)
 
 cutoracle(vf::DefaultValueFunction) = vf.cutmanager
 
@@ -55,7 +56,7 @@ function getstageobjective(vf::DefaultValueFunction, sp::JuMP.Model)
     if ext(sp).finalstage
         return JuMP.getobjectivevalue(sp)
     else
-        return JuMP.getobjectivevalue(sp) - JuMP.getvalue(vf.theta)
+        return JuMP.getobjectivevalue(sp) - JuMP.getvalue(vf.theta)*vf.discount_rate
     end
 end
 
@@ -70,7 +71,7 @@ function setstageobjective!(vf::DefaultValueFunction, sp::JuMP.Model, obj)
     if ext(sp).finalstage
         JuMP.setobjective(sp, getsense(sp), obj)
     else
-        JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
+        JuMP.setobjective(sp, getsense(sp), obj + vf.theta*vf.discount_rate)
     end
     JuMP.setobjectivesense(sp, getsense(sp))
 end
