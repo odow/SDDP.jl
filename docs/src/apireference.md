@@ -48,7 +48,7 @@ DynamicPriceInterpolation
 ```@docs
 solve
 MonteCarloSimulation
-BoundConvergence
+BoundStalling
 Asynchronous
 Serial
 ```

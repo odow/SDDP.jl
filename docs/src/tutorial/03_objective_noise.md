@@ -107,12 +107,12 @@ end
 
 Now we need to solve the problem. As in the previous two tutorials, we use the
 [`solve`](@ref) function. However, this time we use the bound stalling stopping
-rule. This can be controlled via the `bound_convergence` keyword to
+rule. This can be controlled via the `bound_stalling` keyword to
 [`solve`](@ref). The syntax has a lot going on so we're going to give an example
 of how it is used, and then walk through the different components.
 ```julia
 status = solve(m,
-    bound_convergence = BoundConvergence(
+    bound_stalling = BoundStalling(
         iterations = 5,
         rtol       = 0.0,
         atol       = 1e-6
@@ -128,7 +128,7 @@ absolute and relative tolerances by which we compare the equality of the bound
 in consecutive iterations. In this case, since the model is simple we choose an
 absolute convergence tolerance of `1e-6`.
 
-The termination status is `:bound_convergence`, and the output from the log is
+The termination status is `:bound_stalling`, and the output from the log is
 now:
 ```
 -------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ now:
 -------------------------------------------------------------------------------
     Other Statistics:
         Iterations:         7
-        Termination Status: bound_convergence
+        Termination Status: bound_stalling
 ===============================================================================
 ```
 

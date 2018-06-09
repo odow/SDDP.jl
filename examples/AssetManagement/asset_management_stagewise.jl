@@ -61,7 +61,7 @@ status = solve(m,
         max  = 500,
         terminate = false
     ),
-    bound_convergence = BoundConvergence(
+    bound_stalling = BoundStalling(
         iterations = 5,
         rtol       = 0.0,
         atol       = 0.001
@@ -69,7 +69,7 @@ status = solve(m,
     log_file="asset.log"
 )
 rm("asset.log")
-@test status == :bound_convergence
+@test status == :bound_stalling
 @test isapprox(getbound(m), -1.278, atol=1e-3)
 
 # results = simulate(m, 100, [:xs, :xb])

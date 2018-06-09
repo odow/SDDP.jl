@@ -86,14 +86,6 @@ function confidenceinterval(x, conf_level=0.95)
     return mu - err, mu + err
 end
 
-function rtol(x, y)
-    if abs(y) < 1e-6
-        return x - y
-    else
-        (x - y) / abs(y)
-    end
-end
-
 function sample(x::AbstractVector{Float64})
     r = rand()
     for i in 1:length(x)

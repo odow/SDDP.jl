@@ -21,7 +21,7 @@ export SDDPModel,
     stageobjective!, @stageobjective,
     # cut oracles
     DefaultCutOracle, DematosCutOracle, LevelOneCutOracle,
-    MonteCarloSimulation, BoundConvergence,
+    MonteCarloSimulation, BoundStalling,
     Serial, Asynchronous,
     solve, simulate,
     # @visualise,
@@ -347,7 +347,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
 
         addsolutionlog!(m, settings, iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
 
-        status, keep_iterating = testboundstall(m, settings, status, keep_iterating)
+        status, keep_iterating = bound_stalling_stopping_rule(m, settings, status, keep_iterating)
 
         if total_time > settings.time_limit
             status = :time_limit
@@ -369,16 +369,37 @@ function addsolutionlog!(m, settings, iteration, objective, lower, upper, cuttin
     print(print, settings, m.log[end], printsingle, m.sense == :Min)
 end
 
-function testboundstall(m::SDDPModel, settings::Settings, status::Symbol, keep_iterating::Bool)
-    if keep_iterating
-        if settings.bound_convergence.iterations > 1 && length(m.log) >= settings.bound_convergence.iterations
-            last_n = map(l->l.bound, m.log[end-settings.bound_convergence.iterations+1:end])
-            if all(last_n - mean(last_n) .< settings.bound_convergence.atol) || all(abs.(last_n / mean(last_n)-1) .<    settings.bound_convergence.rtol)
-                return :bound_convergence, false
-            end
+atol(x,y) = abs(x - y)
+rtol(x,y) = abs(x - y) / ( 1 + abs(y) )
+
+"""
+    bound_stalling_stopping_rule(observations::Vector{SolutionLog}, bs::BoundStalling)
+
+Return true is the last `bs.iterations` are within an absolute tolerance of
+`bs.atol` or relative tolerance of `bs.rtol` of each other.
+"""
+function bound_stalling_stopping_rule(observations::Vector{SolutionLog}, bs::BoundStalling)
+    if length(observations) < bs.iterations || bs.iterations < 2
+        return false
+    end
+    for i in 1:bs.iterations
+        if atol(observations[end-i+1].bound, observations[end-i].bound) > bs.atol &&
+            rtol(observations[end-i+1].bound, observations[end-i].bound) > bs.rtol
+            return false
         end
     end
-    return status, keep_iterating
+    return true
+end
+
+function bound_stalling_stopping_rule(m::SDDPModel, settings::Settings, status::Symbol, keep_iterating::Bool)
+    if !(keep_iterating)
+        return status, keep_iterating
+    end
+    if bound_stalling_stopping_rule(m.log, settings.bound_stalling)
+        return :bound_stalling, false
+    else
+        return status, keep_iterating
+    end
 end
 
 """
@@ -399,7 +420,7 @@ control the solution process.
     The maximum number of seconds to compute for before termination.
     Defaults to `Inf`.
  * `simulation::MonteCarloSimulation`: see `MonteCarloSimulation`
- * `bound_convergence::BoundConvergence`: see `BoundConvergence`
+ * `bound_stalling::BoundStalling`: see `BoundStalling`
  * `cut_selection_frequency::Int`:
     Frequency (by iteration) with which to rebuild subproblems using a subset of
     cuts. Frequent cut selection (i.e. `cut_selection_frequency` is small) reduces
@@ -435,13 +456,12 @@ control the solution process.
     * `:interrupted`
     * `:converged`
     * `:iteration_limit`
-    * `:bound_convergence`
+    * `:bound_stalling`
     * `:time_limit`
 
 """
 function JuMP.solve(m::SDDPModel;
         iteration_limit::Int      = Int(1e9),
-        max_iterations::Union{Int, Void} = nothing,
         time_limit::Real          = Inf, # seconds
         simulation = MonteCarloSimulation(
                 frequency  = 0,
@@ -451,7 +471,7 @@ function JuMP.solve(m::SDDPModel;
                 confidence = 0.95,
                 terminate  = false
             ),
-        bound_convergence = BoundConvergence(
+        bound_stalling = BoundStalling(
                 iterations = 0,
                 rtol       = 0.0,
                 atol       = 0.0
@@ -464,11 +484,18 @@ function JuMP.solve(m::SDDPModel;
         # this reduces memory but you shouldn't use it if you want to save the
         # sddp model since it throws away some information
         reduce_memory_footprint      = false,
-        cut_output_file::String      = ""
+        cut_output_file::String      = "",
+        # deprecated inputs
+        max_iterations::Union{Int, Void} = nothing,
+        bound_convergence = nothing
     )
     if max_iterations != nothing
         warn("The keyword `max_iterations` is deprecated. Use `iteration_limit` instead.")
         iteration_limit = max_iterations
+    end
+    if bound_convergence != nothing
+        warn("The keyword `bound_convergence` is deprecated. Use `bound_stalling` instead.")
+        bound_stalling = bound_convergence
     end
     reset_timer!(TIMER)
 
@@ -484,7 +511,7 @@ function JuMP.solve(m::SDDPModel;
         iteration_limit,
         time_limit,
         simulation,
-        bound_convergence,
+        bound_stalling,
         cut_selection_frequency,
         print_level,
         log_file,

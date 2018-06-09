@@ -168,13 +168,13 @@ end
 newSDDPModel(sense::Symbol, v::AbstractValueFunction, build!::Function) = newSDDPModel(sense, typeof(v), build!)
 newSDDPModel(sense::Symbol, v::Type{V}, build!::Function) where {V<:AbstractValueFunction} = SDDPModel{V}(sense, Stage[], Storage(), SolutionLog[], build!, Dict())
 
-struct BoundConvergence
+struct BoundStalling
     iterations::Int
     rtol::Float64
     atol::Float64
 end
 """
-    BoundConvergence(;kwargs...)
+    BoundStalling(;kwargs...)
 
 # Description
 
@@ -192,7 +192,7 @@ Defaults to `0.0`
 Maximum allowed absolute deviation from the mean.
 Defaults to `0.0`
 """
-BoundConvergence(;iterations=0,rtol=0.0,atol=0.0) = BoundConvergence(iterations,rtol,atol)
+BoundStalling(;iterations=0,rtol=0.0,atol=0.0) = BoundStalling(iterations,rtol,atol)
 
 struct MonteCarloSimulation
     frequency::Int
@@ -254,7 +254,7 @@ struct Settings
     iteration_limit::Int
     time_limit::Float64
     simulation::MonteCarloSimulation
-    bound_convergence::BoundConvergence
+    bound_stalling::BoundStalling
     cut_selection_frequency::Int
     print_level::Int
     log_file::String
@@ -262,4 +262,4 @@ struct Settings
     cut_output_file::IOStream
     is_asynchronous::Bool
 end
-Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundConvergence(), 0,0,"", false, IOStream("Cuts"), false)
+Settings() = Settings(0,600.0, MonteCarloSimulation(), BoundStalling(), 0,0,"", false, IOStream("Cuts"), false)
