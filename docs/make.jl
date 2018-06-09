@@ -22,7 +22,6 @@ makedocs(
             "tutorial/10_parallel.md"
         ],
         "Readings" => "readings.md",
-        "Old Manual" => "oldindex.md",
         "Reference" => "apireference.md"
     ],
     assets = [

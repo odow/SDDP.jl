@@ -12,9 +12,6 @@ optimization, the SDDP algorithm, Julia, and JuMP.
     If you don't have that background, you may want to brush up on some
     [Readings](@ref).
 
-!!! note
-    You can find the old, terribly incomplete documentation at [Old Manual](@ref).
-
 ## Getting started
 
 This package is unregistered so you will need to `Pkg.clone` it as follows:
