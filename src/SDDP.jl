@@ -444,12 +444,12 @@ function JuMP.solve(m::SDDPModel;
         max_iterations::Union{Int, Void} = nothing,
         time_limit::Real          = Inf, # seconds
         simulation = MonteCarloSimulation(
-                frequency   = 0,
-                min         = 20,
-                step        = 1,
-                max         = 20,
-                confidence  = 0.95,
-                termination = false
+                frequency  = 0,
+                min        = 20,
+                step       = 1,
+                max        = 20,
+                confidence = 0.95,
+                terminate  = false
             ),
         bound_convergence = BoundConvergence(
                 iterations = 0,

@@ -109,19 +109,19 @@ the literature. In addition to the termination methods discussed in previous
 tutorials, the user can also terminate the solve using the keys `[CRTL]+[C]`.
 
 In addition, to demonstrate that we cannot use Monte Carlo simulation to
-estimate the upper  bound of a risk-averse model, we perform a Monte Carlo
-simulation of the policy  every two iterations. If left unchecked, this solve
-will not terminate as we have set `termination=false`.
+estimate the upper bound of a risk-averse model, we perform a Monte Carlo
+simulation of the policy every two iterations. If left unchecked, this solve
+will not terminate as we have set `terminate=false`.
 
 ```julia
 status = solve(m,
     simulation = MonteCarloSimulation(
-        frequency   = 2,
-        confidence  = 0.95,
-        termination = false,
-        min         = 50,
-        step        = 50,
-        max         = 100,
+        frequency  = 2,
+        confidence = 0.95,
+        terminate  = false,
+        min        = 50,
+        step       = 50,
+        max        = 100,
     )
 )
 ```

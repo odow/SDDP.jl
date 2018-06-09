@@ -21,7 +21,7 @@ using SDDP, JuMP, Clp, Base.Test
 
 # Initialise SDDP Model
 m = SDDPModel(
-                  sense = :Min,          
+                  sense = :Min,
                  stages = 3,
                  solver = ClpSolver(),
         objective_bound = 0
@@ -69,7 +69,7 @@ solvestatus = solve(m,
                         min       = 10,
                         step      = 10,
                         max       = 100,
-                        termination = true
+                        terminate = true
                     ),
      print_level=0
 )

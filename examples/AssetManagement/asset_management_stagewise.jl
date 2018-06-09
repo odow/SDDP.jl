@@ -59,7 +59,7 @@ status = solve(m,
         min  = 100,
         step = 100,
         max  = 500,
-        termination = false
+        terminate = false
     ),
     bound_convergence = BoundConvergence(
         iterations = 5,

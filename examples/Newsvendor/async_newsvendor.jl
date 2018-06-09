@@ -136,7 +136,7 @@ solvestatus = SDDP.solve(m2,
                         min       = 5,
                         max       = 50,
                         step      = 5,
-                        termination = true
+                        terminate = true
                              )
 )
 
