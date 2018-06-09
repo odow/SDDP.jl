@@ -153,3 +153,7 @@ This cut file can be read back into a model using [`loadcuts!`](@ref):
 m2 = build_model()
 loadcuts!(m2, "cuts.csv")
 ```
+
+That concludes our eighth tutorial for SDDP.jl. In our next tutorial,
+[Tutorial Nine: nonlinear models](@ref), we discuss how SDDP.jl can be used to
+solve problems that have nonlinear transition functions.
