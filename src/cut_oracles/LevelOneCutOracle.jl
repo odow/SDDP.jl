@@ -46,9 +46,9 @@ function storecut!(o::LevelOneCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
         y = cut.intercept + dot(cut.coefficients, state.state)
         if dominates(sense, y, state.best_objective)
             # if new cut is strictly better
-            # decrement the counter at the old cut
+            # decrement the counter at the previous best
             o.cuts[state.best_cut_index].non_dominated_count -= 1
-            # increment the counter at the old cut
+            # increment the counter at the new cut
             o.cuts[cut_index].non_dominated_count += 1
             state.best_cut_index = cut_index
             state.best_objective = y
@@ -84,7 +84,7 @@ function storecut!(o::LevelOneCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
             # if new cut is strictly better
             # decrement the counter at the old cut
             o.cuts[sampled_state.best_cut_index].non_dominated_count -= 1
-            # increment the counter at the old cut
+            # increment the counter at the new cut
             o.cuts[i].non_dominated_count += 1
             sampled_state.best_cut_index = i
             sampled_state.best_objective = y
@@ -92,12 +92,13 @@ function storecut!(o::LevelOneCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
     end
 end
 
-function validcuts(o::LevelOneCutOracle)
-    active_cuts = Cut[]
-    for stored_cut in o.cuts
-        if stored_cut.non_dominated_count > 0
-            push!(active_cuts, stored_cut.cut)
-        end
-    end
-    active_cuts
+function validcuts(oracle::LevelOneCutOracle)
+    Cut[
+        stored_cut.cut for stored_cut in oracle.cuts
+            if stored_cut.non_dominated_count > 0
+    ]
+end
+
+function allcuts(oracle::LevelOneCutOracle)
+    [stored_cut.cut for stored_cut in oracle.cuts]
 end

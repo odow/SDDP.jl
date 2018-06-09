@@ -33,6 +33,7 @@ WorstCase
 AbstractCutOracle
 storecut!
 validcuts
+allcuts
 DefaultCutOracle
 LevelOneCutOracle
 ```
@@ -66,6 +67,7 @@ getsubproblem
 ## Read and write the model to disk
 
 ```@docs
+writecuts!
 loadcuts!
 savemodel!
 loadmodel

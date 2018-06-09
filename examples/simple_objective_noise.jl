@@ -33,6 +33,15 @@ srand(111)
 m = solve_model([0.5, 0.5])
 @test isapprox(getbound(m), 3.0, atol=1e-3)
 
+SDDP.writecuts!("newsvendor_cuts_valid.csv", m; onlyvalid=true)
+SDDP.writecuts!("newsvendor_cuts_all.csv",   m; onlyvalid=false)
+valid_cuts = readdlm("newsvendor_cuts_valid.csv", ',')
+all_cuts   = readdlm("newsvendor_cuts_all.csv",   ',')
+@test size(valid_cuts, 2) == size(all_cuts, 2)
+@test size(valid_cuts, 1) < size(all_cuts, 1)
+rm("newsvendor_cuts_valid.csv")
+rm("newsvendor_cuts_all.csv")
+
 m = solve_model([1.0, 0.0])
 @test isapprox(getbound(m), 2.5, atol=1e-3)
 

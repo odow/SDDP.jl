@@ -23,5 +23,15 @@ Return an iterable list of all the valid cuts contained within `oracle`.
 """
 function validcuts end
 
+"""
+    allcuts(oracle::AbstactCutOracle)
+
+# Description
+
+Return an iterable list of *all* the cuts contained within `oracle`, not just
+those that are returned by `validcuts`.
+"""
+function allcuts end
+
 include("DefaultCutOracle.jl")
 include("LevelOneCutOracle.jl")

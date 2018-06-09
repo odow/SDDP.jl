@@ -20,3 +20,4 @@ DefaultCutOracle() = DefaultCutOracle(Cut[])
 
 storecut!(oracle::DefaultCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut) = push!(oracle.cuts, cut)
 validcuts(oracle::DefaultCutOracle) = oracle.cuts
+allcuts(oracle::DefaultCutOracle) = oracle.cuts
