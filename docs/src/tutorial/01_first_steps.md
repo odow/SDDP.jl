@@ -83,8 +83,8 @@ defines the [`@state`](@ref) macro.  This macro takes three arguments:
 2. an expression for the outgoing state variable; and
 3. an expression for the incoming state variable.
 
-The 2ⁿᵈ argument can be any valid JuMP `@variable` syntax and can include, for
-example, upper and lower bounds. The 3ʳᵈ argument must be the name of the
+The 2nd argument can be any valid JuMP `@variable` syntax and can include, for
+example, upper and lower bounds. The 3rd argument must be the name of the
 incoming state variable, followed by `==`, and then the value of the state
 variable at the root node of the policy graph. For our hydrothermal example, the
 state variable can be constructed as:

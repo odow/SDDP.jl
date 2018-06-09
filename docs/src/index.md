@@ -24,7 +24,7 @@ If you want to use the parallel features of SDDP.jl, you should start Julia with
 some worker processes (`julia -p N`), or add by running `julia> addprocs(N)` in
 a running Julia session.
 
-Once you've got SDDP.jl installed, you should read some tutorials, beginnng with
+Once you've got SDDP.jl installed, you should read some tutorials, beginning with
 [Tutorial One: first steps](@ref).
 
 ## Citing SDDP.jl

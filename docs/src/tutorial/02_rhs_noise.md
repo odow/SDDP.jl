@@ -60,7 +60,7 @@ inflows = [0.0, 50.0, 100.0]
     outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflows[i]
 )
 ```
-We can set the probabilitiy of sampling each element in the sample space using
+We can set the probability of sampling each element in the sample space using
 the [`setnoiseprobability!`](@ref) function. If `setnoiseprobability!` isn't
 called, the distribution is assumed to be uniform. Despite this, for the sake of
 completeness, we set the probability for our example as:

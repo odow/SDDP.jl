@@ -18,7 +18,7 @@ In this tutorial, we explain how to use the asynchronous solve feature of
 SDDP.jl.
 
 First, we need to add some extra processes to Julia. This can be done two ways.
-We can start julia using `julia -p N`, where `N` is the number of worker
+We can start Julia using `julia -p N`, where `N` is the number of worker
 processes to add, or we can use the `addprocs(N)` function while Julia is
 running. The main process that co-ordinates everything is called the *master*
 process, and the remote  processes are called *workers*. For example, to add two
@@ -99,7 +99,7 @@ status = solve(m,
     solve_type     = Asynchronous()
 )
 ```
-If you have multiple processes, SDDP.jl will detect this and choose asynchrnous
+If you have multiple processes, SDDP.jl will detect this and choose asynchronous
 by default. You can force the serial solution by passing [`Serial()`](@ref) to
 `solve_type`.
 
