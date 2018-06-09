@@ -18,7 +18,8 @@ makedocs(
             "tutorial/06_cut_selection.md",
             "tutorial/07_plotting.md",
             "tutorial/08_odds_and_ends.md",
-            "tutorial/09_nonlinear.md"
+            "tutorial/09_nonlinear.md",
+            "tutorial/10_parallel.md"
         ],
         "Readings" => "readings.md",
         "Old Manual" => "oldindex.md",

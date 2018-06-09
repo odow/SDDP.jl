@@ -1,4 +1,4 @@
-# Tutorial Eight: nonlinear models
+# Tutorial Nine: nonlinear models
 
 In our previous tutorials, we formulated a linear version of the hydrothermal
 scheduling problem. To do so, we had to make a large assumption, namely, that
@@ -88,3 +88,6 @@ julia> simulaton_result[1][:inflow′]
  60.5
  54.45
 ```
+
+That concludes our ninth tutorial for SDDP.jl. In our next tutorial,
+[Tutorial Ten: parallel](@ref), we explain how to solve SDDP models in parallel.
