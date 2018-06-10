@@ -39,7 +39,7 @@ uncertainty from [Tutorial Two: RHS noise](@ref):
 m = SDDPModel(
                   sense = :Min,
                  stages = 3,
-                 solver = GurobiSolver(OutputFlag=0),
+                 solver = ClpSolver(),
         objective_bound = 0.0
                                         ) do sp, t
     @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
