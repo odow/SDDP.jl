@@ -4,15 +4,15 @@ In [Tutorial Five: risk](@ref), we saw how risk measures can be used within our 
 In this tutorial we will learn how to incorporate a distributionally robust
 optimization approach to SDDP in `SDDP.jl`.
 
-Distributionally robust optimization (DRO) is a modeling approach for optimization
+Distributionally robust optimization (DRO) is a modelling approach for optimization
 under uncertainty.
 In our setup, DRO is equivalent to a coherent risk measure, and we can apply DRO
 by using the `risk_measure` keyword we saw previously.
 
 ## A little motivation on the concept
-When we build a policy using SDDP, we impose a model on uncertain parameters.
-When we come to use or evaluate our policy, our uncertainty may not resemble the
-model we assumed.
+When we build a policy using SDDP, we use a model to represent uncertain parameters.
+When we come to use or evaluate our policy, the realized scenarios may not
+actually behave in the way we modelled our uncertainty.
 For example, the hydrothermal scheduling model from the
 previous tutorials assumed that inflows are independent between stages.
 However, a real sequence of inflows is likely to exhibit correlation between stages.
@@ -29,7 +29,7 @@ associated with each noise are the worst case probabilities possible
 The implementation of distributionally robust SDDP here comes from the paper:
 *A.B. Philpott, V.L. de Matos, L. Kapelevich* (2018): Distributionally Robust SDDP,
 Computational Management Science,
-[(link)](http://link.springer.com/article/10.1007/s10287-018-0314-0 "")
+[(link)](http://link.springer.com/article/10.1007/s10287-018-0314-0)
 where the details of the approach are described.
 
 ## Formulating the problem
@@ -48,9 +48,8 @@ m = SDDPModel(
         hydro_generation   >= 0
         hydro_spill        >= 0
     end)
-    first_inflow = 50.0
     if t == 1
-        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == first_inflow)
+        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == 50.0)
     else
         @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
             outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
@@ -100,9 +99,8 @@ m = SDDPModel(
         hydro_generation   >= 0
         hydro_spill        >= 0
     end)
-    first_inflow = 50.0
     if t == 1
-        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == first_inflow)
+        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == 50.0)
     else
         @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
             outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
@@ -118,8 +116,8 @@ end
 ```
 
 ## Solving the problem
-We can solve the above problem terminating with a maximum number of iterations
-criterion. For example,
+We can solve the above problem, terminating at our choice of `iteration_limit`.
+For example,
 ```julia
 solve(m, iteration_limit = 10)
 ```
@@ -157,10 +155,14 @@ gives the following output log:
 :iteration_limit
 ```
 We have converged to a lower bound of roughly 10.023k. One can check that this
-is a little lower than the bound from the worst case measure, which is $15k.
+is a little lower than the bound from the worst case measure, which is $15k,
+but greater than the lower bound using the expectation risk measure of $8.33k.
 
 To run a sanity check, let us set the radius to be sufficiently large in order
-to match [`TheWorstCase()`](@ref):
+to match [`TheWorstCase()`](@ref). Since we have S=3 scenarios, any radius
+larger than $\sqrt{(3-1)/3} = $\sqrt(2/3)$ will do. (This is large enough to move
+from the default probability vector [0.33, 0.33, 0.33] to the worst case
+probability vector [1.0, 0.0, 0.0]).
 
 ```julia
 m = SDDPModel(
@@ -176,9 +178,8 @@ m = SDDPModel(
         hydro_generation   >= 0
         hydro_spill        >= 0
     end)
-    first_inflow = 50.0
     if t == 1
-        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == first_inflow)
+        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == 50.0)
     else
         @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
             outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
@@ -227,4 +228,4 @@ $15k.
 ===============================================================================
 :iteration_limit
 ```
-That concludes our eleventh tutorial for SDDP.jl.
+That concludes our eleventh tutorial for `SDDP.jl`.
