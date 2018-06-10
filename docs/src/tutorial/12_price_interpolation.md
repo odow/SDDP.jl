@@ -27,47 +27,35 @@ case where the fuel cost follows the log auto-regressive process:
 where `noise` is drawn from the sample space `[0.9, 1.0, 1.1]` with equal
 probability.
 
+
 ```julia
 function fuel_cost_dynamics(fuel_cost, noise)
     return noise * fuel_cost
 end
 ```
 
-[`DiscreteDistribution`](@ref)
+We also need to specify the distribution of the noise term. We do this using
+[`DiscreteDistribution`](@ref). This function takes two arguments: the first is
+a vector of realizations, and the second is a corresponding vector of
+probabilities. For our example, we create the noise distribution as:
 ```julia
 noise = DiscreteDistribution( [0.9, 1.0, 1.1], [1/3, 1/3, 1/3] )
 ```
 
 [`DynamicPriceInterpolation`](@ref)
 ```julia
-DynamicPriceInterpolation(
-    dynamics           = (fuel_cost, noise) -> noise * fuel_cost,
-    initial_price      = 100.0,
-    min_price          =  50.0,
-    max_price          = 150.0,
-    noise              = DiscreteDistribution([0.9, 1.0, 1.1], [1/3, 1/3, 1/3]),
-    lipschitz_constant = 1000.0
-)
-```
-
-If the price model depends upon the stage or Markov state,
-
-For our example, the price is deterministic in the first stage:
-```julia
-function build_price_interpolation(t::Int, i::Int)
-    noise = if t == 1
-        DiscreteDistribution([1.0], [1.0])
-    else
-        DiscreteDistribution([0.9, 1.0, 1.1], [1/3, 1/3, 1/3])
-    end
-    DynamicPriceInterpolation(
-        dynamics           = (fuel_cost, noise) -> noise * fuel_cost,
+m = SDDPModel(
+    # ... arguments omitted ...
+    value_function = DynamicPriceInterpolation(
+        dynamics           = fuel_cost_dynamics,
         initial_price      = 100.0,
         min_price          =  50.0,
         max_price          = 150.0,
-        noise              = noise,
+        noise              = DiscreteDistribution([0.9, 1.0, 1.1], [1/3, 1/3, 1/3]),
         lipschitz_constant = 1000.0
     )
+        do sp, t
+    # ... subproblem definition ...
 end
 ```
 
@@ -76,6 +64,31 @@ version takes a function that maps the price in the current stage to an
 expression for the stage objective. For our example, the stage-objective is:
 ```julia
  @stageobjective(sp, (fuel_cost) -> fuel_cost * thermal_generation )
+```
+
+The next question is how to extend this notation to models in which the price
+process depends upon the stage or Markov state. This can be implemented in
+SDDP.jl following a similar approach to that we discussed in [Stage-dependent risk measures](@ref).
+Instead of passing an instance of `DynamicPriceInterpolation`, we pass a
+function that takes two arguments -- the stage `t` and Markov state `i` -- and
+returns an instance of `DynamicPriceInterpolation`. For our example, if the
+price is deterministic in the first stage:
+```julia
+function build_price_interpolation(t::Int, i::Int)
+    noise = if t == 1
+        DiscreteDistribution([1.0], [1.0])
+    else
+        DiscreteDistribution([0.9, 1.0, 1.1], [1/3, 1/3, 1/3])
+    end
+    DynamicPriceInterpolation(
+        dynamics           = fuel_cost_dynamics,
+        initial_price      = 100.0,
+        min_price          =  50.0,
+        max_price          = 150.0,
+        noise              = noise,
+        lipschitz_constant = 1000.0
+    )
+end
 ```
 
 Putting all this together, our model is:
