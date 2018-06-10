@@ -90,17 +90,29 @@ We can get the subproblem from a [`SDDPModel`](@ref) using
 [`SDDP.getsubproblem`](@ref). For example, the subproblem in the first stage and
 first Markov state is:
 ```julia
-SDDP.getsubproblem(m, 1, 1)
+sp = SDDP.getsubproblem(m, 1, 1)
 ```
 Then, given a subproblem `sp`, we can get the cut oracle as follows:
 ```julia
 oracle = SDDP.cutoracle(sp)
 ```
-Finally, we can query the list of valid cuts in the oracle:
+Finally, we can query the list of valid cuts in the oracle using
+[`SDDP.validcuts`](@ref):
 ```julia
 julia> SDDP.validcuts(oracle)
 1-element Array{Cut, 1}:
- SDDP.Cut(29976.6, [-108.333])
+ SDDP.Cut(29964.8, [-108.333])
+```
+Whereas we can query all of the cuts in the oracle using [`SDDP.allcuts`](@ref):
+```julia
+julia> SDDP.allcuts(oracle)
+10-element Array{Cut, 1}:
+ SDDP.Cut(29548.2, [-108.229])
+ SDDP.Cut(29548.2, [-108.229])
+ SDDP.Cut(29964.8, [-108.333])
+ SDDP.Cut(29964.8, [-108.333])
+ SDDP.Cut(29964.8, [-108.333])
+ ⋮
 ```
 So, despite performing 10 SDDP iterations, only one cut is needed to approximate
 the cost-to-go function! A similar result can be found in the wet Markov state
@@ -135,7 +147,8 @@ struct LastCuts <: SDDP.AbstractCutOracle
 end
 ```
 
-Then, we need to overload two methods: `SDDP.storecut!` and `SDDP.validcuts`.
+Then, we need to overload three methods: `SDDP.storecut!`, `SDDP.validcuts`, and
+`SDDP.allcuts`.
 
 `SDDP.storecut` takes four arguments. The first is an instance of the cut
 oracle. The second and third arguments are the SDDPModel `m` and the JuMP
@@ -153,6 +166,14 @@ cuts:
 ```julia
 function SDDP.validcuts(oracle::LastCuts)
     oracle.cuts[max(1, end - oracle.N + 1):end]
+end
+```
+
+Finally, `SDDP.allcuts` returns a list of all of the cuts that have been
+discovered:
+```julia
+function SDDP.allcuts(oracle::LastCuts)
+    oracle.cuts
 end
 ```
 

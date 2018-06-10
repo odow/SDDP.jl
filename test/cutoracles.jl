@@ -23,6 +23,7 @@ struct NotACutOracle end
         cut = SDDP.Cut(1, [1])
         @test_throws Exception SDDP.storecut!(newcutoracle, m, SDDP.getsubproblem(m, 1, 1), cut)
         @test_throws Exception SDDP.validcuts(newcutoracle)
+        @test_throws Exception SDDP.allcuts(newcutoracle)
     end
 
     @testset "Not A Cut Oracle" begin
@@ -54,6 +55,7 @@ struct NotACutOracle end
         cut = SDDP.Cut(1, [1])
         SDDP.storecut!(oracle, m, SDDP.getsubproblem(m, 1, 1), cut)
         @test SDDP.validcuts(oracle) == [cut]
+        @test SDDP.allcuts(oracle) == [cut]
     end
 
     @testset "Level One Oracle" begin

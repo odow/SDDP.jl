@@ -293,3 +293,28 @@ function writecut!(io::IO, stage::Int, markovstate::Int, cut::Cut)
     write(io, "\n")
 end
 writecut!(io, cut::Tuple) = writecut!(io, cut...)
+
+"""
+    writecuts!(filename::String, m::SDDPModel; onlyvalid=false)
+
+Writes all cuts from model m to `filename`.
+
+If `onlyvalid` is true, write the cuts returned from `validcuts`, else write the
+cuts returned from `allcuts`.
+"""
+function writecuts!(filename::String, m::SDDPModel; onlyvalid=false)
+    open(filename, "w") do io
+        writecuts!(io, m, onlyvalid=onlyvalid)
+    end
+end
+function writecuts!(io::IO, m::SDDPModel; onlyvalid=false)
+    for (t, stage) in enumerate(stages(m))
+        for (i, sp) in enumerate(subproblems(stage))
+            cut_or = cutoracle(sp)
+            cuts = onlyvalid ? validcuts(cut_or) : allcuts(cut_or)
+            for cut in cuts
+                writecut!(io, t, i, cut)
+            end
+        end
+    end
+end
