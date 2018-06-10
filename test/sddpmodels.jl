@@ -101,4 +101,38 @@ using Clp
             @test con.terms == JuMP.AffExpr(0.0)
         end
     end
+
+    @testset "Deprecations" begin
+        @testset "max_iterations" begin
+            # test sp is subproblem
+            m = SDDPModel(sense=:Max, stages=3, objective_bound=10, solver=ClpSolver()) do sp, t
+                @state(sp, x>=0, x0==0.0)
+                @rhsnoise(sp, i=1:2, x <= i)
+                @stageobjective(sp, i=1:2, i * x)
+            end
+            status = solve(m, max_iterations=1, print_level=0)
+            @test status == :iteration_limit
+        end
+        @testset "bound_stalling" begin
+            # test sp is subproblem
+            m = SDDPModel(sense=:Max, stages=3, objective_bound=10, solver=ClpSolver()) do sp, t
+                @state(sp, x>=0, x0==0.0)
+                @rhsnoise(sp, i=1:2, x <= i)
+                @stageobjective(sp, i=1:2, i * x)
+            end
+            status = solve(m,
+                bound_convergence=BoundStalling(
+                    iterations = 2, atol  = 1.0, rtol  = 0.5
+                ),
+                print_level=0
+            )
+            @test status == :bound_stalling
+        end
+        @testset "termination" begin
+            s = MonteCarloSimulation(
+                termination = true
+            )
+            @test s.termination == true
+        end
+    end
 end

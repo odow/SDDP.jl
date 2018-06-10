@@ -6,6 +6,18 @@
 
 struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
 
+function dummy_model(sense, risk_measure)
+    SDDPModel(
+        sense           = sense,
+        stages          = 2,
+        objective_bound = 10,
+        risk_measure    = risk_measure
+        ) do sp, t
+        @state(sp, x>=0, x0==0)
+        @rhsnoise(sp, w=1:2, x <= w)
+        @stageobjective(sp, x)
+    end
+end
 
 @testset "Risk Measures" begin
     @testset "Constructors" begin
@@ -24,17 +36,7 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
 
     @testset "Expectation" begin
         measure = Expectation()
-        m = SDDPModel(
-            sense           = :Max,
-            stages          = 2,
-            objective_bound = 10,
-            risk_measure    = measure
-            ) do sp, t
-            @state(sp, x>=0, x0==0)
-            @rhsnoise(sp, w=1:2, x <= w)
-            @stageobjective(sp, x)
-        end
-
+        m = dummy_model(:Max, measure)
         y = zeros(4)
         x = [0.1, 0.2, 0.3, 0.4]
         obj = ones(4)
@@ -43,134 +45,104 @@ struct MyRiskMeasure <: SDDP.AbstractRiskMeasure end
     end
 
     @testset "WorstCase" begin
-        measure = WorstCase()
-        m = SDDPModel(
-            sense           = :Max,
-            stages          = 2,
-            objective_bound = 10,
-            risk_measure    = measure
-            ) do sp, t
-            @state(sp, x>=0, x0==0)
-            @rhsnoise(sp, w=1:2, x <= w)
-            @stageobjective(sp, x)
+        @testset ":Max" begin
+            measure = WorstCase()
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.1, 1.2, 0.6, 1.3]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test y == [0.0, 0.0, 1.0, 0.0]
         end
-
-        y = zeros(4)
-        x = [0.1, 0.2, 0.3, 0.4]
-        obj = [1.1, 1.2, 0.6, 1.3]
-        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test y == [0.0, 0.0, 1.0, 0.0]
-
-        measure = WorstCase()
-        m = SDDPModel(
-            sense           = :Min,
-            stages          = 2,
-            objective_bound = 10,
-            risk_measure    = measure
-            ) do sp, t
-            @state(sp, x>=0, x0==0)
-            @rhsnoise(sp, w=1:2, x <= w)
-            @stageobjective(sp, x)
+        @testset ":Min" begin
+            measure = WorstCase()
+            m = dummy_model(:Min, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.1, 1.2, 0.6, 1.3]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test y == [0.0, 0.0, 0.0, 1.0]
         end
-
-        y = zeros(4)
-        x = [0.1, 0.2, 0.3, 0.4]
-        obj = [1.1, 1.2, 0.6, 1.3]
-        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test y == [0.0, 0.0, 0.0, 1.0]
     end
 
-
     @testset "AV@R" begin
+        @test_throws Exception AVaR(-0.1)
+        @test_throws Exception AVaR(1.1)
+        @testset "beta=0.2" begin
+            measure = AVaR(0.2)
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.0,2.0,3.0,4.0]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test isapprox(y, [1/2, 1/2, 0, 0], atol=1e-6)
+        end
+        @testset "beta=0" begin
+            measure = AVaR(0.0)
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.0,2.0,3.0,4.0]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test isapprox(y, [1.0, 0, 0, 0], atol=1e-6)
+        end
+        @testset "beta=1" begin
+            measure = AVaR(1.0)
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.0,2.0,3.0,4.0]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test isapprox(y, x, atol=1e-6)
+        end
+    end
+
+    @testset "EAV@R" begin
         @test_throws Exception EAVaR(lambda=1.1)
         @test_throws Exception EAVaR(lambda=-0.1)
         @test_throws Exception EAVaR(beta=1.1)
         @test_throws Exception EAVaR(beta=-0.1)
-        measure = EAVaR(lambda=0.25, beta=0.2)
-        m = SDDPModel(
-            sense           = :Max,
-            stages          = 2,
-            objective_bound = 10,
-            risk_measure    = measure
-            ) do sp, t
-            @state(sp, x>=0, x0==0)
-            @rhsnoise(sp, w=1:2, x <= w)
-            @stageobjective(sp, x)
+        @testset "Max - (0.25, 0.2)" begin
+            measure = EAVaR(lambda=0.25, beta=0.2)
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.0,2.0,3.0,4.0]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test isapprox(y, 0.25 * x + 0.75 * [1/2, 1/2, 0, 0], atol=1e-6)
         end
-
-        y = zeros(4)
-        x = [0.1, 0.2, 0.3, 0.4]
-        obj = [1.0,2.0,3.0,4.0]
-        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test isapprox(y, 0.25 * x + 0.75 * [1/2, 1/2, 0, 0], atol=1e-6)
-
-        measure = EAVaR(lambda=0.25, beta=0.2)
-        m = SDDPModel(
-            sense           = :Min,
-            stages          = 2,
-            objective_bound = 10,
-            risk_measure    = measure
-            ) do sp, t
-            @state(sp, x>=0, x0==0)
-            @rhsnoise(sp, w=1:2, x <= w)
-            @stageobjective(sp, x)
+        @testset "Min - (0.25, 0.2)" begin
+            measure = EAVaR(lambda=0.25, beta=0.2)
+            m = dummy_model(:Min, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.0,2.0,3.0,4.0]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test isapprox(y, 0.25 * x + 0.75 * [0, 0, 0, 1.0], atol=1e-6)
         end
-
-        y = zeros(4)
-        x = [0.1, 0.2, 0.3, 0.4]
-        obj = [1.0,2.0,3.0,4.0]
-        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test isapprox(y, 0.25 * x + 0.75 * [0, 0, 0, 1.0], atol=1e-6)
-
-        measure = EAVaR(lambda=0.5, beta=0.0)
-        m = SDDPModel(
-            sense           = :Max,
-            stages          = 2,
-            objective_bound = 10,
-            risk_measure    = measure
-            ) do sp, t
-            @state(sp, x>=0, x0==0)
-            @rhsnoise(sp, w=1:2, x <= w)
-            @stageobjective(sp, x)
+        @testset "Max - (0.5, 0.0)" begin
+            measure = EAVaR(lambda=0.5, beta=0.0)
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.0,2.0,3.0,4.0]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test isapprox(y, 0.5 * x + 0.5 * [1.0, 0, 0, 0], atol=1e-6)
         end
-        y = zeros(4)
-        x = [0.1, 0.2, 0.3, 0.4]
-        obj = [1.0,2.0,3.0,4.0]
-        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test isapprox(y, 0.5 * x + 0.5 * [1.0, 0, 0, 0], atol=1e-6)
-
-        measure = EAVaR(lambda=0.5, beta=0.0)
-        m = SDDPModel(
-            sense           = :Max,
-            stages          = 2,
-            objective_bound = 10,
-            risk_measure    = measure
-            ) do sp, t
-            @state(sp, x>=0, x0==0)
-            @rhsnoise(sp, w=1:2, x <= w)
-            @stageobjective(sp, x)
+        @testset "Max - (0.5, 0.0) 2" begin
+            measure = EAVaR(lambda=0.5, beta=0.0)
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.0, 0.2, 0.4, 0.4]
+            obj = [1.0,2.0,3.0,4.0]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test isapprox(y, 0.5 * x + 0.5 * [0.0, 1.0, 0, 0], atol=1e-6)
         end
-        y = zeros(4)
-        x = [0.0, 0.2, 0.4, 0.4]
-        obj = [1.0,2.0,3.0,4.0]
-        SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-        @test isapprox(y, 0.5 * x + 0.5 * [0.0, 1.0, 0, 0], atol=1e-6)
     end
 
     @testset "User-defined MyRiskMeasure" begin
         measure = MyRiskMeasure()
-
-        m = SDDPModel(
-            sense           = :Max,
-            stages          = 2,
-            objective_bound = 10,
-            risk_measure    = measure
-            ) do sp, t
-            @state(sp, x>=0, x0==0)
-            @rhsnoise(sp, w=1:2, x <= w)
-            @stageobjective(sp, x)
-        end
-
+        m = dummy_model(:Max, measure)
         y = zeros(4)
         x = [0.1, 0.2, 0.3, 0.4]
         obj = ones(4)

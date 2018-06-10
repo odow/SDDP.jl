@@ -280,11 +280,6 @@ end
 
 writecut!(io, cut::Cut, stage::Int, markovstate::Int) = writecut!(io, stage, markovstate, cut)
 
-function writecut!(filename::String, stage::Int, markovstate::Int, cut::Cut)
-    open(filename, "a") do file
-        writecut!(file, cut, stage, markovstate)
-    end
-end
 function writecut!(io::IO, stage::Int, markovstate::Int, cut::Cut)
     write(io, string(stage), ",", string(markovstate), ",", string(cut.intercept))
     for pi in cut.coefficients
