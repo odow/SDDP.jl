@@ -1,4 +1,4 @@
-# Tutorial Six: distributionally robust SDDP
+# Tutorial Eleven: distributionally robust SDDP
 
 In [Tutorial Five: risk](@ref), we saw how risk measures can be used within our model.
 In this tutorial we will learn how to incorporate a distributionally robust
