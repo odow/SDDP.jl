@@ -382,7 +382,7 @@ function bound_stalling_stopping_rule(observations::Vector{SolutionLog}, bs::Bou
     if length(observations) < bs.iterations || bs.iterations < 2
         return false
     end
-    for i in 1:bs.iterations
+    for i in 1:(bs.iterations-1)
         if atol(observations[end-i+1].bound, observations[end-i].bound) > bs.atol &&
             rtol(observations[end-i+1].bound, observations[end-i].bound) > bs.rtol
             return false
