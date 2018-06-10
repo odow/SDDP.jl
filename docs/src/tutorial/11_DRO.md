@@ -80,8 +80,10 @@ For a problem with S noises, this radius should be less than $\sqrt{(S-1)/S}$
     generalize the algorithm to alter the center of the ball, but this is not
     currently implemented (see [this issue](https://github.com/odow/SDDP.jl/issues/117)).
 
-Suppose, for example, we choose the radius of uncertainty to be `1/6`. We can
-implement this by inserting a `DRO(1/6)` object for the keyword argument `risk_measure`
+Suppose, for example, we choose the radius of uncertainty to be `1/6`.
+Intuitively, this means we can decrease the risk-adjusted probability of each
+noise by almost `1/6` at the most.
+We can implement this by inserting a `DRO(1/6)` object for the keyword argument `risk_measure`
 we saw earlier.
 
 This gives the new model
