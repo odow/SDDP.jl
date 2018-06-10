@@ -120,6 +120,21 @@
         end
     end
 
+    @testset "PublicationPlot" begin
+        s = [
+            Dict{Symbol, Any}(:x=>1*[1, 2, 3]),
+            Dict{Symbol, Any}(:x=>2*[1, 2, 3]),
+            Dict{Symbol, Any}(:x=>3*[1, 2, 3]),
+            Dict{Symbol, Any}(:x=>4*[1, 2, 3]),
+            Dict{Symbol, Any}(:x=>5*[1, 2, 3])
+        ]
+        A = SDDP.preparedata(s, :x, [0.0, 0.5, 1.0])
+        @test A == [
+            1.0  2.0  3.0 ;
+            3.0  6.0  9.0 ;
+            5.0 10.0 15.0
+        ]
+    end
     # This needs a dependency on Plots.jl to test. Seems a bit overkill.
     # @testset "PlotRecipes" begin
     #     a = Dict{Symbol, Any}()

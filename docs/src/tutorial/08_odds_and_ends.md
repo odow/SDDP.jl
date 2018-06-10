@@ -138,7 +138,7 @@ that they can be read back in or used for other analysis. This can be done using
 the `cut_output_file` to [`solve`](@ref):
 ```julia
 m = build_model()
-SDDP.solve(m
+SDDP.solve(m,
     iteration_limit = 10,
     cut_output_file = "cuts.csv"
 )
@@ -152,6 +152,14 @@ This cut file can be read back into a model using [`loadcuts!`](@ref):
 ```julia
 m2 = build_model()
 loadcuts!(m2, "cuts.csv")
+```
+
+Another option is to use the [`SDDP.writecuts!`](@ref) method after the model
+has been solved:
+```julia
+m = build_model()
+SDDP.solve(m, iteration_limit = 10)
+SDDP.writecuts!("cuts.csv", m)
 ```
 
 ## Timer outputs

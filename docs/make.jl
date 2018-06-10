@@ -20,17 +20,19 @@ makedocs(
             "tutorial/08_odds_and_ends.md",
             "tutorial/09_nonlinear.md",
             "tutorial/10_parallel.md",
-            "tutorial/11_DRO.md"
+            "tutorial/11_DRO.md",
+            "tutorial/12_price_interpolation.md"
         ],
         "Readings" => "readings.md",
         "Reference" => "apireference.md"
     ],
     assets = [
-        "dowson_thesis.pdf",
-        "clicked_trajectory.png",
-        "single_trajectory.png",
-        "publication_plot.png",
-        "plot_value_function.png"
+        "assets/clicked_trajectory.png",
+        "assets/dowson_thesis.pdf",
+        "assets/plot_value_function.png",
+        "assets/publication_plot.png",
+        "assets/saddle_function.gif",
+        "assets/single_trajectory.png",
     ]
 )
 

@@ -33,6 +33,7 @@ WorstCase
 AbstractCutOracle
 storecut!
 validcuts
+allcuts
 DefaultCutOracle
 LevelOneCutOracle
 ```
@@ -41,6 +42,7 @@ LevelOneCutOracle
 ```@docs
 StaticPriceInterpolation
 DynamicPriceInterpolation
+DiscreteDistribution
 ```
 
 
@@ -48,7 +50,7 @@ DynamicPriceInterpolation
 ```@docs
 solve
 MonteCarloSimulation
-BoundConvergence
+BoundStalling
 Asynchronous
 Serial
 ```
@@ -66,6 +68,7 @@ getsubproblem
 ## Read and write the model to disk
 
 ```@docs
+writecuts!
 loadcuts!
 savemodel!
 loadmodel

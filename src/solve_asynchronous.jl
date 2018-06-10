@@ -194,7 +194,7 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
 
                         addsolutionlog!(m, settings, it, best_objective, simulation_objective, simulation_objective, cutting_time , simulations, simulation_time, total_time, true)
 
-                        status, keep_iterating = testboundstall(m, settings, status, true)
+                        status, keep_iterating = bound_stalling_stopping_rule(m, settings, status, true)
                         !keep_iterating && break
 
                     elseif iterationtype == :simulation
