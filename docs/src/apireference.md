@@ -42,6 +42,7 @@ LevelOneCutOracle
 ```@docs
 StaticPriceInterpolation
 DynamicPriceInterpolation
+DiscreteDistribution
 ```
 
 

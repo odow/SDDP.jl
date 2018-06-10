@@ -154,8 +154,8 @@ m2 = build_model()
 loadcuts!(m2, "cuts.csv")
 ```
 
-Another option is to use the [`writecuts!`](@ref) method after the model has
-been solved:
+Another option is to use the [`SDDP.writecuts!`](@ref) method after the model
+has been solved:
 ```julia
 m = build_model()
 SDDP.solve(m, iteration_limit = 10)
