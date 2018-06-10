@@ -24,7 +24,7 @@ With a distributionally robust approach, we avoid assuming an explicit model
 on the probabilities of the scenarios we consider.
 Instead, each time we come to add a cut, we assume that the probabilities
 associated with each noise are the worst case probabilities possible
-(with respect to our objective), within some ambiguity set.
+(with respect to our objective) within some ambiguity set.
 
 The implementation of distributionally robust SDDP here comes from the paper:
 *A.B. Philpott, V.L. de Matos, L. Kapelevich* (2018): Distributionally Robust SDDP,
