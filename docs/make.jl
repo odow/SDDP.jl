@@ -19,7 +19,8 @@ makedocs(
             "tutorial/07_plotting.md",
             "tutorial/08_odds_and_ends.md",
             "tutorial/09_nonlinear.md",
-            "tutorial/10_parallel.md"
+            "tutorial/10_parallel.md",
+            "tutorial/11_DRO.md"
         ],
         "Readings" => "readings.md",
         "Reference" => "apireference.md"
