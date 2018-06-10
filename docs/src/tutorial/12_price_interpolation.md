@@ -146,3 +146,18 @@ julia> simulation_result[1][:price]
   90.0
   99.0
 ```
+
+We can also plot the cost-to-go function using [`SDP.plotvaluefunction`](@ref)
+like we discussed in [Tutorial Seven: plotting](@ref):
+```julia
+SDDP.plotvaluefunction(m, 2, 2,
+    linspace(0, 200, 50),   # the reservoir volume
+    linspace(70, 130, 50);  # the price state
+    label1="Volume",
+    label2="Price"
+)
+```
+This will launch a browser window with the following:
+![3d saddle function](../assets/saddle_function.gif)
+Note that the surface is convex with respect to the volume dimension and concave
+with respect to the price dimension.
