@@ -138,4 +138,5 @@ The log is:
 Note that the order of the *Cut #* column is not sequential because they are
 numbered in order of when they were created.
 
-That concludes our tenth tutorial for SDDP.jl.
+In the next tutorial [Tutorial Six: distributionally robust SDDP](@ref) we will
+learn how distributionally robust optimization can be incorporated in `SDDP.jl`.
