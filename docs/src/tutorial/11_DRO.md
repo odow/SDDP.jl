@@ -227,4 +227,4 @@ $15k.
 ===============================================================================
 :iteration_limit
 ```
-That concludes our tenth tutorial for SDDP.jl.
+That concludes our eleventh tutorial for SDDP.jl.
