@@ -28,7 +28,7 @@ where `noise` is drawn from the sample space `[0.9, 1.0, 1.1]` with equal
 probability.
 
 To model this in SDDP.jl, we can pass a [`DynamicPriceInterpolation`](@ref)
-object to the `value_function` keyword in [`SDDModel`](@ref).
+object to the `value_function` keyword in [`SDDPModel`](@ref).
 [`DynamicPriceInterpolation`](@ref) takes a number of arguments. First, we need
 to pass `dynamics` a function that takes two inputs -- the value of the price
 state in the previous stage and an instance of the  noise -- and returns value
@@ -50,9 +50,9 @@ noise = DiscreteDistribution( [0.9, 1.0, 1.1], [1/3, 1/3, 1/3] )
 It is the realizations of the noise `0.9`, `1.0`, or `1.1` that are passed as
 `noise` to `fuel_cost_dynamics`.
 
-We also need to pass the value of the price state in the root node to `initial_price`,
-as well as the minimum (to `min_price`) and maximum (to `max_price`) possible
-values of the price state variable.
+We also need to pass the value of the price state in the root node to
+`initial_price`, as well as the minimum (to `min_price`) and maximum (to
+`max_price`) possible values of the price state variable.
 
 Finally, we need to declare a `lipschitz_constant`. In each stage, the
 `lipschitz_constant` should be larger than the maximum possible absolute change
@@ -171,7 +171,7 @@ julia> simulation_result[1][:price]
   99.0
 ```
 
-We can also plot the cost-to-go function using [`SDP.plotvaluefunction`](@ref)
+We can also plot the cost-to-go function using [`SDDP.plotvaluefunction`](@ref)
 like we discussed in [Tutorial Seven: plotting](@ref):
 ```julia
 SDDP.plotvaluefunction(m, 2, 2,
@@ -183,5 +183,6 @@ SDDP.plotvaluefunction(m, 2, 2,
 ```
 This will launch a browser window with the following:
 ![3d saddle function](../assets/saddle_function.gif)
+
 Note that the surface is convex with respect to the volume dimension and concave
 with respect to the price dimension.
