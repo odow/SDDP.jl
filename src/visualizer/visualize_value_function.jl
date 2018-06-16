@@ -97,8 +97,8 @@ At most two states can be vectors.
     SDDP.plotvaluefunction(m, 2, 1, 0.0:0.1:1.0, 0.5, 0.0:0.1:1.0; label1="State 1", label2="State 3")
 """
 function plotvaluefunction(m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")
-    html = prepvaluefunctionplot(m, stage, markovstate, label1, label2, states...)
-    launch_file(html, PLOTLY_ASSETS)
+    filename = joinpath(tempdir(), string(randstring(), ".html"))
+    plotvaluefunction(filename, m, stage, markovstate, states...; label1=label1, label2=label2)
 end
 
 function plotvaluefunction(filename::String, m::SDDPModel, stage::Int, markovstate::Int, states::Union{Float64, AbstractVector{Float64}}...; label1="State 1", label2="State 2")

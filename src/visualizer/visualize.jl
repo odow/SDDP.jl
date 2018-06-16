@@ -8,7 +8,7 @@
 
 const ASSET_DIR = dirname(@__FILE__)
 
-function launch_file(html_string, assets, outputfile=replace(tempname(), ".tmp", ".html"))
+function launch_file(html_string, assets, outputfile)
     for asset in assets
         cp(joinpath(ASSET_DIR, asset), joinpath(dirname(outputfile), asset), remove_destination=true)
     end
