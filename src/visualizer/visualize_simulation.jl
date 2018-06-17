@@ -81,21 +81,22 @@ function addplot!(p::SimulationPlot, i::AbstractVector{Int}, t::AbstractVector{I
 	end
 	push!(p.data, plot_dict)
 end
+
 """
 	show(p::SimulationPlot)
 
-# Description
-
 Launch a browser and render the SimulationPlot plot `p`.
 """
-function Base.show(p::SimulationPlot)
-	html = prephtml(p)
-	launch_file(html, SIMULATION_ASSETS)
-end
+Base.show(p::SimulationPlot) = Base.show(joinpath(tempdir(), string(randstring(), ".html")), p)
 
+"""
+	show(filename::String, p::SimulationPlot)
+
+Launch a browser and render the SimulationPlot plot `p`. Save the resulting
+HTML file to `filename`.
+"""
 function Base.show(filename::String, p::SimulationPlot)
-	html = prephtml(p)
-	launch_file(html, SIMULATION_ASSETS, filename)
+	launch_file(prephtml(p), SIMULATION_ASSETS, filename)
 end
 
 prephtml(p::SimulationPlot) = prephtml(SIMULATION_HTML_FILE, ("<!--DATA-->", json(p.data)))
