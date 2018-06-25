@@ -186,3 +186,7 @@ This will launch a browser window with the following:
 
 Note that the surface is convex with respect to the volume dimension and concave
 with respect to the price dimension.
+
+That concludes our twelfth tutorial for `SDDP.jl`. In the next tutorial,
+[Tutorial Thirteen: constraint noise](@ref), we discuss experimental support for
+noise in the constraint matrix.

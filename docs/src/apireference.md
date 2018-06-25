@@ -14,6 +14,7 @@ SDDPModel
 @rhsnoises
 setnoiseprobability!
 @stageobjective
+addconstraintnoise!
 ```
 
 ### Risk Measures
