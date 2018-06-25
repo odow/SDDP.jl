@@ -54,7 +54,7 @@ coefficient matrix.
 function addconstraintnoise!(sp, x, realizations)
     if !haskey(sp.ext, :changes)
         # initialize storage
-        sp.ext[:changes] = Tuple{Int,Int,Int}[]
+        sp.ext[:changes] = (Int[], Int[], Int[])
     end
     # create an anonymous variable that is `noise * x`
     noise_state = @variable(sp)
@@ -67,17 +67,19 @@ function addconstraintnoise!(sp, x, realizations)
     # substituting in the dummy variable for a fake constraint.
     c2 = @rhsnoise(sp, i=realizations, w==i)
     # store information for solvehook
-    push!(sp.ext[:changes], (c.idx, x.col, c2.idx))
+    push!(sp.ext[:changes][1],  c.idx)
+    push!(sp.ext[:changes][2],  x.col)
+    push!(sp.ext[:changes][3], c2.idx)
     # set solvehook if not already
     if sp.solvehook == nothing
         function our_solve_hook(sp; kwargs...)
-            rows, cols, noise_terms = Int[], Int[], Float64[]
-            for (r, c, w) in sp.ext[:changes]::Vector{Tuple{Int,Int,Int}}
-                push!(rows, r)
-                push!(cols, c)
-                push!(noise_terms, sp.linconstr[w].ub)
+            rows = sp.ext[:changes][1]::Vector{Int}
+            cols = sp.ext[:changes][2]::Vector{Int}
+            noise_terms = fill(0.0, length(rows))
+            for (i, w) in enumerate(sp.ext[:changes][3])
+                noise_terms[i] = sp.linconstr[w].ub
             end
-            MathProgBase.changecoeffs!(JuMP.internalmodel(sp),
+            JuMP.MathProgBase.changecoeffs!(JuMP.internalmodel(sp),
                 rows, cols, noise_terms)
             solve(sp, ignore_solve_hook=true)
         end
