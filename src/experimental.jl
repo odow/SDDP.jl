@@ -39,7 +39,7 @@ right-hand side terms (via `@rhsnoise`), again with equal numbers of
 realizations.
 
 ### Example
-If `w ∈ [1,2,3]` with equal probablilty, and we want to add the constraint:
+If `w ∈ [1,2,3]` with equal probability, and we want to add the constraint:
     @constraint(sp, 2x + w*x <= 1)
 Then
     wx = addconstraintnoise!(sp, x, [1,2,3])

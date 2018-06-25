@@ -43,6 +43,7 @@ include("solve_asynchronous.jl")
 include("visualizer/visualize.jl")
 include("price_interpolation/price_interpolation.jl")
 include("deprecate.jl")
+include("experimental.jl")
 
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
 
