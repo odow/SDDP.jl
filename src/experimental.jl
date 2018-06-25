@@ -54,7 +54,7 @@ coefficient matrix.
 function addconstraintnoise!(sp, x, realizations)
     if !haskey(sp.ext, :changes)
         # initialize storage
-        sp.ext[:changes] = (Int[], Int[], Int[])
+        sp.ext[:changes] = (Int[], Int[], Int[], Float64[])
     end
     # create an anonymous variable that is `noise * x`
     noise_state = @variable(sp)
@@ -70,12 +70,13 @@ function addconstraintnoise!(sp, x, realizations)
     push!(sp.ext[:changes][1],  c.idx)
     push!(sp.ext[:changes][2],  x.col)
     push!(sp.ext[:changes][3], c2.idx)
+    push!(sp.ext[:changes][4],  0.0)
     # set solvehook if not already
     if sp.solvehook == nothing
         function our_solve_hook(sp; kwargs...)
             rows = sp.ext[:changes][1]::Vector{Int}
             cols = sp.ext[:changes][2]::Vector{Int}
-            noise_terms = fill(0.0, length(rows))
+            noise_terms = sp.ext[:changes][4]
             for (i, w) in enumerate(sp.ext[:changes][3])
                 noise_terms[i] = sp.linconstr[w].ub
             end
