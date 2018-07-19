@@ -136,3 +136,14 @@ using Clp
         end
     end
 end
+
+@testset "Markov Issue #120" begin
+    m = SDDPModel(stages=2, sense=:Min, objective_bound=0.0, solver=ClpSolver(),
+            markov_transition = [ [0.5 0.5], [0.5 0.5; 0.5 0.5] ]) do sp, t, i
+        @state(sp, x>=0, x0==2)
+        @rhsnoise(sp, w=[-1, 1], x == x0 + w)
+        @stageobjective(sp, (t + i) * x)
+    end
+    solve(m, iteration_limit=20, print_level=0)
+    @test getbound(m) ≈ 12.0
+end

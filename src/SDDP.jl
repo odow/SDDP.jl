@@ -245,11 +245,27 @@ function backwardpass!(m::SDDPModel, settings::Settings)
             end
         end
     end
+    return compute_initial_bound(m)
+end
+
+"""
+    compute_initial_bound(m)
+
+Calculate the expected cost of the first stage.
+"""
+function compute_initial_bound(m)
+    # TODO(odow): should this return the risk-adjusted expectation? This implies
+    # that we need a risk measure at the root node.
     reset!(m.storage)
     for sp in subproblems(m, 1)
         solvesubproblem!(BackwardPass, m, sp)
     end
-    return dot(m.storage.objective, m.storage.probability)
+    transition_matrix = getstage(m, 1).transitionprobabilities
+    for (i, markov_state) in enumerate(m.storage.markov)
+        m.storage.probability[i] *= transition_matrix[1, markov_state]
+    end
+    @assert sum(m.storage.probability) ≈ 1.0
+    dot(m.storage.objective, m.storage.probability)
 end
 
 function iteration!(m::SDDPModel, settings::Settings)
