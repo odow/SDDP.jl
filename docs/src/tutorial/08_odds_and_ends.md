@@ -223,6 +223,21 @@ call. This produces a log like:
 ===============================================================================
 ```
 
+## Discount factors
+
+If a model has a large number of stages, a common modelling trick is to add a
+discount factor to the cost-to-go function. The stage-objective can then be
+written as ``c^\\top + \\rho \\theta``, where `\\theta` is the cost-to-go
+variable. However, since SDDP.jl does not expose the cost-to-go variable to the
+user, this modelling trick must be accomplished as follows:
+```julia
+SDDPModel() do sp, t
+    ρ = 0.95
+    # ... lines omitted ...
+    @stageobjective(sp, ρ^(t - 1) * dot(c, x))
+end
+```
+
 That concludes our eighth tutorial for SDDP.jl. In our next tutorial,
 [Tutorial Nine: nonlinear models](@ref), we discuss how SDDP.jl can be used to
 solve problems that have nonlinear transition functions.

@@ -92,6 +92,11 @@ state variable can be constructed as:
 @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
 ```
 
+!!! note
+    You must define the same state variables (in the same order) in every
+    subproblem. If a state variable is unused in a particular stage, it must
+    still be defined.
+
 ### Control variables
 
 We now need to define some control variables. In SDDP.jl, control variables are
