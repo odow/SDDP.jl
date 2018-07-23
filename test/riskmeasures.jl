@@ -141,6 +141,7 @@ end
     end
 
     @testset "Wasserstein" begin
+        @test_throws Exception Wasserstein(-1.0, IpoptSolver(print_level=0))
         @testset ":Max Worst case" begin
             measure = Wasserstein(10.0, IpoptSolver(print_level=0))
             m = dummy_model(:Max, measure)
