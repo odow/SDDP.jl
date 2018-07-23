@@ -7,6 +7,7 @@
 using SDDP
 using JuMP
 using Base.Test
+using Ipopt
 
 include("cachevectors.jl")
 include("dispatch.jl")
