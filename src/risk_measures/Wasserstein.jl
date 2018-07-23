@@ -38,13 +38,13 @@ function modifyprobability!(measure::Wasserstein,
     N = length(observations)
     wasserstein = JuMP.Model(solver=measure.solver)
     @variable(wasserstein, x[1:N] >= 0)
-    @constraints(wasserstein, begin
-        sum(x) == 1
+    @constraint(wasserstein, sum(x) == 1)
+    @constraint(wasserstein, 
         # TODO: this should be ||x - original_distribution||₂ <= measure.alpha
         # but Clp and Ipopt (our solvers for the tests) don't support it. Is it
         # really a big deal?
         sum((x - original_distribution).^2) <= measure.alpha^2
-    end)
+    )
     if getsense(sp) == :Min
         @objective(wasserstein, Max, dot(observations, x))
     else
