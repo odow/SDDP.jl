@@ -40,9 +40,7 @@ function modifyprobability!(measure::Wasserstein,
     @variable(wasserstein, x[1:N] >= 0)
     @constraint(wasserstein, sum(x) == 1)
     @constraint(wasserstein, 
-        # TODO: this should be ||x - original_distribution||₂ <= measure.alpha
-        # but Clp and Ipopt (our solvers for the tests) don't support it. Is it
-        # really a big deal?
+        # TODO: other distance metrics?
         sum((x - original_distribution).^2) <= measure.alpha^2
     )
     if getsense(sp) == :Min
