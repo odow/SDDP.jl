@@ -39,8 +39,11 @@ are two ways to do this. First, you can just add multiple calls like:
 @rhsnoise(sp, w=[1,2,3], x <= w)
 @rhsnoise(sp, w=[4,5,6], y >= w)
 ```
-If you have multiple calls to `@rhsnoise`, they must have the same number of
-elements in their sample space. For example, the following will not work:
+Multiple calls to `@rhsnoise`, they are _not_ sampled independently. Instead, in
+the example above, there will be three possible realizations: `(1,4)`, `(2,5)`,
+and `(3,6)`. Therefore, if you have multiple calls to `@rhsnoise`, they must
+have the same number of elements in their sample space. For example, the
+following will not work:
 ```julia
 @rhsnoise(sp, w=[1,2,3], x <= w)    # 3 elements
 @rhsnoise(sp, w=[4,5,6,7], y >= w)  # 4 elements
