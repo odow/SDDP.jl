@@ -21,7 +21,8 @@ makedocs(
             "tutorial/09_nonlinear.md",
             "tutorial/10_parallel.md",
             "tutorial/11_DRO.md",
-            "tutorial/12_price_interpolation.md"
+            "tutorial/12_price_interpolation.md",
+            "tutorial/13_constraint_noise.md"
         ],
         "Readings" => "readings.md",
         "Reference" => "apireference.md"
