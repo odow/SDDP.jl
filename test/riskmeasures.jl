@@ -181,22 +181,22 @@ end
         end
 
         @testset ":Max Intermediate" begin
-            measure = Wasserstein(0.5, IpoptSolver(print_level=0))
+            measure = Wasserstein(0.1, IpoptSolver(print_level=0))
             m = dummy_model(:Max, measure)
             y = zeros(4)
             x = [0.1, 0.2, 0.3, 0.4]
             obj = [1.1, 1.2, 0.6, 1.3]
             SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-            @test y ≈ [0.053, 0.061, 0.718, 0.168] atol=1e-3
+            @test y ≈ [0.194, 0.198, 0.416, 0.191] atol=1e-3
         end
         @testset ":Min Intermediate" begin
-            measure = Wasserstein(0.25, IpoptSolver(print_level=0))
+            measure = Wasserstein(0.1, IpoptSolver(print_level=0))
             m = dummy_model(:Min, measure)
             y = zeros(4)
             x = [0.1, 0.2, 0.3, 0.4]
             obj = [1.1, 1.2, 0.6, 1.3]
             SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
-            @test y ≈ [0.123, 0.270, 0.091, 0.516] atol=1e-3
+            @test y ≈ [0.100, 0.207, 0.156, 0.537] atol=1e-3
         end
     end
 

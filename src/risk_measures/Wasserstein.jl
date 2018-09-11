@@ -14,8 +14,6 @@ A distributionally-robust risk measure based on the Wasserstein distance.
 As `alpha` increases, the measure becomes more risk-averse. When `alpha=0`, the
 measure is equivalent to the expectation operator. As `alpha` increases, the
 measure approaches the Worst-case risk measure.
-
-This requires a `solver` that supports quadratic constraints.
 """
 struct Wasserstein <: AbstractRiskMeasure
     alpha::Float64
@@ -32,22 +30,27 @@ function modifyprobability!(measure::Wasserstein,
     riskadjusted_distribution,
     original_distribution::Vector{Float64},
     observations::Vector{Float64},
-    m::SDDPModel,
-    sp::JuMP.Model
+    model::SDDPModel,
+    subproblem::JuMP.Model
     )
     N = length(observations)
     wasserstein = JuMP.Model(solver=measure.solver)
-    @variable(wasserstein, x[1:N] >= 0)
-    @constraint(wasserstein, sum(x) == 1)
-    @constraint(wasserstein, 
-        # TODO: other distance metrics?
-        sum((x - original_distribution).^2) <= measure.alpha^2
-    )
-    if getsense(sp) == :Min
-        @objective(wasserstein, Max, dot(observations, x))
+    @variables(wasserstein, begin
+        transport_matrix[1:N, 1:N] >= 0
+        adjusted_distribution[1:N] >= 0
+        absolute_value[1:N, 1:N]   >= 0
+    end)
+    @constraints(wasserstein, begin
+        [j=1:N], sum(transport_matrix[:, j]) == original_distribution[j]
+        [i=1:N], sum(transport_matrix[i, :]) == adjusted_distribution[i]
+        sum(transport_matrix[i, j] * abs(observations[i] - observations[j])
+            for i in 1:N, j in 1:N) <= measure.alpha
+    end)
+    if getsense(subproblem) == :Min
+        @objective(wasserstein, Max, dot(observations, adjusted_distribution))
     else
-        @objective(wasserstein, Min, dot(observations, x))
+        @objective(wasserstein, Min, dot(observations, adjusted_distribution))
     end
     solve(wasserstein)
-    copy!(riskadjusted_distribution, getvalue(x))
+    copy!(riskadjusted_distribution, getvalue(adjusted_distribution))
 end
