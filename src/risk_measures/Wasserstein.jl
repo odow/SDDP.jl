@@ -35,7 +35,6 @@ function modifyprobability!(measure::Wasserstein,
     wasserstein = JuMP.Model(solver=measure.solver)
     @variable(wasserstein, transport[1:N, 1:N] >= 0)
     @variable(wasserstein, adjusted_distribution[1:N] >= 0)
-    @variable(wasserstein, absolute_value[1:N, 1:N] >= 0)
     for i in 1:N
         @constraint(wasserstein, sum(transport[:, i]) == original_distribution[i])
         @constraint(wasserstein, sum(transport[i, :]) == adjusted_distribution[i])
