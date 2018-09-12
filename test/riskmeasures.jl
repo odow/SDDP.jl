@@ -140,6 +140,66 @@ end
         end
     end
 
+    @testset "Wasserstein" begin
+        @test_throws Exception Wasserstein(-1.0, IpoptSolver(print_level=0))
+        @testset ":Max Worst case" begin
+            measure = Wasserstein(10.0, IpoptSolver(print_level=0))
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.1, 1.2, 0.6, 1.3]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test y ≈ [0.0, 0.0, 1.0, 0.0] atol=1e-4
+        end
+        @testset ":Min Worst case" begin
+            measure = Wasserstein(10.0, IpoptSolver(print_level=0))
+            m = dummy_model(:Min, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.1, 1.2, 0.6, 1.3]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test y ≈ [0.0, 0.0, 0.0, 1.0] atol=1e-4
+        end
+
+        @testset ":Max Expectation" begin
+            measure = Wasserstein(0.0, IpoptSolver(print_level=0))
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.1, 1.2, 0.6, 1.3]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test y ≈ x atol=1e-4
+        end
+        @testset ":Min Expectation" begin
+            measure = Wasserstein(0.0, IpoptSolver(print_level=0))
+            m = dummy_model(:Min, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.1, 1.2, 0.6, 1.3]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test y ≈ x atol=1e-4
+        end
+
+        @testset ":Max Intermediate" begin
+            measure = Wasserstein(0.1, IpoptSolver(print_level=0))
+            m = dummy_model(:Max, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.1, 1.2, 0.6, 1.3]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test y ≈ [0.194, 0.198, 0.416, 0.191] atol=1e-3
+        end
+        @testset ":Min Intermediate" begin
+            measure = Wasserstein(0.1, IpoptSolver(print_level=0))
+            m = dummy_model(:Min, measure)
+            y = zeros(4)
+            x = [0.1, 0.2, 0.3, 0.4]
+            obj = [1.1, 1.2, 0.6, 1.3]
+            SDDP.modifyprobability!(measure, y, x, obj, m, SDDP.getsubproblem(m, 1, 1))
+            @test y ≈ [0.100, 0.207, 0.156, 0.537] atol=1e-3
+        end
+    end
+
     @testset "User-defined MyRiskMeasure" begin
         measure = MyRiskMeasure()
         m = dummy_model(:Max, measure)
