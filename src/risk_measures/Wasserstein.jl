@@ -20,32 +20,28 @@ struct Wasserstein <: AbstractRiskMeasure
     solver
     function Wasserstein(alpha::Float64, solver)
         if alpha < 0.0
-            error("alpha must be in the range [0, ∞).")
+            error("alpha cannot be $(alpha) as it must be in the range [0, ∞).")
         end
         return new(alpha, solver)
     end
 end
 
 function modifyprobability!(measure::Wasserstein,
-    riskadjusted_distribution,
-    original_distribution::Vector{Float64},
-    observations::Vector{Float64},
-    model::SDDPModel,
-    subproblem::JuMP.Model
-    )
+                            riskadjusted_distribution,
+                            original_distribution::Vector{Float64},
+                            observations::Vector{Float64},
+                            model::SDDPModel, subproblem::JuMP.Model)
     N = length(observations)
     wasserstein = JuMP.Model(solver=measure.solver)
-    @variables(wasserstein, begin
-        transport_matrix[1:N, 1:N] >= 0
-        adjusted_distribution[1:N] >= 0
-        absolute_value[1:N, 1:N]   >= 0
-    end)
-    @constraints(wasserstein, begin
-        [j=1:N], sum(transport_matrix[:, j]) == original_distribution[j]
-        [i=1:N], sum(transport_matrix[i, :]) == adjusted_distribution[i]
-        sum(transport_matrix[i, j] * abs(observations[i] - observations[j])
-            for i in 1:N, j in 1:N) <= measure.alpha
-    end)
+    @variable(wasserstein, transport[1:N, 1:N] >= 0)
+    @variable(wasserstein, adjusted_distribution[1:N] >= 0)
+    @variable(wasserstein, absolute_value[1:N, 1:N] >= 0)
+    for i in 1:N
+        @constraint(wasserstein, sum(transport[:, i]) == original_distribution[i])
+        @constraint(wasserstein, sum(transport[i, :]) == adjusted_distribution[i])
+    end
+    @constraint(wasserstein, sum(transport[i, j] * abs(observations[i] -
+        observations[j]) for i in 1:N, j in 1:N) <= measure.alpha)
     if getsense(subproblem) == :Min
         @objective(wasserstein, Max, dot(observations, adjusted_distribution))
     else
