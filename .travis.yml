@@ -5,6 +5,10 @@ julia:
   - 0.6
 notifications:
   email: false
+sudo: false
+addons:
+  apt_packages:
+    - gfortran
 after_success:
   - julia -e 'cd(Pkg.dir("SDDP")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
   - julia -e 'cd(Pkg.dir("SDDP")); Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))'
