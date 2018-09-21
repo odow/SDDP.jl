@@ -8,11 +8,11 @@ struct DefaultDynamicOracle{T} <: DynamicCutOracle
 end
 DefaultDynamicOracle(T) = DefaultDynamicOracle(Tuple{Cut, T}[])
 
-function storecut!(oracle::DefaultDynamicOracle{T}, m::SDDPModel, sp::JuMP.Model, cut::Cut, price::T) where T
+function store_cut(oracle::DefaultDynamicOracle{T}, m::SDDPModel, sp::JuMP.Model, cut::Cut, price::T) where T
     push!(oracle.cuts, (cut, price))
 end
 
-function validcuts(oracle::DefaultDynamicOracle)
+function valid_cuts(oracle::DefaultDynamicOracle)
     oracle.cuts
 end
 
@@ -37,13 +37,13 @@ mutable struct NanniciniOracle{T} <: DynamicCutOracle
 end
 NanniciniOracle(T,ρ::Int=typemax(Int)) = NanniciniOracle(ρ,0,Tuple{Cut, T}[], Int[])
 
-function storecut!(oracle::NanniciniOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut, price)
+function store_cut(oracle::NanniciniOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut, price)
     push!(oracle.cuts, (cut, price))
     push!(oracle.iterations_since_last_active, 0)
     oracle.cutsinmodel += 1
 end
 
-function validcuts(oracle::NanniciniOracle)
+function valid_cuts(oracle::NanniciniOracle)
     # sort in order of least used, to most recently used
     p = sortperm(oracle.iterations_since_last_active, rev=true)
     permute!(oracle.cuts, p)

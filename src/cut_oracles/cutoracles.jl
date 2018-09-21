@@ -5,33 +5,38 @@
 #############################################################################
 
 """
-    storecut!(oracle::AbstactCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
+    store_cut(oracle::AbstactCutOracle, model::SDDPModel,
+              subproblem::JuMP.Model, cut::Cut)
 
 # Description
 
-Store the cut `cut` in the Cut Oracle `oracle`. `oracle` will belong to the
-subproblem `sp` in the SDDPModel `m`.
+Store the cut `cut` in the Cut Oracle `oracle`. `oracle` will belong to
+`subproblem` in the SDDPModel `model`.
 """
-function storecut! end
+function store_cut end
 
 """
-    validcuts(oracle::AbstactCutOracle)
+    valid_cuts(oracle::AbstactCutOracle)
 
 # Description
 
 Return an iterable list of all the valid cuts contained within `oracle`.
 """
-function validcuts end
+function valid_cuts end
 
 """
-    allcuts(oracle::AbstactCutOracle)
+    all_cuts(oracle::AbstactCutOracle)
 
 # Description
 
 Return an iterable list of *all* the cuts contained within `oracle`, not just
-those that are returned by `validcuts`.
+those that are returned by `valid_cuts`.
 """
-function allcuts end
+function all_cuts end
 
 include("DefaultCutOracle.jl")
 include("LevelOneCutOracle.jl")
+
+@deprecate storecut! store_cut
+@deprecate validcuts valid_cuts
+@deprecate allcuts all_cuts

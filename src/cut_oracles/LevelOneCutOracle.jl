@@ -35,70 +35,70 @@ end
 
 DematosCutOracle() = LevelOneCutOracle()
 
-function storecut!(o::LevelOneCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut)
-    sense = getsense(sp)
+function store_cut(oracle::LevelOneCutOracle, model::SDDPModel,
+                   subproblem::JuMP.Model, cut::Cut)
+    sense = getsense(subproblem)
 
-    # loop through previously visited states comparing the new cut against the
+    # Loop through previously visited states comparing the new cut against the
     # previous best. If it is strictly better, keep the new cut.
-    push!(o.cuts, StoredCut(cut, 0))
-    cut_index = length(o.cuts)
-    for state in o.states
-        y = cut.intercept + dot(cut.coefficients, state.state)
-        if dominates(sense, y, state.best_objective)
-            # if new cut is strictly better
-            # decrement the counter at the previous best
-            o.cuts[state.best_cut_index].non_dominated_count -= 1
-            # increment the counter at the new cut
-            o.cuts[cut_index].non_dominated_count += 1
+    push!(oracle.cuts, StoredCut(cut, 0))
+    cut_index = length(oracle.cuts)
+    for state in oracle.states
+        height = cut.intercept + dot(cut.coefficients, state.state)
+        if dominates(sense, height, state.best_objective)
+            # If new cut is strictly better decrement the counter at the
+            # previous best.
+            oracle.cuts[state.best_cut_index].non_dominated_count -= 1
+            # Increment the counter at the new cut.
+            oracle.cuts[cut_index].non_dominated_count += 1
             state.best_cut_index = cut_index
-            state.best_objective = y
+            state.best_objective = height
         end
     end
 
     # get the last state
-    current_state = copy(getstage(m, ext(sp).stage).state)
+    current_state = copy(getstage(model, ext(subproblem).stage).state)
     if length(current_state) == 0
-        # probably in the async version
-        # where we're adding a cut but haven't seen a state yet
-        # or loading cuts to a new model
+        # This is a special case for the asynchronous algorithm where we're
+        # adding a cut but haven't seen a state yet, or for the case where we're
+        # loading cuts into a new model.
         return
     end
 
-    if current_state in o.sampled_states
+    if current_state in oracle.sampled_states
         return
     end
-    push!(o.sampled_states, current_state)
-    # now loop through the previously discovered cuts comparing them at the
-    # new sampled state. If the new cut is strictly better, keep it, otherwise
-    # keep the old cut
+    push!(oracle.sampled_states, current_state)
+    # Now loop through the previously discovered cuts comparing them at the new
+    # sampled state. If the new cut is strictly better, keep it, otherwise keep
+    # the old cut.
     sampled_state = SampledState(current_state,
         cut.intercept + dot(cut.coefficients, current_state),
-        cut_index  # assume that the new cut is the best
+        cut_index  # Assume that the new cut is the best.
     )
-    push!(o.states, sampled_state)
-    o.cuts[cut_index].non_dominated_count += 1
+    push!(oracle.states, sampled_state)
+    oracle.cuts[cut_index].non_dominated_count += 1
 
-    for (i, stored_cut) in enumerate(o.cuts)
-        y = stored_cut.cut.intercept + dot(stored_cut.cut.coefficients, sampled_state.state)
-        if dominates(sense, y, sampled_state.best_objective)
-            # if new cut is strictly better
-            # decrement the counter at the old cut
-            o.cuts[sampled_state.best_cut_index].non_dominated_count -= 1
-            # increment the counter at the new cut
-            o.cuts[i].non_dominated_count += 1
-            sampled_state.best_cut_index = i
-            sampled_state.best_objective = y
+    for (index, stored_cut) in enumerate(oracle.cuts)
+        height = stored_cut.cut.intercept + dot(stored_cut.cut.coefficients,
+            sampled_state.state)
+        if dominates(sense, height, sampled_state.best_objective)
+            # If new cut is strictly better,  decrement the counter at the old
+            # cut.
+            oracle.cuts[sampled_state.best_cut_index].non_dominated_count -= 1
+            # Increment the counter at the new cut.
+            oracle.cuts[index].non_dominated_count += 1
+            sampled_state.best_cut_index = index
+            sampled_state.best_objective = height
         end
     end
 end
 
-function validcuts(oracle::LevelOneCutOracle)
-    Cut[
-        stored_cut.cut for stored_cut in oracle.cuts
-            if stored_cut.non_dominated_count > 0
-    ]
+function valid_cuts(oracle::LevelOneCutOracle)
+    return Cut[stored_cut.cut for stored_cut in oracle.cuts
+               if stored_cut.non_dominated_count > 0]
 end
 
-function allcuts(oracle::LevelOneCutOracle)
-    [stored_cut.cut for stored_cut in oracle.cuts]
+function all_cuts(oracle::LevelOneCutOracle)
+    return [stored_cut.cut for stored_cut in oracle.cuts]
 end

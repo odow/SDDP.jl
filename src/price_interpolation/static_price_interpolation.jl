@@ -104,7 +104,7 @@ function updatevaluefunction!(m::SDDPModel{V}, settings::Settings, t::Int, sp::J
             writecut!(settings.cut_output_file, ex.stage, ex.markovstate, rib, cut)
         end
 
-        storecut!(cutoracle, m, sp, cut)
+        store_cut(cutoracle, m, sp, cut)
         addcuttoJuMPmodel!(vf, sp, theta, cut)
 
         if settings.is_asynchronous
@@ -125,7 +125,7 @@ function addasynccut!(m::SDDPModel{StaticPriceInterpolation{C,T,T2}}, cut::Tuple
     if price_idx < 1
         error("Attempting to add a cut at the price $(cut[3]), but there is no rib in the value function. Rib locations are $(vf.rib_locations).")
     end
-    storecut!(vf.cutoracles[price_idx], m, sp, cut[4])
+    store_cut(vf.cutoracles[price_idx], m, sp, cut[4])
     addcuttoJuMPmodel!(vf, sp, vf.variables[price_idx], cut[4])
 end
 
@@ -158,7 +158,7 @@ function rebuildsubproblem!(m::SDDPModel{V}, sp::JuMP.Model) where V<:StaticPric
 
     # re-add cuts
     for i in 1:length(vf.variables)
-        for cut in validcuts(vf.cutoracles[i])
+        for cut in valid_cuts(vf.cutoracles[i])
             addcuttoJuMPmodel!(vf, sp2, vf.variables[i], cut)
         end
     end
@@ -173,7 +173,7 @@ function processvaluefunctiondata(vf::StaticPriceInterpolation{C,Float64,T2}, is
     prices = Float64[]
     cuts   = Cut[]
     for (price, oracle) in zip(vf.rib_locations, vf.cutoracles)
-        for cut in validcuts(oracle)
+        for cut in valid_cuts(oracle)
             push!(cuts, cut)
             push!(prices, price)
         end

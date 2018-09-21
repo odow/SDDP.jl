@@ -97,9 +97,9 @@ Then, given a subproblem `sp`, we can get the cut oracle as follows:
 oracle = SDDP.cutoracle(sp)
 ```
 Finally, we can query the list of valid cuts in the oracle using
-[`SDDP.validcuts`](@ref):
+[`SDDP.valid_cuts`](@ref):
 ```julia
-julia> SDDP.validcuts(oracle)
+julia> SDDP.valid_cuts(oracle)
 1-element Array{Cut, 1}:
  SDDP.Cut(29964.8, [-108.333])
 ```
@@ -118,7 +118,7 @@ So, despite performing 10 SDDP iterations, only one cut is needed to approximate
 the cost-to-go function! A similar result can be found in the wet Markov state
 in the second stage:
 ```julia
-julia> SDDP.validcuts(SDDP.cutoracle(SDDP.getsubproblem(m, 2 1)))
+julia> SDDP.valid_cuts(SDDP.cutoracle(SDDP.getsubproblem(m, 2 1)))
 3-element Array{Cut, 1}:
  SDDP.Cut(20625.0, [-162.5])
  SDDP.Cut(16875.0, [-112.5])
@@ -147,7 +147,7 @@ struct LastCuts <: SDDP.AbstractCutOracle
 end
 ```
 
-Then, we need to overload three methods: `SDDP.storecut!`, `SDDP.validcuts`, and
+Then, we need to overload three methods: `SDDP.store_cut`, `SDDP.valid_cuts`, and
 `SDDP.allcuts`.
 
 `SDDP.storecut` takes four arguments. The first is an instance of the cut
@@ -155,16 +155,16 @@ oracle. The second and third arguments are the SDDPModel `m` and the JuMP
 subproblem `sp`. The fourth argument is the cut itself. For our example, we
 store all the cuts that have been discovered:
 ```julia
-function SDDP.storecut!(oracle::LastCuts, m::SDDPModel, sp::JuMP.Model, cut::SDDP.Cut)
+function SDDP.store_cut(oracle::LastCuts, m::SDDPModel, sp::JuMP.Model, cut::SDDP.Cut)
     push!(oracle.cuts, cut)
 end
 ```
 
-`SDDP.validcuts` returns a list of all of the cuts that are valid cuts to keep
+`SDDP.valid_cuts` returns a list of all of the cuts that are valid cuts to keep
 in the subproblem. The `LastCuts` oracle returns the most recent `N` discovered
 cuts:
 ```julia
-function SDDP.validcuts(oracle::LastCuts)
+function SDDP.valid_cuts(oracle::LastCuts)
     oracle.cuts[max(1, end - oracle.N + 1):end]
 end
 ```

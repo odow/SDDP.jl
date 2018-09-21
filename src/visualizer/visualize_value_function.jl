@@ -51,7 +51,7 @@ function mesh(x, y)
 end
 
 function processvaluefunctiondata(vf::DefaultValueFunction, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...)
-    cuts = SDDP.validcuts(SDDP.cutoracle(vf))
+    cuts = SDDP.valid_cuts(SDDP.cutoracle(vf))
     processvaluefunctiondata(cuts, is_minimization, states...)
 end
 function processvaluefunctiondata(cuts::Vector{Cut}, is_minimization::Bool, states::Union{Float64, AbstractVector{Float64}}...)

@@ -32,9 +32,9 @@ WorstCase
 ### Cut Oracles
 ```@docs
 AbstractCutOracle
-storecut!
-validcuts
-allcuts
+store_cut
+valid_cuts
+all_cuts
 DefaultCutOracle
 LevelOneCutOracle
 ```
