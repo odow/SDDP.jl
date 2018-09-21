@@ -140,7 +140,7 @@ function constructcut(m::SDDPModel{V}, sp::JuMP.Model, ex, t, price) where V<:Pr
     end
     # add cut
     I = 1:length(m.storage.objective)
-    modifyprobability!(ex.riskmeasure,
+    modify_probability(ex.riskmeasure,
         view(m.storage.modifiedprobability.data, I),
         m.storage.probability.data[I],
         m.storage.objective.data[I],

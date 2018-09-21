@@ -5,44 +5,34 @@
 #############################################################################
 
 """
-    modifyprobability!(measure::AbstractRiskMeasure,
+    modify_probability(measure::AbstractRiskMeasure,
             riskadjusted_distribution,
             original_distribution::Vector{Float64},
             observations::Vector{Float64},
-            m::SDDPModel,
-            sp::JuMP.Model
-    )
-
-# Description
+            model::SDDPModel,
+            subproblem::JuMP.Model)
 
 Calculate the risk-adjusted probability of each scenario using the
 'change-of-probabilities' approach of Philpott, de Matos, and Finardi,(2013). On
 solving multistage stochastic programs with coherent risk measures. Operations
 Research 61(4), 957-970.
 
-# Arguments
- * `measure::AbstractRiskMeasure`
- The risk measure
- * `riskadjusted_distribution`
- A new probability distribution
- * `original_distribution::Vector{Float64}`
- The original probability distribution.
- * `observations::Vector{Float64}`
- The vector of objective values from the next stage
- problems (one for each scenario).
- * `m::SDDPModel`
- The full SDDP model
- * `sp::JuMP.Model`
- The stage problem that the cut will be added to.
+The function should modify `riskadjusted_distribution` in-place based on the
+original probabiltiy distribution (contained in `original_distribution`) and the
+costs observed in each scenario (contained in `observations`).
+
+The SDDPModel and subproblem are provided for advanced risk measures which may
+want to make use of the information contained within.
 """
-function modifyprobability!(measure::AbstractRiskMeasure,
+function modify_probability(measure::AbstractRiskMeasure,
         riskadjusted_distribution,
         original_distribution::Vector{Float64},
         observations::Vector{Float64},
-        m::SDDPModel,
-        sp::JuMP.Model
+        model::SDDPModel,
+        subproblem::JuMP.Model
     )
-    error("You need to overload a `modifyprobability!` method for the measure of type $(typeof(measure)).")
+    error("You need to overload a `modify_probability` method for the measure" *
+          " of type $(typeof(measure)).")
 end
 
 include("Expectation.jl")
@@ -51,3 +41,5 @@ include("AVaR.jl")
 include("ConvexCombination.jl")
 include("DRO.jl")
 include("Wasserstein.jl")
+
+@deprecate modifyprobability! modify_probability

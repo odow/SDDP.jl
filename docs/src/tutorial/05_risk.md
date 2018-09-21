@@ -176,7 +176,7 @@ maximizing.
 struct TheWorstCase <: SDDP.AbstractRiskMeasure end
 ```
 
-Then, we need to overload the [`SDDP.modifyprobability!`](@ref) function
+Then, we need to overload the [`SDDP.modify_probability`](@ref) function
 provided by SDDP.jl. This function takes six arguments:
  1. an instance of the risk measure (e.g. `TheWorstCase()`);
  2. a vector of the risk-adjusted probability distribution that the function
@@ -189,7 +189,7 @@ provided by SDDP.jl. This function takes six arguments:
 For example, the worst-case risk measure places all of the probability on the
 worst outcome:
 ```julia
-function SDDP.modifyprobability!(::TheWorstCase,
+function SDDP.modify_probability(::TheWorstCase,
     risk_adjusted_distribution,
     original_distribution::Vector{Float64},
     observations::Vector{Float64},

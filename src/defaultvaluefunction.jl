@@ -90,7 +90,7 @@ function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Mode
         m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
     @timeit TIMER "risk measure" begin
-        modifyprobability!(ex.riskmeasure,
+        modify_probability(ex.riskmeasure,
             view(m.storage.modifiedprobability.data, I),
             m.storage.probability.data[I],
             m.storage.objective.data[I],

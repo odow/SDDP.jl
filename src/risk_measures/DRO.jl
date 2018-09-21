@@ -37,89 +37,74 @@ Note: the largest radius that will work with S scenarios is sqrt((S-1)/S).
 """
     DRO(radius::Float64)
 
-The distributionally robust SDDP risk measure.
-Constructs a DRO risk measure object that allows probabilities to deviate by
-`radius` away from the uniform distribution.
+The distributionally robust SDDP risk measure of
+
+Philpott, A., de Matos, V., Kapelevich, L. (2017). Distributionally robust SDDP.
+Tech Report. Electric Power Optimisation Centre. http://www.epoc.org.nz.
+
+Note: requires that the initial probability distribution is uniform.
 """
 struct DRO <: SDDP.AbstractRiskMeasure
     radius::Float64
 end
 
-# Helper to calculate population standard deviation, avoid type instability
+# Helper to calculate population standard deviation, avoiding the penalty of
+# using a keyword argument.
 function popvar(x::Vector{Float64})::Float64
-    ninv = 1 / length(x)
-    ninv * sum(x.^2) - (ninv * sum(x))^2
+    return sum(x.^2) / length(x) - (sum(x) / length(x))^2
 end
 
 function popstd(x::Vector{Float64})
-    sqrt(popvar(x))
+    return sqrt(popvar(x))
 end
 
 function is_dro_applicable(radius::Float64, observations::Vector{Float64})
-    if (abs(radius) < 1e-9)
-        return false
-    elseif abs(popstd(observations)) < 1e-9
-        return false
-    end
-    return true
+    return abs(radius) >= 1e-9 && abs(popstd(observations)) >= 1e-9
 end
 
 function getconstfactor(S::Int, k::Int, radius::Float64, permuted_observations::Vector{Float64})
     stdz = popstd(permuted_observations[k+1:S])::Float64
-    sqrt((S-k) * radius^2 - k/S) / (stdz * (S-k))
+    return sqrt((S-k) * radius^2 - k/S) / (stdz * (S-k))
 end
 
 function getconstadditive(S::Int, k::Int, const_factor, permuted_observations)
     avgz = mean(permuted_observations[k+1:S])
-    1 / (S-k) + const_factor * avgz
+    return 1 / (S-k) + const_factor * avgz
 end
 
-function modifyprobability!(newprobabilities, dro::DRO, sense::Symbol, observations::Vector{Float64}, S::Int)
-
-    # Don't do any DRO reweighting if we aren't distributionally robust or the variance is too low
-    r = dro.radius
-    if !is_dro_applicable(r, observations)
-        newprobabilities .= 1 / S
-        return nothing
+function modify_probability(measure::DRO,
+                            riskadjusted_distribution,
+                            original_distribution::Vector{Float64},
+                            observations::Vector{Float64},
+                            model::SDDPModel,
+                            subproblem::JuMP.Model)
+    S = length(observations)  # Number of noise terms.
+    # Don't do any DRO reweighting if we aren't distributionally robust or the
+    # variance is too low.
+    if !is_dro_applicable(measure.radius, observations)
+        riskadjusted_distribution .= 1 / S
+        return
     end
-
     # Sort future costs/rewards
-    if sense == :Min
+    if getsense(subproblem) == :Min
         perm = sortperm(observations)
         permuted_observations = -observations[perm]
     else
         perm = sortperm(observations, rev=true)
         permuted_observations = observations[perm]
     end
-
     # Compute the new probabilities
-    @inbounds for k = 0:S-2
+    @inbounds for k in 0:S-2
         if k > 0
-            newprobabilities[perm[k]] = 0.0
+            riskadjusted_distribution[perm[k]] = 0.0
         end
-        const_factor   = getconstfactor(S, k, r, permuted_observations)
+        const_factor = getconstfactor(S, k, measure.radius, permuted_observations)
         const_additive = getconstadditive(S, k, const_factor, permuted_observations)
-        @inbounds for i = k+1:S
-            newprobabilities[perm[i]] = const_additive - const_factor * permuted_observations[i]::Float64
+        @inbounds for i in k+1:S
+            riskadjusted_distribution[perm[i]] = const_additive - const_factor * permuted_observations[i]::Float64
         end
-        if newprobabilities[perm[k+1]] >= 0.0
+        if riskadjusted_distribution[perm[k+1]] >= 0.0
             break
         end
     end
-
-end
-
-function modifyprobability!(
-        measure::DRO,
-        newprobabilities,
-        original_distribution::Vector{Float64},
-        observations::Vector{Float64},
-        m::SDDPModel,
-        sp::JuMP.Model
-    )
-
-     # Number of noises
-    S = length(observations)
-
-    modifyprobability!(newprobabilities, measure, getsense(sp), observations, S)
 end

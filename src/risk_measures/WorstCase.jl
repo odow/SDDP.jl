@@ -13,14 +13,13 @@ The worst-case risk measure.
 """
 struct WorstCase <: AbstractRiskMeasure end
 
-function modifyprobability!(measure::WorstCase,
-    riskadjusted_distribution,
-    original_distribution::Vector{Float64},
-    observations::Vector{Float64},
-    m::SDDPModel,
-    sp::JuMP.Model
-    )
-    sense = getsense(sp)
+function modify_probability(measure::WorstCase,
+                            riskadjusted_distribution,
+                            original_distribution::Vector{Float64},
+                            observations::Vector{Float64},
+                            model::SDDPModel,
+                            subproblem::JuMP.Model)
+    sense = getsense(subproblem)
     riskadjusted_distribution .= 0.0
     worst_idx = 1
     worst_observation = -worstcase(sense)
