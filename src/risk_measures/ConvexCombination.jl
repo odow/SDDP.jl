@@ -31,24 +31,28 @@ struct ConvexCombination{T<:Tuple} <: AbstractRiskMeasure
 end
 ConvexCombination(args::Tuple...) = ConvexCombination(args)
 
-(+)(a::ConvexCombination, b::ConvexCombination) = ConvexCombination(a.measures..., b.measures...)
-(*)(lhs::Float64, rhs::AbstractRiskMeasure) = ConvexCombination( ( (lhs, rhs), ) )
+function (+)(a::ConvexCombination, b::ConvexCombination)
+    return ConvexCombination(a.measures..., b.measures...)
+end
 
-function modifyprobability!(riskmeasure::ConvexCombination,
-    riskadjusted_distribution,
-    original_distribution::Vector{Float64},
-    observations::Vector{Float64},
-    m::SDDPModel,
-    sp::JuMP.Model
-    )
+function (*)(lhs::Float64, rhs::AbstractRiskMeasure)
+    return ConvexCombination( ( (lhs, rhs), ) )
+end
+
+function modify_probability(riskmeasure::ConvexCombination,
+                            riskadjusted_distribution,
+                            original_distribution::Vector{Float64},
+                            observations::Vector{Float64},
+                            model::SDDPModel,
+                            subproblem::JuMP.Model)
     riskadjusted_distribution .= 0.0
-    y = similar(original_distribution)
+    partial_distribution = similar(original_distribution)
     for (weight, measure) in riskmeasure.measures
-        y .= 0.0
-        modifyprobability!(measure, y, original_distribution, observations, m, sp)
-        riskadjusted_distribution .+= weight * y
+        partial_distribution .= 0.0
+        modify_probability(measure, partial_distribution, original_distribution,
+                           observations, model, subproblem)
+        riskadjusted_distribution .+= weight * partial_distribution
     end
-    return
 end
 
 """
@@ -56,16 +60,17 @@ end
 
 # Description
 
-A risk measure that is a convex combination of Expectation and Average Value @ Risk
-(also called Conditional Value @ Risk).
+A risk measure that is a convex combination of Expectation and Average Value @
+Risk (also called Conditional Value @ Risk).
 
     λ * E[x] + (1 - λ) * AV@R(1-β)[x]
 
 # Keyword Arguments
 
  * `lambda`
-Convex weight on the expectation (`(1-lambda)` weight is put on the AV@R component.
-Inreasing values of `lambda` are less risk averse (more weight on expecattion)
+ Convex weight on the expectation (`(1-lambda)` weight is put on the AV@R
+ component. Inreasing values of `lambda` are less risk averse (more weight on
+ expecattion)
 
  * `beta`
  The quantile at which to calculate the Average Value @ Risk. Increasing values
@@ -73,11 +78,15 @@ Inreasing values of `lambda` are less risk averse (more weight on expecattion)
  worst case risk measure.
 """
 function EAVaR(;lambda::Float64=1.0, beta::Float64=1.0)
-    if lambda > 1.0 || lambda < 0.0
-        error("Lambda must be in the range [0, 1]. Increasing values of lambda are less risk averse. lambda=1 is identical to taking the expectation.")
+    if !(0.0 <= lambda <= 1.0)
+        error("Lambda must be in the range [0, 1]. Increasing values of " *
+              "lambda are less risk averse. lambda=1 is identical to taking " *
+              "the expectation.")
     end
-    if beta > 1.0 || beta < 0.0
-        error("Beta must be in the range [0, 1]. Increasing values of beta are less risk averse. beta=1 is identical to taking the expectation.")
+    if !(0.0 <= beta <= 1.0)
+        error("Beta must be in the range [0, 1]. Increasing values of beta " *
+              "are less risk averse. lambda=1 is identical to taking the " *
+              "expectation.")
     end
     return lambda * Expectation() + (1 - lambda) * AVaR(beta)
 end

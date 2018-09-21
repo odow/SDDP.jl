@@ -9,7 +9,8 @@ export Wasserstein
 """
     Wasserstein(alpha::Float64, solver::MathProgBase.AbstractMathProgSolver)
 
-A distributionally-robust risk measure based on the Wasserstein distance.
+An (incorrect) distributionally-robust risk measure based on the Wasserstein
+distance.
 
 As `alpha` increases, the measure becomes more risk-averse. When `alpha=0`, the
 measure is equivalent to the expectation operator. As `alpha` increases, the
@@ -26,11 +27,15 @@ struct Wasserstein <: AbstractRiskMeasure
     end
 end
 
-function modifyprobability!(measure::Wasserstein,
+function modify_probability(measure::Wasserstein,
                             riskadjusted_distribution,
                             original_distribution::Vector{Float64},
                             observations::Vector{Float64},
-                            model::SDDPModel, subproblem::JuMP.Model)
+                            model::SDDPModel,
+                            subproblem::JuMP.Model)
+    # TODO(odow): this formulation is incorrect. Instead of using the
+    # observations in the transport matrix, we  need to use the actual noise
+    # values :'(.
     N = length(observations)
     wasserstein = JuMP.Model(solver=measure.solver)
     @variable(wasserstein, transport[1:N, 1:N] >= 0)
@@ -48,4 +53,5 @@ function modifyprobability!(measure::Wasserstein,
     end
     solve(wasserstein)
     copy!(riskadjusted_distribution, getvalue(adjusted_distribution))
+    return
 end

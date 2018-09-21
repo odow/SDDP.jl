@@ -20,7 +20,7 @@ addconstraintnoise!
 ### Risk Measures
 ```@docs
 AbstractRiskMeasure
-modifyprobability!
+modify_probability
 AVaR
 ConvexCombination
 EAVaR

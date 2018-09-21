@@ -13,13 +13,12 @@ The expectation risk measure.
 """
 struct Expectation <: AbstractRiskMeasure end
 
-function modifyprobability!(::Expectation,
-    riskadjusted_distribution::AbstractVector,
-    original_distribution::Vector{Float64},
-    observations::Vector{Float64},
-    m::SDDPModel,
-    sp::JuMP.Model
-    )
+function modify_probability(::Expectation,
+                            riskadjusted_distribution::AbstractVector,
+                            original_distribution::Vector{Float64},
+                            observations::Vector{Float64},
+                            model::SDDPModel,
+                            subproblem::JuMP.Model)
     riskadjusted_distribution .= original_distribution
-    return nothing
+    return
 end
