@@ -18,6 +18,10 @@ struct DefaultCutOracle <: AbstractCutOracle
 end
 DefaultCutOracle() = DefaultCutOracle(Cut[])
 
-storecut!(oracle::DefaultCutOracle, m::SDDPModel, sp::JuMP.Model, cut::Cut) = push!(oracle.cuts, cut)
-validcuts(oracle::DefaultCutOracle) = oracle.cuts
-allcuts(oracle::DefaultCutOracle) = oracle.cuts
+function store_cut(oracle::DefaultCutOracle, model::SDDPModel,
+                   subproblem::JuMP.Model, cut::Cut)
+    push!(oracle.cuts, cut)
+    return
+end
+valid_cuts(oracle::DefaultCutOracle) = oracle.cuts
+all_cuts(oracle::DefaultCutOracle) = oracle.cuts

@@ -294,8 +294,8 @@ writecut!(io, cut::Tuple) = writecut!(io, cut...)
 
 Writes all cuts from model m to `filename`.
 
-If `onlyvalid` is true, write the cuts returned from `validcuts`, else write the
-cuts returned from `allcuts`.
+If `onlyvalid` is true, write the cuts returned from `valid_cuts`, else write the
+cuts returned from `all_cuts`.
 """
 function writecuts!(filename::String, m::SDDPModel; onlyvalid=false)
     open(filename, "w") do io
@@ -306,7 +306,7 @@ function writecuts!(io::IO, m::SDDPModel; onlyvalid=false)
     for (t, stage) in enumerate(stages(m))
         for (i, sp) in enumerate(subproblems(stage))
             cut_or = cutoracle(sp)
-            cuts = onlyvalid ? validcuts(cut_or) : allcuts(cut_or)
+            cuts = onlyvalid ? valid_cuts(cut_or) : all_cuts(cut_or)
             for cut in cuts
                 writecut!(io, t, i, cut)
             end

@@ -169,7 +169,7 @@ function addcut!(m::SDDPModel{V}, sp::JuMP.Model, current_price, cut::Cut) where
     vf = valueoracle(sp)
 
     # store the cut in the oracle
-    storecut!(vf.oracle, m, sp, cut, current_price)
+    store_cut(vf.oracle, m, sp, cut, current_price)
 
     # build affine expression
     affexpr = cuttoaffexpr(sp, cut)
@@ -207,7 +207,7 @@ function rebuildsubproblem!(m::SDDPModel{DynamicPriceInterpolation{NanniciniOrac
     elseif n == 3
         m.build!(sp2, ex.stage, ex.markovstate)
     end
-    for cut in validcuts(vf.oracle)
+    for cut in valid_cuts(vf.oracle)
         affexpr = cuttoaffexpr(sp2, cut[1])
         addpricecut!(ext(sp2).sense, sp2, cut[2], vf, affexpr)
     end

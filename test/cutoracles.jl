@@ -21,9 +21,9 @@ struct NotACutOracle end
             @stageobjective(sp, x)
         end
         cut = SDDP.Cut(1, [1])
-        @test_throws Exception SDDP.storecut!(newcutoracle, m, SDDP.getsubproblem(m, 1, 1), cut)
-        @test_throws Exception SDDP.validcuts(newcutoracle)
-        @test_throws Exception SDDP.allcuts(newcutoracle)
+        @test_throws Exception SDDP.store_cut(newcutoracle, m, SDDP.getsubproblem(m, 1, 1), cut)
+        @test_throws Exception SDDP.valid_cuts(newcutoracle)
+        @test_throws Exception SDDP.all_cuts(newcutoracle)
     end
 
     @testset "Not A Cut Oracle" begin
@@ -53,9 +53,9 @@ struct NotACutOracle end
             @stageobjective(sp, x)
         end
         cut = SDDP.Cut(1, [1])
-        SDDP.storecut!(oracle, m, SDDP.getsubproblem(m, 1, 1), cut)
-        @test SDDP.validcuts(oracle) == [cut]
-        @test SDDP.allcuts(oracle) == [cut]
+        SDDP.store_cut(oracle, m, SDDP.getsubproblem(m, 1, 1), cut)
+        @test SDDP.valid_cuts(oracle) == [cut]
+        @test SDDP.all_cuts(oracle) == [cut]
     end
 
     @testset "Level One Oracle" begin

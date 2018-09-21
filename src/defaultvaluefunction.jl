@@ -126,7 +126,7 @@ end
 function addcut!(m::SDDPModel{V}, sp::JuMP.Model, cut::Cut) where V<:DefaultValueFunction
     vf = valueoracle(sp)
     # store cut in oracle
-    storecut!(cutoracle(vf), m, sp, cut)
+    store_cut(cutoracle(vf), m, sp, cut)
     addcuttoJuMPModel!(sp, cut)
 end
 
@@ -190,7 +190,7 @@ function rebuildsubproblem!(m::SDDPModel{DefaultValueFunction{C}}, sp::JuMP.Mode
     elseif n == 3
         m.build!(sp2, ex.stage, ex.markovstate)
     end
-    for cut in validcuts(vf.cutmanager)
+    for cut in valid_cuts(vf.cutmanager)
         addcuttoJuMPModel!(sp2, cut)
     end
     m.stages[ex.stage].subproblems[ex.markovstate] = sp2
