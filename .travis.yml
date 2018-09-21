@@ -1,31 +1,10 @@
-# Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
 os:
   - linux
-#  - osx
 julia:
-  # - release
   - 0.6
 notifications:
   email: false
-sudo: false
-cache:
-  directories:
-  - $HOME/usr
-addons:
-  apt_packages:
-  - gfortran
-env:
-  - MAKEFLAGS="-j3"
-    LD_LIBRARY_PATH=$HOME/usr/lib
-# uncomment the following lines to override the default test script
-#script:
-#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#  - julia -e 'Pkg.clone(pwd()); Pkg.build("SDDP"); Pkg.test("SDDP"; coverage=true)'
-before_cache:
-  - cp -R $HOME/.julia/*/Cbc/deps/usr $HOME
 after_success:
-  # push coverage results to Codecov
   - julia -e 'cd(Pkg.dir("SDDP")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
-  - julia -e 'Pkg.add("Documenter")'
-  - julia -e 'cd(Pkg.dir("SDDP")); include(joinpath("docs", "make.jl"))'
+  - julia -e 'cd(Pkg.dir("SDDP")); Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))'
