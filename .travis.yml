@@ -5,6 +5,10 @@ julia:
   - 0.6
 notifications:
   email: false
+branches:
+  only:
+    - master
+    - /^release-.*$/
 sudo: false
 addons:
   apt_packages:
