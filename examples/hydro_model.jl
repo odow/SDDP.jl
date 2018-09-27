@@ -51,7 +51,6 @@ graph = Kokako.Graph(
 # ========== The model ==========
 model = Kokako.PolicyGraph(
             graph = graph,
-            root_node_risk_measure = Kokako.Expectation(),
             optimizer = with_optimizer(GLPK.Optimizer),
             # jump_mode = Direct / Manual / Automatic?
             sense = :Min
@@ -82,17 +81,33 @@ model = Kokako.PolicyGraph(
 end
 
 Kokako.solve(model,
+    # Stop after K iterations.
     iteration_limit = 10,
+    # Stop after T seconds.
     time_limt = 20,
+    # A list of stopping rules.
     stopping_rules = [Kokako.BoundStalling(), Kokako.Statistical()],
+    # Cut selection techniques to be used at each node.
     cut_selection = Kokako.LevelOne(),
+    # A risk measure to use at the root node for returning the lower bound.
+    root_node_risk_measure = Kokako.Expectation(),
+    # A risk measure for each node.
     risk_measure = (index) -> index < 5 ? Kokako.Expectation() : Kokako.WorstCase(),
-    sampling_scheme = Kokako.Basic(),
+    # How to sample on the forward pass.
+    sampling_scheme = Kokako.MonteCarlo(),
+    # Control the level of logging to screen.
     print_level = 0,
+    # Pipe the log to a file.
     log_file = "log.txt",
+    # Write the cuts to a file.
     cut_output_file = "cuts.json"
 )
 
+# Query the termination status. One of:
+#    IterationLimit
+#    TimeLimit
+#    BoundStall
+#    Statistical
 Kokako.termination_status(model) == Kokako.IterationLimit
 
 # Single realization of historical (potentially out-of-sample) dataset.
