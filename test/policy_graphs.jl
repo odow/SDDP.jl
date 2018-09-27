@@ -1,15 +1,17 @@
 using Kokako, Test, GLPK
 
 @testset "Linear" begin
-    model = Kokako.PolicyGraph(Kokako.LinearGraph(2), direct_mode=false) do subproblem, stage
-        
+    model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
+                               direct_mode=false) do subproblem, stage
     end
 
-    @test_throws Exception Kokako.PolicyGraph(Kokako.LinearGraph(2)) do subproblem, stage
+    @test_throws Exception Kokako.PolicyGraph(Kokako.LinearGraph(2)
+                                                  ) do subproblem, stage
     end
 
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-        optimizer = with_optimizer(GLPK.Optimizer)) do subproblem, stage
+                               optimizer = with_optimizer(GLPK.Optimizer)
+                                   ) do subproblem, stage
     end
 end
 
@@ -23,7 +25,6 @@ end
         ]
     )
     model = Kokako.PolicyGraph(graph, direct_mode=false) do subproblem, stage
-
     end
 end
 
@@ -39,6 +40,5 @@ end
         ]
     )
     model = Kokako.PolicyGraph(graph, direct_mode=false) do subproblem, stage
-
     end
 end

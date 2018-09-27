@@ -10,8 +10,6 @@ struct State
     incoming::JuMP.VariableRef
     # The outgoing state variable in the subproblem.
     outgoing::JuMP.VariableRef
-    # The "fishing" constraint so we can query the dual.
-    fishing_dual  # TODO(odow): type this appropriately
 end
 
 struct Child
@@ -30,7 +28,7 @@ mutable struct NodeExtension
     # JuMP model based on the observation of the noise.
     parameterize::Function  # TODO(odow): make this a concrete type?
     # A list of the state variables in the model.
-    states::Vector{State}
+    states::Dict{Symbol, State}
 end
 
 struct PolicyGraph{T}
@@ -43,6 +41,10 @@ struct PolicyGraph{T}
     PolicyGraph(T) = new{T}(Float64[], Pair{T, Float64}[], Dict{T, JuMP.Model}())
 end
 
+function Base.getindex(graph::PolicyGraph{T}, index::T) where T
+    return graph.nodes[index]
+end
+
 function construct_subproblem(optimizer_factory, direct_mode::Bool)
     subproblem = if direct_mode
         instance = optimizer_factory.constructor(
@@ -51,8 +53,8 @@ function construct_subproblem(optimizer_factory, direct_mode::Bool)
     else
         JuMP.Model(optimizer_factory)
     end
-    ext = NodeExtension(Child[], Noise[], (sp, index)->(), State[])
-    subproblem.ext[:kokako] = ext
+    subproblem.ext[:kokako] = NodeExtension(Child[], Noise[], (sp, index)->(),
+        Dict{Symbol, State}())
     return subproblem
 end
 
@@ -63,8 +65,8 @@ function construct_subproblem(optimizer_factory::Nothing, direct_mode::Bool)
               "direct_mode=true.")
     end
     subproblem = JuMP.Model()
-    ext = NodeExtension(Child[], Noise[], (sp, index)->(), State[])
-    subproblem.ext[:kokako] = ext
+    subproblem.ext[:kokako] = NodeExtension(Child[], Noise[], (sp, index)->(),
+        Dict{Symbol, State}())
     return subproblem
 end
 extension(subproblem::JuMP.Model) = subproblem.ext[:kokako]::NodeExtension

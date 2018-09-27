@@ -36,32 +36,36 @@ indices = [(1,1), (1,2), (2,1), (2,2), (3,1), (3,2), (4,1), (4,2), (5,1), (5,2)]
 
 # ========== General graph ==========
 graph = Kokako.Graph(
-    root_node = :root,
-    nodes = [:stage_1, :stage_2, :stage_3],
-    edges = [
-        (:root, :stage_1) => 1.0,
-        (:stage_1, :stage_2) => 1.0,
-        (:stage_2, :stage_3) => 1.0,
-        (:stage_3, :stage_1) => 0.9
+    :root,
+    [:stage_1, :stage_2, :stage_3],
+    [
+        (:root => :stage_1, 1.0),
+        (:stage_1 => :stage_2, 1.0),
+        (:stage_2 => :stage_3, 1.0),
+        (:stage_3 => :stage_1, 0.9)
     ]
 )
 
 # ========== The model ==========
 model = Kokako.PolicyGraph(graph,
             optimizer = with_optimizer(GLPK.Optimizer),
-            # jump_mode = Direct / Manual / Automatic?
+            direct_mode = true,
             sense = :Min
                 ) do subproblem, index
-
-    @state(subproblem, 0 <= x′ <= 1, x==1)
-    @state(subproblem, y′, y==2)
-
-    # JuMP definitions
-    @variable(subproblem, u >= 0)
+    @variables(subproblem, begin
+        0 <= x′ <= 1,
+        x
+        y′
+        y
+        u >= 0
+    end)
     @constraints(subproblem, begin
         con, x′ == x + u
         y′ == y - u
     end)
+
+    Kokako.add_state_variable(subproblem, x, x′, :x)
+    Kokako.add_state_variable(subproblem, y, y′, :y)
 
     # Set a risk measure for the subproblem.
     Kokako.set_risk_measure(subproblem, Kokako.Expectation())
@@ -70,10 +74,9 @@ model = Kokako.PolicyGraph(graph,
     Kokako.parameterize(subproblem, Kokako.DiscreteDistribution(
             [1, 2, 3], [0.5, 0.2, 0.3])
             ) do ω
-        # We parameterize the JuMP model using JuMP syntax. The tricky thing is
-        # what to do with the stage objective...
+        # We parameterize the JuMP model using JuMP syntax.
         JuMP.setRHS(subproblem, con = ω)
-        @stageobjective(subproblem, ω * u)
+        Kokako.set_stage_objective(subproblem, ω * u)
     end
 end
 
