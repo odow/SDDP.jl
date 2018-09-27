@@ -1,8 +1,10 @@
 module Kokako
 
-using JuMP
+using Reexport
+@reexport using JuMP
 
 include("risk_measures.jl")
+include("graphs.jl")
 include("policy_graphs.jl")
 
 end

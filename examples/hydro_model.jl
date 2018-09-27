@@ -1,22 +1,20 @@
 using Kokako
 
 # ========== Linear policy graph ==========
-graph = Kokako.LinearGraph(stages = 5)
+graph = Kokako.LinearGraph(5)
 # For infinite horizon:
 Kokako.add_edge(graph, (5, 1) => 0.9)
 
 indices = [1, 2, 3, 4, 5]
 
 # ========== Markovian policy graph ==========
-graph = Kokako.MarkovianGraph(stages = 5,
-    transition_matrix = [
+graph = Kokako.MarkovianGraph([
         [1.0],
         [0.5, 0.5],
         [0.5 0.5; 0.3 0.4],
         [0.5 0.5; 0.3 0.4],
         [0.5 0.5; 0.3 0.4]
-    ],
-    root_node_transition = [1.0],  # Argument not needed.
+    ]
 )
 # For infinite horizon:
 Kokako.add_edge(graph, ((5, 1), (1, 1)) => 0.9)
