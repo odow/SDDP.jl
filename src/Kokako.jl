@@ -4,7 +4,6 @@ using Reexport
 @reexport using JuMP
 
 include("risk_measures.jl")
-include("graphs.jl")
-include("policy_graphs.jl")
-include("states.jl")
+include("user_interface.jl")
+
 end

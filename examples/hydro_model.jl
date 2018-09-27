@@ -3,13 +3,13 @@ using Kokako
 # ========== Linear policy graph ==========
 graph = Kokako.LinearGraph(5)
 # For infinite horizon:
-Kokako.add_edge(graph, (5, 1) => 0.9)
+Kokako.add_edge(graph, (5 => 1, 0.9)
 
 indices = [1, 2, 3, 4, 5]
 
 # ========== Markovian policy graph ==========
 graph = Kokako.MarkovianGraph([
-        [1.0],
+        reshape([1.0], 1, 1),
         [0.5, 0.5],
         [0.5 0.5; 0.3 0.4],
         [0.5 0.5; 0.3 0.4],
@@ -17,20 +17,21 @@ graph = Kokako.MarkovianGraph([
     ]
 )
 # For infinite horizon:
-Kokako.add_edge(graph, ((5, 1), (1, 1)) => 0.9)
-Kokako.add_edge(graph, ((5, 2), (1, 1)) => 0.9)
+Kokako.add_edge(graph, ((5, 1) => (1, 1), 0.9)
+Kokako.add_edge(graph, ((5, 2) => (1, 1), 0.9)
 
 indices = [(1,1), (2,1), (2,2), (3,1), (3,2), (4,1), (4,2), (5,1), (5,2)]
 
-graph = Kokako.MarkovianGraph(stages = 5,
+graph = Kokako.MarkovianGraph(
+    stages = 5,
     transition_matrix = [0.5 0.5; 0.3 0.4]
     root_node_transition = [0.5, 0.5]
 )
 # For infinite horizon:
-Kokako.add_edge(graph, ((5, 1), (1, 1)) => 0.4)
-Kokako.add_edge(graph, ((5, 2), (1, 1)) => 0.4)
-Kokako.add_edge(graph, ((5, 1), (1, 2)) => 0.4)
-Kokako.add_edge(graph, ((5, 2), (1, 2)) => 0.4)
+Kokako.add_edge(graph, ((5, 1) => (1, 1), 0.4)
+Kokako.add_edge(graph, ((5, 2) => (1, 1), 0.4)
+Kokako.add_edge(graph, ((5, 1) => (1, 2), 0.4)
+Kokako.add_edge(graph, ((5, 2) => (1, 2), 0.4)
 
 indices = [(1,1), (1,2), (2,1), (2,2), (3,1), (3,2), (4,1), (4,2), (5,1), (5,2)]
 
@@ -49,8 +50,7 @@ graph = Kokako.Graph(
 # ========== The model ==========
 model = Kokako.PolicyGraph(graph,
             optimizer = with_optimizer(GLPK.Optimizer),
-            direct_mode = true,
-            sense = :Min
+            direct_mode = true
                 ) do subproblem, index
     @variables(subproblem, begin
         0 <= x′ <= 1,
@@ -67,16 +67,11 @@ model = Kokako.PolicyGraph(graph,
     Kokako.add_state_variable(subproblem, x, x′, :x)
     Kokako.add_state_variable(subproblem, y, y′, :y)
 
-    # Set a risk measure for the subproblem.
-    Kokako.set_risk_measure(subproblem, Kokako.Expectation())
-
     # If not probability given in 3'rd argument, defaults to uniform.
-    Kokako.parameterize(subproblem, Kokako.DiscreteDistribution(
-            [1, 2, 3], [0.5, 0.2, 0.3])
-            ) do ω
+    Kokako.parameterize(subproblem, [1, 2, 3], [0.5, 0.2, 0.3]) do ω
         # We parameterize the JuMP model using JuMP syntax.
         JuMP.setRHS(subproblem, con = ω)
-        Kokako.set_stage_objective(subproblem, ω * u)
+        Kokako.set_stage_objective(subproblem, :Min, ω * u)
     end
 end
 
