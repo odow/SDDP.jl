@@ -3,11 +3,12 @@ using Kokako, Test
 @testset "Linear Graphs" begin
     graph = Kokako.LinearGraph(5)
     @test graph.root_node == 0
-    @test graph.nodes == [1, 2, 3, 4, 5]
-    for stage in 1:5
-        @test haskey(graph.edges, (stage - 1, stage))
-        @test graph.edges[(stage - 1, stage)] == 1.0
+    for stage in 0:4
+        @test haskey(graph.nodes, stage)
+        @test graph.nodes[stage] == [(stage+1, 1.0)]
     end
+    @test haskey(graph.nodes, 5)
+    @test graph.nodes[5] == Tuple{Int, Float64}[]
 end
 
 @testset "Markovian Graph" begin
@@ -34,7 +35,6 @@ end
         ])
         @test graph_1.root_node == graph_2.root_node
         @test graph_1.nodes == graph_2.nodes
-        @test graph_1.edges == graph_2.edges
     end
 end
 
@@ -42,11 +42,12 @@ end
     @testset "Construct Graph" begin
         graph = Kokako.Graph(:root)
         @test graph.root_node == :root
+        @test collect(keys(graph.nodes)) == [:root]
     end
     @testset "Add node" begin
         graph = Kokako.Graph(:root)
         Kokako.add_node(graph, :x)
-        @test graph.nodes == [:x]
+        @test collect(keys(graph.nodes)) == [:root, :x]
     end
     @testset "Add duplicate node" begin
         graph = Kokako.Graph(:root)
@@ -56,26 +57,30 @@ end
     @testset "Add edge" begin
         graph = Kokako.Graph(:root)
         Kokako.add_node(graph, :x)
-        Kokako.add_edge(graph, (:root, :x) => 1.0)
-        @test haskey(graph.edges, (:root, :x))
-        @test graph.edges[(:root, :x)] == 1.0
-        @test length(graph.edges) == 1
+        Kokako.add_edge(graph, :root => :x, 1.0)
+        @test haskey(graph.nodes, :root)
+        @test graph.nodes[:root] == [(:x, 1.0)]
     end
-    @testset "Add duplicate edge" begin
+    @testset "Add edge of wrong type" begin
         graph = Kokako.Graph(:root)
-        Kokako.add_node(graph, :x)
-        Kokako.add_edge(graph, (:root, :x) => 1.0)
-        @test_throws Exception Kokako.add_edge(graph, (:root, :x) => 0.9)
+        @test_throws Exception Kokako.add_node(graph, 1)
     end
     @testset "Add edge to missing node" begin
         graph = Kokako.Graph(:root)
         Kokako.add_node(graph, :x)
-        @test_throws Exception Kokako.add_edge(graph, (:x, :y) => 1.0)
-        @test_throws Exception Kokako.add_edge(graph, (:y, :x) => 1.0)
+        @test_throws Exception Kokako.add_edge(graph, :x => :y, 1.0)
+        @test_throws Exception Kokako.add_edge(graph, :y => :x, 1.0)
     end
     @testset "Add edge to root" begin
         graph = Kokako.Graph(:root)
         Kokako.add_node(graph, :x)
-        @test_throws Exception Kokako.add_edge(graph, (:x, :root) => 1.0)
+        @test_throws Exception Kokako.add_edge(graph, :x => :root, 1.0)
+    end
+    @testset "Invalid probability" begin
+        graph = Kokako.Graph(:root)
+        Kokako.add_node(graph, :x)
+        Kokako.add_edge(graph, :root => :x, 0.5)
+        Kokako.add_edge(graph, :root => :x, 0.75)
+        @test_throws Exception Kokako.validate_graph(graph)
     end
 end

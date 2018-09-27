@@ -47,8 +47,7 @@ graph = Kokako.Graph(
 )
 
 # ========== The model ==========
-model = Kokako.PolicyGraph(
-            graph = graph,
+model = Kokako.PolicyGraph(graph,
             optimizer = with_optimizer(GLPK.Optimizer),
             # jump_mode = Direct / Manual / Automatic?
             sense = :Min
