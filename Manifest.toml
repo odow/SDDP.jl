@@ -67,6 +67,12 @@ git-tree-sha1 = "8425a7d4e060bc2ded32d090bce910a187d6cce7"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
 version = "0.9.0"
 
+[[GLPK]]
+deps = ["BinaryProvider", "Compat", "Libdl", "LinQuadOptInterface", "Pkg"]
+git-tree-sha1 = "ca8bd74b621e124f0c2ca2837b98b0053e131006"
+uuid = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
+version = "0.8.2"
+
 [[InteractiveUtils]]
 deps = ["LinearAlgebra", "Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -84,6 +90,12 @@ uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 
 [[Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[[LinQuadOptInterface]]
+deps = ["Compat", "MathOptInterface", "Pkg"]
+git-tree-sha1 = "777c9d1c64b1fc5bd20b2b7b13b746c2c757df0d"
+uuid = "f8899e07-120b-5979-ab1d-7b97bb9e1a48"
+version = "0.4.0"
 
 [[LinearAlgebra]]
 deps = ["Libdl"]
