@@ -42,7 +42,8 @@ end
 
 Add an edge to the graph `graph`.
 """
-function add_edge(graph::Graph{T}, edge::Pair{T, T}, probability::Float64) where T
+function add_edge(graph::Graph{T}, edge::Pair{T, T},
+                  probability::Float64) where T
     (parent, child) = edge
     if !(parent == graph.root_node || haskey(graph.nodes, parent))
         error("Node $(parent) does not exist.")
@@ -135,9 +136,9 @@ function MarkovianGraph(; stages::Int = 1,
     )
 end
 
-struct Noise
+struct Noise{T}
     # The noise term.
-    term  # TODO(odow): make this a concrete type?
+    term::T
     # The probability of sampling the noise term.
     probability::Float64
 end
@@ -149,47 +150,46 @@ struct State
     outgoing::JuMP.VariableRef
 end
 
-struct Child
-    # The child node.
-    node::JuMP.Model
-    # The probability of transitioning to the child node from the parent.
-    probability::Float64
-end
-
-mutable struct NodeExtension
+mutable struct Node{T}
+    # The index of the node in the policy graph.
+    index::T
+    # The JuMP subproblem.
+    subproblem::JuMP.Model
     # A vector of the child nodes.
-    children::Vector{Child}
+    children::Vector{Noise{T}}
     # A vector of the discrete stagewise-independent noise terms.
     noise_terms::Vector{Noise}
-    # A function parameterize(model::JuMP.Model, noise::T) that modifies the
-    # JuMP model based on the observation of the noise.
+    # A function parameterize(model::JuMP.Model, noise) that modifies the JuMP
+    # model based on the observation of the noise.
     parameterize::Function  # TODO(odow): make this a concrete type?
     # A list of the state variables in the model.
     states::Dict{Symbol, State}
-    # Cost/value-to-go variable.
-    cost_to_go::JuMP.VariableRef
-end
-function init_node_extension(subproblem::JuMP.Model)
-    cost_to_go = @variable(subproblem)
-    subproblem.ext[:kokako] = NodeExtension(Child[], Noise[], (ω) -> nothing,
-                                            Dict{Symbol, State}(), cost_to_go)
-    return
+    # Stage objective
+    stage_objective  # TODO(odow): make this a concrete type?
+    # The optimization sense. Must be :Min or :Max.
+    optimization_sense::Symbol
 end
 
 struct PolicyGraph{T}
     # The value of the initial state variables.
     root_state::Vector{Float64}
     # Children of the root node. child => probability.
-    root_children::Vector{Pair{T, Float64}}
+    root_children::Vector{Noise{T}}
     # All nodes in the graph.
-    nodes::Dict{T, JuMP.Model}
-    PolicyGraph(T) = new{T}(Float64[], Pair{T, Float64}[], Dict{T, JuMP.Model}())
+    nodes::Dict{T, Node{T}}
+    PolicyGraph(T) = new{T}(Float64[], Noise{T}[], Dict{T, Node{T}}())
 end
 
+# So we can query nodes in the graph as graph[node].
 function Base.getindex(graph::PolicyGraph{T}, index::T) where T
     return graph.nodes[index]
 end
 
+function get_subproblem(graph::PolicyGraph{T}, index::T) where T
+    return graph[index].subproblem::JuMP.Model
+end
+
+# Work around different JuMP modes (Automatic / Manual / Direct).
 function construct_subproblem(optimizer_factory, direct_mode::Bool)
     subproblem = if direct_mode
         instance = optimizer_factory.constructor(
@@ -198,22 +198,44 @@ function construct_subproblem(optimizer_factory, direct_mode::Bool)
     else
         JuMP.Model(optimizer_factory)
     end
-    init_node_extension(subproblem)
     return subproblem
 end
 
+# Work around different JuMP modes (Automatic / Manual / Direct).
 function construct_subproblem(optimizer_factory::Nothing, direct_mode::Bool)
     if direct_mode
         error("You must specify an optimizer in the form:\n" *
               "    with_optimizer(Module.Opimizer, args...) if " *
               "direct_mode=true.")
     end
-    subproblem = JuMP.Model()
-    init_node_extension(subproblem)
-    return subproblem
+    return JuMP.Model()
 end
-extension(subproblem::JuMP.Model) = subproblem.ext[:kokako]::NodeExtension
 
+"""
+    PolicyGraph(builder::Function, graph::Graph{T};
+                optimizer = nothing,
+                direct_mode = true) where T
+
+Construct a a policy graph based on the graph structure of `graph`. (See `Graph`
+for details.)
+
+# Example
+
+    function builder(subproblem::JuMP.Model, index)
+        # ... subproblem definition ...
+    end
+    model = PolicyGraph(builder, graph;
+                        optimizer = with_optimizer(GLPK.Optimizer),
+                        direct_mode = false)
+
+Or, using the Julia `do ... end` syntax:
+
+    model = PolicyGraph(graph;
+                        optimizer = with_optimizer(GLPK.Optimizer),
+                        direct_mode = true) do subproblem, index
+        # ... subproblem definitions ...
+    end
+"""
 function PolicyGraph(builder::Function, graph::Graph{T};
                      optimizer = nothing,
                      direct_mode = true) where T
@@ -224,61 +246,127 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             continue
         end
         subproblem = construct_subproblem(optimizer, direct_mode)
+        policy_graph.nodes[node_index] = Node(
+            node_index,
+            subproblem,
+            Noise{T}[],
+            Noise[],
+            (ω) -> nothing,
+            Dict{Symbol, State}(),
+            nothing,
+            :Min
+        )
+        subproblem.ext[:kokako_policy_graph] = policy_graph
+        subproblem.ext[:kokako_node] = policy_graph.nodes[node_index]
         builder(subproblem, node_index)
-        policy_graph.nodes[node_index] = subproblem
     end
     # Loop back through and add the arcs/children.
     for (node_index, children) in graph.nodes
         if node_index == graph.root_node
             continue
         end
-        ext = extension(policy_graph.nodes[node_index])
+        node = policy_graph.nodes[node_index]
         for (child, probability) in children
-            push!(ext.children,
-                Child(policy_graph.nodes[child], probability))
+            push!(node.children, Noise(child, probability))
         end
     end
     # Add root nodes
     for (child, probability) in graph.nodes[graph.root_node]
-        push!(policy_graph.root_children, child => probability)
+        push!(policy_graph.root_children, Noise(child, probability))
     end
     return policy_graph
 end
 
+function get_node(subproblem::JuMP.Model)
+    return subproblem.ext[:kokako_node]::Node
+end
+
+"""
+    add_state_variable(subproblem::JuMP.Model,
+                       name::Symbol,
+                       incoming::JuMP.VariableRef,
+                       outgoing::JuMP.VariableRef)
+
+Add the incoming state variable `incoming` and outgoing state variable
+`outgoing` to `subproblem` and call it `name`. If there are multiple state
+variables, `name` must be unique.
+
+# Example
+
+    @variable(subproblem, x)
+    @variable(subproblem, x′)
+    Kokako.add_state_variable(subproblem, :x, x, x′)
+"""
 function add_state_variable(subproblem::JuMP.Model,
                             name::Symbol,
                             incoming::JuMP.VariableRef,
                             outgoing::JuMP.VariableRef)
-    states = extension(subproblem).states
+    node = get_node(subproblem)
     JuMP.fix(incoming, 0.0)  # Fix the variable value.
-    if haskey(states, name)
+    if haskey(node.states, name)
         error("The state $(name) already exists.")
     else
-        states[name] = State(incoming, outgoing)
+        node.states[name] = State(incoming, outgoing)
     end
     return
 end
 
+"""
+    parameterize(modify::Function,
+                 subproblem::JuMP.Model,
+                 realizations::Vector{T},
+                 probability::Vector{Float64} = fill(1.0 / length(realizations))
+                     ) where T
+
+Add a parameterization function `modify` to `subproblem`. The `modify` function
+takes one argument and modifies `subproblem` based on the realization of the
+noise sampled from `realizations` with corresponding probabilities
+`probability`.
+
+In order to conduct an out-of-sample simulation, `modify` should accept
+arguments that are not in realizations (but still of type T).
+
+# Example
+
+    Kokako.parameterize(subproblem, [1, 2, 3], [0.4, 0.3, 0.3]) do ω
+        JuMP.set_upper_bound(x, ω)
+    end
+"""
 function parameterize(modify::Function,
                       subproblem::JuMP.Model,
                       realizations::Vector{T},
                       probability::Vector{Float64} = fill(1.0 / length(realizations))
                           ) where T
-    ext = extension(subproblem)
-    if length(ext.noise_terms) != 0
+    node = get_node(subproblem)
+    if length(node.noise_terms) != 0
         error("Duplicate calls to Kokako.parameterize detected. Only " *
               "a subproblem at most one time.")
     end
     for (realization, prob) in zip(realizations, probability)
-        push!(ext.noise_terms, Noise(realization, prob))
+        push!(node.noise_terms, Noise(realization, prob))
     end
-    ext.parameterize = modify
+    node.parameterize = modify
     return
 end
 
-function set_stage_objective(subproblem::JuMP.Model, sense::Symbol, stage_objective)
-    cost_to_go = extension(subproblem).cost_to_go
-    expr = @expression(subproblem, stage_objective + cost_to_go)
-    JuMP.set_objective(subproblem, sense, expr)
+"""
+    set_stage_objective(subproblem::JuMP.Model, sense::Symbol,
+                        stage_objective)
+
+Set the stage-objective of `subproblem` to `stage_objective` and the
+optimization sense to `sense` (which must be `:Min` or `:Max`).
+
+# Example
+
+    Kokako.set_stage_objective(subproblem, :Min, 2x + 1)
+"""
+function set_stage_objective(subproblem::JuMP.Model, sense::Symbol,
+                             stage_objective)
+    if !(sense == :Min || sense == :Max)
+        error("The optimization sense must be :Min or :Max. It is $(sense).")
+    end
+    node = get_node(subproblem)
+    node.stage_objective = stage_objective
+    node.optimization_sense = sense
     return
 end

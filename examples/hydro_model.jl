@@ -64,65 +64,65 @@ model = Kokako.PolicyGraph(graph,
         y′ == y - u
     end)
 
-    Kokako.add_state_variable(subproblem, x, x′, :x)
-    Kokako.add_state_variable(subproblem, y, y′, :y)
+    Kokako.add_state_variable(subproblem, :x, x, x′)
+    Kokako.add_state_variable(subproblem, :y, y, y′)
 
     # If not probability given in 3'rd argument, defaults to uniform.
     Kokako.parameterize(subproblem, [1, 2, 3], [0.5, 0.2, 0.3]) do ω
         # We parameterize the JuMP model using JuMP syntax.
-        JuMP.setRHS(subproblem, con = ω)
+        # JuMP.setRHS(subproblem, con = ω)
         Kokako.set_stage_objective(subproblem, :Min, ω * u)
     end
 end
 
-Kokako.solve(model,
-    # Stop after K iterations.
-    iteration_limit = 10,
-    # Stop after T seconds.
-    time_limt = 20,
-    # A list of stopping rules.
-    stopping_rules = [Kokako.BoundStalling(), Kokako.Statistical()],
-    # Cut selection techniques to be used at each node.
-    cut_selection = Kokako.LevelOne(),
-    # A risk measure to use at the root node for returning the lower bound.
-    root_node_risk_measure = Kokako.Expectation(),
-    # A risk measure for each node.
-    risk_measure = (index) -> index < 5 ? Kokako.Expectation() : Kokako.WorstCase(),
-    # How to sample on the forward pass.
-    sampling_scheme = Kokako.MonteCarlo(),
-    # Control the level of logging to screen.
-    print_level = 0,
-    # Pipe the log to a file.
-    log_file = "log.txt",
-    # Write the cuts to a file.
-    cut_output_file = "cuts.json"
-)
-
-# Query the termination status. One of:
-#    IterationLimit
-#    TimeLimit
-#    BoundStall
-#    Statistical
-Kokako.termination_status(model) == Kokako.IterationLimit
-
-# Single realization of historical (potentially out-of-sample) dataset.
-Kokako.simulate(model,
-    sampling_scheme = Kokako.Historical(
-        nodes = [1, 2, 3, 4, 5],
-        noise = [1, 2, 4, 3, 2]
-    )
-)
-
-# 100 Monte Carlo replications.
-Kokako.simulate(model,
-    sampling_scheme = Kokako.MonteCarlo(100)
-)
-
-# 100 Monte Carlo replications using a different distribution.
-Kokako.simulate(model,
-    sampling_scheme = Kokako.MonteCarlo(100,
-        (index) -> Kokako.DiscreteDistribution(
-            [4, 5, 6], [0.4, 0.3, 0.3]
-        )
-    )
-)
+# Kokako.solve(model,
+#     # Stop after K iterations.
+#     iteration_limit = 10,
+#     # Stop after T seconds.
+#     time_limt = 20,
+#     # A list of stopping rules.
+#     stopping_rules = [Kokako.BoundStalling(), Kokako.Statistical()],
+#     # Cut selection techniques to be used at each node.
+#     cut_selection = Kokako.LevelOne(),
+#     # A risk measure to use at the root node for returning the lower bound.
+#     root_node_risk_measure = Kokako.Expectation(),
+#     # A risk measure for each node.
+#     risk_measure = (index) -> index < 5 ? Kokako.Expectation() : Kokako.WorstCase(),
+#     # How to sample on the forward pass.
+#     sampling_scheme = Kokako.MonteCarlo(),
+#     # Control the level of logging to screen.
+#     print_level = 0,
+#     # Pipe the log to a file.
+#     log_file = "log.txt",
+#     # Write the cuts to a file.
+#     cut_output_file = "cuts.json"
+# )
+#
+# # Query the termination status. One of:
+# #    IterationLimit
+# #    TimeLimit
+# #    BoundStall
+# #    Statistical
+# Kokako.termination_status(model) == Kokako.IterationLimit
+#
+# # Single realization of historical (potentially out-of-sample) dataset.
+# Kokako.simulate(model,
+#     sampling_scheme = Kokako.Historical(
+#         nodes = [1, 2, 3, 4, 5],
+#         noise = [1, 2, 4, 3, 2]
+#     )
+# )
+#
+# # 100 Monte Carlo replications.
+# Kokako.simulate(model,
+#     sampling_scheme = Kokako.MonteCarlo(100)
+# )
+#
+# # 100 Monte Carlo replications using a different distribution.
+# Kokako.simulate(model,
+#     sampling_scheme = Kokako.MonteCarlo(100,
+#         (index) -> Kokako.DiscreteDistribution(
+#             [4, 5, 6], [0.4, 0.3, 0.3]
+#         )
+#     )
+# )

@@ -3,7 +3,12 @@ module Kokako
 using Reexport
 @reexport using JuMP
 
-include("risk_measures.jl")
+# Modelling interface.
 include("user_interface.jl")
+
+# SDDP related utilities.
+include("risk_measures.jl")
+include("sampling_schemes.jl")
+# include("solve.jl")
 
 end

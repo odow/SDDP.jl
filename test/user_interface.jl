@@ -142,10 +142,10 @@ end
     end
     for stage in 1:2
         node = model[stage]
-        ext = Kokako.extension(node)
-        @test haskey(ext.states, :x)
-        @test length(keys(ext.states)) == 1
-        @test ext.states[:x] == Kokako.State(node[:x], node[:x′])
+        @test haskey(node.states, :x)
+        @test length(keys(node.states)) == 1
+        @test node.states[:x] == Kokako.State(node.subproblem[:x],
+                                              node.subproblem[:x′])
     end
 end
 
@@ -158,22 +158,42 @@ end
         end
     end
     node = model[2]
-    ext = Kokako.extension(node)
-    @test length(ext.noise_terms) == 3
-    @test JuMP.upper_bound(node[:x]) == 1
-    ext.parameterize(ext.noise_terms[2].term)
-    @test JuMP.upper_bound(node[:x]) == 2
-    ext.parameterize(3)
-    @test JuMP.upper_bound(node[:x]) == 3
+    @test length(node.noise_terms) == 3
+    @test JuMP.upper_bound(node.subproblem[:x]) == 1
+    node.parameterize(node.noise_terms[2].term)
+    @test JuMP.upper_bound(node.subproblem[:x]) == 2
+    node.parameterize(3)
+    @test JuMP.upper_bound(node.subproblem[:x]) == 3
 end
 
 @testset "Kokako.set_stage_objective" begin
-    model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               direct_mode=false) do node, stage
-        @variable(node, 0 <= x <= 1)
-        Kokako.set_stage_objective(node, :Min, 2x)
+    @testset ":Min" begin
+        model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
+                                   direct_mode=false) do node, stage
+            @variable(node, 0 <= x <= 1)
+            Kokako.set_stage_objective(node, :Min, 2x)
+        end
+        node = model[2]
+        @test node.stage_objective == 2 * node.subproblem[:x]
+        @test node.optimization_sense == :Min
     end
-    node = model[2]
-    @test JuMP.objective_function(node, typeof(2 * node[:x])) ==
-        2 * node[:x] + Kokako.extension(node).cost_to_go
+
+    @testset ":Max" begin
+        model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
+                                   direct_mode=false) do node, stage
+            @variable(node, 0 <= x <= 1)
+            Kokako.set_stage_objective(node, :Max, 2x)
+        end
+        node = model[2]
+        @test node.stage_objective == 2 * node.subproblem[:x]
+        @test node.optimization_sense == :Max
+    end
+
+    @testset ":Min" begin
+        @test_throws Exception Kokako.PolicyGraph(Kokako.LinearGraph(2),
+                                   direct_mode=false) do node, stage
+            @variable(node, 0 <= x <= 1)
+            Kokako.set_stage_objective(node, :BadSense, 2x)
+        end
+    end
 end
