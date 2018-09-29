@@ -6,9 +6,11 @@ using Reexport
 # Modelling interface.
 include("user_interface.jl")
 
-# SDDP related utilities.
+# SDDP related modular utilities.
 include("risk_measures.jl")
 include("sampling_schemes.jl")
-# include("solve.jl")
+
+# The core SDDP code.
+include("SDDP.jl")
 
 end

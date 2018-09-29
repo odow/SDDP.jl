@@ -1,7 +1,7 @@
 abstract type AbstractSamplingScheme end
 
 """
-    sample_scenario(::AbstractSamplingScheme, graph::PolicyGraph{T};
+    sample_scenario(graph::PolicyGraph{T}, ::AbstractSamplingScheme;
                     max_cycles::Int = 1) where T
 
 Sample a scenario from the policy graph `graph`. If the graph is cyclic, return
@@ -11,8 +11,8 @@ The scenario is a list of tuples (type `Vector{Tuple{T, Any}}`) where the first
 component of each tuple is the index of the node, and the second component is
 the stagewise-independent noise term observed in that node.
 """
-function sample_scenario(sampling_scheme::AbstractSamplingScheme,
-                         graph::PolicyGraph{T};
+function sample_scenario(graph::PolicyGraph{T},
+                         sampling_scheme::AbstractSamplingScheme;
                          max_cycles::Int = 1) where T
     error("You need to overload the function Kokako.sample_scenario for the " *
           "sampling scheme (sampling_scheme).")
@@ -39,7 +39,7 @@ function sample_noise(::MonteCarlo, noise_terms::Vector{<:Noise})
           " using Kokako.MonteCarlo().")
 end
 
-function sample_scenario(sampling_scheme::MonteCarlo, graph::PolicyGraph{T};
+function sample_scenario(graph::PolicyGraph{T}, sampling_scheme::MonteCarlo;
                          max_cycles::Int = 1) where T
     scenario_path = Tuple{T, Any}[]
     visited_nodes = Set{T}()

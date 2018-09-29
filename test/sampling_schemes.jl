@@ -9,7 +9,7 @@ using Kokako, Test
                 JuMP.set_upper_bound(x, ω)
             end
         end
-        scenario = Kokako.sample_scenario(Kokako.MonteCarlo(), model)
+        scenario = Kokako.sample_scenario(model, Kokako.MonteCarlo())
         @test length(scenario) == 2
         for (stage, (node, noise)) in enumerate(scenario)
             @test stage == node
@@ -26,7 +26,7 @@ using Kokako, Test
                 JuMP.set_upper_bound(x, ω)
             end
         end
-        scenario = Kokako.sample_scenario(Kokako.MonteCarlo(), model,
+        scenario = Kokako.sample_scenario(model, Kokako.MonteCarlo(),
                                           max_cycles = 2)
         @test length(scenario) == 4
         for (index, (node, noise)) in enumerate(scenario)
