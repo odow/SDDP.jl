@@ -351,7 +351,7 @@ arguments that are not in realizations (but still of type T).
 function parameterize(modify::Function,
                       subproblem::JuMP.Model,
                       realizations::AbstractVector{T},
-                      probability::AbstractVector{Float64} = fill(1.0 / length(realizations))
+                      probability::AbstractVector{Float64} = fill(1.0 / length(realizations), length(realizations))
                           ) where T
     node = get_node(subproblem)
     if length(node.noise_terms) != 0
@@ -385,4 +385,21 @@ function set_stage_objective(subproblem::JuMP.Model, sense::Symbol,
     node.stage_objective = stage_objective
     node.optimization_sense = sense
     return
+end
+
+macro stageobjective(subproblem, sense, expr)
+    sense = Expr(:quote, sense)
+    code = quote
+        set_stage_objective(
+            $(esc(subproblem)),
+            $(esc(sense)),
+            $(Expr(:macrocall,
+                Symbol("@expression"),
+                :LineNumber,
+                esc(subproblem),
+                esc(expr)
+            ))
+        )
+    end
+    return code
 end

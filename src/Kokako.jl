@@ -5,6 +5,8 @@ using Reexport
 
 using JSON, Logging
 
+export @stageobjective
+
 # Modelling interface.
 include("user_interface.jl")
 

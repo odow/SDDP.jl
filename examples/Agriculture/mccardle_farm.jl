@@ -131,9 +131,8 @@ function test_mccardle_farm_model()
         :bales_3 => 0.0
     )
     status = Kokako.train(model,
-        iteration_limit = 20,
-        initial_state = initial_state,
-        print_level = 1
+        iteration_limit = 50,
+        initial_state = initial_state
     )
     @test status == :iteration_limit
     lower_bound = Kokako.calculate_bound(model, initial_state)

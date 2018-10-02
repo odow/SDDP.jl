@@ -171,7 +171,7 @@ end
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
                                    direct_mode=false) do node, stage
             @variable(node, 0 <= x <= 1)
-            Kokako.set_stage_objective(node, :Min, 2x)
+            @stageobjective(node, Min, 2x)
         end
         node = model[2]
         @test node.stage_objective == 2 * node.subproblem[:x]
@@ -182,18 +182,18 @@ end
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
                                    direct_mode=false) do node, stage
             @variable(node, 0 <= x <= 1)
-            Kokako.set_stage_objective(node, :Max, 2x)
+            @stageobjective(node, Max, 2x)
         end
         node = model[2]
         @test node.stage_objective == 2 * node.subproblem[:x]
         @test node.optimization_sense == :Max
     end
 
-    @testset ":Min" begin
+    @testset "Exception" begin
         @test_throws Exception Kokako.PolicyGraph(Kokako.LinearGraph(2),
                                    direct_mode=false) do node, stage
             @variable(node, 0 <= x <= 1)
-            Kokako.set_stage_objective(node, :BadSense, 2x)
+            @stageobjective(node, BadSense, 2x)
         end
     end
 end
