@@ -1,8 +1,20 @@
-struct Options{SamplingScheme}
+struct Options{SamplingScheme, T}
     initial_state::Dict{Symbol, Float64}
     sampling_scheme::SamplingScheme
+    starting_states::Dict{T, Vector{Dict{Symbol, Float64}}}
+    function Options(policy_graph::PolicyGraph{T},
+                     initial_state::Dict{Symbol, Float64},
+                     sampling_scheme::S) where {T, S}
+        starting_states = Dict{T, Vector{Dict{Symbol, Float64}}}()
+        for node_index in keys(policy_graph.nodes)
+            starting_states[node_index] = Dict{Symbol, Float64}[]
+        end
+        return new{S, T}(initial_state, sampling_scheme, starting_states)
+    end
 end
 
+# Internal function: set the incoming state variables of node to the values
+# contained in state.
 function set_incoming_state(node::Node, state::Dict{Symbol, Float64})
     for (state_name, value) in state
         JuMP.fix(node.states[state_name].incoming, value)
@@ -10,6 +22,9 @@ function set_incoming_state(node::Node, state::Dict{Symbol, Float64})
     return
 end
 
+# Internal function: get the values of the outgoing state variables in node.
+# Requires node.subproblem to have been solved with PrimalStatus ==
+# FeasiblePoint.
 function get_outgoing_state(node::Node)
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
@@ -18,6 +33,9 @@ function get_outgoing_state(node::Node)
     return values
 end
 
+# Internal function: get the values of the dual variables associated with the
+# fixed incoming state variables. Requires node.subproblem to have been solved
+# with DualStatus == FeasiblePoint.
 function get_dual_variables(node::Node)
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
@@ -26,22 +44,34 @@ function get_dual_variables(node::Node)
     return values
 end
 
+
+# Internal function: set the objective of node to the stage objective, plus the
+# cost/value-to-go term.
 function set_objective(node::Node)
-    JuMP.set_objective(node.subproblem, node.optimization_sense,
-                      node.stage_objective)  # TODO(odow) + bellman_term(node.bellman_function))
+    JuMP.set_objective(
+        node.subproblem,
+        node.optimization_sense,
+        node.stage_objective + bellman_term(node.bellman_function)
+    )
 end
 
-function solve_subproblem(graph::PolicyGraph{T}, node, state, noise,
+# Internal function: solve the subproblem associated with node given the
+# incoming state variables state and realization of the stagewise-independent
+# noise term noise. If require_duals=true, also return the dual variables
+# associated with the fixed constraint of the incoming state variables.
+function solve_subproblem(graph::PolicyGraph{T},
+                          node::Node{T},
+                          state::Dict{Symbol, Float64},
+                          noise,
                           require_duals::Bool = false) where T
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
     # set the objective. Note that we set the objective every time incase
     # the user calls set_stage_objective in the parameterize function.
-    #
-    # TODO(odow): cache the need to call set_objective. Only call it if the
-    # objective changes.
     set_incoming_state(node, state)
     node.parameterize(noise)
+    # TODO(odow): cache the need to call set_objective. Only call it if the
+    # objective changes.
     set_objective(node)
     JuMP.optimize!(node.subproblem)
     # Test for primal feasibility.
@@ -50,8 +80,6 @@ function solve_subproblem(graph::PolicyGraph{T}, node, state, noise,
         error("Unable to solve node $(node.index). Primal status: " *
               "$(primal_status).")
     end
-    state = get_outgoing_state(node)
-    stage_objective = JuMP.result_value(node.stage_objective)
     dual_values = if require_duals
         dual_status = JuMP.dual_status(node.subproblem)
         if dual_status != JuMP.MOI.FeasiblePoint
@@ -62,9 +90,14 @@ function solve_subproblem(graph::PolicyGraph{T}, node, state, noise,
     else
         Dict{Symbol, Float64}()
     end
-    return state, dual_values, stage_objective
+    return get_outgoing_state(node),  # The outgoing state variable x'.
+           dual_values,  # The dual variables on the incoming state variables.
+           JuMP.result_value(node.stage_objective),  # C(x, u, ω)
+           JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
 end
 
+# Internal function: perform a single forward pass of the SDDP algorithm given
+# options.
 function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     @debug "Beginning forward pass."
     scenario_path = sample_scenario(graph, options.sampling_scheme)
@@ -75,58 +108,148 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     for (node_index, noise) in scenario_path
         @debug "Solving $(node_index) with noise=$(noise) on forward pass."
         node = graph[node_index]
-        state, duals, stage_objective = solve_subproblem(graph, node, state, noise)
+        state, duals, stage_objective, objective = solve_subproblem(graph, node, state, noise)
         cumulative_value += stage_objective
         push!(sampled_states, state)
     end
     return scenario_path, sampled_states, cumulative_value
 end
 
-function backward_pass(graph::PolicyGraph{T}, options::Options,
-                       scenario_path,
-                       sampled_states::Vector{Dict{Symbol, Float64}})
+# Internal function: perform a backward pass of the SDDP algorithm along the
+# scenario_path, refining the bellman function at sampled_states.
+function backward_pass(graph::PolicyGraph{T},
+                       options::Options,
+                       scenario_path::Vector{Tuple{T, NoiseType}},
+                       sampled_states::Vector{Dict{Symbol, Float64}},
+                       risk_measures
+                           ) where {T, NoiseType}
     for index in (length(scenario_path)-1):-1:1
+        # Lookup node, noise realization, and outgoing state variables.
         node_index, noise = scenario_path[index]
-        state = sampled_states[index]
+        outgoing_state = sampled_states[index]
         node = graph[node_index]
-
-        noise_supports = []
-        original_probability = []
+        # Initialization.
+        noise_supports = NoiseType[]
+        original_probability = Float64[]
         dual_variables = Dict{Symbol, Float64}[]
         objective_realizations = Float64[]
+        # Solve all children.
         for child in node.children
             child_node = graph[child.term]
             for noise in child_node.noise_terms
-                outgoing_state, duals, obj = solve_subproblem(graph, child_node,
-                                                              state, noise.term)
+                outgoing_state, duals, stage_obj, obj = solve_subproblem(
+                    graph, child_node, outgoing_state, noise.term)
                 push!(dual_variables, duals)
                 push!(noise_supports, noise.term)
-                push!(original_probability, child.probabiltiy * noise.probability)
+                push!(original_probability, child.probability * noise.probability)
                 push!(objective_realizations, obj)
             end
         end
-        # refine_bellman_function(graph,
-        #                         node,
-        #                         state,
-        #                         dual_variables,
-        #                         noise_supports,
-        #                         original_probability,
-        #                         objective_realizations)
+        # TODO(odow): refine the bellman function at other nodes with the same
+        # children, e.g., in the same stage of a Markovian policy graph.
+        refine_bellman_function(
+            graph,
+            node,
+            node.bellman_function,
+            get_per_node(risk_measures, node_index),
+            outgoing_state,
+            dual_variables,
+            noise_supports,
+            original_probability,
+            objective_realizations)
     end
 end
-# function solve(graph::PolicyGraph;
-#                iteration_limit = 100_000,
-#                time_limit = Inf,
-#                stopping_rules = [],
-#                cut_selection = nothing,
-#                risk_measure = Kokako.Expectation(),
-#                sampling_scheme = Kokako.MonteCarlo(),
-#                print_level = 0,
-#                log_file = "log.txt",
-#                cut_file = "cuts.csv")
-#     status = :not_solved
-#     # while !convergence_test(graph)
-#     #     iteration(graph, options)
-#     # end
-#     return status
-# end
+
+"""
+    Kokako.calculate_bound(graph::PolicyGraph, state::Dict{Symbol, Float64},
+                           risk_measure=Expectation())
+
+Calculate the lower bound (if minimizing, otherwise upper bound) of the problem
+graph at the point state, assuming the risk measure at the root node is
+risk_measure.
+"""
+function calculate_bound(graph::PolicyGraph, state::Dict{Symbol, Float64},
+                         risk_measure=Expectation())
+    noise_supports = Any[]
+    probabilities = Float64[]
+    objectives = Float64[]
+    for child in graph.root_children
+        node = graph[child.term]
+        for noise in node.noise_terms
+            outgoing_state, duals, stage_obj, obj = solve_subproblem(
+                graph, node, state, noise.term)
+            push!(objectives, obj)
+            push!(probabilities, child.probability * noise.probability)
+            push!(noise_supports, noise.term)
+        end
+    end
+    risk_adjusted_probability = similar(probabilities)
+    adjust_probability(risk_measure,
+                       risk_adjusted_probability,
+                       probabilities,
+                       noise_supports,
+                       objectives,
+                       true)  # TODO(odow): objective sense at root node.
+    return sum(obj * prob for (obj, prob) in
+        zip(objectives, risk_adjusted_probability))
+end
+
+# Internal functions: helpers so users can pass arguments like:
+# risk_measure = Kokako.Expectation(),
+# risk_measure = Dict(1=>Expectation(), 2=>WorstCase())
+# risk_measure = (node_index) -> node_index == 1 ? Expectation() : WorstCase()
+get_per_node(collection, node_index) = collection
+get_per_node(collection::Dict{T, <:Any}, node_index::T) where T = collection[node_index]
+get_per_node(collection::Function, node_index::T) where T = collection(node_index)
+
+function train(graph::PolicyGraph;
+               iteration_limit = 100_000,
+               time_limit = Inf,
+               stopping_rules = AbstractStoppingRules[],
+               initial_state = nothing,
+               # cut_selection = nothing,
+               risk_measure = Kokako.Expectation(),
+               sampling_scheme = Kokako.MonteCarlo(),
+               # log_level = Logging.Info,
+               # log_file = "log.txt",
+               # cut_file = "cuts.csv"
+               )
+    if initial_state === nothing
+        error("You must specify an initial state in the form Dict(:x=>1).")
+    end
+    print_banner()
+    options = Options(graph, initial_state, sampling_scheme)
+    status = :not_solved
+    start_time = time()
+    iteration_count = 1
+    try
+        while true
+            @debug "Beginning iteration $(iteration_count)."
+            should_stop, status = convergence_test(graph, stopping_rules)
+            if should_stop
+                break
+            end
+            if time() - start_time > time_limit
+                status = :time_limit
+                break
+            end
+            if iteration_count > iteration_limit
+                status = :iteration_limit
+                break
+            end
+            scenario_path, sampled_states, cumulative_value = forward_pass(graph, options)
+            backward_pass(graph, options, scenario_path, sampled_states, risk_measure)
+            bound = calculate_bound(graph, initial_state)
+            print_iteration(iteration_count, cumulative_value, bound)
+            iteration_count += 1
+        end
+    catch ex
+        if isa(ex, InterruptException)
+            @warn("Terminating solve due to user interaction.")
+            status = :interrupted
+        else
+            rethrow(ex)
+        end
+    end
+    return status
+end

@@ -168,16 +168,16 @@ mutable struct Node{T}
     stage_objective  # TODO(odow): make this a concrete type?
     # The optimization sense. Must be :Min or :Max.
     optimization_sense::Symbol
+    # Bellman function
+    bellman_function  # TODO(odow): make this a concrete type?
 end
 
 struct PolicyGraph{T}
-    # The value of the initial state variables.
-    root_state::Vector{Float64}
     # Children of the root node. child => probability.
     root_children::Vector{Noise{T}}
     # All nodes in the graph.
     nodes::Dict{T, Node{T}}
-    PolicyGraph(T) = new{T}(Float64[], Noise{T}[], Dict{T, Node{T}}())
+    PolicyGraph(T) = new{T}(Noise{T}[], Dict{T, Node{T}}())
 end
 
 # So we can query nodes in the graph as graph[node].
@@ -213,6 +213,7 @@ end
 
 """
     PolicyGraph(builder::Function, graph::Graph{T};
+                bellman_function = AverageCut,
                 optimizer = nothing,
                 direct_mode = true) where T
 
@@ -225,18 +226,21 @@ for details.)
         # ... subproblem definition ...
     end
     model = PolicyGraph(builder, graph;
+                        bellman_function = AverageCut,
                         optimizer = with_optimizer(GLPK.Optimizer),
                         direct_mode = false)
 
 Or, using the Julia `do ... end` syntax:
 
     model = PolicyGraph(graph;
+                        bellman_function = AverageCut,
                         optimizer = with_optimizer(GLPK.Optimizer),
                         direct_mode = true) do subproblem, index
         # ... subproblem definitions ...
     end
 """
 function PolicyGraph(builder::Function, graph::Graph{T};
+                     bellman_function = AverageCut,
                      optimizer = nothing,
                      direct_mode = true) where T
     policy_graph = PolicyGraph(T)
@@ -246,7 +250,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             continue
         end
         subproblem = construct_subproblem(optimizer, direct_mode)
-        policy_graph.nodes[node_index] = Node(
+        node = Node(
             node_index,
             subproblem,
             Noise{T}[],
@@ -254,10 +258,15 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             (ω) -> nothing,
             Dict{Symbol, State}(),
             nothing,
-            :Min
+            :Min,
+            # Delay initializing the bellman function until later so that it can
+            # use information about the children and number of
+            # stagewise-independent noise realizations.
+            nothing
+
         )
         subproblem.ext[:kokako_policy_graph] = policy_graph
-        subproblem.ext[:kokako_node] = policy_graph.nodes[node_index]
+        policy_graph.nodes[node_index] = subproblem.ext[:kokako_node] = node
         builder(subproblem, node_index)
     end
     # Loop back through and add the arcs/children.
@@ -269,6 +278,9 @@ function PolicyGraph(builder::Function, graph::Graph{T};
         for (child, probability) in children
             push!(node.children, Noise(child, probability))
         end
+        # Intialize the bellman function. (See note in creation of Node above.)
+        node.bellman_function = initialize_bellman_function(
+            bellman_function, policy_graph, node)
     end
     # Add root nodes
     for (child, probability) in graph.nodes[graph.root_node]

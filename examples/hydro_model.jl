@@ -49,6 +49,7 @@ graph = Kokako.Graph(
 
 # ========== The model ==========
 model = Kokako.PolicyGraph(graph,
+            bellman_function = AverageCut(),
             optimizer = with_optimizer(GLPK.Optimizer),
             direct_mode = true
                 ) do subproblem, index
