@@ -25,9 +25,8 @@ function test_multistock_example()
             optimizer = with_optimizer(GLPK.Optimizer),
             bellman_function = Kokako.AverageCut(lower_bound=-5)
                                     ) do subproblem, stage
+        @state(subproblem, 0 <= stock′[i=1:3] <= 1, stock == 0.5)
         @variables(subproblem, begin
-            stock[i=1:3]
-            0 <= stock′[i=1:3] <= 1
             0 <= control[i=1:3] <= 0.5
             ξ[i=1:3]  # Dummy for RHS noise.
         end)
@@ -35,9 +34,6 @@ function test_multistock_example()
             sum(control) - 0.5 * 3 <= 0
             stock′ .== stock .+ control .- ξ
         end)
-        Kokako.add_state_variable(subproblem, :stock_1, stock[1], stock′[1])
-        Kokako.add_state_variable(subproblem, :stock_2, stock[2], stock′[2])
-        Kokako.add_state_variable(subproblem, :stock_3, stock[3], stock′[3])
         Ξ = collect(Base.product(
                 (0.0, 0.15, 0.3),
                 (0.0, 0.15, 0.3),
@@ -46,21 +42,12 @@ function test_multistock_example()
         Kokako.parameterize(subproblem, Ξ) do ω
             JuMP.fix.(ξ, ω)
         end
-        Kokako.set_stage_objective(subproblem, :Min,
+        @stageobjective(subproblem, Min,
             (sin(3 * stage) - 1) * sum(control)
         )
     end
-    initial_state = Dict(
-        :stock_1 => 0.5,
-        :stock_2 => 0.5,
-        :stock_3 => 0.5
-    )
-    status = Kokako.train(model,
-        iteration_limit = 100,
-        print_level = 0,
-        initial_state = initial_state
-        )
-    @test Kokako.calculate_bound(model, initial_state) ≈ -4.349 atol=0.01
+    status = Kokako.train(model, iteration_limit = 100, print_level = 0)
+    @test Kokako.calculate_bound(model) ≈ -4.349 atol=0.01
     # results = simulate(m, 5000)
     # @test length(results) == 5000
     # @test isapprox(mean(r[:objective] for r in results), -4.349, atol=0.02)

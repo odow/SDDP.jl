@@ -60,12 +60,13 @@ function test_mccardle_farm_model()
             optimizer = with_optimizer(GLPK.Optimizer)
                             ) do subproblem, index
         stage, weather = index
+        # ===================== State Variables =====================
+        # Area planted.
+        @state(subproblem, 0 <= acres′ <= M, acres==M)
+        # Bales from cutting i in storage.
+        @state(subproblem, bales′[cutting=1:3] >= 0, bales==(cutting==1 ? H : 0))
         # ===================== Variables =====================
         @variables(subproblem, begin
-            acres  # Incoming state: acres planted for each cutting.
-            0 <= acres′ <= M  # Outgoing state: acres planted for each cutting.
-            bales[cutting=1:3]  # Incoming bales from cutting i in storage.
-            bales′[cutting=1:3] >= 0  # Outgoing bales from cutting i in storage.
             buy[cutting=1:3] >= 0  # Quantity of bales to buy from each cutting.
             sell[cutting=1:3] >= 0 # Quantity of bales to sell from each cutting.
             eat[cutting=1:3] >= 0  # Quantity of bales to eat from each cutting.
@@ -95,17 +96,11 @@ function test_mccardle_farm_model()
                 sum(sell) <= L
             end)
         end
-        # ===================== State Variables =====================
-        Kokako.add_state_variable(subproblem, :acres, acres, acres′)
-        for cutting in 1:3
-            Kokako.add_state_variable(subproblem,
-                Symbol("bales_$(cutting)"), bales[cutting], bales′[cutting])
-        end
         # ===================== Stage objective =====================
         if stage == 1
-            Kokako.set_stage_objective(subproblem, :Min, 0.0)
+            @stageobjective(subproblem, Min, 0.0)
         else
-            stage_objective = @expression(subproblem,
+            @stageobjective(subproblem, Min,
                 1000 * (sum(pen_p) + sum(pen_n)) +
                 # cost of growing
                 C[stage-1, weather] * acres +
@@ -120,23 +115,12 @@ function test_mccardle_farm_model()
                     q[cutting][stage-1,weather] * sell[cutting]
                 for cutting in 1:3)
             )
-            Kokako.set_stage_objective(subproblem, :Min, stage_objective)
         end
         return
     end
-    initial_state = Dict(
-        :acres => M,
-        :bales_1 => H,
-        :bales_2 => 0.0,
-        :bales_3 => 0.0
-    )
-    status = Kokako.train(model,
-        iteration_limit = 50,
-        initial_state = initial_state
-    )
+    status = Kokako.train(model, iteration_limit = 50)
     @test status == :iteration_limit
-    lower_bound = Kokako.calculate_bound(model, initial_state)
-    @test lower_bound ≈ 4074.1391 atol=1e-5
+    @test Kokako.calculate_bound(model) ≈ 4074.1391 atol=1e-5
 end
 
 # srand(111)

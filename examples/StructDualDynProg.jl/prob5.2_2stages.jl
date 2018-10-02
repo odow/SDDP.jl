@@ -23,10 +23,10 @@ function test_prob52_2stages()
         T = [8760, 7000, 1500] / 8760
         D2 = [diff([0, 3919, 7329, 10315])  diff([0, 7086, 9004, 11169])]
         p2 = [0.9, 0.1]
+        # ========== State Variables ==========
+        @state(subproblem, x′[i=1:n] >= 0, x == 0.0)
         # ========== Variables ==========
         @variables(subproblem, begin
-            x[i=1:n]
-            x′[i=1:n] >= 0
             y[1:n, 1:m] >= 0
             v[1:n] >= 0
             penalty >= 0
@@ -42,11 +42,6 @@ function test_prob52_2stages()
             # No investment in last stage.
             @constraint(subproblem, sum(v) == 0)
         end
-        # ========== States ==========
-        # @state(subproblem, x′[i=1:n], x, name="x′_$(i)")
-        for i in 1:n
-            Kokako.add_state_variable(subproblem, Symbol("x_$(i)"), x[i], x′[i])
-        end
         # ========== Uncertainty ==========
         if stage != 1 # no uncertainty in first stage
             Kokako.parameterize(subproblem, 1:size(D2, 2), p2) do ω
@@ -56,23 +51,13 @@ function test_prob52_2stages()
             end
         end
         # ========== Stage objective ==========
-        Kokako.set_stage_objective(subproblem, :Min,
+        @stageobjective(subproblem, Min,
             ic' * v +  C' * y * T + 1e6 * penalty)
         return
     end
 
-    initial_state = Dict(
-        :x_1 => 0.0,
-        :x_2 => 0.0,
-        :x_3 => 0.0
-    )
-
-    status = Kokako.train(model,
-        iteration_limit = 50,
-        initial_state = initial_state
-    )
-
-    @test Kokako.calculate_bound(model, initial_state) ≈ 340315.52 atol=0.1
+    status = Kokako.train(model, iteration_limit = 50)
+    @test Kokako.calculate_bound(model) ≈ 340315.52 atol=0.1
     # sim = simulate(mod, 1, [:x, :penalty])
     # @test length(sim) == 1
     # @test isapprox(sim[1][:x][1], [5085,1311,3919,854])

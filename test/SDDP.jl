@@ -5,10 +5,8 @@ using Kokako, Test, GLPK
                 bellman_function = Kokako.AverageCut(upper_bound=100.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
-        @variable(node, x′ >= 0)
-        @variable(node, x)
-        Kokako.add_state_variable(node, :x, x, x′)
-        Kokako.set_stage_objective(node, :Max, x′)
+        @state(node, x′ >= 0, x == 0)
+        @stageobjective(node, Max, x′)
         Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_upper_bound(x′, ω)
         end
@@ -28,10 +26,8 @@ end
                 bellman_function = Kokako.AverageCut(lower_bound=0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
-        @variable(node, x′ >= 0)
-        @variable(node, x)
-        Kokako.add_state_variable(node, :x, x, x′)
-        Kokako.set_stage_objective(node, :Min, x′)
+        @state(node, x′ >= 0, x == 0)
+        @stageobjective(node, Min, x′)
         Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_lower_bound(x′, ω)
         end

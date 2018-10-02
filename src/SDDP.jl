@@ -200,6 +200,10 @@ function calculate_bound(graph::PolicyGraph, state::Dict{Symbol, Float64},
         zip(objectives, risk_adjusted_probability))
 end
 
+function calculate_bound(graph::PolicyGraph, risk_measure::AbstractRiskMeasure=Expectation())
+    calculate_bound(graph, graph.initial_root_state, risk_measure)
+end
+
 # Internal functions: helpers so users can pass arguments like:
 # risk_measure = Kokako.Expectation(),
 # risk_measure = Dict(1=>Expectation(), 2=>WorstCase())
@@ -212,7 +216,7 @@ function train(graph::PolicyGraph;
                iteration_limit = 100_000,
                time_limit = Inf,
                stopping_rules = AbstractStoppingRules[],
-               initial_state = nothing,
+               # initial_state = nothing,
                # cut_selection = nothing,
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.MonteCarlo(),
@@ -220,13 +224,10 @@ function train(graph::PolicyGraph;
                # log_file = "log.txt",
                # cut_file = "cuts.csv"
                )
-    if initial_state === nothing
-        error("You must specify an initial state in the form Dict(:x=>1).")
-    end
     if print_level > 0
         print_banner()
     end
-    options = Options(graph, initial_state, sampling_scheme)
+    options = Options(graph, graph.initial_root_state, sampling_scheme)
     status = :not_solved
     start_time = time()
     iteration_count = 1
