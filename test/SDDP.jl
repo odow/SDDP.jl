@@ -2,8 +2,9 @@ using Kokako, Test, GLPK
 
 @testset "Forward Pass" begin
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               optimizer = with_optimizer(GLPK.Optimizer)
-                                   ) do node, stage
+                bellman_function = Kokako.AverageCut(upper_bound=100.0),
+                optimizer = with_optimizer(GLPK.Optimizer)
+                    ) do node, stage
         @variable(node, x′ >= 0)
         @variable(node, x)
         Kokako.add_state_variable(node, :x, x, x′)
@@ -24,8 +25,9 @@ end
 
 @testset "solve" begin
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               optimizer = with_optimizer(GLPK.Optimizer)
-                                   ) do node, stage
+                bellman_function = Kokako.AverageCut(lower_bound=0.0),
+                optimizer = with_optimizer(GLPK.Optimizer)
+                    ) do node, stage
         @variable(node, x′ >= 0)
         @variable(node, x)
         Kokako.add_state_variable(node, :x, x, x′)

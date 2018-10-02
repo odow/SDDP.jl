@@ -4,125 +4,114 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
-#
-#    Inspired by
-#       R. McCardle, Farm management optimization. Masters thesis, University
-#       of Louisville, Louisville, Kentucky, United States of America (2009)
-#
+using Kokako, GLPK, Test
 
-using SDDP, JuMP, Clp
-using Base.Test
+"""
+A farm planning problem. There are four stages. The first stage is a
+deterministic  planning stage. The next three are wait-and-see operational
+stages. The uncertainty in the three operational stages is a Markov chain for
+weather. There are three Markov states: dry, normal, and wet.
 
-function mccardle_farm_model()
-    # cutting, stage
-    S = [
+Inspired by
+  R. McCardle, Farm management optimization. Masters thesis, University
+  of Louisville, Louisville, Kentucky, United States of America (2009)
+
+All data, including short variable names, is taken from that thesis.
+"""
+function test_mccardle_farm_model()
+    S = [  # cutting, stage
         0 1 2;
         0 0 1;
         0 0 0
     ]
-
-    # days in period
-    t = [60,60,245]
-    # demand
-    D = [210,210,858]
-
-    # selling price per bale
-    q = [
+    t = [60, 60, 245]  # days in period
+    D = [210, 210, 858]  # demand
+    q = [  # selling price per bale
         [4.5 4.5 4.5; 4.5 4.5 4.5; 4.5 4.5 4.5],
         [5.5 5.5 5.5; 5.5 5.5 5.5; 5.5 5.5 5.5],
         [6.5 6.5 6.5; 6.5 6.5 6.5; 6.5 6.5 6.5]
     ]
-
-    # predicted yield (bales/acres) from cutting i in weather j
-    b = [
+    b = [  # predicted yield (bales/acres) from cutting i in weather j.
         30 75 37.5;
         15 37.5 18.25;
         7.5 18.75 9.325
     ]
-    # max storage
-    w = 3000
-    # cost to grow hay
-    C = [50 50 50; 50 50 50; 50 50 50]
-    # Cost per bale of hay from cutting i during weather condition j;
-    r = [
+    w = 3000  # max storage
+    C = [50 50 50; 50 50 50; 50 50 50]  # cost to grow hay
+    r = [  # Cost per bale of hay from cutting i during weather condition j.
         [5 5 5; 5 5 5; 5 5 5],
         [6 6 6; 6 6 6; 6 6 6],
         [7 7 7; 7 7 7; 7 7 7]
     ]
+    M = 60.0  # max acreage for planting
+    H = 0.0  # initial inventory
+    V = [0.05, 0.05, 0.05]  # inventory cost
+    L = 3000.0  # max demand for hay
 
-    # max acreage for planting
-    M = 60.0
-    # initial inventory
-    H = 0.0
-    # inventory cost
-    V = [0.05, 0.05, 0.05]
-    # max demand for hay
-    L = 3000.0
-
-    transition = Array{Float64, 2}[
-        [1.0]',
-        [0.14 0.69 0.17; 0.14 0.69 0.17; 0.14 0.69 0.17],
+    graph = Kokako.MarkovianGraph([
+        ones(Float64, 1, 1),
+        [0.14 0.69 0.17],
         [0.14 0.69 0.17; 0.14 0.69 0.17; 0.14 0.69 0.17],
         [0.14 0.69 0.17; 0.14 0.69 0.17; 0.14 0.69 0.17]
-    ]
+    ])
 
-    m = SDDPModel(
-                 stages = 4,
-        objective_bound = [0.0, 0.0, 0.0, 0.0],
-                  sense = :Min,
-      markov_transition = transition,
-                 solver = ClpSolver()
-                            ) do sp, stage, weather
-        @states(sp, begin
-            # acres planted for each cutting
-            0 <= acres <= M, acres0==M
-            # bales from cutting i in storage
-            bales[cutting=1:3] >= 0, bales0==[H,0,0][cutting]
+    model = Kokako.PolicyGraph(graph,
+            bellman_function = Kokako.AverageCut(lower_bound=0.0),
+            optimizer = with_optimizer(GLPK.Optimizer)
+                            ) do subproblem, index
+        stage, weather = index
+        # ===================== Variables =====================
+        @variables(subproblem, begin
+            acres  # Incoming state: acres planted for each cutting.
+            0 <= acres′ <= M  # Outgoing state: acres planted for each cutting.
+            bales[cutting=1:3]  # Incoming bales from cutting i in storage.
+            bales′[cutting=1:3] >= 0  # Outgoing bales from cutting i in storage.
+            buy[cutting=1:3] >= 0  # Quantity of bales to buy from each cutting.
+            sell[cutting=1:3] >= 0 # Quantity of bales to sell from each cutting.
+            eat[cutting=1:3] >= 0  # Quantity of bales to eat from each cutting.
+            pen_p[cutting=1:3] >= 0  # Penalties
+            pen_n[cutting=1:3] >= 0  # Penalties
         end)
-
-        @variables(sp, begin
-            # quantity of bales to buy from cutting
-            buy[cutting=1:3] >= 0
-            # quantity of bales to sell from cutting
-            sell[cutting=1:3] >= 0
-            # quantity of bales to eat from cutting
-            eat[cutting=1:3] >= 0
-            # penalties
-            pen_p[cutting=1:3] >= 0
-            pen_n[cutting=1:3] >= 0
-        end)
-        @expression(sp, total_penalties, sum(pen_p) + sum(pen_n))
-
+        # ===================== Constraints =====================
         if stage == 1
-            @constraint(sp, bales0 .== bales)
-            @stageobjective(sp, 0.0)
+            @constraint(subproblem, acres′ <= acres)
+            @constraint(subproblem, bales .== bales′)
         else
-            @expression(sp, cut_ex[c=1:3], bales0[c] + buy[c]  - eat[c] - sell[c] + pen_p[c] - pen_n[c])
-            @constraints(sp, begin
-                # plan planting for next stage
-                acres <= acres0
-                # meet demand
+            @expression(subproblem, cut_ex[c=1:3],
+                bales[c] + buy[c]  - eat[c] - sell[c] + pen_p[c] - pen_n[c])
+            @constraints(subproblem, begin
+                # Cannot plant more land than previously cropped.
+                acres′ <= acres
+                # In each stage we need to meet demand.
                 sum(eat) >= D[stage-1]
-
-                bales[stage-1] == cut_ex[stage-1] + acres0 * b[stage-1, weather]
-                # can buy and sell other cuttings
-                [c=1:3;c!=stage-1], bales[c] == cut_ex[c]
-
-                # max storage
-                sum(bales) <= w
-
-                # can only sell what is in storage
-                [c=1:3], sell[c] <= bales0[c]
-
+                # We can buy and sell other cuttings.
+                bales′[stage-1] == cut_ex[stage-1] + acres * b[stage-1, weather]
+                [c = 1:3; c != stage - 1], bales′[c] == cut_ex[c]
+                # There is some maximum storage.
+                sum(bales′) <= w
+                # We can only sell what is in storage.
+                [c=1:3], sell[c] <= bales[c]
+                # Maximum sales quantity.
                 sum(sell) <= L
             end)
-            @stageobjective(sp,
-                1000 * total_penalties +
+        end
+        # ===================== State Variables =====================
+        Kokako.add_state_variable(subproblem, :acres, acres, acres′)
+        for cutting in 1:3
+            Kokako.add_state_variable(subproblem,
+                Symbol("bales_$(cutting)"), bales[cutting], bales′[cutting])
+        end
+        # ===================== Stage objective =====================
+        if stage == 1
+            Kokako.set_stage_objective(subproblem, :Min, 0.0)
+        else
+            stage_objective = @expression(subproblem,
+                1000 * (sum(pen_p) + sum(pen_n)) +
                 # cost of growing
-                C[stage-1, weather] * acres0 +
+                C[stage-1, weather] * acres +
                 sum(
                     # inventory cost
-                    V[stage-1] * bales0[cutting] * t[stage-1] +
+                    V[stage-1] * bales[cutting] * t[stage-1] +
                     # purchase cost
                     r[cutting][stage-1,weather] * buy[cutting] +
                     # feed cost
@@ -131,30 +120,25 @@ function mccardle_farm_model()
                     q[cutting][stage-1,weather] * sell[cutting]
                 for cutting in 1:3)
             )
+            Kokako.set_stage_objective(subproblem, :Min, stage_objective)
         end
+        return
     end
+    initial_state = Dict(
+        :acres => M,
+        :bales_1 => H,
+        :bales_2 => 0.0,
+        :bales_3 => 0.0
+    )
+    status = Kokako.train(model,
+        iteration_limit = 20,
+        initial_state = initial_state,
+        print_level = 1
+    )
+    @test status == :iteration_limit
+    lower_bound = Kokako.calculate_bound(model, initial_state)
+    @test lower_bound ≈ 4074.1391 atol=1e-5
 end
 
-srand(111)
-m = mccardle_farm_model()
-solution = solve(m, iteration_limit=20, print_level=0)
-@test isapprox(getbound(m), 4074.1391, atol=1e-5)
-
-# results = simulate(m,  # Simulate the policy
-#     100,               # number of monte carlo realisations
-#     [:acres,:acres0,:buy,:sell,:eat,:pen_p,:pen_n,:bales,:bales0]       # variables to return
-#     )
-# plt = SDDP.newplot()
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->results[i][:stageobjective][t], title="Accumulated Profit", ylabel="Accumulated Profit (\$)", cumulative=true)
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->results[i][:stageobjective][t], title="Weekly Income",      ylabel="Week Profit (\$)")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->results[i][:acres][t],          title="acres")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->results[i][:acres0][t],         title="acres0")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->sum(results[i][:bales][t]),     title="bales")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->sum(results[i][:bales0][t]),    title="bales0")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->sum(results[i][:buy][t]),       title="buy")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->sum(results[i][:sell][t]),      title="sell")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->sum(results[i][:eat][t]),       title="eat")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->sum(results[i][:pen_p][t]),     title="pen_p")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->sum(results[i][:pen_n][t]),     title="pen_n")
-# SDDP.addplot!(plt, 1:100, 1:4, (i,t)->results[i][:markov][t],         title="weather")
-# SDDP.show(plt)
+# srand(111)
+test_mccardle_farm_model()

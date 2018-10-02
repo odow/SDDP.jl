@@ -24,6 +24,9 @@ struct MonteCarlo end
 
 # A helper utility for sampling a Noise using Monte Carlo.
 function sample_noise(::MonteCarlo, noise_terms::Vector{<:Noise})
+    if length(noise_terms) == 0
+        return nothing
+    end
     cumulative_probability = sum(noise.probability for noise in noise_terms)
     if cumulative_probability > 1.0
         error("Cumulative probability cannot be greater than 1.0.")

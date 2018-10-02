@@ -39,7 +39,8 @@ end
 function get_dual_variables(node::Node)
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
-        values[name] = JuMP.result_dual(state.incoming)
+        ref = JuMP.FixRef(state.incoming)
+        values[name] = JuMP.result_dual(ref)
     end
     return values
 end
@@ -55,6 +56,11 @@ function set_objective(node::Node)
     )
 end
 
+# Internal function: overload for the case where JuMP.result_value fails on a
+# Real number.
+stage_objective_value(stage_objective::Real) = stage_objective
+stage_objective_value(stage_objective) = JuMP.result_value(stage_objective)
+
 # Internal function: solve the subproblem associated with node given the
 # incoming state variables state and realization of the stagewise-independent
 # noise term noise. If require_duals=true, also return the dual variables
@@ -63,7 +69,7 @@ function solve_subproblem(graph::PolicyGraph{T},
                           node::Node{T},
                           state::Dict{Symbol, Float64},
                           noise,
-                          require_duals::Bool = false) where T
+                          require_duals::Bool = true) where T
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
     # set the objective. Note that we set the objective every time incase
@@ -92,7 +98,7 @@ function solve_subproblem(graph::PolicyGraph{T},
     end
     return get_outgoing_state(node),  # The outgoing state variable x'.
            dual_values,  # The dual variables on the incoming state variables.
-           JuMP.result_value(node.stage_objective),  # C(x, u, ω)
+           stage_objective_value(node.stage_objective),  # C(x, u, ω)
            JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
 end
 
@@ -137,7 +143,7 @@ function backward_pass(graph::PolicyGraph{T},
         for child in node.children
             child_node = graph[child.term]
             for noise in child_node.noise_terms
-                outgoing_state, duals, stage_obj, obj = solve_subproblem(
+                new_outgoing_state, duals, stage_obj, obj = solve_subproblem(
                     graph, child_node, outgoing_state, noise.term)
                 push!(dual_variables, duals)
                 push!(noise_supports, noise.term)
@@ -210,14 +216,16 @@ function train(graph::PolicyGraph;
                # cut_selection = nothing,
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.MonteCarlo(),
-               # log_level = Logging.Info,
+               print_level = 0,
                # log_file = "log.txt",
                # cut_file = "cuts.csv"
                )
     if initial_state === nothing
         error("You must specify an initial state in the form Dict(:x=>1).")
     end
-    print_banner()
+    if print_level > 0
+        print_banner()
+    end
     options = Options(graph, initial_state, sampling_scheme)
     status = :not_solved
     start_time = time()
@@ -240,7 +248,9 @@ function train(graph::PolicyGraph;
             scenario_path, sampled_states, cumulative_value = forward_pass(graph, options)
             backward_pass(graph, options, scenario_path, sampled_states, risk_measure)
             bound = calculate_bound(graph, initial_state)
-            print_iteration(iteration_count, cumulative_value, bound)
+            if print_level > 0
+                print_iteration(iteration_count, cumulative_value, bound)
+            end
             iteration_count += 1
         end
     catch ex

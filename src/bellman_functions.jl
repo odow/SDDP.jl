@@ -86,6 +86,12 @@ function write_bellman_to_file(policy_graph::PolicyGraph{T},
     end
 end
 
+struct BellmanFactory{T}
+    args
+    kwargs
+    BellmanFactory{T}(args...; kwargs...) where T = new{T}(args, kwargs)
+end
+
 # ============================== SDDP.AverageCut ===============================
 
 struct AverageCut <: AbstractBellmanFunction
@@ -93,12 +99,36 @@ struct AverageCut <: AbstractBellmanFunction
     cuts::Vector{Cut}
 end
 
+"""
+    AverageCut(; lower_bound = -Inf, upper_bound = Inf)
+
+The AverageCut Bellman function. Provide a lower_bound if minimizing, or an
+upper_bound if maximizing.
+"""
+function AverageCut(; lower_bound = -Inf, upper_bound = Inf)
+    BellmanFactory{AverageCut}(lower_bound=lower_bound, upper_bound=upper_bound)
+end
+
 JSON.lower(bellman::AverageCut) = bellman.cuts
 
-function initialize_bellman_function(
-        ::Type{AverageCut}, graph::PolicyGraph{T}, node::Node{T}) where T
+function initialize_bellman_function(factory::BellmanFactory{AverageCut},
+                                     graph::PolicyGraph{T},
+                                     node::Node{T}) where T
+    lower_bound, upper_bound = -Inf, Inf
+    if length(factory.args) > 0
+        error("Positional arguments $(factory.args) ignored in AverageCut.")
+    end
+    for (kw, value) in factory.kwargs
+        if kw == :lower_bound
+            lower_bound = value
+        elseif kw == :upper_bound
+            upper_bound = value
+        else
+            error("Keyword $(kw) not recognised as argument to AverageCut.")
+        end
+    end
     bellman_variable = if length(node.children) > 0
-        @variable(node.subproblem, lower_bound=-1000, upper_bound=1000)
+        @variable(node.subproblem, lower_bound=lower_bound, upper_bound=upper_bound)
     else
         @variable(node.subproblem, lower_bound=0, upper_bound=0)
     end
@@ -138,8 +168,8 @@ function refine_bellman_function(graph::PolicyGraph{T},
     for (objective, dual, prob) in zip(objective_realizations, dual_variables,
                                        risk_adjusted_probability)
         intercept += prob * objective
-        for (state, coefficient) in dual
-            coefficients[state] += prob * coefficient
+        for state in keys(outgoing_state)
+            coefficients[state] += prob * dual[state]
         end
     end
     for (name, value) in outgoing_state

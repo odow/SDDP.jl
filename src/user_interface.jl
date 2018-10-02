@@ -240,7 +240,7 @@ Or, using the Julia `do ... end` syntax:
     end
 """
 function PolicyGraph(builder::Function, graph::Graph{T};
-                     bellman_function = AverageCut,
+                     bellman_function = AverageCut(),
                      optimizer = nothing,
                      direct_mode = true) where T
     policy_graph = PolicyGraph(T)
@@ -268,6 +268,10 @@ function PolicyGraph(builder::Function, graph::Graph{T};
         subproblem.ext[:kokako_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:kokako_node] = node
         builder(subproblem, node_index)
+        # Add a dummy noise here so that all nodes have at least one noise term.
+        if length(node.noise_terms) == 0
+            push!(node.noise_terms, Noise(nothing, 1.0))
+        end
     end
     # Loop back through and add the arcs/children.
     for (node_index, children) in graph.nodes
@@ -346,8 +350,8 @@ arguments that are not in realizations (but still of type T).
 """
 function parameterize(modify::Function,
                       subproblem::JuMP.Model,
-                      realizations::Vector{T},
-                      probability::Vector{Float64} = fill(1.0 / length(realizations))
+                      realizations::AbstractVector{T},
+                      probability::AbstractVector{Float64} = fill(1.0 / length(realizations))
                           ) where T
     node = get_node(subproblem)
     if length(node.noise_terms) != 0
