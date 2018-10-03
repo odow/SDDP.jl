@@ -114,11 +114,46 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     for (node_index, noise) in scenario_path
         @debug "Solving $(node_index) with noise=$(noise) on forward pass."
         node = graph[node_index]
+        # ===== Begin: starting state for infinite horizon =====
+        starting_states = options.starting_states[node_index]
+        if distance(starting_states, state) > 0.05
+            push!(starting_states, state)
+        end
+        num_starting_states = length(starting_states)
+        state = splice!(starting_states, rand(1:num_starting_states))
+        # ===== End: starting state for infinite horizon =====
         state, duals, stage_objective, objective = solve_subproblem(graph, node, state, noise)
         cumulative_value += stage_objective
         push!(sampled_states, state)
     end
+    # ===== Begin: drop off starting state if terminated due to cycle =====
+    final_node_index = scenario_path[end][1]
+    final_node = graph[final_node_index]
+    if length(final_node.children) > 0  # Terminated due to cycle.
+        if distance(options.starting_states[final_node_index], sampled_states[end-1]) > 0.05
+            push!(options.starting_states[final_node_index], sampled_states[end-1])
+        end
+    end
+    # ===== End: drop off starting state if terminated due to cycle =====
     return scenario_path, sampled_states, cumulative_value
+end
+
+function distance(starting_states, state)
+    if length(starting_states) == 0
+        return Inf
+    else
+        return maximum(inf_norm.(starting_states, Ref(state)))
+    end
+end
+
+function inf_norm(x::Dict{Symbol, Float64}, y::Dict{Symbol, Float64})
+    norm = 0.0
+    for (key, value) in x
+        if abs(value - y[key]) > norm
+            norm = abs(value - y[key])
+        end
+    end
+    return norm
 end
 
 # Internal function: perform a backward pass of the SDDP algorithm along the
