@@ -2,10 +2,16 @@ abstract type AbstractSamplingScheme end
 
 """
     sample_scenario(graph::PolicyGraph{T}, ::AbstractSamplingScheme;
-                    max_cycles::Int = 1) where T
+                    terminate_on_cycle::Bool = true,
+                    max_depth::Int = 0) where T
 
-Sample a scenario from the policy graph `graph`. If the graph is cyclic, return
-once `max_cycles` number of cycles have been detected.
+Sample a scenario from the policy graph `graph` based on the sampling scheme.
+
+If `terminate_on_cycle`, terminate the forward pass once a cycle is detected.
+
+If `max_depth > 0`, return once `max_depth` nodes have been sampled, otherwise,
+return once a leaf node is reached. Note that if `terminate_on_cycle=false` then
+`max_depth` must be set > 0.
 
 The scenario is a list of tuples (type `Vector{Tuple{T, Any}}`) where the first
 component of each tuple is the index of the node, and the second component is
@@ -13,7 +19,8 @@ the stagewise-independent noise term observed in that node.
 """
 function sample_scenario(graph::PolicyGraph{T},
                          sampling_scheme::AbstractSamplingScheme;
-                         max_cycles::Int = 1) where T
+                         terminate_on_cycle::Bool = true,
+                         max_depth::Int = 0) where T
     error("You need to overload the function Kokako.sample_scenario for the " *
           "sampling scheme (sampling_scheme).")
 end
@@ -43,7 +50,8 @@ function sample_noise(::MonteCarlo, noise_terms::Vector{<:Noise})
 end
 
 function sample_scenario(graph::PolicyGraph{T}, sampling_scheme::MonteCarlo;
-                         max_cycles::Int = 1) where T
+                         terminate_on_cycle::Bool = true,
+                         max_depth::Int = 0) where T
     scenario_path = Tuple{T, Any}[]
     visited_nodes = Set{T}()
     node_index = sample_noise(sampling_scheme, graph.root_children)::T
@@ -54,10 +62,11 @@ function sample_scenario(graph::PolicyGraph{T}, sampling_scheme::MonteCarlo;
         if length(node.children) == 0
             break  # We are at a leaf node.
         elseif node_index in visited_nodes
-            # We are at the start of a cycle. Note that we still sample a noise
-            # from this node for completeness.
-            max_cycles -= 1
-            if max_cycles <= 0
+            if terminate_on_cycle
+                break
+            elseif max_depth == 0
+                error("If terminate_on_cycle=false, then max_depth must be >0.")
+            elseif length(scenario_path) >= max_depth
                 break
             end
         end

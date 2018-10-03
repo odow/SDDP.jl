@@ -2,14 +2,19 @@ struct Options{SamplingScheme, T}
     initial_state::Dict{Symbol, Float64}
     sampling_scheme::SamplingScheme
     starting_states::Dict{T, Vector{Dict{Symbol, Float64}}}
+    cycle_discretization_delta::Float64
     function Options(policy_graph::PolicyGraph{T},
                      initial_state::Dict{Symbol, Float64},
-                     sampling_scheme::S) where {T, S}
+                     sampling_scheme::S,
+                     cycle_discretization_delta::Float64) where {T, S}
         starting_states = Dict{T, Vector{Dict{Symbol, Float64}}}()
         for node_index in keys(policy_graph.nodes)
             starting_states[node_index] = Dict{Symbol, Float64}[]
         end
-        return new{S, T}(initial_state, sampling_scheme, starting_states)
+        return new{S, T}(initial_state,
+                         sampling_scheme,
+                         starting_states,
+                         cycle_discretization_delta)
     end
 end
 
@@ -28,7 +33,15 @@ end
 function get_outgoing_state(node::Node)
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
-        values[name] = JuMP.result_value(state.outgoing)
+        # To fix some cases of numerical infeasiblities, if the outgoing value
+        # is outside its bounds, project the value back onto the bounds.
+        outgoing_value = JuMP.result_value(state.outgoing)
+        if JuMP.has_upper_bound(state.outgoing) && JuMP.upper_bound(state.outgoing) < outgoing_value
+            outgoing_value = JuMP.upper_bound(state.outgoing)
+        elseif JuMP.has_lower_bound(state.outgoing) && JuMP.lower_bound(state.outgoing) > outgoing_value
+            outgoing_value = JuMP.lower_bound(state.outgoing)
+        end
+        values[name] = outgoing_value
     end
     return values
 end
@@ -37,10 +50,13 @@ end
 # fixed incoming state variables. Requires node.subproblem to have been solved
 # with DualStatus == FeasiblePoint.
 function get_dual_variables(node::Node)
+    # Note: due to JuMP's dual convention, we need to flip the sign for
+    # maximization problems.
+    dual_sign = JuMP.objective_sense(node.subproblem) == :Min ? 1.0 : -1.0
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
         ref = JuMP.FixRef(state.incoming)
-        values[name] = JuMP.result_dual(ref)
+        values[name] = dual_sign * JuMP.result_dual(ref)
     end
     return values
 end
@@ -116,21 +132,25 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
         node = graph[node_index]
         # ===== Begin: starting state for infinite horizon =====
         starting_states = options.starting_states[node_index]
-        if distance(starting_states, state) > 0.05
+        if distance(starting_states, state) > options.cycle_discretization_delta
             push!(starting_states, state)
         end
         num_starting_states = length(starting_states)
         state = splice!(starting_states, rand(1:num_starting_states))
         # ===== End: starting state for infinite horizon =====
-        state, duals, stage_objective, objective = solve_subproblem(graph, node, state, noise)
+        new_state, duals, stage_objective, objective = solve_subproblem(graph, node, state, noise)
+        @debug "Solved $(node_index): $(new_state), $(duals), $(stage_objective), $(objective)"
         cumulative_value += stage_objective
-        push!(sampled_states, state)
+        push!(sampled_states, new_state)
+        state = copy(new_state)
     end
     # ===== Begin: drop off starting state if terminated due to cycle =====
     final_node_index = scenario_path[end][1]
     final_node = graph[final_node_index]
     if length(final_node.children) > 0  # Terminated due to cycle.
-        if distance(options.starting_states[final_node_index], sampled_states[end-1]) > 0.05
+        if distance(
+                options.starting_states[final_node_index],
+                sampled_states[end-1]) > options.cycle_discretization_delta
             push!(options.starting_states[final_node_index], sampled_states[end-1])
         end
     end
@@ -256,13 +276,14 @@ function train(graph::PolicyGraph;
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.MonteCarlo(),
                print_level = 0,
+               cycle_discretization_delta = 0.01
                # log_file = "log.txt",
                # cut_file = "cuts.csv"
                )
     if print_level > 0
         print_banner()
     end
-    options = Options(graph, graph.initial_root_state, sampling_scheme)
+    options = Options(graph, graph.initial_root_state, sampling_scheme, cycle_discretization_delta)
     status = :not_solved
     start_time = time()
     iteration_count = 1
@@ -299,4 +320,50 @@ function train(graph::PolicyGraph;
         end
     end
     return status
+end
+
+"""
+Special keys:
+ - :node_index
+ - :noise_term
+ - :stage_objective
+ - :bellman_term
+"""
+function simulate(graph::PolicyGraph{T}, variables;
+                  sampling_scheme = MonteCarlo(),
+                  terminate_on_cycle::Bool = true,
+                  max_depth::Int = 0) where T
+    scenario_path = sample_scenario(graph, sampling_scheme;
+        terminate_on_cycle = terminate_on_cycle, max_depth = max_depth)
+    simulation = Dict{Symbol, Any}[]
+    state = copy(graph.initial_root_state)
+    cumulative_value = 0.0
+    for (node_index, noise) in scenario_path
+        node = graph[node_index]
+        new_state, duals, stage_objective, objective = solve_subproblem(
+            graph, node, state, noise)
+        cumulative_value += stage_objective
+        store = Dict{Symbol, Any}(
+            :node_index => node_index,
+            :noise_term => noise,
+            :stage_objective => stage_objective,
+            :bellman_term => objective - stage_objective
+        )
+        for variable in variables
+            store[variable] = JuMP.result_value(node.subproblem[variable])
+        end
+        push!(simulation, store)
+        state = copy(new_state)
+    end
+    return simulation
+end
+
+function simulate(graph, N::Int, variables::Vector{Symbol};
+                  terminate_on_cycle::Bool = true, max_depth::Int = 0)
+    return [
+        simulate(graph, variables;
+            sampling_scheme = MonteCarlo(),
+            terminate_on_cycle = terminate_on_cycle,
+            max_depth = max_depth)
+        for i in 1:N]
 end

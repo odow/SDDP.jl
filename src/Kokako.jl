@@ -22,4 +22,6 @@ include("print.jl")
 # The core SDDP code.
 include("sddp.jl")
 
+include("policy_visualization.jl")
+
 end

@@ -147,7 +147,7 @@ function refine_bellman_function(graph::PolicyGraph{T},
                                  original_probability::Vector{Float64},
                                  objective_realizations::Vector{Float64}
                                      ) where T
-    is_minimization = JuMP.objective_sense(node.subproblem) == :Min
+    is_minimization = graph.objective_sense == :Min
     risk_adjusted_probability = similar(original_probability)
     adjust_probability(risk_measure,
                        risk_adjusted_probability,
