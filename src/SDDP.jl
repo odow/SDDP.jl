@@ -248,7 +248,8 @@ function train(graph::PolicyGraph;
             end
             scenario_path, sampled_states, cumulative_value = forward_pass(graph, options)
             backward_pass(graph, options, scenario_path, sampled_states, risk_measure)
-            bound = calculate_bound(graph, initial_state)
+            # bound = calculate_bound(graph, initial_state)
+            bound = calculate_bound(graph)
             if print_level > 0
                 print_iteration(iteration_count, cumulative_value, bound)
             end

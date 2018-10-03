@@ -5,7 +5,10 @@ using Kokako, Test, GLPK
                 bellman_function = Kokako.AverageCut(upper_bound=100.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
-        @state(node, x′ >= 0, x == 0)
+        # @state(node, x′ >= 0, x == 0)
+        @variable(node, x)
+        @variable(node, x′ >= 0)
+        Kokako.add_state_variable(node, x, x′, 0.0)
         @stageobjective(node, Max, x′)
         Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_upper_bound(x′, ω)
@@ -26,16 +29,16 @@ end
                 bellman_function = Kokako.AverageCut(lower_bound=0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
-        @state(node, x′ >= 0, x == 0)
+        # @state(node, x′ >= 0, x == 0)
+        @variable(node, x)
+        @variable(node, x′ >= 0)
+        Kokako.add_state_variable(node, x, x′, 0.0)
         @stageobjective(node, Min, x′)
         Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_lower_bound(x′, ω)
         end
     end
-    status = Kokako.train(model;
-        iteration_limit = 4,
-        initial_state = Dict(:x=>0.0)
-    )
+    status = Kokako.train(model; iteration_limit = 4)
     Kokako.write_bellman_to_file(model, "model.bellman.json")
     rm("model.bellman.json")
 end

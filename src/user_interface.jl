@@ -306,7 +306,8 @@ end
 # JuMP.name(incoming) and JuMP.start_value(incoming) to be set.
 function add_state_variable(subproblem::JuMP.Model,
                             incoming::JuMP.VariableRef,
-                            outgoing::JuMP.VariableRef)
+                            outgoing::JuMP.VariableRef,
+                            root_value::Real)
     node = get_node(subproblem)
     name = Symbol(JuMP.name(incoming))
     if haskey(node.states, name)
@@ -314,124 +315,106 @@ function add_state_variable(subproblem::JuMP.Model,
     end
     node.states[name] = State(incoming, outgoing)
     graph = get_policy_graph(subproblem)
-    graph.initial_root_state[name] = 0.0  # JuMP.start_value(incoming)
+    graph.initial_root_state[name] = root_value
     return
 end
 
-# Internal function: an instance of add_state_variable for base-Julia Arrays.
-function add_state_variable(subproblem::JuMP.Model,
-                            incoming::Array{JuMP.VariableRef},
-                            outgoing::Array{JuMP.VariableRef})
-    for (incoming_variable, outgoing_variable) in zip(incoming, outgoing)
-        add_state_variable(subproblem, incoming_variable, outgoing_variable)
-    end
-end
-
-# Internal function: an instance of add_state_variable for JuMPArrays.
-function add_state_variable(subproblem::JuMP.Model,
-                            incoming::JuMPArray{JuMP.VariableRef},
-                            outgoing::JuMPArray{JuMP.VariableRef})
-    for (incoming_variable, outgoing_variable) in zip(incoming, outgoing)
-        add_state_variable(subproblem, incoming_variable, outgoing_variable)
-    end
-end
-
-# Internal function: an instance of add_state_variable for base-Julia Dicts.
-function add_state_variable(subproblem::JuMP.Model,
-                            incoming::Dict{T, JuMP.VariableRef},
-                            outgoing::Dict{T, JuMP.VariableRef}) where T
-    for (incoming_key, incoming_variable) in incoming
-        outgoing_variable = outgoing[incoming_key]
-        add_state_variable(subproblem, incoming_variable, outgoing_variable)
-    end
-end
-
-# Internal function: overload for copy since copy(::Symbol) isn't defined.
-_copy(x::Symbol) = x
-_copy(x::Expr) = copy(x)
-
-# Internal function: given inputs like `1 <= x[i=1:3]` and `0 <= x[i=1:3] <= 1`,
-# return the `x[i=1:3]` component.
-function get_outgoing_name(outgoing::Expr)
-    if outgoing.head == :comparison && length(outgoing.args) == 5
-        return _copy(outgoing.args[3])
-    elseif (outgoing.head == :call && length(outgoing.args) == 3 &&
-            outgoing.args[1] in (:(<=), :(>=), :(==)))
-        return _copy(outgoing.args[2])
-    else
-        error("@state input error: $(outgoing) not valid syntax.")
-    end
-end
-get_outgoing_name(outgoing::Symbol) = outgoing
-
-"""
-    @state(subproblem, outgoing_state, incoming_state)
-
-Define a new state variable in the subproblem `subproblem`.
-
-# Examples
-
-One-dimensional state variables:
-
-    @state(subproblem, x′, x == 0.5)
-
-State variables in a JuMPArray:
-
-    @state(subproblem, x′[1:3, [:A, :B]] >= 1, x == 0)
-
-Julia arrays with upper and lower bounds, and the value at the root node depends
-upon the index:
-
-    @state(subproblem, 0 <= x′[i=1:3] <= 1, x == i)
-"""
-
-macro state(subproblem, outgoing, incoming)
-    # subproblem = esc(subproblem)
-    if !isa(incoming, Expr) || incoming.head != :call || incoming.args[1] != :(==)
-        error("The third argument to @state must be of the form " *
-              "[name]==[value at root node].")
-    end
-    comparison_symbol, in_name, root_value = incoming.args
-    # At the moment, we have something like
-    #     outgoing = :(0 <= x′[i=1:3] <= 1)
-    #     in_name = :(x).
-    # We want to create the incoming expression :(x[i=1:3]). To do so, we're
-    # going to copy the middle portion of the outgoing expression, and replace
-    # the x′ with the incoming name.
-    incoming_expression = get_outgoing_name(outgoing)
-    if isa(incoming_expression, Expr)
-        incoming_expression.args[1] = in_name
-    else
-        incoming_expression = in_name
-    end
-    @show incoming_expression, outgoing
-    macro bar(args...)
-        @show args
-        model = esc(args[1])
-        state_in = gensym()
-        code = quote end
-        push!(code.args, :(@variable $model $(Meta.quot(args[2]))))
-        @show code
-        # push!(code.args, Expr(
-            # :(=),
-            # $(state_in),
-            # Expr(:macrocall, Symbol("@variable"),
-                # esc(model)
-            #
-            # )
-        # )
-        return code
-    end
-    return quote
-        let
-            state_in = @variable($subproblem, $incoming_expression)
-            state_out = @variable($subproblem, $outgoing)
-            add_state_variable($subproblem, state_in, state_out)
-            nothing
-        end
-    end
-end
-
+# Code for implementing the @state macro. Scoping rules have changed in Julia
+# 1.0 and I'm having a hard time re-writing the macro.
+#
+# # Internal function: an instance of add_state_variable for base-Julia Arrays.
+# function add_state_variable(subproblem::JuMP.Model,
+#                             incoming::Array{JuMP.VariableRef},
+#                             outgoing::Array{JuMP.VariableRef})
+#     for (incoming_variable, outgoing_variable) in zip(incoming, outgoing)
+#         add_state_variable(subproblem, incoming_variable, outgoing_variable)
+#     end
+# end
+#
+# # Internal function: an instance of add_state_variable for JuMPArrays.
+# function add_state_variable(subproblem::JuMP.Model,
+#                             incoming::JuMPArray{JuMP.VariableRef},
+#                             outgoing::JuMPArray{JuMP.VariableRef})
+#     for (incoming_variable, outgoing_variable) in zip(incoming, outgoing)
+#         add_state_variable(subproblem, incoming_variable, outgoing_variable)
+#     end
+# end
+#
+# # Internal function: an instance of add_state_variable for base-Julia Dicts.
+# function add_state_variable(subproblem::JuMP.Model,
+#                             incoming::Dict{T, JuMP.VariableRef},
+#                             outgoing::Dict{T, JuMP.VariableRef}) where T
+#     for (incoming_key, incoming_variable) in incoming
+#         outgoing_variable = outgoing[incoming_key]
+#         add_state_variable(subproblem, incoming_variable, outgoing_variable)
+#     end
+# end
+#
+# # Internal function: overload for copy since copy(::Symbol) isn't defined.
+# _copy(x::Symbol) = x
+# _copy(x::Expr) = copy(x)
+#
+# # Internal function: given inputs like `1 <= x[i=1:3]` and `0 <= x[i=1:3] <= 1`,
+# # return the `x[i=1:3]` component.
+# function get_outgoing_name(outgoing::Expr)
+#     if outgoing.head == :comparison && length(outgoing.args) == 5
+#         return _copy(outgoing.args[3])
+#     elseif (outgoing.head == :call && length(outgoing.args) == 3 &&
+#             outgoing.args[1] in (:(<=), :(>=), :(==)))
+#         return _copy(outgoing.args[2])
+#     else
+#         error("@state input error: $(outgoing) not valid syntax.")
+#     end
+# end
+# get_outgoing_name(outgoing::Symbol) = outgoing
+#
+# """
+#     @state(subproblem, outgoing_state, incoming_state)
+#
+# Define a new state variable in the subproblem `subproblem`.
+#
+# # Examples
+#
+# One-dimensional state variables:
+#
+#     @state(subproblem, x′, x == 0.5)
+#
+# State variables in a JuMPArray:
+#
+#     @state(subproblem, x′[1:3, [:A, :B]] >= 1, x == 0)
+#
+# Julia arrays with upper and lower bounds, and the value at the root node depends
+# upon the index:
+#
+#     @state(subproblem, 0 <= x′[i=1:3] <= 1, x == i)
+# """
+#
+# macro state(subproblem, outgoing, incoming)
+#     # subproblem = esc(subproblem)
+#     if !isa(incoming, Expr) || incoming.head != :call || incoming.args[1] != :(==)
+#         error("The third argument to @state must be of the form " *
+#               "[name]==[value at root node].")
+#     end
+#     comparison_symbol, in_name, root_value = incoming.args
+#     # At the moment, we have something like
+#     #     outgoing = :(0 <= x′[i=1:3] <= 1)
+#     #     in_name = :(x).
+#     # We want to create the incoming expression :(x[i=1:3]). To do so, we're
+#     # going to copy the middle portion of the outgoing expression, and replace
+#     # the x′ with the incoming name.
+#     incoming_expression = get_outgoing_name(outgoing)
+#     if isa(incoming_expression, Expr)
+#         incoming_expression.args[1] = in_name
+#     else
+#         incoming_expression = in_name
+#     end
+#     return quote
+#         state_in = @variable($subproblem, $incoming_expression)
+#         state_out = @variable($subproblem, $outgoing)
+#         add_state_variable($subproblem, state_in, state_out)
+#         nothing
+#     end
+# end
 
 """
     parameterize(modify::Function,

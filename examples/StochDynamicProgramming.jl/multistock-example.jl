@@ -25,7 +25,10 @@ function test_multistock_example()
             optimizer = with_optimizer(GLPK.Optimizer),
             bellman_function = Kokako.AverageCut(lower_bound=-5)
                                     ) do subproblem, stage
-        @state(subproblem, 0 <= stock′[i=1:3] <= 1, stock == 0.5)
+        # @state(subproblem, 0 <= stock′[i=1:3] <= 1, stock == 0.5)
+        @variable(subproblem, stock[i=1:3])
+        @variable(subproblem, 0 <= stock′[i=1:3] <= 1)
+        Kokako.add_state_variable.(subproblem, stock, stock′, 0.5)
         @variables(subproblem, begin
             0 <= control[i=1:3] <= 0.5
             ξ[i=1:3]  # Dummy for RHS noise.

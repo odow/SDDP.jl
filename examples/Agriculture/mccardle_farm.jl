@@ -62,9 +62,17 @@ function test_mccardle_farm_model()
         stage, weather = index
         # ===================== State Variables =====================
         # Area planted.
-        @state(subproblem, 0 <= acres′ <= M, acres==M)
+        # @state(subproblem, 0 <= acres′ <= M, acres==M)
         # Bales from cutting i in storage.
-        @state(subproblem, bales′[cutting=1:3] >= 0, bales==(cutting==1 ? H : 0))
+        # @state(subproblem, bales′[cutting=1:3] >= 0, bales==(cutting==1 ? H : 0))
+        @variables(subproblem, begin
+            acres
+            0 <= acres′ <= M
+            bales[cutting=1:3]
+            bales′[cutting=1:3] >= 0
+        end)
+        Kokako.add_state_variable(subproblem, acres, acres′, M)
+        Kokako.add_state_variable.(Ref(subproblem), bales, bales′, [H, 0, 0])
         # ===================== Variables =====================
         @variables(subproblem, begin
             buy[cutting=1:3] >= 0  # Quantity of bales to buy from each cutting.
