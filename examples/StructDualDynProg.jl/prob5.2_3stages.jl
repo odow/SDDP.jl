@@ -37,7 +37,7 @@ function test_prob52_3stages()
             [i=1:n], sum(y[i, :]) <= x0[i]
             [j=1:m], sum(y[:, j]) + penalty >= ξ[j]
         end)
-        @stageobjective(sp, Min, ic'v + C' * y * T + 1e6 * penalty)
+        @stageobjective(sp, ic'v + C' * y * T + 1e6 * penalty)
         if t != 1 # no uncertainty in first stage
             Kokako.parameterize(sp, 1:size(D2, 2), p2) do ω
                 for j in 1:m

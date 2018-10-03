@@ -45,7 +45,7 @@ function test_multistock_example()
         Kokako.parameterize(subproblem, Ξ) do ω
             JuMP.fix.(ξ, ω)
         end
-        @stageobjective(subproblem, Min,
+        @stageobjective(subproblem,
             (sin(3 * stage) - 1) * sum(control)
         )
     end

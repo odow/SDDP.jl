@@ -106,9 +106,9 @@ function test_mccardle_farm_model()
         end
         # ===================== Stage objective =====================
         if stage == 1
-            @stageobjective(subproblem, Min, 0.0)
+            @stageobjective(subproblem, 0.0)
         else
-            @stageobjective(subproblem, Min,
+            @stageobjective(subproblem,
                 1000 * (sum(pen_p) + sum(pen_n)) +
                 # cost of growing
                 C[stage-1, weather] * acres +

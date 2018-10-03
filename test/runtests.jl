@@ -12,20 +12,21 @@ using Kokako, Test, Random
 end
 
 const EXAMPLES = Dict(
-    "Agriculture" => [
+    "agriculture" => [
         "mccardle_farm.jl"],
     "FAST" => [
         "hydro_thermal.jl",
-        "production_management_multiple_stages.jl",
+        "production_management.jl",
         "quickstart.jl"],
-    "InfiniteHorizon" => [
+    "infinite_horizon" => [
+        "trivial_example.jl",
         "hydro_thermal.jl"],
     "StructDualDynProg.jl" => [
         "prob5.2_2stages.jl",
         "prob5.2_3stages.jl"],
     "StochDynamicProgramming.jl" => [
-        "stock-example.jl",
-        "multistock-example.jl"]
+        "stock_example.jl",
+        "multistock_example.jl"]
 )
 
 const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")

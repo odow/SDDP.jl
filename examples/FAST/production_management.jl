@@ -35,7 +35,7 @@ function fast_production_management()
         Kokako.parameterize(sp, t==1 ? [0] : DEMAND) do ω
             JuMP.fix(d, ω)
         end
-        @stageobjective(sp, Min, C'x - S's)
+        @stageobjective(sp, C'x - S's)
     end
     Kokako.train(model, iteration_limit = 10, print_level = 0)
     @test Kokako.calculate_bound(model) ≈ -23.96 atol=1e-2

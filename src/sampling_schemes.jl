@@ -28,7 +28,7 @@ function sample_noise(::MonteCarlo, noise_terms::Vector{<:Noise})
         return nothing
     end
     cumulative_probability = sum(noise.probability for noise in noise_terms)
-    if cumulative_probability > 1.0
+    if cumulative_probability > 1.0 + 1e-6
         error("Cumulative probability cannot be greater than 1.0.")
     end
     rnd = rand() * cumulative_probability

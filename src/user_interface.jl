@@ -166,20 +166,22 @@ mutable struct Node{T}
     states::Dict{Symbol, State}
     # Stage objective
     stage_objective  # TODO(odow): make this a concrete type?
-    # The optimization sense. Must be :Min or :Max.
-    optimization_sense::Symbol
     # Bellman function
     bellman_function  # TODO(odow): make this a concrete type?
 end
 
 struct PolicyGraph{T}
+    # Must be :Min or :Max
+    objective_sense::Symbol
     # Children of the root node. child => probability.
     root_children::Vector{Noise{T}}
     # Starting value of the state variables.
     initial_root_state::Dict{Symbol, Float64}
     # All nodes in the graph.
     nodes::Dict{T, Node{T}}
-    PolicyGraph(T) = new{T}(Noise{T}[], Dict{Symbol, Float64}(), Dict{T, Node{T}}())
+    function PolicyGraph(T, sense::Symbol)
+        new{T}(sense, Noise{T}[], Dict{Symbol, Float64}(), Dict{T, Node{T}}())
+    end
 end
 
 # So we can query nodes in the graph as graph[node].
@@ -242,10 +244,14 @@ Or, using the Julia `do ... end` syntax:
     end
 """
 function PolicyGraph(builder::Function, graph::Graph{T};
+                     sense = :Min,
                      bellman_function = AverageCut(),
                      optimizer = nothing,
                      direct_mode = true) where T
-    policy_graph = PolicyGraph(T)
+    if !(sense == :Min || sense == :Max)
+        error("The optimization sense must be :Min or :Max. It is $(sense).")
+    end
+    policy_graph = PolicyGraph(T, sense)
     # Initialize nodes.
     for (node_index, children) in graph.nodes
         if node_index == graph.root_node
@@ -260,7 +266,6 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             (ω) -> nothing,
             Dict{Symbol, State}(),
             nothing,
-            :Min,
             # Delay initializing the bellman function until later so that it can
             # use information about the children and number of
             # stagewise-independent noise realizations.
@@ -465,23 +470,16 @@ optimization sense to `sense` (which must be `:Min` or `:Max`).
 
     Kokako.set_stage_objective(subproblem, :Min, 2x + 1)
 """
-function set_stage_objective(subproblem::JuMP.Model, sense::Symbol,
-                             stage_objective)
-    if !(sense == :Min || sense == :Max)
-        error("The optimization sense must be :Min or :Max. It is $(sense).")
-    end
+function set_stage_objective(subproblem::JuMP.Model, stage_objective)
     node = get_node(subproblem)
     node.stage_objective = stage_objective
-    node.optimization_sense = sense
     return
 end
 
-macro stageobjective(subproblem, sense, expr)
-    sense = Expr(:quote, sense)
+macro stageobjective(subproblem, expr)
     code = quote
         set_stage_objective(
             $(esc(subproblem)),
-            $(esc(sense)),
             $(Expr(:macrocall,
                 Symbol("@expression"),
                 :LineNumber,

@@ -33,7 +33,7 @@ function fast_hydro_thermal()
         Kokako.parameterize(sp, RAINFALL) do ω
             JuMP.fix(ξ, ω)
         end
-        @stageobjective(sp, Min, 5 * p)
+        @stageobjective(sp, 5 * p)
     end
 
     Kokako.train(model, iteration_limit = 10, print_level = 0)

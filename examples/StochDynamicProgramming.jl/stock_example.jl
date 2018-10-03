@@ -37,7 +37,7 @@ function stock_example()
         Kokako.parameterize(sp, 0.0:1/30:0.3) do ω
             JuMP.fix(ξ, ω)
         end
-        @stageobjective(sp, Min, (sin(3 * stage) - 1) * control)
+        @stageobjective(sp, (sin(3 * stage) - 1) * control)
     end
 
     status = Kokako.train(model, iteration_limit = 50, print_level = 0)

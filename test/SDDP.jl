@@ -1,7 +1,8 @@
 using Kokako, Test, GLPK
 
 @testset "Forward Pass" begin
-    model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
+    model = Kokako.PolicyGraph(Kokako.LinearGraph(2);
+                sense = :Max,
                 bellman_function = Kokako.AverageCut(upper_bound=100.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
@@ -9,7 +10,7 @@ using Kokako, Test, GLPK
         @variable(node, x)
         @variable(node, x′ >= 0)
         Kokako.add_state_variable(node, x, x′, 0.0)
-        @stageobjective(node, Max, x′)
+        @stageobjective(node, x′)
         Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_upper_bound(x′, ω)
         end
@@ -33,7 +34,7 @@ end
         @variable(node, x)
         @variable(node, x′ >= 0)
         Kokako.add_state_variable(node, x, x′, 0.0)
-        @stageobjective(node, Min, x′)
+        @stageobjective(node, x′)
         Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_lower_bound(x′, ω)
         end

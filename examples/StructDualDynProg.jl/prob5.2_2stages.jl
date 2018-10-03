@@ -54,7 +54,7 @@ function test_prob52_2stages()
             end
         end
         # ========== Stage objective ==========
-        @stageobjective(subproblem, Min,
+        @stageobjective(subproblem,
             ic' * v +  C' * y * T + 1e6 * penalty)
         return
     end

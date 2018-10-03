@@ -29,7 +29,7 @@ function infinite_hydro_thermal()
             outgoing_reservoir == incoming_reservoir - hydro_generation - spill + inflow
             hydro_generation + thermal_generation == demand
         end)
-        @stageobjective(subproblem, Min, 10 * spill + thermal_generation)
+        @stageobjective(subproblem, 10 * spill + thermal_generation)
         Kokako.parameterize(subproblem, Ω) do ω
             JuMP.fix(inflow, ω.inflow)
             JuMP.fix(demand, ω.demand)

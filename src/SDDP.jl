@@ -48,10 +48,10 @@ end
 
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
-function set_objective(node::Node)
+function set_objective(graph::PolicyGraph{T}, node::Node{T}) where T
     JuMP.set_objective(
         node.subproblem,
-        node.optimization_sense,
+        graph.objective_sense,
         node.stage_objective + bellman_term(node.bellman_function)
     )
 end
@@ -77,8 +77,8 @@ function solve_subproblem(graph::PolicyGraph{T},
     set_incoming_state(node, state)
     node.parameterize(noise)
     # TODO(odow): cache the need to call set_objective. Only call it if the
-    # objective changes.
-    set_objective(node)
+    # stage-objective changes.
+    set_objective(graph, node)
     JuMP.optimize!(node.subproblem)
     # Test for primal feasibility.
     primal_status = JuMP.primal_status(node.subproblem)
@@ -230,7 +230,7 @@ function calculate_bound(graph::PolicyGraph, state::Dict{Symbol, Float64},
                        probabilities,
                        noise_supports,
                        objectives,
-                       true)  # TODO(odow): objective sense at root node.
+                       graph.objective_sense == :Min)
     return sum(obj * prob for (obj, prob) in
         zip(objectives, risk_adjusted_probability))
 end
