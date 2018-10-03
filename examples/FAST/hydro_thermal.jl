@@ -9,29 +9,36 @@
     https://github.com/leopoldcambier/FAST/tree/daea3d80a5ebb2c52f78670e34db56d53ca2e778/examples/hydro%20thermal
 ==#
 
-using SDDP, JuMP, Clp, Base.Test
+using Kokako, GLPK, Test
 
-RAINFALL = [2, 10]
-
-m = SDDPModel(
-                sense  = :Min,
-                stages = 2,
-                solver = ClpSolver(),
-                objective_bound = 0.0
-                    ) do sp, t
-    @state(sp, 0 <= x <= 8, x0==0)
-    @variable(sp, y >= 0)
-    @variable(sp, p >= 0)
-    @constraint(sp, p + y >= 6)
-    if t == 1
-        @constraint(sp, x <= x0 + mean(RAINFALL) - y)
-    else
-        @rhsnoise(sp, r = RAINFALL, x <= x0 + r - y)
+function fast_hydro_thermal()
+    model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
+                bellman_function = Kokako.AverageCut(lower_bound=0.0),
+                optimizer = with_optimizer(GLPK.Optimizer)
+                        ) do sp, t
+        # @state(sp, 0 <= x <= 8, x0==0)
+        @variables(sp, begin
+            x0
+            0 <= x <= 8
+            y >= 0
+            p >= 0
+            ξ
+        end)
+        Kokako.add_state_variable(sp, x0, x, 0.0)
+        @constraints(sp, begin
+            p + y >= 6
+            x <= x0 - y + ξ
+        end)
+        RAINFALL = (t == 1 ? [6] : [2, 10])
+        Kokako.parameterize(sp, RAINFALL) do ω
+            JuMP.fix(ξ, ω)
+        end
+        @stageobjective(sp, Min, 5 * p)
     end
-    @stageobjective(sp, 5 * p)
+
+    Kokako.train(model, iteration_limit = 10, print_level = 0)
+
+    @test Kokako.calculate_bound(model) == 10
 end
 
-status = solve(m, iteration_limit = 10,
-print_level = 0)
-
-@test getbound(m) == 10
+fast_hydro_thermal()

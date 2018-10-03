@@ -9,36 +9,36 @@
     https://github.com/leopoldcambier/FAST/blob/daea3d80a5ebb2c52f78670e34db56d53ca2e778/examples/production management multiple stages/
 ==#
 
-using SDDP, JuMP, Clp, Base.Test
+using Kokako, GLPK, Test
 
-DEMAND = [2, 10]
-H = 3
-N = 2
-C = [0.2, 0.7]
-S = 2 + [0.33, 0.54]
-
-m = SDDPModel(
-                sense  = :Min,
-                stages = H,
-                solver = ClpSolver(),
-                objective_bound = -50
-                    ) do sp, t
-
-    @state(sp,    x[i=1:N] >= 0, x0==0)
-    @variable(sp, s[i=1:N] >= 0)
-    @constraint(sp, s .<= x0)
-
-    if t == 1
-        @constraint(sp, sum(s) ==  0)
-    else
-        @rhsnoise(sp, d = DEMAND, sum(s) <= d)
+function fast_production_management()
+    DEMAND = [2, 10]
+    H = 3
+    N = 2
+    C = [0.2, 0.7]
+    S = 2 .+ [0.33, 0.54]
+    model = Kokako.PolicyGraph(Kokako.LinearGraph(H),
+                bellman_function = Kokako.AverageCut(lower_bound=-50.0),
+                optimizer = with_optimizer(GLPK.Optimizer)
+                        ) do sp, t
+        @variables(sp, begin
+            x0[i=1:N]
+            x[i=1:N] >= 0
+            s[i=1:N] >= 0
+            d
+        end)
+        Kokako.add_state_variable.(sp, x0, x, 0.0)
+        @constraints(sp, begin
+            s .<= x0
+            sum(s) <= d
+        end)
+        Kokako.parameterize(sp, t==1 ? [0] : DEMAND) do ω
+            JuMP.fix(d, ω)
+        end
+        @stageobjective(sp, Min, C'x - S's)
     end
-
-    @stageobjective(sp, dot(C, x) - dot(S, s))
-
+    Kokako.train(model, iteration_limit = 10, print_level = 0)
+    @test Kokako.calculate_bound(model) ≈ -23.96 atol=1e-2
 end
 
-status = solve(m, iteration_limit = 10,
-print_level = 0)
-
-@test isapprox(getbound(m), -23.96, atol=1e-2)
+fast_production_management()

@@ -10,26 +10,30 @@
 
 ==#
 
-using SDDP, JuMP, Clp, Base.Test
+using Kokako, GLPK, Test
 
-m = SDDPModel(
-                sense  = :Min,
-                stages = 2,
-                solver = ClpSolver(),
-                objective_bound = -5
-                    ) do sp, t
-    @state(sp, x >= 0, x0==0)
-    if t == 1
-        @stageobjective(sp, x)
-    else
-        @variable(sp, s >= 0)
-        @constraint(sp, s <= x0)
-        @rhsnoise(sp, d = [2, 3], s <= d)
-        @stageobjective(sp, -2s)
+function fast_quickstart()
+    model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
+                bellman_function = Kokako.AverageCut(lower_bound=-5),
+                optimizer = with_optimizer(GLPK.Optimizer)
+                        ) do sp, t
+        # @state(sp, 0 <= x <= 8, x0==0)
+        @variable(sp, x0)
+        @variable(sp, x >= 0)
+        Kokako.add_state_variable(sp, x0, x, 0.0)
+        if t == 1
+            @stageobjective(sp, Min, x)
+        else
+            @variable(sp, s >= 0)
+            @constraint(sp, s <= x0)
+            Kokako.parameterize(sp, [2, 3]) do ω
+                JuMP.set_upper_bound(s, ω)
+            end
+            @stageobjective(sp, Min, -2s)
+        end
     end
+    Kokako.train(model, iteration_limit = 3, print_level = 0)
+    @test Kokako.calculate_bound(model) == -2
 end
 
-status = solve(m, iteration_limit = 3,
-print_level = 0)
-
-@test getbound(m) == -2
+fast_quickstart()

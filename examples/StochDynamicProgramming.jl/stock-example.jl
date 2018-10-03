@@ -18,31 +18,34 @@
 
 ==##############################################################################
 
-using SDDP, JuMP, Clp, Base.Test
+using Kokako, GLPK, Test
 
-m = SDDPModel(
-                  sense = :Min,
-                 stages = 5,
-                 solver = ClpSolver(),
-        objective_bound = -2
-                                ) do sp, stage
+function stock_example()
+    model = Kokako.PolicyGraph(Kokako.LinearGraph(5),
+                bellman_function = Kokako.AverageCut(lower_bound = -2),
+                optimizer = with_optimizer(GLPK.Optimizer)
+                                    ) do sp, stage
 
-    @state(sp, 0 <= state <= 1, state0 == 0.5)
+        # @state(sp, 0 <= state <= 1, state0 == 0.5)
+        @variable(sp, 0 <= state <= 1)
+        @variable(sp, state0)
+        Kokako.add_state_variable(sp, state0, state, 0.5)
 
-    @variable(sp, 0 <= control <= 0.5)
+        @variable(sp, 0 <= control <= 0.5)
+        @variable(sp, ξ)
+        @constraint(sp, state == state0 - control + ξ)
+        Kokako.parameterize(sp, 0.0:1/30:0.3) do ω
+            JuMP.fix(ξ, ω)
+        end
+        @stageobjective(sp, Min, (sin(3 * stage) - 1) * control)
+    end
 
-    @rhsnoise(sp,
-        noise = linspace(0, 0.3, 10),
-        state == state0 + control - noise
-    )
+    status = Kokako.train(model, iteration_limit = 50, print_level = 0)
+    @test Kokako.calculate_bound(model) ≈ -1.471 atol=0.001
 
-    @stageobjective(sp, (sin(3 * stage) - 1) * control)
+    # results = simulate(m, 1000)
+    # @test length(results) == 1000
+    # @test isapprox(mean(r[:objective] for r in results), -1.471, atol=0.05)
 end
 
-status = SDDP.solve(m, iteration_limit = 50,
-print_level = 0)
-@test isapprox(SDDP.getbound(m), -1.471, atol=0.001)
-
-results = simulate(m, 1000)
-@test length(results) == 1000
-@test isapprox(mean(r[:objective] for r in results), -1.471, atol=0.05)
+stock_example()
