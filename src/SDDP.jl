@@ -282,7 +282,6 @@ function train(graph::PolicyGraph;
                iteration_limit = 100_000,
                time_limit = Inf,
                stopping_rules = AbstractStoppingRules[],
-               # initial_state = nothing,
                # cut_selection = nothing,
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.MonteCarlo(),

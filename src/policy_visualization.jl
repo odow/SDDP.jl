@@ -1,6 +1,3 @@
-import Statistics
-using RecipesBase
-
 # Internal function: convert dataset (from Kokako.simulate) into a matrix where
 # the rows are quantiles, and the columns are stages.
 function publication_data(dataset::Vector{Vector{Dict{Symbol, Any}}},
@@ -14,15 +11,15 @@ function publication_data(dataset::Vector{Vector{Dict{Symbol, Any}}},
     return output_array
 end
 
-@userplot PublicationPlot
+RecipesBase.@userplot PublicationPlot
 
-@recipe function f(publication_plot::PublicationPlot;
+RecipesBase.@recipe function f(publication_plot::PublicationPlot;
                    quantile=[0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
     dataset, stage_function = publication_plot.args
     size --> (500, 300)
     data_matrix = publication_data(dataset, sort(quantile), stage_function)
     for i in 1:floor(Int, size(data_matrix, 1) / 2)
-        @series begin
+        RecipesBase.@series begin
             x := 1:size(data_matrix, 2)
             μ = 0.5 * (data_matrix[i,:] + data_matrix[end- i + 1, :])
             r = data_matrix[end- i + 1, :] - μ
@@ -37,7 +34,7 @@ end
     end
     if mod(size(data_matrix, 1) , 2) == 1
         qi = ceil(Int, size(data_matrix, 1) / 2)
-        @series begin
+        RecipesBase.@series begin
             x := 1:size(data_matrix, 2)
             y := data_matrix[qi, :]
             c --> "#00467F"

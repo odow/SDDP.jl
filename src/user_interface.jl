@@ -300,28 +300,14 @@ function PolicyGraph(builder::Function, graph::Graph{T};
     return policy_graph
 end
 
+# Internal functino: helper to get the node given a subproblem.
 function get_node(subproblem::JuMP.Model)
     return subproblem.ext[:kokako_node]::Node
 end
+
+# Internal functino: helper to get the policy graph given a subproblem.
 function get_policy_graph(subproblem::JuMP.Model)
     return subproblem.ext[:kokako_policy_graph]::PolicyGraph
-end
-
-# Internal function: at the state variable to the subproblem. Requires
-# JuMP.name(incoming) and JuMP.start_value(incoming) to be set.
-function add_state_variable(subproblem::JuMP.Model,
-                            incoming::JuMP.VariableRef,
-                            outgoing::JuMP.VariableRef,
-                            root_value::Real)
-    node = get_node(subproblem)
-    name = Symbol(JuMP.name(incoming))
-    if haskey(node.states, name)
-        error("The state $(name) already exists.")
-    end
-    node.states[name] = State(incoming, outgoing)
-    graph = get_policy_graph(subproblem)
-    graph.initial_root_state[name] = root_value
-    return
 end
 
 """
@@ -392,4 +378,86 @@ macro stageobjective(subproblem, expr)
         )
     end
     return code
+end
+
+# ============================================================================ #
+#
+#   Code to implement a JuMP variable extension.
+#
+#   Usage:
+#   julia> @variable(subproblem, 0 <= x[i=1:2] <= i, Kokako.State, root_value=i)
+#
+#   julia> x
+#   2-element Array{State{VariableRef},1}:
+#     State(x[1]_in,x[1]_out)
+#     State(x[2]_in,x[2]_out)
+#
+#   julia> x[1].in
+#   x[1]_in
+#
+#   julia> typeof(x[1].in)
+#   VariableRef
+#
+#   julia> x[2].out
+#   x[2]_out
+#
+#   Assuming subproblem has been solved, and there exists a primal solution
+#   julia> x_values = JuMP.result_value.(x)
+#   2-element Array{State{Float64},1}:
+#     State(0.0,1.0)
+#     State(1.2,3.0)
+#
+#   julia> x_values[1].out
+#   1.0
+# ============================================================================ #
+
+struct StateInfo
+    in::JuMP.VariableInfo
+    out::JuMP.VariableInfo
+    root_value::Float64
+end
+
+function JuMP.build_variable(
+    _error::Function, info::JuMP.VariableInfo, ::Type{State};
+    root_value = NaN, kwargs...)
+    if isnan(root_value)
+        _error("When creating a state variable, you must set the `root_value`" *
+               " keyword to the value of the state variable at the root node.")
+    end
+    return StateInfo(
+        JuMP.VariableInfo(
+            false, NaN,  # lower bound
+            false, NaN,  # upper bound
+            false, NaN,  # fixed value
+            false, NaN,  # start value
+            false, false # binary and integer
+        ),
+        info,
+        root_value
+    )
+end
+
+function JuMP.add_variable(
+        subproblem::JuMP.Model, state_info::StateInfo, name::String)
+    state = State(
+        JuMP.add_variable(
+            subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
+        JuMP.add_variable(
+            subproblem, JuMP.ScalarVariable(state_info.out), name * "_out")
+    )
+    node = get_node(subproblem)
+    sym_name = Symbol(name)
+    if haskey(node.states, sym_name)
+        error("The state $(sym_name) already exists.")
+    end
+    node.states[sym_name] = state
+    graph = get_policy_graph(subproblem)
+    graph.initial_root_state[sym_name] = state_info.root_value
+    return state
+end
+
+JuMP.variable_type(model::JuMP.Model, ::Type{State}) = State
+
+function JuMP.result_value(state::State{JuMP.VariableRef})
+    return State(JuMP.result_value(state.in), JuMP.result_value(state.out))
 end

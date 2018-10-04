@@ -24,24 +24,19 @@ function infinite_powder()
         g′(p) = 4 * gₘ / Pₘ * (1 - 2 * p / Pₘ)
 
         # ========== State Variables ==========
-        @variables(subproblem, begin
-            # Pasture cover (kgDM/ha).
-            pasture_cover
-            0 <= pasture_cover′ <= data["maximum_pasture_cover"]
-            # Quantity of supplement in storage (kgDM/ha).
-            stored_supplement
-            stored_supplement′ >= 0
-            # Soil moisture (mm).
-            soil_moisture
-            0 <= soil_moisture′ <= data["maximum_soil_moisture"]
-            # Number of cows milking (cows/ha).
-            cows_milking
-            0 <= cows_milking′ <= data["stocking_rate"]
-        end)
-        Kokako.add_state_variable(subproblem, pasture_cover, pasture_cover′, data["initial_pasture_cover"])
-        Kokako.add_state_variable(subproblem, stored_supplement, stored_supplement′, data["initial_storage"])
-        Kokako.add_state_variable(subproblem, soil_moisture, soil_moisture′, data["initial_soil_moisture"])
-        Kokako.add_state_variable(subproblem, cows_milking, cows_milking′, data["stocking_rate"])
+        # Pasture cover (kgDM/ha).
+        @variable(subproblem,
+            0 <= pasture_cover <= data["maximum_pasture_cover"],
+            Kokako.State, root_value = data["initial_pasture_cover"])
+        # Quantity of supplement in storage (kgDM/ha).
+        @variable(subproblem, stored_supplement >= 0,
+            Kokako.State, root_value = data["initial_storage"])
+        # Soil moisture (mm).
+        @variable(subproblem, 0 <= soil_moisture <= data["maximum_soil_moisture"],
+            Kokako.State, root_value = data["initial_soil_moisture"])
+        # Number of cows milking (cows/ha).
+        @variable(subproblem, 0 <= cows_milking <= data["stocking_rate"],
+            Kokako.State, root_value = data["stocking_rate"])
 
         # ========== Control Variables ==========
         @variables(subproblem, begin
@@ -65,11 +60,11 @@ function infinite_powder()
 
         @constraints(subproblem, begin
             # ========== State constraints ==========
-            pasture_cover′ <= pasture_cover + 7 * grass_growth - harvest - feed_pasture
-            stored_supplement′ <= stored_supplement + data["harvesting_efficiency"] * harvest - feed_storage
+            pasture_cover.out <= pasture_cover.in + 7 * grass_growth - harvest - feed_pasture
+            stored_supplement.out <= stored_supplement.in + data["harvesting_efficiency"] * harvest - feed_storage
             # This is a <= do account for the maximum soil moisture; excess
             # water is assumed to drain away.
-            soil_moisture′ <= soil_moisture - evapotranspiration + rainfall
+            soil_moisture.out <= soil_moisture.in - evapotranspiration + rainfall
 
             # ========== Energy balance ==========
             data["pasture_energy_density"] * (feed_pasture + feed_storage) +
@@ -79,23 +74,23 @@ function infinite_powder()
                     data["energy_for_maintenance"] +
                     data["energy_for_bcs_dry"][stage]
                 ) +
-                cows_milking * (
+                cows_milking.in * (
                     data["energy_for_bcs_milking"][stage] -
                     data["energy_for_bcs_dry"][stage]
                 ) +
                 energy_for_milk_production
 
             # ========== Milk production models ==========
-            energy_for_milk_production <= data["max_milk_energy"][stage] * cows_milking
+            energy_for_milk_production <= data["max_milk_energy"][stage] * cows_milking.in
             actual_milk_production <= energy_for_milk_production / data["energy_content_of_milk"][stage]
             # minimum milk
-            actual_milk_production >= data["min_milk_production"] * cows_milking
+            actual_milk_production >= data["min_milk_production"] * cows_milking.in
 
             # ========== Pasture growth models ==========
             # Model One: grass_growth ~ evapotranspiration
             grass_growth <= data["soil_fertility"][stage] * evapotranspiration / 7
             # Model Two: grass_growth ~ pasture_cover
-            [p′ = linspace(0, Pₘ, Pₙ)], grass_growth <= g(p′) + g′(p′) * (pasture_cover - p′)
+            [p′ = linspace(0, Pₘ, Pₙ)], grass_growth <= g(p′) + g′(p′) * (pasture_cover.in - p′)
 
             # ========== Fat Evaluation Index Penalty ==========
             fei_penalty >= cow_per_day * (0.00 + 0.25 * (supplement / cow_per_day - 3))
@@ -105,11 +100,11 @@ function infinite_powder()
 
         # ========== Lactation cycle over the season ==========
         if stage == data["number_of_weeks"]
-            @constraint(subproblem, cows_milking′ == data["stocking_rate"])
+            @constraint(subproblem, cows_milking.out == data["stocking_rate"])
         elseif data["maximum_lactation"] <= stage < data["number_of_weeks"]
-            @constraint(subproblem, cows_milking′ == 0)
+            @constraint(subproblem, cows_milking.out == 0)
         else
-            @constraint(subproblem, cows_milking′ <= cows_milking)
+            @constraint(subproblem, cows_milking.out <= cows_milking.in)
         end
 
         # ========== Low pasture cover penalty ==========
@@ -118,7 +113,7 @@ function infinite_powder()
         # add a small penalty when the pasture over gets unreasonably low. We
         # should never see pasture_penalty > 0 in a simulation.
         @variable(subproblem, pasture_penalty >= 0)
-        @constraint(subproblem, pasture_cover′ + pasture_penalty >= 500.0)
+        @constraint(subproblem, pasture_cover.out + pasture_penalty >= 500.0)
 
         # ========== Stage Objective ==========
         @stageobjective(subproblem,
@@ -127,16 +122,16 @@ function infinite_powder()
             data["supplement_price"] * supplement -
             data["harvest_cost"] * harvest -
             fei_penalty +
-            1e-4 * soil_moisture′  # Artificial term to encourage max soil moisture.
+            1e-4 * soil_moisture.out  # Artificial term to encourage max soil moisture.
         )
     end
 
     Kokako.train(model, iteration_limit = 1_000, print_level = 1)
 
     simulations = Kokako.simulate(model, 500, [
-        :cows_milking′,
-        :pasture_cover′,
-        :soil_moisture′,
+        :cows_milking,
+        :pasture_cover,
+        :soil_moisture,
         :grass_growth,
         :supplement,
         :actual_milk_production,
@@ -153,13 +148,13 @@ model, simulations = infinite_powder()
 
 plot(
     Kokako.publicationplot(simulations,
-        data -> data[:cows_milking′],
+        data -> data[:cows_milking].out,
         ylabel = "Cows Milking (cows/ha)"),
     Kokako.publicationplot(simulations,
-        data -> data[:pasture_cover′] / 1000,
+        data -> data[:pasture_cover].out / 1000,
         ylabel = "Pasture Cover (t/ha)"),
     Kokako.publicationplot(simulations,
-        data -> data[:soil_moisture′],
+        data -> data[:soil_moisture].out,
         ylabel = "Soil Moisture (mm)"),
 
     Kokako.publicationplot(simulations,

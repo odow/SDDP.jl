@@ -1,15 +1,14 @@
 module Kokako
 
-using Reexport
-@reexport using JuMP
+import Reexport
+Reexport.@reexport using JuMP
 
-using JSON, Logging
+import JSON, Printf, RecipesBase, Statistics
 
-export @stageobjective, @state
+export @stageobjective
 
 # Modelling interface.
 include("user_interface.jl")
-include("states.jl")
 
 # SDDP related modular utilities.
 include("risk_measures.jl")

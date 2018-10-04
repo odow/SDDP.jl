@@ -1,5 +1,3 @@
-using Printf
-
 # ========================== Begin MIT Licensed Code ========================= #
 # The following a modified version of that found at
 #
@@ -39,9 +37,9 @@ function humanize(value::Real)
     end
     normalized_value = sign(value) * BASE * bytes / unit
     if isa(value, Integer)
-        return @sprintf("% 8d%s", normalized_value, suffix)
+        return Printf.@sprintf("% 8d%s", normalized_value, suffix)
     else
-        return @sprintf("% 8.3f%s", normalized_value, suffix)
+        return Printf.@sprintf("% 8.3f%s", normalized_value, suffix)
     end
 end
 # =========================== End MIT Licensed Code ========================== #
