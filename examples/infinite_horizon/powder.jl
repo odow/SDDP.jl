@@ -1,4 +1,4 @@
-using Kokako, GLPK, Test, JSON, Gurobi
+using Kokako, Test, JSON, Gurobi, Plots
 
 function infinite_powder()
     data = JSON.parsefile(joinpath(@__DIR__, "powder_data.json"))
@@ -9,7 +9,6 @@ function infinite_powder()
     model = Kokako.PolicyGraph(graph,
         sense = :Max,
         bellman_function = Kokako.AverageCut(upper_bound = 1e5),
-        # optimizer = with_optimizer(GLPK.Optimizer)
         optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag=0)
             ) do subproblem, stage
         # Simple linspace since it got dropped from Base Julia v1.0.
@@ -155,32 +154,32 @@ model, simulations = infinite_powder()
 plot(
     Kokako.publicationplot(simulations,
         data -> data[:cows_milking′],
-        ylabel = "Cows Milking\n(cows/ha)"),
+        ylabel = "Cows Milking (cows/ha)"),
     Kokako.publicationplot(simulations,
         data -> data[:pasture_cover′] / 1000,
-        ylabel = "Pasture Cover\n(t/ha)"),
+        ylabel = "Pasture Cover (t/ha)"),
     Kokako.publicationplot(simulations,
         data -> data[:soil_moisture′],
-        ylabel = "Soil Moisture\n(mm)"),
+        ylabel = "Soil Moisture (mm)"),
 
     Kokako.publicationplot(simulations,
         data -> data[:grass_growth],
-        ylabel = "Grass Growth\n(kg/day)"),
+        ylabel = "Grass Growth (kg/day)"),
     Kokako.publicationplot(simulations,
         data -> data[:supplement],
-        ylabel = "Palm Kernel Fed\n(kg/cow/day)"),
+        ylabel = "Palm Kernel Fed (kg/cow/day)"),
     Kokako.publicationplot(simulations,
         data -> data[:actual_milk_production],
-        ylabel = "Milk Production\n(kg/day)"),
+        ylabel = "Milk Production (kg/day)"),
 
     Kokako.publicationplot(simulations,
         data -> data[:stage_objective],
-        ylabel = "Stage Objective\n(\\\$)"),
+        ylabel = "Stage Objective (\\\$)"),
     Kokako.publicationplot(simulations,
         data -> data[:noise_term]["evapotranspiration"],
-        ylabel = "Evapotranspiration\n(mm)"),
+        ylabel = "Evapotranspiration (mm)"),
     Kokako.publicationplot(simulations,
         data -> data[:noise_term]["rainfall"],
-        ylabel = "Rainfall\n(mm)"),
+        ylabel = "Rainfall (mm)"),
     size = (1500, 900)
 )

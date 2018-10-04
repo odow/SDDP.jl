@@ -1,9 +1,10 @@
 import Statistics
 using RecipesBase
 
-function prepare_data(dataset::Vector{Vector{Dict{Symbol, Any}}},
-                      quantiles::Vector{Float64},
-                      stage_function::Function)
+# Internal function: convert dataset (from Kokako.simulate) into a matrix where
+# the rows are quantiles, and the columns are stages.
+function publication_data(dataset::Vector{Vector{Dict{Symbol, Any}}},
+        quantiles::Vector{Float64}, stage_function::Function)
     max_stages = maximum(length.(dataset))
     output_array = fill(NaN, length(quantiles), max_stages)
     for stage in 1:max_stages
@@ -19,7 +20,7 @@ end
                    quantile=[0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
     dataset, stage_function = publication_plot.args
     size --> (500, 300)
-    data_matrix = prepare_data(dataset, sort(quantile), stage_function)
+    data_matrix = publication_data(dataset, sort(quantile), stage_function)
     for i in 1:floor(Int, size(data_matrix, 1) / 2)
         @series begin
             x := 1:size(data_matrix, 2)

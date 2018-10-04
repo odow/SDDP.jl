@@ -36,9 +36,11 @@ function get_outgoing_state(node::Node)
         # To fix some cases of numerical infeasiblities, if the outgoing value
         # is outside its bounds, project the value back onto the bounds.
         outgoing_value = JuMP.result_value(state.outgoing)
-        if JuMP.has_upper_bound(state.outgoing) && JuMP.upper_bound(state.outgoing) < outgoing_value
+        if (JuMP.has_upper_bound(state.outgoing) &&
+                JuMP.upper_bound(state.outgoing) < outgoing_value)
             outgoing_value = JuMP.upper_bound(state.outgoing)
-        elseif JuMP.has_lower_bound(state.outgoing) && JuMP.lower_bound(state.outgoing) > outgoing_value
+        elseif (JuMP.has_lower_bound(state.outgoing) &&
+                JuMP.lower_bound(state.outgoing) > outgoing_value)
             outgoing_value = JuMP.lower_bound(state.outgoing)
         end
         values[name] = outgoing_value
@@ -138,8 +140,10 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
         num_starting_states = length(starting_states)
         state = splice!(starting_states, rand(1:num_starting_states))
         # ===== End: starting state for infinite horizon =====
-        new_state, duals, stage_objective, objective = solve_subproblem(graph, node, state, noise)
-        @debug "Solved $(node_index): $(new_state), $(duals), $(stage_objective), $(objective)"
+        new_state, duals, stage_objective, objective = solve_subproblem(
+            graph, node, state, noise)
+        @debug "Solved $(node_index): $(new_state), $(duals), " *
+            "$(stage_objective), $(objective)"
         cumulative_value += stage_objective
         push!(sampled_states, new_state)
         state = copy(new_state)
@@ -151,7 +155,8 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
         if distance(
                 options.starting_states[final_node_index],
                 sampled_states[end-1]) > options.cycle_discretization_delta
-            push!(options.starting_states[final_node_index], sampled_states[end-1])
+            push!(options.starting_states[final_node_index],
+                sampled_states[end-1])
         end
     end
     # ===== End: drop off starting state if terminated due to cycle =====
@@ -202,7 +207,8 @@ function backward_pass(graph::PolicyGraph{T},
                     graph, child_node, outgoing_state, noise.term)
                 push!(dual_variables, duals)
                 push!(noise_supports, noise.term)
-                push!(original_probability, child.probability * noise.probability)
+                push!(original_probability,
+                    child.probability * noise.probability)
                 push!(objective_realizations, obj)
             end
         end
@@ -255,7 +261,8 @@ function calculate_bound(graph::PolicyGraph, state::Dict{Symbol, Float64},
         zip(objectives, risk_adjusted_probability))
 end
 
-function calculate_bound(graph::PolicyGraph, risk_measure::AbstractRiskMeasure=Expectation())
+function calculate_bound(graph::PolicyGraph,
+        risk_measure::AbstractRiskMeasure=Expectation())
     calculate_bound(graph, graph.initial_root_state, risk_measure)
 end
 
@@ -264,8 +271,12 @@ end
 # risk_measure = Dict(1=>Expectation(), 2=>WorstCase())
 # risk_measure = (node_index) -> node_index == 1 ? Expectation() : WorstCase()
 get_per_node(collection, node_index) = collection
-get_per_node(collection::Dict{T, <:Any}, node_index::T) where T = collection[node_index]
-get_per_node(collection::Function, node_index::T) where T = collection(node_index)
+function get_per_node(collection::Dict{T, <:Any}, node_index::T) where T
+    return collection[node_index]
+end
+function get_per_node(collection::Function, node_index::T) where T
+    return collection(node_index)
+end
 
 function train(graph::PolicyGraph;
                iteration_limit = 100_000,
@@ -283,7 +294,8 @@ function train(graph::PolicyGraph;
     if print_level > 0
         print_banner()
     end
-    options = Options(graph, graph.initial_root_state, sampling_scheme, cycle_discretization_delta)
+    options = Options(graph, graph.initial_root_state, sampling_scheme,
+        cycle_discretization_delta)
     status = :not_solved
     start_time = time()
     iteration_count = 1
@@ -302,12 +314,14 @@ function train(graph::PolicyGraph;
                 status = :iteration_limit
                 break
             end
-            scenario_path, sampled_states, cumulative_value = forward_pass(graph, options)
-            backward_pass(graph, options, scenario_path, sampled_states, risk_measure)
-            # bound = calculate_bound(graph, initial_state)
+            scenario_path, sampled_states, cumulative_value = forward_pass(
+                graph, options)
+            backward_pass(
+                graph, options, scenario_path, sampled_states, risk_measure)
             bound = calculate_bound(graph)
             if print_level > 0
-                print_iteration(iteration_count, cumulative_value, bound)
+                print_iteration(iteration_count, cumulative_value, bound,
+                    time() - start_time)
             end
             iteration_count += 1
         end
