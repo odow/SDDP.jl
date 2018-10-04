@@ -97,7 +97,7 @@ shows that thermal generation is high when inflows are low.
 Instead of the interactive Javascript plots, you can also create some
 publication ready plots using the `SDDP.publicationplot` function.
 
-!!! note
+!!!info
     You need to install the [Plots.jl](https://github.com/JuliaPlots/Plots)
     package for this to work. We used the `GR` backend (`gr()`), but any
     Plots.jl backend should work.
@@ -137,6 +137,17 @@ This should open a plot window with a plot that looks like:
 You can save this to a PDF using Plots.jl
 ```julia
 savefig("my_picture.pdf")
+```
+
+Instead of passing the key as the second argument, you can also pass a function.
+This function takes one argument, a simulation dictionary, and returns a vector
+with one element for each stage. For example, to plot the total generation
+(i.e., thermal + hydro), we can go:
+```julia
+SDDP.publicationplot(simulation_result,
+    (data) -> [data[:thermal_generation][t] + data[:hydro_generation][t] for t=1:3],
+    title = "Total Generation"
+)
 ```
 
 ## Plotting the value function
