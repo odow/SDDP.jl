@@ -75,3 +75,45 @@ function sample_scenario(graph::PolicyGraph{T}, sampling_scheme::MonteCarlo;
     end
     return scenario_path
 end
+
+# ========================= Historical Sampling Scheme ========================
+
+struct Historical{NodeIndex, NoiseTerm}
+    scenarios::Vector{Noise{Tuple{NodeIndex, NoiseTerm}}}
+end
+
+"""
+    Historical(scenarios::Vector{Vector{Tuple{T, S}}}, probability::Vector{Float64})
+
+A sampling scheme that samples a scenario from the vector of scenarios
+`scenarios` according to `probability`. If probability omitted, defaults to
+uniform probability.
+
+# Example
+
+    Historical(
+        [
+            [(1, 0.5), (2, 1.0), (3, 0.5)],
+            [(1, 0.5), (2, 0.0), (3, 1.0)],
+            [(1, 1.0), (2, 0.0), (3, 0.0)]
+        ],
+        [0.2, 0.5, 0.3]
+    )
+"""
+function Historical(scenarios::Vector{Vector{Tuple{NodeIndex, NoiseTerm}}},
+                    probability::Vector{Float64} =
+                        fill(1.0 / length(scenarios), length(scenarios))
+                    ) where {NodeIndex, NoiseTerm}
+    output = Noise{Vector{Tuple{NodeIndex, NoiseTerm}}}[]
+    for (scenario, prob) in zip(scenarios, probability)
+        push!(output, Noise(scenario, prob))
+    end
+    return Historical(output)
+end
+
+function sample_scenario(graph::PolicyGraph{T},
+                         sampling_scheme::Historical{T, NoiseTerm};
+                         terminate_on_cycle::Bool = true,
+                         max_depth::Int = 0) where {T, NoiseTerm}
+    sample_noise(MonteCarlo(), sampling_scheme.scenarios)
+end
