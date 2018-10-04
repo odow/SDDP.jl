@@ -10,10 +10,8 @@ function infinite_trivial()
                 bellman_function = Kokako.AverageCut(lower_bound=0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
-        @variable(subproblem, state)
-        @variable(subproblem, state′)
-        Kokako.add_state_variable(subproblem, state, state′, 0.0)
-        @constraint(subproblem, state == state′)
+        @variable(subproblem, state, Kokako.State, root_value=0)
+        @constraint(subproblem, state.in == state.out)
         @stageobjective(subproblem, 2.0)
     end
     Kokako.train(model, iteration_limit=100)

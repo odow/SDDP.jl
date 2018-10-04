@@ -27,7 +27,8 @@ using Kokako, Test
             end
         end
         scenario = Kokako.sample_scenario(model, Kokako.MonteCarlo(),
-                                          max_cycles = 2)
+                                          terminate_on_cycle = false,
+                                          max_depth = 4)
         @test length(scenario) == 4
         for (index, (node, noise)) in enumerate(scenario)
             stage = (index - 1) % 2 + 1

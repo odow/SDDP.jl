@@ -178,11 +178,11 @@ function refine_bellman_function(graph::PolicyGraph{T},
     # Add the cut to the subproblem.
     if is_minimization
         @constraint(node.subproblem, bellman_function.variable >=
-            intercept + sum(coefficients[name] * state.outgoing
+            intercept + sum(coefficients[name] * state.out
                 for (name, state) in node.states))
     else
         @constraint(node.subproblem, bellman_function.variable <=
-            intercept + sum(coefficients[name] * state.outgoing
+            intercept + sum(coefficients[name] * state.out
                 for (name, state) in node.states))
     end
     push!(bellman_function.cuts, Cut(intercept, coefficients))

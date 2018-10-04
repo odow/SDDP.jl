@@ -24,10 +24,7 @@ function test_prob52_2stages()
         D2 = [diff([0, 3919, 7329, 10315])  diff([0, 7086, 9004, 11169])]
         p2 = [0.9, 0.1]
         # ========== State Variables ==========
-        # @state(subproblem, x′[i=1:n] >= 0, x == 0.0)
-        @variable(subproblem, x[i=1:n])
-        @variable(subproblem, x′[i=1:n] >= 0)
-        Kokako.add_state_variable.(subproblem, x, x′, 0.0)
+        @variable(subproblem, x[i=1:n] >= 0, Kokako.State, root_value=0.0)
         # ========== Variables ==========
         @variables(subproblem, begin
             y[1:n, 1:m] >= 0
@@ -37,8 +34,8 @@ function test_prob52_2stages()
         end)
         # ========== Constraints ==========
         @constraints(subproblem, begin
-            x′ .== x + v
-            [i=1:n], sum(y[i, :]) <= x[i]
+            [i=1:n], x[i].out == x[i].in + v[i]
+            [i=1:n], sum(y[i, :]) <= x[i].in
             [j=1:m], sum(y[:, j]) + penalty >= rhs_noise[j]
         end)
         if stage == 2

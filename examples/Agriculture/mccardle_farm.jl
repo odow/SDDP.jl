@@ -62,17 +62,8 @@ function test_mccardle_farm_model()
         stage, weather = index
         # ===================== State Variables =====================
         # Area planted.
-        # @state(subproblem, 0 <= acres′ <= M, acres==M)
-        # Bales from cutting i in storage.
-        # @state(subproblem, bales′[cutting=1:3] >= 0, bales==(cutting==1 ? H : 0))
-        @variables(subproblem, begin
-            acres
-            0 <= acres′ <= M
-            bales[cutting=1:3]
-            bales′[cutting=1:3] >= 0
-        end)
-        Kokako.add_state_variable(subproblem, acres, acres′, M)
-        Kokako.add_state_variable.(Ref(subproblem), bales, bales′, [H, 0, 0])
+        @variable(subproblem, 0 <= acres <= M, Kokako.State, root_value = M)
+        @variable(subproblem, bales[i=1:3] >= 0, Kokako.State, root_value = [H, 0, 0][i])
         # ===================== Variables =====================
         @variables(subproblem, begin
             buy[cutting=1:3] >= 0  # Quantity of bales to buy from each cutting.
@@ -83,23 +74,23 @@ function test_mccardle_farm_model()
         end)
         # ===================== Constraints =====================
         if stage == 1
-            @constraint(subproblem, acres′ <= acres)
-            @constraint(subproblem, bales .== bales′)
+            @constraint(subproblem, acres.out <= acres.in)
+            @constraint(subproblem, [i=1:3], bales[i].in == bales[i].out)
         else
             @expression(subproblem, cut_ex[c=1:3],
-                bales[c] + buy[c]  - eat[c] - sell[c] + pen_p[c] - pen_n[c])
+                bales[c].in + buy[c]  - eat[c] - sell[c] + pen_p[c] - pen_n[c])
             @constraints(subproblem, begin
                 # Cannot plant more land than previously cropped.
-                acres′ <= acres
+                acres.out <= acres.in
                 # In each stage we need to meet demand.
                 sum(eat) >= D[stage-1]
                 # We can buy and sell other cuttings.
-                bales′[stage-1] == cut_ex[stage-1] + acres * b[stage-1, weather]
-                [c = 1:3; c != stage - 1], bales′[c] == cut_ex[c]
+                bales[stage-1].out == cut_ex[stage-1] + acres.in * b[stage-1, weather]
+                [c = 1:3; c != stage - 1], bales[c].out == cut_ex[c]
                 # There is some maximum storage.
-                sum(bales′) <= w
+                sum(bales[i].out for i in 1:3) <= w
                 # We can only sell what is in storage.
-                [c=1:3], sell[c] <= bales[c]
+                [c=1:3], sell[c] <= bales[c].in
                 # Maximum sales quantity.
                 sum(sell) <= L
             end)
@@ -111,10 +102,10 @@ function test_mccardle_farm_model()
             @stageobjective(subproblem,
                 1000 * (sum(pen_p) + sum(pen_n)) +
                 # cost of growing
-                C[stage-1, weather] * acres +
+                C[stage-1, weather] * acres.in +
                 sum(
                     # inventory cost
-                    V[stage-1] * bales[cutting] * t[stage-1] +
+                    V[stage-1] * bales[cutting].in * t[stage-1] +
                     # purchase cost
                     r[cutting][stage-1,weather] * buy[cutting] +
                     # feed cost

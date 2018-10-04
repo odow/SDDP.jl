@@ -6,7 +6,7 @@ struct Options{SamplingScheme, T}
     function Options(policy_graph::PolicyGraph{T},
                      initial_state::Dict{Symbol, Float64},
                      sampling_scheme::S,
-                     cycle_discretization_delta::Float64) where {T, S}
+                     cycle_discretization_delta::Float64 = 0.0) where {T, S}
         starting_states = Dict{T, Vector{Dict{Symbol, Float64}}}()
         for node_index in keys(policy_graph.nodes)
             starting_states[node_index] = Dict{Symbol, Float64}[]
@@ -22,7 +22,7 @@ end
 # contained in state.
 function set_incoming_state(node::Node, state::Dict{Symbol, Float64})
     for (state_name, value) in state
-        JuMP.fix(node.states[state_name].incoming, value)
+        JuMP.fix(node.states[state_name].in, value)
     end
     return
 end
@@ -35,13 +35,13 @@ function get_outgoing_state(node::Node)
     for (name, state) in node.states
         # To fix some cases of numerical infeasiblities, if the outgoing value
         # is outside its bounds, project the value back onto the bounds.
-        outgoing_value = JuMP.result_value(state.outgoing)
-        if (JuMP.has_upper_bound(state.outgoing) &&
-                JuMP.upper_bound(state.outgoing) < outgoing_value)
-            outgoing_value = JuMP.upper_bound(state.outgoing)
-        elseif (JuMP.has_lower_bound(state.outgoing) &&
-                JuMP.lower_bound(state.outgoing) > outgoing_value)
-            outgoing_value = JuMP.lower_bound(state.outgoing)
+        outgoing_value = JuMP.result_value(state.out)
+        if (JuMP.has_upper_bound(state.out) &&
+                JuMP.upper_bound(state.out) < outgoing_value)
+            outgoing_value = JuMP.upper_bound(state.out)
+        elseif (JuMP.has_lower_bound(state.out) &&
+                JuMP.lower_bound(state.out) > outgoing_value)
+            outgoing_value = JuMP.lower_bound(state.out)
         end
         values[name] = outgoing_value
     end
@@ -57,7 +57,7 @@ function get_dual_variables(node::Node)
     dual_sign = JuMP.objective_sense(node.subproblem) == :Min ? 1.0 : -1.0
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
-        ref = JuMP.FixRef(state.incoming)
+        ref = JuMP.FixRef(state.in)
         values[name] = dual_sign * JuMP.result_dual(ref)
     end
     return values

@@ -15,18 +15,17 @@ function infinite_hydro_thermal()
                 bellman_function = Kokako.AverageCut(lower_bound=0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
+        @variable(subproblem,
+            5.0 <= reservoir <= 15.0, Kokako.State, root_value=10.0)
         @variables(subproblem, begin
-            incoming_reservoir
-            5.0 <= outgoing_reservoir <= 15.0
             thermal_generation >= 0
             hydro_generation >= 0
             spill >= 0
             inflow
             demand
         end)
-        Kokako.add_state_variable(subproblem, incoming_reservoir, outgoing_reservoir, 10.0)
         @constraints(subproblem, begin
-            outgoing_reservoir == incoming_reservoir - hydro_generation - spill + inflow
+            reservoir.out == reservoir.in - hydro_generation - spill + inflow
             hydro_generation + thermal_generation == demand
         end)
         @stageobjective(subproblem, 10 * spill + thermal_generation)

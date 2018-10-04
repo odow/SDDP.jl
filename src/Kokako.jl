@@ -9,6 +9,7 @@ export @stageobjective, @state
 
 # Modelling interface.
 include("user_interface.jl")
+include("states.jl")
 
 # SDDP related modular utilities.
 include("risk_measures.jl")

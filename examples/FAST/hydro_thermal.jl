@@ -16,18 +16,15 @@ function fast_hydro_thermal()
                 bellman_function = Kokako.AverageCut(lower_bound=0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                         ) do sp, t
-        # @state(sp, 0 <= x <= 8, x0==0)
+        @variable(sp, 0 <= x <= 8, Kokako.State, root_value = 0.0)
         @variables(sp, begin
-            x0
-            0 <= x <= 8
             y >= 0
             p >= 0
             ξ
         end)
-        Kokako.add_state_variable(sp, x0, x, 0.0)
         @constraints(sp, begin
             p + y >= 6
-            x <= x0 - y + ξ
+            x.out <= x.in - y + ξ
         end)
         RAINFALL = (t == 1 ? [6] : [2, 10])
         Kokako.parameterize(sp, RAINFALL) do ω

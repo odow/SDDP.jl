@@ -17,15 +17,12 @@ function fast_quickstart()
                 bellman_function = Kokako.AverageCut(lower_bound=-5),
                 optimizer = with_optimizer(GLPK.Optimizer)
                         ) do sp, t
-        # @state(sp, 0 <= x <= 8, x0==0)
-        @variable(sp, x0)
-        @variable(sp, x >= 0)
-        Kokako.add_state_variable(sp, x0, x, 0.0)
+        @variable(sp, x >= 0, Kokako.State, root_value = 0.0)
         if t == 1
-            @stageobjective(sp, x)
+            @stageobjective(sp, x.out)
         else
             @variable(sp, s >= 0)
-            @constraint(sp, s <= x0)
+            @constraint(sp, s <= x.in)
             Kokako.parameterize(sp, [2, 3]) do ω
                 JuMP.set_upper_bound(s, ω)
             end

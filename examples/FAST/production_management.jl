@@ -21,21 +21,19 @@ function fast_production_management()
                 bellman_function = Kokako.AverageCut(lower_bound=-50.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                         ) do sp, t
+        @variable(sp, x[1:N] >= 0, Kokako.State, root_value = 0.0)
         @variables(sp, begin
-            x0[i=1:N]
-            x[i=1:N] >= 0
             s[i=1:N] >= 0
             d
         end)
-        Kokako.add_state_variable.(sp, x0, x, 0.0)
         @constraints(sp, begin
-            s .<= x0
+            [i=1:N], s[i] <= x[i].in
             sum(s) <= d
         end)
         Kokako.parameterize(sp, t==1 ? [0] : DEMAND) do ω
             JuMP.fix(d, ω)
         end
-        @stageobjective(sp, C'x - S's)
+        @stageobjective(sp, sum(C[i] * x[i].out for i in 1:N) - S's)
     end
     Kokako.train(model, iteration_limit = 10, print_level = 0)
     @test Kokako.calculate_bound(model) ≈ -23.96 atol=1e-2
