@@ -1,28 +1,67 @@
 const SDDP_TIMER = TimerOutputs.TimerOutput()
 
-struct Options{SamplingScheme, T}
+# to_nodal_form is an internal helper function so users can pass arguments like:
+# risk_measure = Kokako.Expectation(),
+# risk_measure = Dict(1=>Expectation(), 2=>WorstCase())
+# risk_measure = (node_index) -> node_index == 1 ? Expectation() : WorstCase()
+# It will return a dictionary with a key for each node_index in the policy
+# graph, and a corresponding value of whatever the user provided.
+function to_nodal_form(graph::PolicyGraph{T}, element) where T
+    # Note: we don't copy element here, so it element is mutable, you should use
+    # to_nodal_form(graph, x -> new_element()) instead. A good example is
+    # Vector{T}; use to_nodal_form(graph, i -> T[]).
+    store = Dict{T, typeof(element)}()
+    for node_index in keys(graph.nodes)
+        store[node_index] = element
+    end
+    return store
+end
+function to_nodal_form(graph::PolicyGraph{T}, builder::Function) where T
+    node = first(keys(graph.nodes))
+    element = builder(node)
+    store = Dict{T, typeof(element)}()
+    for node_index in keys(graph.nodes)
+        store[node_index] = builder(node_index)
+    end
+    return store
+end
+function to_nodal_form(graph::PolicyGraph{T}, dict::Dict{T, V}) where {T, V}
+    for key in keys(graph.nodes)
+        if !haskey(dict, key)
+            error("Missing key: $(key).")
+        end
+    end
+    return dict
+end
+
+# Internal struct: storage for SDDP options. Users shouldn't interact with this
+# directly.
+struct Options{T}
     # The initial state to start from the root node.
     initial_state::Dict{Symbol, Float64}
     # The sampling scheme to use on the forward pass.
-    sampling_scheme::SamplingScheme
+    sampling_scheme::AbstractSamplingScheme
     # Storage for the set of possible sampling states at each node. We only use
     # this if there is a cycle in the policy graph.
     starting_states::Dict{T, Vector{Dict{Symbol, Float64}}}
+    # Risk measure to use at each node.
+    risk_measures::Dict{T, AbstractRiskMeasure}
     # The delta by which to check if a state is close to a previously sampled
     # state.
     cycle_discretization_delta::Float64
     # Internal function: users should never construct this themselves.
     function Options(policy_graph::PolicyGraph{T},
                      initial_state::Dict{Symbol, Float64},
-                     sampling_scheme::S,
+                     sampling_scheme::AbstractSamplingScheme,
+                     risk_measures,
                      cycle_discretization_delta::Float64 = 0.0) where {T, S}
-        # Initialize the storage for every node in the policy graph.
-        starting_states = Dict{T, Vector{Dict{Symbol, Float64}}}()
-        for node_index in keys(policy_graph.nodes)
-            starting_states[node_index] = Dict{Symbol, Float64}[]
-        end
-        return new{S, T}(initial_state, sampling_scheme, starting_states,
-            cycle_discretization_delta)
+        return new{T}(
+            initial_state,
+            sampling_scheme,
+            to_nodal_form(policy_graph, x -> Dict{Symbol, Float64}[]),
+            to_nodal_form(policy_graph, risk_measures),
+            cycle_discretization_delta
+        )
     end
 end
 
@@ -238,8 +277,7 @@ end
 function backward_pass(graph::PolicyGraph{T},
                        options::Options,
                        scenario_path::Vector{Tuple{T, NoiseType}},
-                       sampled_states::Vector{Dict{Symbol, Float64}},
-                       risk_measures
+                       sampled_states::Vector{Dict{Symbol, Float64}}
                            ) where {T, NoiseType}
     for index in (length(scenario_path)-1):-1:1
         # Lookup node, noise realization, and outgoing state variables.
@@ -274,7 +312,7 @@ function backward_pass(graph::PolicyGraph{T},
             graph,
             node,
             node.bellman_function,
-            get_per_node(risk_measures, node_index),
+            options.risk_measures[node_index],
             outgoing_state,
             dual_variables,
             noise_supports,
@@ -323,18 +361,6 @@ function calculate_bound(graph::PolicyGraph,
         zip(objectives, risk_adjusted_probability))
 end
 
-# Internal functions: helpers so users can pass arguments like:
-# risk_measure = Kokako.Expectation(),
-# risk_measure = Dict(1=>Expectation(), 2=>WorstCase())
-# risk_measure = (node_index) -> node_index == 1 ? Expectation() : WorstCase()
-get_per_node(collection, node_index) = collection
-function get_per_node(collection::Dict{T, <:Any}, node_index::T) where T
-    return collection[node_index]
-end
-function get_per_node(collection::Function, node_index::T) where T
-    return collection(node_index)
-end
-
 """
     Kokako.train(graph::PolicyGraph; kwargs...)
 
@@ -380,8 +406,13 @@ function train(graph::PolicyGraph;
         @warn("You haven't specified a stopping rule! You can only terminate " *
               "the call to Kokako.train via a keyboard interrupt ([CTRL+C]).")
     end
-    options = Options(graph, graph.initial_root_state, sampling_scheme,
-        cycle_discretization_delta)
+    options = Options(
+        graph,
+        graph.initial_root_state,
+        sampling_scheme,
+        risk_measure,
+        cycle_discretization_delta
+    )
     # The default status. This should never be seen by the user.
     status = :not_solved
     try
@@ -395,8 +426,10 @@ function train(graph::PolicyGraph;
                     graph, options)
             end
             TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
-                backward_pass(
-                    graph, options, scenario_path, sampled_states, risk_measure)
+                backward_pass(graph,
+                              options,
+                              scenario_path,
+                              sampled_states)
             end
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
                 bound = calculate_bound(graph)

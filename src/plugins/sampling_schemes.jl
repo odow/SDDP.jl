@@ -93,7 +93,7 @@ function sample_scenario(graph::PolicyGraph{T},
             return scenario_path
         elseif terminate_on_cycle && node_index in visited_nodes
             return scenario_path
-        elseif max_depth > 0 && length(scenario_path) > max_depth
+        elseif max_depth > 0 && length(scenario_path) >= max_depth
             return scenario_path
         end
         # We only need to store a list of visited nodes if we want to terminate
@@ -115,7 +115,8 @@ struct Historical{NodeIndex, NoiseTerm} <: AbstractSamplingScheme
 end
 
 """
-    Historical(scenarios::Vector{Vector{Tuple{T, S}}}, probability::Vector{Float64})
+    Historical(scenarios::Vector{Vector{Tuple{T, S}}},
+               probability::Vector{Float64})
 
 A sampling scheme that samples a scenario from the vector of scenarios
 `scenarios` according to `probability`. If probability omitted, defaults to

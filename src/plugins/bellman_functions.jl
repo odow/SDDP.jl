@@ -46,7 +46,8 @@ function refine_bellman_function(graph::PolicyGraph{T},
                                  original_probability::Vector{Float64},
                                  objective_realizations::Vector{Float64}
                                      ) where T
-    error("Kokako.refine_bellman_function not implemented for $(bellman_function).")
+    error("Kokako.refine_bellman_function not implemented for " *
+          "$(bellman_function).")
 end
 
 """
@@ -64,11 +65,13 @@ struct Cut
 end
 
 function JSON.lower(cut::Cut)
-    return Dict("intercept" => cut.intercept, "coefficients" => cut.coefficients)
+    return Dict("intercept" => cut.intercept,
+                "coefficients" => cut.coefficients)
 end
 
 """
-    write_bellman_to_file(policy_graph::PolicyGraph{T}, filename::String) where T
+    write_bellman_to_file(policy_graph::PolicyGraph{T},
+                          filename::String) where T
 
 Save the Bellman function to `filename` in JSON format.
 """
@@ -128,9 +131,10 @@ function initialize_bellman_function(factory::BellmanFactory{AverageCut},
         end
     end
     bellman_variable = if length(node.children) > 0
-        @variable(node.subproblem, lower_bound=lower_bound, upper_bound=upper_bound)
+        @variable(node.subproblem,
+                  lower_bound = lower_bound, upper_bound = upper_bound)
     else
-        @variable(node.subproblem, lower_bound=0, upper_bound=0)
+        @variable(node.subproblem, lower_bound = 0, upper_bound = 0)
     end
     return AverageCut(bellman_variable, Cut[])
 end

@@ -6,7 +6,7 @@ using Kokako, Test, GLPK
         @test graph.root_node == 0
         for stage in 0:4
             @test haskey(graph.nodes, stage)
-            @test graph.nodes[stage] == [(stage+1, 1.0)]
+            @test graph.nodes[stage] == [(stage + 1, 1.0)]
         end
         @test haskey(graph.nodes, 5)
         @test graph.nodes[5] == Tuple{Int, Float64}[]
@@ -15,11 +15,11 @@ using Kokako, Test, GLPK
     @testset "MarkovianGraph" begin
         @testset "Error cases" begin
             # Not root transition matrix.
-            @test_throws Exception Kokako.MarkovianGraph([ [0.5 0.5; 0.5 0.5] ])
+            @test_throws Exception Kokako.MarkovianGraph([[0.5 0.5; 0.5 0.5]])
             # Negative probability.
-            @test_throws Exception Kokako.MarkovianGraph([ [-0.5 0.75] ])
+            @test_throws Exception Kokako.MarkovianGraph([[-0.5 0.75]])
             # Proability sums to greater than 1.
-            @test_throws Exception Kokako.MarkovianGraph([ [0.8 0.8] ])
+            @test_throws Exception Kokako.MarkovianGraph([[0.8 0.8]])
             # Mis-matched dimensions.
             @test_throws Exception Kokako.MarkovianGraph([
                 [0.1 0.2 0.7], [0.5 0.5; 0.5 0.5]
@@ -112,7 +112,7 @@ end
                 [0.5 0.5; 0.3 0.4]
             ]
         )
-        model = Kokako.PolicyGraph(graph, direct_mode=false) do node, stage
+        model = Kokako.PolicyGraph(graph, direct_mode = false) do node, stage
         end
     end
 
@@ -127,14 +127,14 @@ end
                 (:stage_3 => :stage_1, 0.9)
             ]
         )
-        model = Kokako.PolicyGraph(graph, direct_mode=false) do node, stage
+        model = Kokako.PolicyGraph(graph, direct_mode = false) do node, stage
         end
     end
 end
 
 @testset "Kokako.State" begin
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               direct_mode=false) do node, stage
+                               direct_mode = false) do node, stage
         @variable(node, x, Kokako.State, initial_value = 0)
     end
     for stage in 1:2
@@ -147,7 +147,7 @@ end
 
 @testset "Kokako.parameterize" begin
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               direct_mode=false) do node, stage
+                               direct_mode = false) do node, stage
         @variable(node, 0 <= x <= 1)
         Kokako.parameterize(node, [1, 2, 3], [0.4, 0.5, 0.1]) do ω
             JuMP.set_upper_bound(x, ω)
@@ -165,7 +165,7 @@ end
 @testset "Kokako.set_stage_objective" begin
     @testset ":Min" begin
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                                   direct_mode=false) do node, stage
+                                   direct_mode = false) do node, stage
             @variable(node, 0 <= x <= 1)
             @stageobjective(node, 2x)
         end
@@ -177,7 +177,7 @@ end
     @testset ":Max" begin
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
                                    sense = :Max,
-                                   direct_mode=false) do node, stage
+                                   direct_mode = false) do node, stage
             @variable(node, 0 <= x <= 1)
             @stageobjective(node, 2x)
         end

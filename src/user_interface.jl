@@ -95,7 +95,8 @@ function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
             error("Entries in the transition matrix must be non-negative.")
         end
         if !all(0.0 .<= sum(transition; dims=2) .<= 1.0)
-            error("Rows in the transition matrix must sum to between [0.0, 1.0].")
+            error("Rows in the transition matrix must sum to between 0.0 and " *
+                  "1.0.")
         end
         if stage > 1
             if size(transition_matrices[stage-1], 2) != size(transition, 1)
