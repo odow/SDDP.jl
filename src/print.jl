@@ -53,14 +53,14 @@ end
 function print_banner(io=stdout)
     println(io, "———————————————————————————————————————————————————————————————————————————————")
     println(io, "                         Kokako - © Oscar Dowson, 2018.                        ")
-    # println(io, "0123456789 | 0123456789 | 0123456789 | 0123456789")
     println(io, "———————————————————————————————————————————————————————————————————————————————")
     println(io, " Iteration | Simulation |      Bound |   Time (s)")
     println(io, "———————————————————————————————————————————————————————————————————————————————")
 end
 
-function print_iteration(iteration, simulation, bound, time, io=stdout)
-    line = string(" ", humanize(iteration), " |  ", humanize(simulation),
-        " |  ", humanize(bound), " |  ", humanize(time))
+function print_iteration(log::Log, io=stdout)
+    line = string(" ", humanize(log.iteration), " |  ",
+        humanize(log.simulation_value), " |  ", humanize(log.bound), " |  ",
+        humanize(log.time))
     println(io, line)
 end

@@ -351,8 +351,8 @@ There is also a special option for infinite horizon problems
    the forward pass.
 """
 function train(graph::PolicyGraph;
-               iteration_limit = 100_000,
-               time_limit = Inf,
+               iteration_limit = nothing,
+               time_limit = nothing,
                stopping_rules = AbstractStoppingRule[],
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.InSampleMonteCarlo(),
@@ -364,26 +364,32 @@ function train(graph::PolicyGraph;
     if print_level > 0
         print_banner()
     end
+    # Convert the vector to an AbstractStoppingRule. Otherwise if the user gives
+    # something like stopping_rules = [Kokako.IterationLimit(100)], the vector
+    # will be concretely typed and we can't add a TimeLimit.
+    stopping_rules = convert(Vector{AbstractStoppingRule}, stopping_rules)
+    # Add the limits as stopping rules. An IterationLimit or TimeLimit may
+    # already exist in stopping_rules, but that doesn't matter.
+    if iteration_limit !== nothing
+        push!(stopping_rules, IterationLimit(iteration_limit))
+    end
+    if time_limit !== nothing
+        push!(stopping_rules, TimeLimit(time_limit))
+    end
+    if length(stopping_rules) == 0
+        @warn("You haven't specified a stopping rule! You can only terminate " *
+              "the call to Kokako.train via a keyboard interrupt ([CTRL+C]).")
+    end
     options = Options(graph, graph.initial_root_state, sampling_scheme,
         cycle_discretization_delta)
+    # The default status. This should never be seen by the user.
     status = :not_solved
-    start_time = time()
-    iteration_count = 1
     try
-        while true
-            @debug "Beginning iteration $(iteration_count)."
-            should_stop, status = convergence_test(graph, stopping_rules)
-            if should_stop
-                break
-            end
-            if time() - start_time > time_limit
-                status = :time_limit
-                break
-            end
-            if iteration_count > iteration_limit
-                status = :iteration_limit
-                break
-            end
+        log = Log[]
+        start_time = time()
+        iteration_count = 1
+        has_converged = false
+        while !has_converged
             TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
                 scenario_path, sampled_states, cumulative_value = forward_pass(
                     graph, options)
@@ -395,15 +401,17 @@ function train(graph::PolicyGraph;
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
                 bound = calculate_bound(graph)
             end
+            push!(log, Log(iteration_count, cumulative_value, bound,
+                time() - start_time)
+            )
+            has_converged, status = convergence_test(graph, log, stopping_rules)
             if print_level > 0
-                print_iteration(iteration_count, cumulative_value, bound,
-                    time() - start_time)
+                print_iteration(log[end])
             end
             iteration_count += 1
         end
     catch ex
         if isa(ex, InterruptException)
-            @warn("Terminating solve due to user interaction.")
             status = :interrupted
         else
             rethrow(ex)
