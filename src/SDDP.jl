@@ -136,7 +136,7 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
     scenario_path = sample_scenario(graph, options.sampling_scheme,
-        terminate_on_cycle::Bool = true)
+        terminate_on_cycle = true)
     # Storage for the list of outgoing states that we visit on the forward pass.
     sampled_states = Dict{Symbol, Float64}[]
     # Our initial incoming state.
@@ -506,7 +506,7 @@ function simulate(graph::PolicyGraph,
                   terminate_on_cycle::Bool = true,
                   max_depth::Int = 0,
                   custom_recorders = Dict{Symbol, Function}())
-    return [simulate(
+    return [_simulate(
                 graph,
                 variables;
                 sampling_scheme = sampling_scheme,
