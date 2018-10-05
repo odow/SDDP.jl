@@ -27,7 +27,7 @@ function stock_example()
                                     ) do sp, stage
 
         # @state(sp, 0 <= state <= 1, state0 == 0.5)
-        @variable(sp, 0 <= state <= 1, Kokako.State, root_value=0.5)
+        @variable(sp, 0 <= state <= 1, Kokako.State, initial_value = 0.5)
         @variable(sp, 0 <= control <= 0.5)
         @variable(sp, ξ)
         @constraint(sp, state.out == state.in - control + ξ)

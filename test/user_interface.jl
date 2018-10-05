@@ -135,7 +135,7 @@ end
 @testset "Kokako.State" begin
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
                                direct_mode=false) do node, stage
-        @variable(node, x, Kokako.State, root_value = 0)
+        @variable(node, x, Kokako.State, initial_value = 0)
     end
     for stage in 1:2
         node = model[stage]

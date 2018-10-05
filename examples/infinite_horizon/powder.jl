@@ -27,16 +27,16 @@ function infinite_powder()
         # Pasture cover (kgDM/ha).
         @variable(subproblem,
             0 <= pasture_cover <= data["maximum_pasture_cover"],
-            Kokako.State, root_value = data["initial_pasture_cover"])
+            Kokako.State, initial_value = data["initial_pasture_cover"])
         # Quantity of supplement in storage (kgDM/ha).
         @variable(subproblem, stored_supplement >= 0,
-            Kokako.State, root_value = data["initial_storage"])
+            Kokako.State, initial_value = data["initial_storage"])
         # Soil moisture (mm).
         @variable(subproblem, 0 <= soil_moisture <= data["maximum_soil_moisture"],
-            Kokako.State, root_value = data["initial_soil_moisture"])
+            Kokako.State, initial_value = data["initial_soil_moisture"])
         # Number of cows milking (cows/ha).
         @variable(subproblem, 0 <= cows_milking <= data["stocking_rate"],
-            Kokako.State, root_value = data["stocking_rate"])
+            Kokako.State, initial_value = data["stocking_rate"])
 
         # ========== Control Variables ==========
         @variables(subproblem, begin

@@ -12,7 +12,7 @@ using Kokako, GLPK, Test
 
 function test_prob52_3stages()
     model = Kokako.PolicyGraph(Kokako.LinearGraph(3),
-                bellman_function = Kokako.AverageCut(lower_bound=0.0),
+                bellman_function = Kokako.AverageCut(lower_bound = 0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                 ) do sp, t
         n = 4
@@ -22,7 +22,7 @@ function test_prob52_3stages()
         T = [8760, 7000, 1500] / 8760
         D2 = [diff([0, 3919, 7329, 10315])  diff([0, 7086, 9004, 11169])]
         p2 = [0.9, 0.1]
-        @variable(sp, x[i=1:n] >= 0, Kokako.State, root_value=0.0)
+        @variable(sp, x[i=1:n] >= 0, Kokako.State, initial_value = 0.0)
         @variables(sp, begin
             y[1:n, 1:m] >= 0
             v[1:n]      >= 0
@@ -47,7 +47,7 @@ function test_prob52_3stages()
         end
     end
     Kokako.train(model, iteration_limit = 30, print_level = 0)
-    @test Kokako.calculate_bound(model) ≈ 406712.49 atol=0.1
+    @test Kokako.calculate_bound(model) ≈ 406712.49 atol = 0.1
     # sim = simulate(mod, 1, [:x, :penalty])
     # @test length(sim) == 1
     # @test isapprox(sim[1][:x][1], [2986,0,7329,854])

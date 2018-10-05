@@ -14,10 +14,10 @@ using Kokako, GLPK, Test
 
 function fast_quickstart()
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                bellman_function = Kokako.AverageCut(lower_bound=-5),
+                bellman_function = Kokako.AverageCut(lower_bound = -5),
                 optimizer = with_optimizer(GLPK.Optimizer)
                         ) do sp, t
-        @variable(sp, x >= 0, Kokako.State, root_value = 0.0)
+        @variable(sp, x >= 0, Kokako.State, initial_value = 0.0)
         if t == 1
             @stageobjective(sp, x.out)
         else

@@ -2,9 +2,9 @@ using Kokako, GLPK, Test
 
 function infinite_hydro_thermal()
     Ω = [
-        (inflow=0.0, demand=7.5),
-        (inflow=5.0, demand=5),
-        (inflow=10.0, demand=2.5)
+        (inflow = 0.0, demand = 7.5),
+        (inflow = 5.0, demand = 5),
+        (inflow = 10.0, demand = 2.5)
     ]
     graph = Kokako.Graph(
         :root_node,
@@ -12,11 +12,11 @@ function infinite_hydro_thermal()
         [(:root_node => :week, 1.0), (:week => :week, 0.9)]
     )
     model = Kokako.PolicyGraph(graph,
-                bellman_function = Kokako.AverageCut(lower_bound=0),
+                bellman_function = Kokako.AverageCut(lower_bound = 0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
         @variable(subproblem,
-            5.0 <= reservoir <= 15.0, Kokako.State, root_value=10.0)
+            5.0 <= reservoir <= 15.0, Kokako.State, initial_value = 10.0)
         @variables(subproblem, begin
             thermal_generation >= 0
             hydro_generation >= 0
@@ -34,7 +34,7 @@ function infinite_hydro_thermal()
             JuMP.fix(demand, ω.demand)
         end
     end
-    Kokako.train(model, iteration_limit=100, print_level=1)
+    Kokako.train(model, iteration_limit = 100, print_level = 1)
 end
 
 infinite_hydro_thermal()

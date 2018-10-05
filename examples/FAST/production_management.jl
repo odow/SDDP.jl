@@ -18,10 +18,10 @@ function fast_production_management()
     C = [0.2, 0.7]
     S = 2 .+ [0.33, 0.54]
     model = Kokako.PolicyGraph(Kokako.LinearGraph(H),
-                bellman_function = Kokako.AverageCut(lower_bound=-50.0),
+                bellman_function = Kokako.AverageCut(lower_bound = -50.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                         ) do sp, t
-        @variable(sp, x[1:N] >= 0, Kokako.State, root_value = 0.0)
+        @variable(sp, x[1:N] >= 0, Kokako.State, initial_value = 0.0)
         @variables(sp, begin
             s[i=1:N] >= 0
             d
@@ -36,7 +36,7 @@ function fast_production_management()
         @stageobjective(sp, sum(C[i] * x[i].out for i in 1:N) - S's)
     end
     Kokako.train(model, iteration_limit = 10, print_level = 0)
-    @test Kokako.calculate_bound(model) ≈ -23.96 atol=1e-2
+    @test Kokako.calculate_bound(model) ≈ -23.96 atol = 1e-2
 end
 
 fast_production_management()

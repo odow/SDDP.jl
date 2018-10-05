@@ -23,10 +23,10 @@ using Kokako, GLPK, Test
 function test_multistock_example()
     model = Kokako.PolicyGraph(Kokako.LinearGraph(5),
             optimizer = with_optimizer(GLPK.Optimizer),
-            bellman_function = Kokako.AverageCut(lower_bound=-5)
+            bellman_function = Kokako.AverageCut(lower_bound = -5)
                                     ) do subproblem, stage
         @variable(subproblem,
-            0 <= stock[i=1:3] <= 1, Kokako.State, root_value=0.5)
+            0 <= stock[i=1:3] <= 1, Kokako.State, initial_value = 0.5)
         @variables(subproblem, begin
             0 <= control[i=1:3] <= 0.5
             ξ[i=1:3]  # Dummy for RHS noise.
@@ -48,14 +48,14 @@ function test_multistock_example()
         )
     end
     status = Kokako.train(model, iteration_limit = 100, print_level = 0)
-    @test Kokako.calculate_bound(model) ≈ -4.349 atol=0.01
+    @test Kokako.calculate_bound(model) ≈ -4.349 atol = 0.01
 
     simulation_results = Kokako.simulate(model, 5000)
     @test length(simulation_results) == 5000
     @test Kokako.Statistics.mean(
         sum(data[:stage_objective] for data in simulation)
         for simulation in simulation_results
-    ) ≈ -4.349 atol=0.02
+    ) ≈ -4.349 atol = 0.02
 end
 
 test_multistock_example()

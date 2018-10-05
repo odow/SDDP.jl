@@ -56,26 +56,27 @@ function test_mccardle_farm_model()
     ])
 
     model = Kokako.PolicyGraph(graph,
-            bellman_function = Kokako.AverageCut(lower_bound=0.0),
+            bellman_function = Kokako.AverageCut(lower_bound = 0.0),
             optimizer = with_optimizer(GLPK.Optimizer)
                             ) do subproblem, index
         stage, weather = index
         # ===================== State Variables =====================
         # Area planted.
-        @variable(subproblem, 0 <= acres <= M, Kokako.State, root_value = M)
-        @variable(subproblem, bales[i=1:3] >= 0, Kokako.State, root_value = [H, 0, 0][i])
+        @variable(subproblem, 0 <= acres <= M, Kokako.State, initial_value = M)
+        @variable(subproblem, bales[i = 1:3] >= 0,
+            Kokako.State, initial_value = (i == 1 ? H : 0))
         # ===================== Variables =====================
         @variables(subproblem, begin
-            buy[cutting=1:3] >= 0  # Quantity of bales to buy from each cutting.
-            sell[cutting=1:3] >= 0 # Quantity of bales to sell from each cutting.
-            eat[cutting=1:3] >= 0  # Quantity of bales to eat from each cutting.
-            pen_p[cutting=1:3] >= 0  # Penalties
-            pen_n[cutting=1:3] >= 0  # Penalties
+            buy[1:3] >= 0  # Quantity of bales to buy from each cutting.
+            sell[1:3] >= 0 # Quantity of bales to sell from each cutting.
+            eat[1:3] >= 0  # Quantity of bales to eat from each cutting.
+            pen_p[1:3] >= 0  # Penalties
+            pen_n[1:3] >= 0  # Penalties
         end)
         # ===================== Constraints =====================
         if stage == 1
             @constraint(subproblem, acres.out <= acres.in)
-            @constraint(subproblem, [i=1:3], bales[i].in == bales[i].out)
+            @constraint(subproblem, [i = 1:3], bales[i].in == bales[i].out)
         else
             @expression(subproblem, cut_ex[c=1:3],
                 bales[c].in + buy[c]  - eat[c] - sell[c] + pen_p[c] - pen_n[c])
@@ -85,12 +86,13 @@ function test_mccardle_farm_model()
                 # In each stage we need to meet demand.
                 sum(eat) >= D[stage-1]
                 # We can buy and sell other cuttings.
-                bales[stage-1].out == cut_ex[stage-1] + acres.in * b[stage-1, weather]
+                bales[stage-1].out == cut_ex[stage - 1] +
+                    acres.in * b[stage - 1, weather]
                 [c = 1:3; c != stage - 1], bales[c].out == cut_ex[c]
                 # There is some maximum storage.
                 sum(bales[i].out for i in 1:3) <= w
                 # We can only sell what is in storage.
-                [c=1:3], sell[c] <= bales[c].in
+                [c = 1:3], sell[c] <= bales[c].in
                 # Maximum sales quantity.
                 sum(sell) <= L
             end)
@@ -102,16 +104,16 @@ function test_mccardle_farm_model()
             @stageobjective(subproblem,
                 1000 * (sum(pen_p) + sum(pen_n)) +
                 # cost of growing
-                C[stage-1, weather] * acres.in +
+                C[stage - 1, weather] * acres.in +
                 sum(
                     # inventory cost
-                    V[stage-1] * bales[cutting].in * t[stage-1] +
+                    V[stage - 1] * bales[cutting].in * t[stage - 1] +
                     # purchase cost
-                    r[cutting][stage-1,weather] * buy[cutting] +
+                    r[cutting][stage - 1, weather] * buy[cutting] +
                     # feed cost
-                    S[cutting,stage-1] * eat[cutting] -
+                    S[cutting, stage - 1] * eat[cutting] -
                     # sell reward
-                    q[cutting][stage-1,weather] * sell[cutting]
+                    q[cutting][stage - 1, weather] * sell[cutting]
                 for cutting in 1:3)
             )
         end
@@ -119,7 +121,7 @@ function test_mccardle_farm_model()
     end
     status = Kokako.train(model, iteration_limit = 50)
     @test status == :iteration_limit
-    @test Kokako.calculate_bound(model) ≈ 4074.1391 atol=1e-5
+    @test Kokako.calculate_bound(model) ≈ 4074.1391 atol = 1e-5
 end
 
 test_mccardle_farm_model()

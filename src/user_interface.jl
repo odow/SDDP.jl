@@ -334,7 +334,8 @@ arguments that are not in realizations (but still of type T).
 function parameterize(modify::Function,
                       subproblem::JuMP.Model,
                       realizations::AbstractVector{T},
-                      probability::AbstractVector{Float64} = fill(1.0 / length(realizations), length(realizations))
+                      probability::AbstractVector{Float64} =
+                          fill(1.0 / length(realizations), length(realizations))
                           ) where T
     node = get_node(subproblem)
     if length(node.noise_terms) != 0
@@ -385,7 +386,8 @@ end
 #   Code to implement a JuMP variable extension.
 #
 #   Usage:
-#   julia> @variable(subproblem, 0 <= x[i=1:2] <= i, Kokako.State, root_value=i)
+#   julia> @variable(subproblem, 0 <= x[i=1:2] <= i,
+#              Kokako.State, initial_value = i)
 #
 #   julia> x
 #   2-element Array{State{VariableRef},1}:
@@ -414,15 +416,17 @@ end
 struct StateInfo
     in::JuMP.VariableInfo
     out::JuMP.VariableInfo
-    root_value::Float64
+    initial_value::Float64
 end
 
 function JuMP.build_variable(
-    _error::Function, info::JuMP.VariableInfo, ::Type{State};
-    root_value = NaN, kwargs...)
-    if isnan(root_value)
-        _error("When creating a state variable, you must set the `root_value`" *
-               " keyword to the value of the state variable at the root node.")
+        _error::Function, info::JuMP.VariableInfo, ::Type{State};
+        initial_value = NaN,
+        kwargs...)
+    if isnan(initial_value)
+        _error("When creating a state variable, you must set the " *
+               "`initial_value` keyword to the value of the state variable at" *
+               " the root node.")
     end
     return StateInfo(
         JuMP.VariableInfo(
@@ -433,7 +437,7 @@ function JuMP.build_variable(
             false, false # binary and integer
         ),
         info,
-        root_value
+        initial_value
     )
 end
 
@@ -452,7 +456,7 @@ function JuMP.add_variable(
     end
     node.states[sym_name] = state
     graph = get_policy_graph(subproblem)
-    graph.initial_root_state[sym_name] = state_info.root_value
+    graph.initial_root_state[sym_name] = state_info.initial_value
     return state
 end
 

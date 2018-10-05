@@ -13,10 +13,10 @@ using Kokako, GLPK, Test
 
 function fast_hydro_thermal()
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                bellman_function = Kokako.AverageCut(lower_bound=0.0),
+                bellman_function = Kokako.AverageCut(lower_bound = 0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                         ) do sp, t
-        @variable(sp, 0 <= x <= 8, Kokako.State, root_value = 0.0)
+        @variable(sp, 0 <= x <= 8, Kokako.State, initial_value = 0.0)
         @variables(sp, begin
             y >= 0
             p >= 0
