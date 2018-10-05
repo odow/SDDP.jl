@@ -122,5 +122,4 @@ function test_mccardle_farm_model()
     @test Kokako.calculate_bound(model) ≈ 4074.1391 atol=1e-5
 end
 
-# srand(111)
 test_mccardle_farm_model()

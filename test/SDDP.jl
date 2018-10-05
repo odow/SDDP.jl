@@ -13,7 +13,7 @@ using Kokako, Test, GLPK
         end
     end
     scenario_path, sampled_states, cumulative_value = Kokako.forward_pass(model,
-        Kokako.Options(model, Dict(:x=>1.0), Kokako.MonteCarlo()))
+        Kokako.Options(model, Dict(:x=>1.0), Kokako.InSampleMonteCarlo()))
     simulated_value = 0.0
     for ((node_index, noise), state) in zip(scenario_path, sampled_states)
         @test state[:x] == noise

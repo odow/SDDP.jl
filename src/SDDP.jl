@@ -1,20 +1,26 @@
 struct Options{SamplingScheme, T}
+    # The initial state to start from the root node.
     initial_state::Dict{Symbol, Float64}
+    # The sampling scheme to use on the forward pass.
     sampling_scheme::SamplingScheme
+    # Storage for the set of possible sampling states at each node. We only use
+    # this if there is a cycle in the policy graph.
     starting_states::Dict{T, Vector{Dict{Symbol, Float64}}}
+    # The delta by which to check if a state is close to a previously sampled
+    # state.
     cycle_discretization_delta::Float64
+    # Internal function: users should never construct this themselves.
     function Options(policy_graph::PolicyGraph{T},
                      initial_state::Dict{Symbol, Float64},
                      sampling_scheme::S,
                      cycle_discretization_delta::Float64 = 0.0) where {T, S}
+        # Initialize the storage for every node in the policy graph.
         starting_states = Dict{T, Vector{Dict{Symbol, Float64}}}()
         for node_index in keys(policy_graph.nodes)
             starting_states[node_index] = Dict{Symbol, Float64}[]
         end
-        return new{S, T}(initial_state,
-                         sampling_scheme,
-                         starting_states,
-                         cycle_discretization_delta)
+        return new{S, T}(initial_state, sampling_scheme, starting_states,
+            cycle_discretization_delta)
     end
 end
 
@@ -104,6 +110,10 @@ function solve_subproblem(graph::PolicyGraph{T},
         error("Unable to solve node $(node.index). Primal status: " *
               "$(primal_status).")
     end
+    # If require_duals = true, check for dual feasibility and return a dict with
+    # the dual on the fixed constraint associated with each incoming state
+    # variable. If require_duals=false, return an empty dictionary for
+    # type-stability.
     dual_values = if require_duals
         dual_status = JuMP.dual_status(node.subproblem)
         if dual_status != JuMP.MOI.FeasiblePoint
@@ -123,59 +133,94 @@ end
 # Internal function: perform a single forward pass of the SDDP algorithm given
 # options.
 function forward_pass(graph::PolicyGraph{T}, options::Options) where T
-    @debug "Beginning forward pass."
-    scenario_path = sample_scenario(graph, options.sampling_scheme)
-    @debug "Forward pass = $(scenario_path)."
+    # First up, sample a scenario. Note that if a cycle is detected, this will
+    # return the cycle node as well.
+    scenario_path = sample_scenario(graph, options.sampling_scheme,
+        terminate_on_cycle::Bool = true)
+    # Storage for the list of outgoing states that we visit on the forward pass.
     sampled_states = Dict{Symbol, Float64}[]
-    state = copy(options.initial_state)
+    # Our initial incoming state.
+    incoming_state_value = copy(options.initial_state)
+    # A cumulator for the stage-objectives.
     cumulative_value = 0.0
+    # Iterate down the scenario.
     for (node_index, noise) in scenario_path
-        @debug "Solving $(node_index) with noise=$(noise) on forward pass."
         node = graph[node_index]
         # ===== Begin: starting state for infinite horizon =====
         starting_states = options.starting_states[node_index]
-        if distance(starting_states, state) > options.cycle_discretization_delta
-            push!(starting_states, state)
+        if length(starting_states) > 0
+            # There is at least one other possible starting state. If our
+            # incoming state is more than δ away from the other states, add it
+            # as a possible starting state.
+            if distance(starting_states, incoming_state_value) >
+                    options.cycle_discretization_delta
+                push!(starting_states, incoming_state_value)
+            end
+            # TODO(odow):
+            # - A better way of randomly sampling a starting state.
+            # - Is is bad that we splice! here instead of just sampling? For
+            #   convergence it is probably bad, since our list of possible
+            #   starting states keeps changing, but from a computational
+            #   perspective, we don't want to keep a list of discretized points
+            #   in the state-space δ distance apart...
+            incoming_state_value = splice!(
+                starting_states, rand(1:length(starting_states))
+            )
         end
-        num_starting_states = length(starting_states)
-        state = splice!(starting_states, rand(1:num_starting_states))
         # ===== End: starting state for infinite horizon =====
-        new_state, duals, stage_objective, objective = solve_subproblem(
-            graph, node, state, noise)
-        @debug "Solved $(node_index): $(new_state), $(duals), " *
-            "$(stage_objective), $(objective)"
+        # Solve the subproblem, note that `require_duals=false`.
+        (outgoing_state_value, duals, stage_objective, objective) =
+            solve_subproblem(graph, node, incoming_state_value, noise, false)
+        # Cumulate the stage_objective.
         cumulative_value += stage_objective
-        push!(sampled_states, new_state)
-        state = copy(new_state)
+        # Add the outgoing state variable to the list of states we have sampled
+        # on this forward pass.
+        push!(sampled_states, outgoing_state_value)
+        # Set the outgoing state value as the incoming state value for the next
+        # node.
+        incoming_state_value = copy(outgoing_state_value)
     end
-    # ===== Begin: drop off starting state if terminated due to cycle =====
+    # Get the last node in the scenario.
     final_node_index = scenario_path[end][1]
     final_node = graph[final_node_index]
-    if length(final_node.children) > 0  # Terminated due to cycle.
-        if distance(
-                options.starting_states[final_node_index],
-                sampled_states[end-1]) > options.cycle_discretization_delta
-            push!(options.starting_states[final_node_index],
-                sampled_states[end-1])
+    if length(final_node.children) > 0
+        # The last node in the scenario has children, so we must have terminated
+        # due to a cycle. Here is the list of possible starting states for that
+        # node:
+        starting_states = options.starting_states[final_node_index]
+        # We also need the incoming state variable to the final node, which is
+        # the outgoing state value of the 2'nd to last node:
+        incoming_state_value = sampled_states[end-1]
+        # If this incoming state value is more than δ away from another state,
+        # add it to the list.
+        if distance(starting_states, incoming_state_value) >
+                options.cycle_discretization_delta
+            push!(starting_states, incoming_state_value)
         end
     end
     # ===== End: drop off starting state if terminated due to cycle =====
     return scenario_path, sampled_states, cumulative_value
 end
 
-function distance(starting_states, state)
+# Internal function: calculate the minimum distance between the state `state`
+# and the list of states in `starting_states` using the distance measure `norm`.
+function distance(starting_states::Vector{Dict{Symbol, Float64}},
+                  state::Dict{Symbol, Float64},
+                  norm::Function = inf_norm)
     if length(starting_states) == 0
         return Inf
     else
-        return maximum(inf_norm.(starting_states, Ref(state)))
+        return minimum(norm.(starting_states, Ref(state)))
     end
 end
 
+# Internal function: the norm to use when checking the distance between two
+# possible starting states. We're going to use: d(x, y) = |x - y| / (1 + |y|).
 function inf_norm(x::Dict{Symbol, Float64}, y::Dict{Symbol, Float64})
     norm = 0.0
-    for (key, value) in x
-        if abs(value - y[key]) > norm
-            norm = abs(value - y[key])
+    for (key, value) in y
+        if abs(x[key] - value) > norm
+            norm = abs(x[key] - value) / (1 + abs(value))
         end
     end
     return norm
@@ -203,8 +248,10 @@ function backward_pass(graph::PolicyGraph{T},
         for child in node.children
             child_node = graph[child.term]
             for noise in child_node.noise_terms
-                new_outgoing_state, duals, stage_obj, obj = solve_subproblem(
-                    graph, child_node, outgoing_state, noise.term)
+                (new_outgoing_state, duals, stage_objective, obj) =
+                    solve_subproblem(
+                        graph, child_node, outgoing_state, noise.term
+                    )
                 push!(dual_variables, duals)
                 push!(noise_supports, noise.term)
                 push!(original_probability,
@@ -235,21 +282,26 @@ Calculate the lower bound (if minimizing, otherwise upper bound) of the problem
 graph at the point state, assuming the risk measure at the root node is
 risk_measure.
 """
-function calculate_bound(graph::PolicyGraph, state::Dict{Symbol, Float64},
-                         risk_measure=Expectation())
+function calculate_bound(graph::PolicyGraph,
+                         root_state::Dict{Symbol, Float64} =
+                            graph.initial_root_state;
+                         risk_measure = Expectation())
+    # Initialization.
     noise_supports = Any[]
     probabilities = Float64[]
     objectives = Float64[]
+    # Solve all problems that are children of the root node.
     for child in graph.root_children
         node = graph[child.term]
         for noise in node.noise_terms
-            outgoing_state, duals, stage_obj, obj = solve_subproblem(
-                graph, node, state, noise.term)
+            (outgoing_state, duals, stage_objective, obj) =
+                solve_subproblem(graph, node, root_state, noise.term)
             push!(objectives, obj)
             push!(probabilities, child.probability * noise.probability)
             push!(noise_supports, noise.term)
         end
     end
+    # Now compute the risk-adjusted probability measure:
     risk_adjusted_probability = similar(probabilities)
     adjust_probability(risk_measure,
                        risk_adjusted_probability,
@@ -257,13 +309,9 @@ function calculate_bound(graph::PolicyGraph, state::Dict{Symbol, Float64},
                        noise_supports,
                        objectives,
                        graph.objective_sense == :Min)
+    # Finally, calculate the risk-adjusted value.
     return sum(obj * prob for (obj, prob) in
         zip(objectives, risk_adjusted_probability))
-end
-
-function calculate_bound(graph::PolicyGraph,
-        risk_measure::AbstractRiskMeasure=Expectation())
-    calculate_bound(graph, graph.initial_root_state, risk_measure)
 end
 
 # Internal functions: helpers so users can pass arguments like:
@@ -278,17 +326,29 @@ function get_per_node(collection::Function, node_index::T) where T
     return collection(node_index)
 end
 
+"""
+    Kokako.train(graph::PolicyGraph; kwargs...)
+
+Train the policy of the graph. Keyword arguments are
+ - iteration_limit: number of iterations to conduct before termination. Defaults
+   to 100_000.
+ - time_limit: number of seconds to train before termination. Defaults to Inf.
+ - print_level: control the level of printing to the screen.
+ - sampling_scheme: a sampling scheme to use on the forward pass of the
+   algorithm. Defaults to InSampleMonteCarlo().
+
+There is also a special option for infinite horizon problems
+ - cycle_discretization_delta: the maximum distance between states allowed on
+   the forward pass.
+"""
 function train(graph::PolicyGraph;
                iteration_limit = 100_000,
                time_limit = Inf,
                stopping_rules = AbstractStoppingRules[],
-               # cut_selection = nothing,
                risk_measure = Kokako.Expectation(),
-               sampling_scheme = Kokako.MonteCarlo(),
+               sampling_scheme = Kokako.InSampleMonteCarlo(),
                print_level = 0,
                cycle_discretization_delta = 0.01
-               # log_file = "log.txt",
-               # cut_file = "cuts.csv"
                )
     if print_level > 0
         print_banner()
@@ -335,48 +395,124 @@ function train(graph::PolicyGraph;
     return status
 end
 
-"""
-Special keys:
- - :node_index
- - :noise_term
- - :stage_objective
- - :bellman_term
-"""
-function simulate(graph::PolicyGraph{T}, variables;
-                  sampling_scheme = MonteCarlo(),
-                  terminate_on_cycle::Bool = true,
-                  max_depth::Int = 0) where T
+# Internal function: helper to conduct a single simulation. Users should use the
+# documented, user-facing function Kokako.simulate instead.
+function _simulate(graph::PolicyGraph,
+                   variables::Vector{Symbol} = Symbol[];
+                   sampling_scheme::AbstractSamplingScheme =
+                       InSampleMonteCarlo(),
+                   terminate_on_cycle::Bool = true,
+                   max_depth::Int = 0,
+                   custom_recorders = Dict{Symbol, Function}())
+    # Sample a scenario path.
     scenario_path = sample_scenario(graph, sampling_scheme;
-        terminate_on_cycle = terminate_on_cycle, max_depth = max_depth)
+        terminate_on_cycle = terminate_on_cycle,
+        max_depth = max_depth
+    )
+    # Storage for the simulation results.
     simulation = Dict{Symbol, Any}[]
-    state = copy(graph.initial_root_state)
+    # The incoming state values.
+    incoming_state = copy(graph.initial_root_state)
+    # A cumulator for the stage-objectives.
     cumulative_value = 0.0
     for (node_index, noise) in scenario_path
         node = graph[node_index]
-        new_state, duals, stage_objective, objective = solve_subproblem(
-            graph, node, state, noise)
+        # Solve the subproblem.
+        outgoing_state, duals, stage_objective, objective = solve_subproblem(
+            graph, node, incoming_state, noise)
+        # Add the stage-objective
         cumulative_value += stage_objective
+        # Record useful variables from the solve.
         store = Dict{Symbol, Any}(
             :node_index => node_index,
             :noise_term => noise,
             :stage_objective => stage_objective,
             :bellman_term => objective - stage_objective
         )
+        # Loop through the primal variable values that the user wants.
         for variable in variables
             store[variable] = JuMP.result_value(node.subproblem[variable])
         end
+        # Loop through any custom recorders that the user provided.
+        for (sym, foo) in custom_recorders
+            store[sym] = foo(node.subproblem)
+        end
+        # Add the store to our list.
         push!(simulation, store)
-        state = copy(new_state)
+        # Set outgoing state as the incoming state for the next node.
+        incoming_state = copy(outgoing_state)
     end
     return simulation
 end
 
-function simulate(graph, N::Int, variables::Vector{Symbol};
-                  terminate_on_cycle::Bool = true, max_depth::Int = 0)
-    return [
-        simulate(graph, variables;
-            sampling_scheme = MonteCarlo(),
-            terminate_on_cycle = terminate_on_cycle,
-            max_depth = max_depth)
-        for i in 1:N]
+"""
+    simulate(graph::PolicyGraph,
+             number_replications::Int = 1,
+             variables::Vector{Symbol} = Symbol[];
+             sampling_scheme::AbstractSamplingScheme =
+                 InSampleMonteCarlo(),
+             terminate_on_cycle::Bool = true,
+             max_depth::Int = 0,
+             custom_recorders = Dict{Symbol, Function}()
+     )::Vector{Vector{Dict{Symbol, Any}}}
+
+Perform a simulation of the policy graph with `number_replications` replications
+using the sampling scheme `sampling_scheme`. If `terminate_on_cycle=false` then
+`max_depth` must be set >0.
+
+Returns a vector with one element for each replication. Each element is a vector
+with one-element for each node in the scenario that was sampled. Each element in
+that vector is a dictionary containing information about the subproblem that was
+solved.
+
+In that dictionary there are four special keys:
+ - :node_index, which records the index of the sampled node in the policy graph
+ - :noise_term, which records the noise observed at the node
+ - :stage_objective, which records the stage-objective of the subproblem
+ - :bellman_term, which records the cost/value-to-go of the node.
+The sum of :stage_objective + :bellman_term will equal the objective value of
+the solved subproblem.
+
+In addition to the special keys, the dictionary will contain the result of
+`JuMP.result_value(subproblem[key])` for each `key` in `variables`. This is
+useful to obtain the primal value of the state and control variables.
+
+For more complicated data, the `custom_recorders` keyword arguement can be used.
+
+    data = Dict{Symbol, Any}()
+    for (key, recorder) in custom_recorders
+        data[key] = foo(subproblem)
+    end
+
+For example, to record the dual of a constraint named `my_constraint`, pass the
+following:
+
+    simulation_results = simulate(graph, number_replications=2;
+        custom_recorders = Dict(
+            :constraint_dual = (sp) -> JuMP.result_dual(sp[:my_constraint])
+        )
+    )
+
+The value of the dual in the first stage of the second replication can be
+accessed as:
+
+    simulation_results[2][1][:constraint_dual]
+"""
+function simulate(graph::PolicyGraph,
+                  number_replications::Int = 1,
+                  variables::Vector{Symbol} = Symbol[];
+                  sampling_scheme::AbstractSamplingScheme =
+                      InSampleMonteCarlo(),
+                  terminate_on_cycle::Bool = true,
+                  max_depth::Int = 0,
+                  custom_recorders = Dict{Symbol, Function}())
+    return [simulate(
+                graph,
+                variables;
+                sampling_scheme = sampling_scheme,
+                terminate_on_cycle = terminate_on_cycle,
+                max_depth = max_depth,
+                custom_recorders = custom_recorders)
+                for i in 1:number_replications
+            ]
 end

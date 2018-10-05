@@ -9,6 +9,10 @@ Sample a scenario from the policy graph `graph` based on the sampling scheme.
 
 If `terminate_on_cycle`, terminate the forward pass once a cycle is detected.
 
+*Important note:* If a cycle is detected, the scenario should include the node
+that forms the cycle. For example, if there is a single node in the graph that
+loops onto itself, the returned scenario should contain two elements.
+
 If `max_depth > 0`, return once `max_depth` nodes have been sampled, otherwise,
 return once a leaf node is reached. Note that if `terminate_on_cycle=false` then
 `max_depth` must be set > 0.
@@ -27,10 +31,16 @@ end
 
 # ========================= Monte Carlo Sampling Scheme ========================
 
-struct MonteCarlo end
+"""
+    InSampleMonteCarlo
+
+A Monte Carlo sampling scheme using the in-sample data from the policy graph
+definition.
+"""
+struct InSampleMonteCarlo <: AbstractSamplingScheme end
 
 # A helper utility for sampling a Noise using Monte Carlo.
-function sample_noise(::MonteCarlo, noise_terms::Vector{<:Noise})
+function sample_noise(::InSampleMonteCarlo, noise_terms::Vector{<:Noise})
     if length(noise_terms) == 0
         return nothing
     end
@@ -46,10 +56,10 @@ function sample_noise(::MonteCarlo, noise_terms::Vector{<:Noise})
         end
     end
     error("Internal Kokako error: unable to sample noise from $(noise_terms)" *
-          " using Kokako.MonteCarlo().")
+          " using Kokako.InSampleMonteCarlo().")
 end
 
-function sample_scenario(graph::PolicyGraph{T}, sampling_scheme::MonteCarlo;
+function sample_scenario(graph::PolicyGraph{T}, sampling_scheme::InSampleMonteCarlo;
                          terminate_on_cycle::Bool = true,
                          max_depth::Int = 0) where T
     scenario_path = Tuple{T, Any}[]
@@ -78,7 +88,7 @@ end
 
 # ========================= Historical Sampling Scheme ========================
 
-struct Historical{NodeIndex, NoiseTerm}
+struct Historical{NodeIndex, NoiseTerm} <: AbstractSamplingScheme
     scenarios::Vector{Noise{Tuple{NodeIndex, NoiseTerm}}}
 end
 
@@ -104,6 +114,10 @@ function Historical(scenarios::Vector{Vector{Tuple{NodeIndex, NoiseTerm}}},
                     probability::Vector{Float64} =
                         fill(1.0 / length(scenarios), length(scenarios))
                     ) where {NodeIndex, NoiseTerm}
+    if sum(probability) != 1.0
+        error("Probability of historical scenarios must sum to 1. Currently: " *
+              "$(sum(probability)).")
+    end
     output = Noise{Vector{Tuple{NodeIndex, NoiseTerm}}}[]
     for (scenario, prob) in zip(scenarios, probability)
         push!(output, Noise(scenario, prob))
@@ -115,5 +129,5 @@ function sample_scenario(graph::PolicyGraph{T},
                          sampling_scheme::Historical{T, NoiseTerm};
                          terminate_on_cycle::Bool = true,
                          max_depth::Int = 0) where {T, NoiseTerm}
-    sample_noise(MonteCarlo(), sampling_scheme.scenarios)
+    sample_noise(InSampleMonteCarlo(), sampling_scheme.scenarios)
 end

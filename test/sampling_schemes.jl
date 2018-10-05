@@ -1,6 +1,6 @@
 using Kokako, Test
 
-@testset "MonteCarlo" begin
+@testset "InSampleMonteCarlo" begin
     @testset "Acyclic" begin
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
                                    direct_mode=false) do node, stage
@@ -9,7 +9,7 @@ using Kokako, Test
                 JuMP.set_upper_bound(x, ω)
             end
         end
-        scenario = Kokako.sample_scenario(model, Kokako.MonteCarlo())
+        scenario = Kokako.sample_scenario(model, Kokako.InSampleMonteCarlo())
         @test length(scenario) == 2
         for (stage, (node, noise)) in enumerate(scenario)
             @test stage == node
@@ -26,7 +26,7 @@ using Kokako, Test
                 JuMP.set_upper_bound(x, ω)
             end
         end
-        scenario = Kokako.sample_scenario(model, Kokako.MonteCarlo(),
+        scenario = Kokako.sample_scenario(model, Kokako.InSampleMonteCarlo(),
                                           terminate_on_cycle = false,
                                           max_depth = 4)
         @test length(scenario) == 4

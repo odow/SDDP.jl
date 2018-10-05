@@ -49,9 +49,13 @@ function test_multistock_example()
     end
     status = Kokako.train(model, iteration_limit = 100, print_level = 0)
     @test Kokako.calculate_bound(model) ≈ -4.349 atol=0.01
-    # results = simulate(m, 5000)
-    # @test length(results) == 5000
-    # @test isapprox(mean(r[:objective] for r in results), -4.349, atol=0.02)
+
+    simulation_results = Kokako.simulate(model, 5000)
+    @test length(simulation_results) == 5000
+    @test Kokako.Statistics.mean(
+        sum(data[:stage_objective] for data in simulation)
+        for simulation in simulation_results
+    ) ≈ -4.349 atol=0.02
 end
 
 test_multistock_example()

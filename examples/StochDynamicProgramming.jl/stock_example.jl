@@ -40,9 +40,12 @@ function stock_example()
     status = Kokako.train(model, iteration_limit = 50, print_level = 0)
     @test Kokako.calculate_bound(model) ≈ -1.471 atol=0.001
 
-    # results = simulate(m, 1000)
-    # @test length(results) == 1000
-    # @test isapprox(mean(r[:objective] for r in results), -1.471, atol=0.05)
+    simulation_results = Kokako.simulate(model, 1_000)
+    @test length(simulation_results) == 1_000
+    @test Kokako.Statistics.mean(
+        sum(data[:stage_objective] for data in simulation)
+        for simulation in simulation_results
+    ) ≈ -1.471 atol=0.05
 end
 
 stock_example()
