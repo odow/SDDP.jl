@@ -1,18 +1,40 @@
 using Kokako, Test, JSON, Gurobi, Plots
 
-function infinite_powder()
+function infinite_powder(discount_factor = 0.5)
     data = JSON.parsefile(joinpath(@__DIR__, "powder_data.json"))
-    # Construct infinite horizon graph.
-    graph = Kokako.LinearGraph(data["number_of_weeks"])
-    Kokako.add_edge(graph, data["number_of_weeks"] => 1, 0.5)
+    # ===== Linear Graph =====
+    # graph = Kokako.LinearGraph(data["number_of_weeks"])
+    # Kokako.add_edge(graph, data["number_of_weeks"] => 1, discount_factor)
+    # ===== Markovian Graph =====
+    transition = Array{Float64, 2}[]
+    for transition_matrix in data["transition"]
+        push!(
+            transition,
+            convert(
+                Array{Float64, 2},
+                reshape(
+                    vcat(transition_matrix...),
+                    length(transition_matrix[1]),
+                    length(transition_matrix)
+                )
+            )
+        )
+    end
+    graph = Kokako.MarkovianGraph(transition)
+    for markov_state in 1:size(transition[end], 2)
+        Kokako.add_edge(graph,
+            (data["number_of_weeks"], markov_state) => (1, 1),
+            discount_factor
+        )
+    end
 
     model = Kokako.PolicyGraph(graph,
         sense = :Max,
         bellman_function = Kokako.AverageCut(upper_bound = 1e5),
-        optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag=0)
-            ) do subproblem, stage
-        # Simple linspace since it got dropped from Base Julia v1.0.
-        linspace(a::Real, b::Real, N::Int) = collect(a:(b-a)/(N-1):b)
+        optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag = 0)
+            ) do subproblem, index
+        # Unpack the node index.
+        stage, markov_state = index
         # ========== Data Initialization ==========
         # Data for Fat Evaluation Index penalty
         cow_per_day = data["stocking_rate"] * 7
@@ -24,20 +46,22 @@ function infinite_powder()
         g′(p) = 4 * gₘ / Pₘ * (1 - 2 * p / Pₘ)
 
         # ========== State Variables ==========
-        # Pasture cover (kgDM/ha).
-        @variable(subproblem,
-            0 <= pasture_cover <= data["maximum_pasture_cover"],
-            Kokako.State, initial_value = data["initial_pasture_cover"])
-        # Quantity of supplement in storage (kgDM/ha).
-        @variable(subproblem, stored_supplement >= 0,
-            Kokako.State, initial_value = data["initial_storage"])
-        # Soil moisture (mm).
-        @variable(subproblem, 0 <= soil_moisture <= data["maximum_soil_moisture"],
-            Kokako.State, initial_value = data["initial_soil_moisture"])
-        # Number of cows milking (cows/ha).
-        @variable(subproblem, 0 <= cows_milking <= data["stocking_rate"],
-            Kokako.State, initial_value = data["stocking_rate"])
-
+        @variables(subproblem, begin
+            # Pasture cover (kgDM/ha).
+            (0 <= pasture_cover <= data["maximum_pasture_cover"], Kokako.State,
+                initial_value = data["initial_pasture_cover"])
+            # Quantity of supplement in storage (kgDM/ha).
+            (stored_supplement >= 0, Kokako.State,
+                initial_value = data["initial_storage"])
+            # Soil moisture (mm).
+            (0 <= soil_moisture <= data["maximum_soil_moisture"], Kokako.State,
+                initial_value = data["initial_soil_moisture"])
+            # Number of cows milking (cows/ha).
+            (0 <= cows_milking <= data["stocking_rate"], Kokako.State,
+                initial_value = data["stocking_rate"])
+            (0 <= milk_production <= data["maximum_milk_production"],
+                Kokako.State, initial_value = 0.0)
+        end)
         # ========== Control Variables ==========
         @variables(subproblem, begin
             supplement >= 0  # Quantity of supplement to buy and feed (kgDM).
@@ -48,7 +72,7 @@ function infinite_powder()
             rainfall  # Rainfall (mm); dummy variable for parameterization.
             grass_growth >= 0  # The potential grass growth rate.
             energy_for_milk_production >= 0  # Energy for milk production (MJ).
-            actual_milk_production >= 0  # Actual milk production (kgMS).
+            weekly_milk_production >= 0  # Weekly milk production (kgMS/week).
             fei_penalty >= 0  # Fat Evaluation Index penalty ($)
         end)
 
@@ -60,11 +84,14 @@ function infinite_powder()
 
         @constraints(subproblem, begin
             # ========== State constraints ==========
-            pasture_cover.out <= pasture_cover.in + 7 * grass_growth - harvest - feed_pasture
-            stored_supplement.out <= stored_supplement.in + data["harvesting_efficiency"] * harvest - feed_storage
+            pasture_cover.out <=
+                pasture_cover.in + 7 * grass_growth - harvest - feed_pasture
+            stored_supplement.out <= stored_supplement.in +
+                data["harvesting_efficiency"] * harvest - feed_storage
             # This is a <= do account for the maximum soil moisture; excess
             # water is assumed to drain away.
-            soil_moisture.out <= soil_moisture.in - evapotranspiration + rainfall
+            soil_moisture.out <=
+                soil_moisture.in - evapotranspiration + rainfall
 
             # ========== Energy balance ==========
             data["pasture_energy_density"] * (feed_pasture + feed_storage) +
@@ -81,21 +108,31 @@ function infinite_powder()
                 energy_for_milk_production
 
             # ========== Milk production models ==========
-            energy_for_milk_production <= data["max_milk_energy"][stage] * cows_milking.in
-            actual_milk_production <= energy_for_milk_production / data["energy_content_of_milk"][stage]
-            # minimum milk
-            actual_milk_production >= data["min_milk_production"] * cows_milking.in
+            # Upper bound on the energy that can be used for milk production.
+            energy_for_milk_production <=
+                data["max_milk_energy"][stage] * cows_milking.in
+            # Conversion between energy and physical milk
+            weekly_milk_production == energy_for_milk_production /
+                data["energy_content_of_milk"][stage]
+            # Lower bound on milk production.
+            weekly_milk_production >=
+                data["min_milk_production"] * cows_milking.in
 
             # ========== Pasture growth models ==========
             # Model One: grass_growth ~ evapotranspiration
-            grass_growth <= data["soil_fertility"][stage] * evapotranspiration / 7
+            grass_growth <=
+                data["soil_fertility"][stage] * evapotranspiration / 7
             # Model Two: grass_growth ~ pasture_cover
-            [p′ = linspace(0, Pₘ, Pₙ)], grass_growth <= g(p′) + g′(p′) * (pasture_cover.in - p′)
+            [p′ = range(0, stop = Pₘ, length = Pₙ)],
+                grass_growth <= g(p′) + g′(p′) * (pasture_cover.in - p′)
 
             # ========== Fat Evaluation Index Penalty ==========
-            fei_penalty >= cow_per_day * (0.00 + 0.25 * (supplement / cow_per_day - 3))
-            fei_penalty >= cow_per_day * (0.25 + 0.50 * (supplement / cow_per_day - 4))
-            fei_penalty >= cow_per_day * (0.75 + 1.00 * (supplement / cow_per_day - 5))
+            fei_penalty >=
+                cow_per_day * (0.00 + 0.25 * (supplement / cow_per_day - 3))
+            fei_penalty >=
+                cow_per_day * (0.25 + 0.50 * (supplement / cow_per_day - 4))
+            fei_penalty >=
+                cow_per_day * (0.75 + 1.00 * (supplement / cow_per_day - 5))
         end)
 
         # ========== Lactation cycle over the season ==========
@@ -105,6 +142,17 @@ function infinite_powder()
             @constraint(subproblem, cows_milking.out == 0)
         else
             @constraint(subproblem, cows_milking.out <= cows_milking.in)
+        end
+
+        # ========== Milk revenue cover penalty ==========
+        if stage == data["number_of_weeks"]
+            @constraint(subproblem, milk_production.out == 0.0)
+            @expression(subproblem, milk_revenue,
+                data["prices"][stage][markov_state] * milk_production.in)
+        else
+            @constraint(subproblem, milk_production.out ==
+                milk_production.in + weekly_milk_production)
+            @expression(subproblem, milk_revenue, 0.0)
         end
 
         # ========== Low pasture cover penalty ==========
@@ -117,16 +165,17 @@ function infinite_powder()
 
         # ========== Stage Objective ==========
         @stageobjective(subproblem,
-            6.0 * actual_milk_production -
+            milk_revenue -
             pasture_penalty -
             data["supplement_price"] * supplement -
             data["harvest_cost"] * harvest -
             fei_penalty +
-            1e-4 * soil_moisture.out  # Artificial term to encourage max soil moisture.
+            # Artificial term to encourage max soil moisture.
+            1e-4 * soil_moisture.out
         )
     end
 
-    Kokako.train(model, iteration_limit = 1_000, print_level = 1)
+    Kokako.train(model, iteration_limit = 100, print_level = 1)
 
     simulations = Kokako.simulate(model, 500, [
         :cows_milking,
@@ -134,7 +183,7 @@ function infinite_powder()
         :soil_moisture,
         :grass_growth,
         :supplement,
-        :actual_milk_production,
+        :weekly_milk_production,
         :fei_penalty
         ],
         terminate_on_cycle = false,
@@ -144,7 +193,7 @@ function infinite_powder()
     return model, simulations
 end
 
-model, simulations = infinite_powder()
+model, simulations = infinite_powder(0.9)
 
 plot(
     Kokako.publicationplot(simulations,
@@ -164,12 +213,12 @@ plot(
         data -> data[:supplement],
         ylabel = "Palm Kernel Fed (kg/cow/day)"),
     Kokako.publicationplot(simulations,
-        data -> data[:actual_milk_production],
+        data -> data[:weekly_milk_production],
         ylabel = "Milk Production (kg/day)"),
 
     Kokako.publicationplot(simulations,
-        data -> data[:stage_objective],
-        ylabel = "Stage Objective (\\\$)"),
+        data -> data[:node_index][2],
+        ylabel = "MarkovState"),
     Kokako.publicationplot(simulations,
         data -> data[:noise_term]["evapotranspiration"],
         ylabel = "Evapotranspiration (mm)"),

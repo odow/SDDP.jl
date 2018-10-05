@@ -67,31 +67,45 @@ function sample_noise(::InSampleMonteCarlo, noise_terms::Vector{<:Noise})
           " using Kokako.InSampleMonteCarlo().")
 end
 
-function sample_scenario(graph::PolicyGraph{T}, sampling_scheme::InSampleMonteCarlo;
+function sample_scenario(graph::PolicyGraph{T},
+                         sampling_scheme::InSampleMonteCarlo;
                          terminate_on_cycle::Bool = true,
                          max_depth::Int = 0) where T
+    if !terminate_on_cycle && max_depth == 0
+        error("If terminate_on_cycle=false, then max_depth must be >0.")
+    end
+    # Storage for our scenario. Each tuple is (node_index, noise.term).
     scenario_path = Tuple{T, Any}[]
+    # We only use visited_nodes if terminate_on_cycle=true. Just initialize
+    # anyway.
     visited_nodes = Set{T}()
+    # Begin by sampling a node from the children of the root node.
     node_index = sample_noise(sampling_scheme, graph.root_children)::T
     while true
         node = graph[node_index]
         noise = sample_noise(sampling_scheme, node.noise_terms)
         push!(scenario_path, (node_index, noise))
+        # Termination conditions:
+        #   1. Our node has no children, i.e., we are at a leaf node.
+        #   2. terminate_on_cycle = true and we have detected a cycle.
+        #   3. max_depth > 0 and we have explored max_depth number of nodes.
         if length(node.children) == 0
-            break  # We are at a leaf node.
-        elseif node_index in visited_nodes
-            if terminate_on_cycle
-                break
-            elseif max_depth == 0
-                error("If terminate_on_cycle=false, then max_depth must be >0.")
-            elseif length(scenario_path) >= max_depth
-                break
-            end
+            return scenario_path
+        elseif terminate_on_cycle && node_index in visited_nodes
+            return scenario_path
+        elseif max_depth > 0 && length(scenario_path) > max_depth
+            return scenario_path
         end
-        push!(visited_nodes, node_index)
+        # We only need to store a list of visited nodes if we want to terminate
+        # due to the presence of a cycle.
+        if terminate_on_cycle
+            push!(visited_nodes, node_index)
+        end
+        # Sample a new node to transition to.
         node_index = sample_noise(sampling_scheme, node.children)::T
     end
-    return scenario_path
+    # Throw an error because we should never end up here.
+    error("Internal Kokako error: something went wrong sampling a scenario.")
 end
 
 # ========================= Historical Sampling Scheme ========================

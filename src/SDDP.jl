@@ -401,7 +401,7 @@ function train(graph::PolicyGraph;
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
                 bound = calculate_bound(graph)
             end
-            push!(log, Log(iteration_count, cumulative_value, bound,
+            push!(log, Log(iteration_count, bound, cumulative_value,
                 time() - start_time)
             )
             has_converged, status = convergence_test(graph, log, stopping_rules)
