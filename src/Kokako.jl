@@ -3,7 +3,7 @@ module Kokako
 import Reexport
 Reexport.@reexport using JuMP
 
-import JSON, Printf, RecipesBase, Statistics
+import JSON, Printf, RecipesBase, TimerOutputs, Statistics
 
 export @stageobjective
 
@@ -11,10 +11,10 @@ export @stageobjective
 include("user_interface.jl")
 
 # SDDP related modular utilities.
-include("risk_measures.jl")
-include("sampling_schemes.jl")
-include("bellman_functions.jl")
-include("stopping_rules.jl")
+include("plugins/risk_measures.jl")
+include("plugins/sampling_schemes.jl")
+include("plugins/bellman_functions.jl")
+include("plugins/stopping_rules.jl")
 
 # Printing utilities.
 include("print.jl")

@@ -1,3 +1,11 @@
+"""
+    AbstractSamplingScheme
+
+The abstract type for the sampling-scheme interface.
+
+You need to define the following methods:
+ - Kokako.sample_scenario
+"""
 abstract type AbstractSamplingScheme end
 
 """

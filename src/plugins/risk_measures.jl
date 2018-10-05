@@ -1,3 +1,11 @@
+"""
+    AbstractBellmanFunction
+
+The abstract type for the risk measure interface.
+
+You need to define the following methods:
+ - Kokako.adjust_probability
+"""
 abstract type AbstractRiskMeasure end
 
 """
