@@ -1,5 +1,5 @@
 """
-    AbstractStoppingRules
+    AbstractStoppingRule
 
 The abstract type for the stopping-rule interface.
 
@@ -18,7 +18,7 @@ function convergence_test(graph::PolicyGraph, ::AbstractStoppingRule)
 end
 
 function convergence_test(graph::PolicyGraph,
-                          stopping_rules::Vector{AbstractStoppingRules})
+                          stopping_rules::Vector{AbstractStoppingRule})
     for stopping_rule in stopping_rules
         if convergence_test(graph, stopping_rule)
             return true, stopping_rule_status(stopping_rule)

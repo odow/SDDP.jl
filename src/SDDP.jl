@@ -1,3 +1,5 @@
+const SDDP_TIMER = TimerOutputs.TimerOutput()
+
 struct Options{SamplingScheme, T}
     # The initial state to start from the root node.
     initial_state::Dict{Symbol, Float64}
@@ -126,7 +128,7 @@ function solve_subproblem(graph::PolicyGraph{T},
     end
     return get_outgoing_state(node),  # The outgoing state variable x'.
            dual_values,  # The dual variables on the incoming state variables.
-           stage_objective_value(node.stage_objective),  # C(x, u, ω)
+           stage_objective_value(node.stage_objective),
            JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
 end
 
@@ -135,8 +137,10 @@ end
 function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
-    scenario_path = sample_scenario(graph, options.sampling_scheme,
-        terminate_on_cycle = true)
+    TimerOutputs.@timeit SDDP_TIMER "sample_scenario" begin
+        scenario_path = sample_scenario(graph, options.sampling_scheme,
+            terminate_on_cycle = true)
+    end
     # Storage for the list of outgoing states that we visit on the forward pass.
     sampled_states = Dict{Symbol, Float64}[]
     # Our initial incoming state.
@@ -169,8 +173,11 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
         end
         # ===== End: starting state for infinite horizon =====
         # Solve the subproblem, note that `require_duals=false`.
-        (outgoing_state_value, duals, stage_objective, objective) =
-            solve_subproblem(graph, node, incoming_state_value, noise, false)
+        TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
+            (outgoing_state_value, duals, stage_objective, objective) =
+                solve_subproblem(
+                    graph, node, incoming_state_value, noise, false)
+        end
         # Cumulate the stage_objective.
         cumulative_value += stage_objective
         # Add the outgoing state variable to the list of states we have sampled
@@ -248,10 +255,12 @@ function backward_pass(graph::PolicyGraph{T},
         for child in node.children
             child_node = graph[child.term]
             for noise in child_node.noise_terms
-                (new_outgoing_state, duals, stage_objective, obj) =
-                    solve_subproblem(
-                        graph, child_node, outgoing_state, noise.term
-                    )
+                TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
+                    (new_outgoing_state, duals, stage_objective, obj) =
+                        solve_subproblem(
+                            graph, child_node, outgoing_state, noise.term
+                        )
+                end
                 push!(dual_variables, duals)
                 push!(noise_supports, noise.term)
                 push!(original_probability,
@@ -344,12 +353,14 @@ There is also a special option for infinite horizon problems
 function train(graph::PolicyGraph;
                iteration_limit = 100_000,
                time_limit = Inf,
-               stopping_rules = AbstractStoppingRules[],
+               stopping_rules = AbstractStoppingRule[],
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.InSampleMonteCarlo(),
                print_level = 0,
                cycle_discretization_delta = 0.01
                )
+    # Reset the TimerOutput.
+    TimerOutputs.reset_timer!(SDDP_TIMER)
     if print_level > 0
         print_banner()
     end
@@ -373,11 +384,17 @@ function train(graph::PolicyGraph;
                 status = :iteration_limit
                 break
             end
-            scenario_path, sampled_states, cumulative_value = forward_pass(
-                graph, options)
-            backward_pass(
-                graph, options, scenario_path, sampled_states, risk_measure)
-            bound = calculate_bound(graph)
+            TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
+                scenario_path, sampled_states, cumulative_value = forward_pass(
+                    graph, options)
+            end
+            TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
+                backward_pass(
+                    graph, options, scenario_path, sampled_states, risk_measure)
+            end
+            TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
+                bound = calculate_bound(graph)
+            end
             if print_level > 0
                 print_iteration(iteration_count, cumulative_value, bound,
                     time() - start_time)
@@ -391,6 +408,9 @@ function train(graph::PolicyGraph;
         else
             rethrow(ex)
         end
+    end
+    if print_level > 1
+        TimerOutputs.print_timer(stdout, SDDP_TIMER)
     end
     return status
 end
