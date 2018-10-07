@@ -1,7 +1,7 @@
 # Tutorial Eleven: Infinite-Horizon Stochastic Dynamic Programming
 
 This tutorial discusses discusses Infinite-Horizon Stochastic Dynamic Programming.
-My Honors [thesis](SDDP.jl/docs/src/assets/foster_thesis.pdf) may be useful in understanding the underlying theory of Infinite-Horizon Stochastic Dynamic Programming.
+My Honors [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf) may be useful in understanding the underlying theory of Infinite-Horizon Stochastic Dynamic Programming.
 
 Recall that our model for the hydrothermal scheduling problem  from
 [Tutorial Three: objective noise](@ref) is:
