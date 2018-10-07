@@ -1,11 +1,7 @@
-# Tutorial Four: Markovian policy graphs
+# Tutorial Eleven: Infinite-Horizon Stochastic Dynamic Programming
 
-In our three tutorials ([Tutorial One: first steps](@ref),
-[Tutorial Two: RHS noise](@ref), and [Tutorial Three: objective noise](@ref)),
-we formulated a simple hydrothermal scheduling problem with
-stagewise-independent noise in the right-hand side of the constraints and in the
-objective function. Now, in this tutorial, we introduce some
-*stagewise-dependent* uncertainty using a Markov chain.
+This tutorial discusses discusses Infinite-Horizon Stochastic Dynamic Programming.
+My Honors [thesis](assets/foster_thesis.pdf) may be useful in understanding the underlying theory of Infinite-Horizon Stochastic Dynamic Programming.
 
 Recall that our model for the hydrothermal scheduling problem  from
 [Tutorial Three: objective noise](@ref) is:
