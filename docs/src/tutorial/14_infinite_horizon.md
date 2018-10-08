@@ -130,12 +130,47 @@ The output from the log is:
 # Formulating the problem with infinite-horizon SDDP
 In formulating many stochastic dynamic programs, a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
 
+```
+using SDDP, JuMP, Clp
+m = SDDPModel(
+                 sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+                 objective_bound = 0.0,
+                 is_infinite = true,
+                 lb_states = [0],
+                 ub_states = [200]) do sp, t
 
+    if t > 0
+        @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
+        @variables(sp, begin
+            thermal_generation >= 0
+            hydro_generation   >= 0
+            hydro_spill        >= 0
+            terminalcost       >= 0
+         end)
 
+        inflow = [50.0, 50.0, 50.0]
+        fuel_cost = [50.0, 100.0, 150.0]
 
-To solve this problem, we use the solve method. The additional parameter  *update_limit* is reuqired to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for *iteration_limit* and *update_limit* is more of an art than a science. 
+        @constraints(sp, begin
+            incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
+            thermal_generation + hydro_generation == 150
+        end)
 
-For example, for a standard SDDP problem with an exogenous terminal cost function 3000 iteration of SDDP may be needed for convegence. When solving this problem with SDDP.jl we set ```iteration_limit = 3000``` When the same problem is solved with infinite-horizon SDDP a total of 8000 iterations may be needed. 
+        @stageobjective(sp, fuel_cost[t] * thermal_generation)
+    else
+        @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
+    end
+
+end
+```
+
+To solve this problem, we use the solve method. The additional parameter ```update_limit``` is required to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for ```iteration_limit``` and ```update_limit``` is more of an art than a science. 
+
+For example, for a complex hydrothermal sceduling problem modelled with SDDP (with an exogenous terminal cost function), 3000 iterations of SDDP may be needed for convergence. When solving this problem with SDDP.jl we would set ```iteration_limit = 3000```.
+
+However, when the same problem is solved with infinite-horizon SDDP a total of 8000 iterations of SDDP may be needed because the endogenous terminal cost-to-go function needs to converge. From my experience we choose ```iteration_limit = 500``` and ```update_limit = 20``` (500x16 = 8000 total iteration of SDDP). Choosing the values for ```iteration limit``` and ```update limit``` is discused furhter in Section 5 of my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf). 
 
 For a given problem usually solved with 
 
