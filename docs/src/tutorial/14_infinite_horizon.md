@@ -91,6 +91,11 @@ m = SDDPModel(
         @stageobjective(sp, fuel_cost[t] * thermal_generation + terminalcost)
     end
 end
+
+```
+To solve this problem, we use the solve method:
+```julia
+status = solve(m; iteration_limit=5)
 ```
 
 The output from the log is:
@@ -121,10 +126,6 @@ The output from the log is:
 ===============================================================================
 ```
 
-To solve this problem, we use the solve method:
-```julia
-status = solve(m; iteration_limit=5)
-```
 
 ## Foromulating the problem with infinite-horizon SDDP
 In formulating many stochastic dynamic programs, a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
