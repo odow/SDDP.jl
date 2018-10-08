@@ -60,9 +60,9 @@ using SDDP, JuMP, Clp
 
 m = SDDPModel(
                  sense = :Min,
-                 stages = 3,
-                 solver = ClpSolver(),
-                 objective_bound = 0.0) do sp, t
+                stages = 3,
+                solver = ClpSolver(),
+       objective_bound = 0.0) do sp, t
 
     @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
     @variables(sp, begin
@@ -127,21 +127,41 @@ The output from the log is:
 ```
 
 
-# Formulating the problem with infinite-horizon SDDP
+## Formulating the problem with infinite-horizon SDDP
 In formulating many stochastic dynamic programs, a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
+
+The problem is constrcuted similar to the problem in [Tutorial One: first steps](@ref). 
+However the first difference is in the imput to ```SDDDPModel()```. The flag ```is_infinite = true``` tells ```SDDPModel()``` to build the model using infinite-horizon SDDP. 
+
+The addtional inputs ``` lb_states``` and ```ub_states``` provide the lower bound and upper bound on the state in the first stage of the problem.
+
+
+
+```julia
+m = SDDPModel(
+                 sense = :Min,
+                stages = 3,
+                solver = ClpSolver(),
+       objective_bound = 0.0,
+           is_infinite = true,
+             lb_states = [0],
+             ub_states = [200]) do sp, t
+```
+
+
 
 ```
 using SDDP, JuMP, Clp
 m = SDDPModel(
                  sense = :Min,
-                 stages = 3,
-                 solver = ClpSolver(),
-                 objective_bound = 0.0,
-                 is_infinite = true,
-                 lb_states = [0],
-                 ub_states = [200]) do sp, t
+                stages = 3,
+                solver = ClpSolver(),
+       objective_bound = 0.0,
+           is_infinite = true,
+             lb_states = [0],
+             ub_states = [200]) do sp, t
 
-    if t > 0
+  
         @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
         @variables(sp, begin
             thermal_generation >= 0
@@ -153,6 +173,7 @@ m = SDDPModel(
         inflow = [50.0, 50.0, 50.0]
         fuel_cost = [50.0, 100.0, 150.0]
 
+    if t > 0
         @constraints(sp, begin
             incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
             thermal_generation + hydro_generation == 150
@@ -160,7 +181,7 @@ m = SDDPModel(
 
         @stageobjective(sp, fuel_cost[t] * thermal_generation)
     else
-        @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
+        @state(sp, outgoing_volume == incoming_volume, incoming_volume == 200)
     end
 
 end
