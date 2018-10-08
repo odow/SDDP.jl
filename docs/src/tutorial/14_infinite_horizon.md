@@ -135,7 +135,7 @@ Including a terminal cost has increased the minimal policy cost from `5.0K` to `
 In formulating many stochastic dynamic programs (such as the previous example), a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations, including the previosu example. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
 
 The problem is constructed similar to the problem in [Tutorial One: first steps](@ref). 
-However the first difference is in the imput to `SDDDPModel` method. The flag `is_infinite = true` tells `SDDPModel()` to build the model using infinite-horizon SDDP. 
+However the first difference is in the imput to [`SDDPModel`](@ref) method. The flag `is_infinite = true` tells [`SDDPModel`](@ref) to build the model using infinite-horizon SDDP. 
 
 The addtional inputs `lb_states` and `ub_states` provide the lower bound and upper bound on the state in the first stage of the problem.
 
@@ -150,7 +150,7 @@ m = SDDPModel(
              ub_states = [200]) do sp, t
 ```
 
-The next difference is containing all the standard constraints and the variables inside an if statement under the condition ```if t > 0```. This is due to a dummy stage zero present under the hood. In the else statement the `@stage` should be constrained so the entering state to stage 1 (from the dummy stage zero), is as desired. In our simple example, in the dummy stage 0, we set the outgoing volume to be equal to the incoming volume leading to the incoming volume to stage 1 to be `200`. 
+The next difference is containing all the standard constraints and the variables inside an if statement under the condition `if t > 0`. This is due to a dummy stage zero present under the hood. In the else statement the `@stage` should be constrained so the entering state to stage 1 (from the dummy stage zero), is as desired. In our simple example, in the dummy stage 0, we set the outgoing volume to be equal to the incoming volume leading to the incoming volume to stage 1 to be `200`. 
 
 ```julia
 if t > 0
@@ -198,11 +198,11 @@ m = SDDPModel(
 end
 ```
 
-To solve this problem, we use the ```solve``` method. The additional parameter ```update_limit``` is required to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for ```iteration_limit``` and ```update_limit``` is more of an art than a science. 
+To solve this problem, we use the ```solve``` method. The additional parameter `update_limit` is required to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for `iteration_limit` and `update_limit` is more of an art than a science. 
 
-For example, for a complex hydrothermal sceduling problem modelled with SDDP (with an exogenous terminal cost function), 3000 iterations of SDDP may be needed for convergence. When solving this problem with SDDP.jl we would set ```iteration_limit = 3000```.
+For example, for a complex hydrothermal sceduling problem modelled with SDDP (with an exogenous terminal cost function), 3000 iterations of SDDP may be needed for convergence. When solving this problem with SDDP.jl we would set `iteration_limit = 3000`.
 
-However, when the same problem is solved with infinite-horizon SDDP a total of 8000 iterations of SDDP may be needed because the endogenous terminal cost-to-go function needs to converge. From my experience we choose ```iteration_limit = 500``` and ```update_limit = 20``` (500x16 = 8000 total iteration of SDDP). Choosing the values for ```iteration limit``` and ```update limit``` is discused furhter in Section 5 of my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf). 
+However, when the same problem is solved with infinite-horizon SDDP a total of 8000 iterations of SDDP may be needed because the endogenous terminal cost-to-go function needs to converge. From my experience we choose `iteration_limit = 500` and `update_limit = 20` (500x16 = 8000 total iteration of SDDP). Choosing the values for `iteration_limit` and `update limit` is discused furhter in Section 5 of my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf). 
 
 For a given problem usually solved with 
 
