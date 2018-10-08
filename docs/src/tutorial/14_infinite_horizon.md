@@ -127,8 +127,48 @@ The output from the log is:
 ```
 
 
-## Foromulating the problem with infinite-horizon SDDP
+# Formulating the problem with infinite-horizon SDDP
 In formulating many stochastic dynamic programs, a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
 
+
+
+
+To solve this problem, we use the solve method. The additional parameter  *update_limit* is reuqired to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for *iteration_limit* and *update_limit* is more of an art than a science. 
+
+For example, for a standard SDDP problem with an exogenous terminal cost function 3000 iteration of SDDP may be needed for convegence. When solving this problem with SDDP.jl we set ```iteration_limit = 3000``` When the same problem is solved with infinite-horizon SDDP a total of 8000 iterations may be needed. 
+
+For a given problem usually solved with 
+
+```julia
+status = solve(m; iteration_limit=5, update_limit=10)
+```
+
+The output from the log is:
+
+```
+-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         4
+        States:         1
+        Subproblems:    4
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+        5.000K        17.500K        |     1    0.0      0    0.0    0.0
+       22.500K        35.000K        |     2    0.0      0    0.0    0.0
+       22.500K        35.000K        |     3    0.0      0    0.0    0.0
+       22.500K        35.000K        |     4    0.0      0    0.0    0.0
+       22.500K        35.000K        |     5    0.0      0    0.0    0.0
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         5
+        Termination Status: iteration_limit
+===============================================================================
 
 This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP. 
