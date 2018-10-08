@@ -1,5 +1,7 @@
 # Tutorial Eleven: infinite-horizon SDDP
-This tutorial discusses discusses infinite-horizon stochastic dynamic dual drogramming (infinite-horizon SDDP). The implementation of infinite-horizon SDDP uses the average cost method. Another possible method could be using the discounted cost method however this method converges much slower than the average cost method. Infinite-horizon SDDP finds the optimal steady state policy of the stochastic dynamic problem.
+This tutorial discusses discusses the use of infinite-horizon stochastic dynamic dual drogramming (infinite-horizon SDDP).
+
+The implementation of infinite-horizon SDDP uses the average cost method. Another possible method could be using the discounted cost method however this method converges much slower than the average cost method. Infinite-horizon SDDP finds the optimal steady state policy of the stochastic dynamic problem.
 
 My Honors [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf) may be useful for further understanding the underlying theory of infinite-horizon SDDP. Ben Fulton applied infinite-horizon SDDP when modelling various scenarios in the New Zealand electricity market thus his [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/fulton_thesis.pdf) may also be of interest. 
 
@@ -133,9 +135,7 @@ In formulating many stochastic dynamic programs, a terminating cost-to-go functi
 The problem is constrcuted similar to the problem in [Tutorial One: first steps](@ref). 
 However the first difference is in the imput to ```SDDDPModel()```. The flag ```is_infinite = true``` tells ```SDDPModel()``` to build the model using infinite-horizon SDDP. 
 
-The addtional inputs ``` lb_states``` and ```ub_states``` provide the lower bound and upper bound on the state in the first stage of the problem.
-
-
+The addtional inputs ```lb_states``` and ```ub_states``` provide the lower bound and upper bound on the state in the first stage of the problem.
 
 ```julia
 m = SDDPModel(
@@ -187,7 +187,7 @@ m = SDDPModel(
 end
 ```
 
-To solve this problem, we use the solve method. The additional parameter ```update_limit``` is required to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for ```iteration_limit``` and ```update_limit``` is more of an art than a science. 
+To solve this problem, we use the ```solve``` method. The additional parameter ```update_limit``` is required to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for ```iteration_limit``` and ```update_limit``` is more of an art than a science. 
 
 For example, for a complex hydrothermal sceduling problem modelled with SDDP (with an exogenous terminal cost function), 3000 iterations of SDDP may be needed for convergence. When solving this problem with SDDP.jl we would set ```iteration_limit = 3000```.
 
@@ -226,5 +226,6 @@ The output from the log is:
         Iterations:         5
         Termination Status: iteration_limit
 ===============================================================================
+```
 
 This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP. 
