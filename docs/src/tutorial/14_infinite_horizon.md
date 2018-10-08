@@ -34,8 +34,7 @@ m = SDDPModel(
 end
 ```
 
-We will continue using the hydrothermal scheduling problem, the most common application of stochastic dual dynamic programming. 
-However, the formualtion will be extended slightly
+We will continue using a simple example of the hydrothermal scheduling problem, the most common application of stochastic dual dynamic programming. However, the formualtion will be extended slightly.
 
 The difference between this formulation and the formulation used in previous tutorials is the presence of a terminal cost-to-go function. The terminal cost-to-go is an important part of more developed hydrothermal scheduling problems. 
 
