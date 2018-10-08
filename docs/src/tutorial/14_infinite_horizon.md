@@ -239,7 +239,7 @@ The output from the log is:
 ===============================================================================
 ```
 
-Notice how the `Bound` is higher than the `Simulation`. This due to the when solving the problem with infinite-horizon SDDP overshoots the objective. However the simulation objective is correct. 
+Notice how the objective `Bound` is higher than the `Simulation` objective. This due to the when solving the problem with infinite-horizon SDDP overshoots the objective. However the simulation objective is correct. 
 
 
 This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP. 
