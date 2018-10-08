@@ -32,6 +32,67 @@ m = SDDPModel(
 end
 ```
 
+We will continue using the hydrothermal scheduling problem, the most common application of stochastic dual dynamic programming. 
+However, the formualtion will be extended slightly
+
+The difference between this formulation and the formulation used in previous tutorials is the presence of a terminal cost-to-go function. The terminal cost-to-go is an important part of more developed hydrothermal scheduling problems. 
+
+In the context of hydrothermal sceduling the terminal cost is based on the concept of a marginal value of water. Water at the end-of-horizon has a value because it can be used to generate electricity. The water is said to have a *marginal* value because a m^3 of water is worth more to when the reservoir is empty compared to when our reseroivr is full.
+
+The marginal water value function for this simple problem is shown in the chart below.
+
+![marginal_water_value_chart](../assets/marginal_water_value_chart.png)
+
+In the absence of a terminal cost-to-go function in the context of the hydrothermal sceduling problem the policy would leave the reservoir empty at the end of the final stage. As water in hydro reservoirs has value this outcome is undesirable and would not happen in reality. A terminal cost-to-go function is used to penalise such action. A terminal cost, which is a function of the final reserovir levels at the end of the final stage is included in the terminal stage objective. 
+
+The terminal cost function, constructed from the marginal water value function used in the simple example is shown in the chart below:
+
+![terminal_cost_chart](../assets/terminal_cost_chart.png)
+
+
+## Formulating and solving the problem with SDDP
+
+Now that the marginal water value and terminal cost function have been explained we can construct the model of the problem.
+comapred to the simple hydrothermal scheduling problem
+
+```julia
+using SDDP, JuMP, Clp
+
+m = SDDPModel(
+                 sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+                 objective_bound = 0.0) do sp, t
+
+    @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation >= 0
+        hydro_generation   >= 0
+        hydro_spill        >= 0
+        terminalcost       >= 0
+     end)
+
+    inflow = [50.0, 50.0, 50.0]
+    fuel_cost = [50.0, 100.0, 150.0]
+    terminal_marginal_cost = [-3 -2 -1]
+    intercept = 600
+
+    @constraints(sp, begin
+        incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
+        thermal_generation + hydro_generation == 150
+    end)
+    for i in 1:length(terminal_marginal_cost)
+        @constraint(sp, terminalcost >= terminal_marginal_cost[i] * outgoing_volume + intercept)
+    end
+
+    if t < 3
+        @stageobjective(sp, fuel_cost[t] * thermal_generation)
+    elseif t == 3
+        @stageobjective(sp, fuel_cost[t] * thermal_generation + terminalcost)
+    end
+end
+```
+
 The output from the log is:
 ```
 -------------------------------------------------------------------------------
@@ -60,79 +121,12 @@ The output from the log is:
 ===============================================================================
 ```
 
-
-We will continue using the hydrothermal scheduling problem, the most common application of stochastic dual dynamic programming. 
-However, the formualtion will be extended slightly
-
-The difference between this formulation and the formulation used in previous tutorials is the presence of a terminal cost-to-go function. The terminal cost-to-go is an important part of more developed hydrothermal scheduling problems. 
-
-In the context of hydrothermal sceduling the terminal cost is based on the concept of a marginal value of water. Water at the end-of-horizon has a value because it can be used to generate electricity. The water is said to have a *marginal* value because a m^3 of water is worth more to when the reservoir is empty compared to when our reseroivr is full.
-
-The marginal water value function for this simple problem is shown in the chart below.
-
-![marginal_water_value_chart](../assets/marginal_water_value_chart.png)
-
-In the absence of a terminal cost-to-go function in the context of the hydrothermal sceduling problem the policy would leave the reservoir empty at the end of the final stage. As water in hydro reservoirs has value this outcome is undesirable and would not happen in reality. A terminal cost-to-go function is used to penalise such action. A terminal cost, which is a function of the final reserovir levels at the end of the final stage is included in the terminal stage objective. 
-
-The terminal cost function, constructed from the marginal water value function used in the simple example is shown in the chart below:
-
-![terminal_cost_chart](../assets/terminal_cost_chart.png)
-
-
-## Formulating and solving the problem in SDDP
-
-Now that the marginal water value and terminal cost function have been explained we can construct the model of the problem.
-comapred to the simple hydrothermal scheduling problem
-
-```julia
-using SDDP, JuMP, Clp
-m = SDDPModel(
-                 sense = :Min,
-                 stages = 12,
-                 solver = ClpSolver(),
-                 objective_bound = 0.0,
-                 is_infinite = false,
-                                        ) do sp, t
-                                        
-    @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
-    @variables(sp, begin
-        thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
-        terminalcost       >= 0
-     end)
-     
-    inflow = [50.0, 50.0, 50.0]
-    fuel_cost = [50.0, 100.0, 150.0]
-    terminal_marginal_cost = [-30 -20 -10]
-    intercept = [200 100 50]
-    
-    @expression(md, terminalcost
-        for i in 1:length(marginal_cost)
-	    terminalcost >= terminal_marginal_cost[i] * outgoing_volume + intercept[i])
-	end
-    )
-    
-    @constraints(sp, begin
-        incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
-        thermal_generation + hydro_generation == 150
-    end)
-    
-    if t < 12
-        @stageobjective(sp, fuel_cost[t] * thermal_generation)
-    elseif t == 12
-        # Final stage has extra term in objectivve - the terminal cost
-        @stageobjective(sp, fuel_cost[t] * thermal_generation + terminalcost)
-    end
-end
-```
-
 To solve this problem, we use the solve method:
 ```julia
 status = solve(m; iteration_limit=5)
 ```
 
-## How the formulation changes
+## Foromulating the problem with infinite-horizon SDDP
 In formulating many stochastic dynamic programs, a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
 
 
