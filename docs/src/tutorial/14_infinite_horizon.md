@@ -1,11 +1,11 @@
 # Tutorial Eleven: infinite-horizon SDDP
 This tutorial discusses discusses the use of infinite-horizon stochastic dynamic dual drogramming (infinite-horizon SDDP).
 
-The implementation of infinite-horizon SDDP uses the average cost method. Another possible method could be using the discounted cost method however this method converges much slower than the average cost method. Infinite-horizon SDDP finds the optimal steady state policy of the stochastic dynamic problem.
+The implementation of infinite-horizon SDDP uses the average cost method. Another possible method could be using the discounted cost method however this method converges much slower than the average cost method. Infinite-horizon SDDP finds the optimal steady state policy of the multi-stage stochastic problem.
 
 My Honors [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf) may be useful for further understanding the underlying theory of infinite-horizon SDDP. Ben Fulton applied infinite-horizon SDDP when modelling various scenarios in the New Zealand electricity market thus his [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/fulton_thesis.pdf) may also be of interest. 
 
-The differencs between infinite-horizon SDDP and SDDP will be explained by formulating and solving a multistage stochastic dynamic program with each method. 
+The differencs between infinite-horizon SDDP and standard SDDP will be explained by formulating and solving a multistage stochastic dynamic program with each method. 
 
 ## The Problem
 
@@ -34,11 +34,11 @@ m = SDDPModel(
 end
 ```
 
-We will continue using a simple example of the hydrothermal scheduling problem, the most common application of stochastic dual dynamic programming. However, the formualtion will be extended slightly.
+We will continue using this simple example of the hydrothermal scheduling problem. However, the formualtion will be extended slightly.
 
-The difference between this formulation and the formulation used in previous tutorials is the presence of a terminal cost-to-go function. The terminal cost-to-go is an important part of more developed hydrothermal scheduling problems. 
+We will add a terminal cost-to-go function to the formulation. The terminal cost-to-go is an important part of more developed hydrothermal scheduling problems. 
 
-In the context of hydrothermal sceduling the terminal cost is based on the concept of a marginal value of water. Water at the end-of-horizon has a value because it can be used to generate electricity. The water is said to have a *marginal* value because a m^3 of water is worth more to when the reservoir is empty compared to when our reseroivr is full.
+In the context of hydrothermal sceduling the terminal cost is based on the concept of a marginal value of water. Water at the end-of-horizon has a value because it can be used to generate electricity. The water is said to have a *marginal* value because a m^3 of water is worth more to when the reservoir is empty compared to when our reservoir is full.
 
 The marginal water value function for this simple problem is shown in the chart below.
 
@@ -54,7 +54,8 @@ The terminal cost function, constructed from the marginal water value function u
 ## Formulating and solving the problem with SDDP
 
 Now that the marginal water value and terminal cost function have been explained we can construct the model of the problem.
-comapred to the simple hydrothermal scheduling problem
+
+Compared to the simple hydrothermal scheduling problem presented in [Tutorial One: first steps](@ref) is the additional term in the objective in the final stage, the terminal cost-to-go.
 
 ```julia
 using SDDP, JuMP, Clp
@@ -127,11 +128,13 @@ The output from the log is:
 ===============================================================================
 ```
 
+Including a terminal cost has increased the minimal policy cost from ```5.000K``` to ```5.6K```. This addtional cost (```0.6K```) is due to the additional terminal cost term in the final stage objective.   
+
 
 ## Formulating the problem with infinite-horizon SDDP
-In formulating many stochastic dynamic programs, a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
+In formulating many stochastic dynamic programs (such as the previous example), a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations, including the previosu example. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
 
-The problem is constrcuted similar to the problem in [Tutorial One: first steps](@ref). 
+The problem is constructed similar to the problem in [Tutorial One: first steps](@ref). 
 However the first difference is in the imput to ```SDDDPModel()```. The flag ```is_infinite = true``` tells ```SDDPModel()``` to build the model using infinite-horizon SDDP. 
 
 The addtional inputs ```lb_states``` and ```ub_states``` provide the lower bound and upper bound on the state in the first stage of the problem.
@@ -147,9 +150,18 @@ m = SDDPModel(
              ub_states = [200]) do sp, t
 ```
 
+The next difference is containing all the standard constraints and the variables inside an if statement under the condition ```if t > 0```. In the else statement 
 
-
+```julia
+if t > 0
+  # define all variables, , expressions, constraints, stage-objectives as in tutorial one
+else
+  @state(sp, outgoing_volume == incoming_volume, incoming_volume == 200)
+end
 ```
+
+
+```julia
 using SDDP, JuMP, Clp
 m = SDDPModel(
                  sense = :Min,
@@ -160,7 +172,7 @@ m = SDDPModel(
              lb_states = [0],
              ub_states = [200]) do sp, t
 
-  
+    if t > 0
         @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
         @variables(sp, begin
             thermal_generation >= 0
@@ -172,7 +184,6 @@ m = SDDPModel(
         inflow = [50.0, 50.0, 50.0]
         fuel_cost = [50.0, 100.0, 150.0]
 
-    if t > 0
         @constraints(sp, begin
             incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
             thermal_generation + hydro_generation == 150
