@@ -128,16 +128,16 @@ The output from the log is:
 ===============================================================================
 ```
 
-Including a terminal cost has increased the minimal policy cost from ```5.000K``` to ```5.600K```. This addtional cost  of ```0.6K``` is due to the additional terminal cost term in the final stage objective.   
+Including a terminal cost has increased the minimal policy cost from `5.000K` to `5.600K`. This addtional cost  of ```0.6K``` is due to the additional terminal cost term in the final stage objective.   
 
 
 ## Formulating the problem with infinite-horizon SDDP
 In formulating many stochastic dynamic programs (such as the previous example), a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many fomulations, including the previosu example. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP), eliminates the need for a terminating cost-to-go function. 
 
 The problem is constructed similar to the problem in [Tutorial One: first steps](@ref). 
-However the first difference is in the imput to ```SDDDPModel``` method. The flag ```julia is_infinite = true``` tells ```SDDPModel()``` to build the model using infinite-horizon SDDP. 
+However the first difference is in the imput to `SDDDPModel` method. The flag `julia is_infinite = true` tells `SDDPModel()` to build the model using infinite-horizon SDDP. 
 
-The addtional inputs ```lb_states``` and ```ub_states``` provide the lower bound and upper bound on the state in the first stage of the problem.
+The addtional inputs `lb_states` and `ub_states` provide the lower bound and upper bound on the state in the first stage of the problem.
 
 ```julia
 m = SDDPModel(
