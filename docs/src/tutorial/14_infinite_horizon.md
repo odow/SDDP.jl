@@ -250,7 +250,9 @@ This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP.
 ## To do:
 
 ### Introduce uncertainty in dummy stage 0
-There’s a minor issue with the algorithm. Currently there’s no uncertainty in the dummy stage 0. Because there is uncertatiny in all other stages, this causes issues when developing a proof demonstrating the infinite horizon SDDP methodology converges. The best solution would there to be no dummy stage 0 and have cuts generated from stage 1. 
+There’s a minor issue with the algorithm. Currently there’s no uncertainty in the dummy stage 0. Because there is uncertatiny in all other stages, this causes issues when developing a proof demonstrating the infinite horizon SDDP methodology converges. 
+
+The best implemented solution would have to be no dummy stage 0 and cuts would be generated from stage 1. The current implementation with the dummy stage was chosen for simplicity.
 
 ### Hold cuts in memory
 The current infinite-horizon methodology uses cuts written to a temporty directory (SDDP/src/temp/) vs holding the cuts in memory. Holding cuts in memory may result in faster solving, especially is `update_limit` is relatively large and `iteration_limit` is relatively small. 
@@ -260,7 +262,9 @@ Given the `Simulation Objective` and the `Bound Objective` is less informative i
 
 However, a user defined function that takes the initial `state` in the given iteration of SDDP as the input and applies the user-defined function to produce a string output would be useful in increasing the information value of the bound and simulation objective values procued from each iteration of SDDP.
 
-For example for the hydrothermal sceduling problem, the `state` is commonly multi-dimensional. Let the state may be a vector of length 5 representing 5 reservoirs. The user defined function may multiply each of the of the vector entries by a specific power unique to each reservoir. This specific power converts the amount stored water in the each reservoir (m^3) to the amount stored hydroelectric energy (GWh) in each reservoir. The stored hydroelectric energies in each reservoir are summed to produce the net hydroelectric energy across the system. This value can then be written to the console with the `Simulation Objective` and the `Bound Objective` to inform these values. 
+For example for the hydrothermal sceduling problem, the `state` is commonly multi-dimensional. Let the state may be a vector of length 5 representing 5 reservoirs. The user defined function may multiply each of the of the vector entries by a specific power unique to each reservoir. This specific power converts the amount stored water in the each reservoir (m^3) to the amount stored hydroelectric energy (GWh) in each reservoir. The stored hydroelectric energies in each reservoir are summed to produce the net hydroelectric energy across the system. 
+
+This value can then be written to the console with the `Simulation Objective` and the `Bound Objective` to inform these values. 
 
 ```julia
 function write_informative_string(state::State)
