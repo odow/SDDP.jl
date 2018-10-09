@@ -137,7 +137,7 @@ In formulating many stochastic dynamic programs (such as the previous example), 
 The problem is constructed similarly to the problem in [Tutorial One: first steps](@ref). 
 However, the first difference is in the input to [`SDDPModel`](@ref) method. The flag `is_infinite = true` tells [`SDDPModel`](@ref) to build the model using infinite-horizon SDDP. 
 
-The additional inputs `lb_states` and `ub_states` provide the lower bound and upper bound on the state in the first stage of the problem.
+The additional inputs `lb_states` and `ub_states` provide the lower bound and upper bound on the state in the dummy stage 0 of the problem (explained next).
 
 ```julia
 m = SDDPModel(
@@ -150,7 +150,7 @@ m = SDDPModel(
              ub_states = [200]) do sp, t
 ```
 
-The next difference is containing all the standard constraints and the variables inside an if statement under the condition `if t > 0`. This is due to a dummy stage zero present under the hood. In the else statement the `@stage` should be constrained so the entering state to stage 1 (from the dummy stage zero), is as desired. In our simple example, in the dummy stage 0, we set the outgoing volume to be equal to the incoming volume leading to the incoming volume to stage 1 to be `200`. 
+The next difference is containing all the standard constraints and the variables inside an `if` statement under the condition `if t > 0`. This is due to a dummy stage zero present under the hood. In the `else` statement the `@stage` should be constrained so the entering state to stage 1 (from the dummy stage zero), is as desired. In our simple example, in the dummy stage 0, we set the `outgoing_volume` to be equal to the `incoming_volume` leading to the incoming volume to stage 1 to be `200`. 
 
 ```julia
 if t > 0
@@ -198,11 +198,11 @@ m = SDDPModel(
 end
 ```
 
-To solve this problem, we use the ```solve``` method. The additional parameter `update_limit` is required to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for `iteration_limit` and `update_limit` is more of an art than a science. 
+To solve this problem, we use the [`solve`](@ref) method. The additional parameter `update_limit` is required to be passed to the solve function when using infinite-horizon SDDP. Choosing the values for `iteration_limit` and `update_limit` is more of an art than a science. 
 
-For example, for a complex hydrothermal scheduling problem modelled with SDDP (with an exogenous terminal cost function), 3000 iterations of SDDP may be needed for convergence. When solving this problem with SDDP.jl, we would set `iteration_limit = 3000`.
+For example, for a complex hydrothermal scheduling problem modelled with SDDP (with an exogenous terminal cost function), 3000 iterations of SDDP may be needed for convergence. When solving this problem with SDDP.jl, we would set `iteration_limit = 3000`. 
 
-However, when the same problem is solved with infinite-horizon SDDP, a total of 8000 iterations of SDDP may be needed because the endogenous terminal cost-to-go function needs to converge. From my experience we choose `iteration_limit = 500` and `update_limit = 20` (500x16 = 8000 total iteration of SDDP). Choosing the values for `iteration_limit` and `update limit` is discussed further in Section 5 of my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf). 
+However, when the same problem is solved with infinite-horizon SDDP, a total of 8000 iterations of SDDP may be needed because the endogenous terminal cost-to-go function needs to converge. From my experience, we choose `iteration_limit = 500` and `update_limit = 20` (500x16 = 8000 total iteration of SDDP). Choosing the values for `iteration_limit` and `update limit` is discussed further in Section 5 of my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf). 
 
 For a given problem usually solved with 
 
@@ -241,9 +241,7 @@ The output from the final update (update 10/10) log is:
 
 Notice how the objective `Bound` is higher than the `Simulation` objective. This due to the when solving the problem with infinite-horizon SDDP overshoots the objective. However, the simulation objective is correct. 
 
-
 This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP. 
-
  
 ## To do:
 There’s a minor issue with the algorithm: currently there’s no uncertainty in week 1?
