@@ -236,14 +236,33 @@ The output from the final update (update 10/10) log is:
     Other Statistics:
         Iterations:         5
         Termination Status: iteration_limit
+-------------------------------------------------------------------------------
+Min Δ  : 12500.0
+Max Δ  : 12500.0
+Mean Δ : 12500.0
 ===============================================================================
 ```
 
-Notice how the objective `Bound` is higher than the `Simulation` objective. This due to the when solving the problem with infinite-horizon SDDP overshoots the objective. However, the simulation objective is correct. 
+Notice how the objective `Bound` is higher than the `Simulation` objective. This due to the when solving the problem with infinite-horizon SDDP overshoots the objective. The expected cost of the policy is more accurately shown through the value of Δ (the method of computing Δ is discussed in my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf)).
+
+Note how the `Bound Objective - Δ = Simulation Objective`.
 
 This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP. 
  
 ## To do:
-There’s a minor issue with the algorithm: currently there’s no uncertainty in week 1?
 
-Method uses cuts written to a temp directory (vs all done in memory). To Do -> internalise cuts.
+### Introduce uncertainty in dummy stage 0
+There’s a minor issue with the algorithm. Currently there’s no uncertainty in the dummy stage 0. Because there is uncertatiny in all other stages, this causes issues when developing a proof demonstrating the infinite horizon SDDP methodology converges. 
+
+### Hold cuts in memory
+The current infinite-horizon methodology uses cuts written to a temporty directory (SDDP/src/temp/) vs holding the cuts in memory. Holding cuts in memory may result in faster solving, especially is `update_limit` is relatively large and `iteration_limit` is relatively small. 
+
+## User-defined function to increase information value of the bound and simulation objective values
+Given the `Simulation Objective` and the `Bound Objective` is less informative in the infinite-horizon programming, we output the Δ values as well. The values for Δ conveges as the policy converges. 
+
+However, a user defined function that takes the `state` in the given iteration of SDDP as the input and applies the user-defined function to produce a string output would be useful in increasing the information value of the bound and simulation objective values procued from each iteration of SDDP.
+
+For example for the hydrothermal sceduling problem, the `state` is commonly multi-dimensional (e.g. the state may be a vector of length 5 representing 5 reservoirs). The user defined function may produce a 
+
+
+
