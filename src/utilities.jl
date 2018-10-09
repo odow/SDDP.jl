@@ -111,7 +111,8 @@ function constructcut(m::SDDPModel, sp::JuMP.Model)
             coefficients[j] += m.storage.modifiedprobability[i] * m.storage.duals[i][j]
         end
     end
-    Cut(intercept, coefficients)
+    state = getstage(m, ext(sp).stage).state
+    Cut(intercept, coefficients, state)
 end
 
 addcutconstraint!(sense::Min, sp, theta, affexpr) = @constraint(sp, theta >= affexpr)
@@ -284,6 +285,9 @@ function writecut!(io::IO, stage::Int, markovstate::Int, cut::Cut)
     write(io, string(stage), ",", string(markovstate), ",", string(cut.intercept))
     for pi in cut.coefficients
         write(io, ",", string(pi))
+    end
+    for s in cut.state
+        write(io, ",", string(s))
     end
     write(io, "\n")
 end

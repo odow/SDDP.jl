@@ -44,7 +44,7 @@ include("visualizer/visualize.jl")
 include("price_interpolation/price_interpolation.jl")
 include("deprecate.jl")
 include("experimental.jl")
-include("cut_selection_markov.jl")
+include("cut_selection.jl")
 include("infinite_horizon_functions.jl")
 
 struct UnsetSolver <: JuMP.MathProgBase.AbstractMathProgSolver end
@@ -144,8 +144,8 @@ function SDDPModel(build!::Function;
     value_function       = DefaultValueFunction(cut_oracle),
     # Flag to tell model to build infinite-horizon SDDP model
     is_infinite::Bool    = false,
-    lb_states            = nothing, # State lower bound array for dummy state 0
-    ub_states            = nothing, # State upper bound array for dummy state 0
+    lb_states::Array{Float64,1} = [], # State lower bound array for dummy state 0
+    ub_states::Array{Float64,1} = [], # State upper bound array for dummy state 0
     )
     if objective_bound == nothing
         error("You must specify the objective_bound keyword")
@@ -166,16 +166,16 @@ function SDDPModel(build!::Function;
     m = newSDDPModel(sense, getel(AbstractValueFunction, value_function, 1, 1), build!)
 
     # Dictionary entry in model object to signal if is infinite-horizon or standard model
-    m.ext[:is_infinite] = is_infinite
-    if m.ext[:is_infinite]
+    m.ext[:is_infinite] = (is_infinite ? 1 : 0)
+    if m.ext[:is_infinite] == 1
         m.ext[:SDDP_iter_counter] = 0              # Record number of iterations of SDDP carried out
         m.ext[:fp_final_state] = Array{Float64,1}  # Store state at end of forward pass in stage T
         m.ext[:lb_states] = lb_states
         m.ext[:ub_states] = ub_states
     end
 
-    for t in (1-m.ext[:is_infinite]):stages
-        markov_transition_matrix = getel(Array{Float64, 2}, markov_transition, 1) # tk
+    for t in 1:stages
+        markov_transition_matrix = getel(Array{Float64, 2}, markov_transition, t)
         # check that
         if num_args == 2 && size(markov_transition_matrix, 2) > 1
             error("""Because you specified a noise tree in the SDDPModel constructor, you need to use the
@@ -190,7 +190,7 @@ function SDDPModel(build!::Function;
         for i in 1:size(markov_transition_matrix, 2)
             mod = Subproblem(
                 finalstage     = (t == stages),
-                stage          = t + m.ext[:is_infinite],
+                stage          = t,
                 markov_state   = i,
                 sense          = optimisationsense(sense),
                 bound          = float(getel(Real, objective_bound, t, i)),
@@ -205,12 +205,6 @@ function SDDPModel(build!::Function;
             else
                 build!(mod, t)
             end
-
-            if t == 0
-                @variable(mod, dummy == 0)
-                @stageobjective(mod, 1dummy)
-            end
-
             # # Uniform noise probability for now
             if length(ext(mod).noises) != length(ext(mod).noiseprobability)
                 setnoiseprobability!(mod, ones(length(ext(mod).noises)) / length(ext(mod).noises))
@@ -232,7 +226,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         (last_markov_state, sp) = samplesubproblem(stage, last_markov_state, solutionstore)
         if t > 1
             setstates!(m, sp)
-        elseif m.ext[:is_infinite] && (m.ext[:SDDP_iter_counter] > 0)
+        elseif (m.ext[:SDDP_iter_counter] > 0) & (m.ext[:is_infinite] == 1)
             # Start forward passes where the previous forward pass finished
             setstates_dummystage!(m, sp)
         end
@@ -249,7 +243,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         # store state
         savestates!(stage.state, sp)
 
-        if (t == length(stages(m))) & m.ext[:is_infinite]
+        if (t == length(stages(m))) & (m.ext[:is_infinite] == 1)
             # When in final stage of forward pass after sub-problem solved record state.
             # Start in this state (in the first stage) in next forward pass
             m.ext[:fp_final_state] = stage.state
@@ -323,7 +317,7 @@ function iteration!(m::SDDPModel, settings::Settings)
             end
         end
     end
-    if m.ext[:is_infinite]; m.ext[:SDDP_iter_counter] += 1 end;
+    m.ext[:SDDP_iter_counter] += 1
     return objective_bound, time_backwards, simulation_objective, time_forwards
 end
 
@@ -635,26 +629,26 @@ function JuMP.solve(m::SDDPModel;
     end
     reset_timer!(TIMER)
 
-    if m.ext[:is_infinite]
+    if (m.ext[:is_infinite] ==1)
         cutsout_fp             = string(temp_dir,"cutsout.csv")
         cut_output_file        = cutsout_fp
         allcuts_fp             = string(temp_dir,"allcuts.csv")
         stage1cuts_fp          = string(temp_dir,"stage1_cuts.csv")
+        T                      = length(m.stages) - 2
         time_arr               = zeros(0)
         terminalcost_integral  = zeros(0)
         lb_arr                 = zeros(0)
-        T                      = length(m.stages) - 2
-        max_nb_ms = max([size(m.stages[stage].transitionprobabilities,1) for stage in 1:length(m.stages)]...)
-        ymax_AA_M              = zeros(0,T+1,max_nb_ms)
-        nondom_i_AA_M          = zeros(0,T+1,max_nb_ms)
+        ymax_AA_M              = zeros(0,T+1)
+        nondom_i_AA_M          = zeros(0,T+1)
+        nb_nondom_cuts_M       = zeros(0,T+1)
         m_blank                = deepcopy(m)
     end
-    status = nothing
 
-    for i in 1:(update_limit * m.ext[:is_infinite] + 1 -  m.ext[:is_infinite])
 
-        if m.ext[:is_infinite]
-            #tic()
+    for i in 1:(update_limit * m.ext[:is_infinite] + 1)
+
+        if (m.ext[:is_infinite] == 1)
+            tic()
             try rm(cutsout_fp) catch end
 
             # Clear all cuts from model
@@ -662,7 +656,7 @@ function JuMP.solve(m::SDDPModel;
 
             if i > 1
             # Load L1 dominating cuts into model
-                m, ymax_AA_M, nondom_i_AA_M = load_L1_cuts!(
+                m, ymax_AA_M, nondom_i_AA_M, nb_nondom_cuts = load_L1_cuts!(
                     m, ymax_AA_M, nondom_i_AA_M, allcuts_fp, stage1cuts_fp, iteration_limit, i)
             end
         end
@@ -695,7 +689,7 @@ function JuMP.solve(m::SDDPModel;
                 status = solve(solve_type, m, settings)
             end
             lb = SDDP.getbound(m)
-            if m.ext[:is_infinite]; append!(lb_arr, Int(round(lb,0))) end;
+            append!(lb_arr, Int(round(lb,0)))
         catch ex
             if isa(ex, InterruptException)
                 warn("Terminating solve due to user interaction")
@@ -708,7 +702,7 @@ function JuMP.solve(m::SDDPModel;
         end
         print(printfooter, settings, m, settings, status, TIMER)
 
-        if m.ext[:is_infinite]
+        if (m.ext[:is_infinite] == 1)
             # Extract stage 1 cuts and change stage value to number of passes
             all_newcuts = readcsv(cutsout_fp)
             new_stage1cuts = all_newcuts[get_idx(all_newcuts,1),:]
@@ -726,9 +720,9 @@ function JuMP.solve(m::SDDPModel;
             write_cuts(allcuts_fp, all_newcuts, (i == 1 ? "w" : "a"))
 
             # Store convergence data and print convergence metrics
-            #append!(terminalcost_integral, Int(round(convergence_test(stage1cuts_fp),0)))
-            #append!(time_arr, Int(round(toc(),0)))
-            #if (print_level > 0); print_rundata(time_arr, lb_arr, terminalcost_integral) end
+            append!(terminalcost_integral, Int(round(convergence_test(stage1cuts_fp),0)))
+            append!(time_arr, Int(round(toc(),0)))
+            if (print_level > 0); print_rundata(time_arr, lb_arr, terminalcost_integral) end
         end
     end
     status

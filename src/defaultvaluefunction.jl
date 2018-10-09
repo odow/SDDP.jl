@@ -221,13 +221,30 @@ function loadcuts!(m::SDDPModel{DefaultValueFunction{C}}, filename::String) wher
             stage     = parse(Int, items[1])
             ms        = parse(Int, items[2])
             intercept = parse(Float64, items[3])
-            coefficients = [parse(Float64, i) for i in items[4:end]]
-            cut = Cut(intercept, coefficients)
+            nb_dims = div(length(items)-3,2) # Dimensions of gradients, states
+            coefficients = [parse(Float64, i) for i in items[4:(3+nb_dims)]]
+            state = [parse(Float64, i) for i in items[(3+nb_dims):end]]
+            cut = Cut(intercept, coefficients, state)
             sp = getsubproblem(m, stage, ms)
             addcut!(m, sp, cut)
         end
     end
 end
+
+function loadcuts!(m::SDDPModel{DefaultValueFunction{C}}, cuts::Array{Float64,2}) where C
+    nb_dims = div(size(cuts,2)-3,2) # Dimensions of gradients, states
+    for i in 1:size(cuts,1)
+        stage     = Int(cuts[i,1])
+        ms        = Int(cuts[i,2])
+        intercept = cuts[i,3]
+        coefficients = cuts[i,4:(3+nb_dims)]
+        state = cuts[i,(3+nb_dims):end]
+        cut = Cut(intercept, coefficients, state)
+        sp = getsubproblem(m, stage,  ms)
+        addcut!(m, sp, cut)
+    end
+end
+
 
 #=
     To enable asynchronous solutions, it is necessary to implement

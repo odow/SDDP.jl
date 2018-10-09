@@ -44,6 +44,55 @@ function Asynchronous(;slaves=workers(), step=1/(1 + length(slaves)))
 end
 Base.show(io::IO, async::Asynchronous) = print(io, "Asynchronous solver with $(length(async.slaves)) slave processors and a step of $(async.step)")
 
+function sendto_infinite(procs;args...)
+    """
+    Initialise the state for each processor
+    - Sample from a uniform distribution ~ uniform(lower bound, upper bound)
+    - Different inital state for each processor
+    """
+    for p in procs
+        (nm, sddpm) = args[1]
+        m_copy = deepcopy(sddpm)
+
+        # Initialise states for dummy stage 0 from uniform distribution
+        #dummy_stage = stages(m_copy)[1] # get SDDP subproblem for dummy stage
+        #(last_markov_state, sp) = samplesubproblem(dummy_stage, 1, nothing)
+        ub_arr = sddpm.ext[:ub_states]
+        lb_arr = sddpm.ext[:lb_states]
+        state = lb_arr + rand() .* (ub_arr .- lb_arr)
+        m_copy.ext[:fp_final_state] = state
+
+        #=
+        for i in 1:length(state)
+            v = state[i]
+            st = states(sp)[i]
+            ub = ub_arr[i]
+            lb = lb_arr[i]
+            if v < lb
+                v = lb
+            elseif (v > ub)
+                v = ub
+            end
+            JuMP.fix(st.variable, v)  # fixes the st.variable value
+            setvalue!(st, v)          # fixes st.constraint == v
+        end
+        =#
+
+        p == myid() && continue
+        io = IOBuffer()
+        serialize(io, m_copy)
+        @spawnat(p, begin
+            eval(SDDP, Expr(:(=), :io, io))
+            seekstart(SDDP.io)
+            eval(SDDP, Expr(:(=), nm, deserialize(SDDP.io)))
+            close(SDDP.io)
+        end)
+        close(io)
+
+        m_copy = nothing
+    end
+end
+
 function sendto(procs;args...)
     for p in procs
         p == myid() && continue
@@ -114,7 +163,11 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
 
     begin
         @timeit TIMER "Remote Initialization" begin
-            sendto(async.slaves, m=m)
+            if m.ext[:is_infinite] == 1
+                sendto_infinite(async.slaves, m=m)
+            else
+                sendto(async.slaves, m=m)
+            end
         end
     end
 

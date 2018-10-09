@@ -42,6 +42,25 @@ function setstates!(m, sp)
         end
     end
 end
+function setstates_dummystage!(m, sp)
+    last_state = m.ext[:fp_final_state]
+    ub_arr = m.ext[:ub_states]
+    lb_arr = m.ext[:lb_states]
+
+    for (i,v) in enumerate(last_state)
+        st = states(sp)[i]
+        ub = ub_arr[i]
+        lb = lb_arr[i]
+        if v < lb
+            v = lb
+        elseif v > ub
+            v = ub
+        end
+        JuMP.fix(st.variable, v)  # fixes the st.variable value
+        setvalue!(st, v)          # fixes st.constraint == v
+    end
+end
+
 
 function padvec!(x::AbstractVector{T}, n::Int) where T
     append!(x, zeros(T, max(0, n - length(x))))

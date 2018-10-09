@@ -53,6 +53,7 @@ end
 struct Cut
     intercept::Float64
     coefficients::Vector{Float64}
+    state::Vector{Float64}
 end
 
 struct State
