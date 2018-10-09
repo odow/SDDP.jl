@@ -210,7 +210,7 @@ For a given problem usually solved with
 status = solve(m; iteration_limit=5, update_limit=10)
 ```
 
-The output from the log is:
+The output from the final update (update 10/10) log is:
 
 ```
 -------------------------------------------------------------------------------
@@ -243,3 +243,9 @@ Notice how the objective `Bound` is higher than the `Simulation` objective. This
 
 
 This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP. 
+
+ 
+## To do:
+There’s a minor issue with the algorithm: currently there’s no uncertainty in week 1?
+
+Method uses cuts written to a temp directory (vs all done in memory). To Do -> internalise cuts.
