@@ -257,7 +257,7 @@ There’s a minor issue with the algorithm. Currently there’s no uncertainty i
 ### Hold cuts in memory
 The current infinite-horizon methodology uses cuts written to a temporty directory (SDDP/src/temp/) vs holding the cuts in memory. Holding cuts in memory may result in faster solving, especially is `update_limit` is relatively large and `iteration_limit` is relatively small. 
 
-## User-defined function to increase information value of the bound and simulation objective values
+### User-defined function to increase information value of the bound and simulation objective values
 Given the `Simulation Objective` and the `Bound Objective` is less informative in the infinite-horizon programming, we output the Δ values as well. The values for Δ conveges as the policy converges. 
 
 However, a user defined function that takes the `state` in the given iteration of SDDP as the input and applies the user-defined function to produce a string output would be useful in increasing the information value of the bound and simulation objective values procued from each iteration of SDDP.
