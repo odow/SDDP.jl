@@ -1,7 +1,7 @@
 # Tutorial Eleven: infinite-horizon SDDP
-This tutorial discusses the use of infinite-horizon stochastic dynamic dual programming (infinite-horizon SDDP). Infinite-horizon SDDP is a methodology to find the optimal steady state policy of a multi-stage stochastic problem.
+This tutorial discusses the use of infinite-horizon stochastic dynamic dual programming (infinite-horizon SDDP). Infinite-horizon SDDP is a methodology for finding the optimal steady state policy of a multi-stage stochastic problem.
 
-We implemented infinite-horizon SDDP using the average-cost method. Another possible method could be using the discounted-cost method however this method converges slower (than the average-cost method)
+We implemented infinite-horizon SDDP using the average-cost method. Another possible method could be using the discounted-cost method however this method converges slower (than the average-cost method).
 
 My Honors [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf) may be useful for further understanding of the underlying theory of infinite-horizon SDDP. Ben Fulton applied infinite-horizon SDDP when modelling various scenarios in the New Zealand electricity market thus his [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/fulton_thesis.pdf) may also be of interest. 
 
@@ -34,9 +34,9 @@ m = SDDPModel(
 end
 ```
 
-We will continue using this simple example of the hydrothermal scheduling problem. However, the formulation will be extended slightly.
+We will continue using this simple example of the hydrothermal scheduling problem. However, the formulation will be slightly extended.
 
-We will add a terminal cost-to-go function to the formulation. The terminal cost-to-go is an important part of more developed hydrothermal scheduling problems. 
+We will add a terminal cost-to-go function to the formulation. The terminal cost-to-go is an important part of developed hydrothermal scheduling problems. 
 
 In the context of hydrothermal scheduling, the terminal cost is based on the concept of a marginal value of water. Water at the end-of-horizon has value because it can be used to generate electricity. The water is said to have a *marginal* value because a m^3 of water is worth more to when the reservoir is empty compared to when our reservoir is full.
 
@@ -55,7 +55,7 @@ The terminal cost function, constructed from the marginal water value function u
 
 Now that the marginal water value and terminal cost function have been explained we can construct the model of the problem.
 
-Compared to the simple hydrothermal scheduling problem presented in [Tutorial One: first steps](@ref) is the additional term in the objective in the final stage, the terminal cost-to-go.
+Compared to the simple hydrothermal scheduling problem presented in [Tutorial One: first steps](@ref) there is an additional term in the objective in the final stage, the terminal cost.
 
 ```julia
 using SDDP, JuMP, Clp
@@ -128,11 +128,11 @@ The output from the log is:
 ===============================================================================
 ```
 
-Including a terminal cost has increased the minimal policy cost from `5.0K` to `5.6K`. This additional cost of `0.6K` is due to the additional terminal cost term in the final stage objective.   
+Including a terminal cost has increased the minimal policy cost from `5.0K` to `5.6K`. This additional cost of `0.6K` is due to the addition of the terminal cost in the final stage objective.   
 
 
 ## Formulating the problem with infinite-horizon SDDP
-In formulating many stochastic dynamic programs (such as the previous example), a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many formulations, including the previous example. Solving a multi-stage stochastic dynamic problem with infinite-horizon stochastic dynamic programming (infinite-horizon SDDP) eliminates the need for a terminating cost-to-go function. 
+In formulating many stochastic dynamic programs (such as the previous example), a terminating cost-to-go function is necessary. However, this terminating cost-to-go function is an assumption of many formulations, including the previous example. Solving a multi-stage stochastic problem with infinite-horizon stochastic dynamic programming eliminates the need for a terminal cost function. 
 
 The problem is constructed similarly to the problem in [Tutorial One: first steps](@ref). 
 However, the first difference is in the input to [`SDDPModel`](@ref) method. The flag `is_infinite = true` tells [`SDDPModel`](@ref) to build the model using infinite-horizon SDDP. 
@@ -202,16 +202,14 @@ To solve this problem, we use the [`solve`](@ref) method. The additional paramet
 
 For example, for a complex hydrothermal scheduling problem modelled with SDDP (with an exogenous terminal cost function), 3000 iterations of SDDP may be needed for convergence. When solving this problem with SDDP.jl, we would set `iteration_limit = 3000`. 
 
-However, when the same problem is solved with infinite-horizon SDDP, a total of 8000 iterations of SDDP may be needed because the endogenous terminal cost-to-go function needs to converge. From my experience, we choose `iteration_limit = 500` and `update_limit = 20` (500x16 = 8000 total iteration of SDDP). Choosing the values for `iteration_limit` and `update limit` is discussed further in Section 5 of my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf). 
+However, when the same problem is solved with infinite-horizon SDDP, a total of 8000 iterations of SDDP may be needed because the endogenous terminal cost-to-go function needs to converge. From my experience, we choose `iteration_limit = 500` and `update_limit = 16` (500x16 = 8000 total iteration of SDDP). Choosing the values for `iteration_limit` and `update limit` is discussed further in Section 5 of my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf). 
 
-For a given problem usually solved with 
-
+For this simple problem we solve the model with the `iteration_limit=5`, `update_limit=10`.
 ```julia
 status = solve(m; iteration_limit=5, update_limit=10)
 ```
 
 The output from the final update (update 10/10) log is:
-
 ```
 -------------------------------------------------------------------------------
                           SDDP.jl © Oscar Dowson, 2017-2018
