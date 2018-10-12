@@ -22,6 +22,10 @@
 # CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+function humanize(value::Integer)
+    return Printf.@sprintf("% 9d", value)
+end
+
 function humanize(value::Real)
     SUFFIX = [" ", "K", "M", "G", "T", "P", "E", "Z", "Y"]
     BASE = 1000.0
@@ -36,11 +40,7 @@ function humanize(value::Real)
         end
     end
     normalized_value = sign(value) * BASE * bytes / unit
-    if isa(value, Integer)
-        return Printf.@sprintf("% 8d%s", normalized_value, suffix)
-    else
-        return Printf.@sprintf("% 8.3f%s", normalized_value, suffix)
-    end
+    return Printf.@sprintf("% 8.3f%s", normalized_value, suffix)
 end
 # =========================== End MIT Licensed Code ========================== #
 

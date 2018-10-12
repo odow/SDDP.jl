@@ -1,10 +1,16 @@
 using Kokako, Test, JSON, Gurobi, Plots
 
-function infinite_powder(discount_factor = 0.5)
+"""
+    infinite_powder(; discount_factor = 0.5, stocking_rate::Float64 = NaN)
+
+Create an instance of the infinite horizon POWDER model.
+"""
+function infinite_powder(; discount_factor = 0.5, stocking_rate::Float64 = NaN)
     data = JSON.parsefile(joinpath(@__DIR__, "powder_data.json"))
-    # ===== Linear Graph =====
-    # graph = Kokako.LinearGraph(data["number_of_weeks"])
-    # Kokako.add_edge(graph, data["number_of_weeks"] => 1, discount_factor)
+    # Allow over-ride of the stocking rate contained in data.
+    if !isnan(stocking_rate)
+        data["stocking_rate"] = stocking_rate
+    end
     # ===== Markovian Graph =====
     transition = Array{Float64, 2}[]
     for transition_matrix in data["transition"]
@@ -47,8 +53,11 @@ function infinite_powder(discount_factor = 0.5)
 
         # ========== State Variables ==========
         @variables(subproblem, begin
-            # Pasture cover (kgDM/ha).
-            (0 <= pasture_cover <= data["maximum_pasture_cover"], Kokako.State,
+            # Pasture cover (kgDM/ha). Note: to avoid numerical difficulties, we
+            # increase the lower bound so that it is not zero. This avoids the
+            # situaton where pasture_cover=0 and thus growth=0, effectively
+            # killing all grass for all time.
+            (10 <= pasture_cover <= data["maximum_pasture_cover"], Kokako.State,
                 initial_value = data["initial_pasture_cover"])
             # Quantity of supplement in storage (kgDM/ha).
             (stored_supplement >= 0, Kokako.State,
@@ -84,9 +93,9 @@ function infinite_powder(discount_factor = 0.5)
 
         @constraints(subproblem, begin
             # ========== State constraints ==========
-            pasture_cover.out <=
+            pasture_cover.out ==
                 pasture_cover.in + 7 * grass_growth - harvest - feed_pasture
-            stored_supplement.out <= stored_supplement.in +
+            stored_supplement.out == stored_supplement.in +
                 data["harvesting_efficiency"] * harvest - feed_storage
             # This is a <= do account for the maximum soil moisture; excess
             # water is assumed to drain away.
@@ -155,18 +164,9 @@ function infinite_powder(discount_factor = 0.5)
             @expression(subproblem, milk_revenue, 0.0)
         end
 
-        # ========== Low pasture cover penalty ==========
-        # To encourage the optimization to avoid zero pasture cover (thereby
-        # enforcing grass growth to zero and all manner of numerical issues),
-        # add a small penalty when the pasture over gets unreasonably low. We
-        # should never see pasture_penalty > 0 in a simulation.
-        @variable(subproblem, pasture_penalty >= 0)
-        @constraint(subproblem, pasture_cover.out + pasture_penalty >= 500.0)
-
         # ========== Stage Objective ==========
         @stageobjective(subproblem,
             milk_revenue -
-            pasture_penalty -
             data["supplement_price"] * supplement -
             data["harvest_cost"] * harvest -
             fei_penalty +
@@ -174,10 +174,11 @@ function infinite_powder(discount_factor = 0.5)
             1e-4 * soil_moisture.out
         )
     end
+    return model
+end
 
-    Kokako.train(model, iteration_limit = 100, print_level = 1)
-
-    simulations = Kokako.simulate(model, 500, [
+function visualize_policy(model, filename)
+    simulations = Kokako.simulate(model, 5_000, [
         :cows_milking,
         :pasture_cover,
         :soil_moisture,
@@ -187,43 +188,94 @@ function infinite_powder(discount_factor = 0.5)
         :fei_penalty
         ],
         terminate_on_cycle = false,
-        max_depth = 520
+        max_depth = 52 * 5
     )
+    open(filename * ".json", "w") do io
+        write(io, JSON.json(simulations))
+    end
+    xticks = (1:26:5*52, repeat(["Aug", "Feb"], outer=5))
+    plot(
+        Kokako.publicationplot(simulations,
+            data -> data[:cows_milking].out,
+            title = "(a)",
+            ylabel = "Cows Milking (cows/ha)",
+            xticks = xticks),
+        Kokako.publicationplot(simulations,
+            data -> data[:pasture_cover].out / 1000,
+            ylabel = "Pasture Cover (t/ha)",
+            title = "(b)",
+            xticks = xticks),
+        Kokako.publicationplot(simulations,
+            data -> data[:noise_term]["evapotranspiration"],
+            ylabel = "Evapotranspiration (mm)",
+            title = "(c)",
+            xticks = xticks),
+        # Kokako.publicationplot(simulations,
+        #     data -> data[:grass_growth],
+        #     ylabel = "Grass Growth (kg/day)",
+        #     title = "(d)",
+        #     xticks = xticks),
+        # Kokako.publicationplot(simulations,
+        #     data -> data[:supplement],
+        #     ylabel = "Palm Kernel Fed (kg/cow/day)",
+        #     title = "(e)",
+        #     xticks = xticks),
+        # Kokako.publicationplot(simulations,
+        #     data -> data[:weekly_milk_production],
+        #     ylabel = "Milk Production (kg/day)",
+        #     title = "(f)",
+        #     xticks = xticks),
 
-    return model, simulations
+        layout = (1, 3),
+        size = (1500, 300)
+    )
+    savefig(filename * ".pdf")
 end
 
-model, simulations = infinite_powder(0.9)
 
-plot(
-    Kokako.publicationplot(simulations,
-        data -> data[:cows_milking].out,
-        ylabel = "Cows Milking (cows/ha)"),
-    Kokako.publicationplot(simulations,
-        data -> data[:pasture_cover].out / 1000,
-        ylabel = "Pasture Cover (t/ha)"),
-    Kokako.publicationplot(simulations,
-        data -> data[:soil_moisture].out,
-        ylabel = "Soil Moisture (mm)"),
+# The experiments can be run by calling `julia powder.jl run`.
+if length(ARGS) > 0 && ARGS[1] == "run"
+    # Import Random for seed!
+    using Random
+    let
+        println("""Running the base case: POWDER with discount factor of 0.9 and
+        a stocking rate of 3 cows/ha.""")
+        model = infinite_powder(discount_factor = 0.9, stocking_rate = 3.0)
+        Random.seed!(1234)
+        Kokako.train(model, iteration_limit = 3_000, print_level = 1,
+            log_file = "powder_09_3000it.log")
+        Random.seed!(5678)
+        visualize_policy(model, "powder_09_3000it")
+    end
 
-    Kokako.publicationplot(simulations,
-        data -> data[:grass_growth],
-        ylabel = "Grass Growth (kg/day)"),
-    Kokako.publicationplot(simulations,
-        data -> data[:supplement],
-        ylabel = "Palm Kernel Fed (kg/cow/day)"),
-    Kokako.publicationplot(simulations,
-        data -> data[:weekly_milk_production],
-        ylabel = "Milk Production (kg/day)"),
+    let
+        println("""Running experiment 1: compare the evolution of the lower
+        bound with a smaller # discount factor. No need to visualize as we only
+        care about the evolution of the upper bound.""")
+        model = infinite_powder(discount_factor = 0.5, stocking_rate = 3.0)
+        Random.seed!(1234)
+        Kokako.train(model, iteration_limit = 3_000, print_level = 1,
+            log_file = "powder_50_3000it.log")
+    end
 
-    Kokako.publicationplot(simulations,
-        data -> data[:node_index][2],
-        ylabel = "MarkovState"),
-    Kokako.publicationplot(simulations,
-        data -> data[:noise_term]["evapotranspiration"],
-        ylabel = "Evapotranspiration (mm)"),
-    Kokako.publicationplot(simulations,
-        data -> data[:noise_term]["rainfall"],
-        ylabel = "Rainfall (mm)"),
-    size = (1500, 900)
-)
+    let
+        println("""Running experiment 2: visualize an unconverged policy.
+        Compare against powder_90_3000it.""")
+        model = infinite_powder(discount_factor = 0.9, stocking_rate = 3.0)
+        Random.seed!(1234)
+        Kokako.train(model, iteration_limit = 500, print_level = 1,
+            log_file = "powder_90_500it.log")
+        Random.seed!(5678)
+        visualize_policy(model, "powder_90_500it")
+    end
+
+    let
+        println("""Running experiment 3: solve with a lower stocking rate.
+        Compare against powder_90_3000it. No need to visualize as we only care
+        about the lower bound.""")
+        model = infinite_powder(discount_factor = 0.9, stocking_rate = 2.5)
+        Random.seed!(1234)
+        Kokako.train(model, iteration_limit = 3_000, print_level = 1,
+            log_file = "powder_90_3000it_25SR.log")
+    end
+end

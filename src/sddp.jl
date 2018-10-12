@@ -383,12 +383,15 @@ function train(graph::PolicyGraph;
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.InSampleMonteCarlo(),
                print_level = 0,
-               cycle_discretization_delta = 0.01
+               cycle_discretization_delta = 0.01,
+               log_file = "kokako.log"
                )
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
+    log_file_handle = open(log_file, "a")
     if print_level > 0
         print_banner()
+        print_banner(log_file_handle)
     end
     # Convert the vector to an AbstractStoppingRule. Otherwise if the user gives
     # something like stopping_rules = [Kokako.IterationLimit(100)], the vector
@@ -440,6 +443,7 @@ function train(graph::PolicyGraph;
             has_converged, status = convergence_test(graph, log, stopping_rules)
             if print_level > 0
                 print_iteration(log[end])
+                print_iteration(log[end], log_file_handle)
             end
             iteration_count += 1
         end
@@ -449,6 +453,8 @@ function train(graph::PolicyGraph;
         else
             rethrow(ex)
         end
+    finally
+        close(log_file_handle)
     end
     if print_level > 1
         TimerOutputs.print_timer(stdout, SDDP_TIMER)
