@@ -54,29 +54,11 @@ function sendto_infinite(procs;args...)
         (nm, sddpm) = args[1]
         m_copy = deepcopy(sddpm)
 
-        # Initialise states for dummy stage 0 from uniform distribution
-        #dummy_stage = stages(m_copy)[1] # get SDDP subproblem for dummy stage
-        #(last_markov_state, sp) = samplesubproblem(dummy_stage, 1, nothing)
+        # Initialise states for stage 1 from uniform distribution
         ub_arr = sddpm.ext[:ub_states]
         lb_arr = sddpm.ext[:lb_states]
-        state = lb_arr + rand() .* (ub_arr .- lb_arr)
-        m_copy.ext[:fp_final_state] = state
-
-        #=
-        for i in 1:length(state)
-            v = state[i]
-            st = states(sp)[i]
-            ub = ub_arr[i]
-            lb = lb_arr[i]
-            if v < lb
-                v = lb
-            elseif (v > ub)
-                v = ub
-            end
-            JuMP.fix(st.variable, v)  # fixes the st.variable value
-            setvalue!(st, v)          # fixes st.constraint == v
-        end
-        =#
+        state_ = lb_arr + rand() .* (ub_arr .- lb_arr)
+        m_copy.ext[:fp_start_state] = state_
 
         p == myid() && continue
         io = IOBuffer()

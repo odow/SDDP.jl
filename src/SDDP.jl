@@ -166,7 +166,7 @@ function SDDPModel(build!::Function;
     m = newSDDPModel(sense, getel(AbstractValueFunction, value_function, 1, 1), build!)
     m.ext[:is_infinite] = is_infinite
     m.ext[:completed_iter1] = false            # Record number of iterations of SDDP carried out
-    m.ext[:fp_final_state] = Array{Float64,1}  # Store state at end of forward pass in stage T
+    m.ext[:fp_end_state] = Array{Float64,1}  # Store state at end of forward pass in stage T
     m.ext[:fp_start_state] = Array{Float64,1}  # Store state at start of forward pass in stage 1
     m.ext[:lb_states] = lb_states
     m.ext[:ub_states] = ub_states
@@ -224,19 +224,24 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
     for (t, stage) in enumerate(stages(m))
         # choose markov state
         (last_markov_state, sp) = samplesubproblem(stage, last_markov_state, solutionstore)
+
+        if m.ext[:is_infinite] & t == 1
+            if m.ext[:completed_iter1]
+                m.ext[:fp_start_state] = m.ext[:fp_end_state]
+            else
+                # Random starting state for each new "inner loop"
+                ub_arr = m.ext[:ub_states]
+                lb_arr = m.ext[:lb_states]
+                random_init_state = lb_arr + rand() .* (ub_arr .- lb_arr)
+                m.ext[:fp_start_state] = random_init_state
+            end
+        end
+
         if t > 1
             setstates!(m, sp)
         elseif m.ext[:is_infinite] & m.ext[:completed_iter1]
             # Start forward passes where the previous forward pass finished
-            setstates!(m, sp, m.ext[:fp_final_state])
-        end
-
-        if m.ext[:is_infinite] & t == 1
-            if m.ext[:completed_iter1]
-                m.ext[:fp_start_state] = m.ext[:fp_final_state]
-            else
-                m.ext[:fp_start_state] = stage.state
-            end
+            setstates!(m, sp, m.ext[:fp_start_state])
         end
 
         # choose and set RHS noise
@@ -254,7 +259,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         if (t == length(stages(m))) & m.ext[:is_infinite]
             # When in final stage of forward pass after sub-problem solved record state.
             # Start first stage of next forward pass (in next iteration) in this state
-            m.ext[:fp_final_state] = stage.state
+            m.ext[:fp_end_state] = stage.state
         end
 
         # save solution for simulations (defaults to no-op)

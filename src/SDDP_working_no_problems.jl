@@ -169,7 +169,7 @@ function SDDPModel(build!::Function;
     m.ext[:is_infinite] = (is_infinite ? 1 : 0)
     if m.ext[:is_infinite] == 1
         m.ext[:SDDP_iter_counter] = 0              # Record number of iterations of SDDP carried out
-        m.ext[:fp_final_state] = Array{Float64,1}  # Store state at end of forward pass in stage T
+        m.ext[:fp_end_state] = Array{Float64,1}  # Store state at end of forward pass in stage T
         m.ext[:lb_states] = lb_states
         m.ext[:ub_states] = ub_states
     end
@@ -246,7 +246,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         if (t == length(stages(m))) & (m.ext[:is_infinite] == 1)
             # When in final stage of forward pass after sub-problem solved record state.
             # Start in this state (in the first stage) in next forward pass
-            m.ext[:fp_final_state] = stage.state
+            m.ext[:fp_end_state] = stage.state
         end
 
         # save solution for simulations (defaults to no-op)
