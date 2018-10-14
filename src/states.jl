@@ -24,9 +24,9 @@ function savestates!(y, sp::JuMP.Model)
     end
 end
 
-function setstates!(m, sp)
-    s = getstage(m, ext(sp).stage-1)
-    for (st, v) in zip(states(sp), s.state)
+setstates!(m, sp) = setstates!(m, sp, getstage(m, ext(sp).stage-1).state)
+function setstates!(m, sp, state_)
+    for (st, v) in zip(states(sp), state_)
         # Deal with numerical issues that can lead to occasional
         # infeasibilities. Ref discussions at
         # https://github.com/odow/SDDP.jl/issues/6#issuecomment-343022931
@@ -40,24 +40,6 @@ function setstates!(m, sp)
         else
             setvalue!(st, v)
         end
-    end
-end
-function setstates_dummystage!(m, sp)
-    last_state = m.ext[:fp_final_state]
-    ub_arr = m.ext[:ub_states]
-    lb_arr = m.ext[:lb_states]
-
-    for (i,v) in enumerate(last_state)
-        st = states(sp)[i]
-        ub = ub_arr[i]
-        lb = lb_arr[i]
-        if v < lb
-            v = lb
-        elseif v > ub
-            v = ub
-        end
-        JuMP.fix(st.variable, v)  # fixes the st.variable value
-        setvalue!(st, v)          # fixes st.constraint == v
     end
 end
 

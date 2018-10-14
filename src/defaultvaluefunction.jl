@@ -53,7 +53,11 @@ function getstageobjective end
 
 function getstageobjective(vf::DefaultValueFunction, sp::JuMP.Model)
     if ext(sp).finalstage
-        return JuMP.getobjectivevalue(sp)
+        if ext(sp).is_infinite
+            return JuMP.getobjectivevalue(sp) - JuMP.getvalue(vf.theta)
+        else
+            return JuMP.getobjectivevalue(sp)
+        end
     else
         return JuMP.getobjectivevalue(sp) - JuMP.getvalue(vf.theta)
     end
@@ -68,12 +72,17 @@ function setstageobjective! end
 
 function setstageobjective!(vf::DefaultValueFunction, sp::JuMP.Model, obj)
     if ext(sp).finalstage
-        JuMP.setobjective(sp, getsense(sp), obj)
+        if ext(sp).is_infinite
+            JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
+        else
+            JuMP.setobjective(sp, getsense(sp), obj)
+        end
     else
         JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
     end
     JuMP.setobjectivesense(sp, getsense(sp))
 end
+
 
 """
     modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Model, writecuts::Bool=true)
@@ -86,8 +95,14 @@ function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Mode
     I = 1:length(m.storage.objective)
     # TODO: improve this to reduce the extra memory usage
     current_transition = copy(m.storage.probability.data[I])
-    for i in I
-        m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
+    if ex.stage == nstages(m)
+        for i in I
+            m.storage.probability[i] *= getstage(m, 1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
+        end
+    else
+        for i in I
+            m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
+        end
     end
     @timeit TIMER "risk measure" begin
         modify_probability(ex.riskmeasure,
@@ -109,8 +124,10 @@ function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Mode
         end
     end
 
-    # add the cut to value function and JuMP model
-    addcut!(m, sp, cut)
+    if !ex.finalstage
+        # add the cut to value function and JuMP model
+        addcut!(m, sp, cut)
+    end
 
     # if we are solving asynchronously, need to save it
     # for passing
@@ -223,7 +240,7 @@ function loadcuts!(m::SDDPModel{DefaultValueFunction{C}}, filename::String) wher
             intercept = parse(Float64, items[3])
             nb_dims = div(length(items)-3,2) # Dimensions of gradients, states
             coefficients = [parse(Float64, i) for i in items[4:(3+nb_dims)]]
-            state = [parse(Float64, i) for i in items[(3+nb_dims):end]]
+            state = [parse(Float64, i) for i in items[(4+nb_dims):end]]
             cut = Cut(intercept, coefficients, state)
             sp = getsubproblem(m, stage, ms)
             addcut!(m, sp, cut)
@@ -238,7 +255,7 @@ function loadcuts!(m::SDDPModel{DefaultValueFunction{C}}, cuts::Array{Float64,2}
         ms        = Int(cuts[i,2])
         intercept = cuts[i,3]
         coefficients = cuts[i,4:(3+nb_dims)]
-        state = cuts[i,(3+nb_dims):end]
+        state = cuts[i,(4+nb_dims):end]
         cut = Cut(intercept, coefficients, state)
         sp = getsubproblem(m, stage,  ms)
         addcut!(m, sp, cut)
@@ -269,6 +286,8 @@ Where T is asyncutstoragetype(V)
 function addasynccut end
 
 function addasynccut!(m::SDDPModel{DefaultValueFunction{C}}, cut::Tuple{Int, Int, Cut}) where C
-    sp = getsubproblem(m, cut[1], cut[2])
-    addcut!(m, sp, cut[3])
+    if cut[1] < nstages(m)
+        sp = getsubproblem(m, cut[1], cut[2])
+        addcut!(m, sp, cut[3])
+    end
 end

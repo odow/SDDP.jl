@@ -54,7 +54,7 @@ end
 
 function load_L1_cuts!(md::SDDPModel, ymax_AA_M::Array{Float64,3}, nondom_i_AA_M::Array{Float64,3},
                          allcuts_fp::String, stage1cuts_fp::String, nb_iter::Integer, i::Integer)
-    T_ = length(md.stages)-1 # Equals Number of stages (T) minus
+    T = length(md.stages)
     allcuts = readcsv(allcuts_fp)
     nb_cuts = size(allcuts,1)
     max_nb_ms = max([size(md.stages[stage].transitionprobabilities,1) for stage in 1:length(md.stages)]...)
@@ -62,21 +62,21 @@ function load_L1_cuts!(md::SDDPModel, ymax_AA_M::Array{Float64,3}, nondom_i_AA_M
     if i == 2
         # Initalize storage matrices
         # Max y value for [A]ll sampled states and [A]ll cuts
-        ymax_AA_M = vcat(ymax_AA_M, zeros(div(nb_cuts,T_), T_, max_nb_ms))
+        ymax_AA_M = vcat(ymax_AA_M, zeros(div(nb_cuts,T), T, max_nb_ms))
         # Nondom cut idx for [A]ll sampled states and [A]ll cuts
-        nondom_i_AA_M = vcat(nondom_i_AA_M, zeros(div(nb_cuts,T_), T_, max_nb_ms))
+        nondom_i_AA_M = vcat(nondom_i_AA_M, zeros(div(nb_cuts,T), T, max_nb_ms))
     elseif i >= 3
-        currentcuts = allcuts[1:(nb_cuts-T_*nb_iter),:]
-        newcuts = allcuts[(nb_cuts-T_*nb_iter+1):end,:]
+        currentcuts = allcuts[1:(nb_cuts-T*nb_iter),:]
+        newcuts = allcuts[(nb_cuts-T*nb_iter+1):end,:]
         # Max y value for all [C]urrent sampled states and [C]urrent cuts
         ymax_CC_M = deepcopy(ymax_AA_M)
         # Nondom cut idx for all [C]urrent sampled states and [C]urrent cuts
         nondom_i_CC_M = deepcopy(nondom_i_AA_M)
-        ymax_AA_M = zeros(div(nb_cuts,T_), T_, max_nb_ms)
-        nondom_i_AA_M = zeros(div(nb_cuts,T_), T_, max_nb_ms)
+        ymax_AA_M = zeros(div(nb_cuts,T), T, max_nb_ms)
+        nondom_i_AA_M = zeros(div(nb_cuts,T), T, max_nb_ms)
     end
 
-    for stage in 1:T_
+    for stage in 1:T
         nb_ms = size(md.stages[stage].transitionprobabilities,1)
         for ms in 1:nb_ms
             if i == 2
@@ -90,7 +90,7 @@ function load_L1_cuts!(md::SDDPModel, ymax_AA_M::Array{Float64,3}, nondom_i_AA_M
                 ymax_NC, nondom_i_NC = L1_cut_selection(get_cuts(newcuts,stage,ms),get_samplestates(currentcuts, stage, ms))
                 ii = ymax_NC .> ymax_CC_M[:,stage]
                 ymax_AC[ii] = ymax_NC[ii] # max y value for all current sampled state (over all cuts)
-                nondom_i_AC[ii] = nondom_i_NC[ii] + div(size(currentcuts,1),T_)
+                nondom_i_AC[ii] = nondom_i_NC[ii] + div(size(currentcuts,1),T)
                 ymax_AN, nondom_i_AN = L1_cut_selection(get_cuts(allcuts,stage,ms),get_samplestates(newcuts,stage, ms))
                 ymax_AA_M[:,stage] = vcat(ymax_AC, ymax_AN)
                 nondom_i_AA_M[:,stage] = vcat(nondom_i_AC, nondom_i_AN)

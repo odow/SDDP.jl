@@ -24,8 +24,8 @@ function save_deltas(delta_fp::String, delta_arr::Array{Float64,1}, file_modifie
 end
 
 
-function shift_newcuts_down!(new_cuts::Array{Float64,2}, stage1cuts_fp::String)
-    current_cuts = readcsv(stage1cuts_fp)
+function shift_newcuts_down!(new_cuts::Array{Float64,2}, stageTcuts_fp::String)
+    current_cuts = readcsv(stageTcuts_fp)
     delta_arr = zeros(0)
     dim_state = div(size(new_cuts,2)-3,2)
 
@@ -39,24 +39,18 @@ function shift_newcuts_down!(new_cuts::Array{Float64,2}, stage1cuts_fp::String)
         end
     end
 
-    println("-------------------------------------------------------------------------------")
-    println("Min Delta: ", min(delta_arr...))
-    println("Max Delta: ", max(delta_arr...))
-    println("Mean Delta: ", mean(delta_arr))
-    println("-------------------------------------------------------------------------------")
-
     Delta = min(delta_arr...)
     new_cuts[:,3] -= Delta
     return new_cuts, delta_arr
 end
 
 
-function convergence_test(stage1cuts_fp::String)
+function convergence_test(stageTcuts_fp::String)
     "Function determines area under 1D approximation of all of stage 1 cuts"
 
     theta = [0.000725151, 0.00067598, 0.001131078, 0.000363842, 0.000395587, 0.00026111, 0.000725151]
     scalefactor = 10000
-    cuts = readcsv(stage1cuts_fp)
+    cuts = readcsv(stageTcuts_fp)
     alphas = zeros(0)
     betas_1D = zeros(0)
 
@@ -122,12 +116,21 @@ function convergence_test(stage1cuts_fp::String)
     integral_sum
 end
 
-
-function print_rundata(time_arr::Array{Float64,1}, lb_arr::Array{Float64,1}, terminalcost_integral::Array{Float64,1})
+function print_covergence_metrics(time_arr::Array{Float64,1},
+                                  lb_arr::Array{Float64,1},
+                                  Delta_arr::Array{Float64,1},
+                                  SDdelta::Array{Float64,1},
+                                  terminalcost_integral::Array{Float64,1})
     println("-------------------------------------------------------------------------------")
-    println("Iteration      Time taken (s)       Lower Bound     Terminal Cost Integral")
-    for i in 1:length(time_arr)
-        println(string(i), "            ", humanize(time_arr[i],"5.2f"), "            ", humanize(lb_arr[i],"8.3f"),"         ", string(round(terminalcost_integral[i],0)))
+    println("Iteration  Time (s)   Bound      Delta      sd(delta)    Terminal Cost Integral")
+    println(humanize(1), "     ", humanize(time_arr[1],"5.2f"), "  ", humanize(lb_arr[1],"8.3f"))
+    for i in 2:length(time_arr)
+        println(humanize(i), "     ",
+                humanize(time_arr[i],"5.2f"), "  ",
+                humanize(lb_arr[i],"8.3f"),"   ",
+                humanize(Delta_arr[i-1],"8.3f"), "   ",
+                humanize(SDdelta[i-1],"8.3f"), "   ",
+                humanize(terminalcost_integral[i-1],"8.3f"))
     end
     println("Net runtime (minutes): ", Int(round(sum(time_arr) / 60,0)))
     println("-------------------------------------------------------------------------------")

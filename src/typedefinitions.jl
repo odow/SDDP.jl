@@ -75,7 +75,7 @@ struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:Abstract
     stage::Int              # stage index
     markovstate::Int        # index of the subproblem by markov state
     problembound::Float64   # objective bound
-    sense::S          # optimisation sense (max or min)
+    sense::S                # optimisation sense (max or min)
     # a vector of states
     states::Vector{State}
     # an oracle to value function
@@ -86,10 +86,13 @@ struct SubproblemExt{S<:OptimisationSense, V<:AbstractValueFunction, R<:Abstract
     noiseprobability::Vector{Float64}
     # A risk measure to use for the subproblem
     riskmeasure::R
+    # if using infinite-horizon SDDP
+    is_infinite::Bool
 end
 
 function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min(), bound=-1e6,
-    risk_measure=Expectation(), value_function=DefaultValueFunction(DefaultCutOracle()))
+    risk_measure=Expectation(), value_function=DefaultValueFunction(DefaultCutOracle()),
+    is_infinite=false)
     m = Model()
     m.ext[:SDDP] = SDDP.SubproblemExt(
         finalstage,
@@ -101,7 +104,8 @@ function Subproblem(;finalstage=false, stage=1, markov_state=1, sense=Min(), bou
         initializevaluefunction(deepcopy(value_function), m, sense, bound),
         Noise[],
         Float64[],
-        risk_measure
+        risk_measure,
+        is_infinite
     )
     m
 end
