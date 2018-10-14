@@ -57,7 +57,7 @@ The terminal cost function, constructed from the marginal water value function u
 
 Now that the marginal water value and terminal cost function have been explained we can construct the model of the problem.
 
-Compared to the simple hydrothermal scheduling problem presented in [Tutorial One: first steps](@ref) there is an additional term in the objective in the final stage, the terminal cost.
+Compared to the simple hydrothermal scheduling problem presented in [Tutorial Two: RHS noise](@ref) there is an additional term in the objective in the final stage, the terminal cost.
 
 ```julia
 using SDDP, JuMP, Clp
@@ -120,7 +120,7 @@ In formulating many stochastic dynamic programs (such as the previous example), 
 The problem is constructed similarly to the problem in [Tutorial One: first steps](@ref). 
 The only difference is in the input to [`SDDPModel`](@ref) method. The flag `is_infinite = true` tells [`SDDPModel`](@ref) to build the model using infinite-horizon SDDP. 
 
-The additional inputs `lb_states` and `ub_states` provide the lower bound and upper bound on the state in stage 1 of the problem and are *required* inputs when using infinite-horizon SDDP.
+The additional inputs `lb_states` and `ub_states` provide the lower bound and upper bound on the state in stage 1 of the problem and are **required** inputs when using infinite-horizon SDDP.
 
 ```julia
 m = SDDPModel(
@@ -179,18 +179,13 @@ The output from the final update (update 10/10) log is:
 
 ```
 
-Notice how the objective `Bound` is higher than the `Simulation` objective. This due to the when solving the problem with infinite-horizon SDDP overshoots the objective. The expected cost of the policy is more accurately shown through the value of Δ (the method of computing Δ is discussed in my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf)).
+Notice how the objective `Bound` is higher than the `Simulation` objective. This due to the when solving the problem with infinite-horizon SDDP overshoots the objective. The expected cost of the policy is more accurately shown through the value of Delta (the method of computing Δ is discussed in my [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf)).
 
-Note how the `Bound Objective - Δ = Simulation Objective`.
+Note how the `Bound Objective - Delta = Simulation Objective`.
 
 This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP. 
  
 ## To do:
-
-### Introduce uncertainty in dummy stage 0
-There’s a minor issue with the algorithm. Currently there’s no uncertainty in the dummy stage 0. Because there is uncertatiny in all other stages, this causes issues when developing a proof demonstrating the infinite horizon SDDP methodology converges. 
-
-The best implemented solution would have to be no dummy stage 0 and cuts would be generated from stage 1. The current implementation with the dummy stage was chosen for simplicity.
 
 ### Hold cuts in memory
 The current infinite-horizon methodology uses cuts written to a temporty directory (SDDP/src/temp/) vs holding the cuts in memory. Holding cuts in memory may result in faster solving, especially is `update_limit` is relatively large and `iteration_limit` is relatively small. 
