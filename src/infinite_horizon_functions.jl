@@ -32,8 +32,8 @@ function shift_newcuts_down!(new_cuts::Array{Float64,2}, stageTcuts_fp::String)
     # Determine the minimum distance between the new cut surface
     # and the current cut surface for each of the new cuts sampled state
     for i in 1:size(new_cuts,1)
-        y = max((sum(vA(new_cuts[i,(4+dim_state):end], new_cuts[:,4:(3+dim_state)]),2) .+ new_cuts[:,3])...)
-        delta = min((y - (sum(vA(new_cuts[i,(4+dim_state):end], current_cuts[:,4:(3+dim_state)]),2) .+ current_cuts[:,3]))...)
+        y = max((sum(vA(new_cuts[i,4+dim_state:end], new_cuts[:,4:3+dim_state]),2) .+ new_cuts[:,3])...)
+        delta = min((y - (sum(vA(new_cuts[i,4+dim_state:end], current_cuts[:,4:3+dim_state]),2) .+ current_cuts[:,3]))...)
         if delta > 0
             append!(delta_arr, delta)
         end
@@ -45,74 +45,66 @@ function shift_newcuts_down!(new_cuts::Array{Float64,2}, stageTcuts_fp::String)
 end
 
 
-function convergence_test(stageTcuts_fp::String)
+
+function convergence_test(allcuts_fp::String, ub_arr::Array{Float64,1})
     "Function determines area under 1D approximation of all of stage 1 cuts"
+    # Total runtime about 12.5 seconds
 
-    theta = [0.000725151, 0.00067598, 0.001131078, 0.000363842, 0.000395587, 0.00026111, 0.000725151]
-    scalefactor = 10000
-    cuts = readcsv(stageTcuts_fp)
-    alphas = zeros(0)
-    betas_1D = zeros(0)
-
-
-    for i in 1:size(cuts,1)
-        cut = cuts[i,:]
-        if (sum(cut[11:17]) > 0.01) & (cut[3] > 0.01) & (abs(sum(cut[4:10])) > 0.01)
-            alpha = cut[3]
-            beta = sum((cut[11:17] .* cut[4:10]) ./ theta) / (sum(cut[11:17]) * scalefactor) # Slope
-            append!(alphas, alpha)
-            append!(betas_1D, beta)
-        end
-    end
+    ub_arr = [242544.0, 84862.0, 82319.0, 42345.0, 150187.0, 137876.0, 5724.0]
+    cuts = cutsout[get_idx(cutsout, 1),:]
+    dim_state = div(size(cuts,2)-3,2)
+    sum_state = sum(cuts[:,4+dim_state:end],2)
+    idx = cuts[:,3] .> repeat([1e-6], inner=size(cuts,1))
+    weighted_product = sum(cuts[:,4:3+dim_state] .* cuts[:,4+dim_state:end],2)
+    betas = weighted_product[idx] ./ sum_state[idx]
+    alphas = cuts[idx,3]
+    idx = .!(isnan.(alphas) .| isnan.(betas))
+    alphas = alphas[idx]
+    betas = betas[idx]
 
     nb_cuts = length(alphas)
     duals = zeros(0)
-    dominating_cuts_indexes = zeros(0)
-    x_arr = collect(linspace(1,5000,1000))
-    for x_hat in x_arr
-        m = Model(solver=GurobiSolver(OutputFlag=0))
-        @variable(m, 0 <= theta <= Inf)
-        @variable(m, 0 <= x <= Inf)
-        @objective(m, Min, 1theta)
+    dominating_cuts_idx = zeros(0)
+    X = collect(linspace(0,sum(ub_arr),1000))
 
-        # Reference constraints by cut[i] so we we can see later which cuts are dominating
-        @constraint(m, cut[i=1:nb_cuts], betas_1D[i]*x + alphas[i] <= theta)
+    m = Model(solver=ClpSolver())
+    @variable(m, 0 <= θ <= Inf)
+    @variable(m, 0 <= x <= Inf)
+    @objective(m, Min, 1θ)
+    @constraint(m, cut[i=1:nb_cuts], betas[i]*x + alphas[i] <= θ)
+    state_constraint = @constraint(m, x <= X[1])
 
-        # Add constraint to set current energy storage
-        # 1000 scalefactor as x_hat is in GWh not MWh
-        state_constraint = @constraint(m, x <= 1000 * x_hat)
-
+    for x̄ in X
         status = solve(m)
         if status != :Optimal
-            println("LP not optimal for, x:", x)
+            println("LP not optimal for, x̄:", x̄)
         else
-            # Store marginal value for this energy state
             append!(duals, getdual(state_constraint))
-
-            # If the shadow price is zero the constraint is not binding
-            # We only want the dominating cut (which is the binding constraint)
-            # for this given x_hat (energy state)
             for i in 1:nb_cuts
-                if abs(getdual(cut[i])) > 1e-8
-                    append!(dominating_cuts_indexes, Int(i))
+                if abs(getdual(cut[i])) > 1e-6
+                    append!(dominating_cuts_idx, Int(i))
                 end
             end
         end
+        JuMP.setRHS(state_constraint, x̄)
     end
 
-    dominating_cuts_indexes = unique(dominating_cuts_indexes)
+    idx = unique(dominating_cuts_idx)
+    alphas = alphas[Int.(idx)]
+    betas = betas[Int.(idx)]
 
-    alphas = alphas[Int.(dominating_cuts_indexes)] / 1000
-    betas_1D = betas_1D[Int.(dominating_cuts_indexes)]
-
-    # Takes approx 2 seconds
     integral_sum = 0
-    x_max = max((-alphas ./ betas_1D)...)
-    n_steps = 1000000
-    for x in collect(linspace(0,x_max,n_steps))
-        integral_sum += max(append!(alphas + betas_1D * x, 0)...) * (x_max/(n_steps+1))
-    end
+    x_max = max((-alphas ./ betas)...) # where last dominating cut crosses x-axis
+    nsteps = 1000000
+    step = x_max/(n_steps+1)
+    x = collect(linspace(0,x_max,n_steps))
 
+    alphasM = repmat(alphas, 1, n_steps)
+    betasM = repmat(betas, 1, n_steps)
+    xM = repmat(x, 1, 4)'
+    vals, idx = findmax(alphasM .+ betasM .* xM, 1)
+
+    integral_sum = vals * step * ones(nsteps)
     integral_sum
 end
 
