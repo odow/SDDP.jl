@@ -101,7 +101,7 @@ end
 function get_dual_variables(node::Node)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
-    dual_sign = JuMP.objective_sense(node.subproblem) == :Min ? 1.0 : -1.0
+    dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MinSense ? 1.0 : -1.0
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
         ref = JuMP.FixRef(state.in)
@@ -109,7 +109,6 @@ function get_dual_variables(node::Node)
     end
     return values
 end
-
 
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
@@ -355,7 +354,7 @@ function calculate_bound(graph::PolicyGraph,
                        probabilities,
                        noise_supports,
                        objectives,
-                       graph.objective_sense == :Min)
+                       graph.objective_sense == MOI.MinSense)
     # Finally, calculate the risk-adjusted value.
     return sum(obj * prob for (obj, prob) in
         zip(objectives, risk_adjusted_probability))

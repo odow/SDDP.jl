@@ -35,7 +35,7 @@ function fast_production_management()
         end
         @stageobjective(sp, sum(C[i] * x[i].out for i in 1:N) - S's)
     end
-    Kokako.train(model, iteration_limit = 10, print_level = 0)
+    Kokako.train(model, iteration_limit = 10, print_level = 1)
     @test Kokako.calculate_bound(model) ≈ -23.96 atol = 1e-2
 end
 

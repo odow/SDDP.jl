@@ -171,7 +171,7 @@ end
         end
         node = model[2]
         @test node.stage_objective == 2 * node.subproblem[:x]
-        @test model.objective_sense == :Min
+        @test model.objective_sense == Kokako.MOI.MinSense
     end
 
     @testset ":Max" begin
@@ -183,6 +183,6 @@ end
         end
         node = model[2]
         @test node.stage_objective == 2 * node.subproblem[:x]
-        @test model.objective_sense == :Max
+        @test model.objective_sense == Kokako.MOI.MaxSense
     end
 end

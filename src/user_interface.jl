@@ -172,8 +172,8 @@ mutable struct Node{T}
 end
 
 struct PolicyGraph{T}
-    # Must be :Min or :Max
-    objective_sense::Symbol
+    # Must be MOI.MinSense or MOI.MaxSense
+    objective_sense::MOI.OptimizationSense
     # Children of the root node. child => probability.
     root_children::Vector{Noise{T}}
     # Starting value of the state variables.
@@ -181,7 +181,14 @@ struct PolicyGraph{T}
     # All nodes in the graph.
     nodes::Dict{T, Node{T}}
     function PolicyGraph(T, sense::Symbol)
-        new{T}(sense, Noise{T}[], Dict{Symbol, Float64}(), Dict{T, Node{T}}())
+        optimization_sense = if sense == :Min
+            MOI.MinSense
+        elseif sense == :Max
+            MOI.MaxSense
+        else
+            error("The optimization sense must be :Min or :Max. It is $(sense).")
+        end
+        new{T}(optimization_sense, Noise{T}[], Dict{Symbol, Float64}(), Dict{T, Node{T}}())
     end
 end
 
@@ -249,9 +256,6 @@ function PolicyGraph(builder::Function, graph::Graph{T};
                      bellman_function = AverageCut(),
                      optimizer = nothing,
                      direct_mode = true) where T
-    if !(sense == :Min || sense == :Max)
-        error("The optimization sense must be :Min or :Max. It is $(sense).")
-    end
     policy_graph = PolicyGraph(T, sense)
     # Initialize nodes.
     for (node_index, children) in graph.nodes
@@ -351,15 +355,13 @@ function parameterize(modify::Function,
 end
 
 """
-    set_stage_objective(subproblem::JuMP.Model, sense::Symbol,
-                        stage_objective)
+    set_stage_objective(subproblem::JuMP.Model, stage_objective)
 
-Set the stage-objective of `subproblem` to `stage_objective` and the
-optimization sense to `sense` (which must be `:Min` or `:Max`).
+Set the stage-objective of `subproblem` to `stage_objective`.
 
 # Example
 
-    Kokako.set_stage_objective(subproblem, :Min, 2x + 1)
+    Kokako.set_stage_objective(subproblem, 2x + 1)
 """
 function set_stage_objective(subproblem::JuMP.Model, stage_objective)
     node = get_node(subproblem)

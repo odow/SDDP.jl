@@ -1,8 +1,9 @@
 using Kokako, Test, Random
 
 @testset "Unit Tests" begin
-    for file in ["risk_measures.jl",
-                 "sampling_schemes.jl",
+    for file in ["plugins/risk_measures.jl",
+                 "plugins/sampling_schemes.jl",
+                 "plugins/stopping_rules.jl",
                  "sddp.jl",
                  "user_interface.jl"]
         @testset "$(file)" begin
