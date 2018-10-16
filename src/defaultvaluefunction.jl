@@ -52,12 +52,8 @@ Return a Float64 of the stage objective
 function getstageobjective end
 
 function getstageobjective(vf::DefaultValueFunction, sp::JuMP.Model)
-    if ext(sp).finalstage
-        if ext(sp).is_infinite
-            return JuMP.getobjectivevalue(sp) - JuMP.getvalue(vf.theta)
-        else
-            return JuMP.getobjectivevalue(sp)
-        end
+    if ext(sp).finalstage & !ext(sp).is_infinite
+        return JuMP.getobjectivevalue(sp)
     else
         return JuMP.getobjectivevalue(sp) - JuMP.getvalue(vf.theta)
     end
@@ -71,12 +67,8 @@ Set the full objective
 function setstageobjective! end
 
 function setstageobjective!(vf::DefaultValueFunction, sp::JuMP.Model, obj)
-    if ext(sp).finalstage
-        if ext(sp).is_infinite
-            JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
-        else
-            JuMP.setobjective(sp, getsense(sp), obj)
-        end
+    if ext(sp).finalstage & !ext(sp).is_infinite
+        JuMP.setobjective(sp, getsense(sp), obj)
     else
         JuMP.setobjective(sp, getsense(sp), obj + vf.theta)
     end
@@ -90,20 +82,20 @@ end
 function modifyvaluefunction! end
 
 function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Model) where V<:DefaultValueFunction
+    # The issue must be here
+    # Go through each function called here
+
     ex = ext(sp)
     vf = valueoracle(sp)
     I = 1:length(m.storage.objective)
     # TODO: improve this to reduce the extra memory usage
     current_transition = copy(m.storage.probability.data[I])
-    if ex.stage == nstages(m)
-        for i in I
-            m.storage.probability[i] *= getstage(m, 1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
-        end
-    else
-        for i in I
-            m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
-        end
+
+    for i in I
+        # This make "sense" in the wrap around principle but
+        m.storage.probability[i] *= getstage(m, ex.finalstage ? 1 : ex.stage+1).transitionprobabilities[ex.markovstate,m.storage.markov[i]]
     end
+
     @timeit TIMER "risk measure" begin
         modify_probability(ex.riskmeasure,
             view(m.storage.modifiedprobability.data, I),
@@ -113,12 +105,14 @@ function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Mode
             sp
         )
     end
+    # State of subproblem used here.
+    # For stage T cut we are use state of stage T
+    # We should actually be using the stage of stage T, from the previous iterations. fp_start_state?
     cut = constructcut(m, sp)
 
     if !settings.is_asynchronous && isopen(settings.cut_output_file)
-        # only write the cut to file if it is open and
-        # we are in serial mode. Async cut writing happens on
-        # master thread
+        # only write the cut to file if it is open and we are in serial mode.
+        # Async cut writing happens on master thread
         @timeit TIMER "cut to file" begin
             writecut!(settings.cut_output_file, cut, ex.stage, ex.markovstate)
         end

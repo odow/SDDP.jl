@@ -105,19 +105,18 @@ function constructcut(m::SDDPModel, sp::JuMP.Model)
     # theta <=/>= E[ (y - πᵀx̄) + πᵀx ]
     intercept = 0.0
     coefficients = zeros(nstates(sp))
+    state_ = (ext(sp).finalstage ? m.ext[:fp_start_state] : getstage(m, ext(sp).stage).state)
     for i in 1:length(m.storage.objective)
-        intercept += m.storage.modifiedprobability[i] * (m.storage.objective[i] - dot(getstage(m, ext(sp).stage).state, m.storage.duals[i]))
+        intercept += m.storage.modifiedprobability[i] * (m.storage.objective[i] - dot(state_, m.storage.duals[i]))
         for j in 1:nstates(sp)
             coefficients[j] += m.storage.modifiedprobability[i] * m.storage.duals[i][j]
         end
     end
-    state = getstage(m, ext(sp).stage).state
-    Cut(intercept, coefficients, state)
+    Cut(intercept, coefficients, state_)
 end
 
 addcutconstraint!(sense::Min, sp, theta, affexpr) = @constraint(sp, theta >= affexpr)
 addcutconstraint!(sense::Max, sp, theta, affexpr) = @constraint(sp, theta <= affexpr)
-
 
 Base.size(x::CachedVector{T}) where {T} = (x.n,)
 function Base.getindex(x::CachedVector{T}, i) where T

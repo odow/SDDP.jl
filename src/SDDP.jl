@@ -166,11 +166,10 @@ function SDDPModel(build!::Function;
     m = newSDDPModel(sense, getel(AbstractValueFunction, value_function, 1, 1), build!)
     m.ext[:is_infinite] = is_infinite
     m.ext[:completed_iter1] = false            # Record number of iterations of SDDP carried out
-    m.ext[:fp_end_state] = Array{Float64,1}  # Store state at end of forward pass in stage T
+    m.ext[:fp_end_state] = Array{Float64,1}    # Store state at end of forward pass in stage T
     m.ext[:fp_start_state] = Array{Float64,1}  # Store state at start of forward pass in stage 1
     m.ext[:lb_states] = lb_states
     m.ext[:ub_states] = ub_states
-
 
     for t in 1:stages
         markov_transition_matrix = getel(Array{Float64, 2}, markov_transition, t)
@@ -225,22 +224,22 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         # choose markov state
         (last_markov_state, sp) = samplesubproblem(stage, last_markov_state, solutionstore)
 
+        # Set the starting stage of each forward pass to be
+        # (i) A random starting state when starting each new "inner loop"
+        # (ii) The state the previous forward pass finished at
         if m.ext[:is_infinite] & t == 1
             if m.ext[:completed_iter1]
                 m.ext[:fp_start_state] = m.ext[:fp_end_state]
             else
-                # Random starting state for each new "inner loop"
                 ub_arr = m.ext[:ub_states]
                 lb_arr = m.ext[:lb_states]
-                random_init_state = lb_arr + rand() .* (ub_arr .- lb_arr)
-                m.ext[:fp_start_state] = random_init_state
+                m.ext[:fp_start_state] = lb_arr + rand() .* (ub_arr .- lb_arr)
             end
         end
 
         if t > 1
             setstates!(m, sp)
         elseif m.ext[:is_infinite] & m.ext[:completed_iter1]
-            # Start forward passes where the previous forward pass finished
             setstates!(m, sp, m.ext[:fp_start_state])
         end
 
@@ -256,7 +255,7 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         # store state
         savestates!(stage.state, sp)
 
-        if (t == length(stages(m))) & m.ext[:is_infinite]
+        if (t == nstages(m)) & m.ext[:is_infinite]
             # When in final stage of forward pass after sub-problem solved record state.
             # Start first stage of next forward pass (in next iteration) in this state
             m.ext[:fp_end_state] = stage.state
@@ -272,7 +271,7 @@ function backwardpass!(m::SDDPModel, settings::Settings)
     stage1_state = getstage(m, 1).state
 
     # walk backward through the stages
-    for t in nstages(m):-1:(2 - m.ext[:is_infinite])
+    for t in nstages(m):-1:(2-m.ext[:is_infinite])
         # solve all stage t problems
         reset!(m.storage)
         for sp in subproblems(m, t)
@@ -340,7 +339,7 @@ function iteration!(m::SDDPModel, settings::Settings)
             end
         end
     end
-    m.ext[:completed_iter1] = false
+    m.ext[:completed_iter1] = true
     return objective_bound, time_backwards, simulation_objective, time_forwards
 end
 
@@ -589,7 +588,8 @@ function JuMP.solve(m::SDDPModel;
     end
     status = nothing
 
-    for i in 1:(update_limit * m.ext[:is_infinite] + 1 -  m.ext[:is_infinite])
+
+    for i in 1:(m.ext[:is_infinite] ? update_limit : 1)
 
         if m.ext[:is_infinite]
             if print_level > 0; tic() end
@@ -660,15 +660,14 @@ function JuMP.solve(m::SDDPModel;
                 # Store convergence data and print convergence metrics
                 append!(Delta_arr, min(delta_arr...))
                 append!(SDdelta_arr, sqrt(var(delta_arr)))
-                #append!(terminalcost_integral, Int(round(convergence_test(stageTcuts_fp),0)))
                 append!(terminalcost_integral, 0)
             end
 
-            write_cuts(stageTcuts_fp, new_stageTcuts, (i == 1 ? "w" : "a"))
+            write_cuts(stageTcuts_fp, new_stageTcuts, i == 1 ? "w" : "a")
 
             # Replace endogenous stage T cuts with shifted stage T cuts
             all_newcuts[get_idx(all_newcuts,T),:] = new_stageTcuts
-            write_cuts(allcuts_fp, all_newcuts, (i == 1 ? "w" : "a"))
+            write_cuts(allcuts_fp, all_newcuts, i == 1 ? "w" : "a")
 
             if print_level > 0
                 append!(time_arr, Int(round(toc(),0)))
