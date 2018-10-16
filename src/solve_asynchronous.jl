@@ -106,10 +106,10 @@ function async_iteration!(m::SDDPModel, settings::Settings, slave::Vector{C}) wh
     else
         empty!(m.ext[:cuts])
     end
-    (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
+    (objective_bound, time_backwards, simulation_objective, time_forwards, init_state) = iteration!(m, settings)
     y = copy(m.ext[:cuts])
     empty!(m.ext[:cuts])
-    y, objective_bound, simulation_objective
+    y, objective_bound, simulation_objective, init_state
 end
 function async_forwardpass!(T, settings::Settings)
     m = SDDP.m::T
@@ -145,7 +145,7 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
 
     begin
         @timeit TIMER "Remote Initialization" begin
-            if m.ext[:is_infinite] == 1
+            if m.ext[:is_infinite]
                 sendto_infinite(async.slaves, m=m)
             else
                 sendto(async.slaves, m=m)
@@ -196,7 +196,7 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
                         newcuts = deepcopy(slaves[p])
                         empty!(slaves[p])
                         @timeit TIMER "Iteration Phase" begin
-                            (cuts, objective_bound, simulation_objective) = remotecall_fetch(async_iteration!, p, typeof(m), settings, newcuts)
+                            (cuts, objective_bound, simulation_objective, init_state) = remotecall_fetch(async_iteration!, p, typeof(m), settings, newcuts)
                         end
                         for cut in cuts
                             if isopen(settings.cut_output_file)
@@ -227,7 +227,7 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
                             needs_rebuilding[p] = false
                         end
 
-                        addsolutionlog!(m, settings, it, best_objective, simulation_objective, simulation_objective, cutting_time , simulations, simulation_time, total_time, true)
+                        addsolutionlog!(m, settings, it, init_state, best_objective, simulation_objective, simulation_objective, cutting_time , simulations, simulation_time, total_time, true)
 
                         status, keep_iterating = bound_stalling_stopping_rule(m, settings, status, true)
                         !keep_iterating && break

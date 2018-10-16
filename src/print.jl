@@ -52,18 +52,34 @@ function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)
         end
         rtol_string = humanize(tol, "5.1f")
     end
-    println(io,
-        @sprintf("%s %s %s | %s %s %s %s %s",
-            bound_string,
-            humanize(l.bound, "8.3f"),
-            rtol_string,
-            humanize(l.iteration),
-            humanize(l.timecuts),
-            humanize(l.simulations),
-            humanize(l.timesimulations),
-            humanize(l.timetotal)
+    if l.init_state == false
+        println(io,
+            @sprintf("%s %s %s | %s %s %s %s %s",
+                bound_string,
+                humanize(l.bound, "8.3f"),
+                rtol_string,
+                humanize(l.iteration),
+                humanize(l.timecuts),
+                humanize(l.simulations),
+                humanize(l.timesimulations),
+                humanize(l.timetotal)
+            )
         )
-    )
+    else
+        println(io,
+            @sprintf("%s %s %s %s | %s %s %s %s %s",
+                l.init_state,
+                bound_string,
+                humanize(l.bound, "8.3f"),
+                rtol_string,
+                humanize(l.iteration),
+                humanize(l.timecuts),
+                humanize(l.simulations),
+                humanize(l.timesimulations),
+                humanize(l.timetotal)
+            )
+        )
+    end
 end
 
 function humanize(value::Int)

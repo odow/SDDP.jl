@@ -340,7 +340,12 @@ function iteration!(m::SDDPModel, settings::Settings)
         end
     end
     m.ext[:completed_iter1] = true
-    return objective_bound, time_backwards, simulation_objective, time_forwards
+    init_state = false
+    if m.ext[:is_infinite] & (m.ext[:init_state_info_func] != nothing)
+        f = m.ext[:init_state_info_func]
+        init_state = f(m.ext[:fp_start_state])
+    end
+    return objective_bound, time_backwards, simulation_objective, time_forwards, init_state
 end
 
 function rebuild!(m::SDDPModel)
@@ -363,7 +368,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     while keep_iterating
         # add cuts
         @timeit TIMER "Iteration Phase" begin
-            (objective_bound, time_backwards, simulation_objective, time_forwards) = iteration!(m, settings)
+            (objective_bound, time_backwards, simulation_objective, time_forwards, init_state) = iteration!(m, settings)
         end
         # update timers and bounds
         time_cutting += time_backwards + time_forwards
@@ -410,8 +415,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
         end
 
         total_time = time() - start_time
-        state_informer = sum(state_)
-        addsolutionlog!(m, settings, iteration, state_informer, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
+        addsolutionlog!(m, settings, iteration, init_state, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
 
         status, keep_iterating = bound_stalling_stopping_rule(m, settings, status, keep_iterating)
 
@@ -556,6 +560,7 @@ function JuMP.solve(m::SDDPModel;
         # infinite horizon inputs
         update_limit::Int      = Int(1e3),
         temp_dir::String       = string(dirname(dirname(@__FILE__)),"/temp"),
+        init_state_info_func   = nothing,
         # deprecated inputs
         max_iterations::Union{Int, Void} = nothing,
         bound_convergence = nothing,
@@ -570,6 +575,7 @@ function JuMP.solve(m::SDDPModel;
     end
     reset_timer!(TIMER)
 
+    m.ext[:init_state_info_func] = init_state_info_func
     if m.ext[:is_infinite]
         if !isdir(temp_dir); mkdir(temp_dir) end
         cut_output_file        = string(temp_dir,"/cutsout.csv")
