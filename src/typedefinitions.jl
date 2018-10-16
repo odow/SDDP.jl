@@ -153,6 +153,7 @@ end
 
 struct SolutionLog
     iteration::Int
+    state_informer::Any
     bound::Float64
     lower_statistical_bound::Float64
     upper_statistical_bound::Float64

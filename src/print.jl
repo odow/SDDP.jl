@@ -4,6 +4,8 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #############################################################################
 
+
+
 function printheader(io::IO, m::SDDPModel{T}, solve_type) where T
     n = length(m.stages)
     println(io, """-------------------------------------------------------------------------------
@@ -50,7 +52,6 @@ function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)
         end
         rtol_string = humanize(tol, "5.1f")
     end
-
     println(io,
         @sprintf("%s %s %s | %s %s %s %s %s",
             bound_string,

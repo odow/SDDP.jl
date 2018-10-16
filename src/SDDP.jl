@@ -410,8 +410,8 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
         end
 
         total_time = time() - start_time
-
-        addsolutionlog!(m, settings, iteration, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
+        state_informer = sum(state_)
+        addsolutionlog!(m, settings, iteration, state_informer, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
 
         status, keep_iterating = bound_stalling_stopping_rule(m, settings, status, keep_iterating)
 
@@ -430,8 +430,8 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     status
 end
 
-function addsolutionlog!(m, settings, iteration, objective, lower, upper, cutting_time, simulations, simulation_time, total_time, printsingle)
-    push!(m.log, SolutionLog(iteration, objective, lower, upper, cutting_time, simulations, simulation_time, total_time))
+function addsolutionlog!(m, settings, iteration, state_informer, objective, lower, upper, cutting_time, simulations, simulation_time, total_time, printsingle)
+    push!(m.log, SolutionLog(iteration, state_informer, objective, lower, upper, cutting_time, simulations, simulation_time, total_time))
     print(print, settings, m.log[end], printsingle, m.sense == :Min)
 end
 
