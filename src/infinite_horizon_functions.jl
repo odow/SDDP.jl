@@ -48,7 +48,7 @@ end
 
 function convergence_test(allcuts_fp::String, ub_arr::Array{Float64,1})
     "Function determines area under 1D approximation of all of stage 1 cuts"
-    # Total runtime about 12.5 seconds
+    # Total runtime about 1.1 second
 
     ub_arr = [242544.0, 84862.0, 82319.0, 42345.0, 150187.0, 137876.0, 5724.0]
     cuts = cutsout[get_idx(cutsout, 1),:]
@@ -62,40 +62,24 @@ function convergence_test(allcuts_fp::String, ub_arr::Array{Float64,1})
     alphas = alphas[idx]
     betas = betas[idx]
 
-    nb_cuts = length(alphas)
     duals = zeros(0)
     dominating_cuts_idx = zeros(0)
-    X = collect(linspace(0,sum(ub_arr),1000))
-
-    m = Model(solver=ClpSolver())
-    @variable(m, 0 <= θ <= Inf)
-    @variable(m, 0 <= x <= Inf)
-    @objective(m, Min, 1θ)
-    @constraint(m, cut[i=1:nb_cuts], betas[i]*x + alphas[i] <= θ)
-    state_constraint = @constraint(m, x <= X[1])
+    X = collect(linspace(0,sum(ub_arr),10000))
 
     for x̄ in X
-        status = solve(m)
-        if status != :Optimal
-            println("LP not optimal for, x̄:", x̄)
-        else
-            append!(duals, getdual(state_constraint))
-            for i in 1:nb_cuts
-                if abs(getdual(cut[i])) > 1e-6
-                    append!(dominating_cuts_idx, Int(i))
-                end
-            end
-        end
-        JuMP.setRHS(state_constraint, x̄)
+        val, idx = findmax(alphas + betas * x̄)
+        append!(dominating_cuts_idx, idx)
     end
 
     idx = unique(dominating_cuts_idx)
     alphas = alphas[Int.(idx)]
     betas = betas[Int.(idx)]
+    alphas = alphas
 
+    # Takes approx 2 seconds
     integral_sum = 0
-    x_max = max((-alphas ./ betas)...) # where last dominating cut crosses x-axis
-    nsteps = 1000000
+    x_max = max((-alphas ./ betas)...)
+    n_steps = 1000000
     step = x_max/(n_steps+1)
     x = collect(linspace(0,x_max,n_steps))
 
@@ -104,8 +88,8 @@ function convergence_test(allcuts_fp::String, ub_arr::Array{Float64,1})
     xM = repmat(x, 1, 4)'
     vals, idx = findmax(alphasM .+ betasM .* xM, 1)
 
-    integral_sum = vals * step * ones(nsteps)
-    integral_sum
+    integral = vals * step * ones(n_steps)
+    integral
 end
 
 function print_covergence_metrics(time_arr::Array{Float64,1},
