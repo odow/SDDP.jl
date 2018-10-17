@@ -146,6 +146,7 @@ function SDDPModel(build!::Function;
     is_infinite::Bool    = false,
     lb_states            = nothing, # State lower bound array for dummy state 0
     ub_states            = nothing, # State upper bound array for dummy state 0
+    init_state_info_func = false,
     )
     if objective_bound == nothing
         error("You must specify the objective_bound keyword")
@@ -170,6 +171,7 @@ function SDDPModel(build!::Function;
     m.ext[:fp_start_state] = Array{Float64,1}  # Store state at start of forward pass in stage 1
     m.ext[:lb_states] = lb_states
     m.ext[:ub_states] = ub_states
+    m.ext[:init_state_info_func] = init_state_info_func
 
     for t in 1:stages
         markov_transition_matrix = getel(Array{Float64, 2}, markov_transition, t)
@@ -264,7 +266,14 @@ function forwardpass!(m::SDDPModel, settings::Settings, solutionstore=nothing)
         # save solution for simulations (defaults to no-op)
         savesolution!(solutionstore, last_markov_state, noiseidx, sp, t)
     end
-    return obj
+
+
+    init_state = false
+    #f = m.ext[:init_state_info_func]
+    if f != false
+        #init_state = f(m.ext[:fp_start_state])
+    end
+    return obj, init_state
 end
 
 function backwardpass!(m::SDDPModel, settings::Settings)
@@ -319,7 +328,7 @@ end
 function iteration!(m::SDDPModel, settings::Settings)
     t = time()
     @timeit TIMER "Forward Pass" begin
-        simulation_objective = forwardpass!(m, settings)
+        simulation_objective, init_state = forwardpass!(m, settings)
     end
     time_forwards = time() - t
     @timeit TIMER "Backward Pass" begin
@@ -338,12 +347,6 @@ function iteration!(m::SDDPModel, settings::Settings)
                 end
             end
         end
-    end
-    m.ext[:completed_iter1] = true
-    init_state = false
-    if m.ext[:is_infinite] & (m.ext[:init_state_info_func] != nothing)
-        f = m.ext[:init_state_info_func]
-        init_state = f(m.ext[:fp_start_state])
     end
     return objective_bound, time_backwards, simulation_objective, time_forwards, init_state
 end
@@ -393,7 +396,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
                 for i in 1:settings.simulation.steps[end]
                     # forwardpass! returns objective
 
-                    push!(objectives, forwardpass!(m, settings))
+                    push!(objectives, forwardpass!(m, settings)[1])
                     nsimulations += 1
                     if i == settings.simulation.steps[simidx]
                         # simulation incrementation
@@ -413,6 +416,7 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
             end
             time_simulating += time() - t
         end
+        m.ext[:completed_iter1] = true
 
         total_time = time() - start_time
         addsolutionlog!(m, settings, iteration, init_state, objective_bound, lower, upper, time_cutting, nsimulations, time_simulating, total_time, !applicable(iteration, settings.simulation.frequency))
@@ -434,8 +438,8 @@ function JuMP.solve(::Serial, m::SDDPModel, settings::Settings=Settings())
     status
 end
 
-function addsolutionlog!(m, settings, iteration, state_informer, objective, lower, upper, cutting_time, simulations, simulation_time, total_time, printsingle)
-    push!(m.log, SolutionLog(iteration, state_informer, objective, lower, upper, cutting_time, simulations, simulation_time, total_time))
+function addsolutionlog!(m, settings, iteration, init_state, objective, lower, upper, cutting_time, simulations, simulation_time, total_time, printsingle)
+    push!(m.log, SolutionLog(iteration, init_state, objective, lower, upper, cutting_time, simulations, simulation_time, total_time))
     print(print, settings, m.log[end], printsingle, m.sense == :Min)
 end
 
@@ -560,7 +564,7 @@ function JuMP.solve(m::SDDPModel;
         # infinite horizon inputs
         update_limit::Int      = Int(1e3),
         temp_dir::String       = string(dirname(dirname(@__FILE__)),"/temp"),
-        init_state_info_func   = nothing,
+        init_state_info_func   = false,
         # deprecated inputs
         max_iterations::Union{Int, Void} = nothing,
         bound_convergence = nothing,
@@ -575,7 +579,7 @@ function JuMP.solve(m::SDDPModel;
     end
     reset_timer!(TIMER)
 
-    m.ext[:init_state_info_func] = init_state_info_func
+    m.ext[:init_state_info_func] = (solve_type == Serial() ? init_state_info_func : false)
     if m.ext[:is_infinite]
         if !isdir(temp_dir); mkdir(temp_dir) end
         cut_output_file        = string(temp_dir,"/cutsout.csv")

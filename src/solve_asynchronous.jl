@@ -109,6 +109,7 @@ function async_iteration!(m::SDDPModel, settings::Settings, slave::Vector{C}) wh
     (objective_bound, time_backwards, simulation_objective, time_forwards, init_state) = iteration!(m, settings)
     y = copy(m.ext[:cuts])
     empty!(m.ext[:cuts])
+
     y, objective_bound, simulation_objective, init_state
 end
 function async_forwardpass!(T, settings::Settings)
@@ -241,7 +242,7 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
                         simulation_timer = time()
 
                         @timeit TIMER "Simulation Phase" begin
-                            push!(objectives, remotecall_fetch(async_forwardpass!, p, typeof(m), settings))
+                            push!(objectives, remotecall_fetch(async_forwardpass!, p, typeof(m), settings)[2])
                         end
                         nsimulations = addsimulation!()
 
@@ -252,7 +253,7 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
                             total_time = time() - start_time
                             if contains(best_objective, lower, upper)
                                 if length(objectives) >= settings.simulation.steps[end]
-                                    addsolutionlog!(m, settings, iteration-1, best_objective, lower, upper, cutting_time, nsimulations, simulation_time, total_time, false)
+                                    addsolutionlog!(m, settings, iteration-1, false, best_objective, lower, upper, cutting_time, nsimulations, simulation_time, total_time, false)
                                     # terminate with statistical bound convergence
                                     if settings.simulation.termination
                                         status = :converged
@@ -260,7 +261,7 @@ function JuMP.solve(async::Asynchronous, m::SDDPModel{T}, settings::Settings=Set
                                     end
                                 end
                             else
-                                addsolutionlog!(m, settings, iteration-1, best_objective, lower, upper, cutting_time, nsimulations, simulation_time, total_time, false)
+                                addsolutionlog!(m, settings, iteration-1, false, best_objective, lower, upper, cutting_time, nsimulations, simulation_time, total_time, false)
                                 settype!(:cutting)
                             end
                         end
