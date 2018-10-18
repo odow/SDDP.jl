@@ -698,7 +698,7 @@ function JuMP.solve(m::SDDPModel;
                 # Store convergence data and print convergence metrics
                 append!(Delta_arr, min(delta_arr...))
                 append!(SDdelta_arr, sqrt(var(delta_arr)))
-                append!(terminalcost_integral, 0)
+                append!(terminalcost_integral, m.ext[:ub_states])
             end
 
             write_cuts(stageTcuts_fp, new_stageTcuts, i == 1 ? "w" : "a")
