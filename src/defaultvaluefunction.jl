@@ -92,7 +92,7 @@ function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Mode
     current_transition = copy(m.storage.probability.data[I])
 
     for i in I
-        # This make "sense" in the wrap around principle but
+        # Need a different problem formulation if using Markov with infinite-horizon SDDP
         m.storage.probability[i] *= getstage(m, ex.finalstage ? 1 : ex.stage+1).transitionprobabilities[ex.markovstate,m.storage.markov[i]]
     end
 
@@ -105,9 +105,7 @@ function modifyvaluefunction!(m::SDDPModel{V}, settings::Settings, sp::JuMP.Mode
             sp
         )
     end
-    # State of subproblem used here.
-    # For stage T cut we are use state of stage T
-    # We should actually be using the stage of stage T, from the previous iterations. fp_start_state?
+
     cut = constructcut(m, sp)
 
     if !settings.is_asynchronous && isopen(settings.cut_output_file)
