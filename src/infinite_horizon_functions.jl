@@ -1,5 +1,3 @@
-using Gurobi
-
 function write_cuts(filepath::String, cuts::Array{Float64,2}, file_modifier::String)
     open(filepath, file_modifier) do file
         for i in 1:size(cuts,1)
@@ -48,9 +46,7 @@ end
 
 function convergence_test(allcuts_fp::String, ub_arr::Array{Float64,1})
     "Function determines area under 1D approximation of all of stage 1 cuts"
-    # Total runtime about 1.1 second
 
-    ub_arr = [242544.0, 84862.0, 82319.0, 42345.0, 150187.0, 137876.0, 5724.0]
     cuts = cutsout[get_idx(cutsout, 1),:]
     dim_state = div(size(cuts,2)-3,2)
     sum_state = sum(cuts[:,4+dim_state:end],2)
@@ -76,7 +72,6 @@ function convergence_test(allcuts_fp::String, ub_arr::Array{Float64,1})
     betas = betas[Int.(idx)]
     alphas = alphas
 
-    # Takes approx 2 seconds
     integral_sum = 0
     x_max = max((-alphas ./ betas)...)
     n_steps = 1000000
