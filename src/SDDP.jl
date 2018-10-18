@@ -130,6 +130,34 @@ state 1 to Markov state 1, a 90% chance of transitioning from Markov state 1
 to Markov state 2, an 80% chance of transitioning from Markov state 2 to Markov
 state 1, and a 20% chance of transitioning from Markov state 2 to Markov state 2.
 
+* `is_infinite`
+Flag to tell method to build model with infinite-horizon stochastic dual dynamic
+programming. Set to true to build with infinite-horizon SDDP.
+
+* `lb_states`
+A vector of the lower bound on the state of the stage 1 subproblems. 
+Used in generating a random distribution of starting states for each outer loop
+in infinite-horizon SDDP and in convergence testing when finding the 1D
+approximation of the stage 1 cuts and then determining the integral. 
+Required input if using infinite-horizon SDDP. 
+
+* `ub_states`
+A vector of the upper bound on the state of the stage 1 subproblems.
+Used in generating a random distribution of starting states for each outer loop
+in infinite-horizon SDDP and in convergence testing when finding the 1D
+approximation of the stage 1 cuts and then determining the integral.
+Required input if using infinite-horizon SDDP. 
+
+* `init_state_info_func`
+A function that takes a vector input and outputs a string. 
+The vector input is the starting state of a forward pass.
+The function processes this starting state to a string that is informative to the user. 
+For example, for the hydro-thermal scheduling problem, the state is the reservoir levels
+of a set of lakes. This function may convert the reservoir levels into a single number,
+representing the stored energy level of all the reservoirs. 
+The function would then output this as a string (of a constant length so the output looks nice). 
+Optional input if using infinite-horizon SDDP. 
+
 # Returns
  * `m`: the `SDDPModel`
 """
@@ -144,8 +172,8 @@ function SDDPModel(build!::Function;
     value_function       = DefaultValueFunction(cut_oracle),
     # Flag to tell model to build infinite-horizon SDDP model
     is_infinite::Bool    = false,
-    lb_states            = nothing, # State lower bound array for dummy state 0
-    ub_states            = nothing, # State upper bound array for dummy state 0
+    lb_states            = nothing, # State lower bound array for stage 1
+    ub_states            = nothing, # State upper bound array for stage 1
     init_state_info_func = false,
     )
     if objective_bound == nothing
