@@ -1,7 +1,7 @@
 # Tutorial Eleven: infinite-horizon SDDP
 This tutorial discusses the use of infinite-horizon stochastic dynamic dual programming (infinite-horizon SDDP). Infinite-horizon SDDP is a methodology for finding the optimal steady state policy of a multi-stage stochastic problem.
 
-We implemented infinite-horizon SDDP using the average-cost method. Another possible method could be using the discounted-cost method however this method converges slower (than the average-cost method).
+We implemented infinite-horizon SDDP using the average-cost method. Another possible method could be using the discounted-cost method however this method converges slower (than the average-cost method). The changes I made to various parts of SDDP.jl are explained in [this document](https://github.com/shasafoster/SDDP.jl/blob/6afbca48190524e0c5fc554bf71a19b7172a3a4c/docs/src/assets/infinite-horizon%20integration%20notes.docx)
 
 My Honors [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/foster_thesis.pdf) may be useful for further understanding of the underlying theory of infinite-horizon SDDP. Ben Fulton applied infinite-horizon SDDP when modelling various scenarios in the New Zealand electricity market thus his [thesis](https://github.com/shasafoster/SDDP.jl/blob/master/docs/src/assets/fulton_thesis.pdf) may also be of interest. 
 
