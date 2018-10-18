@@ -108,7 +108,40 @@ status = solve(m; iteration_limit=5)
 
 The output from the log is:
 ```
-
+-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         3
+        States:         1
+        Subproblems:    3
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+        8.100K        12.362K        |     1    0.0      0    0.0    0.0
+       13.496K        11.143K        |     2    0.0      0    0.0    0.0
+       11.850K         8.906K        |     3    0.0      0    0.0    0.0
+        3.050K         8.906K        |     4    0.0      0    0.0    0.0
+       13.100K         8.906K        |     5    0.0      0    0.0    0.0
+        5.550K         8.906K        |     6    0.0      0    0.0    0.0
+       13.100K         8.906K        |     7    0.0      0    0.0    0.0
+        3.050K         8.906K        |     8    0.0      0    0.0    0.0
+        8.100K         8.906K        |     9    0.0      0    0.0    0.0
+        8.100K         8.906K        |    10    0.0      0    0.0    0.0
+       13.100K         8.906K        |    11    0.0      0    0.0    0.0
+       13.100K         8.906K        |    12    0.0      0    0.0    0.0
+        8.100K         8.906K        |    13    0.0      0    0.0    0.0
+        3.050K         8.906K        |    14    0.0      0    0.0    0.0
+       13.100K         8.906K        |    15    0.0      0    0.0    0.0
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         15
+        Termination Status: iteration_limit
+===============================================================================
 ```
 
 Including a terminal cost has increased the minimal policy cost from `5.0K` to `5.6K`. This additional cost of `0.6K` is due to the addition of the terminal cost in the final stage objective.   
@@ -231,10 +264,13 @@ This concludes our tutorial 12 for SDDP.jl on infinite-horizon SDDP.
  
 ## To do:
 
-### Hold cuts in memory
-The current infinite-horizon methodology uses cuts written to a temporty directory (SDDP/src/temp/) vs holding the cuts in memory. Holding cuts in memory may result in faster solving, especially is `update_limit` is relatively large and `iteration_limit` is relatively small. 
+### Testing in Markov Model, Price interpolation and different risk measures
+Currently the infinite-horizon model has not been integrated with Markov methods, Price interpolation and different risk measures which are existing in SDDP. 
 
-### User-defined function to increase information value of the bound and simulation objective values
+### Hold cuts in memory
+The current infinite-horizon methodology uses cuts written to a temporty directory (SDDP/src/temp/) vs holding the cuts in memory. Holding cuts in memory may (likely marginally) result in faster solving, especially is `update_limit` is relatively large and `iteration_limit` is relatively small. 
+
+### User-defined function to increase information value of the bound and simulation objective values (for async solving)
 Given the `Simulation Objective` and the `Bound Objective` is less informative in the infinite-horizon programming, we output the Δ values as well. The values for Δ conveges as the policy converges. 
 
 However, a user defined function that takes the initial `state` in the given iteration of SDDP as the input and applies the user-defined function to produce a string output would be useful in increasing the information value of the bound and simulation objective values procued from each iteration of SDDP.
@@ -249,4 +285,6 @@ function write_informative_string(state::State)
     return string
 end
 ```
+
+I have implemented this for method for serial solving but for some reason the mere attaching of a function to the m.ext[] dictionary causes asynchronous solving to fail. 
 
