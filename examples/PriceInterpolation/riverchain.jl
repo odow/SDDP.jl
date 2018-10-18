@@ -28,7 +28,7 @@ struct PriceReservoir
     inflows::Vector{Float64}
 end
 
-function priceprocess(USE_AR1)
+function priceprocess(USE_AR1, lipschitz_constant = 1e6)
     b_t = [61.261, 56.716, 59.159, 66.080, 72.131, 76.708, 76.665, 76.071, 76.832, 69.970, 69.132, 67.176]
     alpha = 0.5
     beta = -0.5
@@ -62,7 +62,8 @@ function priceprocess(USE_AR1)
             initial_price  = pbar,
             min_price      = minprice,
             max_price      = maxprice,
-            noise          = NOISES
+            noise          = NOISES,
+            lipschitz_constant = lipschitz_constant
         )
     else
         return (t,i) -> DynamicPriceInterpolation(
@@ -70,18 +71,19 @@ function priceprocess(USE_AR1)
             initial_price  = (pbar, pbar),
             min_price      = (minprice, minprice),
             max_price      = (maxprice, maxprice),
-            noise          = NOISES
+            noise          = NOISES,
+            lipschitz_constant = lipschitz_constant
         )
     end
 end
 
-function buildmodel(USE_AR1, valley_chain)
+function buildmodel(USE_AR1, valley_chain, lipschitz_constant = 1e6)
     return SDDPModel(
                 sense           = :Min,
                 stages          = 12,
                 objective_bound = -50_000.0,
                 solver          = ClpSolver(),
-                value_function   = priceprocess(USE_AR1)
+                value_function   = priceprocess(USE_AR1, lipschitz_constant)
                                         ) do sp, stage
         N = length(valley_chain)
         turbine(i) = valley_chain[i].turbine
@@ -120,6 +122,22 @@ function buildmodel(USE_AR1, valley_chain)
                     ) - price[1] * generation_quantity
             )
         end
+    end
+end
+
+function lipschitz_constant_experiment()
+    river_chain = [
+        # PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+        # PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+        # PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+        PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0]),
+        PriceReservoir(0, 200, 100, PriceTurbine([50, 60, 70], [55, 65, 70]), 1000, [0])
+    ]
+    for alpha in [0.0, 10.0, 100.0, 1_000.0, 10_000.0, 100_000.0, 1_000_000.0]
+        model = buildmodel(true, river_chain, alpha)
+        solve(model,
+            iteration_limit = 500,
+            log_file="alpha_$(alpha).log")
     end
 end
 
