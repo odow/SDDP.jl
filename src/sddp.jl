@@ -147,8 +147,11 @@ function solve_subproblem(graph::PolicyGraph{T},
     # Test for primal feasibility.
     primal_status = JuMP.primal_status(node.subproblem)
     if primal_status != JuMP.MOI.FeasiblePoint
-        error("Unable to solve node $(node.index). Primal status: " *
-              "$(primal_status).")
+        error("""Unable to solve node $(node.index).
+            Termination status: $(JuMP.termination_status(node.subproblem))
+            Primal status: $(primal_status)
+            Dual status: $(JuMP.dual_status(node.subproblem)).
+        """)
     end
     # If require_duals = true, check for dual feasibility and return a dict with
     # the dual on the fixed constraint associated with each incoming state
@@ -176,8 +179,12 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
     TimerOutputs.@timeit SDDP_TIMER "sample_scenario" begin
-        scenario_path = sample_scenario(graph, options.sampling_scheme,
-            terminate_on_cycle = true)
+        scenario_path, terminated_due_to_cycle = sample_scenario(
+            graph,
+            options.sampling_scheme,
+            include_last_node = false,
+            terminate_on_cycle = true
+        )
     end
     # Storage for the list of outgoing states that we visit on the forward pass.
     sampled_states = Dict{Symbol, Float64}[]
@@ -225,17 +232,17 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
         # node.
         incoming_state_value = copy(outgoing_state_value)
     end
-    # Get the last node in the scenario.
-    final_node_index = scenario_path[end][1]
-    final_node = graph[final_node_index]
-    if length(final_node.children) > 0
+    if terminated_due_to_cycle
+        # Get the last node in the scenario.
+        final_node_index = scenario_path[end][1]
+        final_node = graph[final_node_index]
         # The last node in the scenario has children, so we must have terminated
         # due to a cycle. Here is the list of possible starting states for that
         # node:
         starting_states = options.starting_states[final_node_index]
         # We also need the incoming state variable to the final node, which is
         # the outgoing state value of the 2'nd to last node:
-        incoming_state_value = sampled_states[end-1]
+        incoming_state_value = sampled_states[end]
         # If this incoming state value is more than δ away from another state,
         # add it to the list.
         if distance(starting_states, incoming_state_value) >
@@ -272,13 +279,15 @@ function inf_norm(x::Dict{Symbol, Float64}, y::Dict{Symbol, Float64})
 end
 
 # Internal function: perform a backward pass of the SDDP algorithm along the
-# scenario_path, refining the bellman function at sampled_states.
+# scenario_path, refining the bellman function at sampled_states. Assumes that
+# scenario_path does not end in a leaf node (i.e., the forward pass was solved
+# with include_last_node = false)
 function backward_pass(graph::PolicyGraph{T},
                        options::Options,
                        scenario_path::Vector{Tuple{T, NoiseType}},
                        sampled_states::Vector{Dict{Symbol, Float64}}
                            ) where {T, NoiseType}
-    for index in (length(scenario_path)-1):-1:1
+    for index in length(scenario_path):-1:1
         # Lookup node, noise realization, and outgoing state variables.
         node_index, noise = scenario_path[index]
         outgoing_state = sampled_states[index]
@@ -288,6 +297,10 @@ function backward_pass(graph::PolicyGraph{T},
         original_probability = Float64[]
         dual_variables = Dict{Symbol, Float64}[]
         objective_realizations = Float64[]
+        if length(node.children) == 0
+            error("The `scenario_path` passed to the backward pass should not" *
+                  " contain a leaf node.")
+        end
         # Solve all children.
         for child in node.children
             child_node = graph[child.term]
@@ -471,8 +484,10 @@ function _simulate(graph::PolicyGraph,
                    max_depth::Int = 0,
                    custom_recorders = Dict{Symbol, Function}())
     # Sample a scenario path.
-    scenario_path = sample_scenario(graph, sampling_scheme;
+    scenario_path, terminated_due_to_cycle = sample_scenario(
+        graph, sampling_scheme;
         terminate_on_cycle = terminate_on_cycle,
+        include_last_node = true,
         max_depth = max_depth
     )
     # Storage for the simulation results.

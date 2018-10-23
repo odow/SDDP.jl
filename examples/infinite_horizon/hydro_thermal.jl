@@ -1,4 +1,4 @@
-using Kokako, GLPK, Test
+using Kokako, GLPK, Test, Statistics
 
 function infinite_hydro_thermal()
     Ω = [
@@ -34,7 +34,20 @@ function infinite_hydro_thermal()
             JuMP.fix(demand, ω.demand)
         end
     end
-    Kokako.train(model, iteration_limit = 100, print_level = 1)
+    Kokako.train(model, print_level = 0, time_limit = 5.0,
+        sampling_scheme = Kokako.LeafMonteCarlo()
+    )
+    @test Kokako.calculate_bound(model) ≈ 119.167 atol = 5.0
+
+    results = Kokako.simulate(model, 500,
+        sampling_scheme = Kokako.LeafMonteCarlo())
+    objectives = [
+        sum(s[:stage_objective] for s in simulation) for simulation in results
+    ]
+    sample_mean = round(Statistics.mean(objectives); digits = 2)
+    sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
+    println("Confidence_interval = $(sample_mean) ± $(sample_ci)")
+    @test sample_mean ≈ 119.167 atol = 5.0
 end
 
 infinite_hydro_thermal()

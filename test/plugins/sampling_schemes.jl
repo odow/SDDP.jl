@@ -9,8 +9,10 @@ using Kokako, Test
                 JuMP.set_upper_bound(x, ω)
             end
         end
-        scenario = Kokako.sample_scenario(model, Kokako.InSampleMonteCarlo())
+        scenario, terminated_due_to_cycle = Kokako.sample_scenario(
+            model, Kokako.InSampleMonteCarlo())
         @test length(scenario) == 2
+        @test !terminated_due_to_cycle
         for (stage, (node, noise)) in enumerate(scenario)
             @test stage == node
             @test noise in stage * [1, 3]
@@ -26,10 +28,13 @@ using Kokako, Test
                 JuMP.set_upper_bound(x, ω)
             end
         end
-        scenario = Kokako.sample_scenario(model, Kokako.InSampleMonteCarlo(),
-                                          terminate_on_cycle = false,
-                                          max_depth = 4)
+        scenario, terminated_due_to_cycle = Kokako.sample_scenario(
+            model, Kokako.InSampleMonteCarlo(),
+            terminate_on_cycle = false,
+            max_depth = 4
+        )
         @test length(scenario) == 4
+        @test !terminated_due_to_cycle  # Terminated due to max depth.
         for (index, (node, noise)) in enumerate(scenario)
             stage = (index - 1) % 2 + 1
             @test stage == node
