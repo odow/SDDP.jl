@@ -15,6 +15,9 @@ end
 const EXAMPLES = Dict(
     "agriculture" => [
         "mccardle_farm.jl"],
+    "asset_management" => [
+        "simple.jl"
+    ],
     "FAST" => [
         "hydro_thermal.jl",
         "production_management.jl",
