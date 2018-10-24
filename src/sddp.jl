@@ -181,9 +181,7 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     TimerOutputs.@timeit SDDP_TIMER "sample_scenario" begin
         scenario_path, terminated_due_to_cycle = sample_scenario(
             graph,
-            options.sampling_scheme,
-            include_last_node = false,
-            terminate_on_cycle = true
+            options.sampling_scheme
         )
     end
     # Storage for the list of outgoing states that we visit on the forward pass.
@@ -292,6 +290,15 @@ function backward_pass(graph::PolicyGraph{T},
         node_index, noise = scenario_path[index]
         outgoing_state = sampled_states[index]
         node = graph[node_index]
+        # If our node has no children, it means that we terminated the forward
+        # pass at a leaf node. In this case, we don't need to add any cuts so we
+        # can skip back up the scenario path one node. This should only ever be
+        # true on the last node, but it probably doesn't hurt to check every
+        # time in case someone wants to implement a really weird sampling
+        # scheme.
+        if length(node.children) == 0
+            continue
+        end
         # Initialization.
         noise_supports = NoiseType[]
         original_probability = Float64[]
@@ -480,15 +487,10 @@ function _simulate(graph::PolicyGraph,
                    variables::Vector{Symbol} = Symbol[];
                    sampling_scheme::AbstractSamplingScheme =
                        InSampleMonteCarlo(),
-                   terminate_on_cycle::Bool = true,
-                   max_depth::Int = 0,
                    custom_recorders = Dict{Symbol, Function}())
     # Sample a scenario path.
     scenario_path, terminated_due_to_cycle = sample_scenario(
-        graph, sampling_scheme;
-        terminate_on_cycle = terminate_on_cycle,
-        include_last_node = true,
-        max_depth = max_depth
+        graph, sampling_scheme
     )
     # Storage for the simulation results.
     simulation = Dict{Symbol, Any}[]
@@ -532,14 +534,11 @@ end
              variables::Vector{Symbol} = Symbol[];
              sampling_scheme::AbstractSamplingScheme =
                  InSampleMonteCarlo(),
-             terminate_on_cycle::Bool = true,
-             max_depth::Int = 0,
              custom_recorders = Dict{Symbol, Function}()
      )::Vector{Vector{Dict{Symbol, Any}}}
 
 Perform a simulation of the policy graph with `number_replications` replications
-using the sampling scheme `sampling_scheme`. If `terminate_on_cycle=false` then
-`max_depth` must be set >0.
+using the sampling scheme `sampling_scheme`.
 
 Returns a vector with one element for each replication. Each element is a vector
 with one-element for each node in the scenario that was sampled. Each element in
@@ -584,15 +583,11 @@ function simulate(graph::PolicyGraph,
                   variables::Vector{Symbol} = Symbol[];
                   sampling_scheme::AbstractSamplingScheme =
                       InSampleMonteCarlo(),
-                  terminate_on_cycle::Bool = true,
-                  max_depth::Int = 0,
                   custom_recorders = Dict{Symbol, Function}())
     return [_simulate(
                 graph,
                 variables;
                 sampling_scheme = sampling_scheme,
-                terminate_on_cycle = terminate_on_cycle,
-                max_depth = max_depth,
                 custom_recorders = custom_recorders)
                 for i in 1:number_replications
             ]

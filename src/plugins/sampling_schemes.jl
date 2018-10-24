@@ -9,26 +9,9 @@ You need to define the following methods:
 abstract type AbstractSamplingScheme end
 
 """
-    sample_scenario(graph::PolicyGraph{T}, ::AbstractSamplingScheme;
-                    terminate_on_cycle::Bool = true,
-                    include_last_node::Bool = true,
-                    max_depth::Int = 0) where T
+    sample_scenario(graph::PolicyGraph{T}, ::AbstractSamplingScheme) where T
 
 Sample a scenario from the policy graph `graph` based on the sampling scheme.
-
-If `terminate_on_cycle`, terminate the forward pass once a cycle is detected.
-
-If `include_last_node`, return the final node of the scenario. This is useful
-when simulating the graph, but for the forward pass, we typically want to stop
-at stage T-1; thus, `include_last_node = false`.
-
-*Important note:* If a cycle is detected and `include_last_node = true`, the
-*scenario should include the node that forms the cycle. For example, if there is
-*a single node in the graph that loops onto itself, the returned scenario should
-*contain two elements.
-
-If `max_depth > 0`, return once `max_depth` nodes have been sampled, otherwise,
-return once a leaf node is reached.
 
 Returns `::Tuple{Vector{Tuple{T, <:Any}}, Bool}`, where the first element is the
 scenario, and the second element is a Boolean flag indicating if the scenario
@@ -39,10 +22,7 @@ first component of each tuple is the index of the node, and the second component
 is the stagewise-independent noise term observed in that node.
 """
 function sample_scenario(graph::PolicyGraph{T},
-                         sampling_scheme::AbstractSamplingScheme;
-                         terminate_on_cycle::Bool = true,
-                         include_last_node::Bool = true,
-                         max_depth::Int = 0) where T
+                         sampling_scheme::AbstractSamplingScheme) where T
     error("You need to overload the function Kokako.sample_scenario for the " *
           "sampling scheme (sampling_scheme).")
 end
@@ -50,12 +30,38 @@ end
 # ========================= Monte Carlo Sampling Scheme ========================
 
 """
-    InSampleMonteCarlo
+    InSampleMonteCarlo(;
+        terminate_on_cycle = false,
+        max_depth = 0,
+        terminate_on_dummy_leaf = true
+    )
 
 A Monte Carlo sampling scheme using the in-sample data from the policy graph
 definition.
+
+If `terminate_on_cycle`, terminate the forward pass once a cycle is detected.
+If `max_depth > 0`, return once `max_depth` nodes have been sampled.
+If `terminate_on_dummy_leaf`, terminate the forward pass with 1 - probability of
+sampling a child node.
+
+Note that if `terminate_on_cycle = false` and `terminate_on_dummy_leaf = false`
+then `max_depth` must be set > 0.
 """
-struct InSampleMonteCarlo <: AbstractSamplingScheme end
+struct InSampleMonteCarlo <: AbstractSamplingScheme
+    terminate_on_cycle::Bool
+    terminate_on_dummy_leaf::Bool
+    max_depth::Int
+    function InSampleMonteCarlo(;
+        terminate_on_cycle::Bool = false,
+        terminate_on_dummy_leaf::Bool = true,
+        max_depth::Int = 0)
+        if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
+            error("terminate_on_cycle and terminate_on_dummy_leaf cannot both" *
+                  " be false when max_depth=0.")
+        end
+        return new(terminate_on_cycle, terminate_on_dummy_leaf, max_depth)
+    end
+end
 
 # A helper utility for sampling a Noise using Monte Carlo.
 function sample_noise(::InSampleMonteCarlo, noise_terms::Vector{<:Noise})
@@ -80,17 +86,10 @@ end
 """
     sample_scenario(graph, ::InSampleMonteCarlo; kwargs...)
 
-Sample a scenario using the InSampleMonteCarlo sampler. Note that if
-`terminate_on_cycle = false` then `max_depth` must be set > 0.
+Sample a scenario using the InSampleMonteCarlo sampler.
 """
 function sample_scenario(graph::PolicyGraph{T},
-                         sampling_scheme::InSampleMonteCarlo;
-                         terminate_on_cycle::Bool = true,
-                         include_last_node::Bool = true,
-                         max_depth::Int = 0) where T
-    if !terminate_on_cycle && max_depth == 0
-        error("If terminate_on_cycle=false, then max_depth must be >0.")
-    end
+                         sampling_scheme::InSampleMonteCarlo) where T
     # Storage for our scenario. Each tuple is (node_index, noise.term).
     scenario_path = Tuple{T, Any}[]
     # We only use visited_nodes if terminate_on_cycle=true. Just initialize
@@ -103,24 +102,24 @@ function sample_scenario(graph::PolicyGraph{T},
         noise = sample_noise(sampling_scheme, node.noise_terms)
         push!(scenario_path, (node_index, noise))
         # Termination conditions:
-        #   1. Our node has no children, i.e., we are at a leaf node.
-        #   2. terminate_on_cycle = true and we have detected a cycle.
-        #   3. max_depth > 0 and we have explored max_depth number of nodes.
-        if (length(node.children) == 0) ||
-            (terminate_on_cycle && node_index in visited_nodes) ||
-            (max_depth > 0 && length(scenario_path) >= max_depth)
-            # Drop the last node in the scenario if required. Doing so here
-            # avoids more complicated logic elsewhere.
-            if !include_last_node
-                pop!(scenario_path)
-            end
-            terminated_due_to_cycle = terminate_on_cycle &&
-                node_index in visited_nodes
-            return scenario_path, terminated_due_to_cycle
+        if length(node.children) == 0
+            # 1. Our node has no children, i.e., we are at a leaf node.
+            return scenario_path, false
+        elseif sampling_scheme.terminate_on_cycle && node_index in visited_nodes
+            # 2. terminate_on_cycle = true and we have detected a cycle.
+            return scenario_path, true
+        elseif 0 < sampling_scheme.max_depth <= length(scenario_path)
+            # 3. max_depth > 0 and we have explored max_depth number of nodes.
+            return scenario_path, false
+        elseif sampling_scheme.terminate_on_dummy_leaf &&
+                rand() < 1 - sum(child.probability for child in node.children)
+            # 4. we sample a "dummy" leaf node in the next step due to the
+            # probability of the child nodes summing to less than one.
+            return scenario_path, false
         end
         # We only need to store a list of visited nodes if we want to terminate
         # due to the presence of a cycle.
-        if terminate_on_cycle
+        if sampling_scheme.terminate_on_cycle
             push!(visited_nodes, node_index)
         end
         # Sample a new node to transition to.
@@ -172,52 +171,8 @@ end
 
 function sample_scenario(graph::PolicyGraph{T},
                          sampling_scheme::Historical{T, NoiseTerm};
-                         # Ignore the actual kwargs because the user is giving
+                         # Ignore the other kwargs because the user is giving
                          # us the full scenario.
                          kwargs...) where {T, NoiseTerm}
     return sample_noise(InSampleMonteCarlo(), sampling_scheme.scenarios), false
-end
-
-
-# ========================= Monte Carlo Sampling Scheme ========================
-
-"""
-    LeafMonteCarlo
-
-A Monte Carlo sampling scheme using the in-sample data from the policy graph
-definition. Terminates once it reaches a leaf node of the graph.
-"""
-struct LeafMonteCarlo <: AbstractSamplingScheme end
-
-function sample_scenario(graph::PolicyGraph{T},
-                         sampling_scheme::LeafMonteCarlo;
-                         include_last_node::Bool = true,
-                         # Ignore the other kwargs because this is a special
-                         # sampling scheme.
-                         kwargs...) where T
-    # Storage for our scenario. Each tuple is (node_index, noise.term).
-    scenario_path = Tuple{T, Any}[]
-    # Begin by sampling a node from the children of the root node.
-    node_index = sample_noise(InSampleMonteCarlo(), graph.root_children)::T
-    while true
-        node = graph[node_index]
-        noise = sample_noise(InSampleMonteCarlo(), node.noise_terms)
-        push!(scenario_path, (node_index, noise))
-        # Termination conditions:
-        #   1. Our node has no children, i.e., we are at a leaf node.
-        #   2. We've reached a "dummy" node by exiting a cycle.
-        if length(node.children) == 0
-            if !include_last_node
-                pop!(scenario_path)
-            end
-            return scenario_path, false
-        elseif rand() < 1 - sum(child.probability for child in node.children)
-            # Test if we will exit the cycle by sampling a dummy node in the
-            # next step. If we do, we will exit on the next loop.
-            return scenario_path, false
-        end
-        node_index = sample_noise(InSampleMonteCarlo(), node.children)::T
-    end
-    # Throw an error because we should never end up here.
-    error("Internal Kokako error: something went wrong sampling a scenario.")
 end

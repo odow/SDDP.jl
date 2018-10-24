@@ -34,13 +34,10 @@ function infinite_hydro_thermal()
             JuMP.fix(demand, ω.demand)
         end
     end
-    Kokako.train(model, print_level = 0, time_limit = 5.0,
-        sampling_scheme = Kokako.LeafMonteCarlo()
-    )
+    Kokako.train(model, print_level = 0, time_limit = 5.0)
     @test Kokako.calculate_bound(model) ≈ 119.167 atol = 5.0
 
-    results = Kokako.simulate(model, 500,
-        sampling_scheme = Kokako.LeafMonteCarlo())
+    results = Kokako.simulate(model, 500)
     objectives = [
         sum(s[:stage_objective] for s in simulation) for simulation in results
     ]

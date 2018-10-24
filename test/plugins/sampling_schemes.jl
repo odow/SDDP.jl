@@ -10,7 +10,8 @@ using Kokako, Test
             end
         end
         scenario, terminated_due_to_cycle = Kokako.sample_scenario(
-            model, Kokako.InSampleMonteCarlo())
+            model, Kokako.InSampleMonteCarlo()
+        )
         @test length(scenario) == 2
         @test !terminated_due_to_cycle
         for (stage, (node, noise)) in enumerate(scenario)
@@ -29,9 +30,10 @@ using Kokako, Test
             end
         end
         scenario, terminated_due_to_cycle = Kokako.sample_scenario(
-            model, Kokako.InSampleMonteCarlo(),
-            terminate_on_cycle = false,
-            max_depth = 4
+            model, Kokako.InSampleMonteCarlo(
+                terminate_on_dummy_leaf = false,
+                max_depth = 4
+            )
         )
         @test length(scenario) == 4
         @test !terminated_due_to_cycle  # Terminated due to max depth.
