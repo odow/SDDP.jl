@@ -4,7 +4,7 @@
 SDDP 3.0 on a policy graph. The future is here. Supports Julia 1.0. JuMP 0.19.
 
 <p align="center">
-  <img width="50%" src="https://upload.wikimedia.org/wikipedia/commons/a/a2/K%C5%8Dkako.jpg">
+  <img width="20%" src="https://upload.wikimedia.org/wikipedia/commons/a/a2/K%C5%8Dkako.jpg">
 </p>
 
 ## Philosophy

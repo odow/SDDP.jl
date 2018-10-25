@@ -215,7 +215,7 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
             )
         end
         # ===== End: starting state for infinite horizon =====
-        # Solve the subproblem, note that `require_duals=false`.
+        # Solve the subproblem, note that `require_duals = false`.
         TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
             (outgoing_state_value, duals, stage_objective, objective) =
                 solve_subproblem(
@@ -233,10 +233,8 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     if terminated_due_to_cycle
         # Get the last node in the scenario.
         final_node_index = scenario_path[end][1]
-        final_node = graph[final_node_index]
-        # The last node in the scenario has children, so we must have terminated
-        # due to a cycle. Here is the list of possible starting states for that
-        # node:
+        # We terminated due to a cycle. Here is the list of possible starting
+        # states for that node:
         starting_states = options.starting_states[final_node_index]
         # We also need the incoming state variable to the final node, which is
         # the outgoing state value of the 2'nd to last node:

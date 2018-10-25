@@ -1,12 +1,15 @@
 using Kokako, Test, JSON, Gurobi, Plots
 
 """
-    infinite_powder(; discount_factor = 0.5, stocking_rate::Float64 = NaN)
+    infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
+                    data_filename = "powder_data.json")
 
-Create an instance of the infinite horizon POWDER model.
+Create an instance of the infinite horizon POWDER model. If `stocking_rate =
+NaN`, we use the value from the file `data_filename`.
 """
-function infinite_powder(; discount_factor = 0.5, stocking_rate::Float64 = NaN)
-    data = JSON.parsefile(joinpath(@__DIR__, "powder_data.json"))
+function infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
+                         data_filename = "powder_data.json")
+    data = JSON.parsefile(joinpath(@__DIR__, data_filename))
     # Allow over-ride of the stocking rate contained in data.
     if !isnan(stocking_rate)
         data["stocking_rate"] = stocking_rate
@@ -178,7 +181,7 @@ function infinite_powder(; discount_factor = 0.5, stocking_rate::Float64 = NaN)
 end
 
 function visualize_policy(model, filename)
-    simulations = Kokako.simulate(model, 5_000, [
+    simulations = Kokako.simulate(model, 1_000, [
         :cows_milking,
         :pasture_cover,
         :soil_moisture,
@@ -187,8 +190,11 @@ function visualize_policy(model, filename)
         :weekly_milk_production,
         :fei_penalty
         ],
-        terminate_on_cycle = false,
-        max_depth = 52 * 5
+        sampling_scheme = Kokako.InSampleMonteCarlo(
+            terminate_on_cycle = false,
+            terminate_on_dummy_leaf = false,
+            max_depth = 52 * 5
+        )
     )
     open(filename * ".json", "w") do io
         write(io, JSON.json(simulations))
@@ -210,72 +216,54 @@ function visualize_policy(model, filename)
             ylabel = "Evapotranspiration (mm)",
             title = "(c)",
             xticks = xticks),
-        # Kokako.publicationplot(simulations,
-        #     data -> data[:grass_growth],
-        #     ylabel = "Grass Growth (kg/day)",
-        #     title = "(d)",
-        #     xticks = xticks),
-        # Kokako.publicationplot(simulations,
-        #     data -> data[:supplement],
-        #     ylabel = "Palm Kernel Fed (kg/cow/day)",
-        #     title = "(e)",
-        #     xticks = xticks),
-        # Kokako.publicationplot(simulations,
-        #     data -> data[:weekly_milk_production],
-        #     ylabel = "Milk Production (kg/day)",
-        #     title = "(f)",
-        #     xticks = xticks),
+        Kokako.publicationplot(simulations,
+            data -> data[:grass_growth],
+            ylabel = "Grass Growth (kg/day)",
+            title = "(d)",
+            xticks = xticks),
+        Kokako.publicationplot(simulations,
+            data -> data[:supplement],
+            ylabel = "Palm Kernel Fed (kg/cow/day)",
+            title = "(e)",
+            xticks = xticks),
+        Kokako.publicationplot(simulations,
+            data -> data[:weekly_milk_production],
+            ylabel = "Milk Production (kg/day)",
+            title = "(f)",
+            xticks = xticks),
 
-        layout = (1, 3),
-        size = (1500, 300)
+        layout = (2, 3),
+        size = (1500, 600)
     )
     savefig(filename * ".pdf")
 end
 
+function estimate_statistical_bound(model, filename)
+    # Simulate to estimate the lower (statistical) bound. Note that we need to
+    # set `terminate_on_dummy_leaf = true`.
+    bound_simulations = Kokako.simulate(model, 1_000,
+        sampling_scheme = Kokako.InSampleMonteCarlo(
+            terminate_on_cycle = false,
+            terminate_on_dummy_leaf = true
+        )
+    )
+    open(filename * ".json", "w") do io
+        write(io, JSON.json(bound_simulations))
+    end
+end
 
 # The experiments can be run by calling `julia powder.jl run`.
 if length(ARGS) > 0 && ARGS[1] == "run"
     # Import Random for seed!
     using Random
-    let
-        println("""Running the base case: POWDER with discount factor of 0.9 and
-        a stocking rate of 3 cows/ha.""")
-        model = infinite_powder(discount_factor = 0.9, stocking_rate = 3.0)
-        Random.seed!(1234)
-        Kokako.train(model, iteration_limit = 3_000, print_level = 1,
-            log_file = "powder_09_3000it.log")
-        Random.seed!(5678)
-        visualize_policy(model, "powder_09_3000it")
-    end
-
-    let
-        println("""Running experiment 1: compare the evolution of the lower
-        bound with a smaller # discount factor. No need to visualize as we only
-        care about the evolution of the upper bound.""")
-        model = infinite_powder(discount_factor = 0.5, stocking_rate = 3.0)
-        Random.seed!(1234)
-        Kokako.train(model, iteration_limit = 3_000, print_level = 1,
-            log_file = "powder_50_3000it.log")
-    end
-
-    let
-        println("""Running experiment 2: visualize an unconverged policy.
-        Compare against powder_90_3000it.""")
-        model = infinite_powder(discount_factor = 0.9, stocking_rate = 3.0)
-        Random.seed!(1234)
-        Kokako.train(model, iteration_limit = 500, print_level = 1,
-            log_file = "powder_90_500it.log")
-        Random.seed!(5678)
-        visualize_policy(model, "powder_90_500it")
-    end
-
-    let
-        println("""Running experiment 3: solve with a lower stocking rate.
-        Compare against powder_90_3000it. No need to visualize as we only care
-        about the lower bound.""")
-        model = infinite_powder(discount_factor = 0.9, stocking_rate = 2.5)
-        Random.seed!(1234)
-        Kokako.train(model, iteration_limit = 3_000, print_level = 1,
-            log_file = "powder_90_3000it_25SR.log")
+    model = infinite_powder(discount_factor = 0.75, stocking_rate = 3.0)
+    for loop in 1:5
+        Random.seed!(123 * loop)
+        Kokako.train(model, iteration_limit = 100, print_level = 1,
+            log_file = "powder_$(loop).log")
+        Random.seed!(456 * loop)
+        visualize_policy(model, "powder_visualization_$(loop)")
+        Random.seed!(456 * loop)
+        estimate_statistical_bound(model, "powder_bound_$(loop)")
     end
 end
