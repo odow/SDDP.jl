@@ -241,14 +241,20 @@ end
 function estimate_statistical_bound(model, filename)
     # Simulate to estimate the lower (statistical) bound. Note that we need to
     # set `terminate_on_dummy_leaf = true`.
-    bound_simulations = Kokako.simulate(model, 1_000,
+    bound_simulations = Kokako.simulate(model, 10_000,
         sampling_scheme = Kokako.InSampleMonteCarlo(
             terminate_on_cycle = false,
             terminate_on_dummy_leaf = true
         )
     )
+    objectives = [
+        sum(x[:stage_objective] for x in sim) for sim in bound_simulations
+    ]
+    μ = Statistics.mean(objectives)
+    σ = Statistics.std(objectives)
+    println(μ - 1.96 * σ, "    ", μ + 1.96 * σ)
     open(filename * ".json", "w") do io
-        write(io, JSON.json(bound_simulations))
+        write(io, JSON.json(objectives))
     end
 end
 
