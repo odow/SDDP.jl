@@ -34,8 +34,48 @@ function to_nodal_form(graph::PolicyGraph{T}, dict::Dict{T, V}) where {T, V}
     return dict
 end
 
-# Internal struct: storage for SDDP options. Users shouldn't interact with this
-# directly.
+# Internal function: returns a dictionary with a key for each node, where the
+# value is a list of other nodes that contain the same children. This is useful
+# because on the backward pass we can add cuts to nodes with the same children
+# without having to re-solve the children.
+#
+# TODO(odow): this is inefficient as it is O(n²) in the number of nodes, but
+# it's just a one-off hit so let's optimize later.
+function get_same_children(graph::PolicyGraph{T}) where T
+    same_children = Dict{T, Vector{T}}()
+    # For each node in the graph
+    for (node_index_1, node_1) in graph.nodes
+        same_children[node_index_1] = T[]
+        # Get the set of child nodes.
+        children_1 = Set(child.term for child in node_1.children)
+        # For each node in the graph:
+        for (node_index_2, node_2) in graph.nodes
+            if node_index_1 == node_index_2
+                continue
+            end
+            # Get the set of child nodes.
+            children_2 = Set(child.term for child in node_2.children)
+            # Record if node_1 has a superset of node_2's children.
+            if children_2 ⊆ children_1
+                push!(same_children[node_index_1], node_index_2)
+            end
+        end
+    end
+    return same_children
+end
+
+function build_Φ(graph::PolicyGraph{T}) where T
+    Φ = Dict{Tuple{T, T}, Float64}()
+    for (node_index_1, node_1) in graph.nodes
+        for child in node_1.children
+            Φ[(node_index_1, child.term)] = child.probability
+        end
+    end
+    return Φ
+end
+
+# Internal struct: storage for SDDP options and cached data. Users shouldn't
+# interact with this directly.
 struct Options{T}
     # The initial state to start from the root node.
     initial_state::Dict{Symbol, Float64}
@@ -49,18 +89,28 @@ struct Options{T}
     # The delta by which to check if a state is close to a previously sampled
     # state.
     cycle_discretization_delta::Float64
+    # Flag to add cuts to similar nodes.
+    refine_at_similar_nodes::Bool
+    # The node transition matrix.
+    Φ::Dict{Tuple{T, T}, Float64}
+    # A list of nodes that contain a subset of the children of node i.
+    similar_children::Dict{T, Vector{T}}
     # Internal function: users should never construct this themselves.
     function Options(policy_graph::PolicyGraph{T},
                      initial_state::Dict{Symbol, Float64},
                      sampling_scheme::AbstractSamplingScheme,
                      risk_measures,
-                     cycle_discretization_delta::Float64 = 0.0) where {T, S}
+                     cycle_discretization_delta::Float64,
+                     refine_at_similar_nodes::Bool) where {T, S}
         return new{T}(
             initial_state,
             sampling_scheme,
             to_nodal_form(policy_graph, x -> Dict{Symbol, Float64}[]),
             to_nodal_form(policy_graph, risk_measures),
-            cycle_discretization_delta
+            cycle_discretization_delta,
+            refine_at_similar_nodes,
+            build_Φ(policy_graph),
+            get_same_children(policy_graph)
         )
     end
 end
@@ -298,7 +348,8 @@ function backward_pass(graph::PolicyGraph{T},
             continue
         end
         # Initialization.
-        noise_supports = NoiseType[]
+        noise_supports = Noise[]
+        child_indices = T[]
         original_probability = Float64[]
         dual_variables = Dict{Symbol, Float64}[]
         objective_realizations = Float64[]
@@ -317,14 +368,13 @@ function backward_pass(graph::PolicyGraph{T},
                         )
                 end
                 push!(dual_variables, duals)
-                push!(noise_supports, noise.term)
+                push!(noise_supports, noise)
+                push!(child_indices, child_node.index)
                 push!(original_probability,
                     child.probability * noise.probability)
                 push!(objective_realizations, obj)
             end
         end
-        # TODO(odow): refine the bellman function at other nodes with the same
-        # children, e.g., in the same stage of a Markovian policy graph.
         refine_bellman_function(
             graph,
             node,
@@ -334,7 +384,32 @@ function backward_pass(graph::PolicyGraph{T},
             dual_variables,
             noise_supports,
             original_probability,
-            objective_realizations)
+            objective_realizations
+        )
+        if options.refine_at_similar_nodes
+            # Refine the bellman function at other nodes with the same children,
+            # e.g., in the same stage of a Markovian policy graph.
+            for other_index in options.similar_children[node_index]
+                copied_probability = similar(original_probability)
+                other_node = graph[other_index]
+                for (idx, child_index) in enumerate(child_indices)
+                    copied_probability[idx] =
+                        get(options.Φ, (other_index, child_index), 0.0) *
+                        noise_supports[idx].probability
+                end
+                refine_bellman_function(
+                    graph,
+                    other_node,
+                    other_node.bellman_function,
+                    options.risk_measures[other_index],
+                    outgoing_state,
+                    dual_variables,
+                    noise_supports,
+                    copied_probability,
+                    objective_realizations
+                )
+            end
+        end
     end
 end
 
@@ -400,7 +475,8 @@ function train(graph::PolicyGraph;
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.InSampleMonteCarlo(),
                print_level = 0,
-               cycle_discretization_delta = 0.01,
+               cycle_discretization_delta = 0.0,
+               refine_at_similar_nodes = true,
                log_file = "kokako.log"
                )
     # Reset the TimerOutput.
@@ -431,7 +507,8 @@ function train(graph::PolicyGraph;
         graph.initial_root_state,
         sampling_scheme,
         risk_measure,
-        cycle_discretization_delta
+        cycle_discretization_delta,
+        refine_at_similar_nodes
     )
     # The default status. This should never be seen by the user.
     status = :not_solved

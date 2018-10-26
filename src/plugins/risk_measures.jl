@@ -12,9 +12,9 @@ abstract type AbstractRiskMeasure end
     adjust_probability(measure::Expectation
                        risk_adjusted_probability::Vector{Float64},
                        original_probability::Vector{Float64},
-                       noise_support::Vector{T},
+                       noise_support::Vector{Noise{T}},
                        objective_realizations::Vector{Float64},
-                       is_minimization::Bool)
+                       is_minimization::Bool) where T
 """
 function adjust_probability end
 
@@ -25,9 +25,9 @@ struct Expectation <: AbstractRiskMeasure end
 function adjust_probability(measure::Expectation,
                             risk_adjusted_probability::Vector{Float64},
                             original_probability::Vector{Float64},
-                            noise_support::Vector{T},
+                            noise_support::Vector,
                             objective_realizations::Vector{Float64},
-                            is_minimization::Bool) where T
+                            is_minimization::Bool)
     risk_adjusted_probability .= original_probability
     return
 end
@@ -39,9 +39,9 @@ struct WorstCase <: AbstractRiskMeasure end
 function adjust_probability(measure::WorstCase,
                             risk_adjusted_probability::Vector{Float64},
                             original_probability::Vector{Float64},
-                            noise_support::Vector{T},
+                            noise_support::Vector,
                             objective_realizations::Vector{Float64},
-                            is_minimization::Bool) where T
+                            is_minimization::Bool)
     risk_adjusted_probability .= 0.0
     worst_index = 1
     worst_observation = is_minimization ? -Inf : Inf

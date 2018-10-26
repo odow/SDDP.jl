@@ -85,11 +85,12 @@ end
 The AverageCut Bellman function. Provide a lower_bound if minimizing, or an
 upper_bound if maximizing.
 """
-function AverageCut(;
-        lower_bound = -Inf,
-        upper_bound = Inf,
-        cut_improvement_tolerance::Float64 = 0.0
-        )
+# function AverageCut(;
+#         lower_bound = -Inf,
+#         upper_bound = Inf,
+#         cut_improvement_tolerance::Float64 = 0.0
+#         )
+function AverageCut(; kwargs...)
     return BellmanFactory{AverageCut}(; kwargs...)
 end
 
@@ -175,9 +176,12 @@ function refine_bellman_function(graph::PolicyGraph{T},
 
     # Test whether we should add the new cut to the subproblem. We do this now
     # before collating the intercept to avoid twice the work.
-    cut_is_an_improvement =
-        abs(JuMP.get_objective_value(node.subproblem) - current_height) >
+    cut_is_an_improvement = if bellman_function.cut_improvement_tolerance > 0.0
+        abs(JuMP.objective_value(node.subproblem) - current_height) >
             bellman_function.cut_improvement_tolerance
+    else
+        true
+    end
 
     if cut_is_an_improvement
         index = if is_minimization

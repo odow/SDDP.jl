@@ -18,7 +18,9 @@ using Kokako, Test, GLPK
             model,
             Dict(:x => 1.0),
             Kokako.InSampleMonteCarlo(),
-            Kokako.Expectation()
+            Kokako.Expectation(),
+            0.0,
+            true
         )
     )
     simulated_value = 0.0
