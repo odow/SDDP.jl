@@ -214,26 +214,27 @@ function visualize_policy(model, filename)
         Kokako.publicationplot(simulations,
             data -> data[:noise_term]["evapotranspiration"],
             ylabel = "Evapotranspiration (mm)",
+            xlabel = " ",
             title = "(c)",
             xticks = xticks),
-        Kokako.publicationplot(simulations,
-            data -> data[:grass_growth],
-            ylabel = "Grass Growth (kg/day)",
-            title = "(d)",
-            xticks = xticks),
-        Kokako.publicationplot(simulations,
-            data -> data[:supplement],
-            ylabel = "Palm Kernel Fed (kg/cow/day)",
-            title = "(e)",
-            xticks = xticks),
-        Kokako.publicationplot(simulations,
-            data -> data[:weekly_milk_production],
-            ylabel = "Milk Production (kg/day)",
-            title = "(f)",
-            xticks = xticks),
+        # Kokako.publicationplot(simulations,
+        #     data -> data[:grass_growth],
+        #     ylabel = "Grass Growth (kg/day)",
+        #     title = "(d)",
+        #     xticks = xticks),
+        # Kokako.publicationplot(simulations,
+        #     data -> data[:supplement],
+        #     ylabel = "Palm Kernel Fed (kg/cow/day)",
+        #     title = "(e)",
+        #     xticks = xticks),
+        # Kokako.publicationplot(simulations,
+        #     data -> data[:weekly_milk_production],
+        #     ylabel = "Milk Production (kg/day)",
+        #     title = "(f)",
+        #     xticks = xticks),
 
-        layout = (2, 3),
-        size = (1500, 600)
+        layout = (1, 3),
+        size = (1500, 300)
     )
     savefig(filename * ".pdf")
 end
@@ -250,9 +251,16 @@ function estimate_statistical_bound(model, filename)
     objectives = [
         sum(x[:stage_objective] for x in sim) for sim in bound_simulations
     ]
-    μ = Statistics.mean(objectives)
-    σ = Statistics.std(objectives)
-    println(μ - 1.96 * σ, "    ", μ + 1.96 * σ)
+
+    function modified_cox(X, α = 1.96)
+        N = length(X)
+        logX = log.(X)
+        μ = Statistics.mean(logX)
+        σ² = Statistics.var(logX)
+        half_width = α * sqrt(σ² / N + σ²^2 / (2N - 2))
+        return exp(μ + σ² / 2 - half_width), exp(μ + σ² / 2 + half_width)
+    end
+    println(modified_cox(objectives))
     open(filename * ".json", "w") do io
         write(io, JSON.json(objectives))
     end

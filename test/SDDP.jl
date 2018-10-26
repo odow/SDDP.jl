@@ -41,6 +41,5 @@ end
         end
     end
     status = Kokako.train(model; iteration_limit = 4)
-    Kokako.write_bellman_to_file(model, "model.bellman.json")
-    rm("model.bellman.json")
+    @test status == :iteration_limit
 end
