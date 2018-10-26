@@ -454,7 +454,7 @@ function calculate_bound(graph::PolicyGraph,
 end
 
 """
-    Kokako.train(graph::PolicyGraph; kwargs...)
+    Kokako.train(graph::PolicyGraph; kwargs...)::Tuple{Symbol, Vector{Log}}
 
 Train the policy of the graph. Keyword arguments are
  - iteration_limit: number of iterations to conduct before termination. Defaults
@@ -512,8 +512,8 @@ function train(graph::PolicyGraph;
     )
     # The default status. This should never be seen by the user.
     status = :not_solved
+    log = Log[]
     try
-        log = Log[]
         start_time = time()
         iteration_count = 1
         has_converged = false
@@ -553,7 +553,7 @@ function train(graph::PolicyGraph;
     if print_level > 1
         TimerOutputs.print_timer(stdout, SDDP_TIMER)
     end
-    return status
+    return status, log
 end
 
 # Internal function: helper to conduct a single simulation. Users should use the
