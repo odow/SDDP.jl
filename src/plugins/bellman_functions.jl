@@ -59,34 +59,18 @@ function bellman_term(bellman::AbstractBellmanFunction)
     error("Kokako.bellman term not implemented for $(bellman).")
 end
 
-struct Cut
+# ============================== SDDP.AverageCut ===============================
+
+mutable struct Cut
     intercept::Float64
     coefficients::Dict{Symbol, Float64}
+    index
 end
 
-function JSON.lower(cut::Cut)
-    return Dict("intercept" => cut.intercept,
-                "coefficients" => cut.coefficients)
-end
-
-"""
-    write_bellman_to_file(policy_graph::PolicyGraph{T},
-                          filename::String) where T
-
-Save the Bellman function to `filename` in JSON format.
-"""
-function write_bellman_to_file(policy_graph::PolicyGraph{T},
-                               filename::String) where T
-    bellman = Dict{T, Any}()
-    for (node_index, node) in policy_graph.nodes
-        bellman[node_index] = Dict(
-            "type" => typeof(node.bellman_function),
-            "function" => node.bellman_function
-        )
-    end
-    open(filename, "w") do io
-        println(io, JSON.json(bellman))
-    end
+struct AverageCut <: AbstractBellmanFunction
+    variable::JuMP.VariableRef
+    cut_improvement_tolerance::Float64
+    cuts::Vector{Cut}
 end
 
 struct BellmanFactory{T}
@@ -95,29 +79,25 @@ struct BellmanFactory{T}
     BellmanFactory{T}(args...; kwargs...) where T = new{T}(args, kwargs)
 end
 
-# ============================== SDDP.AverageCut ===============================
-
-struct AverageCut <: AbstractBellmanFunction
-    variable::JuMP.VariableRef
-    cuts::Vector{Cut}
-end
-
 """
     AverageCut(; lower_bound = -Inf, upper_bound = Inf)
 
 The AverageCut Bellman function. Provide a lower_bound if minimizing, or an
 upper_bound if maximizing.
 """
-function AverageCut(; lower_bound = -Inf, upper_bound = Inf)
-    BellmanFactory{AverageCut}(lower_bound=lower_bound, upper_bound=upper_bound)
+function AverageCut(;
+        lower_bound = -Inf,
+        upper_bound = Inf,
+        cut_improvement_tolerance::Float64 = 0.0
+        )
+    return BellmanFactory{AverageCut}(; kwargs...)
 end
-
-JSON.lower(bellman::AverageCut) = bellman.cuts
 
 function initialize_bellman_function(factory::BellmanFactory{AverageCut},
                                      graph::PolicyGraph{T},
                                      node::Node{T}) where T
     lower_bound, upper_bound = -Inf, Inf
+    cut_improvement_tolerance = 0.0
     if length(factory.args) > 0
         error("Positional arguments $(factory.args) ignored in AverageCut.")
     end
@@ -126,6 +106,11 @@ function initialize_bellman_function(factory::BellmanFactory{AverageCut},
             lower_bound = value
         elseif kw == :upper_bound
             upper_bound = value
+        elseif kw == :cut_improvement_tolerance
+            if value < 0
+                error("Cut cut_improvement_tolerance must be > 0.")
+            end
+            cut_improvement_tolerance = value
         else
             error("Keyword $(kw) not recognised as argument to AverageCut.")
         end
@@ -136,7 +121,7 @@ function initialize_bellman_function(factory::BellmanFactory{AverageCut},
     else
         @variable(node.subproblem, lower_bound = 0, upper_bound = 0)
     end
-    return AverageCut(bellman_variable, Cut[])
+    return AverageCut(bellman_variable, cut_improvement_tolerance, Cut[])
 end
 
 bellman_term(bellman::AverageCut) = bellman.variable
@@ -176,19 +161,38 @@ function refine_bellman_function(graph::PolicyGraph{T},
             coefficients[state] += prob * dual[state]
         end
     end
+    # Height of the cut at outgoing_state. We cache the value here for the
+    # tolerance check that happens later.
+    current_height = intercept
+    # Calculate the intercept of the cut.
     for (name, value) in outgoing_state
         intercept -= coefficients[name] * value
     end
-    # Add the cut to the subproblem.
-    if is_minimization
-        @constraint(node.subproblem, bellman_function.variable >=
-            intercept + sum(coefficients[name] * state.out
-                for (name, state) in node.states))
-    else
-        @constraint(node.subproblem, bellman_function.variable <=
-            intercept + sum(coefficients[name] * state.out
-                for (name, state) in node.states))
+
+    # A structure to hold information about the cut. The third argument is
+    # `nothing` because we haven't added it to the model.
+    cut = Cut(intercept, coefficients, nothing)
+
+    # Test whether we should add the new cut to the subproblem. We do this now
+    # before collating the intercept to avoid twice the work.
+    cut_is_an_improvement =
+        abs(JuMP.get_objective_value(node.subproblem) - current_height) >
+            bellman_function.cut_improvement_tolerance
+
+    if cut_is_an_improvement
+        index = if is_minimization
+            @constraint(node.subproblem, bellman_function.variable >=
+                intercept + sum(coefficients[name] * state.out
+                    for (name, state) in node.states))
+        else
+            @constraint(node.subproblem, bellman_function.variable <=
+                intercept + sum(coefficients[name] * state.out
+                    for (name, state) in node.states))
+        end
+        # Store the index of the cut.
+        cut.index = index
     end
-    push!(bellman_function.cuts, Cut(intercept, coefficients))
+    # Store the cut in the Bellman function.
+    push!(bellman_function.cuts, cut)
     return
 end
