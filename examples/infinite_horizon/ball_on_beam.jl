@@ -1,3 +1,4 @@
+# This should kind of work, but it doesn't.
 using Kokako, Ipopt, Test
 
 function value(ex::JuMP.GenericQuadExpr{CoefType, VarType},
