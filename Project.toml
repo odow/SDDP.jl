@@ -4,15 +4,17 @@ authors = ["Oscar Dowson <oscar.dowson@northwestern.edu"]
 version = "0.0.0"
 
 [deps]
-GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
-JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
-LinQuadOptInterface = "f8899e07-120b-5979-ab1d-7b97bb9e1a48"
-Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
+
+[extras]
+GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["GLPK", "Random", "Test"]

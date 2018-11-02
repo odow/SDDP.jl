@@ -7,7 +7,6 @@ You need to define the following methods:
  - Kokako.initialize_bellman_function
  - Kokako.refine_bellman_function
  - Kokako.bellman_term
- - JSON.lower(bellman::AbstractBellmanFunction)
 """
 abstract type AbstractBellmanFunction end
 
