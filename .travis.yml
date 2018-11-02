@@ -6,9 +6,12 @@ julia:
 branches:
   only:
     - master
-    - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 notifications:
     email: false
+sudo: false
+addons:
+  apt_packages:
+    - gfortran
 after_success:
   - if [[ $TRAVIS_JULIA_VERSION = 1.0 ]] && [[ $TRAVIS_OS_NAME = linux ]]; then
       julia --project=test/coverage -e 'using Pkg; Pkg.instantiate();
