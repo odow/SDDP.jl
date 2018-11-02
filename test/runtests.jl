@@ -12,38 +12,27 @@ using Kokako, Test, Random
     end
 end
 
-const EXAMPLES = Dict(
-    "agriculture" => [
-        "mccardle_farm.jl"],
-    "asset_management" => [
-        "simple.jl"
-    ],
-    "FAST" => [
-        "hydro_thermal.jl",
-        "production_management.jl",
-        "quickstart.jl"],
-    "infinite_horizon" => [
-        "trivial_example.jl",
-        "hydro_thermal.jl"],
-    "StructDualDynProg.jl" => [
-        "prob5.2_2stages.jl",
-        "prob5.2_3stages.jl"],
-    "StochDynamicProgramming.jl" => [
-        "stock_example.jl",
-        "multistock_example.jl"]
-)
+const EXAMPLES = [
+    "agriculture_mccardle_farm.jl",
+    "asset_management_simple.jl",
+    "FAST_hydro_thermal.jl",
+    "FAST_production_management.jl",
+    "FAST_quickstart.jl",
+    "infinite_horizon_trivial.jl",
+    "infinite_horizon_hydro_thermal.jl",
+    "StructDualDynProg.jl_prob5.2_2stages.jl",
+    "StructDualDynProg.jl_prob5.2_3stages.jl",
+    "StochDynamicProgramming.jl_stock.jl",
+    "StochDynamicProgramming.jl_multistock.jl"
+]
 
 const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
 
 @testset "Examples" begin
-    for (directory, example_list) in EXAMPLES
-        @testset "$(directory)" begin
-            for example in example_list
-                @testset "$(example)" begin
-                    Random.seed!(12345)
-                    evalfile(joinpath(EXAMPLES_DIR, directory, example))
-                end
-            end
+    for example in EXAMPLES
+        @testset "$(example)" begin
+            Random.seed!(12345)
+            include(joinpath(EXAMPLES_DIR, example))
         end
     end
 end
