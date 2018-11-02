@@ -1,0 +1,25 @@
+language: julia
+os:
+    - linux
+julia:
+    - 1.0
+branches:
+  only:
+    - master
+    - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+notifications:
+    email: false
+after_success:
+  - if [[ $TRAVIS_JULIA_VERSION = 1.0 ]] && [[ $TRAVIS_OS_NAME = linux ]]; then
+      julia --project=test/coverage -e 'using Pkg; Pkg.instantiate();
+          using Coverage; Codecov.submit(Codecov.process_folder())';
+    fi
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.add(PackageSpec(path=pwd()))'
+        - julia --project=docs --color=yes docs/make.jl
+after_success: skip
