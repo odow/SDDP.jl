@@ -76,10 +76,8 @@ version = "0.10.1"
 [[GLPK]]
 deps = ["BinaryProvider", "Compat", "Libdl", "LinQuadOptInterface"]
 git-tree-sha1 = "fd8611745ac49689673fce6714893b3cd2301ab5"
-repo-rev = "master"
-repo-url = "https://github.com/JuliaOpt/GLPK.jl.git"
 uuid = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
-version = "0.8.2+"
+version = "0.8.3"
 
 [[InteractiveUtils]]
 deps = ["LinearAlgebra", "Markdown"]
