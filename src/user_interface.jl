@@ -167,6 +167,7 @@ mutable struct Node{T}
     states::Dict{Symbol, State{JuMP.VariableRef}}
     # Stage objective
     stage_objective  # TODO(odow): make this a concrete type?
+    stage_objective_set::Bool
     # Bellman function
     bellman_function  # TODO(odow): make this a concrete type?
 end
@@ -271,6 +272,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             (ω) -> nothing,
             Dict{Symbol, State{JuMP.VariableRef}}(),
             nothing,
+            false,
             # Delay initializing the bellman function until later so that it can
             # use information about the children and number of
             # stagewise-independent noise realizations.
@@ -366,6 +368,7 @@ Set the stage-objective of `subproblem` to `stage_objective`.
 function set_stage_objective(subproblem::JuMP.Model, stage_objective)
     node = get_node(subproblem)
     node.stage_objective = stage_objective
+    node.stage_objective_set = false
     return
 end
 

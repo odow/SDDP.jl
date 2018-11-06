@@ -131,14 +131,21 @@ function get_outgoing_state(node::Node)
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
         # To fix some cases of numerical infeasiblities, if the outgoing value
-        # is outside its bounds, project the value back onto the bounds.
+        # is outside its bounds, project the value back onto the bounds. There
+        # is a pretty large (×5) penalty associated with this check because it
+        # typically requires a call to the solver. It is worth reducing
+        # infeasibilities though.
         outgoing_value = JuMP.result_value(state.out)
-        if (JuMP.has_upper_bound(state.out) &&
-                JuMP.upper_bound(state.out) < outgoing_value)
-            outgoing_value = JuMP.upper_bound(state.out)
-        elseif (JuMP.has_lower_bound(state.out) &&
-                JuMP.lower_bound(state.out) > outgoing_value)
-            outgoing_value = JuMP.lower_bound(state.out)
+        if JuMP.has_upper_bound(state.out)
+            current_bound = JuMP.upper_bound(state.out)
+            if current_bound < outgoing_value
+                outgoing_value = current_bound
+            end
+        elseif JuMP.has_lower_bound(state.out)
+            current_bound = JuMP.lower_bound(state.out)
+            if current_bound > outgoing_value
+                outgoing_value = current_bound
+            end
         end
         values[name] = outgoing_value
     end
@@ -163,6 +170,7 @@ end
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
 function set_objective(graph::PolicyGraph{T}, node::Node{T}) where T
+    node.stage_objective_set = true
     JuMP.set_objective(
         node.subproblem,
         graph.objective_sense,
@@ -190,9 +198,10 @@ function solve_subproblem(graph::PolicyGraph{T},
     # the user calls set_stage_objective in the parameterize function.
     set_incoming_state(node, state)
     node.parameterize(noise)
-    # TODO(odow): cache the need to call set_objective. Only call it if the
-    # stage-objective changes.
-    set_objective(graph, node)
+    # Only call it if the stage-objective changes.
+    if !node.stage_objective_set
+        set_objective(graph, node)
+    end
     JuMP.optimize!(node.subproblem)
     # Test for primal feasibility.
     primal_status = JuMP.primal_status(node.subproblem)
