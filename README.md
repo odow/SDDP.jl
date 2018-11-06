@@ -1,7 +1,8 @@
 # Kōkako.jl
 *\[kor-kah-co\]*
 
-__Note: this package is under active development. Things may change.__
+__Note: this package is under active development. Things may change. If you currently use 
+[SDDP.jl](https://github.com/odow/SDDP.jl), we recommend you keep using it.__
 
 Kōkako.jl is a Julia package for solving multistage stochastic optimization
 problems. It is very similar to the package [SDDP.jl](https://github.com/odow/SDDP.jl),
