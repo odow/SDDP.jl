@@ -85,7 +85,7 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[JuMP]]
 deps = ["Calculus", "Compat", "DataStructures", "ForwardDiff", "LinearAlgebra", "MathOptInterface", "NaNMath", "Printf", "Statistics"]
-git-tree-sha1 = "01ee7396112df3028af080d518ba78421e0062a1"
+git-tree-sha1 = "3e48d7d62bc4b46b0e40bba909564da445eb8d6a"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaOpt/JuMP.jl.git"
 uuid = "4076af6c-e467-56ae-b986-b466b2749572"
@@ -99,9 +99,9 @@ uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
 [[LinQuadOptInterface]]
 deps = ["Compat", "MathOptInterface"]
-path = "C:\\Users\\Oscar\\.julia\\dev\\LinQuadOptInterface"
+git-tree-sha1 = "c246e73894d2063ab0697be54ecbb122e604df19"
 uuid = "f8899e07-120b-5979-ab1d-7b97bb9e1a48"
-version = "0.4.1+"
+version = "0.4.1"
 
 [[LinearAlgebra]]
 deps = ["Libdl"]
