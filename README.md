@@ -29,7 +29,7 @@ If you use Kokako.jl, we ask that you please cite the following paper:
 ```
 @article{dowson_policy_graph,
 	title = {The policy graph decomposition of multistage stochastic optimization problems},
-	url = {},
+	url = {http://www.optimization-online.org/DB_HTML/2018/11/6914.html},
 	journal = {Optimization Online},
 	author = {Dowson, Oscar},
 	year = {2018}
