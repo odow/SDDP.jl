@@ -135,7 +135,7 @@ function get_outgoing_state(node::Node)
         # is a pretty large (×5) penalty associated with this check because it
         # typically requires a call to the solver. It is worth reducing
         # infeasibilities though.
-        outgoing_value = JuMP.result_value(state.out)
+        outgoing_value = JuMP.value(state.out)
         if JuMP.has_upper_bound(state.out)
             current_bound = JuMP.upper_bound(state.out)
             if current_bound < outgoing_value
@@ -162,7 +162,7 @@ function get_dual_variables(node::Node)
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
         ref = JuMP.FixRef(state.in)
-        values[name] = dual_sign * JuMP.result_dual(ref)
+        values[name] = dual_sign * JuMP.dual(ref)
     end
     return values
 end
@@ -178,10 +178,10 @@ function set_objective(graph::PolicyGraph{T}, node::Node{T}) where T
     )
 end
 
-# Internal function: overload for the case where JuMP.result_value fails on a
+# Internal function: overload for the case where JuMP.value fails on a
 # Real number.
 stage_objective_value(stage_objective::Real) = stage_objective
-stage_objective_value(stage_objective) = JuMP.result_value(stage_objective)
+stage_objective_value(stage_objective) = JuMP.value(stage_objective)
 
 # Internal function: solve the subproblem associated with node given the
 # incoming state variables state and realization of the stagewise-independent
@@ -598,7 +598,7 @@ function _simulate(graph::PolicyGraph,
         )
         # Loop through the primal variable values that the user wants.
         for variable in variables
-            store[variable] = JuMP.result_value(node.subproblem[variable])
+            store[variable] = JuMP.value(node.subproblem[variable])
         end
         # Loop through any custom recorders that the user provided.
         for (sym, foo) in custom_recorders
@@ -638,7 +638,7 @@ The sum of :stage_objective + :bellman_term will equal the objective value of
 the solved subproblem.
 
 In addition to the special keys, the dictionary will contain the result of
-`JuMP.result_value(subproblem[key])` for each `key` in `variables`. This is
+`JuMP.value(subproblem[key])` for each `key` in `variables`. This is
 useful to obtain the primal value of the state and control variables.
 
 For more complicated data, the `custom_recorders` keyword arguement can be used.
@@ -653,7 +653,7 @@ following:
 
     simulation_results = simulate(graph, number_replications=2;
         custom_recorders = Dict(
-            :constraint_dual = (sp) -> JuMP.result_dual(sp[:my_constraint])
+            :constraint_dual = (sp) -> JuMP.dual(sp[:my_constraint])
         )
     )
 

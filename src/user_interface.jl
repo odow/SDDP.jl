@@ -410,7 +410,7 @@ end
 #   x[2]_out
 #
 #   Assuming subproblem has been solved, and there exists a primal solution
-#   julia> x_values = JuMP.result_value.(x)
+#   julia> x_values = JuMP.value.(x)
 #   2-element Array{State{Float64},1}:
 #     State(0.0,1.0)
 #     State(1.2,3.0)
@@ -468,6 +468,6 @@ end
 
 JuMP.variable_type(model::JuMP.Model, ::Type{State}) = State
 
-function JuMP.result_value(state::State{JuMP.VariableRef})
-    return State(JuMP.result_value(state.in), JuMP.result_value(state.out))
+function JuMP.value(state::State{JuMP.VariableRef})
+    return State(JuMP.value(state.in), JuMP.value(state.out))
 end
