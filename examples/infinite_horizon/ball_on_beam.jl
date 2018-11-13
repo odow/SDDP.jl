@@ -1,23 +1,6 @@
 # This should kind of work, but it doesn't.
 using Kokako, Ipopt, Test
 
-function value(ex::JuMP.GenericQuadExpr{CoefType, VarType},
-               map::Function) where {CoefType, VarType}
-    # The return type of appling map to ::VarType.
-    MapVarType = Base.promote_op(map, VarType)
-    # Later, we're going to multiply two MapVarType together
-    MapVarType2 = Base.promote_op(*, MapVarType, MapVarType)
-    # We're also going to multiple a constant with ::MapVarType2
-    RetType = Base.promote_op(*, CoefType, MapVarType2)
-    ret = convert(RetType, map(ex.aff))
-    for (vars, coef) in ex.terms
-        ret += coef * map(vars.a) * map(vars.b)
-    end
-    return ret
-end
-
-JuMP.result_value(ex::JuMP.GenericQuadExpr) = value(ex, JuMP.result_value)
-
 function infinite_ball_on_beam()
     graph = Kokako.Graph(
         :root_node,
