@@ -1,14 +1,12 @@
-#  Copyright 2018, Oscar Dowson
+#  Copyright 2018, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#############################################################################
 
-#==
+#=
     An implementation of the QuickStart example from FAST
     https://github.com/leopoldcambier/FAST/tree/daea3d80a5ebb2c52f78670e34db56d53ca2e778/demo
-
-==#
+=#
 
 using Kokako, GLPK, Test
 

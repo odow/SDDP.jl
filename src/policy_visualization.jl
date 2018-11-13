@@ -1,3 +1,8 @@
+#  Copyright 2018, Oscar Dowson.
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 # Internal function: convert dataset (from Kokako.simulate) into a matrix where
 # the rows are quantiles, and the columns are stages.
 function publication_data(dataset::Vector{Vector{Dict{Symbol, Any}}},

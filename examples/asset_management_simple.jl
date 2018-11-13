@@ -1,16 +1,15 @@
-#  Copyright 2018, Oscar Dowson
+#  Copyright 2018, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#############################################################################
 
-#==
+#=
 The Asset Management problem taken from
 
     J. R. Birge,  F. Louveaux,  Introduction to Stochastic Programming,
     Springer Series in Operations Research and Financial Engineering,
     Springer New York, New York, NY, 2011
-==#
+=#
 
 using Kokako, GLPK, Test
 

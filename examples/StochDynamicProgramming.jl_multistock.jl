@@ -1,9 +1,9 @@
-#==
-#  Copyright 2018, Oscar Dowson
+#  Copyright 2018, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#=
     This example comes from github.com/JuliaOpt/StochDynamicProgramming.jl/tree/
         f68b9da541c2f811ce24fc76f6065803a0715c2f/examples/multistock-example.jl
 
@@ -16,7 +16,7 @@
          u_min <= u_t <= u_max
          u_t choosen knowing xi_1 .. xi_t
 
-==##############################################################################
+=#
 
 using Kokako, GLPK, Test
 
