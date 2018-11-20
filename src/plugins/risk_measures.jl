@@ -233,15 +233,25 @@ Note: the largest radius that will work with S scenarios is sqrt((S-1)/S).
 =#
 
 """
-    ModifiedChiSquared(radius::Float64)
+    ModifiedChiSquared(radius::Float64; minimum_std=1e-5)
 
 The distributionally robust SDDP risk measure of
-
 Philpott, A., de Matos, V., Kapelevich, L. Distributionally robust SDDP.
 Computational Management Science (2018) 165:431-454.
+
+If the uncorrected standard deviation of the objecive realizations is less than
+`minimum_std`, then the risk-measure will default to `Expectation()`.
 """
 struct ModifiedChiSquared <: AbstractRiskMeasure
     radius::Float64
+    minimum_std::Float64
+    function ModifiedChiSquared(radius::Float64; minimum_std::Float64=1e-5)
+        if abs(radius) < 1e-9
+            @warn("Radius is very small. You should probably use " *
+                  "`SDDP.Expectation()` instead.")
+        end
+        return new(radius, minimum_std)
+    end
 end
 
 function adjust_probability(measure::ModifiedChiSquared,
@@ -250,10 +260,7 @@ function adjust_probability(measure::ModifiedChiSquared,
                             noise_support::Vector,
                             objective_realizations::Vector{Float64},
                             is_minimization::Bool)
-    if abs(measure.radius) < 1e-9 ||
-            Statistics.std(objective_realizations, corrected=false) < 1e-9
-        # Don't do any reweighting if the radius is small or the variance is too
-        # low. Use Expectation instead.
+    if Statistics.std(objective_realizations, corrected=false) < measure.minimum_std
         return adjust_probability(
            Expectation(), risk_adjusted_probability, original_probability,
            noise_support, objective_realizations, is_minimization)
@@ -305,11 +312,17 @@ function uniform_dro(
     @inbounds for k in 0:m-2
         # Step (1a):
         z_bar = sum(z[i] for i in (k+1):m) / (m - k)
-        s = sqrt(sum(z[i]^2 - z_bar^2 for i in (k+1):m) / (m - k))
+        s² = sum(z[i]^2 - z_bar^2 for i in (k+1):m) / (m - k)
+        # Due to numerical error, s² may sometimes be a little bit negative.
+        if s² < -1e-8
+            error("Something unexpected happened with s² term: `$(s²) < 0.0`.")
+        elseif s² <= 0.0
+            error("`s²<0`: choose a larger threshold for `minimum_std`.")
+        end
         # Step (1b): note that we cache a couple of terms that don't depend on i
         #            to speed things up.
         term_1 = 1 / (m - k)
-        term_2 = sqrt((m - k) * measure.radius^2 - k / m) / ((m - k) * s)
+        term_2 = sqrt((m - k) * measure.radius^2 - k / m) / ((m - k) * sqrt(s²))
         # We really should set p[i] = 0 for i = 1, ..., k. But since we don't
         # touch p[k-1] again, we can just set the k'th element to 0.
         if k > 0

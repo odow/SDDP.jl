@@ -4,6 +4,7 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using SDDP, Test, JSON, Gurobi, Plots
+using Profile, ProfileView, Random
 
 """
     infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
@@ -12,8 +13,9 @@ using SDDP, Test, JSON, Gurobi, Plots
 Create an instance of the infinite horizon POWDER model. If `stocking_rate =
 NaN`, we use the value from the file `data_filename`.
 """
-function infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
-                         data_filename = "powder_data.json")
+function infinite_powder(;
+        discount_factor = 0.75, stocking_rate::Float64 = NaN,
+        data_filename = "powder_data.json")
     data = JSON.parsefile(joinpath(@__DIR__, data_filename))
     # Allow over-ride of the stocking rate contained in data.
     if !isnan(stocking_rate)
@@ -26,7 +28,7 @@ function infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
             transition,
             convert(
                 Array{Float64, 2},
-                reshape(
+                Base.reshape(
                     vcat(transition_matrix...),
                     length(transition_matrix[1]),
                     length(transition_matrix)
@@ -222,22 +224,6 @@ function visualize_policy(model, filename)
             xlabel = " ",
             title = "(c)",
             xticks = xticks),
-        # SDDP.publicationplot(simulations,
-        #     data -> data[:grass_growth],
-        #     ylabel = "Grass Growth (kg/day)",
-        #     title = "(d)",
-        #     xticks = xticks),
-        # SDDP.publicationplot(simulations,
-        #     data -> data[:supplement],
-        #     ylabel = "Palm Kernel Fed (kg/cow/day)",
-        #     title = "(e)",
-        #     xticks = xticks),
-        # SDDP.publicationplot(simulations,
-        #     data -> data[:weekly_milk_production],
-        #     ylabel = "Milk Production (kg/day)",
-        #     title = "(f)",
-        #     xticks = xticks),
-
         layout = (1, 3),
         size = (1500, 300)
     )
@@ -271,18 +257,30 @@ function estimate_statistical_bound(model, filename)
     end
 end
 
-# The experiments can be run by calling `julia powder.jl run`.
-if length(ARGS) > 0 && ARGS[1] == "run"
-    # Import Random for seed!
-    using Random
+function profile_powder()
+    # Force compilation.
     model = infinite_powder(discount_factor = 0.75, stocking_rate = 3.0)
-    for loop in 1:5
-        Random.seed!(123 * loop)
-        SDDP.train(model, iteration_limit = 100, print_level = 1,
-            log_file = "powder_$(loop).log")
-        Random.seed!(456 * loop)
-        visualize_policy(model, "powder_visualization_$(loop)")
-        Random.seed!(456 * loop)
-        estimate_statistical_bound(model, "powder_bound_$(loop)")
+    Profile.clear()
+    @profile SDDP.train(model, iteration_limit = 1, print_level = 0)
+
+    model = infinite_powder(discount_factor = 0.75, stocking_rate = 3.0)
+    Profile.clear()
+    @profile SDDP.train(model, iteration_limit = 50, print_level = 0)
+    ProfileView.view()
+end
+
+# The experiments can be run by calling `julia powder.jl run`.
+if length(ARGS) > 0
+    if ARGS[1] == "run"
+        model = infinite_powder(discount_factor = 0.75, stocking_rate = 3.0)
+        for loop in 1:5
+            Random.seed!(123 * loop)
+            SDDP.train(model, iteration_limit = 100, print_level = 1,
+                log_file = "powder_$(loop).log")
+            Random.seed!(456 * loop)
+            visualize_policy(model, "powder_visualization_$(loop)")
+            Random.seed!(456 * loop)
+            estimate_statistical_bound(model, "powder_bound_$(loop)")
+        end
     end
 end
