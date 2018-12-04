@@ -72,8 +72,16 @@ function addconstraintnoise!(sp, x, realizations)
     push!(sp.ext[:changes][3], c2.idx)
     push!(sp.ext[:changes][4],  0.0)
     # set solvehook if not already
-    if sp.solvehook == nothing
+    if sp.solvehook === nothing
         function our_solve_hook(sp; kwargs...)
+            if JuMP.internalmodel(sp) === nothing
+                # Prior to our first solve, we have to attach the solver. We do
+                # this here as opposed to outside the solvehook (e.g., when we
+                # call setsolvehook) because we need to wait for the
+                # asynchronous code to copy the model across without a solver
+                # attached. Yuck.
+                JuMP.build(sp)
+            end
             rows = sp.ext[:changes][1]::Vector{Int}
             cols = sp.ext[:changes][2]::Vector{Int}
             noise_terms = sp.ext[:changes][4]
@@ -85,7 +93,6 @@ function addconstraintnoise!(sp, x, realizations)
             solve(sp, ignore_solve_hook=true)
         end
         JuMP.setsolvehook(sp, our_solve_hook)
-        JuMP.build(sp)
     end
     # return the anonymous variable that is `noise * x`
     return noise_state

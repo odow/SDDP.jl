@@ -129,10 +129,15 @@ with the exception of `:objective` which is just
     mean(r[:objective] for r in results) # mean objective of the simulations
     results[2][:x][3] # value of :x in stage 3 in second simulation
 """
-function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[])
-    wp = CachingPool(workers())
-    let m=m
-        pmap(wp, (i) -> randomsimulation(m, variables), 1:N)
+function simulate(m::SDDPModel, N::Int, variables::Vector{Symbol}=Symbol[];
+        asynchronous::Bool = true)
+    if asynchronous
+        wp = CachingPool(workers())
+        let m = m
+            return pmap(wp, (i) -> randomsimulation(m, variables), 1:N)
+        end
+    else
+        return map(i -> randomsimulation(m, variables), 1:N)
     end
 end
 
