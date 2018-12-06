@@ -9,32 +9,10 @@
 
 <head>
     <style>
-        body {
-            font: 20px Arial;
-        }
-
-        .title {
-            font-size: 22px;
-        }
-
-        .axislabel {
-            font-size: 22px;
-            text-anchor: middle;
-        }
-
-        .axis {
-            font-size: 22px;
-        }
-
-        .axis path,
-        .axis line {
+        .axis path {
             fill: none;
             stroke: #000;
             shape-rendering: crispEdges;
-        }
-
-        .x.axis path {
-            display: none;
         }
 
         .line {
@@ -42,18 +20,6 @@
             stroke: #8D9091;
             stroke-width: 2px;
             opacity: 0.1;
-        }
-
-        .bar {
-            fill: #00467F;
-            opacity: 0.5;
-        }
-
-        .vertline {
-            stroke-width: 2;
-            stroke: #00467F;
-            fill: none;
-            opacity: 0.5;
         }
     </style>
 </head>
@@ -63,7 +29,7 @@
     <script src="d3.v3.min.js" charset="utf-8"></script>
     <script src="spaghetti_plot.js"></script>
     <script>
-        runmain( <!--DATA-->);
+        main( <!--DATA-->);
     </script>
 
 </body>
