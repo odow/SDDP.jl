@@ -29,6 +29,8 @@ include("print.jl")
 # The core SDDP code.
 include("sddp.jl")
 
-include("policy_visualization.jl")
+# Visualization related code.
+include("visualization/publication_plot.jl")
+include("visualization/spaghetti_plot.jl")
 
 end

@@ -1,0 +1,71 @@
+<!--
+    Copyright 2018, Oscar Dowson.
+    This Source Code Form is subject to the terms of the Mozilla Public License,
+    v. 2.0. If a copy of the MPL was not distributed with this file, You can
+    obtain one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <style>
+        body {
+            font: 20px Arial;
+        }
+
+        .title {
+            font-size: 22px;
+        }
+
+        .axislabel {
+            font-size: 22px;
+            text-anchor: middle;
+        }
+
+        .axis {
+            font-size: 22px;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .x.axis path {
+            display: none;
+        }
+
+        .line {
+            fill: none;
+            stroke: #8D9091;
+            stroke-width: 2px;
+            opacity: 0.1;
+        }
+
+        .bar {
+            fill: #00467F;
+            opacity: 0.5;
+        }
+
+        .vertline {
+            stroke-width: 2;
+            stroke: #00467F;
+            fill: none;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="plots"></div>
+    <script src="d3.v3.min.js" charset="utf-8"></script>
+    <script src="spaghetti_plot.js"></script>
+    <script>
+        runmain( <!--DATA-->);
+    </script>
+
+</body>
+
+</html>
