@@ -10,7 +10,8 @@ using Kokako, Test, Random
                  "plugins/sampling_schemes.jl",
                  "plugins/stopping_rules.jl",
                  "sddp.jl",
-                 "user_interface.jl"]
+                 "user_interface.jl",
+                 "visualization.jl"]
         @testset "$(file)" begin
             include(file)
         end

@@ -10,7 +10,7 @@ Reexport.@reexport using JuMP
 
 const MOI = JuMP.MOI
 
-import Printf, RecipesBase, TimerOutputs, Statistics
+import JSON, Printf, RecipesBase, TimerOutputs, Statistics
 
 export @stageobjective
 
@@ -29,6 +29,8 @@ include("print.jl")
 # The core SDDP code.
 include("sddp.jl")
 
-include("policy_visualization.jl")
+# Visualization related code.
+include("visualization/publication_plot.jl")
+include("visualization/spaghetti_plot.jl")
 
 end
