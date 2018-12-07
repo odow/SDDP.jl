@@ -10,7 +10,7 @@ Reexport.@reexport using JuMP
 
 const MOI = JuMP.MOI
 
-import Printf, RecipesBase, TimerOutputs, Statistics
+import JSON, Printf, RecipesBase, TimerOutputs, Statistics
 
 export @stageobjective
 

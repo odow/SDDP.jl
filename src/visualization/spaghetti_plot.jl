@@ -16,21 +16,20 @@ const PLOT_DATA = Dict{String, Any}(
 	"ymax"        => ""
 )
 
+
+"""
+	Kokako.SpaghettiPlot(; stages, scenarios)
+
+Initialize a new `SpaghettiPlot` with `stages` stages and `scenarios` number of
+replications.
+"""
 struct SpaghettiPlot
 	stages::Int
 	scenarios::Int
 	data::Vector{Dict{String, Any}}
-end
-
-"""
-	Kokako.spaghetti_plot()
-
-# Description
-
-Initialize a new `SpaghettiPlot`.
-"""
-function spaghetti_plot(; stages, scenarios)
-	return SpaghettiPlot(stages, scenarios, Dict{String, Any}[])
+	function SpaghettiPlot(; stages, scenarios)
+		return new(stages, scenarios, Dict{String, Any}[])
+	end
 end
 
 """
@@ -92,22 +91,14 @@ function add_spaghetti(data_function::Function, plt::SpaghettiPlot;
 end
 
 """
-	show(plt::SpaghettiPlot)
+	show(plt::SpaghettiPlot[, filename::String])
 
-Launch a browser and render the SpaghettiPlot plot `p`.
+Launch a browser and render the SpaghettiPlot plot `plt`. If `filename` is
+given, save the resulting HTML file to `filename`.
 """
-function Base.show(plt::SpaghettiPlot)
-	Base.show(joinpath(tempdir(), string(Random.randstring(), ".html")), plt)
-end
-
-"""
-	show(filename::String, plt::SpaghettiPlot)
-
-Launch a browser and render the SpaghettiPlot plot `plt`. Save the resulting
-HTML file to `filename`.
-"""
-function Base.show(filename::String, plt::SpaghettiPlot)
-	launch_file(prep_html(plt), SIMULATION_ASSETS, filename)
+function Base.show(plt::SpaghettiPlot, filename::String =
+		joinpath(tempdir(), string(Random.randstring(), ".html")))
+	return launch_file(prep_html(plt), SIMULATION_ASSETS, filename)
 end
 
 function prep_html(plt::SpaghettiPlot)
