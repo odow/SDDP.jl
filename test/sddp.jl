@@ -17,17 +17,18 @@ using Kokako, Test, GLPK
             JuMP.set_upper_bound(x.out, ω)
         end
     end
-    scenario_path, sampled_states, cumulative_value = Kokako.forward_pass(
-        model,
-        Kokako.Options(
+    scenario_path, sampled_states, objective_states, cumulative_value =
+        Kokako.forward_pass(
             model,
-            Dict(:x => 1.0),
-            Kokako.InSampleMonteCarlo(),
-            Kokako.Expectation(),
-            0.0,
-            true
+            Kokako.Options(
+                model,
+                Dict(:x => 1.0),
+                Kokako.InSampleMonteCarlo(),
+                Kokako.Expectation(),
+                0.0,
+                true
+            )
         )
-    )
     simulated_value = 0.0
     for ((node_index, noise), state) in zip(scenario_path, sampled_states)
         @test state[:x] == noise

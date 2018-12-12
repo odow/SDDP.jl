@@ -156,6 +156,15 @@ struct State{T}
     out::T
 end
 
+mutable struct ObjectiveState{N}
+    update::Function
+    initial_value::NTuple{N, Float64}
+    state::NTuple{N, Float64}
+    lower_bound::NTuple{N, Float64}
+    upper_bound::NTuple{N, Float64}
+    μ::NTuple{N, JuMP.VariableRef}
+end
+
 mutable struct Node{T}
     # The index of the node in the policy graph.
     index::T
@@ -175,6 +184,8 @@ mutable struct Node{T}
     stage_objective_set::Bool
     # Bellman function
     bellman_function  # TODO(odow): make this a concrete type?
+    # For dynamic interpolation of objective states.
+    objective_state::Union{Nothing, ObjectiveState}
 end
 
 struct PolicyGraph{T}
@@ -196,6 +207,10 @@ struct PolicyGraph{T}
         end
         new{T}(optimization_sense, Noise{T}[], Dict{Symbol, Float64}(), Dict{T, Node{T}}())
     end
+end
+
+function Base.show(io::IO, graph::PolicyGraph)
+    println(io, "A policy graph with $(length(graph.nodes)) nodes.")
 end
 
 # So we can query nodes in the graph as graph[node].
@@ -281,6 +296,8 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             # Delay initializing the bellman function until later so that it can
             # use information about the children and number of
             # stagewise-independent noise realizations.
+            nothing,
+            # Likewise for the objective states.
             nothing
 
         )
@@ -475,4 +492,84 @@ JuMP.variable_type(model::JuMP.Model, ::Type{State}) = State
 
 function JuMP.value(state::State{JuMP.VariableRef})
     return State(JuMP.value(state.in), JuMP.value(state.out))
+end
+
+# ==============================================================================
+
+"""
+    add_objective_state(update::Function, subproblem::JuMP.Model; kwargs...)
+
+Add an objective state variable to `subproblem`. Required `kwargs` are:
+ - `initial_value`: The initial value of the objective state variable at the
+    root node.
+ - `lower_bound`: A valid lower bound for the objective state variable. Can be
+    `-Inf`.
+ - `upper_bound`: A valid upper bound for the objective state variable. Can be
+    `+Inf`.
+ - `lipschitz`: The lipschitz constant of the objective state variable.
+
+If the objective state is one-dimensional, each keyword argument can either be a
+`Float64` or a tuple with length 1. For example `initial_value = 0.0` or
+`initial_value = (0.0,)`.
+
+If the objective state is `N`-dimensional, each keyword argument must be an
+`NTuple{N, Float64}`. For example, `initial_value = (0.0, 1.0)`.
+"""
+function add_objective_state(update::Function, subproblem::JuMP.Model;
+                             initial_value, lower_bound, upper_bound, lipschitz)
+    return add_objective_state(update, subproblem, initial_value, lower_bound,
+        upper_bound, lipschitz)
+end
+
+# Internal function: add_objective_state with positional Float64 arguments.
+function add_objective_state(update::Function, subproblem::JuMP.Model,
+                             initial_value::Float64, lower_bound::Float64,
+                             upper_bound::Float64, lipschitz::Float64)
+    return add_objective_state(update, subproblem, (initial_value,),
+        (lower_bound,), (upper_bound,), (lipschitz,))
+end
+
+# Internal function: add_objective_state with positional NTuple arguments.
+function add_objective_state(update::Function, subproblem::JuMP.Model,
+                             initial_value::NTuple{N, Float64},
+                             lower_bound::NTuple{N, Float64},
+                             upper_bound::NTuple{N, Float64},
+                             lipschitz::NTuple{N, Float64}) where {N}
+    node = get_node(subproblem)
+    if node.objective_state !== nothing
+        error("Can only add one objective state :(")
+    end
+    μ = @variable(subproblem, [i = 1:N],
+        lower_bound = -lipschitz[i], upper_bound = lipschitz[i])
+    node.objective_state = ObjectiveState(update, initial_value, initial_value,
+        lower_bound, upper_bound, tuple(μ...))
+    return
+end
+
+"""
+    objective_state(subproblem::JuMP.Model)
+"""
+function objective_state(subproblem::JuMP.Model)
+    objective_state = get_node(subproblem).objective_state
+    if objective_state !== nothing
+        if length(objective_state.state) == 1
+            return objective_state.state[1]
+        else
+            return objective_state.state
+        end
+    else
+        error("No objective state defined.")
+    end
+end
+
+# Internal function: calculate <y, μ>.
+function get_objective_state_component(node::Node)
+    objective_state_component = JuMP.AffExpr(0.0)
+    objective_state = node.objective_state
+    if objective_state !== nothing
+        for (y, μ) in zip(objective_state.state, objective_state.μ)
+            objective_state_component += y * μ
+        end
+    end
+    return objective_state_component
 end

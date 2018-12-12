@@ -19,6 +19,8 @@ using Kokako, Test, Random
 end
 
 const EXAMPLES = [
+    "biobjective_hydro.jl",
+    "objective_state_newsvendor.jl",
     "agriculture_mccardle_farm.jl",
     "asset_management_simple.jl",
     "FAST_hydro_thermal.jl",
