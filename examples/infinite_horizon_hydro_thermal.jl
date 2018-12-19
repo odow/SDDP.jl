@@ -39,7 +39,7 @@ function infinite_hydro_thermal()
             JuMP.fix(demand, ω.demand)
         end
     end
-    Kokako.train(model, print_level = 1, time_limit = 2.0)
+    Kokako.train(model, time_limit = 2.0)
     @test Kokako.calculate_bound(model) ≈ 119.167 atol = 0.1
 
     results = Kokako.simulate(model, 500)
@@ -49,7 +49,7 @@ function infinite_hydro_thermal()
     sample_mean = round(Statistics.mean(objectives); digits = 2)
     sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
     println("Confidence_interval = $(sample_mean) ± $(sample_ci)")
-    @test sample_mean ≈ 119.167 atol = 5.0
+    @test sample_mean - sample_ci <= 119.167 <= sample_mean + sample_ci
 end
 
 infinite_hydro_thermal()

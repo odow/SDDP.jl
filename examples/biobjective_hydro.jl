@@ -45,7 +45,7 @@ function biobjective_hydro()
             @stageobjective(subproblem, λ * objective_1 + (1 - λ) * objective_2)
         end
     end
-    Kokako.train(model, iteration_limit = 100, print_level = 1)
+    Kokako.train(model, iteration_limit = 50)
 
     results = Kokako.simulate(model, 500)
     objectives = [
