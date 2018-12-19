@@ -41,7 +41,18 @@ end
 # ========================= Statistical Stopping Rule ======================== #
 
 """
-    Statistical(;num_replications[], iteration_period = 1, z_score = 1.96 verbose = true])
+    Statistical(; num_replications, iteration_period = 1, z_score = 1.96,
+                verbose = true)
+
+Perform an in-sample Monte Carlo simulation of the policy with
+`num_replications` replications every `iteration_period`s. Terminate if the
+deterministic bound (lower if minimizing) calls into the confidence interval for
+the mean of the simulated cost. If `verbose = true`, print the confidence
+interval.
+
+Note that this tests assumes that the simulated values are normally distributed.
+In infinite horizon models, this is almost never the case. The distribution is
+usually closer to exponential or log-normal.
 """
 struct Statistical <: AbstractStoppingRule
     num_replications::Int
@@ -56,7 +67,12 @@ end
 
 stopping_rule_status(::Statistical) = :statistical
 
-function convergence_test(graph::PolicyGraph, log::Vector{Log}, rule::Statistical)
+function convergence_test(graph::PolicyGraph, log::Vector{Log},
+                          rule::Statistical)
+    if length(log) % rule.iteration_period != 0
+        # Only run this convergence test every rule.iteration_period iterations.
+        return false
+    end
     results = simulate(graph, rule.num_replications)
     objectives = map(
         simulation -> sum(s[:stage_objective] for s in simulation), results)

@@ -18,7 +18,6 @@ const PLOT_DATA = Dict{String, Any}(
 	"ymax"        => ""
 )
 
-
 """
 	Kokako.SpaghettiPlot(; stages, scenarios)
 
