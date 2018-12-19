@@ -1,50 +1,15 @@
 #  Copyright 2018, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-"""
-    AbstractStoppingRule
-
-The abstract type for the stopping-rule interface.
-
-You need to define the following methods:
- - Kokako.stopping_rule_status
- - Kokako.convergence_test
-"""
-abstract type AbstractStoppingRule end
-
-struct Log
-    iteration::Int
-    bound::Float64
-    simulation_value::Float64
-    time::Float64
-end
-
-function stopping_rule_status(stopping_rule::AbstractStoppingRule)
-    error("You need to overload the function Kokako.stopping_rule_status for " *
-          "the stopping rule (stopping_rule).")
-end
-
-function convergence_test(
-    graph::PolicyGraph, log::Vector{Log}, stopping_rule::AbstractStoppingRule)
-    error("You need to overload the function Kokako.convergence_test for the " *
-          "stopping rule (stopping_rule).")
-end
-
-function convergence_test(graph::PolicyGraph,
-                          log::Vector{Log},
-                          stopping_rules::Vector{AbstractStoppingRule})
-    for stopping_rule in stopping_rules
-        if convergence_test(graph, log, stopping_rule)
-            return true, stopping_rule_status(stopping_rule)
-        end
-    end
-    return false, :not_solved
-end
+#  This Source Code Form is subject to the terms of the Mozilla Public License,
+#  v. 2.0. If a copy of the MPL was not distributed with this file, You can
+#  obtain one at http://mozilla.org/MPL/2.0/.
 
 # ======================= Iteration Limit Stopping Rule ====================== #
 
+"""
+    IterationLimit(limit::Int)
+
+Teriminate the algorithm after `limit` number of iterations.
+"""
 mutable struct IterationLimit <: AbstractStoppingRule
     limit::Int
 end
@@ -58,6 +23,11 @@ end
 
 # ========================= Time Limit Stopping Rule ========================= #
 
+"""
+    TimeLimit(limit::Float64)
+
+Teriminate the algorithm after `limit` seconds of computation.
+"""
 mutable struct TimeLimit <: AbstractStoppingRule
     limit::Float64
 end
@@ -70,17 +40,46 @@ end
 
 # ========================= Statistical Stopping Rule ======================== #
 
-# struct Statistical <: AbstractStoppingRule
-    # number_replications::Int
-# end
-#
-# stopping_rule_status(::Statistical) = :statistical
-# function convergence_test(graph, ::Statistical)
-#
-# end
+"""
+    Statistical(;num_replications[], iteration_period = 1, z_score = 1.96 verbose = true])
+"""
+struct Statistical <: AbstractStoppingRule
+    num_replications::Int
+    iteration_period::Int
+    z_score::Float64
+    verbose::Bool
+    function Statistical(; num_replications, iteration_period = 1,
+                         z_score = 1.96, verbose = true)
+        return new(num_replications, iteration_period, z_score, verbose)
+    end
+end
+
+stopping_rule_status(::Statistical) = :statistical
+
+function convergence_test(graph::PolicyGraph, log::Vector{Log}, rule::Statistical)
+    results = simulate(graph, rule.num_replications)
+    objectives = map(
+        simulation -> sum(s[:stage_objective] for s in simulation), results)
+    sample_mean = Statistics.mean(objectives)
+    sample_ci = rule.z_score * Statistics.std(objectives) / sqrt(rule.num_replications)
+    if rule.verbose
+        println("Simulated policy value: [" *
+                "$(humanize(sample_mean - sample_ci)), " *
+                "$(humanize(sample_mean + sample_ci))]")
+    end
+    current_bound = log[end].bound
+    return sample_mean - sample_ci  <= current_bound <= sample_mean + sample_ci
+end
 
 # ======================= Bound-stalling Stopping Rule ======================= #
 
+"""
+    BoundStalling(num_previous_iterations::Int, tolerance::Float64)
+
+Teriminate the algorithm once the deterministic bound (lower if minimizing,
+upper if maximizing) fails to improve by more than `tolerance` in absolute terms
+for more than `num_previous_iterations` consecutve iterations.
+"""
 struct BoundStalling <: AbstractStoppingRule
     num_previous_iterations::Int
     tolerance::Float64

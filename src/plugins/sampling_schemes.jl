@@ -3,36 +3,8 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""
-    AbstractSamplingScheme
 
-The abstract type for the sampling-scheme interface.
-
-You need to define the following methods:
- - Kokako.sample_scenario
-"""
-abstract type AbstractSamplingScheme end
-
-"""
-    sample_scenario(graph::PolicyGraph{T}, ::AbstractSamplingScheme) where T
-
-Sample a scenario from the policy graph `graph` based on the sampling scheme.
-
-Returns `::Tuple{Vector{Tuple{T, <:Any}}, Bool}`, where the first element is the
-scenario, and the second element is a Boolean flag indicating if the scenario
-was terminated due to the detection of a cycle.
-
-The scenario is a list of tuples (type `Vector{Tuple{T, <:Any}}`) where the
-first component of each tuple is the index of the node, and the second component
-is the stagewise-independent noise term observed in that node.
-"""
-function sample_scenario(graph::PolicyGraph{T},
-                         sampling_scheme::AbstractSamplingScheme) where T
-    error("You need to overload the function Kokako.sample_scenario for the " *
-          "sampling scheme (sampling_scheme).")
-end
-
-# ========================= Monte Carlo Sampling Scheme ========================
+# ========================= Monte Carlo Sampling Scheme ====================== #
 
 """
     InSampleMonteCarlo(;
@@ -134,7 +106,7 @@ function sample_scenario(graph::PolicyGraph{T},
     error("Internal Kokako error: something went wrong sampling a scenario.")
 end
 
-# ========================= Historical Sampling Scheme ========================
+# ========================= Historical Sampling Scheme ======================= #
 
 struct Historical{NodeIndex, NoiseTerm} <: AbstractSamplingScheme
     scenarios::Vector{Noise{Tuple{NodeIndex, NoiseTerm}}}

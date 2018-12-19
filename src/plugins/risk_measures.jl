@@ -1,29 +1,9 @@
 #  Copyright 2018, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  This Source Code Form is subject to the terms of the Mozilla Public License,
+#  v. 2.0. If a copy of the MPL was not distributed with this file, You can
+#  obtain one at http://mozilla.org/MPL/2.0/.
 
-"""
-    AbstractRiskMeasure
-
-The abstract type for the risk measure interface.
-
-You need to define the following methods:
- - Kokako.adjust_probability
-"""
-abstract type AbstractRiskMeasure end
-
-"""
-    adjust_probability(measure::Expectation
-                       risk_adjusted_probability::Vector{Float64},
-                       original_probability::Vector{Float64},
-                       noise_support::Vector{Noise{T}},
-                       objective_realizations::Vector{Float64},
-                       is_minimization::Bool) where T
-"""
-function adjust_probability end
-
-# ========================== The Expectation Operator ==========================
+# ========================== The Expectation Operator ======================== #
 
 struct Expectation <: AbstractRiskMeasure end
 
@@ -37,7 +17,7 @@ function adjust_probability(measure::Expectation,
     return
 end
 
-# ========================== The Worst Case Operator ===========================
+# ========================== The Worst Case Operator ========================= #
 
 struct WorstCase <: AbstractRiskMeasure end
 

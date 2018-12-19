@@ -8,6 +8,7 @@ using Kokako, Test
 @testset "InSampleMonteCarlo" begin
     @testset "Acyclic" begin
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
+                                   bellman_function = Kokako.AverageCut(),
                                    direct_mode=false) do node, stage
             @variable(node, 0 <= x <= 1)
             Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
@@ -28,7 +29,9 @@ using Kokako, Test
     @testset "Cyclic" begin
         graph = Kokako.LinearGraph(2)
         Kokako.add_edge(graph, 2=>1, 0.9)
-        model = Kokako.PolicyGraph(graph, direct_mode=false) do node, stage
+        model = Kokako.PolicyGraph(
+                graph, bellman_function = Kokako.AverageCut(),
+                direct_mode=false) do node, stage
             @variable(node, 0 <= x <= 1)
             Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
                 JuMP.set_upper_bound(x, ω)

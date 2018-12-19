@@ -274,7 +274,7 @@ Or, using the Julia `do ... end` syntax:
 """
 function PolicyGraph(builder::Function, graph::Graph{T};
                      sense = :Min,
-                     bellman_function = AverageCut(),
+                     bellman_function, # = AverageCut(),
                      optimizer = nothing,
                      direct_mode = true) where T
     policy_graph = PolicyGraph(T, sense)
