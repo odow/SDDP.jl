@@ -4,8 +4,10 @@
 #  obtain one at http://mozilla.org/MPL/2.0/.
 
 const ASSET_DIR = dirname(@__FILE__)
-const SIMULATION_HTML_FILE = "spaghetti_plot.html"
-const SIMULATION_ASSETS    = ["d3.v3.min.js", "spaghetti_plot.js"]
+const SPAGHETTI_HTML_FILE = joinpath(ASSET_DIR, "spaghetti_plot.html")
+const SPAGHETTI_JS_FILE = joinpath(ASSET_DIR, "spaghetti_plot.js")
+const D3_JS_FILE = joinpath(ASSET_DIR, "d3.v3.min.js")
+
 const PLOT_DATA = Dict{String, Any}(
 	"cumulative"  => false,
 	"title"       => "",
@@ -98,32 +100,33 @@ given, save the resulting HTML file to `filename`.
 """
 function Base.show(plt::SpaghettiPlot, filename::String =
 		joinpath(tempdir(), string(Random.randstring(), ".html")))
-	return launch_file(prep_html(plt), SIMULATION_ASSETS, filename)
+	prep_html(plt, filename)
+	return launch_file(filename)
 end
 
-function prep_html(plt::SpaghettiPlot)
-	html = read(joinpath(ASSET_DIR, SIMULATION_HTML_FILE), String)
-	html = replace(html, "<!--DATA-->" => JSON.json(plt.data))
-	return html
-end
-
-function launch_file(html_string, assets, output_file)
-    for asset in assets
-        cp(joinpath(ASSET_DIR, asset), joinpath(dirname(output_file), asset),
-			force = true)
-    end
-    open(output_file, "w") do io
+function prep_html(plt::SpaghettiPlot, filename::String)
+	html_string = read(SPAGHETTI_HTML_FILE, String)
+	for pair in ["<!--DATA-->" => JSON.json(plt.data),
+				 "<!--D3.JS-->" => read(D3_JS_FILE, String),
+				 "<!--SPAGHETTI_PLOT.JS-->" => read(SPAGHETTI_JS_FILE, String)]
+		html_string = replace(html_string, pair)
+	end
+	open(filename, "w") do io
         write(io, html_string)
     end
-	if Sys.iswindows()
-		run(`$(ENV["COMSPEC"]) /c start $(output_file)`)
+	return
+end
+
+function launch_file(filename)
+    if Sys.iswindows()
+		run(`$(ENV["COMSPEC"]) /c start $(filename)`)
 	elseif Sys.isapple()
-        run(`open $(output_file)`)
+        run(`open $(filename)`)
     elseif Sys.islinux() || Sys.isbsd()
-        run(`xdg-open $(output_file)`)
+        run(`xdg-open $(filename)`)
 	else
 		error("Unable to show spaghetti plot. Try opening the file " *
-		      "$(output_file) manually.")
+		      "$(filename) manually.")
     end
 	return
 end

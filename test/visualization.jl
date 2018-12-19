@@ -17,6 +17,7 @@ using Kokako, Test
     Kokako.add_spaghetti(plt, title = "y") do scenario, stage
         2 * simulations[scenario][:y][stage]
     end
-    html = Kokako.prep_html(plt)
-    @test html == String(read("visualization_example.html"))
+    Kokako.prep_html(plt, "test.html")
+    @test read("test.html", String) == read("control.html", String)
+    rm("test.html")
 end

@@ -3,7 +3,7 @@
 #  v. 2.0. If a copy of the MPL was not distributed with this file, You can
 #  obtain one at http://mozilla.org/MPL/2.0/.
 
-using Kokako, GLPK, Test
+using Kokako, GLPK, Random, Test
 
 @testset "TimeLimit" begin
     graph = Kokako.PolicyGraph(Kokako.LinearGraph(2),
@@ -45,6 +45,7 @@ end
     status, log = Kokako.train(model, iteration_limit = 1)
     rule = Kokako.Statistical(num_replications = 20)
     @test Kokako.stopping_rule_status(rule) == :statistical
+    Random.seed!(123)
     @test Kokako.convergence_test(model, [Kokako.Log(1, 6.0, 9.0, 1.0)], rule)
     @test !Kokako.convergence_test(model, [Kokako.Log(1, 0.0, 9.0, 1.0)], rule)
     @test !Kokako.convergence_test(model, [Kokako.Log(1, 12.0, 9.0, 1.0)], rule)
