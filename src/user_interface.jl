@@ -137,7 +137,7 @@ function MarkovianGraph(; stages::Int = 1,
                         transition_matrix::Matrix{Float64}=[1.0],
                         root_node_transition::Vector{Float64}=[1.0])
     return MarkovianGraph(
-        vcat([reshape(root_node_transition, 1, length(root_node_transition))],
+        vcat([Base.reshape(root_node_transition, 1, length(root_node_transition))],
              [transition_matrix for stage in 1:(stages - 1)])
     )
 end
@@ -189,7 +189,7 @@ mutable struct Node{T}
 end
 
 struct PolicyGraph{T}
-    # Must be MOI.MinSense or MOI.MaxSense
+    # Must be MOI.MIN_SENSE or MOI.MAX_SENSE
     objective_sense::MOI.OptimizationSense
     # Children of the root node. child => probability.
     root_children::Vector{Noise{T}}
@@ -199,9 +199,9 @@ struct PolicyGraph{T}
     nodes::Dict{T, Node{T}}
     function PolicyGraph(T, sense::Symbol)
         optimization_sense = if sense == :Min
-            MOI.MinSense
+            MOI.MIN_SENSE
         elseif sense == :Max
-            MOI.MaxSense
+            MOI.MAX_SENSE
         else
             error("The optimization sense must be :Min or :Max. It is $(sense).")
         end

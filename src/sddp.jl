@@ -165,7 +165,7 @@ end
 function get_dual_variables(node::Node)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
-    dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MinSense ? 1.0 : -1.0
+    dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
     values = Dict{Symbol, Float64}()
     for (name, state) in node.states
         ref = JuMP.FixRef(state.in)
@@ -216,7 +216,7 @@ function solve_subproblem(graph::PolicyGraph{T},
     JuMP.optimize!(node.subproblem)
     # Test for primal feasibility.
     primal_status = JuMP.primal_status(node.subproblem)
-    if primal_status != JuMP.MOI.FeasiblePoint
+    if primal_status != JuMP.MOI.FEASIBLE_POINT
         error("""Unable to solve node $(node.index).
             Termination status: $(JuMP.termination_status(node.subproblem))
             Primal status: $(primal_status)
@@ -229,7 +229,7 @@ function solve_subproblem(graph::PolicyGraph{T},
     # type-stability.
     dual_values = if require_duals
         dual_status = JuMP.dual_status(node.subproblem)
-        if dual_status != JuMP.MOI.FeasiblePoint
+        if dual_status != JuMP.MOI.FEASIBLE_POINT
             error("Unable to solve dual of node $(node.index). Dual status: " *
                   "$(dual_status).")
         end
@@ -336,7 +336,7 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
         # states for that node:
         starting_states = options.starting_states[final_node_index]
         # We also need the incoming state variable to the final node, which is
-        # the outgoing state value of the 2'nd to last node:
+        # the outgoing state value of the last node:
         incoming_state_value = sampled_states[end]
         # If this incoming state value is more than δ away from another state,
         # add it to the list.
@@ -507,7 +507,7 @@ function calculate_bound(graph::PolicyGraph,
                        probabilities,
                        noise_supports,
                        objectives,
-                       graph.objective_sense == MOI.MinSense)
+                       graph.objective_sense == MOI.MIN_SENSE)
     # Finally, calculate the risk-adjusted value.
     return sum(obj * prob for (obj, prob) in
         zip(objectives, risk_adjusted_probability))

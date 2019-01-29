@@ -8,8 +8,6 @@ module Kokako
 import Reexport
 Reexport.@reexport using JuMP
 
-const MOI = JuMP.MOI
-
 import JSON, Printf, Random, RecipesBase, TimerOutputs, Statistics
 
 export @stageobjective
