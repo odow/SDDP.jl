@@ -3,26 +3,16 @@ os:
     - linux
 julia:
     - 1.0
+    - 1.1
 branches:
   only:
     - master
-notifications:
-    email: false
-sudo: false
-addons:
-  apt_packages:
-    - gfortran
-after_success:
-  - if [[ $TRAVIS_JULIA_VERSION = 1.0 ]] && [[ $TRAVIS_OS_NAME = linux ]]; then
-      julia --project=test/coverage -e 'using Pkg; Pkg.instantiate();
-          Pkg.add("Coverage");
-          using Coverage; Codecov.submit(Codecov.process_folder())';
-    fi
-# jobs:
-#   include:
-#     - stage: "Documentation"
-#       julia: 1.0
-#       os: linux
-#       script:
-#         - julia --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.add(PackageSpec(path=pwd()))'
-#         - julia --project=docs --color=yes docs/make.jl
+codecov: false
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.add(PackageSpec(path=pwd()))'
+        - julia --project=docs --color=yes docs/make.jl

@@ -42,7 +42,7 @@ end
         end
         @stageobjective(node, x.out)
     end
-    status, log = Kokako.train(model, iteration_limit = 1)
+    Kokako.train(model, iteration_limit = 1)
     rule = Kokako.Statistical(num_replications = 20)
     @test Kokako.stopping_rule_status(rule) == :statistical
     Random.seed!(123)

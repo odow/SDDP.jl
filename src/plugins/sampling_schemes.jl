@@ -108,8 +108,8 @@ end
 
 # ========================= Historical Sampling Scheme ======================= #
 
-struct Historical{NodeIndex, NoiseTerm} <: AbstractSamplingScheme
-    scenarios::Vector{Noise{Tuple{NodeIndex, NoiseTerm}}}
+struct Historical{T, S} <: AbstractSamplingScheme
+    scenarios::Vector{Noise{Vector{Tuple{T, S}}}}
 end
 
 """
@@ -120,7 +120,7 @@ A sampling scheme that samples a scenario from the vector of scenarios
 `scenarios` according to `probability`. If probability omitted, defaults to
 uniform probability.
 
-# Example
+### Example
 
     Historical(
         [
@@ -131,19 +131,33 @@ uniform probability.
         [0.2, 0.5, 0.3]
     )
 """
-function Historical(scenarios::Vector{Vector{Tuple{NodeIndex, NoiseTerm}}},
+function Historical(scenarios::Vector{Vector{Tuple{T, S}}},
                     probability::Vector{Float64} =
                         fill(1.0 / length(scenarios), length(scenarios))
-                    ) where {NodeIndex, NoiseTerm}
+                    ) where {T, S}
     if sum(probability) != 1.0
         error("Probability of historical scenarios must sum to 1. Currently: " *
               "$(sum(probability)).")
     end
-    output = Noise{Vector{Tuple{NodeIndex, NoiseTerm}}}[]
+    output = Noise{Vector{Tuple{T, S}}}[]
     for (scenario, prob) in zip(scenarios, probability)
         push!(output, Noise(scenario, prob))
     end
     return Historical(output)
+end
+
+"""
+    Historical(scenario::Vector{Tuple{T, S}})
+
+A deterministic sampling scheme that always samples `scenario` with probability
+`1`.
+
+### Example
+
+    Historical([(1, 0.5), (2, 1.5), (3, 0.75)])
+"""
+function Historical(scenario::Vector{Tuple{T, S}}) where {T, S}
+    return Historical([scenario], [1.0])
 end
 
 function sample_scenario(graph::PolicyGraph{T},

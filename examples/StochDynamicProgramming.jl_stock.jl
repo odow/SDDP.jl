@@ -37,7 +37,7 @@ function stock_example()
         @stageobjective(sp, (sin(3 * stage) - 1) * control)
     end
 
-    status, log = Kokako.train(model, iteration_limit = 50, print_level = 0)
+    Kokako.train(model, iteration_limit = 50, print_level = 0)
     @test Kokako.calculate_bound(model) ≈ -1.471 atol=0.001
 
     simulation_results = Kokako.simulate(model, 1_000)

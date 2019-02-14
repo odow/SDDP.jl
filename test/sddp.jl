@@ -48,6 +48,6 @@ end
             JuMP.set_lower_bound(x.out, ω)
         end
     end
-    status, log = Kokako.train(model; iteration_limit = 4)
-    @test status == :iteration_limit
+    train_results = Kokako.train(model; iteration_limit = 4)
+    @test Kokako.termination_status(train_results) == :iteration_limit
 end

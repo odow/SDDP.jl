@@ -56,7 +56,7 @@ function test_prob52_2stages()
         return
     end
 
-    status, log = Kokako.train(model, iteration_limit = 50)
+    Kokako.train(model, iteration_limit = 50, print_level = 0)
     @test Kokako.calculate_bound(model) ≈ 340315.52 atol = 0.1
     # sim = simulate(mod, 1, [:x, :penalty])
     # @test length(sim) == 1

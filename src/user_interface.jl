@@ -188,7 +188,7 @@ mutable struct Node{T}
     objective_state::Union{Nothing, ObjectiveState}
 end
 
-struct PolicyGraph{T}
+mutable struct PolicyGraph{T}
     # Must be MOI.MIN_SENSE or MOI.MAX_SENSE
     objective_sense::MOI.OptimizationSense
     # Children of the root node. child => probability.
@@ -209,8 +209,17 @@ struct PolicyGraph{T}
     end
 end
 
+# Helper utilities to sort the nodes for printing. This helps linear and
+# Markovian policy graphs where the nodes might be stored in an unusual ordering
+# in the dictionary.
+sort_nodes(nodes::Vector{Int}) = sort!(nodes)
+sort_nodes(nodes::Vector{Tuple{Int, Int}}) = sort!(nodes)
+sort_nodes(nodes) = nodes
+
 function Base.show(io::IO, graph::PolicyGraph)
     println(io, "A policy graph with $(length(graph.nodes)) nodes.")
+    println(io, " Node indices: ",
+        join(sort_nodes(collect(keys(graph.nodes))), ", "))
 end
 
 # So we can query nodes in the graph as graph[node].
@@ -245,6 +254,34 @@ function construct_subproblem(optimizer_factory::Nothing, direct_mode::Bool)
 end
 
 """
+    LinearPolicyGraph(builder::Function; stages::Int, kwargs...)
+
+Create a linear policy graph with `stages` number of stages.
+
+See [`PolicyGraph`](@ref) for the other keyword arguments.
+"""
+function LinearPolicyGraph(builder::Function; stages::Int, kwargs...)
+    if stages < 1
+        error("You must create a LinearPolicyGraph with `stages >= 1`.")
+    end
+    return PolicyGraph(builder, LinearGraph(stages); kwargs...)
+end
+
+"""
+    MarkovianPolicyGraph(builder::Function;
+        transition_matrices::Vector{Array{Float64, 2}}, kwargs...)
+
+Create a Markovian policy graph based on the transition matrices given in
+`transition_matrices`.
+
+See [`PolicyGraph`](@ref) for the other keyword arguments.
+"""
+function MarkovianPolicyGraph(builder::Function;
+        transition_matrices::Vector{Array{Float64, 2}}, kwargs...)
+    return PolicyGraph(builder, MarkovianGraph(transition_matrices); kwargs...)
+end
+
+"""
     PolicyGraph(builder::Function, graph::Graph{T};
                 bellman_function = AverageCut,
                 optimizer = nothing,
@@ -274,10 +311,24 @@ Or, using the Julia `do ... end` syntax:
 """
 function PolicyGraph(builder::Function, graph::Graph{T};
                      sense = :Min,
-                     bellman_function, # = AverageCut(),
+                     bellman_function = nothing,
+                     lower_bound = -Inf,
+                     upper_bound = Inf,
                      optimizer = nothing,
                      direct_mode = true) where T
     policy_graph = PolicyGraph(T, sense)
+
+    # Create a Bellman function if one is not given.
+    if bellman_function === nothing
+        if lower_bound === -Inf && upper_bound === Inf
+            error("You must specify a bound on the objective value, through " *
+                  "`lower_bound` if minimizing, or `upper_bound` if maximizing.")
+        else
+            bellman_function = AverageCut(
+                lower_bound = lower_bound, upper_bound = upper_bound)
+        end
+    end
+
     # Initialize nodes.
     for (node_index, children) in graph.nodes
         if node_index == graph.root_node
@@ -394,6 +445,15 @@ function set_stage_objective(subproblem::JuMP.Model, stage_objective)
     return
 end
 
+"""
+    @stageobjective(subproblem, expr)
+
+Set the stage-objective of `subproblem` to `expr`.
+
+### Example
+
+    @stageobjective(subproblem, 2x + y)
+"""
 macro stageobjective(subproblem, expr)
     code = quote
         set_stage_objective(

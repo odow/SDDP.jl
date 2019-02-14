@@ -19,7 +19,7 @@ function infinite_trivial()
         @constraint(subproblem, state.in == state.out)
         @stageobjective(subproblem, 2.0)
     end
-    Kokako.train(model, iteration_limit = 100)
+    Kokako.train(model, iteration_limit = 100, print_level = 0)
     @test Kokako.calculate_bound(model) ≈ 2.0 / (1 - 0.9) atol = 1e-3
 end
 

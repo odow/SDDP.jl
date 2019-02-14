@@ -60,7 +60,7 @@ function newsvendor_example()
 end
 
 model = newsvendor_example()
-Kokako.train(model, iteration_limit = 100)
+Kokako.train(model, iteration_limit = 100, print_level = 0)
 
 results = Kokako.simulate(model, 500)
 objectives = [
