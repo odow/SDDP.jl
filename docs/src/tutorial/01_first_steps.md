@@ -1,8 +1,9 @@
 # Tutorial One: first steps
 
 Hydrothermal scheduling is the most common application of stochastic dual
-dynamic programming. To illustrate some of the basic functionality of Kokako.jl,
-we implement a very simple model of the hydrothermal scheduling problem.
+dynamic programming. To illustrate some of the basic functionality of
+`Kōkako.jl`, we implement a very simple model of the hydrothermal scheduling
+problem.
 
 We consider the problem of scheduling electrical generation over three time
 periods in order to meet a known demand of 150 MWh in each period.
