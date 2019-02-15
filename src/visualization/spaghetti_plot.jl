@@ -33,6 +33,11 @@ struct SpaghettiPlot
 	end
 end
 
+function Base.show(io::IO, plt::SpaghettiPlot)
+	print(io, "A spaghetti plot with ", plt.stages, " stages and ",
+		  plt.scenarios, " scenarios.")
+end
+
 """
 	Kokako.add_spaghetti(data_function::Function, plt::SpaghettiPlot; kwargs...)
 
@@ -59,7 +64,7 @@ Add a new figure to the SpaghettiPlot `plt`, where the y-value is given by
 	simulations = simulate(model, 10)
 	plt = Kokako.spaghetti_plot(stages = 10, scenarios = 10)
 	Kokako.add_spaghetti(plt; title = "Stage objective") do scenario, stage
-		return simulations[scenario][stage][:stageobjective]
+		return simulations[scenario][stage][:stage_objective]
 	end
 """
 function add_spaghetti(data_function::Function, plt::SpaghettiPlot;
@@ -92,15 +97,20 @@ function add_spaghetti(data_function::Function, plt::SpaghettiPlot;
 end
 
 """
-	show(plt::SpaghettiPlot[, filename::String])
+	save(plt::SpaghettiPlot[, filename::String]; open::Bool = true)
 
-Launch a browser and render the SpaghettiPlot plot `plt`. If `filename` is
-given, save the resulting HTML file to `filename`.
+The SpaghettiPlot plot `plt` to `filename`. If `filename` is not given, it will
+be saved to a temporary directory. If `open = true`, then a browser window will
+be opened to display the resulting HTML file.
 """
-function Base.show(plt::SpaghettiPlot, filename::String =
-		joinpath(tempdir(), string(Random.randstring(), ".html")))
+function save(plt::SpaghettiPlot,
+			  filename::String = joinpath(tempdir(), string(Random.randstring(), ".html"));
+			  open::Bool = true)
 	prep_html(plt, filename)
-	return launch_file(filename)
+	if open
+		launch_file(filename)
+	end
+	return
 end
 
 function prep_html(plt::SpaghettiPlot, filename::String)

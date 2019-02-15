@@ -1,4 +1,4 @@
-# Tutorial One: first steps
+# Basics I: first steps
 
 Hydrothermal scheduling is the most common application of stochastic dual
 dynamic programming. To illustrate some of the basic functionality of
@@ -188,9 +188,18 @@ gives the incoming value of the state variable in the first stage.
 
 #### Defining the stage-objective
 
+In a JuMP model, we can set the objective using `@objective`. For example:
 ```julia
 @objective(subproblem, Min, fuel_cost[t] * thermal_generation)
 ```
+
+Since we only need to define the objective for each stage, rather than the
+whole problem, we use the Kokako-provided [`@stageobjective`](@ref).
+```julia
+@stageobjective(subproblem, fuel_cost[t] * thermal_generation)
+```
+Note that we don't have to specify the optimization sense (`Max` of `Min`) since
+this is done via the `sense` keyword argument of [`Kokako.LinearPolicyGraph`](@ref).
 
 ## Training a Kokako policy
 
@@ -210,7 +219,7 @@ println("Termination status is: ", Kokako.termination_status(training_results))
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                         Kokako - © Oscar Dowson, 2018.
+                        Kokako - © Oscar Dowson, 2018-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -280,5 +289,5 @@ MWh of thermal and 50 Wh of hydro. In the third and final stage, use 0 MWh of
 thermal and 150 MWh of  hydro.
 
 This concludes our first very simple tutorial for `Kokako.jl`. In the next
-tutorial, [Tutorial Two: adding uncertainty](@ref), we will extend this problem
+tutorial, [Basics II: adding uncertainty](@ref), we will extend this problem
 by adding uncertainty.

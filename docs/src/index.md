@@ -15,6 +15,11 @@ programming problems using *stochastic dual dynamic programming*. In this
 manual, we're going to assume a reasonable amount of background knowledge about
 stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 
+!!! info
+    If you haven't used JuMP before, we recommend that you read the
+    [JuMP documentation](http://www.juliaopt.org/JuMP.jl/latest/) and try
+    building and solving JuMP models _before_ trying `Kokako.jl`.
+
 ## Installation
 
 You can install `Kōkako.jl` as follows:
@@ -24,8 +29,10 @@ import Pkg
 Pkg.add("https://github.com/odow/Kokako.jl.git")
 ```
 
+## Tutorials
+
 Once you've got Kōkako installed, you should read some tutorials, beginning
-with [Tutorial One: first steps](@ref).
+with [Basics I: first steps](@ref).
 
 ## Citing SDDP.jl
 

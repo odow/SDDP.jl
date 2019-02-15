@@ -29,3 +29,10 @@ Kokako.simulate
 Kokako.calculate_bound
 Kokako.Historical
 ```
+
+## Visualizing the policy
+
+```@docs
+Kokako.SpaghettiPlot
+Kokako.add_spaghetti
+```

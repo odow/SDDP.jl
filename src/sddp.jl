@@ -671,7 +671,13 @@ function _simulate(graph::PolicyGraph,
         )
         # Loop through the primal variable values that the user wants.
         for variable in variables
-            store[variable] = JuMP.value(node.subproblem[variable])
+            if haskey(node.subproblem.obj_dict, variable)
+                store[variable] = JuMP.value(node.subproblem[variable])
+            else
+                error("No variable named $(variable) exists in the subproblem" *
+                     ". If you want to simulate the value of a variable, make" *
+                     " sure it is defined in _all_ subproblems.")
+            end
         end
         # Loop through any custom recorders that the user provided.
         for (sym, foo) in custom_recorders

@@ -1,6 +1,6 @@
-# Tutorial Three: objective uncertainty
+# Basics III: objective uncertainty
 
-In the previous tutorial, [Tutorial Two: adding uncertainty](@ref), we created a
+In the previous tutorial, [Basics II: adding uncertainty](@ref), we created a
 stochastic hydro-thermal scheduling model. In this tutorial, we extend the
 problem by adding uncertainty to the fuel costs.
 
@@ -95,7 +95,7 @@ println("Lower bound: ", round(Kokako.calculate_bound(model), digits = 2))
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                         Kokako - © Oscar Dowson, 2018.
+                        Kokako - © Oscar Dowson, 2018-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -115,5 +115,5 @@ Lower bound: 10625.0
 ```
 
 This concludes our third tutorial for `Kokako.jl`. In the next tutorial,
-[Tutorial Four: Markov uncertainty](@ref), we add stagewise-dependence to the
+[Basics IV: Markov uncertainty](@ref), we add stagewise-dependence to the
 inflows using a Markov chain.

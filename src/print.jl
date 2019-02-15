@@ -52,7 +52,7 @@ end
 
 function print_banner(io=stdout)
     println(io, "———————————————————————————————————————————————————————————————————————————————")
-    println(io, "                         Kokako - © Oscar Dowson, 2018.                        ")
+    println(io, "                        Kokako - © Oscar Dowson, 2018-19.                      ")
     println(io, "———————————————————————————————————————————————————————————————————————————————")
     println(io, " Iteration | Simulation |      Bound |   Time (s)")
     println(io, "———————————————————————————————————————————————————————————————————————————————")

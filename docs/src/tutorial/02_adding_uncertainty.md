@@ -1,6 +1,6 @@
-# Tutorial Two: adding uncertainty
+# Basics II: adding uncertainty
 
-In the previous tutorial, [Tutorial One: first steps](@ref), we created a
+In the previous tutorial, [Basics I: first steps](@ref), we created a
 deterministic  hydro-thermal scheduling model. In this tutorial, we extend the
 problem by adding uncertainty.
 
@@ -61,7 +61,7 @@ model = Kokako.LinearPolicyGraph(
     # Define the constraints
     @constraints(subproblem, begin
         volume.out == volume.in + inflow - hydro_generation - hydro_spill
-        thermal_generation + hydro_generation == 150.0
+        demand_constraint, thermal_generation + hydro_generation == 150.0
     end)
     # Define the objective for each stage `t`. Note that we can use `t` as an
     # index for t = 1, 2, 3.
@@ -88,7 +88,7 @@ variable to `ω`.
 
 ## Training and simulating the policy
 
-As in [Tutorial One: first steps](@ref), we train the policy:
+As in [Basics I: first steps](@ref), we train the policy:
 ```jldoctest tutorial_two; filter=r"\|.+?\n"
 training_results = Kokako.train(model; iteration_limit = 10)
 
@@ -97,7 +97,7 @@ println("Termination status is: ", Kokako.termination_status(training_results))
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                         Kokako - © Oscar Dowson, 2018.
+                        Kokako - © Oscar Dowson, 2018-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -147,6 +147,32 @@ Confidence interval: 8400.00 ± 409.34
 Lower bound: 8333.33
 ```
 
+In addition to simulating the primal values of variables, we can also pass
+`Kokako.jl` custom recorder functions. Each of these functions takes one
+argument, the JuMP subproblem, and returns anything you can compute. For example,
+the dual of the demand constraint (which we named `demand_constraint`)
+corresponds to the price we should charge for electricity, since it represents
+the cost of each additional unit of demand. To calculate this, we can go
+
+```jldoctest tutorial_two; filter = r"\s+?\-?\d+\.0"
+simulations = Kokako.simulate(
+    model,
+    1,
+    custom_recorders = Dict{Symbol, Function}(
+        :price => (sp) -> JuMP.dual(sp[:demand_constraint])
+    )
+)
+
+electricity_price = [stage[:price] for stage in simulations[1]]
+
+# output
+
+3-element Array{Float64,1}:
+  50.0
+ 100.0
+  -0.0
+```
+
 This concludes our second tutorial for `Kokako.jl`. In the next tutorial,
-[Tutorial Three: objective uncertainty](@ref), we extend the uncertainty to the
+[Basics III: objective uncertainty](@ref), we extend the uncertainty to the
 fuel cost.
