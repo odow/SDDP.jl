@@ -8,7 +8,8 @@
 """
     Expectation()
 
-The Expectation risk measure.
+The Expectation risk measure. Identical to taking the expectation with respect
+to the nominal distribution.
 """
 struct Expectation <: AbstractRiskMeasure end
 
@@ -27,7 +28,8 @@ end
 """
     WorstCase()
 
-The worst-case risk measure.
+The worst-case risk measure. Places all of the probability weight on the worst
+outcome.
 """
 struct WorstCase <: AbstractRiskMeasure end
 
@@ -341,7 +343,7 @@ end
 # ================================= Wasserstein ============================== #
 
 """
-    Wasserstein(solver_factory; alpha::Float64)
+    Wasserstein(norm::Function, solver_factory; alpha::Float64)
 
 A distributionally-robust risk measure based on the Wasserstein distance.
 

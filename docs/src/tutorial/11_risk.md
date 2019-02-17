@@ -63,8 +63,9 @@ julia> risk_adjusted_probability = zeros(4)
 
 ### Expectation
 
-The [`Kokako.Expectation`](@ref) risk-measure takes the risk-adjusted
-expectation with respect to the nominal distribution:
+```@docs
+Kokako.Expectation
+```
 
 ```jldoctest intermediate_risk
 Kokako.adjust_probability(
@@ -91,8 +92,9 @@ risk_adjusted_probability
 
 ### Worst-case
 
-The [`Kokako.WorstCase`](@ref) risk-measure places all of the weight on the
-worst outcome (largest if minimizing, smallest if maximizing):
+```@docs
+Kokako.WorstCase
+```
 
 ```jldoctest intermediate_risk
 Kokako.adjust_probability(
@@ -117,8 +119,9 @@ risk_adjusted_probability
 
 ### Average value at risk (AV@R)
 
-The average value at risk [`Kokako.AVaR`](@ref) measure computes the expectation
-of the worst `beta` fraction of outcomes.
+```@docs
+Kokako.AVaR
+```
 
 ```jldoctest intermediate_risk
 Kokako.adjust_probability(
@@ -144,13 +147,17 @@ round.(risk_adjusted_probability, digits = 1)
 ### Convex combination of risk measures
 
 Using the axioms of coherent risk measures, it is easy to show that any convex
-combination of coherent risk measures is also a coherent risk measure.
+combination of coherent risk measures is also a coherent risk measure. Convex
+combinations of risk measures can be created directly:
 
 ```jldoctest intermediate_risk
-risk_measure = 0.5 * Kokako.Expectation() + 0.5 * Kokako.WorstCase()
+julia> cvx_comb_measure = 0.5 * Kokako.Expectation() + 0.5 * Kokako.WorstCase()
+A convex combination of 0.5 * Kokako.Expectation() + 0.5 * Kokako.WorstCase()
+```
 
+```jldoctest intermediate_risk
 Kokako.adjust_probability(
-    risk_measure,
+    cvx_comb_measure,
     risk_adjusted_probability,
     nominal_probability,
     noise_supports,
@@ -176,10 +183,9 @@ julia> risk_measure = Kokako.EAVaR(beta=0.25, lambda=0.4)
 A convex combination of 0.4 * Kokako.Expectation() + 0.6 * Kokako.AVaR(0.25)
 ```
 
-This is short-hand for
-`lambda * Kokako.Expectation() + (1-lambda) * Kokako.AVaR(beta)`.
- As `lambda` and `beta` tend toward `1.0`, the measure becomes more risk-neutral
- (i.e. less risk averse).
+```@docs
+Kokako.EAVaR
+```
 
 ### Distributionally robust
 
@@ -189,8 +195,9 @@ Wasserstein distance metric.
 
 #### Modified Chi-squard
 
-The [`Kokako.ModifiedChiSquared`](@ref) risk measure takes one argument: the
-radius of the ball.
+```@docs
+Kokako.ModifiedChiSquared
+```
 
 ```jldoctest intermediate_risk
 Kokako.adjust_probability(
@@ -215,7 +222,9 @@ round.(risk_adjusted_probability, digits = 4)
 
 #### Wasserstein
 
-[`Kokako.Wasserstein`](@ref)
+```@docs
+Kokako.Wasserstein
+```
 
 ```jldoctest intermediate_risk
 risk_measure = Kokako.Wasserstein(

@@ -154,19 +154,14 @@ publication ready plots using the `Kokako.publicationplot` function.
     You need to install the [Plots.jl](https://github.com/JuliaPlots/Plots)
     package for this to work. We used the `GR` backend (`gr()`), but any
     `Plots.jl` backend should work.
-    ```julia
-    import Pkg
-    Pkg.add("Plots")
-    Pkg.add("GR")
-    ```
 
-This function implements a plot recipe to create ribbon plots of each variable
-against the stages. The first argument is the vector of simulation dictionaries
-and the second argument is the dictionary key that you want to plot. Standard
-Plots.jl keyword arguments such as `title` and `xlabel` can be used to modify
-the look of each plot. By default, the plot displays ribbons of the 0-100,
-10-90, and 25-75 percentiles. The dark, solid line in the middle is the median
-(i.e. 50'th percentile).
+`Kokako.publicationplot` implements a plot recipe to create ribbon plots of each
+variable against the stages. The first argument is the vector of simulation
+dictionaries and the second argument is the dictionary key that you want to
+plot. Standard Plots.jl keyword arguments such as `title` and `xlabel` can be
+used to modify the look of each plot. By default, the plot displays ribbons of
+the 0-100, 10-90, and 25-75 percentiles. The dark, solid line in the middle is
+the median (i.e. 50'th percentile).
 
 ```julia
 using Plots
