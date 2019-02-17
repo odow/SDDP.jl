@@ -171,7 +171,7 @@ function EAVaR(;lambda::Float64=1.0, beta::Float64=1.0)
     return lambda * Expectation() + (1 - lambda) * AVaR(beta)
 end
 
-# ===================================== DRO ================================== #
+# ================================= Modified-Χ² ============================== #
 
 #=
 This code was contributed by Lea Kapelevich.
@@ -201,18 +201,18 @@ Note: the largest radius that will work with S scenarios is sqrt((S-1)/S).
 =#
 
 """
-    DRO(radius::Float64)
+    ModifiedChiSquared(radius::Float64)
 
 The distributionally robust SDDP risk measure of
 
 Philpott, A., de Matos, V., Kapelevich, L. Distributionally robust SDDP.
 Computational Management Science (2018) 165:431-454.
 """
-struct DRO <: AbstractRiskMeasure
+struct ModifiedChiSquared <: AbstractRiskMeasure
     radius::Float64
 end
 
-function adjust_probability(measure::DRO,
+function adjust_probability(measure::ModifiedChiSquared,
                             risk_adjusted_probability::Vector{Float64},
                             original_probability::Vector{Float64},
                             noise_support::Vector,
@@ -220,8 +220,8 @@ function adjust_probability(measure::DRO,
                             is_minimization::Bool)
     if abs(measure.radius) < 1e-9 ||
             Statistics.std(objective_realizations, corrected=false) < 1e-9
-        # Don't do any DRO reweighting if the radius is small or the variance
-        # is too low. Use Expectation instead.
+        # Don't do any reweighting if the radius is small or the variance is too
+        # low. Use Expectation instead.
         return adjust_probability(
            Expectation(), risk_adjusted_probability, original_probability,
            noise_support, objective_realizations, is_minimization)
@@ -242,13 +242,13 @@ Algorithm (1) of Philpott et al. Assumes that the nominal distribution is _not_
 uniform.
 """
 function non_uniform_dro(
-        measure::DRO,
+        measure::ModifiedChiSquared,
         risk_adjusted_probability::Vector{Float64},
         original_probability::Vector{Float64},
         objective_realizations::Vector{Float64},
         is_minimization::Bool)
-    error("Current implementation of DRO assumes that the nominal " *
-          "distribution is uniform.")
+    error("Current implementation of ModifiedChiSquared assumes that the " *
+          "nominal distribution is uniform.")
 end
 
 """
@@ -256,7 +256,7 @@ Algorithm (2) of Philpott et al. Assumes that the nominal distribution is
 uniform.
 """
 function uniform_dro(
-        measure::DRO,
+        measure::ModifiedChiSquared,
         risk_adjusted_probability::Vector{Float64},
         original_probability::Vector{Float64},
         objective_realizations::Vector{Float64},

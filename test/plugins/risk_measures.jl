@@ -162,11 +162,11 @@ end
     end
 end
 
-@testset "DRO" begin
+@testset "ModifiedChiSquared" begin
     @testset "Min - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         Kokako.adjust_probability(
-            Kokako.DRO(0.25),
+            Kokako.ModifiedChiSquared(0.25),
             risk_adjusted_probability,
             fill(0.2, 5),
             [:a, :b, :c, :d, :e],
@@ -178,7 +178,7 @@ end
     @testset "Max - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         Kokako.adjust_probability(
-            Kokako.DRO(0.25),
+            Kokako.ModifiedChiSquared(0.25),
             risk_adjusted_probability,
             fill(0.2, 5),
             [:a, :b, :c, :d, :e],
@@ -190,7 +190,7 @@ end
     @testset "Min - R=0.4" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         Kokako.adjust_probability(
-            Kokako.DRO(0.4),
+            Kokako.ModifiedChiSquared(0.4),
             risk_adjusted_probability,
             fill(0.2, 5),
             [:a, :b, :c, :d, :e],
@@ -202,7 +202,7 @@ end
     @testset "Max - R=0.4" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         Kokako.adjust_probability(
-            Kokako.DRO(0.4),
+            Kokako.ModifiedChiSquared(0.4),
             risk_adjusted_probability,
             fill(0.2, 5),
             [:a, :b, :c, :d, :e],
@@ -214,7 +214,7 @@ end
     @testset "Min - R=√0.8" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         Kokako.adjust_probability(
-            Kokako.DRO(sqrt(0.8)),
+            Kokako.ModifiedChiSquared(sqrt(0.8)),
             risk_adjusted_probability,
             fill(0.2, 5),
             [:a, :b, :c, :d, :e],
