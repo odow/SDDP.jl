@@ -22,6 +22,17 @@ Kokako.train
 Kokako.termination_status
 ```
 
+### Risk measures
+
+```@docs
+Kokako.Expectation
+Kokako.WorstCase
+Kokako.AVaR
+Kokako.EAVaR
+Kokako.ModifiedChiSquared
+Kokako.Wasserstein
+```
+
 ## Simulating the policy
 
 ```@docs

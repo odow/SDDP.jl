@@ -138,12 +138,7 @@ Finished training!
 ```
 
 How do we tell which is more appropriate? There are a few clues that you should
-look out for.    m = Model(with_optimizer(Ipopt.Optimizer, tol=1E-24, dual_inf_tol=1E-24,
-        constr_viol_tol=1E-24, compl_inf_tol=1E-24, print_level=0))
-    @variable(m, newvarvec[i=1:numvars] >= 0)
-    obj = @expression(m, sum(newvarvec[i] for i=1:numvars))
-    @objective(m, Min, obj)
-    JuMP.optimize!(m)
+look out for.
 
 - The bound converges to a value above (if minimizing) the simulated cost of the
   policy. In this case, the problem is deterministic, so it is easy to tell. But
@@ -161,4 +156,6 @@ look out for.    m = Model(with_optimizer(Ipopt.Optimizer, tol=1E-24, dual_inf_t
   varies between models, but notice that `11.0` is quite close to `10.0`
   compared with `3.5` and `0.0`.
 
-This concludes or series of basic introductory tutorials for `Kokako.jl`.
+This concludes or series of basic introductory tutorials for `Kokako.jl`. When
+you're ready, continue to our intermediate series of tutorials, beginning with
+[Intermediate I: risk](@ref).

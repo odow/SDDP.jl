@@ -15,13 +15,12 @@ makedocs(
             "tutorial/03_objective_uncertainty.md",
             "tutorial/04_markov_uncertainty.md",
             "tutorial/05_plotting.md",
-            "tutorial/06_warnings.md"
-            # "tutorial/06_cut_selection.md",
-            # "tutorial/08_odds_and_ends.md",
-            # "tutorial/09_nonlinear.md",
-            # "tutorial/10_parallel.md",
-            # "tutorial/11_DRO.md",
-            # "tutorial/12_price_interpolation.md",
+            "tutorial/06_warnings.md",
+            "tutorial/11_risk.md",
+            "tutorial/12_stopping_rules.md",
+            "tutorial/13_generic_graphs.md",
+            "tutorial/14_price_interpolation.md",
+            "tutorial/15_performance.md"
         ],
         "Reference" => "apireference.md"
     ],

@@ -5,6 +5,11 @@
 
 # ========================== The Expectation Operator ======================== #
 
+"""
+    Expectation()
+
+The Expectation risk measure.
+"""
 struct Expectation <: AbstractRiskMeasure end
 
 function adjust_probability(measure::Expectation,
@@ -19,6 +24,11 @@ end
 
 # ========================== The Worst Case Operator ========================= #
 
+"""
+    WorstCase()
+
+The worst-case risk measure.
+"""
 struct WorstCase <: AbstractRiskMeasure end
 
 function adjust_probability(measure::WorstCase,
@@ -46,6 +56,18 @@ end
 
 # =================================== AV@R =================================== #
 
+"""
+    AVaR(β)
+
+The average value at risk (AV@R) risk measure.
+
+Computes the expectation of the β fraction of worst outcomes. β must be in `[0,
+1]`. When `β=1`, this is equivalent to the [`Expectation`](@ref) risk measure.
+When `β=0`, this is equivalent  to the [`WorstCase`](@ref) risk measure.
+
+AV@R is also known as the conditional value at risk (CV@R) or expected
+shortfall.
+"""
 struct AVaR <: AbstractRiskMeasure
     β::Float64
     function AVaR(β::Float64)
@@ -109,7 +131,15 @@ struct ConvexCombination{T<:Tuple} <: AbstractRiskMeasure
     measures::T
 end
 ConvexCombination(args::Tuple...) = ConvexCombination(args)
-
+function Base.show(io::IO, measure::ConvexCombination)
+    print(io, "A convex combination of ")
+    is_first = true
+    for m in measure.measures
+        !is_first && print(io, " + ")
+        print(io, m[1], " * ", m[2])
+        is_first = false
+    end
+end
 import Base: +, *
 
 function Base.:+(a::ConvexCombination, b::ConvexCombination)
@@ -330,6 +360,7 @@ struct Wasserstein{T, F} <: AbstractRiskMeasure
         return new{typeof(solver_factory), typeof(norm)}(alpha, solver_factory, norm)
     end
 end
+Base.show(io::IO, measure::Wasserstein) = print(io, "Kokako.Wasserstein")
 
 function adjust_probability(measure::Wasserstein,
                             risk_adjusted_probability::Vector{Float64},
@@ -358,7 +389,8 @@ function adjust_probability(measure::Wasserstein,
     )
     JuMP.optimize!(wasserstein)
     if JuMP.primal_status(wasserstein) != MOI.FEASIBLE_POINT
-        error("Unable to solver Wasserstein subproblem. Status: ", JuMP.termination_status(wassserstein))
+        error("Unable to solver Wasserstein subproblem. Status: ",
+              JuMP.termination_status(wassserstein))
     end
     copyto!(risk_adjusted_probability, JuMP.value.(p))
     return
