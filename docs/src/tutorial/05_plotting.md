@@ -91,35 +91,27 @@ the name when you see the graph).
 To create a spaghetti plot, begin by creating a new
 [`Kokako.SpaghettiPlot`](@ref) instance as follows:
 ```jldoctest tutorial_five
-julia> plt = Kokako.SpaghettiPlot(stages = 3, scenarios = 100)
-A spaghetti plot with 3 stages and 100 scenarios.
+julia> plt = Kokako.SpaghettiPlot(simulations)
+A spaghetti plot with 100 scenarios and 3 stages.
 ```
-The keyword `stages` gives the number of stages in the problem (in this case, 3)
-and the keyword `scenarios` gives the number of trajectories that you want to
-plot (in this case, 100, since that is how many Monte Carlo replications we
-conducted).
 
-Next, we can add plots to `plt` using the [`Kokako.add_spaghetti`](@ref)
+We can add plots to `plt` using the [`Kokako.add_spaghetti`](@ref)
 function.
 
 ```jldoctest tutorial_five
-julia> Kokako.add_spaghetti(plt; title = "Reservoir volume") do scenario, stage
-           return simulations[scenario][stage][:volume].out
+julia> Kokako.add_spaghetti(plt; title = "Reservoir volume") do data
+           return data[:volume].out
        end
 ```
-
-The return value of each `do ... end` block is a `Float64` for the y-value of
-the `scenario`'th line in stage `stage`.
 
 You don't have just return values from the simulation, you can compute things
 too.
 
 ```jldoctest tutorial_five
 julia> Kokako.add_spaghetti(plt;
-               title = "Fuel cost", ymin = 0, ymax = 250) do scenario, stage
-           if simulations[scenario][stage][:thermal_generation] > 0
-               return simulations[scenario][stage][:stage_objective] /
-                   simulations[scenario][stage][:thermal_generation]
+               title = "Fuel cost", ymin = 0, ymax = 250) do data
+           if data[:thermal_generation] > 0
+               return data[:stage_objective] / data[:thermal_generation]
            else  # No thermal generation, so return 0.0.
                return 0.0
            end
@@ -148,34 +140,30 @@ are shown darker and those further away are shown lighter.
 ## Publication plots
 
 Instead of the interactive Javascript plots, you can also create some
-publication ready plots using the `Kokako.publicationplot` function.
+publication ready plots using the [`Kokako.publication_plot`](@ref) function.
 
 !!!info
     You need to install the [Plots.jl](https://github.com/JuliaPlots/Plots)
     package for this to work. We used the `GR` backend (`gr()`), but any
     `Plots.jl` backend should work.
 
-`Kokako.publicationplot` implements a plot recipe to create ribbon plots of each
-variable against the stages. The first argument is the vector of simulation
-dictionaries and the second argument is the dictionary key that you want to
-plot. Standard Plots.jl keyword arguments such as `title` and `xlabel` can be
-used to modify the look of each plot. By default, the plot displays ribbons of
-the 0-100, 10-90, and 25-75 percentiles. The dark, solid line in the middle is
-the median (i.e. 50'th percentile).
+[`Kokako.publication_plot`](@ref) implements a plot recipe to create ribbon
+plots of each variable against the stages. The first argument is the vector of
+simulation dictionaries and the second argument is the dictionary key that you
+want to plot. Standard `Plots.jl` keyword arguments such as `title` and `xlabel`
+can be used to modify the look of each plot. By default, the plot displays
+ribbons of the 0-100, 10-90, and 25-75 percentiles. The dark, solid line in the
+middle is the median (i.e. 50'th percentile).
 
 ```julia
 using Plots
 plot(
-    Kokako.publicationplot(
-        simulations,
-        data -> data[:volume].out,
-        title = "Outgoing volume"
-    ),
-    Kokako.publicationplot(
-        simulations,
-        data -> data[:thermal_generation],
-        title = "Thermal generation"
-    ),
+    Kokako.publication_plot(simulations, title = "Outgoing volume") do data
+        return data[:volume].out
+    end,
+    Kokako.publication_plot(simulations, title = "Thermal generation") do data
+        return data[:thermal_generation]
+    end,
     xlabel = "Stage",
     ylims = (0, 200),
     layout = (1, 2),

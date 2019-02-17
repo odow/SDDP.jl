@@ -16,6 +16,30 @@ function publication_data(dataset::Vector{Vector{Dict{Symbol, Any}}},
     return output_array
 end
 
+"""
+    Kokako.publication_plot(
+        data_function, simulations;
+        quantile = [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0],
+        kwargs...)
+
+Create a `Plots.jl` recipe plot of the simulations.
+
+See `Plots.jl` for the list of keyword arguments.
+
+### Example
+
+    Kokako.publication_plot(simulations; title = "My title") do data
+        return data[:stage_objective]
+    end
+"""
+function publication_plot(
+        data_function::Function, simulations::Vector{Vector{Dict{Symbol, Any}}};
+        kwargs...)
+    # An annoying over-load so that we can provide a consistent interface
+    # instead of the Plots.jl generated `publicationplot`.
+    return Kokako.publicationplot(simulations, data_function, kwargs...)
+end
+
 RecipesBase.@userplot PublicationPlot
 
 RecipesBase.@recipe function f(publication_plot::PublicationPlot;

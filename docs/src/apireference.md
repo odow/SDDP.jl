@@ -35,4 +35,5 @@ Kokako.Historical
 ```@docs
 Kokako.SpaghettiPlot
 Kokako.add_spaghetti
+Kokako.publication_plot
 ```

@@ -7,15 +7,22 @@ using Kokako, Test
 
 @testset "SpaghettiPlot" begin
     simulations = [
-        Dict(:x => [1.0, 2.0, 3.0], :y => [4.0, 5.0, 6.0]),
-        Dict(:x => [1.5, 2.5, 3.5], :y => [4.5, 5.5, 6.5])
+        [
+            Dict(:x => 1.0, :y => 4.0),
+            Dict(:x => 2.0, :y => 5.0),
+            Dict(:x => 3.0, :y => 6.0)
+        ], [
+            Dict(:x => 1.5, :y => 4.5),
+            Dict(:x => 2.5, :y => 5.5),
+            Dict(:x => 3.5, :y => 6.5)
+        ]
     ]
-    plt = Kokako.SpaghettiPlot(scenarios = 2, stages = 3)
-    Kokako.add_spaghetti(plt, cumulative = true) do scenario, stage
-        simulations[scenario][:x][stage]
+    plt = Kokako.SpaghettiPlot(simulations)
+    Kokako.add_spaghetti(plt, cumulative = true) do data
+        return data[:x]
     end
-    Kokako.add_spaghetti(plt, title = "y") do scenario, stage
-        2 * simulations[scenario][:y][stage]
+    Kokako.add_spaghetti(plt, title = "y") do data
+        return 2 * data[:y]
     end
     Kokako.prep_html(plt, "test.html")
     @test read("test.html", String) == read("control.html", String)

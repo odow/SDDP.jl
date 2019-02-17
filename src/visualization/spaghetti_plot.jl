@@ -25,17 +25,16 @@ Initialize a new `SpaghettiPlot` with `stages` stages and `scenarios` number of
 replications.
 """
 struct SpaghettiPlot
-	stages::Int
-	scenarios::Int
+	simulations::Vector{Vector{Dict{Symbol, Any}}}
 	data::Vector{Dict{String, Any}}
-	function SpaghettiPlot(; stages, scenarios)
-		return new(stages, scenarios, Dict{String, Any}[])
+	function SpaghettiPlot(simulations)
+		return new(simulations, Dict{String, Any}[])
 	end
 end
 
 function Base.show(io::IO, plt::SpaghettiPlot)
-	print(io, "A spaghetti plot with ", plt.stages, " stages and ",
-		  plt.scenarios, " scenarios.")
+	print(io, "A spaghetti plot with ", length(plt.simulations), " scenarios ",
+	      "and ", length(plt.simulations[1]), " stages.")
 end
 
 """
@@ -43,9 +42,9 @@ end
 
 # Description
 
-Add a new figure to the SpaghettiPlot `plt`, where the y-value is given by
-`data_function(stage, scenario)` for all `stage`s in `1:plt.stages` and
-`scenario`s in `1:plt.scenarios`.
+Add a new figure to the SpaghettiPlot `plt`, where the y-value of the
+`scenario`th line when x = `stage` is given by
+`data_function(plt.simulations[scenario][stage])`.
 
 # Keyword arguments
 
@@ -62,9 +61,9 @@ Add a new figure to the SpaghettiPlot `plt`, where the y-value is given by
 # Examples
 
 	simulations = simulate(model, 10)
-	plt = Kokako.spaghetti_plot(stages = 10, scenarios = 10)
-	Kokako.add_spaghetti(plt; title = "Stage objective") do scenario, stage
-		return simulations[scenario][stage][:stage_objective]
+	plt = Kokako.spaghetti_plot(simulations)
+	Kokako.add_spaghetti(plt; title = "Stage objective") do data
+		return data[:stage_objective]
 	end
 """
 function add_spaghetti(data_function::Function, plt::SpaghettiPlot;
@@ -80,16 +79,17 @@ function add_spaghetti(data_function::Function, plt::SpaghettiPlot;
 		"ymax" => ymax
 	)
 	plot_dict["data"] = Vector{Float64}[]
-	for scenario in 1:plt.scenarios
+	for (i, scenario) in enumerate(plt.simulations)
 		push!(plot_dict["data"], Float64[])
 		series_value = 0.0
-		for stage in 1:plt.stages
+		for stage in scenario
+			y_value = float(data_function(stage))
 			if cumulative
-				series_value += float(data_function(scenario, stage))
+				series_value += y_value
 			else
-				series_value = float(data_function(scenario, stage))
+				series_value = y_value
 			end
-			push!(plot_dict["data"][scenario], series_value)
+			push!(plot_dict["data"][i], series_value)
 		end
 	end
 	push!(plt.data, plot_dict)
