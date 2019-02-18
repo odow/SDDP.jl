@@ -1,4 +1,4 @@
-# Basics VII: modelling tips
+# Basic VII: modelling tips
 
 This tutorial discusses some different modelling tips.
 

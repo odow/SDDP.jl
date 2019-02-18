@@ -1,4 +1,4 @@
-# Basics I: first steps
+# Basic I: first steps
 
 Hydrothermal scheduling is the most common application of stochastic dual
 dynamic programming. To illustrate some of the basic functionality of
@@ -285,9 +285,9 @@ julia> thermal_generation = [stage[:thermal_generation] for stage in simulations
 
 From this, we can see the optimal policy: in the first stage, use 150 MWh of
 thermal generation and 0 MWh of hydro generation. In the second stage, use 100
-MWh of thermal and 50 Wh of hydro. In the third and final stage, use 0 MWh of
+MWh of thermal and 50 MWh of hydro. In the third and final stage, use 0 MWh of
 thermal and 150 MWh of  hydro.
 
 This concludes our first very simple tutorial for `Kokako.jl`. In the next
-tutorial, [Basics II: adding uncertainty](@ref), we will extend this problem
-by adding uncertainty.
+tutorial, [Basic II: adding uncertainty](@ref), we will extend this problem by
+adding uncertainty.

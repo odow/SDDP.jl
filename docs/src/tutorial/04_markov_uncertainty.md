@@ -1,8 +1,8 @@
-# Basics IV: Markov uncertainty
+# Basic IV: Markov uncertainty
 
-In our three tutorials ([Basics I: first steps](@ref),
-[Basics II: adding uncertainty](@ref), and
-[Basics III: objective uncertainty](@ref)), we formulated a simple
+In our three tutorials ([Basic I: first steps](@ref),
+[Basic II: adding uncertainty](@ref), and
+[Basic III: objective uncertainty](@ref)), we formulated a simple
 hydrothermal scheduling problem with stagewise-independent noise in the
 right-hand side of the constraints and in the objective function. Now, in this
 tutorial, we introduce some *stagewise-dependent* uncertainty using a Markov
@@ -165,5 +165,5 @@ simulations = Kokako.simulate(
 ```
 
 This concludes our fourth tutorial for `Kokako.jl`. In the next tutorial,
-[Basics V: plotting](@ref) we discuss the plotting utilities included in
+[Basic V: plotting](@ref) we discuss the plotting utilities included in
 `Kokako.jl`.

@@ -1,6 +1,6 @@
-# Basics II: adding uncertainty
+# Basic II: adding uncertainty
 
-In the previous tutorial, [Basics I: first steps](@ref), we created a
+In the previous tutorial, [Basic I: first steps](@ref), we created a
 deterministic  hydro-thermal scheduling model. In this tutorial, we extend the
 problem by adding uncertainty.
 
@@ -88,7 +88,7 @@ variable to `ω`.
 
 ## Training and simulating the policy
 
-As in [Basics I: first steps](@ref), we train the policy:
+As in [Basic I: first steps](@ref), we train the policy:
 ```jldoctest tutorial_two; filter=r"\|.+?\n"
 training_results = Kokako.train(model; iteration_limit = 10)
 
@@ -174,5 +174,5 @@ electricity_price = [stage[:price] for stage in simulations[1]]
 ```
 
 This concludes our second tutorial for `Kokako.jl`. In the next tutorial,
-[Basics III: objective uncertainty](@ref), we extend the uncertainty to the
+[Basic III: objective uncertainty](@ref), we extend the uncertainty to the
 fuel cost.

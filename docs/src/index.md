@@ -32,7 +32,7 @@ Pkg.add("https://github.com/odow/Kokako.jl.git")
 ## Tutorials
 
 Once you've got Kōkako installed, you should read some tutorials, beginning
-with [Basics I: first steps](@ref).
+with [Basic I: first steps](@ref).
 
 ## Citing SDDP.jl
 

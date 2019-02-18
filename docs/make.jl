@@ -10,18 +10,22 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Tutorials" => Any[
-            "tutorial/01_first_steps.md",
-            "tutorial/02_adding_uncertainty.md",
-            "tutorial/03_objective_uncertainty.md",
-            "tutorial/04_markov_uncertainty.md",
-            "tutorial/05_plotting.md",
-            "tutorial/06_warnings.md",
-            "tutorial/07_advanced_modelling.md",
-            "tutorial/11_risk.md",
-            "tutorial/12_stopping_rules.md",
-            "tutorial/13_generic_graphs.md",
-            "tutorial/14_objective_states.md",
-            "tutorial/15_performance.md"
+            "Basic" => Any[
+                "tutorial/01_first_steps.md",
+                "tutorial/02_adding_uncertainty.md",
+                "tutorial/03_objective_uncertainty.md",
+                "tutorial/04_markov_uncertainty.md",
+                "tutorial/05_plotting.md",
+                "tutorial/06_warnings.md",
+                "tutorial/07_advanced_modelling.md"
+            ],
+            "Intermediate" => Any[
+                "tutorial/11_risk.md",
+                "tutorial/12_stopping_rules.md",
+                "tutorial/13_generic_graphs.md",
+                "tutorial/14_objective_states.md",
+                "tutorial/15_performance.md"
+            ]
         ],
         "Reference" => "apireference.md"
     ],

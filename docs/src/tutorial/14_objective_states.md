@@ -11,7 +11,7 @@ variables (e.g., the spot price in the current stage).
 
 To overcome this problem, the approach in the literature has been to discretize
 the price process in order to model it using a Markovian policy graph like those
-discussed in [Basics IV: Markov uncertainty](@ref).
+discussed in [Basic IV: Markov uncertainty](@ref).
 
 However, recent work offers a way to include stagewise-dependent objective
 uncertainty into the objective function of SDDP subproblems. Readers are

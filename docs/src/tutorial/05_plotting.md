@@ -1,4 +1,4 @@
-# Basics V: plotting
+# Basic V: plotting
 
 In our previous tutorials, we formulated, solved, and simulated multistage
 stochastic optimization problems. However, we haven't really investigated what
@@ -9,7 +9,7 @@ pretty pictures.
 ## Preliminaries
 
 First, we need to create a policy and simulate some trajectories. So, let's take
-the model from  [Basics IV: Markov uncertainty](@ref), train it for 20
+the model from  [Basic IV: Markov uncertainty](@ref), train it for 20
 iterations, and then simulate 100 Monte Carlo realizations of the policy.
 
 ```jldoctest tutorial_five; filter=r"\|.+?\n"
@@ -181,6 +181,6 @@ You can save this plot as a PDF using the `Plots.jl` function `savefig`:
 Plots.savefig("my_picture.pdf")
 ```
 
-This concludes our fifth tutorial for `Kokako.jl`. In our next tutorial, [Basics
-VI: words of warning](@ref) we discuss some of the issues that you should be
-aware of when creating your own models.
+This concludes our fifth tutorial for `Kokako.jl`. In our next tutorial,
+[Basic VI: words of warning](@ref) we discuss some of the issues that you should
+be aware of when creating your own models.

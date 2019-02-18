@@ -1,4 +1,4 @@
-# Basics VI: words of warning
+# Basic VI: words of warning
 
 SDDP is a powerful solution technique for multistage stochastic programming.
 However, there are a number of subtle things to be aware of before creating
@@ -138,7 +138,7 @@ look out for.
 - The bound converges to a value above (if minimizing) the simulated cost of the
   policy. In this case, the problem is deterministic, so it is easy to tell. But
   you can also check by performing a Monte Carlo simulation like we did in
-  [Basics II: adding uncertainty](@ref).
+  [Basic II: adding uncertainty](@ref).
 
 - The bound converges to different values when we change the bound. This is
   another clear give-away. The bound provided by the user is only used in the
@@ -152,4 +152,4 @@ look out for.
   compared with `3.5` and `0.0`.
 
 This concludes our sixth tutorial for `Kokako.jl`. In our final basics tutorial,
-[Basics VII: modelling tips](@ref) we discuss some additional modelling tips.
+[Basic VII: modelling tips](@ref) we discuss some additional modelling tips.
