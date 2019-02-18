@@ -40,3 +40,7 @@ Kokako.TimeLimit
 Kokako.Statistical
 Kokako.BoundStalling
 ```
+
+In the next tutorial, [Intermediate III: policy graphs](@ref), we discuss
+generic extensions to [`Kokako.LinearPolicyGraph`](@ref) and
+[`Kokako.MarkovianPolicyGraph`](@ref).

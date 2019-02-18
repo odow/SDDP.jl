@@ -40,16 +40,11 @@ largest difference in magnitude. For example, if we talk in terms of million m³
 then we have a capacity of 10⁴ million m³, and a price of \\\$50,000 per million
 m³. Now things are only one order of magnitude apart.
 
-### Solver choice
+### Solver-specific options
 
-If you still run into issues after re-scaling your problem, the next thing to
-consider is solver choice. We _highly_ recommend using a commercial solver such
-as [CPLEX](https://github.com/JuliaOpt/CPLEX.jl),
-[Gurobi](https://github.com/JuliaOpt/Gurobi.jl), or
-[Xpress](https://github.com/JuliaOpt/Xpress.jl). If you have a particularly
-troublesome model, you should investigate setting solver-specific options to
-improve the numerical stability of each solver. For example, Gurobi has a
-[`NumericFocus` option](http://www.gurobi.com/documentation/8.1/refman/numericfocus.html#parameter:NumericFocus).
+If you have a particularly troublesome model, you should investigate setting
+solver-specific options to improve the numerical stability of each solver. For
+example, Gurobi has a [`NumericFocus` option](http://www.gurobi.com/documentation/8.1/refman/numericfocus.html#parameter:NumericFocus).
 
 ## Choosing an initial bound
 

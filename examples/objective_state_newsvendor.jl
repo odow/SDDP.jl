@@ -44,9 +44,10 @@ function newsvendor_example()
             w
         end)
         @constraint(subproblem, x.out == x.in - u + w)
-        Kokako.add_objective_state(subproblem, initial_value = 1.5,
-            lower_bound = 0.75, upper_bound = 2.25, lipschitz = 100.0) do y, ω
-                return (y[1] + ω.price_noise,)
+        Kokako.add_objective_state(
+                subproblem, initial_value = 1.5, lower_bound = 0.75,
+                upper_bound = 2.25, lipschitz = 100.0) do y, ω
+            return y + ω.price_noise
         end
         noise_terms = joint_distribution(
             demand = 0:0.05:0.5, price_noise = [-0.25, -0.125, 0.125, 0.25])

@@ -12,9 +12,10 @@ function biobjective_hydro()
                         ) do subproblem, stage
         @variable(subproblem, 0 <= v <= 200, Kokako.State, initial_value = 50)
 
-        Kokako.add_objective_state(subproblem, initial_value = 0.0,
-            lower_bound = 0.0, upper_bound = 1.0, lipschitz = 1e6) do y, ω
-                return (y[1] + ω.λ,)
+        Kokako.add_objective_state(
+                subproblem, initial_value = 0.0, lower_bound = 0.0,
+                upper_bound = 1.0, lipschitz = 1e6) do y, ω
+            return y + ω.λ
         end
 
         @variables(subproblem, begin

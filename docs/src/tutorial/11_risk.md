@@ -305,7 +305,9 @@ Kokako.train(
     If you simulate the policy, the simulated value is the risk-neutral value of
     the policy.
 
-This concludes our first intermediate tutorial.
+This concludes our first intermediate tutorial. In the next tutorial,
+[Intermediate II: stopping rules](@ref), we discuss different ways that the
+training can be terminated.
 
 ```@meta
 DocTestSetup = nothing

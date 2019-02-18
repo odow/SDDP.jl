@@ -13,6 +13,8 @@ Kokako.PolicyGraph
 ```@docs
 @stageobjective
 Kokako.parameterize
+Kokako.add_objective_state
+Kokako.objective_state
 ```
 
 ## Training the policy
