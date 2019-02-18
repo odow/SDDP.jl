@@ -16,6 +16,7 @@ makedocs(
             "tutorial/04_markov_uncertainty.md",
             "tutorial/05_plotting.md",
             "tutorial/06_warnings.md",
+            "tutorial/07_advanced_modelling.md",
             "tutorial/11_risk.md",
             "tutorial/12_stopping_rules.md",
             "tutorial/13_generic_graphs.md",

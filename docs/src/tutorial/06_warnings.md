@@ -151,6 +151,5 @@ look out for.
   varies between models, but notice that `11.0` is quite close to `10.0`
   compared with `3.5` and `0.0`.
 
-This concludes or series of basic introductory tutorials for `Kokako.jl`. When
-you're ready, continue to our intermediate series of tutorials, beginning with
-[Intermediate I: risk](@ref).
+This concludes our sixth tutorial for `Kokako.jl`. In our final basics tutorial,
+[Basics VII: modelling tips](@ref) we discuss some additional modelling tips.

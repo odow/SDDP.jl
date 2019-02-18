@@ -181,6 +181,6 @@ You can save this plot as a PDF using the `Plots.jl` function `savefig`:
 Plots.savefig("my_picture.pdf")
 ```
 
-This concludes our fifth tutorial for `Kokako.jl`. In our final _Basics_
-tutorial, [Basics VI: words of warning](@ref) we discuss some of the issues that
-you should be aware of when creating your own models.
+This concludes our fifth tutorial for `Kokako.jl`. In our next tutorial, [Basics
+VI: words of warning](@ref) we discuss some of the issues that you should be
+aware of when creating your own models.
