@@ -33,7 +33,7 @@ dynamics to include `inflow`:
 `volume.out = volume.in + inflow - hydro_generation - hydro_spill`
 
 
-## Creating a Kokako model
+## Creating a model
 
 To add an uncertain variable to the model, we create a new JuMP variable
 `inflow`, and then call the function [`Kokako.parameterize`](@ref). The
@@ -93,7 +93,7 @@ As in [Basic I: first steps](@ref), we train the policy:
 ```jldoctest tutorial_two; filter=r"\|.+"
 julia> Kokako.train(model; iteration_limit = 10);
 ———————————————————————————————————————————————————————————————————————————————
-                        Kokako - © Oscar Dowson, 2018-19.
+                        SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -142,7 +142,7 @@ Lower bound: 8333.33
 ```
 
 In addition to simulating the primal values of variables, we can also pass
-`Kokako.jl` custom recorder functions. Each of these functions takes one
+`SDDP.jl` custom recorder functions. Each of these functions takes one
 argument, the JuMP subproblem, and returns anything you can compute. For example,
 the dual of the demand constraint (which we named `demand_constraint`)
 corresponds to the price we should charge for electricity, since it represents
@@ -164,6 +164,6 @@ julia> [stage[:price] for stage in simulations[1]]
   -0.0
 ```
 
-This concludes our second tutorial for `Kokako.jl`. In the next tutorial,
+This concludes our second tutorial for `SDDP.jl`. In the next tutorial,
 [Basic III: objective uncertainty](@ref), we extend the uncertainty to the
 fuel cost.

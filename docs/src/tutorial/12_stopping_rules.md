@@ -32,7 +32,7 @@ as a vector to the `stopping_rules` keyword. For example:
 Kokako.train(model, stopping_rules = [Kokako.BoundStalling(10, 1e-4)])
 ```
 
-Here are the stopping rules implemented in `Kokako.jl`:
+Here are the stopping rules implemented in `SDDP.jl`:
 
 ```@docs
 Kokako.IterationLimit

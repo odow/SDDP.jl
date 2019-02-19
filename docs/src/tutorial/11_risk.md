@@ -8,7 +8,7 @@ end
 
 ## Risk measures
 
-To illustrate the risk-measures included in `Kokako.jl`, we consider a discrete
+To illustrate the risk-measures included in `SDDP.jl`, we consider a discrete
 random variable with four outcomes.
 
 The random variable is supported on the values 1, 2, 3, and 4:
@@ -88,7 +88,7 @@ risk_adjusted_probability
  0.4
 ```
 
-[`Kokako.Expectation`](@ref) is the default risk measure in `Kokako.jl`.
+[`Kokako.Expectation`](@ref) is the default risk measure in `SDDP.jl`.
 
 ### Worst-case
 
@@ -189,7 +189,7 @@ Kokako.EAVaR
 
 ### Distributionally robust
 
-`Kokako.jl` supports two types of distrbutionally robust risk measures: the
+`SDDP.jl` supports two types of distrbutionally robust risk measures: the
 modified Χ² method of Philpott et al. (2018), and a method based on the
 Wasserstein distance metric.
 
@@ -254,7 +254,7 @@ round.(risk_adjusted_probability, digits = 1)
 
 ## Training a risk-averse model
 
-Now that we know what risk measures `Kokako.jl` supports, lets see how to train
+Now that we know what risk measures `SDDP.jl` supports, lets see how to train
 a policy using them. There are three possible ways.
 
 If the same risk measure is used at every node in the policy graph, we can just

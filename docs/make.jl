@@ -1,7 +1,7 @@
 using Documenter, Kokako
 
 makedocs(
-    sitename = "Kokako.jl",
+    sitename = "SDDP.jl",
     authors  = "Oscar Dowson",
     clean = true,
     # See https://github.com/JuliaDocs/Documenter.jl/issues/868
@@ -31,8 +31,6 @@ makedocs(
     ],
     assets = [
         "deterministic_linear_policy_graph.png",
-        "logo.ico",
-        "logo.png",
         "publication_plot.png",
         "spaghetti_plot.html",
         "stochastic_linear_policy_graph.png",
@@ -40,4 +38,4 @@ makedocs(
     ]
 )
 
-deploydocs(repo   = "github.com/odow/Kokako.jl.git")
+deploydocs(repo = "github.com/odow/Kokako.jl.git")

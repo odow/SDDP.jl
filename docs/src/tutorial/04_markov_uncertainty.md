@@ -49,7 +49,7 @@ T = Array{Float64, 2}[
     Make sure to add the `'` after the first transition matrix so Julia can
     distinguish between a vector and a matrix.
 
-## Creating a Kokako model
+## Creating a model
 
 ```jldoctest tutorial_four
 using Kokako, GLPK
@@ -122,7 +122,7 @@ println("Termination status is: ", Kokako.termination_status(training_results))
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                        Kokako - © Oscar Dowson, 2018-19.
+                        SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -168,6 +168,6 @@ simulations = Kokako.simulate(
  (3, 1)
 ```
 
-This concludes our fourth tutorial for `Kokako.jl`. In the next tutorial,
+This concludes our fourth tutorial for `SDDP.jl`. In the next tutorial,
 [Basic V: plotting](@ref) we discuss the plotting utilities included in
-`Kokako.jl`.
+`SDDP.jl`.

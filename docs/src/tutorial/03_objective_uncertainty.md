@@ -22,7 +22,7 @@ In stage `t`, the objective is not to minimize
 
 `fuel_multiplier * fuel_cost[t] * thermal_generation`
 
-## Creating a Kokako model
+## Creating a model
 
 To add an uncertain objective, we can simply call [`@stageobjective`](@ref) from
 inside the [`Kokako.parameterize`](@ref) function.
@@ -95,7 +95,7 @@ println("Lower bound: ", round(Kokako.calculate_bound(model), digits = 2))
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                        Kokako - © Oscar Dowson, 2018-19.
+                        SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -114,6 +114,6 @@ Confidence interval: 11342.5 ± 753.02
 Lower bound: 10625.0
 ```
 
-This concludes our third tutorial for `Kokako.jl`. In the next tutorial,
+This concludes our third tutorial for `SDDP.jl`. In the next tutorial,
 [Basic IV: Markov uncertainty](@ref), we add stagewise-dependence to the
 inflows using a Markov chain.

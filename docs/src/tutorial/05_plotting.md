@@ -2,7 +2,7 @@
 
 In our previous tutorials, we formulated, solved, and simulated multistage
 stochastic optimization problems. However, we haven't really investigated what
-the solution looks like. Luckily, `Kokako.jl` includes a number of plotting
+the solution looks like. Luckily, `SDDP.jl` includes a number of plotting
 tools to help us do that. In this tutorial, we explain the tools and make some
 pretty pictures.
 
@@ -54,7 +54,7 @@ println("Completed $(length(simulations)) simulations.")
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                        Kokako - © Oscar Dowson, 2018-19.
+                        SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -181,6 +181,6 @@ You can save this plot as a PDF using the `Plots.jl` function `savefig`:
 Plots.savefig("my_picture.pdf")
 ```
 
-This concludes our fifth tutorial for `Kokako.jl`. In our next tutorial,
+This concludes our fifth tutorial for `SDDP.jl`. In our next tutorial,
 [Basic VI: words of warning](@ref) we discuss some of the issues that you should
 be aware of when creating your own models.

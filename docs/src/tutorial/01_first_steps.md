@@ -2,7 +2,7 @@
 
 Hydrothermal scheduling is the most common application of stochastic dual
 dynamic programming. To illustrate some of the basic functionality of
-`Kōkako.jl`, we implement a very simple model of the hydrothermal scheduling
+`SDDP.jl`, we implement a very simple model of the hydrothermal scheduling
 problem.
 
 We consider the problem of scheduling electrical generation over three time
@@ -112,12 +112,12 @@ In stage `t`, they want to minimize `fuel_cost[t] * thermal_generation`, where
 `fuel_cost[t]` is \\\$50 when `t=1`, \\\$100 when `t=2`, and \\\$150 when
 `t=3`.
 
-We're now ready to construct a Kokako model. Since Kokako is intended to be very
+We're now ready to construct a model. Since `SDDP.jl` is intended to be very
 user-friendly, we're going to give the full code first, and then walk through
 some of the details. However, you should be able to read through and understand
 most of what is happening.
 
-## Creating a Kokako model
+## Creating a model
 
 ```jldoctest tutorial_one
 using Kokako, GLPK
@@ -198,18 +198,18 @@ In a JuMP model, we can set the objective using `@objective`. For example:
 ```
 
 Since we only need to define the objective for each stage, rather than the
-whole problem, we use the Kokako-provided [`@stageobjective`](@ref).
+whole problem, we use the `SDDP.jl`-provided [`@stageobjective`](@ref).
 ```julia
 @stageobjective(subproblem, fuel_cost[t] * thermal_generation)
 ```
 Note that we don't have to specify the optimization sense (`Max` of `Min`) since
 this is done via the `sense` keyword argument of [`Kokako.LinearPolicyGraph`](@ref).
 
-## Training a Kokako policy
+## Training a policy
 
-Kokako models can be trained using the [`Kokako.train`](@ref) function. It
-accepts a number of keyword arguments. `iteration_limit` terminates the training
-after the provided number of iterations.
+Models can be trained using the [`Kokako.train`](@ref) function. It accepts a
+number of keyword arguments. `iteration_limit` terminates the training after the
+provided number of iterations.
 
 [`Kokako.train`](@ref) returns a `TrainingResults` object. You can query the
 reason that the training stopped by calling [`Kokako.termination_status`](@ref)
@@ -223,7 +223,7 @@ println("Termination status is: ", Kokako.termination_status(training_results))
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                        Kokako - © Oscar Dowson, 2018-19.
+                        SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -292,6 +292,6 @@ thermal generation and 0 MWh of hydro generation. In the second stage, use 100
 MWh of thermal and 50 MWh of hydro. In the third and final stage, use 0 MWh of
 thermal and 150 MWh of  hydro.
 
-This concludes our first very simple tutorial for `Kokako.jl`. In the next
+This concludes our first very simple tutorial for `SDDP.jl`. In the next
 tutorial, [Basic II: adding uncertainty](@ref), we will extend this problem by
 adding uncertainty.

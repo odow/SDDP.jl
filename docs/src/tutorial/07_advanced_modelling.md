@@ -91,6 +91,6 @@ emissions : 0.5 x_out <= 1.0
     `JuMP.set_coefficient` sets the coefficient on the _canonicalized_
     constraint.
 
-This concludes or series of basic introductory tutorials for `Kokako.jl`. When
+This concludes or series of basic introductory tutorials for `SDDP.jl`. When
 you're ready, continue to our intermediate series of tutorials, beginning with
 [Intermediate I: risk](@ref).

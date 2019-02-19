@@ -82,7 +82,7 @@ println("Finished training!")
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                        Kokako - © Oscar Dowson, 2018-19.
+                        SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -120,7 +120,7 @@ println("Finished training!")
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
-                        Kokako - © Oscar Dowson, 2018-19.
+                        SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
@@ -151,5 +151,5 @@ look out for.
   varies between models, but notice that `11.0` is quite close to `10.0`
   compared with `3.5` and `0.0`.
 
-This concludes our sixth tutorial for `Kokako.jl`. In our final basics tutorial,
+This concludes our sixth tutorial for `SDDP.jl`. In our final basics tutorial,
 [Basic VII: modelling tips](@ref) we discuss some additional modelling tips.
