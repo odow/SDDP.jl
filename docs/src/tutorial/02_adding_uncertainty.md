@@ -79,8 +79,8 @@ A policy graph with 3 nodes.
  Node indices: 1, 2, 3
 ```
 
-Note how we use the JuMP function `JuMP.fix` to set the value of the `inflow`
-variable to `ω`.
+Note how we use the JuMP function [`JuMP.fix`](http://www.juliaopt.org/JuMP.jl/v0.19/variables/#JuMP.fix)
+to set the value of the `inflow` variable to `ω`.
 
 !!! note
     [`Kokako.parameterize`](@ref) can only be called once in each subproblem
@@ -89,13 +89,9 @@ variable to `ω`.
 ## Training and simulating the policy
 
 As in [Basic I: first steps](@ref), we train the policy:
-```jldoctest tutorial_two; filter=r"\|.+?\n"
-training_results = Kokako.train(model; iteration_limit = 10)
 
-println("Termination status is: ", Kokako.termination_status(training_results))
-
-# output
-
+```jldoctest tutorial_two; filter=r"\|.+"
+julia> Kokako.train(model; iteration_limit = 10);
 ———————————————————————————————————————————————————————————————————————————————
                         Kokako - © Oscar Dowson, 2018-19.
 ———————————————————————————————————————————————————————————————————————————————
@@ -111,7 +107,6 @@ println("Termination status is: ", Kokako.termination_status(training_results))
          8 |    12.500K |     8.333K |     0.014
          9 |     7.500K |     8.333K |     0.014
         10 |     5.000K |     8.333K |     0.016
-Termination status is: iteration_limit
 ```
 
 !!! note
@@ -126,24 +121,23 @@ expected cost. This confidence interval is an estimate for the upper bound.
 In addition to the confidence interval, we can calculate the lower bound using
 [`Kokako.calculate_bound`](@ref).
 
-```jldoctest tutorial_two; filter=r"Confidence interval.+?\n"
-simulations = Kokako.simulate(model, 500)
+```jldoctest tutorial_two; filter=r"Confidence interval.+"
+julia> simulations = Kokako.simulate(model, 500);
 
-objective_values = [
-    sum(stage[:stage_objective] for stage in sim) for sim in simulations
-]
+julia> objective_values = [
+           sum(stage[:stage_objective] for stage in sim) for sim in simulations
+       ];
 
-using Statistics
+julia> using Statistics
 
-μ = round(mean(objective_values), digits = 2)
-ci = round(1.96 * std(objective_values) / sqrt(500), digits = 2)
+julia> μ = round(mean(objective_values), digits = 2);
 
-println("Confidence interval: ", μ, " ± ", ci)
-println("Lower bound: ", round(Kokako.calculate_bound(model), digits = 2))
+julia> ci = round(1.96 * std(objective_values) / sqrt(500), digits = 2);
 
-# output
-
+julia> println("Confidence interval: ", μ, " ± ", ci)
 Confidence interval: 8400.00 ± 409.34
+
+julia> println("Lower bound: ", round(Kokako.calculate_bound(model), digits = 2))
 Lower bound: 8333.33
 ```
 
@@ -155,18 +149,15 @@ corresponds to the price we should charge for electricity, since it represents
 the cost of each additional unit of demand. To calculate this, we can go
 
 ```jldoctest tutorial_two; filter = r"\s+?\-?\d+\.0"
-simulations = Kokako.simulate(
-    model,
-    1,
-    custom_recorders = Dict{Symbol, Function}(
-        :price => (sp) -> JuMP.dual(sp[:demand_constraint])
-    )
-)
+julia> simulations = Kokako.simulate(
+           model,
+           1,
+           custom_recorders = Dict{Symbol, Function}(
+               :price => (sp) -> JuMP.dual(sp[:demand_constraint])
+           )
+       );
 
-electricity_price = [stage[:price] for stage in simulations[1]]
-
-# output
-
+julia> [stage[:price] for stage in simulations[1]]
 3-element Array{Float64,1}:
   50.0
  100.0
