@@ -155,6 +155,10 @@ A policy graph with 3 nodes.
 
 Wasn't that easy! Let's walk through some of the non-obvious features.
 
+!!! info
+    For more information on [`Kokako.LinearPolicyGraph`](@ref)s, read
+    [Intermediate III: policy graphs](@ref).
+
 #### The keywords in the [`Kokako.LinearPolicyGraph`](@ref) constructor
 
 Hopefully `stages` and `sense` are obvious. However, the other two are not so

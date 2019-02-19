@@ -11,6 +11,27 @@ struct Graph{T}
     nodes::Dict{T, Vector{Tuple{T, Float64}}}
 end
 
+# Helper utilities to sort the nodes for printing. This helps linear and
+# Markovian policy graphs where the nodes might be stored in an unusual ordering
+# in the dictionary.
+sort_nodes(nodes::Vector{Int}) = sort!(nodes)
+sort_nodes(nodes::Vector{Tuple{Int, Int}}) = sort!(nodes)
+sort_nodes(nodes) = nodes
+
+function Base.show(io::IO, graph::Graph)
+    println(io, "Root")
+    println(io, " ", graph.root_node)
+    println(io, "Nodes")
+    nodes = sort_nodes(collect(keys(graph.nodes)))
+    println.(Ref(io), " ", filter(n -> n != graph.root_node, nodes))
+    println(io, "Arcs")
+    for node in nodes
+        for (child, probability) in graph.nodes[node]
+            println(io, " ", node, " => ", child, " w.p. ", probability)
+        end
+    end
+end
+
 function validate_graph(graph)
     for (node, children) in nodes
         probability = sum(child[2] for child in children)
@@ -21,6 +42,11 @@ function validate_graph(graph)
     end
 end
 
+"""
+    Graph(root_node::T) where T
+
+Create an empty graph struture with the root node `root_node`.
+"""
 function Graph(root_node::T) where T
     return Graph(root_node, Dict{T, Vector{Tuple{T, Float64}}}(
         root_node => Tuple{T, Float64}[]))
@@ -208,13 +234,6 @@ mutable struct PolicyGraph{T}
         new{T}(optimization_sense, Noise{T}[], Dict{Symbol, Float64}(), Dict{T, Node{T}}())
     end
 end
-
-# Helper utilities to sort the nodes for printing. This helps linear and
-# Markovian policy graphs where the nodes might be stored in an unusual ordering
-# in the dictionary.
-sort_nodes(nodes::Vector{Int}) = sort!(nodes)
-sort_nodes(nodes::Vector{Tuple{Int, Int}}) = sort!(nodes)
-sort_nodes(nodes) = nodes
 
 function Base.show(io::IO, graph::PolicyGraph)
     println(io, "A policy graph with $(length(graph.nodes)) nodes.")

@@ -107,6 +107,10 @@ A policy graph with 5 nodes.
  Node indices: (1, 1), (2, 1), (2, 2), (3, 1), (3, 2)
 ```
 
+!!! info
+    For more information on [`Kokako.MarkovianPolicyGraph`](@ref)s, read
+    [Intermediate III: policy graphs](@ref).
+
 ## Training and simulating the policy
 
 As in the previous three tutorials, we train the policy:

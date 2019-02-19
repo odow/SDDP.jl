@@ -3,6 +3,11 @@
 ## Policy graphs
 
 ```@docs
+Kokako.Graph
+Kokako.add_node
+Kokako.add_edge
+Kokako.LinearGraph
+Kokako.MarkovianGraph
 Kokako.LinearPolicyGraph
 Kokako.MarkovianPolicyGraph
 Kokako.PolicyGraph
