@@ -197,6 +197,35 @@ end
 stage_objective_value(stage_objective::Real) = stage_objective
 stage_objective_value(stage_objective) = JuMP.value(stage_objective)
 
+# For files, we need to strip out any unnecessary bits of the default constraint
+# names.
+function sanitize_name(name::String)
+    for str_old in ["MathOptInterface.", "{", "}", "."]
+        name = replace(name, str_old => "")
+    end
+    return name
+end
+
+function write_to_file(subproblem::JuMP.Model, filename::String)
+    mps = MathOptFormat.MPS.Model()
+    MOI.copy_to(mps, JuMP.backend(subproblem))
+    for (F, S) in MOI.get(mps, MOI.ListOfConstraints())
+        for c_index in MOI.get(mps, MOI.ListOfConstraintIndices{F, S}())
+            if MOI.get(mps, MOI.ConstraintName(), c_index) == ""
+                name = sanitize_name("$(F)_$(S)_$(c_index.value)")
+                MOI.set(mps, MOI.ConstraintName(), c_index, name)
+            end
+        end
+    end
+    for v_index in MOI.get(mps, MOI.ListOfVariableIndices())
+        if MOI.get(mps, MOI.VariableName(), v_index) == ""
+            MOI.set(mps, MOI.VariableName(), v_index, "v_$(v_index.value)")
+        end
+    end
+    MOI.write_to_file(mps, filename)
+    return
+end
+
 # Internal function: solve the subproblem associated with node given the
 # incoming state variables state and realization of the stagewise-independent
 # noise term noise. If require_duals=true, also return the dual variables
@@ -217,11 +246,12 @@ function solve_subproblem(graph::PolicyGraph{T},
     # Test for primal feasibility.
     primal_status = JuMP.primal_status(node.subproblem)
     if primal_status != JuMP.MOI.FEASIBLE_POINT
-        error("""Unable to solve node $(node.index).
-            Termination status: $(JuMP.termination_status(node.subproblem))
-            Primal status: $(primal_status)
-            Dual status: $(JuMP.dual_status(node.subproblem)).
-        """)
+        write_to_file(node.subproblem, "subproblem.mps")
+        error("Unable to retrieve primal solution from ", node.index, ".",
+              "\n  Termination status: ", JuMP.termination_status(node.subproblem),
+              "\n  Primal status:      ", primal_status,
+              "\n  Dual status:        ", JuMP.dual_status(node.subproblem),
+              ".\n An MPS file was written to `subproblem.mps`")
     end
     # If require_duals = true, check for dual feasibility and return a dict with
     # the dual on the fixed constraint associated with each incoming state
@@ -230,8 +260,12 @@ function solve_subproblem(graph::PolicyGraph{T},
     dual_values = if require_duals
         dual_status = JuMP.dual_status(node.subproblem)
         if dual_status != JuMP.MOI.FEASIBLE_POINT
-            error("Unable to solve dual of node $(node.index). Dual status: " *
-                  "$(dual_status).")
+            write_to_file(node.subproblem, "subproblem.mps")
+            error("Unable to retrieve dual solution from ", node.index, ".",
+                  "\n  Termination status: ", JuMP.termination_status(node.subproblem),
+                  "\n  Primal status:      ", primal_status,
+                  "\n  Dual status:        ", dual_status,
+                  ".\n An MPS file was written to `subproblem.mps`")
         end
         get_dual_variables(node)
     else

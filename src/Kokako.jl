@@ -9,6 +9,7 @@ import Reexport
 Reexport.@reexport using JuMP
 
 import JSON, Printf, Random, RecipesBase, TimerOutputs, Statistics
+import MathOptFormat
 
 export @stageobjective
 

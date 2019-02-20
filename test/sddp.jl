@@ -51,3 +51,25 @@ end
     train_results = Kokako.train(model; iteration_limit = 4)
     @test Kokako.termination_status(train_results) == :iteration_limit
 end
+
+function MOI.get(::GLPK.Optimizer, ::MOI.ListOfVariableAttributesSet)
+    return MOI.AbstractVariableAttribute[MOI.VariableName()]
+end
+function MOI.get(::GLPK.Optimizer, ::MOI.ListOfConstraintAttributesSet)
+    return MOI.AbstractConstraintAttribute[MOI.ConstraintName()]
+end
+
+@testset "infeasible model" begin
+    model = Kokako.LinearPolicyGraph(
+                stages = 2,
+                lower_bound = 0.0,
+                optimizer = with_optimizer(GLPK.Optimizer)
+                    ) do node, stage
+        @variable(node, x >= 0, Kokako.State, initial_value = 0.0)
+        @constraint(node, x.out <= -1)
+        @stageobjective(node, x.out)
+    end
+    @test_throws Exception Kokako.train(model; iteration_limit = 1)
+    @test isfile("subproblem.mps")
+    rm("subproblem.mps")
+end
