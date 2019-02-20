@@ -7,7 +7,7 @@ using Kokako, GLPK, Random, Test
 
 @testset "TimeLimit" begin
     graph = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               bellman_function = Kokako.AverageCut(),
+                               lower_bound = 0.0,
                                direct_mode = false) do node, stage
         @variable(node, x, Kokako.State, initial_value = 0)
     end
@@ -19,7 +19,7 @@ end
 
 @testset "IterationLimit" begin
     graph = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               bellman_function = Kokako.AverageCut(),
+                               lower_bound = 0.0,
                                direct_mode = false) do node, stage
         @variable(node, x, Kokako.State, initial_value = 0)
     end
@@ -53,7 +53,7 @@ end
 
 @testset "BoundStalling" begin
     graph = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               bellman_function = Kokako.AverageCut(),
+                               lower_bound = 0.0,
                                direct_mode = false) do node, stage
         @variable(node, x, Kokako.State, initial_value = 0)
     end

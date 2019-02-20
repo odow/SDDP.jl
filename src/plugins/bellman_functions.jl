@@ -88,8 +88,16 @@ function initialize_bellman_function(factory::BellmanFactory{AverageCut},
     if length(node.children) == 0
         lower_bound = upper_bound = 0.0
     end
-    bellman_variable = @variable(node.subproblem, lower_bound = lower_bound,
-                                 upper_bound = upper_bound)
+    bellman_variable = if lower_bound == -Inf && upper_bound < Inf
+        @variable(node.subproblem, upper_bound = upper_bound)
+    elseif lower_bound > -Inf && upper_bound == Inf
+        @variable(node.subproblem, lower_bound = lower_bound)
+    elseif lower_bound > -Inf && upper_bound < Inf
+        @variable(node.subproblem,
+            lower_bound = lower_bound, upper_bound = upper_bound)
+    else
+        error("You must supply a non-infinite bound for the cost-to-go variable.")
+    end
     # Initialize bounds for the objective states. If objective_state==nothing,
     # this check will be skipped by dispatch.
     add_initial_bounds(node.objective_state, node.subproblem, bellman_variable)
@@ -105,8 +113,8 @@ end
 
 # Internal function: helper used in add_initial_bounds.
 function add_objective_state_constraint(subproblem, y, μ, θ)
-    lower_bound = JuMP.lower_bound(θ)
-    upper_bound = JuMP.upper_bound(θ)
+    lower_bound = JuMP.has_lower_bound(θ) ? JuMP.lower_bound(θ) : -Inf
+    upper_bound = JuMP.has_upper_bound(θ) ? JuMP.upper_bound(θ) : Inf
     if lower_bound > -Inf
         @constraint(subproblem, _dot(y, μ) + θ >= lower_bound)
     end

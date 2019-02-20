@@ -95,17 +95,17 @@ end
 @testset "PolicyGraph constructor" begin
     @testset "LinearGraph" begin
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                                   bellman_function = Kokako.AverageCut(),
+                                   lower_bound = 0.0,
                                    direct_mode=false) do node, stage
         end
 
         @test_throws Exception Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                                                  bellman_function = Kokako.AverageCut()
+                                                  lower_bound = 0.0
                                                       ) do node, stage
         end
         nodes = Set{Int}()
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                                   bellman_function = Kokako.AverageCut(),
+                                   lower_bound = 0.0,
                                    optimizer = with_optimizer(GLPK.Optimizer)
                                        ) do node, stage
             push!(nodes, stage)
@@ -123,7 +123,7 @@ end
             ]
         )
         nodes = Set{Tuple{Int, Int}}()
-        model = Kokako.PolicyGraph(graph, bellman_function = Kokako.AverageCut(),
+        model = Kokako.PolicyGraph(graph, lower_bound = 0.0,
                                    direct_mode = false) do node, stage
             push!(nodes, stage)
         end
@@ -142,7 +142,7 @@ end
             ]
         )
         nodes = Set{Symbol}()
-        model = Kokako.PolicyGraph(graph, bellman_function = Kokako.AverageCut(),
+        model = Kokako.PolicyGraph(graph, lower_bound = 0.0,
                                    direct_mode = false) do node, stage
             push!(nodes, stage)
         end
@@ -152,7 +152,7 @@ end
 
 @testset "Kokako.State" begin
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               bellman_function = Kokako.AverageCut(),
+                               lower_bound = 0.0,
                                direct_mode = false) do node, stage
         @variable(node, x, Kokako.State, initial_value = 0)
     end
@@ -166,7 +166,7 @@ end
 
 @testset "Kokako.parameterize" begin
     model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                               bellman_function = Kokako.AverageCut(),
+                               lower_bound = 0.0,
                                direct_mode = false) do node, stage
         @variable(node, 0 <= x <= 1)
         Kokako.parameterize(node, [1, 2, 3], [0.4, 0.5, 0.1]) do ω
@@ -185,7 +185,7 @@ end
 @testset "Kokako.set_stage_objective" begin
     @testset ":Min" begin
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                                   bellman_function = Kokako.AverageCut(),
+                                   lower_bound = 0.0,
                                    direct_mode = false) do node, stage
             @variable(node, 0 <= x <= 1)
             @stageobjective(node, 2x)
@@ -197,7 +197,7 @@ end
 
     @testset ":Max" begin
         model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                                   bellman_function = Kokako.AverageCut(),
+                                   lower_bound = 0.0,
                                    sense = :Max,
                                    direct_mode = false) do node, stage
             @variable(node, 0 <= x <= 1)
