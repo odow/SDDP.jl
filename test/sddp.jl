@@ -72,4 +72,6 @@ end
     @test_throws Exception Kokako.train(model; iteration_limit = 1)
     @test isfile("subproblem.mps")
     rm("subproblem.mps")
+    @test isfile("subproblem.lp")
+    rm("subproblem.lp")
 end

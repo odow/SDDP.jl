@@ -18,29 +18,17 @@ using Kokako, Test, Random
     end
 end
 
-const EXAMPLES = [
-    "biobjective_hydro.jl",
-    "objective_state_newsvendor.jl",
-    "agriculture_mccardle_farm.jl",
-    "asset_management_simple.jl",
-    "FAST_hydro_thermal.jl",
-    "FAST_production_management.jl",
-    "FAST_quickstart.jl",
-    "infinite_horizon_trivial.jl",
-    "infinite_horizon_hydro_thermal.jl",
-    "StructDualDynProg.jl_prob5.2_2stages.jl",
-    "StructDualDynProg.jl_prob5.2_3stages.jl",
-    "StochDynamicProgramming.jl_stock.jl",
-    "StochDynamicProgramming.jl_multistock.jl"
+const EXCLUDED_EXAMPLES = [
+    "inventory_management.jl",
+    "daniel_hydro_complete.jl"
 ]
 
 const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
 
 @testset "Examples" begin
-    for example in EXAMPLES
-        @testset "$(example)" begin
-            Random.seed!(12345)
-            include(joinpath(EXAMPLES_DIR, example))
-        end
+    @testset "$(example)" for example in filter(
+            s-> !(s in EXCLUDED_EXAMPLES) && endswith(s, ".jl"), readdir(EXAMPLES_DIR))
+        Random.seed!(12345)
+        include(joinpath(EXAMPLES_DIR, example))
     end
 end

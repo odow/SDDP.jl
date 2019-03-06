@@ -27,9 +27,9 @@ version = "0.2.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "49269e311ffe11ac5b334681d212329002a9832a"
+git-tree-sha1 = "195a3ffcb8b0762684b6821de18f83a16455c6ea"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "1.5.1"
+version = "2.0.0"
 
 [[Crayons]]
 deps = ["Test"]
@@ -75,15 +75,15 @@ version = "0.6.0"
 
 [[Documenter]]
 deps = ["Base64", "DocStringExtensions", "InteractiveUtils", "LibGit2", "Logging", "Markdown", "Pkg", "REPL", "Random", "Test", "Unicode"]
-git-tree-sha1 = "f5dd8036d6e6673d8f0f9b60cd844ebb89aec591"
+git-tree-sha1 = "a8c41ba3d0861240dbec942ee1d0f86c57c37c1c"
 uuid = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-version = "0.21.4"
+version = "0.21.5"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "InteractiveUtils", "LinearAlgebra", "NaNMath", "Random", "SparseArrays", "SpecialFunctions", "StaticArrays", "Test"]
-git-tree-sha1 = "e393bd3b9102659fb24fe88caedec41f2bc2e7de"
+git-tree-sha1 = "4c4d727f1b7e0092134fabfab6396b8945c1ea5b"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.2"
+version = "0.10.3"
 
 [[GLPK]]
 deps = ["BinaryProvider", "Compat", "Libdl", "LinQuadOptInterface"]
@@ -122,6 +122,8 @@ uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 [[LinQuadOptInterface]]
 deps = ["Compat", "MathOptInterface"]
 git-tree-sha1 = "d6692a09d0424e34c884cd819b8ed47943eefc20"
+repo-rev = "master"
+repo-url = "https://github.com/JuliaOpt/LinQuadOptInterface.jl.git"
 uuid = "f8899e07-120b-5979-ab1d-7b97bb9e1a48"
 version = "0.6.0"
 
@@ -137,8 +139,8 @@ deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[MathOptFormat]]
-deps = ["Compat", "DataStructures", "GZip", "JSON", "MathOptInterface"]
-git-tree-sha1 = "1e7270de10b7140b4b2df8b8576956eed62583de"
+deps = ["DataStructures", "GZip", "JSON", "MathOptInterface", "Test"]
+git-tree-sha1 = "545d0d75f7e3c097ebfee341e7475485ab3739b3"
 repo-rev = "master"
 repo-url = "https://github.com/odow/MathOptFormat.jl"
 uuid = "54bc58d1-11ba-502a-845d-f421086f2369"
@@ -218,9 +220,9 @@ version = "0.7.2"
 
 [[StaticArrays]]
 deps = ["InteractiveUtils", "LinearAlgebra", "Random", "Statistics", "Test"]
-git-tree-sha1 = "1eb114d6e23a817cd3e99abc3226190876d7c898"
+git-tree-sha1 = "3841b39ed5f047db1162627bf5f80a9cd3e39ae2"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "0.10.2"
+version = "0.10.3"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -232,9 +234,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[TimerOutputs]]
 deps = ["Crayons", "Printf", "Test", "Unicode"]
-git-tree-sha1 = "89a9bd610d6bfd62a7c2b85112762b99b979fe5f"
+git-tree-sha1 = "b80671c06f8f8bae08c55d67b5ce292c5ae2660c"
 uuid = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
-version = "0.4.0"
+version = "0.5.0"
 
 [[URIParser]]
 deps = ["Test", "Unicode"]
