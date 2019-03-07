@@ -119,6 +119,12 @@ julia> Kokako.train(model; iteration_limit = 10)
 ———————————————————————————————————————————————————————————————————————————————
                         SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+00]
+  Non-zero Objective range  [1e+00, 2e+02]
+  Non-zero Bounds range     [2e+02, 2e+02]
+  Non-zero RHS range        [2e+02, 2e+02]
+———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
          1 |     5.625K |     5.329K |     0.031

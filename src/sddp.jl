@@ -11,27 +11,27 @@ const SDDP_TIMER = TimerOutputs.TimerOutput()
 # risk_measure = (node_index) -> node_index == 1 ? Expectation() : WorstCase()
 # It will return a dictionary with a key for each node_index in the policy
 # graph, and a corresponding value of whatever the user provided.
-function to_nodal_form(graph::PolicyGraph{T}, element) where T
+function to_nodal_form(model::PolicyGraph{T}, element) where T
     # Note: we don't copy element here, so it element is mutable, you should use
-    # to_nodal_form(graph, x -> new_element()) instead. A good example is
-    # Vector{T}; use to_nodal_form(graph, i -> T[]).
+    # to_nodal_form(model, x -> new_element()) instead. A good example is
+    # Vector{T}; use to_nodal_form(model, i -> T[]).
     store = Dict{T, typeof(element)}()
-    for node_index in keys(graph.nodes)
+    for node_index in keys(model.nodes)
         store[node_index] = element
     end
     return store
 end
-function to_nodal_form(graph::PolicyGraph{T}, builder::Function) where T
-    node = first(keys(graph.nodes))
+function to_nodal_form(model::PolicyGraph{T}, builder::Function) where T
+    node = first(keys(model.nodes))
     element = builder(node)
     store = Dict{T, typeof(element)}()
-    for node_index in keys(graph.nodes)
+    for node_index in keys(model.nodes)
         store[node_index] = builder(node_index)
     end
     return store
 end
-function to_nodal_form(graph::PolicyGraph{T}, dict::Dict{T, V}) where {T, V}
-    for key in keys(graph.nodes)
+function to_nodal_form(model::PolicyGraph{T}, dict::Dict{T, V}) where {T, V}
+    for key in keys(model.nodes)
         if !haskey(dict, key)
             error("Missing key: $(key).")
         end
@@ -46,17 +46,17 @@ end
 #
 # TODO(odow): this is inefficient as it is O(n²) in the number of nodes, but
 # it's just a one-off hit so let's optimize later.
-function get_same_children(graph::PolicyGraph{T}) where T
+function get_same_children(model::PolicyGraph{T}) where T
     same_children = Dict{T, Vector{T}}()
-    # For each node in the graph
-    for (node_index_1, node_1) in graph.nodes
+    # For each node in the model
+    for (node_index_1, node_1) in model.nodes
         same_children[node_index_1] = T[]
         # Get the set of child nodes.
         children_1 = Set(child.term for child in node_1.children)
         # Skip this one if there are no children.
         length(children_1) == 0 && continue
-        # For each node in the graph:
-        for (node_index_2, node_2) in graph.nodes
+        # For each node in the model:
+        for (node_index_2, node_2) in model.nodes
             node_index_1 == node_index_2 && continue
             # Get the set of child nodes.
             children_2 = Set(child.term for child in node_2.children)
@@ -71,9 +71,9 @@ function get_same_children(graph::PolicyGraph{T}) where T
     return same_children
 end
 
-function build_Φ(graph::PolicyGraph{T}) where T
+function build_Φ(model::PolicyGraph{T}) where T
     Φ = Dict{Tuple{T, T}, Float64}()
-    for (node_index_1, node_1) in graph.nodes
+    for (node_index_1, node_1) in model.nodes
         for child in node_1.children
             Φ[(node_index_1, child.term)] = child.probability
         end
@@ -177,7 +177,7 @@ end
 
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
-function set_objective(graph::PolicyGraph{T}, node::Node{T}) where T
+function set_objective(model::PolicyGraph{T}, node::Node{T}) where T
     objective_state_component = get_objective_state_component(node)
     if objective_state_component != JuMP.AffExpr(0.0)
         node.stage_objective_set = false
@@ -185,7 +185,7 @@ function set_objective(graph::PolicyGraph{T}, node::Node{T}) where T
     if !node.stage_objective_set
         JuMP.set_objective(
             node.subproblem,
-            graph.objective_sense,
+            model.objective_sense,
             node.stage_objective + objective_state_component +
                 bellman_term(node.bellman_function)
         )
@@ -212,7 +212,7 @@ end
 # incoming state variables state and realization of the stagewise-independent
 # noise term noise. If require_duals=true, also return the dual variables
 # associated with the fixed constraint of the incoming state variables.
-function solve_subproblem(graph::PolicyGraph{T},
+function solve_subproblem(model::PolicyGraph{T},
                           node::Node{T},
                           state::Dict{Symbol, Float64},
                           noise,
@@ -223,7 +223,7 @@ function solve_subproblem(graph::PolicyGraph{T},
     # the user calls set_stage_objective in the parameterize function.
     set_incoming_state(node, state)
     node.parameterize(noise)
-    set_objective(graph, node)
+    set_objective(model, node)
     JuMP.optimize!(node.subproblem)
     # Test for primal feasibility.
     primal_status = JuMP.primal_status(node.subproblem)
@@ -285,14 +285,12 @@ end
 
 # Internal function: perform a single forward pass of the SDDP algorithm given
 # options.
-function forward_pass(graph::PolicyGraph{T}, options::Options) where T
+function forward_pass(model::PolicyGraph{T}, options::Options) where T
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
     TimerOutputs.@timeit SDDP_TIMER "sample_scenario" begin
         scenario_path, terminated_due_to_cycle = sample_scenario(
-            graph,
-            options.sampling_scheme
-        )
+            model, options.sampling_scheme)
     end
     # Storage for the list of outgoing states that we visit on the forward pass.
     sampled_states = Dict{Symbol, Float64}[]
@@ -302,11 +300,11 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
     cumulative_value = 0.0
     # Objective state interpolation.
     objective_state_vector, N = initialize_objective_state(
-        graph[scenario_path[1][1]])
+        model[scenario_path[1][1]])
     objective_states = NTuple{N, Float64}[]
     # Iterate down the scenario.
     for (node_index, noise) in scenario_path
-        node = graph[node_index]
+        node = model[node_index]
         # Objective state interpolation.
         objective_state_vector = update_objective_state(
             node.objective_state, objective_state_vector, noise)
@@ -339,7 +337,7 @@ function forward_pass(graph::PolicyGraph{T}, options::Options) where T
         TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
             (outgoing_state_value, duals, stage_objective, objective) =
                 solve_subproblem(
-                    graph, node, incoming_state_value, noise, false)
+                    model, node, incoming_state_value, noise, false)
         end
         # Cumulate the stage_objective.
         cumulative_value += stage_objective
@@ -398,7 +396,7 @@ end
 # scenario_path, refining the bellman function at sampled_states. Assumes that
 # scenario_path does not end in a leaf node (i.e., the forward pass was solved
 # with include_last_node = false)
-function backward_pass(graph::PolicyGraph{T},
+function backward_pass(model::PolicyGraph{T},
                        options::Options,
                        scenario_path::Vector{Tuple{T, NoiseType}},
                        sampled_states::Vector{Dict{Symbol, Float64}},
@@ -408,7 +406,7 @@ function backward_pass(graph::PolicyGraph{T},
         # Lookup node, noise realization, and outgoing state variables.
         node_index, noise = scenario_path[index]
         outgoing_state = sampled_states[index]
-        node = graph[node_index]
+        node = model[node_index]
         # If our node has no children, it means that we terminated the forward
         # pass at a leaf node. In this case, we don't need to add any cuts so we
         # can skip back up the scenario path one node. This should only ever be
@@ -430,7 +428,7 @@ function backward_pass(graph::PolicyGraph{T},
         end
         # Solve all children.
         for child in node.children
-            child_node = graph[child.term]
+            child_node = model[child.term]
             for noise in child_node.noise_terms
                 # There are multiple ways to check this. Here is one. Another
                 # could be that |objective_state| = |scenario_path|.
@@ -441,7 +439,7 @@ function backward_pass(graph::PolicyGraph{T},
                 TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
                     (new_outgoing_state, duals, stage_objective, obj) =
                         solve_subproblem(
-                            graph, child_node, outgoing_state, noise.term
+                            model, child_node, outgoing_state, noise.term
                         )
                 end
                 push!(dual_variables, duals)
@@ -453,7 +451,7 @@ function backward_pass(graph::PolicyGraph{T},
             end
         end
         refine_bellman_function(
-            graph,
+            model,
             node,
             node.bellman_function,
             options.risk_measures[node_index],
@@ -468,14 +466,14 @@ function backward_pass(graph::PolicyGraph{T},
             # e.g., in the same stage of a Markovian policy graph.
             for other_index in options.similar_children[node_index]
                 copied_probability = similar(original_probability)
-                other_node = graph[other_index]
+                other_node = model[other_index]
                 for (idx, child_index) in enumerate(child_indices)
                     copied_probability[idx] =
                         get(options.Φ, (other_index, child_index), 0.0) *
                         noise_supports[idx].probability
                 end
                 refine_bellman_function(
-                    graph,
+                    model,
                     other_node,
                     other_node.bellman_function,
                     options.risk_measures[other_index],
@@ -491,31 +489,31 @@ function backward_pass(graph::PolicyGraph{T},
 end
 
 """
-    Kokako.calculate_bound(graph::PolicyGraph, state::Dict{Symbol, Float64},
+    Kokako.calculate_bound(model::PolicyGraph, state::Dict{Symbol, Float64},
                            risk_measure=Expectation())
 
 Calculate the lower bound (if minimizing, otherwise upper bound) of the problem
-graph at the point state, assuming the risk measure at the root node is
+model at the point state, assuming the risk measure at the root node is
 risk_measure.
 """
-function calculate_bound(graph::PolicyGraph,
+function calculate_bound(model::PolicyGraph,
                          root_state::Dict{Symbol, Float64} =
-                            graph.initial_root_state;
+                            model.initial_root_state;
                          risk_measure = Expectation())
     # Initialization.
     noise_supports = Any[]
     probabilities = Float64[]
     objectives = Float64[]
     # Solve all problems that are children of the root node.
-    for child in graph.root_children
-        node = graph[child.term]
+    for child in model.root_children
+        node = model[child.term]
         for noise in node.noise_terms
             if node.objective_state !== nothing
                 update_objective_state(node.objective_state,
                     node.objective_state.initial_value, noise.term)
             end
             (outgoing_state, duals, stage_objective, obj) =
-                solve_subproblem(graph, node, root_state, noise.term)
+                solve_subproblem(model, node, root_state, noise.term)
             push!(objectives, obj)
             push!(probabilities, child.probability * noise.probability)
             push!(noise_supports, noise.term)
@@ -528,7 +526,7 @@ function calculate_bound(graph::PolicyGraph,
                        probabilities,
                        noise_supports,
                        objectives,
-                       graph.objective_sense == MOI.MIN_SENSE)
+                       model.objective_sense == MOI.MIN_SENSE)
     # Finally, calculate the risk-adjusted value.
     return sum(obj * prob for (obj, prob) in
         zip(objectives, risk_adjusted_probability))
@@ -553,37 +551,56 @@ function termination_status(model::PolicyGraph)
 end
 
 """
-    Kokako.train(graph::PolicyGraph; kwargs...)
+    Kokako.train(model::PolicyGraph; kwargs...)
 
-Train the policy of the graph. Keyword arguments are
- - iteration_limit: number of iterations to conduct before termination. Defaults
-   to 100_000.
- - time_limit: number of seconds to train before termination. Defaults to Inf.
- - print_level: control the level of printing to the screen.
+Train the policy of the model. Keyword arguments are
+ - iteration_limit: number of iterations to conduct before termination
+ - time_limit: number of seconds to train before termination
+ - print_level: control the level of printing to the screen
+ - log_file: filepath at which to write a log of the training progress
+ - perform_numerical_stability_check: perform a numerical stability check prior
+   to solve
+ - risk_measure
+ - stoping_rules
  - sampling_scheme: a sampling scheme to use on the forward pass of the
    algorithm. Defaults to InSampleMonteCarlo().
+ - refine_at_similar_nodes
 
 There is also a special option for infinite horizon problems
  - cycle_discretization_delta: the maximum distance between states allowed on
    the forward pass.
 """
-function train(graph::PolicyGraph;
+function train(model::PolicyGraph;
                iteration_limit = nothing,
                time_limit = nothing,
+               print_level = 1,
+               log_file = "kokako.log",
+               perform_numerical_stability_check::Bool = true,
                stopping_rules = AbstractStoppingRule[],
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.InSampleMonteCarlo(),
-               print_level = 1,
                cycle_discretization_delta = 0.0,
-               refine_at_similar_nodes = true,
-               log_file = "kokako.log"
+               refine_at_similar_nodes = true
                )
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
     log_file_handle = open(log_file, "a")
+
     if print_level > 0
         print_banner()
         print_banner(log_file_handle)
+    end
+
+    if perform_numerical_stability_check
+        # TODO: don't do this check twice.
+        numerical_stability_report(model, print = print_level > 0)
+        numerical_stability_report(
+            log_file_handle, model, print = print_level > 0)
+    end
+
+    if print_level > 0
+        print_iteration_header()
+        print_iteration_header(log_file_handle)
     end
     # Convert the vector to an AbstractStoppingRule. Otherwise if the user gives
     # something like stopping_rules = [Kokako.IterationLimit(100)], the vector
@@ -602,8 +619,8 @@ function train(graph::PolicyGraph;
               "the call to Kokako.train via a keyboard interrupt ([CTRL+C]).")
     end
     options = Options(
-        graph,
-        graph.initial_root_state,
+        model,
+        model.initial_root_state,
         sampling_scheme,
         risk_measure,
         cycle_discretization_delta,
@@ -619,19 +636,19 @@ function train(graph::PolicyGraph;
         while !has_converged
             TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
                 scenario_path, sampled_states, objective_states,
-                    cumulative_value = forward_pass(graph, options)
+                    cumulative_value = forward_pass(model, options)
             end
             TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
-                backward_pass(graph, options, scenario_path, sampled_states,
+                backward_pass(model, options, scenario_path, sampled_states,
                               objective_states)
             end
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
-                bound = calculate_bound(graph)
+                bound = calculate_bound(model)
             end
             push!(log, Log(iteration_count, bound, cumulative_value,
                 time() - start_time)
             )
-            has_converged, status = convergence_test(graph, log, stopping_rules)
+            has_converged, status = convergence_test(model, log, stopping_rules)
             if print_level > 0
                 print_iteration(stdout, log[end])
                 print_iteration(log_file_handle, log[end])
@@ -647,7 +664,7 @@ function train(graph::PolicyGraph;
         end
     end
     training_results = TrainingResults(status, log)
-    graph.most_recent_training_results = training_results
+    model.most_recent_training_results = training_results
     if print_level > 0
         print_footer(stdout, training_results)
         print_footer(log_file_handle, training_results)
@@ -662,28 +679,28 @@ end
 
 # Internal function: helper to conduct a single simulation. Users should use the
 # documented, user-facing function Kokako.simulate instead.
-function _simulate(graph::PolicyGraph,
+function _simulate(model::PolicyGraph,
                    variables::Vector{Symbol} = Symbol[];
                    sampling_scheme::AbstractSamplingScheme =
                        InSampleMonteCarlo(),
                    custom_recorders = Dict{Symbol, Function}())
     # Sample a scenario path.
     scenario_path, terminated_due_to_cycle = sample_scenario(
-        graph, sampling_scheme
+        model, sampling_scheme
     )
     # Storage for the simulation results.
     simulation = Dict{Symbol, Any}[]
     # The incoming state values.
-    incoming_state = copy(graph.initial_root_state)
+    incoming_state = copy(model.initial_root_state)
     # A cumulator for the stage-objectives.
     cumulative_value = 0.0
 
     # Objective state interpolation.
     objective_state_vector, N = initialize_objective_state(
-        graph[scenario_path[1][1]])
+        model[scenario_path[1][1]])
     objective_states = NTuple{N, Float64}[]
     for (node_index, noise) in scenario_path
-        node = graph[node_index]
+        node = model[node_index]
         # Objective state interpolation.
         objective_state_vector = update_objective_state(node.objective_state,
             objective_state_vector, noise)
@@ -692,7 +709,7 @@ function _simulate(graph::PolicyGraph,
         end
         # Solve the subproblem.
         outgoing_state, duals, stage_objective, objective = solve_subproblem(
-            graph, node, incoming_state, noise)
+            model, node, incoming_state, noise)
         # Add the stage-objective
         cumulative_value += stage_objective
         # Record useful variables from the solve.
@@ -729,7 +746,7 @@ function _simulate(graph::PolicyGraph,
 end
 
 """
-    simulate(graph::PolicyGraph,
+    simulate(model::PolicyGraph,
              number_replications::Int = 1,
              variables::Vector{Symbol} = Symbol[];
              sampling_scheme::AbstractSamplingScheme =
@@ -737,7 +754,7 @@ end
              custom_recorders = Dict{Symbol, Function}()
      )::Vector{Vector{Dict{Symbol, Any}}}
 
-Perform a simulation of the policy graph with `number_replications` replications
+Perform a simulation of the policy model with `number_replications` replications
 using the sampling scheme `sampling_scheme`.
 
 Returns a vector with one element for each replication. Each element is a vector
@@ -746,7 +763,7 @@ that vector is a dictionary containing information about the subproblem that was
 solved.
 
 In that dictionary there are four special keys:
- - :node_index, which records the index of the sampled node in the policy graph
+ - :node_index, which records the index of the sampled node in the policy model
  - :noise_term, which records the noise observed at the node
  - :stage_objective, which records the stage-objective of the subproblem
  - :bellman_term, which records the cost/value-to-go of the node.
@@ -767,7 +784,7 @@ For more complicated data, the `custom_recorders` keyword arguement can be used.
 For example, to record the dual of a constraint named `my_constraint`, pass the
 following:
 
-    simulation_results = simulate(graph, number_replications=2;
+    simulation_results = simulate(model, number_replications=2;
         custom_recorders = Dict(
             :constraint_dual = (sp) -> JuMP.dual(sp[:my_constraint])
         )
@@ -778,14 +795,14 @@ accessed as:
 
     simulation_results[2][1][:constraint_dual]
 """
-function simulate(graph::PolicyGraph,
+function simulate(model::PolicyGraph,
                   number_replications::Int = 1,
                   variables::Vector{Symbol} = Symbol[];
                   sampling_scheme::AbstractSamplingScheme =
                       InSampleMonteCarlo(),
                   custom_recorders = Dict{Symbol, Function}())
     return [_simulate(
-                graph,
+                model,
                 variables;
                 sampling_scheme = sampling_scheme,
                 custom_recorders = custom_recorders)

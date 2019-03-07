@@ -25,6 +25,7 @@ Kokako.objective_state
 ## Training the policy
 
 ```@docs
+Kokako.numerical_stability_report
 Kokako.train
 Kokako.termination_status
 ```

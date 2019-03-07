@@ -138,7 +138,7 @@ A policy graph with 3 nodes.
 After creating our model, we can train and simulate as usual.
 
 ```jldoctest intermediate_price; filter=r"\|.+?\n"
-Kokako.train(model, iteration_limit = 10)
+Kokako.train(model, iteration_limit = 10, perform_numerical_stability_check=false)
 
 simulations = Kokako.simulate(model, 1)
 
@@ -237,7 +237,7 @@ model = Kokako.LinearPolicyGraph(
     end
 end
 
-Kokako.train(model, iteration_limit = 10)
+Kokako.train(model, iteration_limit = 10, perform_numerical_stability_check=false)
 
 simulations = Kokako.simulate(model, 1)
 

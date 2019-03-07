@@ -216,6 +216,12 @@ julia> Kokako.train(model; iteration_limit = 3)
 ———————————————————————————————————————————————————————————————————————————————
                         SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+00]
+  Non-zero Objective range  [1e+00, 2e+02]
+  Non-zero Bounds range     [2e+02, 2e+02]
+  Non-zero RHS range        [2e+02, 2e+02]
+———————————————————————————————————————————————————————————————————————————————
  Iteration | Simulation |      Bound |   Time (s)
 ———————————————————————————————————————————————————————————————————————————————
          1 |    32.500K |    15.000K |     0.001
@@ -225,6 +231,10 @@ julia> Kokako.train(model; iteration_limit = 3)
  Terminating training with status: iteration_limit
 ———————————————————————————————————————————————————————————————————————————————
 ```
+
+!!! info
+    For more information on the numerical stability report, read the
+    section on [Problem scaling](@ref).
 
 ## Simulating the policy
 

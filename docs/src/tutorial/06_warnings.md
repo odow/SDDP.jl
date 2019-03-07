@@ -40,6 +40,47 @@ largest difference in magnitude. For example, if we talk in terms of million m³
 then we have a capacity of 10⁴ million m³, and a price of \\\$50,000 per million
 m³. Now things are only one order of magnitude apart.
 
+### Numerical stability report
+
+To aid in the diagnose of numerical issues, you can call
+[`Kokako.numerical_stability_report`](@ref). By default, this aggregates all of
+the nodes into a single report. You can produce a stability report for each node
+by passing `by_node=true`.
+
+```jldoctest
+using Kokako
+
+model = Kokako.LinearPolicyGraph(
+        stages = 2, lower_bound = -1e10, direct_mode=false) do subproblem, t
+    @variable(subproblem, x >= -1e7, Kokako.State, initial_value=1e-5)
+    @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 1e-8)
+    @stageobjective(subproblem, 1e9 * x.out)
+end
+
+Kokako.numerical_stability_report(model)
+
+# output
+
+Numerical stability report
+  Non-zero Matrix range     [1e-06, 1e+09]
+  Non-zero Objective range  [1e+00, 1e+09]
+  Non-zero Bounds range     [1e+07, 1e+10]
+  Non-zero RHS range        [1e-08, 1e-08]
+WARNING: numerical stability issues detected
+  - Matrix range contains small coefficients
+  - Matrix range contains large coefficients
+  - Objective range contains large coefficients
+  - Bounds range contains large coefficients
+  - RHS range contains small coefficients
+These coefficients can cause numerical stability issues. Consider reformulating
+the model.
+———————————————————————————————————————————————————————————————————————————————
+```
+
+By default, a numerical stability check is run when you call
+[`Kokako.train`](@ref), although it can be turned off by passing
+`perform_numerical_stability_check = false`.
+
 ### Solver-specific options
 
 If you have a particularly troublesome model, you should investigate setting
@@ -75,7 +116,7 @@ model = Kokako.LinearPolicyGraph(
     @stageobjective(subproblem, t * v)
 end
 
-Kokako.train(model, iteration_limit = 5)
+Kokako.train(model, iteration_limit = 5, perform_numerical_stability_check=false)
 
 # output
 
@@ -113,7 +154,7 @@ model = Kokako.LinearPolicyGraph(
     @stageobjective(subproblem, t * v)
 end
 
-Kokako.train(model, iteration_limit = 5)
+Kokako.train(model, iteration_limit = 5, perform_numerical_stability_check=false)
 
 # output
 
