@@ -540,14 +540,20 @@ struct TrainingResults
 end
 
 """
-    termination_status(results::TrainingResults)
+    termination_status(model::PolicyGraph)
 
 Query the reason why the training stopped.
 """
-termination_status(results::TrainingResults) = results.status
+function termination_status(model::PolicyGraph)
+    if model.most_recent_training_results === nothing
+        return :ModelNotSolved
+    else
+        return model.most_recent_training_results.status
+    end
+end
 
 """
-    Kokako.train(graph::PolicyGraph; kwargs...)::TrainingResults
+    Kokako.train(graph::PolicyGraph; kwargs...)
 
 Train the policy of the graph. Keyword arguments are
  - iteration_limit: number of iterations to conduct before termination. Defaults
@@ -627,8 +633,8 @@ function train(graph::PolicyGraph;
             )
             has_converged, status = convergence_test(graph, log, stopping_rules)
             if print_level > 0
-                print_iteration(log[end])
-                print_iteration(log[end], log_file_handle)
+                print_iteration(stdout, log[end])
+                print_iteration(log_file_handle, log[end])
             end
             iteration_count += 1
         end
@@ -636,15 +642,22 @@ function train(graph::PolicyGraph;
         if isa(ex, InterruptException)
             status = :interrupted
         else
+            close(log_file_handle)
             rethrow(ex)
         end
-    finally
-        close(log_file_handle)
     end
-    if print_level > 1
-        TimerOutputs.print_timer(stdout, SDDP_TIMER)
+    training_results = TrainingResults(status, log)
+    graph.most_recent_training_results = training_results
+    if print_level > 0
+        print_footer(stdout, training_results)
+        print_footer(log_file_handle, training_results)
+        if print_level > 1
+            TimerOutputs.print_timer(stdout, SDDP_TIMER)
+            TimerOutputs.print_timer(log_file_handle, SDDP_TIMER)
+        end
     end
-    return TrainingResults(status, log)
+    close(log_file_handle)
+    return
 end
 
 # Internal function: helper to conduct a single simulation. Users should use the

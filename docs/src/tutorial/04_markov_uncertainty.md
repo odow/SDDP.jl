@@ -115,12 +115,7 @@ A policy graph with 5 nodes.
 
 As in the previous three tutorials, we train the policy:
 ```jldoctest tutorial_four; filter=[r"\|.+?\n", r"Confidence interval.+?\n"]
-training_results = Kokako.train(model; iteration_limit = 10)
-
-println("Termination status is: ", Kokako.termination_status(training_results))
-
-# output
-
+julia> Kokako.train(model; iteration_limit = 10)
 ———————————————————————————————————————————————————————————————————————————————
                         SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
@@ -136,7 +131,9 @@ println("Termination status is: ", Kokako.termination_status(training_results))
          8 |    13.125K |     8.073K |     0.092
          9 |    11.250K |     8.073K |     0.096
         10 |     1.875K |     8.073K |     0.099
-Termination status is: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 ```
 
 Instead of performing a Monte Carlo simulation like the previous tutorials, we

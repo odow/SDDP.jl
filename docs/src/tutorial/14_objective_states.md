@@ -161,6 +161,9 @@ print("Finished training and simulating.")
          8 |     7.481K |     4.573K |     0.045
          9 |     5.231K |     4.573K |     0.048
         10 |     6.300K |     4.573K |     0.050
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 Finished training and simulating.
 ```
 
@@ -257,6 +260,9 @@ print("Finished training and simulating.")
          8 |     7.481K |     4.573K |     0.045
          9 |     5.231K |     4.573K |     0.048
         10 |     6.300K |     4.573K |     0.050
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 Finished training and simulating.
 ```
 

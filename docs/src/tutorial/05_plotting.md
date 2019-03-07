@@ -78,6 +78,9 @@ println("Completed $(length(simulations)) simulations.")
         18 |     5.000K |     8.073K |     0.065
         19 |     1.875K |     8.073K |     0.066
         20 |    11.250K |     8.073K |     0.069
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 Completed 100 simulations.
 ```
 

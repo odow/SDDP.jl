@@ -47,7 +47,7 @@ function test_multistock_example()
             (sin(3 * stage) - 1) * sum(control)
         )
     end
-    train_results = Kokako.train(model, iteration_limit = 100, print_level = 0)
+    Kokako.train(model, iteration_limit = 100, print_level = 0)
     @test Kokako.calculate_bound(model) ≈ -4.349 atol = 0.01
 
     simulation_results = Kokako.simulate(model, 5000)

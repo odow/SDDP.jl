@@ -74,9 +74,7 @@ A policy graph with 3 nodes.
 
 As in the previous two tutorials, we train the policy:
 ```jldoctest tutorial_two; filter=[r"\|.+?\n", r"Confidence interval.+?\n"]
-training_results = Kokako.train(model; iteration_limit = 10)
-
-println("Termination status is: ", Kokako.termination_status(training_results))
+Kokako.train(model; iteration_limit = 10)
 
 simulations = Kokako.simulate(model, 500)
 
@@ -109,7 +107,9 @@ println("Lower bound: ", round(Kokako.calculate_bound(model), digits = 2))
          8 |    27.500K |    10.625K |     0.058
          9 |    11.250K |    10.625K |     0.060
         10 |    11.250K |    10.625K |     0.061
-Termination status is: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 Confidence interval: 11342.5 ± 753.02
 Lower bound: 10625.0
 ```

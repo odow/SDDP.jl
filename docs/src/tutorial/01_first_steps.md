@@ -211,17 +211,8 @@ Models can be trained using the [`Kokako.train`](@ref) function. It accepts a
 number of keyword arguments. `iteration_limit` terminates the training after the
 provided number of iterations.
 
-[`Kokako.train`](@ref) returns a `TrainingResults` object. You can query the
-reason that the training stopped by calling [`Kokako.termination_status`](@ref)
-on this  object.
-
 ```jldoctest tutorial_one; filter=r"\|\s+?\d\.\d+?\n"
-training_results = Kokako.train(model; iteration_limit = 3)
-
-println("Termination status is: ", Kokako.termination_status(training_results))
-
-# output
-
+julia> Kokako.train(model; iteration_limit = 3)
 ———————————————————————————————————————————————————————————————————————————————
                         SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
@@ -230,7 +221,9 @@ println("Termination status is: ", Kokako.termination_status(training_results))
          1 |    32.500K |    15.000K |     0.001
          2 |    17.500K |    17.500K |     0.002
          3 |    17.500K |    17.500K |     0.002
-Termination status is: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 ```
 
 ## Simulating the policy

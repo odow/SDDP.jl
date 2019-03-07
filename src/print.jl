@@ -52,15 +52,21 @@ end
 
 function print_banner(io=stdout)
     println(io, "———————————————————————————————————————————————————————————————————————————————")
-    println(io, "                        SDDP.jl - © Oscar Dowson, 2017-19.                      ")
+    println(io, "                        SDDP.jl - © Oscar Dowson, 2017-19.")
     println(io, "———————————————————————————————————————————————————————————————————————————————")
     println(io, " Iteration | Simulation |      Bound |   Time (s)")
     println(io, "———————————————————————————————————————————————————————————————————————————————")
 end
 
-function print_iteration(log::Log, io=stdout)
+function print_iteration(io, log::Log)
     line = string(" ", humanize(log.iteration), " |  ",
         humanize(log.simulation_value), " |  ", humanize(log.bound), " |  ",
         humanize(log.time))
     println(io, line)
+end
+
+function print_footer(io, training_results)
+    println(io, "———————————————————————————————————————————————————————————————————————————————")
+    println(io, " Terminating training with status: $(training_results.status)")
+    println(io, "———————————————————————————————————————————————————————————————————————————————")
 end

@@ -48,8 +48,8 @@ end
             JuMP.set_lower_bound(x.out, ω)
         end
     end
-    train_results = Kokako.train(model; iteration_limit = 4)
-    @test Kokako.termination_status(train_results) == :iteration_limit
+    Kokako.train(model; iteration_limit = 4)
+    @test Kokako.termination_status(model) == :iteration_limit
 end
 
 function MOI.get(::GLPK.Optimizer, ::MOI.ListOfVariableAttributesSet)

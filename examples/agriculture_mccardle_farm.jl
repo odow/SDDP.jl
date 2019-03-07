@@ -118,8 +118,8 @@ function test_mccardle_farm_model()
         end
         return
     end
-    train_results = Kokako.train(model, iteration_limit = 50, print_level = 0)
-    @test Kokako.termination_status(train_results) == :iteration_limit
+    Kokako.train(model, iteration_limit = 50, print_level = 0)
+    @test Kokako.termination_status(model) == :iteration_limit
     @test Kokako.calculate_bound(model) ≈ 4074.1391 atol = 1e-5
 end
 

@@ -223,6 +223,8 @@ mutable struct PolicyGraph{T}
     initial_root_state::Dict{Symbol, Float64}
     # All nodes in the graph.
     nodes::Dict{T, Node{T}}
+    # Storage for the most recent training results.
+    most_recent_training_results
     function PolicyGraph(T, sense::Symbol)
         optimization_sense = if sense == :Min
             MOI.MIN_SENSE
@@ -231,7 +233,7 @@ mutable struct PolicyGraph{T}
         else
             error("The optimization sense must be :Min or :Max. It is $(sense).")
         end
-        new{T}(optimization_sense, Noise{T}[], Dict{Symbol, Float64}(), Dict{T, Node{T}}())
+        new{T}(optimization_sense, Noise{T}[], Dict{Symbol, Float64}(), Dict{T, Node{T}}(), nothing)
     end
 end
 

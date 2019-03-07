@@ -44,8 +44,8 @@ function asset_management_simple()
             @stageobjective(subproblem, -over + 4*short)
         end
     end
-    train_results = Kokako.train(model, iteration_limit = 25, print_level = 0)
-    @test Kokako.termination_status(train_results) == :iteration_limit
+    Kokako.train(model, iteration_limit = 25, print_level = 0)
+    @test Kokako.termination_status(model) == :iteration_limit
     @test Kokako.calculate_bound(model) ≈ 1.514 atol = 1e-4
 end
 

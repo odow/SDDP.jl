@@ -77,8 +77,6 @@ end
 
 Kokako.train(model, iteration_limit = 5)
 
-println("Finished training!")
-
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
@@ -91,7 +89,9 @@ println("Finished training!")
          3 |     3.500  |     3.500  |     0.004
          4 |     3.500  |     3.500  |     0.004
          5 |     3.500  |     3.500  |     0.005
-Finished training!
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 ```
 
 Now consider the case when we set the `lower_bound` to `10.0`:
@@ -115,8 +115,6 @@ end
 
 Kokako.train(model, iteration_limit = 5)
 
-println("Finished training!")
-
 # output
 
 ———————————————————————————————————————————————————————————————————————————————
@@ -129,7 +127,9 @@ println("Finished training!")
          3 |     5.500  |    11.000  |     0.002
          4 |     5.500  |    11.000  |     0.003
          5 |     5.500  |    11.000  |     0.006
-Finished training!
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 ```
 
 How do we tell which is more appropriate? There are a few clues that you should

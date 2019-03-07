@@ -91,7 +91,7 @@ to set the value of the `inflow` variable to `ω`.
 As in [Basic I: first steps](@ref), we train the policy:
 
 ```jldoctest tutorial_two; filter=r"\|.+"
-julia> Kokako.train(model; iteration_limit = 10);
+julia> Kokako.train(model; iteration_limit = 10)
 ———————————————————————————————————————————————————————————————————————————————
                         SDDP.jl - © Oscar Dowson, 2017-19.
 ———————————————————————————————————————————————————————————————————————————————
@@ -107,6 +107,9 @@ julia> Kokako.train(model; iteration_limit = 10);
          8 |    12.500K |     8.333K |     0.014
          9 |     7.500K |     8.333K |     0.014
         10 |     5.000K |     8.333K |     0.016
+———————————————————————————————————————————————————————————————————————————————
+ Terminating training with status: iteration_limit
+———————————————————————————————————————————————————————————————————————————————
 ```
 
 !!! note
