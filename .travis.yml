@@ -7,7 +7,7 @@ julia:
 branches:
   only:
     - master
-codecov: false
+codecov: true
 jobs:
   include:
     - stage: "Documentation"
