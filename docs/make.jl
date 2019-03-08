@@ -27,6 +27,7 @@ makedocs(
     strict = true,
     pages = [
         "Home" => "index.md",
+        "Upgrading guide" => "upgrading_guide.md",
         "Tutorials" => Any[
             "Basic" => Any[
                 "tutorial/01_first_steps.md",
