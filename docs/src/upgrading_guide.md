@@ -159,10 +159,10 @@ complete list of the new options as most things have changed.
 
 #### Plotting
 
-Much of the syntax for plotting has changed. See [Basics V: plotting](@ref) for
+Much of the syntax for plotting has changed. See [Basic V: plotting](@ref) for
 the new syntax.
 
 #### Price interpolation
 
 The syntax for models with stagewise-dependent objective processes has
-completely changed. See [`Intermediate IV: objective states`](@ref) for details.
+completely changed. See [Intermediate IV: objective states](@ref) for details.
