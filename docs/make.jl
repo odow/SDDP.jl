@@ -1,9 +1,27 @@
 using Documenter, Kokako
 
+"Set FIX_DOCTEST to `true` in order to replace the outputs of doctests."
+const FIX_DOCTESTS = false
+
+# doctest=:fix only works with `\n` line endings, so let's replace any `\r\n`
+# ones.
+function convert_line_endings()
+    for file in readdir(joinpath(@__DIR__, "src", "tutorial"))
+        !endswith(file, ".md") && continue
+        filename = joinpath(@__DIR__, "src", "tutorial", file)
+        code = read(filename, String)
+        open(filename, "w") do io
+            write(io, replace(code, "\r\n" => "\n"))
+        end
+    end
+end
+FIX_DOCTESTS && convert_line_endings()
+
 makedocs(
     sitename = "SDDP.jl",
     authors  = "Oscar Dowson",
     clean = true,
+    doctest = FIX_DOCTESTS ? :fix : true,
     # See https://github.com/JuliaDocs/Documenter.jl/issues/868
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
     strict = true,
@@ -35,7 +53,8 @@ makedocs(
         "spaghetti_plot.html",
         "stochastic_linear_policy_graph.png",
         "stochastic_markovian_policy_graph.png"
-    ]
+    ],
+    doctestfilters = [r"\d\.\d{5}e[\+\-]\d{2}"]
 )
 
 deploydocs(repo = "github.com/odow/Kokako.jl.git")

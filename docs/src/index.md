@@ -8,7 +8,6 @@ CurrentModule = Kokako
     `SDDP.jl` under went a major re-write to be compatible with JuMP v0.19 and
     Julia v1.0.
 
-
 `SDDP.jl` is a package for solving large multistage convex stochastic
 programming problems using *stochastic dual dynamic programming*. In this
 manual, we're going to assume a reasonable amount of background knowledge about

@@ -79,9 +79,9 @@ function convergence_test(graph::PolicyGraph, log::Vector{Log},
     sample_mean = Statistics.mean(objectives)
     sample_ci = rule.z_score * Statistics.std(objectives) / sqrt(rule.num_replications)
     if rule.verbose
-        println("Simulated policy value: [" *
-                "$(humanize(sample_mean - sample_ci)), " *
-                "$(humanize(sample_mean + sample_ci))]")
+        println("Simulated policy value: [",
+                print_value(sample_mean - sample_ci), ", ",
+                print_value(sample_mean + sample_ci), "]")
     end
     current_bound = log[end].bound
     return sample_mean - sample_ci  <= current_bound <= sample_mean + sample_ci

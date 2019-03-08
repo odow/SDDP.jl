@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Kokako
+```
+
 # Basic I: first steps
 
 Hydrothermal scheduling is the most common application of stochastic dual
@@ -211,25 +215,24 @@ Models can be trained using the [`Kokako.train`](@ref) function. It accepts a
 number of keyword arguments. `iteration_limit` terminates the training after the
 provided number of iterations.
 
-```jldoctest tutorial_one; filter=r"\|\s+?\d\.\d+?\n"
+```jldoctest tutorial_one
 julia> Kokako.train(model; iteration_limit = 3)
-———————————————————————————————————————————————————————————————————————————————
-                        SDDP.jl - © Oscar Dowson, 2017-19.
-———————————————————————————————————————————————————————————————————————————————
+----------------------------------------------------
+         SDDP.jl (c) Oscar Dowson, 2017-19
+
 Numerical stability report
   Non-zero Matrix range     [1e+00, 1e+00]
   Non-zero Objective range  [1e+00, 2e+02]
   Non-zero Bounds range     [2e+02, 2e+02]
   Non-zero RHS range        [2e+02, 2e+02]
-———————————————————————————————————————————————————————————————————————————————
- Iteration | Simulation |      Bound |   Time (s)
-———————————————————————————————————————————————————————————————————————————————
-         1 |    32.500K |    15.000K |     0.001
-         2 |    17.500K |    17.500K |     0.002
-         3 |    17.500K |    17.500K |     0.002
-———————————————————————————————————————————————————————————————————————————————
- Terminating training with status: iteration_limit
-———————————————————————————————————————————————————————————————————————————————
+
+ Iteration   Simulation      Bound        Time (s)
+         1   3.25000e+04   1.50000e+04   3.10001e-02
+         2   1.75000e+04   1.75000e+04   3.10001e-02
+         3   1.75000e+04   1.75000e+04   3.20001e-02
+
+Terminating training with status: iteration_limit
+----------------------------------------------------
 ```
 
 !!! info
