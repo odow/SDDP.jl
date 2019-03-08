@@ -1,7 +1,7 @@
 using Documenter, Kokako
 
-"Set FIX_DOCTEST to `true` in order to replace the outputs of doctests."
-const FIX_DOCTESTS = false
+"Call julia docs/make.jl --fix to rebuild the doctests."
+const FIX_DOCTESTS = length(ARGS) == 1 && ARGS[1] == "--fix"
 
 # doctest=:fix only works with `\n` line endings, so let's replace any `\r\n`
 # ones.
@@ -54,7 +54,7 @@ makedocs(
         "stochastic_linear_policy_graph.png",
         "stochastic_markovian_policy_graph.png"
     ],
-    doctestfilters = [r"\d\.\d{5}e[\+\-]\d{2}"]
+    doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"]
 )
 
 deploydocs(repo = "github.com/odow/Kokako.jl.git")

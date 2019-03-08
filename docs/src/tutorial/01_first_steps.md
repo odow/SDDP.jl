@@ -217,7 +217,7 @@ provided number of iterations.
 
 ```jldoctest tutorial_one
 julia> Kokako.train(model; iteration_limit = 3)
-----------------------------------------------------
+-------------------------------------------------------
          SDDP.jl (c) Oscar Dowson, 2017-19
 
 Numerical stability report
@@ -225,19 +225,20 @@ Numerical stability report
   Non-zero Objective range  [1e+00, 2e+02]
   Non-zero Bounds range     [2e+02, 2e+02]
   Non-zero RHS range        [2e+02, 2e+02]
+No problems detected
 
- Iteration   Simulation      Bound        Time (s)
-         1   3.25000e+04   1.50000e+04   3.10001e-02
-         2   1.75000e+04   1.75000e+04   3.10001e-02
-         3   1.75000e+04   1.75000e+04   3.20001e-02
+ Iteration    Simulation       Bound         Time (s)
+        1    3.250000e+04   1.500000e+04   3.099990e-02
+        2    1.750000e+04   1.750000e+04   3.099990e-02
+        3    1.750000e+04   1.750000e+04   3.199983e-02
 
 Terminating training with status: iteration_limit
-----------------------------------------------------
+-------------------------------------------------------
 ```
 
 !!! info
     For more information on the numerical stability report, read the
-    section on [Problem scaling](@ref).
+    [Numerical stability report](@ref) section.
 
 ## Simulating the policy
 

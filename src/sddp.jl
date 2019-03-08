@@ -558,7 +558,7 @@ Train the policy of the model. Keyword arguments are
  - time_limit: number of seconds to train before termination
  - print_level: control the level of printing to the screen
  - log_file: filepath at which to write a log of the training progress
- - perform_numerical_stability_check: perform a numerical stability check prior
+ - run_numerical_stability_report: generate a numerical stability report prior
    to solve
  - risk_measure
  - stoping_rules
@@ -575,7 +575,7 @@ function train(model::PolicyGraph;
                time_limit = nothing,
                print_level = 1,
                log_file = "kokako.log",
-               perform_numerical_stability_check::Bool = true,
+               run_numerical_stability_report::Bool = true,
                stopping_rules = AbstractStoppingRule[],
                risk_measure = Kokako.Expectation(),
                sampling_scheme = Kokako.InSampleMonteCarlo(),
@@ -591,7 +591,7 @@ function train(model::PolicyGraph;
         print_banner(log_file_handle)
     end
 
-    if perform_numerical_stability_check
+    if run_numerical_stability_report
         # TODO: don't do this check twice.
         numerical_stability_report(model, print = print_level > 0)
         numerical_stability_report(
