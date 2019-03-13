@@ -10,30 +10,12 @@ You can find the documentation at https://odow.github.io/SDDP.jl/latest/.
 
 **If you are struggling to figure out how to use something, raise a Github issue!**
 
-## Examples
-
-We need your examples! We're trying to collate a large array of examples to test the
-correctness (and later, performance) of the package. Either make a PR or go to the
-examples folder and click [`Upload Files`](https://github.com/odow/SDDP.jl/upload/master/examples) and Github will walk you through the process.
-Bonus points for models where you know the optimal first stage objective value.
-
-## Bugs
-
-We need your bug reports! We've only stressed a few code paths on real-world models.
-If you run into any problems, [file an issue here](https://github.com/odow/SDDP.jl/issues/new).
-
 ## Other Packages
 
 `SDDP.jl` isn't the only Julia package for solving multi-stage stochastic programs.
 You may want to checkout [StructDualDynProg.jl](https://github.com/blegat/StructDualDynProg.jl)
 or [StochDynamicProgramming.jl](https://github.com/JuliaOpt/StochDynamicProgramming.jl)
 to see if they better suit your needs.
-
-## SDDiP
-
-[@lkapelevich](https://github.com/lkapelevich) wrote an extension for SDDP.jl to
-solve multi-stage stochastic programs with binary state variables. Check it out
-at https://github.com/lkapelevich/SDDiP.jl!
 
 ## Citing SDDP.jl
 
