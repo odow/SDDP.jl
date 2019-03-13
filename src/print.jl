@@ -77,7 +77,7 @@ function _print_numerical_stability_report(
                     "can cause numerical stability issues. Consider\n",
                     "reformulating the model.")
         else
-            println(io, "No problems detected")
+            print && println(io, "No problems detected")
         end
     end
     return
