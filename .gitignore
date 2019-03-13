@@ -1,5 +1,0 @@
-*.jl.cov
-*.jl.*.cov
-*.jl.mem
-.tags1
-docs/build/*
