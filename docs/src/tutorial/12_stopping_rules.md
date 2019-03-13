@@ -12,35 +12,35 @@ The training of an SDDP policy can be terminated after a fixed number of
 iterations using the `iteration_limit` keyword.
 
 ```julia
-Kokako.train(model, iteration_limit = 10)
+SDDP.train(model, iteration_limit = 10)
 ```
 
 The training of an SDDP policy can be terminated after a fixed number of
 seconds using the `time_limit` keyword.
 
 ```julia
-Kokako.train(model, time_limit = 2.0)
+SDDP.train(model, time_limit = 2.0)
 ```
 
 ## Stopping rules
 
 In addition to the limits provided as keyword arguments, a variety of other
-stopping rules are available. These can be passed to [`Kokako.train`](@ref)
+stopping rules are available. These can be passed to [`SDDP.train`](@ref)
 as a vector to the `stopping_rules` keyword. For example:
 
 ```julia
-Kokako.train(model, stopping_rules = [Kokako.BoundStalling(10, 1e-4)])
+SDDP.train(model, stopping_rules = [SDDP.BoundStalling(10, 1e-4)])
 ```
 
 Here are the stopping rules implemented in `SDDP.jl`:
 
 ```@docs
-Kokako.IterationLimit
-Kokako.TimeLimit
-Kokako.Statistical
-Kokako.BoundStalling
+SDDP.IterationLimit
+SDDP.TimeLimit
+SDDP.Statistical
+SDDP.BoundStalling
 ```
 
 In the next tutorial, [Intermediate III: policy graphs](@ref), we discuss
-generic extensions to [`Kokako.LinearPolicyGraph`](@ref) and
-[`Kokako.MarkovianPolicyGraph`](@ref).
+generic extensions to [`SDDP.LinearPolicyGraph`](@ref) and
+[`SDDP.MarkovianPolicyGraph`](@ref).

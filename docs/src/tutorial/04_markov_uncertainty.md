@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = Kokako
+CurrentModule = SDDP
 ```
 
 # Basic IV: Markov uncertainty
@@ -56,7 +56,7 @@ T = Array{Float64, 2}[
 ## Creating a model
 
 ```jldoctest tutorial_four
-using Kokako, GLPK
+using SDDP, GLPK
 
 Ω = [
     (inflow = 0.0, fuel_multiplier = 1.5),
@@ -64,7 +64,7 @@ using Kokako, GLPK
     (inflow = 100.0, fuel_multiplier = 0.75)
 ]
 
-model = Kokako.MarkovianPolicyGraph(
+model = SDDP.MarkovianPolicyGraph(
             transition_matrices = Array{Float64, 2}[
                 [ 1.0 ]',
                 [ 0.75 0.25 ],
@@ -77,7 +77,7 @@ model = Kokako.MarkovianPolicyGraph(
     # Unpack the stage and Markov index.
     t, markov_state = node
     # Define the state variable.
-    @variable(subproblem, 0 <= volume <= 200, Kokako.State, initial_value = 200)
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     # Define the control variables.
     @variables(subproblem, begin
         thermal_generation >= 0
@@ -98,7 +98,7 @@ model = Kokako.MarkovianPolicyGraph(
     end
 
     fuel_cost = [50.0, 100.0, 150.0]
-    Kokako.parameterize(subproblem, Ω, probability) do ω
+    SDDP.parameterize(subproblem, Ω, probability) do ω
         JuMP.fix(inflow, ω.inflow)
         @stageobjective(subproblem,
             ω.fuel_multiplier * fuel_cost[t] * thermal_generation)
@@ -112,14 +112,14 @@ A policy graph with 5 nodes.
 ```
 
 !!! info
-    For more information on [`Kokako.MarkovianPolicyGraph`](@ref)s, read
+    For more information on [`SDDP.MarkovianPolicyGraph`](@ref)s, read
     [Intermediate III: policy graphs](@ref).
 
 ## Training and simulating the policy
 
 As in the previous three tutorials, we train the policy:
 ```jldoctest tutorial_four
-julia> Kokako.train(model; iteration_limit = 10)
+julia> SDDP.train(model; iteration_limit = 10)
 -------------------------------------------------------
          SDDP.jl (c) Oscar Dowson, 2017-19
 
@@ -149,16 +149,16 @@ Terminating training with status: iteration_limit
 Instead of performing a Monte Carlo simulation like the previous tutorials, we
 may want to simulate one particular sequence of noise realizations. This
 _historical_ simulation can also be conducted by passing a
-[`Kokako.Historical`](@ref) sampling scheme to the `sampling_scheme` keyword of
-the [`Kokako.simulate`](@ref) function.
+[`SDDP.Historical`](@ref) sampling scheme to the `sampling_scheme` keyword of
+the [`SDDP.simulate`](@ref) function.
 
 We can confirm that the historical sequence of nodes was visited by querying
 the `:node_index` key of the simulation results.
 
 ```jldoctest tutorial_four
-simulations = Kokako.simulate(
+simulations = SDDP.simulate(
     model,
-    sampling_scheme = Kokako.Historical([
+    sampling_scheme = SDDP.Historical([
         ((1, 1), Ω[1]),
         ((2, 2), Ω[3]),
         ((3, 1), Ω[2])

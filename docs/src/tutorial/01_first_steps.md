@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = Kokako
+CurrentModule = SDDP
 ```
 
 # Basic I: first steps
@@ -124,16 +124,16 @@ most of what is happening.
 ## Creating a model
 
 ```jldoctest tutorial_one
-using Kokako, GLPK
+using SDDP, GLPK
 
-model = Kokako.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
             stages = 3,
             sense = :Min,
             lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer)
         ) do subproblem, t
     # Define the state variable.
-    @variable(subproblem, 0 <= volume <= 200, Kokako.State, initial_value = 200)
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     # Define the control variables.
     @variables(subproblem, begin
         thermal_generation >= 0
@@ -160,10 +160,10 @@ A policy graph with 3 nodes.
 Wasn't that easy! Let's walk through some of the non-obvious features.
 
 !!! info
-    For more information on [`Kokako.LinearPolicyGraph`](@ref)s, read
+    For more information on [`SDDP.LinearPolicyGraph`](@ref)s, read
     [Intermediate III: policy graphs](@ref).
 
-#### The keywords in the [`Kokako.LinearPolicyGraph`](@ref) constructor
+#### The keywords in the [`SDDP.LinearPolicyGraph`](@ref) constructor
 
 Hopefully `stages` and `sense` are obvious. However, the other two are not so
 clear.
@@ -188,7 +188,7 @@ variable in JuMP, you go:
 ```
 whereas to create a state variable you go
 ```julia
-@variable(subproblem, x, Kokako.State)
+@variable(subproblem, x, SDDP.State)
 ```
 
 Also note that you have to pass a keyword argument called `initial_value` that
@@ -207,16 +207,16 @@ whole problem, we use the `SDDP.jl`-provided [`@stageobjective`](@ref).
 @stageobjective(subproblem, fuel_cost[t] * thermal_generation)
 ```
 Note that we don't have to specify the optimization sense (`Max` of `Min`) since
-this is done via the `sense` keyword argument of [`Kokako.LinearPolicyGraph`](@ref).
+this is done via the `sense` keyword argument of [`SDDP.LinearPolicyGraph`](@ref).
 
 ## Training a policy
 
-Models can be trained using the [`Kokako.train`](@ref) function. It accepts a
+Models can be trained using the [`SDDP.train`](@ref) function. It accepts a
 number of keyword arguments. `iteration_limit` terminates the training after the
 provided number of iterations.
 
 ```jldoctest tutorial_one
-julia> Kokako.train(model; iteration_limit = 3)
+julia> SDDP.train(model; iteration_limit = 3)
 -------------------------------------------------------
          SDDP.jl (c) Oscar Dowson, 2017-19
 
@@ -243,14 +243,14 @@ Terminating training with status: iteration_limit
 ## Simulating the policy
 
 Once you have a trained policy, you can simulate it using
-[`Kokako.simulate`](@ref). The return value from `simulate` is a
+[`SDDP.simulate`](@ref). The return value from `simulate` is a
 vector with one element for each replication. Each element is itself a vector,
 with one element for each stage. Each element, corresponding to a particular
 stage in a particular replication, is a dictionary that records information
 from the simulation.
 
 ```jldoctest tutorial_one
-simulations = Kokako.simulate(
+simulations = SDDP.simulate(
     # The trained model to simulate.
     model,
     # The number of replications.

@@ -2,7 +2,7 @@
 
 ```@meta
 DocTestSetup = quote
-    using Kokako, GLPK
+    using SDDP, GLPK
 end
 ```
 
@@ -13,15 +13,15 @@ before continuing with this tutorial.
  - Dowson, O. (2018). The policy graph decomposition of multistage stochastic
    optimization problems. Optimization Online. [link](http://www.optimization-online.org/DB_HTML/2018/11/6914.html)
 
-## Creating a [`Kokako.Graph`](@ref)
+## Creating a [`SDDP.Graph`](@ref)
 
 ### Linear graphs
 
-Linear policy graphs can be created using the [`Kokako.LinearGraph`](@ref)
+Linear policy graphs can be created using the [`SDDP.LinearGraph`](@ref)
 function.
 
 ```jldoctest linear_graph
-julia> graph = Kokako.LinearGraph(3)
+julia> graph = SDDP.LinearGraph(3)
 Root
  0
 Nodes
@@ -34,15 +34,15 @@ Arcs
  2 => 3 w.p. 1.0
 ```
 
-We can add nodes to a graph using [`Kokako.add_node`](@ref) and edges using
-[`Kokako.add_edge`](@ref).
+We can add nodes to a graph using [`SDDP.add_node`](@ref) and edges using
+[`SDDP.add_edge`](@ref).
 
 ```jldoctest linear_graph
-julia> Kokako.add_node(graph, 4)
+julia> SDDP.add_node(graph, 4)
 
-julia> Kokako.add_edge(graph, 3 => 4, 1.0)
+julia> SDDP.add_edge(graph, 3 => 4, 1.0)
 
-julia> Kokako.add_edge(graph, 4 => 1, 0.9)
+julia> SDDP.add_edge(graph, 4 => 1, 0.9)
 
 julia> graph
 Root
@@ -66,11 +66,11 @@ discount factor.
 
 ### Markovian policy graphs
 
-Markovian policy graphs can be created using the [`Kokako.MarkovianGraph`](@ref)
+Markovian policy graphs can be created using the [`SDDP.MarkovianGraph`](@ref)
 function.
 
 ```jldoctest
-julia> Kokako.MarkovianGraph(Matrix{Float64}[[1.0]', [0.4 0.6]])
+julia> SDDP.MarkovianGraph(Matrix{Float64}[[1.0]', [0.4 0.6]])
 Root
  (0, 1)
 Nodes
@@ -85,21 +85,21 @@ Arcs
 
 ### General graphs
 
-Arbitrarily complicated graphs can be constructed using [`Kokako.Graph`](@ref),
-[`Kokako.add_node`](@ref) and [`Kokako.add_edge`](@ref). For example
+Arbitrarily complicated graphs can be constructed using [`SDDP.Graph`](@ref),
+[`SDDP.add_node`](@ref) and [`SDDP.add_edge`](@ref). For example
 
 ```jldoctest
-julia> graph = Kokako.Graph(:root_node)
+julia> graph = SDDP.Graph(:root_node)
 Root
  root_node
 Nodes
 Arcs
 
-julia> Kokako.add_node(graph, :decision_node)
+julia> SDDP.add_node(graph, :decision_node)
 
-julia> Kokako.add_edge(graph, :root_node => :decision_node, 1.0)
+julia> SDDP.add_edge(graph, :root_node => :decision_node, 1.0)
 
-julia> Kokako.add_edge(graph, :decision_node => :decision_node, 0.9)
+julia> SDDP.add_edge(graph, :decision_node => :decision_node, 0.9)
 
 julia> graph
 Root
@@ -113,11 +113,11 @@ Arcs
 
 ## Creating a policy graph
 
-Once you have constructed an instance of [`Kokako.Graph`], you can create a
+Once you have constructed an instance of [`SDDP.Graph`], you can create a
 policy graph by passing the graph as the first argument.
 
 ```jldoctest
-julia> graph = Kokako.Graph(
+julia> graph = SDDP.Graph(
            :root_node,
            [:decision_node],
            [
@@ -125,7 +125,7 @@ julia> graph = Kokako.Graph(
                (:decision_node => :decision_node, 0.9)
            ]);
 
-julia> model = Kokako.PolicyGraph(
+julia> model = SDDP.PolicyGraph(
                graph,
                lower_bound = 0,
                optimizer = with_optimizer(GLPK.Optimizer)) do subproblem, node
@@ -139,11 +139,11 @@ Called from node: decision_node
 There are two special cases which cover the majority of models in the
 literature.
 
-- [`Kokako.LinearPolicyGraph`](@ref) is a special case where a
-  [`Kokako.LinearGraph`](@ref) is passed as the first argument.
+- [`SDDP.LinearPolicyGraph`](@ref) is a special case where a
+  [`SDDP.LinearGraph`](@ref) is passed as the first argument.
 
-- [`Kokako.MarkovianPolicyGraph`](@ref) is a special case where a
-  [`Kokako.MarkovianGraph`](@ref) is passed as the first argument.
+- [`SDDP.MarkovianPolicyGraph`](@ref) is a special case where a
+  [`SDDP.MarkovianGraph`](@ref) is passed as the first argument.
 
 Note that the type of the names of all nodes (including the root node) must be
 the same. In this case, they are `Symbol`s.

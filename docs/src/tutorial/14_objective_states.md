@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = Kokako
+CurrentModule = SDDP
 ```
 
 # Intermediate IV: objective states
@@ -49,9 +49,9 @@ where `ω` is drawn from the sample space `[0.75, 0.9, 1.1, 1.25]` with equal
 probability.
 
 An objective state can be added to a subproblem using the
-[`Kokako.add_objective_state`](@ref) function. This can only be called once per
+[`SDDP.add_objective_state`](@ref) function. This can only be called once per
 subproblem. If you want to add a multi-dimensional objective state, read
-[Multi-dimensional objective states](@ref). [`Kokako.add_objective_state`](@ref)
+[Multi-dimensional objective states](@ref). [`SDDP.add_objective_state`](@ref)
 takes a number of keyword arguments. The two required ones are
 
  - `initial_value`: the value of the objective state at the root node of the
@@ -68,28 +68,28 @@ which give SDDP.jl hints (importantly, not constraints) about the domain of the
 objective state. Setting these bounds appropriately can improve the speed of
 convergence.
 
-Finally, [`Kokako.add_objective_state`](@ref) requires an update function. This
+Finally, [`SDDP.add_objective_state`](@ref) requires an update function. This
 function takes two arguments. The first is the incoming value of the objective
 state, and the second is the realization of the stagewise-independent noise term
-(set using [`Kokako.parameterize`](@ref)). The function should return the value
+(set using [`SDDP.parameterize`](@ref)). The function should return the value
 of the objective state to be used in the current subproblem.
 
 This connection with the stagewise-independent noise term means that
-[`Kokako.parameterize`](@ref) _must_ be called in a subproblem that defines an
-objective state. Inside [`Kokako.parameterize`](@ref), the value of the objective
+[`SDDP.parameterize`](@ref) _must_ be called in a subproblem that defines an
+objective state. Inside [`SDDP.parameterize`](@ref), the value of the objective
 state to be used in the current subproblem (i.e., after the update function),
-can be queried using [`Kokako.objective_state`](@ref).
+can be queried using [`SDDP.objective_state`](@ref).
 
 Here is the full model with the objective state.
 
 ```jldoctest intermediate_price
-using Kokako, GLPK
+using SDDP, GLPK
 
-model = Kokako.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
             stages = 3, sense = :Min, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer)
         ) do subproblem, t
-    @variable(subproblem, 0 <= volume <= 200, Kokako.State, initial_value = 200)
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     @variables(subproblem, begin
         thermal_generation >= 0
         hydro_generation   >= 0
@@ -103,10 +103,10 @@ model = Kokako.LinearPolicyGraph(
 
     ###
     ### Add an objective state. ω will be the same value that is called in
-    ### `Kokako.parameterize`.
+    ### `SDDP.parameterize`.
     ###
 
-    Kokako.add_objective_state(
+    SDDP.add_objective_state(
             subproblem, initial_value = 50.0, lipschitz = 10_000.0,
             lower_bound = 50.0, upper_bound = 150.0) do fuel_cost, ω
         return ω.fuel * fuel_cost
@@ -121,12 +121,12 @@ model = Kokako.LinearPolicyGraph(
         for f in [0.75, 0.9, 1.1, 1.25] for w in [0.0, 50.0, 100.0]
     ]
 
-    Kokako.parameterize(subproblem, Ω) do ω
+    SDDP.parameterize(subproblem, Ω) do ω
         ###
         ### Query the current fuel cost.
         ###
 
-        fuel_cost = Kokako.objective_state(subproblem)
+        fuel_cost = SDDP.objective_state(subproblem)
 
         @stageobjective(subproblem, fuel_cost * thermal_generation)
         JuMP.fix(inflow, ω.inflow)
@@ -142,9 +142,9 @@ A policy graph with 3 nodes.
 After creating our model, we can train and simulate as usual.
 
 ```jldoctest intermediate_price
-Kokako.train(model, iteration_limit = 10, run_numerical_stability_report=false)
+SDDP.train(model, iteration_limit = 10, run_numerical_stability_report=false)
 
-simulations = Kokako.simulate(model, 1)
+simulations = SDDP.simulate(model, 1)
 
 print("Finished training and simulating.")
 
@@ -204,11 +204,11 @@ example, `initial_value = 1.0` becomes `initial_value = (1.0, 2.0)`.
 Here is an example:
 
 ```jldoctest intermediate_price
-model = Kokako.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
             stages = 3, sense = :Min, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer)
         ) do subproblem, t
-    @variable(subproblem, 0 <= volume <= 200, Kokako.State, initial_value = 200)
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     @variables(subproblem, begin
         thermal_generation >= 0
         hydro_generation   >= 0
@@ -220,7 +220,7 @@ model = Kokako.LinearPolicyGraph(
         demand_constraint, thermal_generation + hydro_generation == 150.0
     end)
 
-    Kokako.add_objective_state(
+    SDDP.add_objective_state(
             subproblem, initial_value = (50.0, 50.0),
             lipschitz = (10_000.0, 10_000.0), lower_bound = (50.0, 50.0),
             upper_bound = (150.0, 150.0)) do fuel_cost, ω
@@ -233,16 +233,16 @@ model = Kokako.LinearPolicyGraph(
         for f in [-10.0, -5.0, 5.0, 10.0] for w in [0.0, 50.0, 100.0]
     ]
 
-    Kokako.parameterize(subproblem, Ω) do ω
-        (fuel_cost, fuel_cost_old) = Kokako.objective_state(subproblem)
+    SDDP.parameterize(subproblem, Ω) do ω
+        (fuel_cost, fuel_cost_old) = SDDP.objective_state(subproblem)
         @stageobjective(subproblem, fuel_cost * thermal_generation)
         JuMP.fix(inflow, ω.inflow)
     end
 end
 
-Kokako.train(model, iteration_limit = 10, run_numerical_stability_report=false)
+SDDP.train(model, iteration_limit = 10, run_numerical_stability_report=false)
 
-simulations = Kokako.simulate(model, 1)
+simulations = SDDP.simulate(model, 1)
 
 print("Finished training and simulating.")
 

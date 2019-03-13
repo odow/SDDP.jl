@@ -1,4 +1,4 @@
-using Documenter, Kokako
+using Documenter, SDDP
 
 "Call julia docs/make.jl --fix to rebuild the doctests."
 const FIX_DOCTESTS = length(ARGS) == 1 && ARGS[1] == "--fix"
@@ -58,4 +58,4 @@ makedocs(
     doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"]
 )
 
-deploydocs(repo = "github.com/odow/Kokako.jl.git")
+deploydocs(repo = "github.com/odow/SDDP.jl.git")

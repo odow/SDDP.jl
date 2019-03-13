@@ -1,30 +1,30 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using Kokako, Test, GLPK
+using SDDP, Test, GLPK
 
 @testset "Forward Pass" begin
-    model = Kokako.PolicyGraph(Kokako.LinearGraph(2);
+    model = SDDP.PolicyGraph(SDDP.LinearGraph(2);
                 sense = :Max,
-                bellman_function = Kokako.AverageCut(upper_bound = 100.0),
+                bellman_function = SDDP.AverageCut(upper_bound = 100.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
-        @variable(node, x, Kokako.State, initial_value = 0.0)
+        @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
-        Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_upper_bound(x.out, ω)
         end
     end
     scenario_path, sampled_states, objective_states, cumulative_value =
-        Kokako.forward_pass(
+        SDDP.forward_pass(
             model,
-            Kokako.Options(
+            SDDP.Options(
                 model,
                 Dict(:x => 1.0),
-                Kokako.InSampleMonteCarlo(),
-                Kokako.Expectation(),
+                SDDP.InSampleMonteCarlo(),
+                SDDP.Expectation(),
                 0.0,
                 true
             )
@@ -38,18 +38,18 @@ using Kokako, Test, GLPK
 end
 
 @testset "solve" begin
-    model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                bellman_function = Kokako.AverageCut(lower_bound = 0.0),
+    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
+                bellman_function = SDDP.AverageCut(lower_bound = 0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
-        @variable(node, x >= 0, Kokako.State, initial_value = 0.0)
+        @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
-        Kokako.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_lower_bound(x.out, ω)
         end
     end
-    Kokako.train(model; iteration_limit = 4)
-    @test Kokako.termination_status(model) == :iteration_limit
+    SDDP.train(model; iteration_limit = 4)
+    @test SDDP.termination_status(model) == :iteration_limit
 end
 
 function MOI.get(::GLPK.Optimizer, ::MOI.ListOfVariableAttributesSet)
@@ -60,16 +60,16 @@ function MOI.get(::GLPK.Optimizer, ::MOI.ListOfConstraintAttributesSet)
 end
 
 @testset "infeasible model" begin
-    model = Kokako.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(
                 stages = 2,
                 lower_bound = 0.0,
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
-        @variable(node, x >= 0, Kokako.State, initial_value = 0.0)
+        @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @constraint(node, x.out <= -1)
         @stageobjective(node, x.out)
     end
-    @test_throws Exception Kokako.train(model; iteration_limit = 1)
+    @test_throws Exception SDDP.train(model; iteration_limit = 1)
     @test isfile("subproblem.mps")
     rm("subproblem.mps")
     @test isfile("subproblem.lp")

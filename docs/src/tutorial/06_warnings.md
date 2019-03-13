@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = Kokako
+CurrentModule = SDDP
 ```
 
 # Basic VI: words of warning
@@ -47,21 +47,21 @@ m³. Now things are only one order of magnitude apart.
 ### Numerical stability report
 
 To aid in the diagnose of numerical issues, you can call
-[`Kokako.numerical_stability_report`](@ref). By default, this aggregates all of
+[`SDDP.numerical_stability_report`](@ref). By default, this aggregates all of
 the nodes into a single report. You can produce a stability report for each node
 by passing `by_node=true`.
 
 ```jldoctest
-using Kokako
+using SDDP
 
-model = Kokako.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
         stages = 2, lower_bound = -1e10, direct_mode=false) do subproblem, t
-    @variable(subproblem, x >= -1e7, Kokako.State, initial_value=1e-5)
+    @variable(subproblem, x >= -1e7, SDDP.State, initial_value=1e-5)
     @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 1e-8)
     @stageobjective(subproblem, 1e9 * x.out)
 end
 
-Kokako.numerical_stability_report(model)
+SDDP.numerical_stability_report(model)
 
 # output
 
@@ -88,7 +88,7 @@ small values. As discussed in [Problem scaling](@ref), this is an indication
 that you should reformulate your model.
 
 By default, a numerical stability check is run when you call
-[`Kokako.train`](@ref), although it can be turned off by passing
+[`SDDP.train`](@ref), although it can be turned off by passing
 `run_numerical_stability_report = false`.
 
 ### Solver-specific options
@@ -110,15 +110,15 @@ it may cut of the feasible region and lead to a sub-optimal solution.
 
 Consider the following simple model, where we first set `lower_bound` to `0.0`.
 ```jldoctest
-using Kokako, GLPK
+using SDDP, GLPK
 
-model = Kokako.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
             stages = 3,
             sense = :Min,
             lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer)
         ) do subproblem, t
-    @variable(subproblem, x >= 0, Kokako.State, initial_value = 2)
+    @variable(subproblem, x >= 0, SDDP.State, initial_value = 2)
     @variable(subproblem, u >= 0)
     @variable(subproblem, v >= 0)
     @constraint(subproblem, x.out == x.in - u)
@@ -126,7 +126,7 @@ model = Kokako.LinearPolicyGraph(
     @stageobjective(subproblem, t * v)
 end
 
-Kokako.train(model, iteration_limit = 5, run_numerical_stability_report=false)
+SDDP.train(model, iteration_limit = 5, run_numerical_stability_report=false)
 
 # output
 
@@ -147,15 +147,15 @@ Terminating training with status: iteration_limit
 Now consider the case when we set the `lower_bound` to `10.0`:
 
 ```jldoctest
-using Kokako, GLPK
+using SDDP, GLPK
 
-model = Kokako.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
             stages = 3,
             sense = :Min,
             lower_bound = 10.0,
             optimizer = with_optimizer(GLPK.Optimizer)
         ) do subproblem, t
-    @variable(subproblem, x >= 0, Kokako.State, initial_value = 2)
+    @variable(subproblem, x >= 0, SDDP.State, initial_value = 2)
     @variable(subproblem, u >= 0)
     @variable(subproblem, v >= 0)
     @constraint(subproblem, x.out == x.in - u)
@@ -163,7 +163,7 @@ model = Kokako.LinearPolicyGraph(
     @stageobjective(subproblem, t * v)
 end
 
-Kokako.train(model, iteration_limit = 5, run_numerical_stability_report=false)
+SDDP.train(model, iteration_limit = 5, run_numerical_stability_report=false)
 
 # output
 

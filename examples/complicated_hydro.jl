@@ -1,4 +1,4 @@
-using Kokako, JSON, GLPK
+using SDDP, JSON, GLPK
 
 const DATA = JSON.parsefile(joinpath(@__DIR__, "complicated_hydro.json"))
 
@@ -7,17 +7,17 @@ const PRICES = [18 + round(5 * sin(0.5 * (t - 2 - 1)), digits=2) for t in 1:T]
 const FLOW_KNOTS = [50.0, 60.0, 70.0]
 const POWER_KNOTS = [55.0, 65.0, 70.0]
 
-model = Kokako.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
             stages = T,
             sense = :Min,
-            bellman_function = Kokako.AverageCut(
+            bellman_function = SDDP.AverageCut(
                 lower_bound = 0,
                 deletion_minimum = 1_000_000
             ),
             optimizer = with_optimizer(GLPK.Optimizer)
         ) do subproblem, t
-    @variable(subproblem, 0 <= volume[1:3] <= 200, Kokako.State, initial_value = 50)
-    @variable(subproblem, inflow[i=1:3], Kokako.State, initial_value = DATA["initial_inflow"][1][i])
+    @variable(subproblem, 0 <= volume[1:3] <= 200, SDDP.State, initial_value = 50)
+    @variable(subproblem, inflow[i=1:3], SDDP.State, initial_value = DATA["initial_inflow"][1][i])
     @variables(subproblem, begin
         thermal_generation >= 0
         thermal_cost >= 0
@@ -61,7 +61,7 @@ model = Kokako.LinearPolicyGraph(
                 inflow[i].out ==
                     sum(get(R, "$(j-1)", 0.0) * inflow[j].in for j in 1:3) + ω[i])
         end
-        Kokako.parameterize(subproblem, [1, 2]) do ϕ
+        SDDP.parameterize(subproblem, [1, 2]) do ϕ
             for i in 1:3
                 JuMP.fix(ω[i], DATA["RHS_noise"][i][ϕ][t])
             end
@@ -72,6 +72,6 @@ model = Kokako.LinearPolicyGraph(
     end
 end
 
-Kokako.train(model, iteration_limit = 50, print_level = 0)
+SDDP.train(model, iteration_limit = 50, print_level = 0)
 
-@test Kokako.calculate_bound(model) ≈ 129_469 atol=1
+@test SDDP.calculate_bound(model) ≈ 129_469 atol=1

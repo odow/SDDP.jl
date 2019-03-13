@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = Kokako
+CurrentModule = SDDP
 ```
 
 # Basic V: plotting
@@ -17,20 +17,20 @@ the model from  [Basic IV: Markov uncertainty](@ref), train it for 20
 iterations, and then simulate 100 Monte Carlo realizations of the policy.
 
 ```jldoctest tutorial_five
-using Kokako, GLPK
+using SDDP, GLPK
 Ω = [
     (inflow = 0.0, fuel_multiplier = 1.5),
     (inflow = 50.0, fuel_multiplier = 1.0),
     (inflow = 100.0, fuel_multiplier = 0.75)
 ]
-model = Kokako.MarkovianPolicyGraph(
+model = SDDP.MarkovianPolicyGraph(
             transition_matrices = Array{Float64, 2}[
                 [1.0]', [0.75 0.25], [0.75 0.25 ; 0.25 0.75]],
             sense = :Min, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer)
         ) do subproblem, node
     t, markov_state = node
-    @variable(subproblem, 0 <= volume <= 200, Kokako.State, initial_value = 200)
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     @variable(subproblem, thermal_generation >= 0)
     @variable(subproblem, hydro_generation >= 0)
     @variable(subproblem, hydro_spill >= 0)
@@ -40,16 +40,16 @@ model = Kokako.MarkovianPolicyGraph(
     @constraint(subproblem, thermal_generation + hydro_generation == 150.0)
     probability = markov_state == 1 ? [1/6, 1/3, 1/2] : [1/2, 1/3, 1/6]
     fuel_cost = [50.0, 100.0, 150.0]
-    Kokako.parameterize(subproblem, Ω, probability) do ω
+    SDDP.parameterize(subproblem, Ω, probability) do ω
         JuMP.fix(inflow, ω.inflow)
         @stageobjective(subproblem,
             ω.fuel_multiplier * fuel_cost[t] * thermal_generation)
     end
 end
 
-Kokako.train(model, iteration_limit = 20, run_numerical_stability_report = false)
+SDDP.train(model, iteration_limit = 20, run_numerical_stability_report = false)
 
-simulations = Kokako.simulate(
+simulations = SDDP.simulate(
     model, 100,
     [:volume, :thermal_generation, :hydro_generation, :hydro_spill])
 
@@ -95,17 +95,17 @@ The first plotting utility we discuss is a _spaghetti_ plot (you'll understand
 the name when you see the graph).
 
 To create a spaghetti plot, begin by creating a new
-[`Kokako.SpaghettiPlot`](@ref) instance as follows:
+[`SDDP.SpaghettiPlot`](@ref) instance as follows:
 ```jldoctest tutorial_five
-julia> plt = Kokako.SpaghettiPlot(simulations)
+julia> plt = SDDP.SpaghettiPlot(simulations)
 A spaghetti plot with 100 scenarios and 3 stages.
 ```
 
-We can add plots to `plt` using the [`Kokako.add_spaghetti`](@ref)
+We can add plots to `plt` using the [`SDDP.add_spaghetti`](@ref)
 function.
 
 ```jldoctest tutorial_five
-julia> Kokako.add_spaghetti(plt; title = "Reservoir volume") do data
+julia> SDDP.add_spaghetti(plt; title = "Reservoir volume") do data
            return data[:volume].out
        end
 ```
@@ -114,7 +114,7 @@ You don't have just return values from the simulation, you can compute things
 too.
 
 ```jldoctest tutorial_five
-julia> Kokako.add_spaghetti(plt;
+julia> SDDP.add_spaghetti(plt;
                title = "Fuel cost", ymin = 0, ymax = 250) do data
            if data[:thermal_generation] > 0
                return data[:stage_objective] / data[:thermal_generation]
@@ -126,12 +126,12 @@ julia> Kokako.add_spaghetti(plt;
 
 Note that there are many keyword arguments in addition to `title`. For example,
 we fixed the minimum and maximum values of the y-axis using `ymin` and `ymax`.
-See the [`Kokako.add_spaghetti`](@ref) documentation for all the arguments.
+See the [`SDDP.add_spaghetti`](@ref) documentation for all the arguments.
 
 Having built the plot, we now need to display it.
 
 ```jldoctest tutorial_five
-julia> Kokako.save(plt, "spaghetti_plot.html", open = true)
+julia> SDDP.save(plt, "spaghetti_plot.html", open = true)
 ```
 
 This should open a webpage that looks like [this one](../assets/spaghetti_plot.html).
@@ -146,14 +146,14 @@ are shown darker and those further away are shown lighter.
 ## Publication plots
 
 Instead of the interactive Javascript plots, you can also create some
-publication ready plots using the [`Kokako.publication_plot`](@ref) function.
+publication ready plots using the [`SDDP.publication_plot`](@ref) function.
 
 !!!info
     You need to install the [Plots.jl](https://github.com/JuliaPlots/Plots)
     package for this to work. We used the `GR` backend (`gr()`), but any
     `Plots.jl` backend should work.
 
-[`Kokako.publication_plot`](@ref) implements a plot recipe to create ribbon
+[`SDDP.publication_plot`](@ref) implements a plot recipe to create ribbon
 plots of each variable against the stages. The first argument is the vector of
 simulation dictionaries and the second argument is the dictionary key that you
 want to plot. Standard `Plots.jl` keyword arguments such as `title` and `xlabel`
@@ -164,10 +164,10 @@ middle is the median (i.e. 50'th percentile).
 ```julia
 using Plots
 plot(
-    Kokako.publication_plot(simulations, title = "Outgoing volume") do data
+    SDDP.publication_plot(simulations, title = "Outgoing volume") do data
         return data[:volume].out
     end,
-    Kokako.publication_plot(simulations, title = "Thermal generation") do data
+    SDDP.publication_plot(simulations, title = "Thermal generation") do data
         return data[:thermal_generation]
     end,
     xlabel = "Stage",

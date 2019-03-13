@@ -1,4 +1,4 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public License,
 #  v. 2.0. If a copy of the MPL was not distributed with this file, You can
 #  obtain one at http://mozilla.org/MPL/2.0/.
@@ -119,15 +119,15 @@ Create a weighted combination of risk measures.
 
 ### Examples
 
-    Kokako.ConvexCombination(
-        (0.5, Kokako.Expectation()),
-        (0.5, Kokako.AVaR(0.25))
+    SDDP.ConvexCombination(
+        (0.5, SDDP.Expectation()),
+        (0.5, SDDP.AVaR(0.25))
     )
 
 Convex combinations can also be constructed by adding weighted risk measures
 together as follows:
 
-    0.5 * Kokako.Expectation() + 0.5 * Kokako.AVaR(0.5)
+    0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.5)
 """
 struct ConvexCombination{T<:Tuple} <: AbstractRiskMeasure
     measures::T
@@ -362,7 +362,7 @@ struct Wasserstein{T, F} <: AbstractRiskMeasure
         return new{typeof(solver_factory), typeof(norm)}(alpha, solver_factory, norm)
     end
 end
-Base.show(io::IO, measure::Wasserstein) = print(io, "Kokako.Wasserstein")
+Base.show(io::IO, measure::Wasserstein) = print(io, "SDDP.Wasserstein")
 
 function adjust_probability(measure::Wasserstein,
                             risk_adjusted_probability::Vector{Float64},

@@ -1,9 +1,9 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using Kokako, Test, JSON, Gurobi, Plots
+using SDDP, Test, JSON, Gurobi, Plots
 
 """
     infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
@@ -34,17 +34,17 @@ function infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
             )
         )
     end
-    graph = Kokako.MarkovianGraph(transition)
+    graph = SDDP.MarkovianGraph(transition)
     for markov_state in 1:size(transition[end], 2)
-        Kokako.add_edge(graph,
+        SDDP.add_edge(graph,
             (data["number_of_weeks"], markov_state) => (1, 1),
             discount_factor
         )
     end
 
-    model = Kokako.PolicyGraph(graph,
+    model = SDDP.PolicyGraph(graph,
         sense = :Max,
-        bellman_function = Kokako.AverageCut(upper_bound = 1e5),
+        bellman_function = SDDP.AverageCut(upper_bound = 1e5),
         optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag = 0)
             ) do subproblem, index
         # Unpack the node index.
@@ -65,19 +65,19 @@ function infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
             # increase the lower bound so that it is not zero. This avoids the
             # situaton where pasture_cover=0 and thus growth=0, effectively
             # killing all grass for all time.
-            (10 <= pasture_cover <= data["maximum_pasture_cover"], Kokako.State,
+            (10 <= pasture_cover <= data["maximum_pasture_cover"], SDDP.State,
                 initial_value = data["initial_pasture_cover"])
             # Quantity of supplement in storage (kgDM/ha).
-            (stored_supplement >= 0, Kokako.State,
+            (stored_supplement >= 0, SDDP.State,
                 initial_value = data["initial_storage"])
             # Soil moisture (mm).
-            (0 <= soil_moisture <= data["maximum_soil_moisture"], Kokako.State,
+            (0 <= soil_moisture <= data["maximum_soil_moisture"], SDDP.State,
                 initial_value = data["initial_soil_moisture"])
             # Number of cows milking (cows/ha).
-            (0 <= cows_milking <= data["stocking_rate"], Kokako.State,
+            (0 <= cows_milking <= data["stocking_rate"], SDDP.State,
                 initial_value = data["stocking_rate"])
             (0 <= milk_production <= data["maximum_milk_production"],
-                Kokako.State, initial_value = 0.0)
+                SDDP.State, initial_value = 0.0)
         end)
         # ========== Control Variables ==========
         @variables(subproblem, begin
@@ -94,7 +94,7 @@ function infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
         end)
 
         # ========== Parameterize model on uncertainty ==========
-        Kokako.parameterize(subproblem, data["niwa_data"][stage]) do ω
+        SDDP.parameterize(subproblem, data["niwa_data"][stage]) do ω
             JuMP.set_upper_bound(evapotranspiration, ω["evapotranspiration"])
             JuMP.fix(rainfall, ω["rainfall"])
         end
@@ -186,7 +186,7 @@ function infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
 end
 
 function visualize_policy(model, filename)
-    simulations = Kokako.simulate(model, 1_000, [
+    simulations = SDDP.simulate(model, 1_000, [
         :cows_milking,
         :pasture_cover,
         :soil_moisture,
@@ -195,7 +195,7 @@ function visualize_policy(model, filename)
         :weekly_milk_production,
         :fei_penalty
         ],
-        sampling_scheme = Kokako.InSampleMonteCarlo(
+        sampling_scheme = SDDP.InSampleMonteCarlo(
             terminate_on_cycle = false,
             terminate_on_dummy_leaf = false,
             max_depth = 52 * 5
@@ -206,33 +206,33 @@ function visualize_policy(model, filename)
     end
     xticks = (1:26:5*52, repeat(["Aug", "Feb"], outer=5))
     plot(
-        Kokako.publicationplot(simulations,
+        SDDP.publicationplot(simulations,
             data -> data[:cows_milking].out,
             title = "(a)",
             ylabel = "Cows Milking (cows/ha)",
             xticks = xticks),
-        Kokako.publicationplot(simulations,
+        SDDP.publicationplot(simulations,
             data -> data[:pasture_cover].out / 1000,
             ylabel = "Pasture Cover (t/ha)",
             title = "(b)",
             xticks = xticks),
-        Kokako.publicationplot(simulations,
+        SDDP.publicationplot(simulations,
             data -> data[:noise_term]["evapotranspiration"],
             ylabel = "Evapotranspiration (mm)",
             xlabel = " ",
             title = "(c)",
             xticks = xticks),
-        # Kokako.publicationplot(simulations,
+        # SDDP.publicationplot(simulations,
         #     data -> data[:grass_growth],
         #     ylabel = "Grass Growth (kg/day)",
         #     title = "(d)",
         #     xticks = xticks),
-        # Kokako.publicationplot(simulations,
+        # SDDP.publicationplot(simulations,
         #     data -> data[:supplement],
         #     ylabel = "Palm Kernel Fed (kg/cow/day)",
         #     title = "(e)",
         #     xticks = xticks),
-        # Kokako.publicationplot(simulations,
+        # SDDP.publicationplot(simulations,
         #     data -> data[:weekly_milk_production],
         #     ylabel = "Milk Production (kg/day)",
         #     title = "(f)",
@@ -247,8 +247,8 @@ end
 function estimate_statistical_bound(model, filename)
     # Simulate to estimate the lower (statistical) bound. Note that we need to
     # set `terminate_on_dummy_leaf = true`.
-    bound_simulations = Kokako.simulate(model, 10_000,
-        sampling_scheme = Kokako.InSampleMonteCarlo(
+    bound_simulations = SDDP.simulate(model, 10_000,
+        sampling_scheme = SDDP.InSampleMonteCarlo(
             terminate_on_cycle = false,
             terminate_on_dummy_leaf = true
         )
@@ -278,7 +278,7 @@ if length(ARGS) > 0 && ARGS[1] == "run"
     model = infinite_powder(discount_factor = 0.75, stocking_rate = 3.0)
     for loop in 1:5
         Random.seed!(123 * loop)
-        Kokako.train(model, iteration_limit = 100, print_level = 1,
+        SDDP.train(model, iteration_limit = 100, print_level = 1,
             log_file = "powder_$(loop).log")
         Random.seed!(456 * loop)
         visualize_policy(model, "powder_visualization_$(loop)")

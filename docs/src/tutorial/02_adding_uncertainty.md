@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = Kokako
+CurrentModule = SDDP
 ```
 
 # Basic II: adding uncertainty
@@ -40,21 +40,21 @@ dynamics to include `inflow`:
 ## Creating a model
 
 To add an uncertain variable to the model, we create a new JuMP variable
-`inflow`, and then call the function [`Kokako.parameterize`](@ref). The
-[`Kokako.parameterize`](@ref) function takes three arguments: the subproblem,
+`inflow`, and then call the function [`SDDP.parameterize`](@ref). The
+[`SDDP.parameterize`](@ref) function takes three arguments: the subproblem,
 a vector of realizations, and a corresponding vector of probabilities.
 
 ```jldoctest tutorial_two
-using Kokako, GLPK
+using SDDP, GLPK
 
-model = Kokako.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
             stages = 3,
             sense = :Min,
             lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer)
         ) do subproblem, t
     # Define the state variable.
-    @variable(subproblem, 0 <= volume <= 200, Kokako.State, initial_value = 200)
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     # Define the control variables.
     @variables(subproblem, begin
         thermal_generation >= 0
@@ -72,7 +72,7 @@ model = Kokako.LinearPolicyGraph(
     fuel_cost = [50.0, 100.0, 150.0]
     @stageobjective(subproblem, fuel_cost[t] * thermal_generation)
     # Parameterize the subproblem.
-    Kokako.parameterize(subproblem, [0.0, 50.0, 100.0], [1/3, 1/3, 1/3]) do ω
+    SDDP.parameterize(subproblem, [0.0, 50.0, 100.0], [1/3, 1/3, 1/3]) do ω
         JuMP.fix(inflow, ω)
     end
 end
@@ -87,7 +87,7 @@ Note how we use the JuMP function [`JuMP.fix`](http://www.juliaopt.org/JuMP.jl/v
 to set the value of the `inflow` variable to `ω`.
 
 !!! note
-    [`Kokako.parameterize`](@ref) can only be called once in each subproblem
+    [`SDDP.parameterize`](@ref) can only be called once in each subproblem
     definition!
 
 ## Training and simulating the policy
@@ -95,7 +95,7 @@ to set the value of the `inflow` variable to `ω`.
 As in [Basic I: first steps](@ref), we train the policy:
 
 ```jldoctest tutorial_two
-julia> Kokako.train(model; iteration_limit = 10)
+julia> SDDP.train(model; iteration_limit = 10)
 -------------------------------------------------------
          SDDP.jl (c) Oscar Dowson, 2017-19
 
@@ -132,10 +132,10 @@ perform  a Monte Carlo simulation and then form a confidence interval for the
 expected cost. This confidence interval is an estimate for the upper bound.
 
 In addition to the confidence interval, we can calculate the lower bound using
-[`Kokako.calculate_bound`](@ref).
+[`SDDP.calculate_bound`](@ref).
 
 ```jldoctest tutorial_two; filter=r"Confidence interval.+"
-julia> simulations = Kokako.simulate(model, 500);
+julia> simulations = SDDP.simulate(model, 500);
 
 julia> objective_values = [
            sum(stage[:stage_objective] for stage in sim) for sim in simulations
@@ -150,7 +150,7 @@ julia> ci = round(1.96 * std(objective_values) / sqrt(500), digits = 2);
 julia> println("Confidence interval: ", μ, " ± ", ci)
 Confidence interval: 8400.00 ± 409.34
 
-julia> println("Lower bound: ", round(Kokako.calculate_bound(model), digits = 2))
+julia> println("Lower bound: ", round(SDDP.calculate_bound(model), digits = 2))
 Lower bound: 8333.33
 ```
 
@@ -162,7 +162,7 @@ corresponds to the price we should charge for electricity, since it represents
 the cost of each additional unit of demand. To calculate this, we can go
 
 ```jldoctest tutorial_two; filter = r"\s+?\-?\d+\.0"
-julia> simulations = Kokako.simulate(
+julia> simulations = SDDP.simulate(
            model,
            1,
            custom_recorders = Dict{Symbol, Function}(

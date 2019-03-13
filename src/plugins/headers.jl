@@ -1,4 +1,4 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public License,
 #  v. 2.0. If a copy of the MPL was not distributed with this file, You can
 #  obtain one at http://mozilla.org/MPL/2.0/.
@@ -11,7 +11,7 @@
 The abstract type for the risk measure interface.
 
 You need to define the following methods:
- - Kokako.adjust_probability
+ - SDDP.adjust_probability
 """
 abstract type AbstractRiskMeasure end
 
@@ -33,7 +33,7 @@ function adjust_probability end
 The abstract type for the sampling-scheme interface.
 
 You need to define the following methods:
- - Kokako.sample_scenario
+ - SDDP.sample_scenario
 """
 abstract type AbstractSamplingScheme end
 
@@ -52,7 +52,7 @@ is the stagewise-independent noise term observed in that node.
 """
 function sample_scenario(graph::PolicyGraph{T},
                          sampling_scheme::AbstractSamplingScheme) where T
-    error("You need to overload the function Kokako.sample_scenario for the " *
+    error("You need to overload the function SDDP.sample_scenario for the " *
           "sampling scheme (sampling_scheme).")
 end
 
@@ -64,9 +64,9 @@ end
 The abstract type for the Bellman function interface.
 
 You need to define the following methods:
- - Kokako.initialize_bellman_function
- - Kokako.refine_bellman_function
- - Kokako.bellman_term
+ - SDDP.initialize_bellman_function
+ - SDDP.refine_bellman_function
+ - SDDP.bellman_term
 """
 abstract type AbstractBellmanFunction end
 
@@ -80,7 +80,7 @@ Return an instance of the Bellman function F for `node` in the policy graph
 function initialize_bellman_function(
         ::Type{F}, graph::PolicyGraph{T}, node::Node{T}
             ) where {F<:AbstractBellmanFunction, T}
-    error("Overload the function Kokako.initialize_bellman_function for $(F).")
+    error("Overload the function SDDP.initialize_bellman_function for $(F).")
 end
 
 """
@@ -105,7 +105,7 @@ function refine_bellman_function(graph::PolicyGraph{T},
                                  original_probability::Vector{Float64},
                                  objective_realizations::Vector{Float64}
                                      ) where T
-    error("Kokako.refine_bellman_function not implemented for " *
+    error("SDDP.refine_bellman_function not implemented for " *
           "$(bellman_function).")
 end
 
@@ -115,7 +115,7 @@ end
 Return a JuMP expression representing the Bellman function.
 """
 function bellman_term(bellman::AbstractBellmanFunction)
-    error("Kokako.bellman term not implemented for $(bellman).")
+    error("SDDP.bellman term not implemented for $(bellman).")
 end
 
 # =============================== stopping_rules ============================= #
@@ -126,8 +126,8 @@ end
 The abstract type for the stopping-rule interface.
 
 You need to define the following methods:
- - Kokako.stopping_rule_status
- - Kokako.convergence_test
+ - SDDP.stopping_rule_status
+ - SDDP.convergence_test
 """
 abstract type AbstractStoppingRule end
 
@@ -139,13 +139,13 @@ struct Log
 end
 
 function stopping_rule_status(stopping_rule::AbstractStoppingRule)
-    error("You need to overload the function Kokako.stopping_rule_status for " *
+    error("You need to overload the function SDDP.stopping_rule_status for " *
           "the stopping rule (stopping_rule).")
 end
 
 function convergence_test(
     graph::PolicyGraph, log::Vector{Log}, stopping_rule::AbstractStoppingRule)
-    error("You need to overload the function Kokako.convergence_test for the " *
+    error("You need to overload the function SDDP.convergence_test for the " *
           "stopping rule (stopping_rule).")
 end
 

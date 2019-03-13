@@ -21,7 +21,7 @@
     ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.
 =#
 
-using Kokako, GLPK, Statistics, Test
+using SDDP, GLPK, Statistics, Test
 
 function joint_distribution(; kwargs...)
     names = tuple([first(kw) for kw in kwargs]...)
@@ -32,28 +32,28 @@ function joint_distribution(; kwargs...)
 end
 
 function newsvendor_example()
-    model = Kokako.PolicyGraph(
-            Kokako.LinearGraph(3),
+    model = SDDP.PolicyGraph(
+            SDDP.LinearGraph(3),
             sense = :Max,
-            bellman_function = Kokako.AverageCut(upper_bound = 50.0),
+            bellman_function = SDDP.AverageCut(upper_bound = 50.0),
             optimizer = with_optimizer(GLPK.Optimizer)
             ) do subproblem, stage
         @variables(subproblem, begin
-            x >= 0, (Kokako.State, initial_value = 2)
+            x >= 0, (SDDP.State, initial_value = 2)
             0 <= u <= 1
             w
         end)
         @constraint(subproblem, x.out == x.in - u + w)
-        Kokako.add_objective_state(
+        SDDP.add_objective_state(
                 subproblem, initial_value = 1.5, lower_bound = 0.75,
                 upper_bound = 2.25, lipschitz = 100.0) do y, ω
             return y + ω.price_noise
         end
         noise_terms = joint_distribution(
             demand = 0:0.05:0.5, price_noise = [-0.25, -0.125, 0.125, 0.25])
-        Kokako.parameterize(subproblem, noise_terms) do ω
+        SDDP.parameterize(subproblem, noise_terms) do ω
             JuMP.fix(w, ω.demand)
-            price = Kokako.objective_state(subproblem)
+            price = SDDP.objective_state(subproblem)
             @stageobjective(subproblem, price * u)
         end
     end
@@ -61,13 +61,13 @@ function newsvendor_example()
 end
 
 model = newsvendor_example()
-Kokako.train(model, iteration_limit = 100, print_level = 0)
+SDDP.train(model, iteration_limit = 100, print_level = 0)
 
-results = Kokako.simulate(model, 500)
+results = SDDP.simulate(model, 500)
 objectives = [
     sum(s[:stage_objective] for s in simulation) for simulation in results
 ]
 sample_mean = round(Statistics.mean(objectives); digits = 2)
 sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
 println("Confidence_interval = $(sample_mean) ± $(sample_ci)")
-@test Kokako.calculate_bound(model) ≈ sample_mean atol = sample_ci
+@test SDDP.calculate_bound(model) ≈ sample_mean atol = sample_ci

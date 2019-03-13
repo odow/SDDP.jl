@@ -1,4 +1,4 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -56,8 +56,8 @@ function sample_noise(::InSampleMonteCarlo, noise_terms::Vector{<:Noise})
             return noise.term
         end
     end
-    error("Internal Kokako error: unable to sample noise from $(noise_terms)" *
-          " using Kokako.InSampleMonteCarlo().")
+    error("Internal SDDP error: unable to sample noise from $(noise_terms)" *
+          " using SDDP.InSampleMonteCarlo().")
 end
 
 """
@@ -103,7 +103,7 @@ function sample_scenario(graph::PolicyGraph{T},
         node_index = sample_noise(sampling_scheme, node.children)::T
     end
     # Throw an error because we should never end up here.
-    error("Internal Kokako error: something went wrong sampling a scenario.")
+    error("Internal SDDP error: something went wrong sampling a scenario.")
 end
 
 # ========================= Historical Sampling Scheme ======================= #

@@ -1,4 +1,4 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -18,15 +18,15 @@
 
 =#
 
-using Kokako, GLPK, Test
+using SDDP, GLPK, Test
 
 function test_multistock_example()
-    model = Kokako.PolicyGraph(Kokako.LinearGraph(5),
+    model = SDDP.PolicyGraph(SDDP.LinearGraph(5),
             optimizer = with_optimizer(GLPK.Optimizer),
-            bellman_function = Kokako.AverageCut(lower_bound = -5)
+            bellman_function = SDDP.AverageCut(lower_bound = -5)
                                     ) do subproblem, stage
         @variable(subproblem,
-            0 <= stock[i=1:3] <= 1, Kokako.State, initial_value = 0.5)
+            0 <= stock[i=1:3] <= 1, SDDP.State, initial_value = 0.5)
         @variables(subproblem, begin
             0 <= control[i=1:3] <= 0.5
             ξ[i=1:3]  # Dummy for RHS noise.
@@ -40,19 +40,19 @@ function test_multistock_example()
                 (0.0, 0.15, 0.3),
                 (0.0, 0.15, 0.3))
             )[:]
-        Kokako.parameterize(subproblem, Ξ) do ω
+        SDDP.parameterize(subproblem, Ξ) do ω
             JuMP.fix.(ξ, ω)
         end
         @stageobjective(subproblem,
             (sin(3 * stage) - 1) * sum(control)
         )
     end
-    Kokako.train(model, iteration_limit = 100, print_level = 0)
-    @test Kokako.calculate_bound(model) ≈ -4.349 atol = 0.01
+    SDDP.train(model, iteration_limit = 100, print_level = 0)
+    @test SDDP.calculate_bound(model) ≈ -4.349 atol = 0.01
 
-    simulation_results = Kokako.simulate(model, 5000)
+    simulation_results = SDDP.simulate(model, 5000)
     @test length(simulation_results) == 5000
-    @test Kokako.Statistics.mean(
+    @test SDDP.Statistics.mean(
         sum(data[:stage_objective] for data in simulation)
         for simulation in simulation_results
     ) ≈ -4.349 atol = 0.02

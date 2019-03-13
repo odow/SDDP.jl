@@ -1,9 +1,9 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using Kokako, GLPK, Test
+using SDDP, GLPK, Test
 
 """
 A farm planning problem. There are four stages. The first stage is a
@@ -47,23 +47,23 @@ function test_mccardle_farm_model()
     V = [0.05, 0.05, 0.05]  # inventory cost
     L = 3000.0  # max demand for hay
 
-    graph = Kokako.MarkovianGraph([
+    graph = SDDP.MarkovianGraph([
         ones(Float64, 1, 1),
         [0.14 0.69 0.17],
         [0.14 0.69 0.17; 0.14 0.69 0.17; 0.14 0.69 0.17],
         [0.14 0.69 0.17; 0.14 0.69 0.17; 0.14 0.69 0.17]
     ])
 
-    model = Kokako.PolicyGraph(graph,
-            bellman_function = Kokako.AverageCut(lower_bound = 0.0),
+    model = SDDP.PolicyGraph(graph,
+            bellman_function = SDDP.AverageCut(lower_bound = 0.0),
             optimizer = with_optimizer(GLPK.Optimizer)
                             ) do subproblem, index
         stage, weather = index
         # ===================== State Variables =====================
         # Area planted.
-        @variable(subproblem, 0 <= acres <= M, Kokako.State, initial_value = M)
+        @variable(subproblem, 0 <= acres <= M, SDDP.State, initial_value = M)
         @variable(subproblem, bales[i = 1:3] >= 0,
-            Kokako.State, initial_value = (i == 1 ? H : 0))
+            SDDP.State, initial_value = (i == 1 ? H : 0))
         # ===================== Variables =====================
         @variables(subproblem, begin
             buy[1:3] >= 0  # Quantity of bales to buy from each cutting.
@@ -118,9 +118,9 @@ function test_mccardle_farm_model()
         end
         return
     end
-    Kokako.train(model, iteration_limit = 50, print_level = 0)
-    @test Kokako.termination_status(model) == :iteration_limit
-    @test Kokako.calculate_bound(model) ≈ 4074.1391 atol = 1e-5
+    SDDP.train(model, iteration_limit = 50, print_level = 0)
+    @test SDDP.termination_status(model) == :iteration_limit
+    @test SDDP.calculate_bound(model) ≈ 4074.1391 atol = 1e-5
 end
 
 test_mccardle_farm_model()

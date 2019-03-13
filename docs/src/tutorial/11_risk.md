@@ -2,7 +2,7 @@
 
 ```@meta
 DocTestSetup = quote
-    using Kokako, GLPK
+    using SDDP, GLPK
 end
 ```
 
@@ -64,12 +64,12 @@ julia> risk_adjusted_probability = zeros(4)
 ### Expectation
 
 ```@docs
-Kokako.Expectation
+SDDP.Expectation
 ```
 
 ```jldoctest intermediate_risk
-Kokako.adjust_probability(
-    Kokako.Expectation(),
+SDDP.adjust_probability(
+    SDDP.Expectation(),
     risk_adjusted_probability,
     nominal_probability,
     noise_supports,
@@ -88,17 +88,17 @@ risk_adjusted_probability
  0.4
 ```
 
-[`Kokako.Expectation`](@ref) is the default risk measure in `SDDP.jl`.
+[`SDDP.Expectation`](@ref) is the default risk measure in `SDDP.jl`.
 
 ### Worst-case
 
 ```@docs
-Kokako.WorstCase
+SDDP.WorstCase
 ```
 
 ```jldoctest intermediate_risk
-Kokako.adjust_probability(
-    Kokako.WorstCase(),
+SDDP.adjust_probability(
+    SDDP.WorstCase(),
     risk_adjusted_probability,
     nominal_probability,
     noise_supports,
@@ -120,12 +120,12 @@ risk_adjusted_probability
 ### Average value at risk (AV@R)
 
 ```@docs
-Kokako.AVaR
+SDDP.AVaR
 ```
 
 ```jldoctest intermediate_risk
-Kokako.adjust_probability(
-    Kokako.AVaR(0.5),
+SDDP.adjust_probability(
+    SDDP.AVaR(0.5),
     risk_adjusted_probability,
     nominal_probability,
     noise_supports,
@@ -151,12 +151,12 @@ combination of coherent risk measures is also a coherent risk measure. Convex
 combinations of risk measures can be created directly:
 
 ```jldoctest intermediate_risk
-julia> cvx_comb_measure = 0.5 * Kokako.Expectation() + 0.5 * Kokako.WorstCase()
-A convex combination of 0.5 * Kokako.Expectation() + 0.5 * Kokako.WorstCase()
+julia> cvx_comb_measure = 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()
+A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()
 ```
 
 ```jldoctest intermediate_risk
-Kokako.adjust_probability(
+SDDP.adjust_probability(
     cvx_comb_measure,
     risk_adjusted_probability,
     nominal_probability,
@@ -176,15 +176,15 @@ risk_adjusted_probability
  0.2
 ```
 
-As a special case, the [`Kokako.EAVaR`](@ref) risk-measure is a convex
-combination of [`Kokako.Expectation`](@ref) and [`Kokako.AVaR`](@ref):
+As a special case, the [`SDDP.EAVaR`](@ref) risk-measure is a convex
+combination of [`SDDP.Expectation`](@ref) and [`SDDP.AVaR`](@ref):
 ```jldoctest intermediate_risk
-julia> risk_measure = Kokako.EAVaR(beta=0.25, lambda=0.4)
-A convex combination of 0.4 * Kokako.Expectation() + 0.6 * Kokako.AVaR(0.25)
+julia> risk_measure = SDDP.EAVaR(beta=0.25, lambda=0.4)
+A convex combination of 0.4 * SDDP.Expectation() + 0.6 * SDDP.AVaR(0.25)
 ```
 
 ```@docs
-Kokako.EAVaR
+SDDP.EAVaR
 ```
 
 ### Distributionally robust
@@ -196,12 +196,12 @@ Wasserstein distance metric.
 #### Modified Chi-squard
 
 ```@docs
-Kokako.ModifiedChiSquared
+SDDP.ModifiedChiSquared
 ```
 
 ```jldoctest intermediate_risk
-Kokako.adjust_probability(
-    Kokako.ModifiedChiSquared(0.5),
+SDDP.adjust_probability(
+    SDDP.ModifiedChiSquared(0.5),
     risk_adjusted_probability,
     [0.25, 0.25, 0.25, 0.25],
     noise_supports,
@@ -223,16 +223,16 @@ round.(risk_adjusted_probability, digits = 4)
 #### Wasserstein
 
 ```@docs
-Kokako.Wasserstein
+SDDP.Wasserstein
 ```
 
 ```jldoctest intermediate_risk
-risk_measure = Kokako.Wasserstein(
+risk_measure = SDDP.Wasserstein(
         with_optimizer(GLPK.Optimizer); alpha=0.5) do x, y
    return abs(x - y)
 end
 
-Kokako.adjust_probability(
+SDDP.adjust_probability(
     risk_measure,
     risk_adjusted_probability,
     nominal_probability,
@@ -259,12 +259,12 @@ a policy using them. There are three possible ways.
 
 If the same risk measure is used at every node in the policy graph, we can just
 pass an instance of one of the risk measures to the `risk_measure` keyword
-argument of the [`Kokako.train`](@ref) function.
+argument of the [`SDDP.train`](@ref) function.
 
 ```julia
-Kokako.train(
+SDDP.train(
     model,
-    risk_measure = Kokako.WorstCase(),
+    risk_measure = SDDP.WorstCase(),
     iteration_limit = 10
 )
 ```
@@ -275,11 +275,11 @@ with one entry for each node. The keys of the dictionary are the indices of the
 nodes.
 
 ```julia
-Kokako.train(
+SDDP.train(
     model,
     risk_measure = Dict(
-        1 => Kokako.Expectation(),
-        2 => Kokako.WorstCase()
+        1 => SDDP.Expectation(),
+        2 => SDDP.WorstCase()
     ),
     iteration_limit = 10
 )
@@ -288,13 +288,13 @@ Kokako.train(
 An alternative method is to pass `risk_measure` a function that takes one
 argument, the index of a node, and returns an instance of a risk measure:
 ```julia
-Kokako.train(
+SDDP.train(
     model,
     risk_measure = (node_index) -> begin
         if node_index == 1
-            return Kokako.Expectation()
+            return SDDP.Expectation()
         else
-            return Kokako.WorstCase()
+            return SDDP.WorstCase()
         end
     end,
     iteration_limit = 10

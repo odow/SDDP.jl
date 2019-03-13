@@ -39,7 +39,7 @@ end
 
 # becomes
 
-model = Kokako.LinearPolicyGraph(stages = 3) do subproblem, t
+model = SDDP.LinearPolicyGraph(stages = 3) do subproblem, t
     # subproblem definition.
 end
 ```
@@ -59,7 +59,7 @@ end
 
 # becomes
 
-model = Kokako.MarkovianPolicyGraph(
+model = SDDP.MarkovianPolicyGraph(
         transition_matrices = Array{Float64, 2}[
             [ 1.0 ]',
             [ 0.75 0.25 ],
@@ -91,7 +91,7 @@ We changed how to specify state variables.
 
 # becomes
 
-@variable(subproblem, 0 <= x <= 1, Kokako.State, initial_value = 2)
+@variable(subproblem, 0 <= x <= 1, SDDP.State, initial_value = 2)
 ```
 
 In addition, instead of having to create an incoming state `x0` and an outgoing
@@ -101,7 +101,7 @@ state `x`, we now refer to `x.in` and `x.out`. Here is another example:
 
 # becomes
 
-@variable(subproblem, 0 <= x[i=1:2] <= 1, Kokako.State, initial_value = i)
+@variable(subproblem, 0 <= x[i=1:2] <= 1, SDDP.State, initial_value = i)
 
 x0[1]
 
@@ -129,7 +129,7 @@ setnoiseprobability!(subproblem, [0.5, 0.2, 0.3])
 
 @variable(subproblem, ω)
 @constraint(subproblem, 2x <= ω)
-Kokako.parameterize(subproblem, [1, 2, 3], [0.5, 0.2, 0.3]) do ϕ
+SDDP.parameterize(subproblem, [1, 2, 3], [0.5, 0.2, 0.3]) do ϕ
     JuMP.fix(ω, ϕ)
 end
 ```
@@ -137,21 +137,21 @@ end
 #### `@stageobjective`
 
 `@stageobjective` no longer accepts a random list of parameters. Use
-[`Kokako.parameterize`](@ref) instead.
+[`SDDP.parameterize`](@ref) instead.
 ```julia
 @stageobjective(subproblem, ω = [1, 2, 3], ω * x)
 setnoiseprobability!(subproblem, [0.5, 0.2, 0.3])
 
 # becomes
 
-Kokako.parameterize(subproblem, [1, 2, 3], [0.5, 0.2, 0.3]) do ω
+SDDP.parameterize(subproblem, [1, 2, 3], [0.5, 0.2, 0.3]) do ω
     @stageobjective(subproblem, ω * x)
 end
 ```
 
 #### `SDDP.solve`
 
-`SDDP.solve` has been replaced by [`Kokako.train`](@ref). See the docs for a
+`SDDP.solve` has been replaced by [`SDDP.train`](@ref). See the docs for a
 complete list of the new options as most things have changed.
 
 !!! note

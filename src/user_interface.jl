@@ -1,4 +1,4 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -428,7 +428,7 @@ arguments that are not in realizations (but still of type T).
 
 # Example
 
-    Kokako.parameterize(subproblem, [1, 2, 3], [0.4, 0.3, 0.3]) do ω
+    SDDP.parameterize(subproblem, [1, 2, 3], [0.4, 0.3, 0.3]) do ω
         JuMP.set_upper_bound(x, ω)
     end
 """
@@ -440,7 +440,7 @@ function parameterize(modify::Function,
                           ) where T
     node = get_node(subproblem)
     if length(node.noise_terms) != 0
-        error("Duplicate calls to Kokako.parameterize detected. Only " *
+        error("Duplicate calls to SDDP.parameterize detected. Only " *
               "a subproblem at most one time.")
     end
     for (realization, prob) in zip(realizations, probability)
@@ -457,7 +457,7 @@ Set the stage-objective of `subproblem` to `stage_objective`.
 
 # Example
 
-    Kokako.set_stage_objective(subproblem, 2x + 1)
+    SDDP.set_stage_objective(subproblem, 2x + 1)
 """
 function set_stage_objective(subproblem::JuMP.Model, stage_objective)
     node = get_node(subproblem)
@@ -496,7 +496,7 @@ end
 #
 #   Usage:
 #   julia> @variable(subproblem, 0 <= x[i=1:2] <= i,
-#              Kokako.State, initial_value = i)
+#              SDDP.State, initial_value = i)
 #
 #   julia> x
 #   2-element Array{State{VariableRef},1}:

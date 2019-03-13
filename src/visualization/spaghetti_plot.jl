@@ -1,4 +1,4 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public License,
 #  v. 2.0. If a copy of the MPL was not distributed with this file, You can
 #  obtain one at http://mozilla.org/MPL/2.0/.
@@ -19,7 +19,7 @@ const PLOT_DATA = Dict{String, Any}(
 )
 
 """
-	Kokako.SpaghettiPlot(; stages, scenarios)
+	SDDP.SpaghettiPlot(; stages, scenarios)
 
 Initialize a new `SpaghettiPlot` with `stages` stages and `scenarios` number of
 replications.
@@ -38,7 +38,7 @@ function Base.show(io::IO, plt::SpaghettiPlot)
 end
 
 """
-	Kokako.add_spaghetti(data_function::Function, plt::SpaghettiPlot; kwargs...)
+	SDDP.add_spaghetti(data_function::Function, plt::SpaghettiPlot; kwargs...)
 
 # Description
 
@@ -61,8 +61,8 @@ Add a new figure to the SpaghettiPlot `plt`, where the y-value of the
 # Examples
 
 	simulations = simulate(model, 10)
-	plt = Kokako.spaghetti_plot(simulations)
-	Kokako.add_spaghetti(plt; title = "Stage objective") do data
+	plt = SDDP.spaghetti_plot(simulations)
+	SDDP.add_spaghetti(plt; title = "Stage objective") do data
 		return data[:stage_objective]
 	end
 """

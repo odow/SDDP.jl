@@ -1,9 +1,9 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using Kokako, GLPK, Test, Statistics
+using SDDP, GLPK, Test, Statistics
 
 function infinite_hydro_thermal()
     Ω = [
@@ -11,17 +11,17 @@ function infinite_hydro_thermal()
         (inflow = 5.0, demand = 5),
         (inflow = 10.0, demand = 2.5)
     ]
-    graph = Kokako.Graph(
+    graph = SDDP.Graph(
         :root_node,
         [:week],
         [(:root_node => :week, 1.0), (:week => :week, 0.9)]
     )
-    model = Kokako.PolicyGraph(graph,
-                bellman_function = Kokako.AverageCut(lower_bound = 0),
+    model = SDDP.PolicyGraph(graph,
+                bellman_function = SDDP.AverageCut(lower_bound = 0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
         @variable(subproblem,
-            5.0 <= reservoir <= 15.0, Kokako.State, initial_value = 10.0)
+            5.0 <= reservoir <= 15.0, SDDP.State, initial_value = 10.0)
         @variables(subproblem, begin
             thermal_generation >= 0
             hydro_generation >= 0
@@ -34,15 +34,15 @@ function infinite_hydro_thermal()
             hydro_generation + thermal_generation == demand
         end)
         @stageobjective(subproblem, 10 * spill + thermal_generation)
-        Kokako.parameterize(subproblem, Ω) do ω
+        SDDP.parameterize(subproblem, Ω) do ω
             JuMP.fix(inflow, ω.inflow)
             JuMP.fix(demand, ω.demand)
         end
     end
-    Kokako.train(model, time_limit = 2.0, print_level = 0)
-    @test Kokako.calculate_bound(model) ≈ 119.167 atol = 0.1
+    SDDP.train(model, time_limit = 2.0, print_level = 0)
+    @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
 
-    results = Kokako.simulate(model, 500)
+    results = SDDP.simulate(model, 500)
     objectives = [
         sum(s[:stage_objective] for s in simulation) for simulation in results
     ]

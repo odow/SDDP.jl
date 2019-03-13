@@ -1,22 +1,22 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using Kokako, GLPK, Test, Distributions
+using SDDP, GLPK, Test, Distributions
 
 function infinite_lin_HD()
-    graph = Kokako.Graph(
+    graph = SDDP.Graph(
         :root_node,
         [:week],
         [(:root_node => :week, 1.0), (:week => :week, 0.95)]
     )
-    model = Kokako.PolicyGraph(graph,
-                bellman_function = Kokako.AverageCut(lower_bound = 0),
+    model = SDDP.PolicyGraph(graph,
+                bellman_function = SDDP.AverageCut(lower_bound = 0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
 
-        @variable(subproblem, -10 <= state <= 10, Kokako.State, initial_value = 0)
+        @variable(subproblem, -10 <= state <= 10, SDDP.State, initial_value = 0)
 
         @variables(subproblem, begin
             0 <= order_quantity
@@ -37,7 +37,7 @@ function infinite_lin_HD()
         # Truncated normal on [0, 10] with mean 5 and sd 2.
         Pg = rand(Distributions.TruncatedNormal(5, 2, 0, 10), 50)
         sort!(Pg)
-        Kokako.parameterize(subproblem, Pg) do ω
+        SDDP.parameterize(subproblem, Pg) do ω
             JuMP.fix(demand, ω)
         end
 
@@ -53,7 +53,7 @@ function infinite_lin_HD()
 end
 
 function infinite_lin_DH()
-    graph = Kokako.Graph(
+    graph = SDDP.Graph(
         :root_node,
         [:decision, :recourse],
         [
@@ -62,12 +62,12 @@ function infinite_lin_DH()
             (:recourse => :decision, 0.95)
         ]
     )
-    model = Kokako.PolicyGraph(graph,
-                bellman_function = Kokako.AverageCut(lower_bound = 0),
+    model = SDDP.PolicyGraph(graph,
+                bellman_function = SDDP.AverageCut(lower_bound = 0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
-        @variable(subproblem, -10 <= state <= 10, Kokako.State, initial_value = 0)
-        @variable(subproblem, 0 <= order_quantity, Kokako.State, initial_value = 0)
+        @variable(subproblem, -10 <= state <= 10, SDDP.State, initial_value = 0)
+        @variable(subproblem, 0 <= order_quantity, SDDP.State, initial_value = 0)
         if node == :decision
             @constraint(subproblem, state.out == state.in)
             @stageobjective(subproblem, 20 * order_quantity.out)
@@ -87,7 +87,7 @@ function infinite_lin_DH()
             end)
             Pg = rand(Distributions.TruncatedNormal(5, 2, 0, 10), 50)
             sort!(Pg)
-            Kokako.parameterize(subproblem, Pg) do ω
+            SDDP.parameterize(subproblem, Pg) do ω
                 JuMP.fix(demand, ω)
             end
             @stageobjective(subproblem,
@@ -105,8 +105,8 @@ using Random
 Random.seed!(1234)
 begin
     model = infinite_lin_HD()
-    Kokako.train(model, iteration_limit = 75, print_level = 1)
-    results = Kokako.simulate(model, 500)
+    SDDP.train(model, iteration_limit = 75, print_level = 1)
+    results = SDDP.simulate(model, 500)
     objectives = [
         sum(s[:stage_objective] for s in simulation) for simulation in results
     ]
@@ -117,8 +117,8 @@ end
 Random.seed!(1234)
 begin
     model = infinite_lin_DH()
-    Kokako.train(model, iteration_limit = 75, print_level = 1)
-    results = Kokako.simulate(model, 500)
+    SDDP.train(model, iteration_limit = 75, print_level = 1)
+    results = SDDP.simulate(model, 500)
     objectives = [
         sum(s[:stage_objective] for s in simulation) for simulation in results
     ]

@@ -3,45 +3,45 @@
 ## Policy graphs
 
 ```@docs
-Kokako.Graph
-Kokako.add_node
-Kokako.add_edge
-Kokako.LinearGraph
-Kokako.MarkovianGraph
-Kokako.LinearPolicyGraph
-Kokako.MarkovianPolicyGraph
-Kokako.PolicyGraph
+SDDP.Graph
+SDDP.add_node
+SDDP.add_edge
+SDDP.LinearGraph
+SDDP.MarkovianGraph
+SDDP.LinearPolicyGraph
+SDDP.MarkovianPolicyGraph
+SDDP.PolicyGraph
 ```
 
 ## Subproblem definition
 
 ```@docs
 @stageobjective
-Kokako.parameterize
-Kokako.add_objective_state
-Kokako.objective_state
+SDDP.parameterize
+SDDP.add_objective_state
+SDDP.objective_state
 ```
 
 ## Training the policy
 
 ```@docs
-Kokako.numerical_stability_report
-Kokako.train
-Kokako.termination_status
+SDDP.numerical_stability_report
+SDDP.train
+SDDP.termination_status
 ```
 
 ## Simulating the policy
 
 ```@docs
-Kokako.simulate
-Kokako.calculate_bound
-Kokako.Historical
+SDDP.simulate
+SDDP.calculate_bound
+SDDP.Historical
 ```
 
 ## Visualizing the policy
 
 ```@docs
-Kokako.SpaghettiPlot
-Kokako.add_spaghetti
-Kokako.publication_plot
+SDDP.SpaghettiPlot
+SDDP.add_spaghetti
+SDDP.publication_plot
 ```

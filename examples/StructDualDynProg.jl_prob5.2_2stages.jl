@@ -1,4 +1,4 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,11 +8,11 @@
         https://github.com/blegat/StochasticDualDynamicProgramming.jl/blob/fe5ef82db6befd7c8f11c023a639098ecb85737d/test/prob5.2_2stages.jl
 ==#
 
-using Kokako, GLPK, Test
+using SDDP, GLPK, Test
 
 function test_prob52_2stages()
-    model = Kokako.PolicyGraph(Kokako.LinearGraph(2),
-                bellman_function = Kokako.AverageCut(lower_bound = 0.0),
+    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
+                bellman_function = SDDP.AverageCut(lower_bound = 0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                 ) do subproblem, stage
         # ========== Problem data ==========
@@ -24,7 +24,7 @@ function test_prob52_2stages()
         D2 = [diff([0, 3919, 7329, 10315])  diff([0, 7086, 9004, 11169])]
         p2 = [0.9, 0.1]
         # ========== State Variables ==========
-        @variable(subproblem, x[i=1:n] >= 0, Kokako.State, initial_value = 0.0)
+        @variable(subproblem, x[i=1:n] >= 0, SDDP.State, initial_value = 0.0)
         # ========== Variables ==========
         @variables(subproblem, begin
             y[1:n, 1:m] >= 0
@@ -44,7 +44,7 @@ function test_prob52_2stages()
         end
         # ========== Uncertainty ==========
         if stage != 1 # no uncertainty in first stage
-            Kokako.parameterize(subproblem, 1:size(D2, 2), p2) do ω
+            SDDP.parameterize(subproblem, 1:size(D2, 2), p2) do ω
                 for j in 1:m
                     JuMP.fix(rhs_noise[j], D2[j, ω])
                 end
@@ -56,8 +56,8 @@ function test_prob52_2stages()
         return
     end
 
-    Kokako.train(model, iteration_limit = 50, print_level = 0)
-    @test Kokako.calculate_bound(model) ≈ 340315.52 atol = 0.1
+    SDDP.train(model, iteration_limit = 50, print_level = 0)
+    @test SDDP.calculate_bound(model) ≈ 340315.52 atol = 0.1
     # sim = simulate(mod, 1, [:x, :penalty])
     # @test length(sim) == 1
     # @test isapprox(sim[1][:x][1], [5085,1311,3919,854])
