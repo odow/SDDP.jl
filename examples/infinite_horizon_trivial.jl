@@ -19,7 +19,12 @@ function infinite_trivial()
         @constraint(subproblem, state.in == state.out)
         @stageobjective(subproblem, 2.0)
     end
-    SDDP.train(model, iteration_limit = 100, print_level = 0)
+    SDDP.train(
+        model;
+        iteration_limit = 100,
+        print_level = 0,
+        cycle_discretization_delta = 0.1
+    )
     @test SDDP.calculate_bound(model) ≈ 2.0 / (1 - 0.9) atol = 1e-3
 end
 
