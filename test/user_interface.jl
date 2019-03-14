@@ -15,6 +15,19 @@ using SDDP, Test, GLPK
         end
         @test haskey(graph.nodes, 5)
         @test graph.nodes[5] == Tuple{Int, Float64}[]
+
+        graph = SDDP.LinearGraph(3)
+        @test sprint(show, graph) ==
+            "Root\n" *
+            " 0\n" *
+            "Nodes\n" *
+            " 1\n" *
+            " 2\n" *
+            " 3\n" *
+            "Arcs\n" *
+            " 0 => 1 w.p. 1.0\n" *
+            " 1 => 2 w.p. 1.0\n" *
+            " 2 => 3 w.p. 1.0\n"
     end
 
     @testset "MarkovianGraph" begin
@@ -81,13 +94,6 @@ using SDDP, Test, GLPK
             graph = SDDP.Graph(:root)
             SDDP.add_node(graph, :x)
             @test_throws Exception SDDP.add_edge(graph, :x => :root, 1.0)
-        end
-        @testset "Invalid probability" begin
-            graph = SDDP.Graph(:root)
-            SDDP.add_node(graph, :x)
-            SDDP.add_edge(graph, :root => :x, 0.5)
-            SDDP.add_edge(graph, :root => :x, 0.75)
-            @test_throws Exception SDDP.validate_graph(graph)
         end
     end
 end
@@ -207,4 +213,58 @@ end
         @test node.stage_objective == 2 * node.subproblem[:x]
         @test model.objective_sense == SDDP.MOI.MAX_SENSE
     end
+end
+
+@testset "Errors" begin
+    @testset "<=0 stages" begin
+        exception = ErrorException(
+            "You must create a LinearPolicyGraph with `stages >= 1`.")
+        @test_throws exception SDDP.LinearPolicyGraph(stages = 0) do sp, t
+        end
+    end
+    @testset "missing bounds" begin
+        exception = ErrorException(
+            "You must specify a bound on the objective value, through " *
+            "`lower_bound` if minimizing, or `upper_bound` if maximizing.")
+        @test_throws exception SDDP.LinearPolicyGraph(stages = 1) do sp, t
+        end
+    end
+    @testset "parameterize!" begin
+        exception = ErrorException(
+            "Duplicate calls to SDDP.parameterize detected.")
+        @test_throws exception SDDP.LinearPolicyGraph(
+                stages = 2, lower_bound = 0.0, sense = :Max, direct_mode = false
+                ) do node, stage
+            @variable(node, 0 <= x <= 1)
+            SDDP.parameterize(node, [1, 2]) do ω
+                @stageobjective(node, ω * x)
+            end
+            SDDP.parameterize(node, [3, 4]) do ω
+                @stageobjective(node, ω * x)
+            end
+        end
+    end
+    @testset "no initial_value" begin
+        exception = ErrorException(
+            "In `@variable(node, x, SDDP.State)`: When creating a state " *
+            "variable, you must set the `initial_value` keyword to the value " *
+            "of the state variable at the root node.")
+        @test_throws exception SDDP.LinearPolicyGraph(
+                stages = 2, lower_bound = 0.0, sense = :Max, direct_mode = false
+                ) do node, stage
+            @variable(node, x, SDDP.State)
+            @stageobjective(node, x.out)
+        end
+    end
+end
+
+@testset "Numerical stability report" begin
+    model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = -1e10, direct_mode=false) do subproblem, t
+        @variable(subproblem, x >= -1e7, SDDP.State, initial_value=1e-5)
+        @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 1e-8)
+        @stageobjective(subproblem, 1e9 * x.out)
+    end
+    report = sprint(SDDP.numerical_stability_report, model)
+    @test occursin("WARNING", report)
 end

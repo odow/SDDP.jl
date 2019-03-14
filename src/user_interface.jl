@@ -32,16 +32,6 @@ function Base.show(io::IO, graph::Graph)
     end
 end
 
-function validate_graph(graph)
-    for (node, children) in nodes
-        probability = sum(child[2] for child in children)
-        if !(0.0 <= probability <= 1.0)
-            error("Probability on edges leaving node $(node) sum to " *
-                  "$(probability), but this must be in [0.0, 1.0]")
-        end
-    end
-end
-
 """
     Graph(root_node::T) where T
 
@@ -248,10 +238,6 @@ function Base.getindex(graph::PolicyGraph{T}, index::T) where T
     return graph.nodes[index]
 end
 
-function get_subproblem(graph::PolicyGraph{T}, index::T) where T
-    return graph[index].subproblem::JuMP.Model
-end
-
 # Work around different JuMP modes (Automatic / Manual / Direct).
 function construct_subproblem(optimizer_factory, direct_mode::Bool)
     subproblem = if direct_mode
@@ -440,8 +426,7 @@ function parameterize(modify::Function,
                           ) where T
     node = get_node(subproblem)
     if length(node.noise_terms) != 0
-        error("Duplicate calls to SDDP.parameterize detected. Only " *
-              "a subproblem at most one time.")
+        error("Duplicate calls to SDDP.parameterize detected.")
     end
     for (realization, prob) in zip(realizations, probability)
         push!(node.noise_terms, Noise(realization, prob))
@@ -560,9 +545,7 @@ function JuMP.add_variable(
     )
     node = get_node(subproblem)
     sym_name = Symbol(name)
-    if haskey(node.states, sym_name)
-        error("The state $(sym_name) already exists.")
-    end
+    @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.
     node.states[sym_name] = state
     graph = get_policy_graph(subproblem)
     graph.initial_root_state[sym_name] = state_info.initial_value
