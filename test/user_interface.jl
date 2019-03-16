@@ -117,6 +117,8 @@ end
             push!(nodes, stage)
         end
         @test nodes == Set([1, 2])
+        @test sprint(show, model) ==
+            "A policy graph with 2 nodes.\n Node indices: 1, 2\n"
     end
 
     @testset "MarkovianGraph" begin
@@ -131,6 +133,21 @@ end
         nodes = Set{Tuple{Int, Int}}()
         model = SDDP.PolicyGraph(graph, lower_bound = 0.0,
                                    direct_mode = false) do node, stage
+            push!(nodes, stage)
+        end
+        @test nodes == Set([(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (4, 2), (5, 1), (5, 2)])
+    end
+
+    @testset "MarkovianPolicyGraph" begin
+        nodes = Set{Tuple{Int, Int}}()
+        model = SDDP.MarkovianPolicyGraph(
+                transition_matrices = [
+                    ones(Float64, (1, 1)),
+                    [0.5 0.5],
+                    [0.5 0.5; 0.3 0.4],
+                    [0.5 0.5; 0.3 0.4],
+                    [0.5 0.5; 0.3 0.4]],
+                lower_bound = 0.0, direct_mode = false) do node, stage
             push!(nodes, stage)
         end
         @test nodes == Set([(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (4, 2), (5, 1), (5, 2)])
@@ -267,4 +284,8 @@ end
     end
     report = sprint(SDDP.numerical_stability_report, model)
     @test occursin("WARNING", report)
+    report_2 = sprint(
+        io -> SDDP.numerical_stability_report(io, model, by_node=true))
+    @test occursin("Numerical stability report for node: 1", report_2)
+    @test occursin("Numerical stability report for node: 2", report_2)
 end

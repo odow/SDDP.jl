@@ -21,17 +21,21 @@ function to_nodal_form(model::PolicyGraph{T}, element) where T
     end
     return store
 end
-function to_nodal_form(model::PolicyGraph{T}, builder::Function) where T
-    node = first(keys(model.nodes))
-    element = builder(node)
-    store = Dict{T, typeof(element)}()
-    for node_index in keys(model.nodes)
+
+function to_nodal_form(graph::PolicyGraph{T}, builder::Function) where {T}
+    store = Dict{T, Any}()
+    for node_index in keys(graph.nodes)
         store[node_index] = builder(node_index)
     end
-    return store
+    V = typeof(first(values(store)))
+    for val in values(store)
+        V = promote_type(V, typeof(val))
+    end
+    return Dict{T, V}(key => val for (key, val) in store)
 end
-function to_nodal_form(model::PolicyGraph{T}, dict::Dict{T, V}) where {T, V}
-    for key in keys(model.nodes)
+
+function to_nodal_form(graph::PolicyGraph{T}, dict::Dict{T, V}) where {T, V}
+    for key in keys(graph.nodes)
         if !haskey(dict, key)
             error("Missing key: $(key).")
         end

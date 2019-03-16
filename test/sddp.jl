@@ -37,6 +37,28 @@ using SDDP, Test, GLPK
     @test simulated_value == cumulative_value
 end
 
+@testset "to nodal forms" begin
+    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
+                bellman_function = SDDP.AverageCut(lower_bound = 0.0),
+                optimizer = with_optimizer(GLPK.Optimizer)
+                    ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
+        @stageobjective(node, x.out)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            JuMP.set_lower_bound(x.out, ω)
+        end
+    end
+    SDDP.train(model; iteration_limit = 1, risk_measure = SDDP.Expectation())
+    @test SDDP.termination_status(model) == :iteration_limit
+    SDDP.train(model; iteration_limit = 1,
+        risk_measure = Dict(1 => SDDP.Expectation(), 2 => SDDP.WorstCase()))
+    @test SDDP.termination_status(model) == :iteration_limit
+    SDDP.train(model; iteration_limit = 1,
+        risk_measure = (idx) -> idx == 1 ? SDDP.Expectation() : SDDP.WorstCase()
+    )
+    @test SDDP.termination_status(model) == :iteration_limit
+end
+
 @testset "solve" begin
     model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
                 bellman_function = SDDP.AverageCut(lower_bound = 0.0),
@@ -50,6 +72,18 @@ end
     end
     SDDP.train(model; iteration_limit = 4)
     @test SDDP.termination_status(model) == :iteration_limit
+    @testset "simulate" begin
+        simulations = SDDP.simulate(model, 11, [:x])
+        @test length(simulations) == 11
+        @test all(length.(simulations) .== 2)
+
+        simulation = simulations[1][1]
+        @test length(keys(simulation)) == 6
+        @test sort(collect(keys(simulation))) ==
+            [:bellman_term, :node_index, :noise_term, :objective_state,
+            :stage_objective, :x]
+        @test typeof(simulation[:x]) == SDDP.State{Float64}
+    end
 end
 
 function MOI.get(::GLPK.Optimizer, ::MOI.ListOfVariableAttributesSet)

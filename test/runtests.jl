@@ -6,15 +6,14 @@
 using SDDP, Test, Random
 
 @testset "Unit Tests" begin
-    for file in ["plugins/risk_measures.jl",
-                 "plugins/sampling_schemes.jl",
-                 "plugins/stopping_rules.jl",
-                 "sddp.jl",
-                 "user_interface.jl",
-                 "visualization.jl"]
-        @testset "$(file)" begin
-            include(file)
-        end
+    @testset "$(file)" for file in [
+            "plugins/risk_measures.jl",
+             "plugins/sampling_schemes.jl",
+             "plugins/stopping_rules.jl",
+             "sddp.jl",
+             "user_interface.jl",
+             "visualization.jl"]
+        include(file)
     end
 end
 

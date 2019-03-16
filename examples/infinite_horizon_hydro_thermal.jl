@@ -39,7 +39,8 @@ function infinite_hydro_thermal()
             JuMP.fix(demand, ω.demand)
         end
     end
-    SDDP.train(model, time_limit = 2.0, print_level = 0)
+    SDDP.train(model;
+        time_limit = 2.0, print_level = 0, cycle_discretization_delta = 0.1)
     @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
 
     results = SDDP.simulate(model, 500)
