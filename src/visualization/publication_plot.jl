@@ -5,7 +5,8 @@
 
 # Internal function: convert dataset (from SDDP.simulate) into a matrix where
 # the rows are quantiles, and the columns are stages.
-function publication_data(dataset::Vector{Vector{Dict{Symbol, Any}}},
+function publication_data(
+        dataset::Vector{Vector{Dict{Symbol, Any}}},
         quantiles::Vector{Float64}, stage_function::Function)
     max_stages = maximum(length.(dataset))
     output_array = fill(NaN, length(quantiles), max_stages)
@@ -32,9 +33,9 @@ See `Plots.jl` for the list of keyword arguments.
         return data[:stage_objective]
     end
 """
-function publication_plot(
-        data_function::Function, simulations::Vector{Vector{Dict{Symbol, Any}}};
-        kwargs...)
+function publication_plot(data_function::Function,
+                          simulations::Vector{Vector{Dict{Symbol, Any}}};
+                          kwargs...)
     # An annoying over-load so that we can provide a consistent interface
     # instead of the Plots.jl generated `publicationplot`.
     return SDDP.publicationplot(simulations, data_function, kwargs...)
@@ -42,8 +43,9 @@ end
 
 RecipesBase.@userplot PublicationPlot
 
-RecipesBase.@recipe function f(publication_plot::PublicationPlot;
-                   quantile=[0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
+RecipesBase.@recipe function f(
+        publication_plot::PublicationPlot;
+        quantile=[0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
     dataset, stage_function = publication_plot.args
     size --> (500, 300)
     data_matrix = publication_data(dataset, sort(quantile), stage_function)

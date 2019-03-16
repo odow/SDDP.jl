@@ -28,3 +28,12 @@ using SDDP, Test
     @test read("test.html", String) == read("control.html", String)
     rm("test.html")
 end
+
+@testset "PublicationPlot" begin
+    data = SDDP.publication_data([
+            [Dict{Symbol, Any}(:x => 1), Dict{Symbol, Any}(:x => 5)],
+            [Dict{Symbol, Any}(:x => 2), Dict{Symbol, Any}(:x => 6)],
+            [Dict{Symbol, Any}(:x => 3), Dict{Symbol, Any}(:x => 4)]
+        ], [0.0, 1.0], (d) -> d[:x])
+    @test data == [1 4; 3 6]
+end

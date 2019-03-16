@@ -273,6 +273,16 @@ end
             @stageobjective(node, x.out)
         end
     end
+
+    @testset "termination_status" begin
+        model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0.0, sense = :Max, direct_mode = false
+            ) do node, stage
+            @variable(node, x, SDDP.State, initial_value = 0.0)
+            @stageobjective(node, x.out)
+        end
+        @test SDDP.termination_status(model) == :model_not_solved
+    end
 end
 
 @testset "Numerical stability report" begin

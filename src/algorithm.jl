@@ -548,7 +548,7 @@ Query the reason why the training stopped.
 """
 function termination_status(model::PolicyGraph)
     if model.most_recent_training_results === nothing
-        return :ModelNotSolved
+        return :model_not_solved
     else
         return model.most_recent_training_results.status
     end
