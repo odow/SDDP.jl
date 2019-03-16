@@ -34,7 +34,7 @@ function fast_production_management()
         end
         @stageobjective(sp, sum(C[i] * x[i].out for i in 1:N) - S's)
     end
-    SDDP.train(model, iteration_limit = 10, print_level = 1)
+    SDDP.train(model, iteration_limit = 10, print_level = 2)
     @test SDDP.calculate_bound(model) ≈ -23.96 atol = 1e-2
 end
 
