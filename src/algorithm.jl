@@ -730,7 +730,14 @@ function _simulate(model::PolicyGraph,
         # Loop through the primal variable values that the user wants.
         for variable in variables
             if haskey(node.subproblem.obj_dict, variable)
-                store[variable] = JuMP.value(node.subproblem[variable])
+                # Note: we broadcast the call to value for variables which are
+                # containers (like Array, Containers.DenseAxisArray, etc). If
+                # the variable is a scalar (e.g. just a plain VariableRef), the
+                # broadcast preseves the scalar shape.
+                # TODO: what if the variable container is a dictionary? They
+                # should be using Containers.SparseAxisArray, but this might not
+                # always be the case...
+                store[variable] = JuMP.value.(node.subproblem[variable])
             else
                 error("No variable named $(variable) exists in the subproblem" *
                      ". If you want to simulate the value of a variable, make" *

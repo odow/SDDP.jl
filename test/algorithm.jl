@@ -86,6 +86,17 @@ end
     end
 end
 
+@testset "simulate" begin
+    model = SDDP.LinearPolicyGraph(
+            stages=2, lower_bound=0.0, optimizer=with_optimizer(GLPK.Optimizer)
+            ) do sp, t
+        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
+        @stageobjective(sp, x[1].out + x[2].out)
+    end
+    simulations = SDDP.simulate(model, 1, [:x])
+    @test simulations[1][1][:x] == [SDDP.State(2.0, 1.0), SDDP.State(4.0, 2.0)]
+end
+
 function MOI.get(::GLPK.Optimizer, ::MOI.ListOfVariableAttributesSet)
     return MOI.AbstractVariableAttribute[MOI.VariableName()]
 end

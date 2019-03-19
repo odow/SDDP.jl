@@ -558,6 +558,8 @@ function JuMP.value(state::State{JuMP.VariableRef})
     return State(JuMP.value(state.in), JuMP.value(state.out))
 end
 
+Broadcast.broadcastable(x::State{T}) where {T} = Ref{State{T}}(x)
+
 # ==============================================================================
 
 """

@@ -10,7 +10,7 @@ using SDDP, Test, Random
             "plugins/risk_measures.jl",
              "plugins/sampling_schemes.jl",
              "plugins/stopping_rules.jl",
-             "sddp.jl",
+             "algorithm.jl",
              "user_interface.jl",
              "visualization.jl"]
         include(file)
