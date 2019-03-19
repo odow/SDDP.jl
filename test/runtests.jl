@@ -5,14 +5,15 @@
 
 using SDDP, Test, Random
 
+function read_dir(dir, exclude = String[])
+    return filter(s->!(s in exclude) && endswith(s, ".jl"), readdir(dir))
+end
+
 @testset "Unit Tests" begin
-    @testset "$(file)" for file in [
-            "plugins/risk_measures.jl",
-             "plugins/sampling_schemes.jl",
-             "plugins/stopping_rules.jl",
-             "algorithm.jl",
-             "user_interface.jl",
-             "visualization.jl"]
+    @testset "plugins/$(file)" for file in read_dir("plugins")
+        include(joinpath("plugins", file))
+    end
+    @testset "$(file)" for file in read_dir(".", ["runtests.jl"])
         include(file)
     end
 end
@@ -25,8 +26,7 @@ const EXCLUDED_EXAMPLES = [
 const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
 
 @testset "Examples" begin
-    @testset "$(example)" for example in filter(
-            s-> !(s in EXCLUDED_EXAMPLES) && endswith(s, ".jl"), readdir(EXAMPLES_DIR))
+    @testset "$example" for example in read_dir(EXAMPLES_DIR, EXCLUDED_EXAMPLES)
         Random.seed!(12345)
         include(joinpath(EXAMPLES_DIR, example))
     end

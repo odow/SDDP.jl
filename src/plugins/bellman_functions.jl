@@ -299,3 +299,90 @@ function levelone_update(bellman_function::AverageCut, cut::Cut,
     push!(bellman_function.states, sampled_state)
     return
 end
+
+"""
+    write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
+
+Write the cuts that form the policy in `model` to `filename` in JSON format.
+
+See also [`SDDP.read_cuts_from_file`](@ref).
+"""
+function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
+    cuts = Dict{T, Vector{Dict{Symbol, Float64}}}()
+    for (node_name, node) in model.nodes
+        if node.objective_state !== nothing
+            error("Unable to write cuts to file because it contains objective" *
+                  " states.")
+        end
+        cuts[node_name] = Dict{String, Float64}[]
+        for cut in node.bellman_function.cuts
+            cut_dict = copy(cut.coefficients)
+            cut_dict[:cut_intercept] = cut.intercept
+            push!(cuts[node_name], cut_dict)
+        end
+    end
+    open(filename, "w") do io
+        write(io, JSON.json(cuts))
+    end
+    return
+end
+
+_node_name_parser(::Type{Int}, name::String) = parse(Int, name)
+_node_name_parser(::Type{Symbol}, name::String) = Symbol(name)
+function _node_name_parser(::Type{NTuple{N, Int}}, name::String) where {N}
+    keys = parse.(Int, strip.(split(name[2:end-1], ",")))
+    if length(keys) != N
+        error("Unable to parse node called $(name). Expected $N elements.")
+    end
+    return tuple(keys...)
+end
+
+function _node_name_parser(T, name)
+    error("Unable to read name $(name). Provide a custom parser to " *
+          "`read_cuts_from_file` using the `node_name_parser` keyword.")
+end
+
+"""
+    read_cuts_from_file(
+        model::PolicyGraph{T}, filename::String;
+        node_name_parser::Function = _node_name_parser) where {T}
+
+Read cuts (saved using [`SDDP.write_cuts_to_file`](@ref)) from `filename` into
+`model`.
+
+Since `T` can be an arbitrary Julia type, the conversion to JSON is lossy. When
+reading, `read_cuts_from_file` only supports `T=Int`, `T=NTuple{N, Int}`, and
+`T=Symbol`. If you have manually created a policy graph with a different node
+type `T`, provide a function `node_name_parser` with the signature
+`node_name_parser(T, name::String)::T where {T}` that returns the name of each
+node given the string name `name`.
+
+See also [`SDDP.write_cuts_to_file`](@ref).
+"""
+function read_cuts_from_file(
+        model::PolicyGraph{T}, filename::String;
+        node_name_parser::Function = _node_name_parser) where {T}
+    cuts = JSON.parsefile(filename, use_mmap=false)
+    for (str_node_name, cut_list) in cuts
+        node_name = node_name_parser(T, str_node_name)::T
+        node = model[node_name]
+        for json_cut in cut_list
+            intercept = 0.0
+            coefficients = Dict{Symbol, Float64}()
+            for (name, coef) in json_cut
+                if name == "cut_intercept"
+                    intercept = coef
+                else
+                    coefficients[Symbol(name)] = coef
+                end
+            end
+            add_new_cut(
+                node,
+                node.bellman_function.variable,
+                Cut(intercept, coefficients, 1, nothing),
+                JuMP.AffExpr(0.0),
+                model.objective_sense == MOI.MIN_SENSE)
+        end
+    end
+    return
+end
