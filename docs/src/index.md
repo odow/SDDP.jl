@@ -28,6 +28,16 @@ import Pkg
 Pkg.add("https://github.com/odow/SDDP.jl.git")
 ```
 
+If you get an error like:
+`ERROR: Unsatisfiable requirements detected for package MathOptFormat`,
+run
+
+```julia
+import Pkg
+Pkg.add("https://github.com/odow/MathOptFormat.jl.git")
+Pkg.add("https://github.com/odow/SDDP.jl.git")
+```
+
 ## Tutorials
 
 Once you've got `SDDP.jl` installed, you should read some tutorials, beginning

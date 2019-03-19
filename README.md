@@ -4,6 +4,22 @@
 |:-----------------:|:--------------------:|:----------------:|
 | [![][docs-latest-img]][docs-latest-url] | [![Build Status][build-img]][build-url] | [![Codecov branch][codecov-img]][codecov-url]
 
+## Installation
+
+To install `SDDP.jl`, open a Julia REPL and run
+```julia
+julia> ] add https://github.com/odow/SDDP.jl
+```
+
+If you get an error like:
+`ERROR: Unsatisfiable requirements detected for package MathOptFormat`,
+run
+
+```julia
+julia> ] add https://github.com/odow/MathOptFormat.jl
+julia> ] add https://github.com/odow/SDDP.jl
+```
+
 ## Documentation
 
 You can find the documentation at https://odow.github.io/SDDP.jl/latest/.
