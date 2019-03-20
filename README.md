@@ -20,6 +20,13 @@ julia> ] add https://github.com/odow/MathOptFormat.jl
 julia> ] add https://github.com/odow/SDDP.jl
 ```
 
+## Want the old version?
+
+Still using Julia 0.6 and things broke when you went `Pkg.update()`? Run
+```julia
+julia> Pkg.checkout("SDDP", "release-v0")
+```
+
 ## Documentation
 
 You can find the documentation at https://odow.github.io/SDDP.jl/latest/.
