@@ -4,23 +4,34 @@
 |:-----------------:|:--------------------:|:----------------:|
 | [![][docs-latest-img]][docs-latest-url] | [![Build Status][build-img]][build-url] | [![Codecov branch][codecov-img]][codecov-url]
 
+## Installation
+
+To install `SDDP.jl`, open a Julia REPL and run
+```julia
+julia> ] add https://github.com/odow/SDDP.jl
+```
+
+If you get an error like:
+`ERROR: Unsatisfiable requirements detected for package MathOptFormat`,
+run
+
+```julia
+julia> ] add https://github.com/odow/MathOptFormat.jl
+julia> ] add https://github.com/odow/SDDP.jl
+```
+
+## Want the old version?
+
+Still using Julia 0.6 and things broke when you went `Pkg.update()`? Run
+```julia
+julia> Pkg.checkout("SDDP", "release-v0")
+```
+
 ## Documentation
 
 You can find the documentation at https://odow.github.io/SDDP.jl/latest/.
 
 **If you are struggling to figure out how to use something, raise a Github issue!**
-
-## Examples
-
-We need your examples! We're trying to collate a large array of examples to test the
-correctness (and later, performance) of the package. Either make a PR or go to the
-examples folder and click [`Upload Files`](https://github.com/odow/SDDP.jl/upload/master/examples) and Github will walk you through the process.
-Bonus points for models where you know the optimal first stage objective value.
-
-## Bugs
-
-We need your bug reports! We've only stressed a few code paths on real-world models.
-If you run into any problems, [file an issue here](https://github.com/odow/SDDP.jl/issues/new).
 
 ## Other Packages
 
@@ -28,12 +39,6 @@ If you run into any problems, [file an issue here](https://github.com/odow/SDDP.
 You may want to checkout [StructDualDynProg.jl](https://github.com/blegat/StructDualDynProg.jl)
 or [StochDynamicProgramming.jl](https://github.com/JuliaOpt/StochDynamicProgramming.jl)
 to see if they better suit your needs.
-
-## SDDiP
-
-[@lkapelevich](https://github.com/lkapelevich) wrote an extension for SDDP.jl to
-solve multi-stage stochastic programs with binary state variables. Check it out
-at https://github.com/lkapelevich/SDDiP.jl!
 
 ## Citing SDDP.jl
 

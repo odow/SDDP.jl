@@ -1,16 +1,21 @@
-# Tutorial One: first steps
+```@meta
+CurrentModule = SDDP
+```
+
+# Basic I: first steps
 
 Hydrothermal scheduling is the most common application of stochastic dual
-dynamic programming. To illustrate some of the basic functionality of SDDP.jl,
-we implement a very simple model of the hydrothermal scheduling problem.
+dynamic programming. To illustrate some of the basic functionality of
+`SDDP.jl`, we implement a very simple model of the hydrothermal scheduling
+problem.
 
-In this model, there are two generators: a thermal generator, and a hydro
-generator. The thermal generator has a short-run marginal cost of \\\$50/MWh in
-the first stage, \\\$100/MWh in the second stage, and \\\$150/MWh in the third
-stage. The hydro generator has a short-run marginal cost of \\\$0/MWh.
+We consider the problem of scheduling electrical generation over three time
+periods in order to meet a known demand of 150 MWh in each period.
 
-We consider the problem of scheduling the generation over three time periods in
-order to meet a known demand of 150 MWh in each period.
+There are two generators: a thermal generator, and a hydro generator. The
+thermal generator has a short-run marginal cost of \\\$50/MWh in the first
+stage, \\\$100/MWh in the second stage, and \\\$150/MWh in the third stage. The
+hydro generator has a short-run marginal cost of \\\$0/MWh.
 
 The hydro generator draws water from a reservoir which has a maximum capacity of
 200 units. We assume that at the start of the first time period, the reservoir
@@ -22,267 +27,278 @@ over-topping the dam. We assume that there is no cost of spillage.
 The objective of the optimization is to minimize the expected cost of generation
 over the three time periods.
 
-## Formulating the problem
+## Mathematical formulation
 
-First, we need to load some packages. For this example, we are going to use the
-[Clp.jl](https://github.com/JuliaOpt/Clp.jl) package; however, you are free to
-use any solver that you could normally use with JuMP.
-```julia
-using SDDP, JuMP, Clp
-```
+Let's take the problem described above and form a mathematical model. In any
+multistage stochastic programming problem, we need to identify five key
+features:
 
-Next, we need to initialize our model. In our example, we are minimizing, there
-are three stages, and we know a lower bound of `0.0`. Therefore, we can
-initialize our model using the [`SDDPModel`](@ref) constructor:
-```julia
-m = SDDPModel(
-                  sense = :Min,
-                 stages = 3,
-                 solver = ClpSolver(),
-        objective_bound = 0.0
-                                        ) do sp, t
-    # ... stuff to go here ...
-end
-```
-If you haven't seen the `do sp, t ... end` syntax before, this syntax is
-equivalent to the following:
-```julia
-function define_subproblem(sp::JuMP.Model, t::Int)
-    # ... stuff to go here ...
-end
-m = SDDPModel(
-    define_subproblem,
-    sense           = :Min,
-    stages          = 3,
-    solver          = ClpSolver(),
-    objective_bound = 0.0
-)
-```
-The function `define_subproblem` (although you can call it anything you like)
-takes two arguments: `sp`, a `JuMP.Model` that we will use to build each
-subproblem; and `t`, an `Int` that is a counter from `1` to the number of
-stages. In this case, `t=1, 2, 3`. The `sense`, `stages`, and `solver` keyword
-arguments to `SDDPModel` should be obvious; however, the `objective_bound` is
-worth explaining.
+1. The _stages_
+2. The _state_ variables
+3. The _control_ variables
+4. The _dynamics_
+5. The _stage-objective_
 
-In order to solve a model using SDDP, we need to define a valid lower bound for
-every subproblem. (See [Introduction to SDDP](@ref) for details.) In this
-example, the least-cost solution is to meet demand entirely from the hydro
-generator, incurring a cost of \\\$0/MWh. Therefore, we set
-`objective_bound=0.0`.
+#### Stages
 
-Now we need to define build each subproblem using a mix of JuMP and SDDP.jl
-syntax.
+> We consider the problem of scheduling electrical generation over three time
+periods
 
-### State variables
+So, we have three stages: `t = 1, 2, 3`. Here is a picture:
 
-There is one state variable in our model: the quantity of water in the reservoir
-at the end of stage `t`. Two add this state variable to the model, SDDP.jl
-defines the [`@state`](@ref) macro.  This macro takes three arguments:
-1. `sp` - the JuMP model;
-2. an expression for the outgoing state variable; and
-3. an expression for the incoming state variable.
+![Linear policy graph](../assets/deterministic_linear_policy_graph.png)
 
-The 2nd argument can be any valid JuMP `@variable` syntax and can include, for
-example, upper and lower bounds. The 3rd argument must be the name of the
-incoming state variable, followed by `==`, and then the value of the state
-variable at the root node of the policy graph. For our hydrothermal example, the
-state variable can be constructed as:
-```julia
-@state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
-```
+Notice that the boxes form a _linear graph_. This will be important when we get
+to the code. (We'll get to more complicated graphs in future tutorials.)
 
-!!! note
-    You must define the same state variables (in the same order) in every
-    subproblem. If a state variable is unused in a particular stage, it must
-    still be defined.
+#### State variables
 
-### Control variables
+State variables capture the information that flows between stages. These can be
+harder to identify. However, in our model, the state variable is the volume of
+water stored in the reservoir over time.
 
-We now need to define some control variables. In SDDP.jl, control variables are
-just normal JuMP variables. Therefore, we can define the three variables in the
-hydrothermal scheduling problem (thermal generation, hydro generation, and the
-quantity of water to spill) as follows:
-```julia
-@variables(sp, begin
-    thermal_generation >= 0
-    hydro_generation   >= 0
-    hydro_spill        >= 0
- end)
-```
+In the model below, we're going to call the state variable `volume`.
 
-### Constraints
+Each stage `t` is an interval in time. Thus, we need to record the value of the
+state variable in each stage at two points in time: at the beginning of the
+stage, which we  refer to as the _incoming_ value of the state variable; and at
+the end of the  state, which we refer to as the _outgoing_ state variable.
 
-Before we specify the constraints, we need to create some data. For this
-problem, we need the inflow to the reservoir in each stage `t=1, 2, 3`.
-Therefore, we create the vector:
-```julia
-inflow = [50.0, 50.0, 50.0]
-```
-The inflow in stage `t` can be accessed as `inflow[t]`.
+We're going to refer to the incoming value of `volume` by `volume.in` and the
+outgoing value by `volume.out`.
 
-First, we have the water balance constraint: the volume of water at
-the end of the stage must equal the volume of water at the start of the stage,
-plus any inflows, less that used for generation or spilled down the spillway.
-```julia
-@constraint(sp,
-    incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
-)
-```
-Note that we use `t` defined by the `SDDPModel` constructor. There is also a
-constraint that total generation must equal demand of 150 MWh:
-```julia
-@constraint(sp,
-    thermal_generation + hydro_generation == 150
-)
-```
+Note that `volume.out` when `t=1` is equal to `volume.in` when `t=2`.
 
-### The stage objective    
+The problem description also mentions some constraints on the volume of water in
+the reservoir. It cannot be negative, and the maximum level is 200 units. Thus,
+we have `0 <= volume <= 200`. Also, the description says that the initial value
+of water in the reservoir (i.e., `volume.in` when `t = 1`) is 200.
 
-Finally, there is a cost on thermal generation of \\\$50/MWh in the first stage,
-\\\$100/MWh in the second stage, and \\\$150/MWh in the third stage. To add the
-stage-objective, we use the aptly named [`@stageobjective`](@ref) macro provided
-by SDDP.jl:
-```julia
-if t == 1
-    @stageobjective(sp,  50.0 * thermal_generation )
-elseif t == 2
-    @stageobjective(sp, 100.0 * thermal_generation )
-elseif t == 3
-    @stageobjective(sp, 150.0 * thermal_generation )
-end
-```
-!!! info
-    `if` statements can be used more broadly in the subproblem definition to
-    conditionally and variables and constraints into different subproblems.
+#### Control variables
 
-We can also implement the stage-objective more succinctly using a vector:
-```julia
-fuel_cost = [50.0, 100.0, 150.0]
-@stageobjective(sp, fuel_cost[t] * thermal_generation )
-```
+Control variables are the actions that the agent can take during a stage to
+change the value of the state variables. (Hence the name _control_.)
 
-## Solving the problem
+There are three control variables in our problem.
 
-Putting all that we have discussed above together, we get:
-```julia
-using SDDP, JuMP, Clp
-m = SDDPModel(
-                  sense = :Min,
-                 stages = 3,
-                 solver = ClpSolver(),
-        objective_bound = 0.0
-                                        ) do sp, t
-    @state(sp, 0 <= outgoing_volume <= 200, incoming_volume == 200)
-    @variables(sp, begin
+1. The quantity of thermal generation, which we're going to call
+   `thermal_generation`.
+2. The quantity of hydro generation, which we're going to call
+   `hydro_generation`.
+3. The quatity of water to spill, which we're going to call `hydro_spill`.
+
+All of these variables are non-negative.
+
+#### The dynamics
+
+The dynamics of a problem describe how the state variables evolve through time
+in response to the controls chosen by the agent.
+
+For our problem, the state variable is the volume of water in the reservoir. The
+volume of water decreases in response to water being used for hydro generation
+and spillage. So the dynamics for our problem are:
+
+`volume.out = volume.in - hydro_generation - hydro_spill`
+
+We can also put constraints on the values of the state and control variables.
+For example, in our problem, there is also a constraint that the total
+generation must meet the demand of 150 MWh in each stage. So, we have a
+constraint that:
+`hydro_generation + thermal_generation = 150`.
+
+#### The stage-objective
+
+The agent's objective is to minimize the cost of generation. So in each stage,
+the agent wants to minimize the quantity of thermal generation multiplied by
+the short-run marginal cost of thermal generation.
+
+In stage `t`, they want to minimize `fuel_cost[t] * thermal_generation`, where
+`fuel_cost[t]` is \\\$50 when `t=1`, \\\$100 when `t=2`, and \\\$150 when
+`t=3`.
+
+We're now ready to construct a model. Since `SDDP.jl` is intended to be very
+user-friendly, we're going to give the full code first, and then walk through
+some of the details. However, you should be able to read through and understand
+most of what is happening.
+
+## Creating a model
+
+```jldoctest tutorial_one
+using SDDP, GLPK
+
+model = SDDP.LinearPolicyGraph(
+            stages = 3,
+            sense = :Min,
+            lower_bound = 0.0,
+            optimizer = with_optimizer(GLPK.Optimizer)
+        ) do subproblem, t
+    # Define the state variable.
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
+    # Define the control variables.
+    @variables(subproblem, begin
         thermal_generation >= 0
         hydro_generation   >= 0
         hydro_spill        >= 0
-     end)
-    inflow = [50.0, 50.0, 50.0]
-    @constraints(sp, begin
-        incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
-        thermal_generation + hydro_generation == 150
     end)
+    # Define the constraints
+    @constraints(subproblem, begin
+        volume.out == volume.in - hydro_generation - hydro_spill
+        thermal_generation + hydro_generation == 150.0
+    end)
+    # Define the objective for each stage `t`. Note that we can use `t` as an
+    # index for t = 1, 2, 3.
     fuel_cost = [50.0, 100.0, 150.0]
-    @stageobjective(sp, fuel_cost[t] * thermal_generation )
+    @stageobjective(subproblem, fuel_cost[t] * thermal_generation)
 end
+
+# output
+
+A policy graph with 3 nodes.
+ Node indices: 1, 2, 3
 ```
 
-To solve this problem, we use the [`solve`](@ref) method:
+Wasn't that easy! Let's walk through some of the non-obvious features.
+
+!!! info
+    For more information on [`SDDP.LinearPolicyGraph`](@ref)s, read
+    [Intermediate III: policy graphs](@ref).
+
+#### The keywords in the [`SDDP.LinearPolicyGraph`](@ref) constructor
+
+Hopefully `stages` and `sense` are obvious. However, the other two are not so
+clear.
+
+`lower_bound`: you _must_ supply a valid bound on the objective. For our
+problem, we know that we cannot incur a negative cost so \\\$0 is a valid lower
+bound.
+
+`optimizer`: This is borrowed directly from JuMP's `Model` constructor:
 ```julia
-status = solve(m; iteration_limit=5)
-```
-The argument `iteration_limit` is self-explanatory. The return value `status` is
-a symbol describing why the SDDP algorithm terminated. In this case, the value
-is `:iteration_limit`. We discuss other arguments to the [`solve`](@ref) method
-and other possible values for `status` in future sections of this manual.
-
-During the solve, the following log is printed to the screen.
-```
--------------------------------------------------------------------------------
-                          SDDP.jl © Oscar Dowson, 2017-2018
--------------------------------------------------------------------------------
-    Solver:
-        Serial solver
-    Model:
-        Stages:         3
-        States:         1
-        Subproblems:    3
-        Value Function: Default
--------------------------------------------------------------------------------
-              Objective              |  Cut  Passes    Simulations   Total
-     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
--------------------------------------------------------------------------------
-       15.000K         5.000K        |     1    0.0      0    0.0    0.0
-        5.000K         5.000K        |     2    0.0      0    0.0    0.0
-        5.000K         5.000K        |     3    0.0      0    0.0    0.0
-        5.000K         5.000K        |     4    0.0      0    0.0    0.0
-        5.000K         5.000K        |     5    0.0      0    0.0    0.0
--------------------------------------------------------------------------------
-    Other Statistics:
-        Iterations:         5
-        Termination Status: iteration_limit
-===============================================================================
+using JuMP
+model = Model(with_optimizer(GLPK.Optimizer))
 ```
 
-The header and footer of the output log contain self-explanatory statistics
-about the problem. The numeric columns are worthy of description. Each row
-corresponds to one iteration of the SDDP algorithm.
+#### Creating state variables
 
-The left half of the log relates to the objective of the problem. In the
-*Simulation* column, we give the cumulative cost of each forward pass. In the
-*Bound* column, we give the lower bound (upper if maximizing) obtained after the
-backward pass has completed in each iteration. Ignore the *% Gap* column for
-now, that is addressed in [Tutorial Two: RHS noise](@ref).
-
-The right half of the log displays timing statistics. *Cut Passes* displays the
-number of cutting iterations conducted (in *#*) and the time it took to (in
-*Time*). Ignore the *Simulations* columns for now, they are addressed in
-Tutorial [Tutorial Two: RHS noise](@ref). Finally, the *Total Time* column
-records the total time spent solving the problem.
-
-This log can be silenced by setting the `print_level` keyword argument to
-`solve` to `0`. In addition, the log will be written to the file given by the
-`log_file` keyword argument (this is off by default).
-
-## Understanding the solution
-
-The first thing we want to do is to query the lower (upper if maximizing) bound
-of the solution. This can be done via the [`getbound`](@ref) function:
+State variables can be created like any other JuMP variables. Think of them as
+another type of variable like binary or integer. For example, to create a binary
+variable in JuMP, you go:
 ```julia
-getbound(m)
+@variable(subproblem, x, Bin)
 ```
-This returns the value of the *Bound* column in the last row in the output table
-above. In this example, the bound is `5000.0`.
-
-Then, we can perform a Monte Carlo simulation of the policy using the
-[`simulate`](@ref) function. It takes three arguments. The first is the
-[`SDDPModel`](@ref) `m`. The second is the number of replications to perform.
-The third is a vector of variable names to record the value of at each stage and
-replication. Since our example is deterministic, it is sufficient to perform a
-single replication:
+whereas to create a state variable you go
 ```julia
-simulation_result = simulate(m,
+@variable(subproblem, x, SDDP.State)
+```
+
+Also note that you have to pass a keyword argument called `initial_value` that
+gives the incoming value of the state variable in the first stage.
+
+#### Defining the stage-objective
+
+In a JuMP model, we can set the objective using `@objective`. For example:
+```julia
+@objective(subproblem, Min, fuel_cost[t] * thermal_generation)
+```
+
+Since we only need to define the objective for each stage, rather than the
+whole problem, we use the `SDDP.jl`-provided [`@stageobjective`](@ref).
+```julia
+@stageobjective(subproblem, fuel_cost[t] * thermal_generation)
+```
+Note that we don't have to specify the optimization sense (`Max` of `Min`) since
+this is done via the `sense` keyword argument of [`SDDP.LinearPolicyGraph`](@ref).
+
+## Training a policy
+
+Models can be trained using the [`SDDP.train`](@ref) function. It accepts a
+number of keyword arguments. `iteration_limit` terminates the training after the
+provided number of iterations.
+
+```jldoctest tutorial_one
+julia> SDDP.train(model; iteration_limit = 3)
+-------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson, 2017-19
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+00]
+  Non-zero Objective range  [1e+00, 2e+02]
+  Non-zero Bounds range     [2e+02, 2e+02]
+  Non-zero RHS range        [2e+02, 2e+02]
+No problems detected
+
+ Iteration    Simulation       Bound         Time (s)
+        1    3.250000e+04   1.500000e+04   3.099990e-02
+        2    1.750000e+04   1.750000e+04   3.099990e-02
+        3    1.750000e+04   1.750000e+04   3.199983e-02
+
+Terminating training with status: iteration_limit
+-------------------------------------------------------
+```
+
+!!! info
+    For more information on the numerical stability report, read the
+    [Numerical stability report](@ref) section.
+
+## Simulating the policy
+
+Once you have a trained policy, you can simulate it using
+[`SDDP.simulate`](@ref). The return value from `simulate` is a
+vector with one element for each replication. Each element is itself a vector,
+with one element for each stage. Each element, corresponding to a particular
+stage in a particular replication, is a dictionary that records information
+from the simulation.
+
+```jldoctest tutorial_one
+simulations = SDDP.simulate(
+    # The trained model to simulate.
+    model,
+    # The number of replications.
     1,
-    [:outgoing_volume, :thermal_generation, :hydro_generation, :hydro_spill]
+    # A list of names to record the values of.
+    [:volume, :thermal_generation, :hydro_generation, :hydro_spill]
 )
-```
-The return value, `simulation_result`, is a vector of dictionaries containing
-one element for each Monte Carlo replication. In this case,
-`length(simulation_result) = 1`. The keys of the dictionary are the variable
-symbols given in the `simulate` function, and their associated values are
-vectors, with one element for each stage, or the variable value in the simulated
-solution. For example, we can query the optimal quantity of hydro generation in
-each stage as follows:
-```julia
-julia> simulation_result[1][:hydro_generation]
-3-element Array{Any, 1}:
-  50.0
- 150.0
- 150.0
+
+replication = 1
+stage = 2
+simulations[replication][stage]
+
+# output
+
+Dict{Symbol,Any} with 9 entries:
+  :volume             => State{Float64}(200.0, 150.0)
+  :hydro_spill        => 0.0
+  :bellman_term       => 0.0
+  :noise_term         => nothing
+  :node_index         => 2
+  :stage_objective    => 10000.0
+  :objective_state    => nothing
+  :thermal_generation => 100.0
+  :hydro_generation   => 50.0
 ```
 
-This concludes our first very simple tutorial for SDDP.jl. In the next tutorial,
-[Tutorial Two: RHS noise](@ref), we introduce stagewise-independent noise into
-the model.
+Ignore many of the entries for now. They will be relevant later. Of interest is
+`:volume` and `:thermal_generation`.
+
+```jldoctest tutorial_one
+julia> outgoing_volume = [stage[:volume].out for stage in simulations[1]]
+3-element Array{Float64,1}:
+ 200.0
+ 150.0
+   0.0
+
+julia> thermal_generation = [stage[:thermal_generation] for stage in simulations[1]]
+3-element Array{Float64,1}:
+ 150.0
+ 100.0
+   0.0
+```
+
+From this, we can see the optimal policy: in the first stage, use 150 MWh of
+thermal generation and 0 MWh of hydro generation. In the second stage, use 100
+MWh of thermal and 50 MWh of hydro. In the third and final stage, use 0 MWh of
+thermal and 150 MWh of  hydro.
+
+This concludes our first very simple tutorial for `SDDP.jl`. In the next
+tutorial, [Basic II: adding uncertainty](@ref), we will extend this problem by
+adding uncertainty.

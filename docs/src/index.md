@@ -1,38 +1,59 @@
 ```@meta
 CurrentModule = SDDP
 ```
-# SDDP.jl Documentation
 
-SDDP.jl is a package for solving large multistage convex stochastic optimization
-problems using *stochastic dual dynamic programming*. In this manual, we're
-going to assume a reasonable amount of background knowledge about stochastic
-optimization, the SDDP algorithm, Julia, and JuMP.
+# SDDP.jl
 
-!!! note
-    If you don't have that background, you may want to brush up on some
-    [Readings](@ref). Part I of my [thesis](assets/dowson_thesis.pdf) may also
-    be useful as it contains a primer on how to formulate multistage stochastic
-    optimization problems (Chapter One), as well as an introduction and
-    literature review of the SDDP algorithm (Chapter Two).
+!!! warn
+    `SDDP.jl` under went a major re-write to be compatible with JuMP v0.19 and
+    Julia v1.0. The [Upgrading guide](@ref) has advice on how to upgrade your
+    existing `SDDP.jl` models.
 
-## Getting started
+`SDDP.jl` is a package for solving large multistage convex stochastic
+programming problems using *stochastic dual dynamic programming*. In this
+manual, we're going to assume a reasonable amount of background knowledge about
+stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 
-This package is unregistered so you will need to `Pkg.clone` it as follows:
+!!! info
+    If you haven't used JuMP before, we recommend that you read the
+    [JuMP documentation](http://www.juliaopt.org/JuMP.jl/latest/) and try
+    building and solving JuMP models _before_ trying `SDDP.jl`.
+
+## Installation
+
+You can install `SDDP.jl` as follows:
 
 ```julia
-Pkg.clone("https://github.com/odow/SDDP.jl.git")
+import Pkg
+Pkg.add("https://github.com/odow/SDDP.jl.git")
 ```
 
-If you want to use the parallel features of SDDP.jl, you should start Julia with
-some worker processes (`julia -p N`), or add by running `julia> addprocs(N)` in
-a running Julia session.
+If you get an error like:
+`ERROR: Unsatisfiable requirements detected for package MathOptFormat`,
+run
 
-Once you've got SDDP.jl installed, you should read some tutorials, beginning with
-[Tutorial One: first steps](@ref).
+```julia
+import Pkg
+Pkg.add("https://github.com/odow/MathOptFormat.jl.git")
+Pkg.add("https://github.com/odow/SDDP.jl.git")
+```
 
-## Citing SDDP.jl
+### Want the old version?
 
-If you use SDDP.jl, we ask that you please cite the following [paper](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf):
+Still using Julia 0.6 and things broke when you went `Pkg.update()`? Run
+```julia
+julia> Pkg.checkout("SDDP", "release-v0")
+```
+
+## Tutorials
+
+Once you've got `SDDP.jl` installed, you should read some tutorials, beginning
+with [Basic I: first steps](@ref).
+
+## Citing `SDDP.jl`
+
+If you use `SDDP.jl`, we ask that you please cite the following
+[paper](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf):
 ```
 @article{dowson_sddp.jl,
 	title = {{SDDP}.jl: a {Julia} package for stochastic dual dynamic programming},
@@ -43,18 +64,15 @@ If you use SDDP.jl, we ask that you please cite the following [paper](http://www
 }
 ```
 
-## FAQ
-
-**Q.** How do I make the constraint coefficients random?
-
-**A.** Due to the design of JuMP, it's difficult to efficiently modify constraint
-coefficients. Therefore, you can only vary the right hand-side of a constraint
-using the `@rhsnoise` macro.
-
-As a work around, we suggest you either reformulate the model so the uncertainty
-appears in the RHS, or model the uncertainty as a Markov process.
-[Tutorial Four: Markovian policy graphs](@ref) explains how to implement this.
-You might also want to take a look at the [asset management example](https://github.com/odow/SDDP.jl/blob/master/examples/AssetManagement/asset_management.jl)
-to see an example of this. Make sure you keep in mind that a new value function
-is built at each Markov state which increases the computation time and memory
-requirements.
+If you use the infinite horizon functionality, we ask that you please cite the
+following [paper](http://www.optimization-online.org/DB_HTML/2018/11/6914.html):
+```
+@article{dowson_policy_graph,
+	title = {The policy graph decomposition of multistage stochastic
+      optimization problems},
+	url = {http://www.optimization-online.org/DB_HTML/2018/11/6914.html},
+	journal = {Optimization Online},
+	author = {Dowson, Oscar},
+	year = {2018}
+}
+```

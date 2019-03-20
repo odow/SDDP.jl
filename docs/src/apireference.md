@@ -1,76 +1,49 @@
-```@meta
-CurrentModule = SDDP
-```
-
 # API Reference
 
-## Communicating the problem to the solver
+## Policy graphs
 
 ```@docs
-SDDPModel
-@state
-@states
-@rhsnoise
-@rhsnoises
-setnoiseprobability!
+SDDP.Graph
+SDDP.add_node
+SDDP.add_edge
+SDDP.LinearGraph
+SDDP.MarkovianGraph
+SDDP.LinearPolicyGraph
+SDDP.MarkovianPolicyGraph
+SDDP.PolicyGraph
+```
+
+## Subproblem definition
+
+```@docs
 @stageobjective
-addconstraintnoise!
+SDDP.parameterize
+SDDP.add_objective_state
+SDDP.objective_state
 ```
 
-### Risk Measures
+## Training the policy
+
 ```@docs
-AbstractRiskMeasure
-modify_probability
-AVaR
-ConvexCombination
-EAVaR
-Expectation
-DRO
-WorstCase
+SDDP.numerical_stability_report
+SDDP.train
+SDDP.termination_status
+SDDP.write_cuts_to_file
+SDDP.read_cuts_from_file
 ```
 
-### Cut Oracles
+## Simulating the policy
+
 ```@docs
-AbstractCutOracle
-store_cut
-valid_cuts
-all_cuts
-DefaultCutOracle
-LevelOneCutOracle
+SDDP.simulate
+SDDP.calculate_bound
+SDDP.Historical
 ```
 
-### Price Interpolation
-```@docs
-StaticPriceInterpolation
-DynamicPriceInterpolation
-DiscreteDistribution
-```
-
-
-## Solving the problem efficiently
-```@docs
-solve
-MonteCarloSimulation
-BoundStalling
-Asynchronous
-Serial
-```
-## Understanding the solution
-```@docs
-simulate
-getbound
-newplot
-addplot!
-show(::SDDP.SimulationPlot)
-plotvaluefunction
-getsubproblem
-```
-
-## Read and write the model to disk
+## Visualizing the policy
 
 ```@docs
-writecuts!
-loadcuts!
-savemodel!
-loadmodel
+SDDP.SpaghettiPlot
+SDDP.add_spaghetti
+SDDP.publication_plot
 ```

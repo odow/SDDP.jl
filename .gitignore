@@ -1,5 +1,4 @@
-*.jl.cov
-*.jl.*.cov
-*.jl.mem
-.tags1
+*.log
+benchmark*
 docs/build/*
+docs/spaghetti_plot.html

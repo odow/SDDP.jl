@@ -2,17 +2,17 @@ language: julia
 os:
   - linux
 julia:
-  - 0.6
-notifications:
-  email: false
+  - 1.0
+  - 1.1
 branches:
   only:
     - master
-    - /^release-.*$/
-sudo: false
-addons:
-  apt_packages:
-    - gfortran
-after_success:
-  - julia -e 'cd(Pkg.dir("SDDP")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
-  - julia -e 'cd(Pkg.dir("SDDP")); Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))'
+codecov: true
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.add(PackageSpec(path=pwd()))'
+        - julia --project=docs --color=yes docs/make.jl

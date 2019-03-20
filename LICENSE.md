@@ -1,6 +1,6 @@
 The SDDP.jl package is licensed under the Mozilla Public License, Version 2.0:
 
-> Copyright (c) 2017-2018: Oscar Dowson.
+> Copyright (c) 2017-2019: Oscar Dowson.
 >
 >
 > Mozilla Public License, version 2.0

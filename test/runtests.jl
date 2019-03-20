@@ -1,23 +1,33 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2017-19, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#############################################################################
 
-using SDDP
-using JuMP
-using Base.Test
-using Ipopt
+using SDDP, Test, Random
 
-include("cachevectors.jl")
-include("dispatch.jl")
-include("utilities.jl")
-include("riskmeasures.jl")
-include("states.jl")
-include("noises.jl")
-include("cutoracles.jl")
-include("stageobjectives.jl")
-include("sddpmodels.jl")
-include("price_interpolation.jl")
-include("examples.jl")
-include("visualization.jl")
+function read_dir(dir, exclude = String[])
+    return filter(s->!(s in exclude) && endswith(s, ".jl"), readdir(dir))
+end
+
+@testset "Unit Tests" begin
+    @testset "plugins/$(file)" for file in read_dir("plugins")
+        include(joinpath("plugins", file))
+    end
+    @testset "$(file)" for file in read_dir(".", ["runtests.jl"])
+        include(file)
+    end
+end
+
+const EXCLUDED_EXAMPLES = [
+    "inventory_management.jl",
+    "daniel_hydro_complete.jl"
+]
+
+const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
+
+@testset "Examples" begin
+    @testset "$example" for example in read_dir(EXAMPLES_DIR, EXCLUDED_EXAMPLES)
+        Random.seed!(12345)
+        include(joinpath(EXAMPLES_DIR, example))
+    end
+end

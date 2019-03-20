@@ -1,85 +1,197 @@
-#  Copyright 2017, Oscar Dowson
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#############################################################################
+#  Copyright 2017-19, Oscar Dowson. This Source Code Form is subject to the terms
+#  of the Mozilla Public License, v.2.0. If a copy of the MPL was not
+#  distributed with this file, You can obtain one at
+#  http://mozilla.org/MPL/2.0/.
 
-function printheader(io::IO, m::SDDPModel{T}, solve_type) where T
-    n = length(m.stages)
-    println(io, """-------------------------------------------------------------------------------
-                              SDDP.jl © Oscar Dowson, 2017-2018
-    -------------------------------------------------------------------------------""")
-    println(io, """    Solver:
-            $(solve_type)
-        Model:
-            Stages:         $(length(m.stages))
-            States:         $(nstates(getsubproblem(m, 1, 1)))
-            Subproblems:    $(sum(length(subproblems(s)) for s in stages(m)))
-            Value Function: $(summarise(T))
-    -------------------------------------------------------------------------------""")
-    println(io, "              Objective              |  Cut  Passes    Simulations   Total    ")
-    println(io, "     Simulation       Bound   % Gap  |   #     Time     #    Time    Time     ")
-    println(io, "-------------------------------------------------------------------------------")
+function print_banner(io=stdout)
+    println(io, "-------------------------------------------------------")
+    println(io, "         SDDP.jl (c) Oscar Dowson, 2017-19")
+    println(io)
 end
 
-function printfooter(io::IO, m::SDDPModel, settings, status, timer)
-    println(io, "-------------------------------------------------------------------------------")
-    if settings.print_level > 1
-        print_timer(io, timer, title="Timing statistics")
-        print(io, "\n")
-    end
-    println(io, """    Other Statistics:
-            Iterations:         $(m.log[end].iteration)
-            Termination Status: $(status)
-    ===============================================================================""")
+function print_iteration_header(io=stdout)
+    println(io, " Iteration    Simulation       Bound         Time (s)")
 end
 
-function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)
-    if printmean
-        bound_string = string("     ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.3f"), "     ")
-        rtol_string = "      "
-    else
-        bound_string = string(
-            humanize(l.lower_statistical_bound, "8.3f"), " ",
-            humanize(l.upper_statistical_bound, "8.3f")
-        )
-        if is_min
-            tol = 100*rtol(l.lower_statistical_bound, l.bound)
+print_value(x::Real) = lpad(Printf.@sprintf("%1.6e", x), 13)
+print_value(x::Int) = Printf.@sprintf("%9d", x)
+
+function print_iteration(io, log::Log)
+    print(io, print_value(log.iteration))
+    print(io, "   ", print_value(log.simulation_value))
+    print(io, "  ", print_value(log.bound))
+    print(io, "  ", print_value(log.time))
+    println(io)
+end
+
+function print_footer(io, training_results)
+    println(io, "\nTerminating training with status: $(training_results.status)")
+    println(io, "-------------------------------------------------------")
+end
+
+###
+### Numerical stability checks
+###
+
+struct CoefficientRanges
+    matrix::Vector{Float64}
+    objective::Vector{Float64}
+    bounds::Vector{Float64}
+    rhs::Vector{Float64}
+    CoefficientRanges() = new([Inf, -Inf], [Inf, -Inf], [Inf, -Inf], [Inf, -Inf])
+end
+
+function _merge(x::Vector{Float64}, y::Vector{Float64})
+    x[1] = min(x[1], y[1])
+    x[2] = max(x[2], y[2])
+    return
+end
+function _merge(x::CoefficientRanges, y::CoefficientRanges)
+    _merge(x.matrix, y.matrix)
+    _merge(x.objective, y.objective)
+    _merge(x.bounds, y.bounds)
+    _merge(x.rhs, y.rhs)
+    return
+end
+
+function _stringify_bounds(bounds::Vector{Float64})
+    lower = bounds[1] < Inf ? _print_value(bounds[1]) : "0e+00"
+    upper = bounds[2] > -Inf ? _print_value(bounds[2]) : "0e+00"
+    return string("[", lower, ", ", upper, "]")
+end
+
+function _print_numerical_stability_report(
+        io::IO, ranges::CoefficientRanges, print::Bool, warn::Bool)
+    warnings = Tuple{String, String}[]
+    _print_coefficients(io, "Matrix", ranges.matrix, print, warnings)
+    _print_coefficients(io, "Objective", ranges.objective, print, warnings)
+    _print_coefficients(io, "Bounds", ranges.bounds, print, warnings)
+    _print_coefficients(io, "RHS", ranges.rhs, print, warnings)
+    if warn
+        if length(warnings) > 0
+            println(io, "WARNING: numerical stability issues detected")
+            for (name, sense) in warnings
+                println(io, "  - $(name) range contains $(sense) coefficients")
+            end
+            println(io, "Very large or small absolute values of coefficients\n",
+                    "can cause numerical stability issues. Consider\n",
+                    "reformulating the model.")
         else
-            tol = -100*rtol(l.upper_statistical_bound, l.bound)
+            print && println(io, "No problems detected")
         end
-        rtol_string = humanize(tol, "5.1f")
     end
-
-    println(io,
-        @sprintf("%s %s %s | %s %s %s %s %s",
-            bound_string,
-            humanize(l.bound, "8.3f"),
-            rtol_string,
-            humanize(l.iteration),
-            humanize(l.timecuts),
-            humanize(l.simulations),
-            humanize(l.timesimulations),
-            humanize(l.timetotal)
-        )
-    )
+    return
 end
 
-function humanize(value::Int)
-    if value < 1000 && value > -1000
-        return humanize(value, "5d")
-    else
-        return humanize(value, "5.1f")
+function _print_coefficients(io::IO, name::String, range, print::Bool, warnings::Vector{Tuple{String, String}})
+    if print
+        println(io, "  Non-zero ", rpad(string(name, " range"), 17),
+                _stringify_bounds(range))
+    end
+    range[1] < 1e-4 && push!(warnings, (name, "small"))
+    range[2] > 1e7 && push!(warnings, (name, "large"))
+    return
+end
+
+_print_value(x::Real) = Printf.@sprintf("%1.0e", x)
+
+function _update_range(range::Vector{Float64}, value::Real)
+    if !(value ≈ 0.0)
+        range[1] = min(range[1], abs(value))
+        range[2] = max(range[2], abs(value))
+    end
+    return
+end
+
+function _update_range(range::Vector{Float64}, func::JuMP.GenericAffExpr)
+    for coefficient in values(func.terms)
+        _update_range(range, coefficient)
     end
 end
 
-function printtofile(foo::Function, filename::String, args...)
-    open(filename, "a") do file
-        foo(file, args...)
-    end
+function _update_range(range::Vector{Float64}, func::MOI.LessThan)
+    _update_range(range, func.upper)
 end
 
-function Base.print(printfunc::Function, settings::Settings, args...)
-    settings.print_level > 0 && printfunc(STDOUT, args...)
-    settings.log_file != "" && printtofile(printfunc, settings.log_file, args...)
+function _update_range(range::Vector{Float64}, func::MOI.GreaterThan)
+    _update_range(range, func.lower)
+end
+
+function _update_range(range::Vector{Float64}, func::MOI.EqualTo)
+    _update_range(range, func.value)
+end
+
+function _update_range(range::Vector{Float64}, func::MOI.Interval)
+    _update_range(range, func.upper)
+    _update_range(range, func.lower)
+end
+
+# Default fallback for unsupported constraints.
+_update_range(range::Vector{Float64}, x) = nothing
+
+function _coefficient_ranges(model::JuMP.Model)
+    ranges = CoefficientRanges()
+    _update_range(ranges.objective, JuMP.objective_function(model))
+    for var in JuMP.all_variables(model)
+        if JuMP.has_lower_bound(var)
+            _update_range(ranges.bounds, JuMP.lower_bound(var))
+        end
+        if JuMP.has_upper_bound(var)
+            _update_range(ranges.bounds, JuMP.upper_bound(var))
+        end
+    end
+    for (F, S) in JuMP.list_of_constraint_types(model)
+        F == JuMP.VariableRef && continue
+        for con in JuMP.all_constraints(model, F, S)
+            con_obj = JuMP.constraint_object(con)
+            _update_range(ranges.matrix, con_obj.func)
+            _update_range(ranges.rhs, con_obj.set)
+        end
+    end
+    return ranges
+end
+
+"""
+    numerical_stability_report([io::IO=stdout,] model::PolicyGraph,
+                               by_node::Bool=false, print=true, warn::Bool=true)
+
+Print a report identifying possible numeric stability issues.
+
+- If `by_node`, print a report for each node in the graph.
+- If `print`, print to `io`.
+- If `warn`, warn if the coefficients may cause numerical issues.
+"""
+function numerical_stability_report(
+        io::IO, model::PolicyGraph;
+        by_node::Bool=false, print::Bool=true, warn::Bool=true)
+    graph_ranges = CoefficientRanges()
+    node_keys = sort_nodes(collect(keys(model.nodes)))
+    for key in node_keys
+        node = model[key]
+        node_ranges = CoefficientRanges()
+        for noise in node.noise_terms
+            node.parameterize(noise.term)
+            set_objective(model, node)
+            node_ranges_2 = _coefficient_ranges(node.subproblem)
+            _merge(node_ranges, node_ranges_2)
+        end
+        if by_node
+            print && println(io, "Numerical stability report for node: ", key)
+            _print_numerical_stability_report(io, node_ranges, print, warn)
+        end
+        _merge(graph_ranges, node_ranges)
+    end
+    if !by_node
+        print && println(io, "Numerical stability report")
+        _print_numerical_stability_report(io, graph_ranges, print, warn)
+    end
+    print && println(io)
+    return
+end
+
+function numerical_stability_report(
+        model::PolicyGraph;
+        by_node::Bool=false, print::Bool=true, warn::Bool=true)
+    numerical_stability_report(
+        stdout, model, by_node=by_node, print=print, warn=warn)
 end
