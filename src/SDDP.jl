@@ -28,7 +28,7 @@ include("algorithm.jl")
 # Specific plugins.
 include("plugins/risk_measures.jl")
 include("plugins/sampling_schemes.jl")
-include("plugins/cost_to_go_functions.jl")
+include("plugins/bellman_functions.jl")
 include("plugins/stopping_rules.jl")
 
 # Visualization related code.

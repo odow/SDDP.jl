@@ -191,7 +191,7 @@ function set_objective(model::PolicyGraph{T}, node::Node{T}) where T
             node.subproblem,
             model.objective_sense,
             node.stage_objective + objective_state_component +
-                cost_to_go_term(node.bellman_function)
+                bellman_term(node.bellman_function)
         )
     end
     node.stage_objective_set = true

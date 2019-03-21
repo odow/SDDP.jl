@@ -84,7 +84,7 @@ function _dominates(candidate, incumbent, minimization::Bool)
 end
 
 # Internal function: update the Level-One datastructures inside
-# `cost_to_go`.
+# `bellman_function`.
 function _level_one_update(oracle::LevelOneOracle, cut::Cut,
                            state::Dict{Symbol, Float64}, is_minimization::Bool)
     sampled_state = SampledState(state, cut, _eval_height(cut, state))
@@ -134,13 +134,13 @@ end
 
 @enum(CutType, AVERAGE_CUT, MULTI_CUT)
 
-struct CostToGoFunction <: AbstractBellmanFunction
+struct BellmanFunction <: AbstractBellmanFunction
     θ_global::ConvexApproximation
     θ_locals::Vector{ConvexApproximation}
     cut_type::CutType
 end
 
-cost_to_go_term(cost_to_go::CostToGoFunction) = cost_to_go.θ_global.θ
+bellman_term(bellman_function::BellmanFunction) = bellman_function.θ_global.θ
 
 # Internal struct: this struct is just a cache for arguments until we can build
 # an actual instance of the type T at a later point.
@@ -152,13 +152,13 @@ end
 
 function AverageCut(; lower_bound = -Inf, upper_bound = Inf,
                       deletion_minimum::Int = 1)
-    return InstanceFactory{CostToGoFunction}(
+    return InstanceFactory{BellmanFunction}(
         lower_bound = lower_bound, upper_bound = upper_bound,
         deletion_minimum = deletion_minimum)
 end
 
 function initialize_bellman_function(
-        factory::InstanceFactory{CostToGoFunction}, model::PolicyGraph{T},
+        factory::InstanceFactory{BellmanFunction}, model::PolicyGraph{T},
         node::Node{T}) where {T}
     lower_bound, upper_bound, deletion_minimum = -Inf, Inf, 0
     if length(factory.args) > 0
@@ -188,7 +188,7 @@ function initialize_bellman_function(
     # this check will be skipped by dispatch.
     _add_initial_bounds(node.objective_state, Θᴳ)
     x′ = Dict(key => var.out for (key, var) in node.states)
-    return CostToGoFunction(
+    return BellmanFunction(
         ConvexApproximation(Θᴳ, x′, deletion_minimum),
         ConvexApproximation[],
         AVERAGE_CUT
@@ -236,7 +236,7 @@ end
 function refine_bellman_function(
             model::PolicyGraph{T},
             node::Node{T},
-            cost_to_go::CostToGoFunction,
+            bellman_function::BellmanFunction,
             risk_measure::AbstractRiskMeasure,
             outgoing_state::Dict{Symbol, Float64},
             dual_variables::Vector{Dict{Symbol, Float64}},
@@ -253,7 +253,7 @@ function refine_bellman_function(
         noise_supports, objective_realizations,
         model.objective_sense == MOI.MIN_SENSE)
     # The meat of the function.
-    if cost_to_go.cut_type == AVERAGE_CUT
+    if bellman_function.cut_type == AVERAGE_CUT
         _add_average_cut(
             node,
             outgoing_state,
@@ -261,8 +261,8 @@ function refine_bellman_function(
             objective_realizations,
             dual_variables)
     else  # Add a multi-cut
-        @assert cost_to_go.cut_type == MULTI_CUT
-        _add_locals_if_necessary(cost_to_go, length(dual_variables))
+        @assert bellman_function.cut_type == MULTI_CUT
+        _add_locals_if_necessary(bellman_function, length(dual_variables))
         _add_multi_cut(
             node,
             outgoing_state,
@@ -302,23 +302,23 @@ function _add_multi_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
                         duals::Vector{Dict{Symbol, Float64}})
     N = length(risk_adjusted_probability)
     @assert N == length(objective_realizations) == length(duals)
-    cost_to_go = node.bellman_function
+    bellman_function = node.bellman_function
     for i in 1:length(duals)
         # Do not include the objective state component μᵀy.
-        _add_cut(cost_to_go.θ_locals[i], objective_realizations[i],
+        _add_cut(bellman_function.θ_locals[i], objective_realizations[i],
                  dual_variables[i], outgoing_state)
     end
-    model = JuMP.owner_model(cost_to_go.θ_global)
+    model = JuMP.owner_model(bellman_function.θ_global)
     μᵀy = get_objective_state_component(node)
     # TODO(odow): hash the risk_adjusted_probability and only add if it's a new
     # probability distribution.
     if JuMP.objective_sense(model) == MOI.MIN_SENSE
-        @constraint(model, cost_to_go.ϴ_global.θ + μᵀy >= sum(
-            risk_adjusted_probability[i] * cost_to_go.θ_locals[i].θ
+        @constraint(model, bellman_function.ϴ_global.θ + μᵀy >= sum(
+            risk_adjusted_probability[i] * bellman_function.θ_locals[i].θ
                 for i in 1:length(risk_adjusted_probability)))
     else
-        @constraint(model, cost_to_go.ϴ_global.θ + μᵀy <= sum(
-            risk_adjusted_probability[i] * cost_to_go.θ_locals[i].θ
+        @constraint(model, bellman_function.ϴ_global.θ + μᵀy <= sum(
+            risk_adjusted_probability[i] * bellman_function.θ_locals[i].θ
                 for i in 1:length(risk_adjusted_probability)))
     end
     return
@@ -327,22 +327,22 @@ end
 # If we are adding a multi-cut for the first time, then the local θ variables
 # won't have been added.
 # TODO(odow): a way to set different bounds for each variable in the multi-cut.
-function _add_locals_if_necessary(cost_to_go::CostToGoFunction, N::Int)
-    num_local_thetas = length(cost_to_go.θ_locals)
+function _add_locals_if_necessary(bellman_function::BellmanFunction, N::Int)
+    num_local_thetas = length(bellman_function.θ_locals)
     if num_local_thetas == N
         # Do nothing. Already initialized.
     elseif num_local_thetas == 0
-        Θᴳ = cost_to_go.θ_global.θ
+        Θᴳ = bellman_function.θ_global.θ
         model = JuMP.owner_model(Θᴳ)
         for i in 1:N
             θ = @variable(model)
             if JuMP.has_lower_bound(Θᴳ)
                 JuMP.set_lower_bound(θ, JuMP.lower_bound(Θᴳ))
             end
-            if JuMP.has_upper_bound(cost_to_go.θ_global.θ)
+            if JuMP.has_upper_bound(bellman_function.θ_global.θ)
                 JuMP.set_upper_bound(θ, JuMP.upper_bound(Θᴳ))
             end
-            push!(cost_to_go.θ_locals, ConvexApproximation(
+            push!(bellman_function.θ_locals, ConvexApproximation(
                 θ, Θᴳ.x′; deletion_minimum=Θᴳ.deletion_minimum))
         end
     else
