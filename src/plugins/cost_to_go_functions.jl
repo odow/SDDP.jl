@@ -30,27 +30,44 @@ struct ConvexApproximation
     θ::JuMP.VariableRef
     x′::Dict{Symbol, JuMP.VariableRef}
     cut_oracle::LevelOneOracle
-    function ConvexApproximation(θ, x′; deletion_minimum)
+    function ConvexApproximation(θ, x′, deletion_minimum)
         return new(θ, x′, LevelOneOracle(deletion_minimum))
     end
 end
 
 # Add the cut `V.θ ≥ θᵏ + ⟨πᵏ, x′ - xᵏ⟩`.
-function _add_cut(V::ConvexApproximation, θᵏ, πᵏ, xᵏ)
+function _add_cut(V::ConvexApproximation, θᵏ, πᵏ, xᵏ, μᵀy=JuMP.AffExpr(0.0); cut_selection::Bool=true)
     model = JuMP.owner_model(V.θ)
     for (key, x) in xᵏ
         θᵏ -= πᵏ[key] * xᵏ[key]
     end
     is_minimization = JuMP.objective_sense(model) == MOI.MIN_SENSE
-    c_ref = if is_minimization
-        @constraint(model, V.θ >= θᵏ + sum(πᵏ[i] * V.x′[i] for i in keys(V.x′)))
-    else
-        @constraint(model, V.θ <= θᵏ + sum(πᵏ[i] * V.x′[i] for i in keys(V.x′)))
+    cut = Cut(θᵏ, πᵏ, 1, nothing)
+    if μᵀy == JuMP.AffExpr(0.0) && cut_selection
+        _level_one_update(V.cut_oracle, cut, xᵏ, is_minimization)
+        _purge_cuts(V)
     end
-    cut = Cut(θᵏ, πᵏ, 1, c_ref)
-    _level_one_update(V.cut_oracle, cut, xᵏ, is_minimization)
+    cut.constraint_ref = if is_minimization
+        @constraint(model,
+            V.θ + μᵀy >= θᵏ + sum(πᵏ[i] * V.x′[i] for i in keys(V.x′)))
+    else
+        @constraint(model,
+            V.θ + μᵀy <= θᵏ + sum(πᵏ[i] * V.x′[i] for i in keys(V.x′)))
+    end
     return
 end
+
+function _purge_cuts(V::ConvexApproximation)
+    model = JuMP.owner_model(V.θ)
+    if length(V.cut_oracle.cuts_to_be_deleted) >= V.cut_oracle.deletion_minimum
+        for cut in V.cut_oracle.cuts_to_be_deleted
+            JuMP.delete(model, cut.constraint_ref)
+        end
+        empty!(V.cut_oracle.cuts_to_be_deleted)
+    end
+    return
+end
+
 
 # Internal function: calculate the height of `cut` evaluated at `state`.
 function _eval_height(cut::Cut, state::Dict{Symbol, Float64})
@@ -167,12 +184,53 @@ function initialize_bellman_function(
     Θᴳ = @variable(node.subproblem)
     lower_bound > -Inf && JuMP.set_lower_bound(Θᴳ, lower_bound)
     upper_bound < Inf && JuMP.set_upper_bound(Θᴳ, upper_bound)
+    # Initialize bounds for the objective states. If objective_state==nothing,
+    # this check will be skipped by dispatch.
+    _add_initial_bounds(node.objective_state, Θᴳ)
     x′ = Dict(key => var.out for (key, var) in node.states)
     return CostToGoFunction(
-        ConvexApproximation(Θᴳ, x′; deletion_minimum=deletion_minimum),
+        ConvexApproximation(Θᴳ, x′, deletion_minimum),
         ConvexApproximation[],
         AVERAGE_CUT
     )
+end
+
+# Internal function: helper used in add_initial_bounds.
+function _add_objective_state_constraint(
+        θ::JuMP.VariableRef, y::NTuple{N, Float64},
+        μ::NTuple{N, JuMP.VariableRef}) where {N}
+    model = JuMP.owner_model(θ)
+    lower_bound = JuMP.has_lower_bound(θ) ? JuMP.lower_bound(θ) : -Inf
+    upper_bound = JuMP.has_upper_bound(θ) ? JuMP.upper_bound(θ) : Inf
+    if lower_bound > -Inf
+        @constraint(model, sum(y[i] * μ[i] for i in 1:N) + θ >= lower_bound)
+    end
+    if upper_bound < Inf
+        @constraint(model, sum(y[i] * μ[i] for i in 1:N) + θ <= upper_bound)
+    end
+    if lower_bound ≈ upper_bound ≈ 0.0
+        @constraint(model, [i=1:N], μ[i] == 0.0)
+    end
+    return
+end
+
+# Internal function: When created, θ has bounds of [-M, M], but, since we are
+# adding these μ terms, we really want to bound <y, μ> + θ ∈ [-M, M]. We need to
+# consider all possible values for `y`. Because the domain of `y` is
+# rectangular, we want to add a constraint at each extreme point. This involves
+# adding 2^N constraints where N = |μ|. This is only feasible for
+# low-dimensional problems, e.g., N < 5.
+_add_initial_bounds(obj_state::Nothing, θ) = nothing
+function _add_initial_bounds(obj_state::ObjectiveState, θ)
+    model = JuMP.owner_model(θ)
+    if length(obj_state.μ) < 5
+        for y in Base.product(zip(obj_state.lower_bound, obj_state.upper_bound)...)
+            _add_objective_state_constraint(θ, y, obj_state.μ)
+        end
+    else
+        _add_objective_state_constraint(θ, obj_state.lower_bound, obj_state.μ)
+        _add_objective_state_constraint(θ, obj_state.upper_bound, obj_state.μ)
+    end
 end
 
 function refine_bellman_function(
@@ -231,8 +289,10 @@ function _add_average_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
             πᵏ[key] += p * dual
         end
     end
-    # Now add the average-cut to the subproblem.
-    _add_cut(node.bellman_function.θ_global, θᵏ, πᵏ, outgoing_state)
+    # Now add the average-cut to the subproblem. We include the objective-state
+    # component μᵀy.
+    _add_cut(node.bellman_function.θ_global, θᵏ, πᵏ, outgoing_state,
+             get_objective_state_component(node))
     return
 end
 
@@ -244,19 +304,20 @@ function _add_multi_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
     @assert N == length(objective_realizations) == length(duals)
     cost_to_go = node.bellman_function
     for i in 1:length(duals)
-        _add_cut(
-            cost_to_go.θ_locals[i],
-            objective_realizations[i], dual_variables[i], outgoing_state)
+        # Do not include the objective state component μᵀy.
+        _add_cut(cost_to_go.θ_locals[i], objective_realizations[i],
+                 dual_variables[i], outgoing_state)
     end
     model = JuMP.owner_model(cost_to_go.θ_global)
+    μᵀy = get_objective_state_component(node)
     # TODO(odow): hash the risk_adjusted_probability and only add if it's a new
-# probability distribution.
+    # probability distribution.
     if JuMP.objective_sense(model) == MOI.MIN_SENSE
-        @constraint(model, cost_to_go.ϴ_global.θ >= sum(
+        @constraint(model, cost_to_go.ϴ_global.θ + μᵀy >= sum(
             risk_adjusted_probability[i] * cost_to_go.θ_locals[i].θ
                 for i in 1:length(risk_adjusted_probability)))
     else
-        @constraint(model, cost_to_go.ϴ_global.θ <= sum(
+        @constraint(model, cost_to_go.ϴ_global.θ + μᵀy <= sum(
             risk_adjusted_probability[i] * cost_to_go.θ_locals[i].θ
                 for i in 1:length(risk_adjusted_probability)))
     end
@@ -301,8 +362,11 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
     cuts = Dict{T, Vector{Dict{Symbol, Float64}}}()
     for (node_name, node) in model.nodes
         if node.objective_state !== nothing
-            error("Unable to write cuts to file because it contains objective" *
-                  " states.")
+            error("Unable to write cuts to file because model contains " *
+                  "objective states.")
+        elseif length(node.bellman_function.θ_locals) > 0
+            error("Unable to write cuts to file because model contains " *
+                  "multi-cuts.")
         end
         cuts[node_name] = Dict{String, Float64}[]
         for cut in node.bellman_function.θ_global.cut_oracle.cuts
@@ -366,11 +430,16 @@ function read_cuts_from_file(
                     coefficients[Symbol(name)] = coef
                 end
             end
+            # So they cuts are written to file after they have been normalized
+            # to `θᴳ ≥ [θᵏ - ⟨πᵏ, xᵏ⟩] + ⟨πᵏ, x′⟩`. Thus, we pass `xᵏ=0` so that
+            # eveything works out okay.
+            # Importantly, don't run cut selection when adding these cuts.
             _add_cut(
                 node.bellman_function.θ_global,
                 intercept,
                 coefficients,
-                Dict(key=>0.0 for key in keys(coefficients))
+                Dict(key=>0.0 for key in keys(coefficients)),
+                cut_selection = false
             )
         end
     end
