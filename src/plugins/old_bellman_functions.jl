@@ -39,10 +39,10 @@ end
 
 # Internal struct: this struct is just a cache for arguments until we can build
 # an actual instance of the type T at a later point.
-struct BellmanFactory{T}
+struct InstanceFactory{T}
     args
     kwargs
-    BellmanFactory{T}(args...; kwargs...) where {T} = new{T}(args, kwargs)
+    InstanceFactory{T}(args...; kwargs...) where {T} = new{T}(args, kwargs)
 end
 
 """
@@ -62,11 +62,11 @@ improve performance. Cut selection can be "turned off" by setting
 """
 function AverageCut(; lower_bound = -Inf, upper_bound = Inf,
                     deletion_minimum::Int = 1)
-    return BellmanFactory{AverageCut}(lower_bound = lower_bound,
+    return InstanceFactory{AverageCut}(lower_bound = lower_bound,
         upper_bound = upper_bound, deletion_minimum = deletion_minimum)
 end
 
-function initialize_bellman_function(factory::BellmanFactory{AverageCut},
+function initialize_bellman_function(factory::InstanceFactory{AverageCut},
                                      graph::PolicyGraph{T},
                                      node::Node{T}) where {T}
     lower_bound, upper_bound = -Inf, Inf
@@ -147,7 +147,7 @@ function add_initial_bounds(obj_state::ObjectiveState, subproblem, θ)
     end
 end
 
-bellman_term(bellman::AverageCut) = bellman.variable
+cost_to_go_term(bellman::AverageCut) = bellman.variable
 
 function refine_bellman_function(graph::PolicyGraph{T},
                                  node::Node{T},

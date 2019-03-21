@@ -110,11 +110,11 @@ function refine_bellman_function(graph::PolicyGraph{T},
 end
 
 """
-    bellman_term(::AbstractBellmanFunction)
+    cost_to_go_term(::AbstractBellmanFunction)
 
 Return a JuMP expression representing the Bellman function.
 """
-function bellman_term(bellman::AbstractBellmanFunction)
+function cost_to_go_term(bellman::AbstractBellmanFunction)
     error("SDDP.bellman term not implemented for $(bellman).")
 end
 
