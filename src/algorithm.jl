@@ -583,6 +583,7 @@ function train(model::PolicyGraph;
                stopping_rules = AbstractStoppingRule[],
                risk_measure = SDDP.Expectation(),
                sampling_scheme = SDDP.InSampleMonteCarlo(),
+               cut_type = SDDP.AVERAGE_CUT,
                cycle_discretization_delta = 0.0,
                refine_at_similar_nodes = true
                )
@@ -630,6 +631,10 @@ function train(model::PolicyGraph;
         cycle_discretization_delta,
         refine_at_similar_nodes
     )
+    # Update the nodes with the selected cut type (AVERAGE_CUT or MULTI_CUT).
+    for (key, node) in model.nodes
+        node.bellman_function.cut_type = cut_type
+    end
     # The default status. This should never be seen by the user.
     status = :not_solved
     log = Log[]

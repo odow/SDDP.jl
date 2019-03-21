@@ -5,6 +5,7 @@ v1.0.
 
 Some of the highlights of the new release include
 
+ - Support for "multi-cut"s
  - Support for stagewise-independent noise in the constraint matrix
  - A way to simulate out-of-sample realizations of the stagewise-independent
    noise terms

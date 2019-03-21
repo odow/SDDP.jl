@@ -115,7 +115,7 @@ end
 Return a JuMP expression representing the Bellman function.
 """
 function bellman_term(bellman::AbstractBellmanFunction)
-    error("SDDP.bellman term not implemented for $(bellman).")
+    error("SDDP.bellman_term not implemented for $(bellman).")
 end
 
 # =============================== stopping_rules ============================= #

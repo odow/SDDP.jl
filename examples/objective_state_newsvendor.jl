@@ -31,11 +31,11 @@ function joint_distribution(; kwargs...)
     return distribution[:]
 end
 
-function newsvendor_example()
+function newsvendor_example(;cut_type)
     model = SDDP.PolicyGraph(
             SDDP.LinearGraph(3),
             sense = :Max,
-            bellman_function = SDDP.AverageCut(upper_bound = 50.0),
+            upper_bound = 50.0,
             optimizer = with_optimizer(GLPK.Optimizer)
             ) do subproblem, stage
         @variables(subproblem, begin
@@ -57,17 +57,16 @@ function newsvendor_example()
             @stageobjective(subproblem, price * u)
         end
     end
-    return model
+    SDDP.train(model,
+        iteration_limit = 100, print_level = 0, time_limit = 20.0,
+        cut_type = cut_type)
+    @test SDDP.calculate_bound(model) ≈ 4.04 atol=0.05
+    results = SDDP.simulate(model, 500)
+    objectives = [
+        sum(s[:stage_objective] for s in simulation) for simulation in results
+    ]
+    @test round(Statistics.mean(objectives); digits = 2) ≈ 4.04 atol=0.1
 end
 
-model = newsvendor_example()
-SDDP.train(model, iteration_limit = 100, print_level = 0)
-
-results = SDDP.simulate(model, 500)
-objectives = [
-    sum(s[:stage_objective] for s in simulation) for simulation in results
-]
-sample_mean = round(Statistics.mean(objectives); digits = 2)
-sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
-println("Confidence_interval = $(sample_mean) ± $(sample_ci)")
-@test SDDP.calculate_bound(model) ≈ sample_mean atol = sample_ci
+newsvendor_example(cut_type = SDDP.AVERAGE_CUT)
+newsvendor_example(cut_type = SDDP.MULTI_CUT)

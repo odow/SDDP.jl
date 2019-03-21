@@ -23,7 +23,7 @@ using SDDP, GLPK, Test
 function test_multistock_example()
     model = SDDP.PolicyGraph(SDDP.LinearGraph(5),
             optimizer = with_optimizer(GLPK.Optimizer),
-            bellman_function = SDDP.AverageCut(lower_bound = -5)
+            bellman_function = SDDP.BellmanFunction(lower_bound = -5)
                                     ) do subproblem, stage
         @variable(subproblem,
             0 <= stock[i=1:3] <= 1, SDDP.State, initial_value = 0.5)
