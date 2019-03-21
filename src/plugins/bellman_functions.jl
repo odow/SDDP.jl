@@ -140,7 +140,7 @@ struct InstanceFactory{T}
     InstanceFactory{T}(args...; kwargs...) where {T} = new{T}(args, kwargs)
 end
 
-struct BellmanFunction <: AbstractBellmanFunction
+mutable struct BellmanFunction <: AbstractBellmanFunction
     global_theta::ConvexApproximation
     local_thetas::Vector{ConvexApproximation}
     cut_type::CutType

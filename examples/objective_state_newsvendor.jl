@@ -35,8 +35,7 @@ function newsvendor_example(;cut_type)
     model = SDDP.PolicyGraph(
             SDDP.LinearGraph(3),
             sense = :Max,
-            bellman_function = SDDP.BellmanFunction(
-                upper_bound = 50.0, cut_type=cut_type),
+            upper_bound = 50.0,
             optimizer = with_optimizer(GLPK.Optimizer)
             ) do subproblem, stage
         @variables(subproblem, begin
@@ -58,7 +57,9 @@ function newsvendor_example(;cut_type)
             @stageobjective(subproblem, price * u)
         end
     end
-    SDDP.train(model, iteration_limit = 100, print_level = 0, time_limit = 20.0)
+    SDDP.train(model,
+        iteration_limit = 100, print_level = 0, time_limit = 20.0,
+        cut_type = cut_type)
     @test SDDP.calculate_bound(model) ≈ 4.04 atol=0.05
     results = SDDP.simulate(model, 500)
     objectives = [
