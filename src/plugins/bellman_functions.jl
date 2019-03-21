@@ -27,17 +27,17 @@ struct LevelOneOracle
 end
 
 struct ConvexApproximation
-    θ::JuMP.VariableRef
-    x′::Dict{Symbol, JuMP.VariableRef}
+    theta::JuMP.VariableRef
+    states::Dict{Symbol, JuMP.VariableRef}
     cut_oracle::LevelOneOracle
-    function ConvexApproximation(θ, x′, deletion_minimum)
-        return new(θ, x′, LevelOneOracle(deletion_minimum))
+    function ConvexApproximation(theta, states, deletion_minimum)
+        return new(theta, states, LevelOneOracle(deletion_minimum))
     end
 end
 
 # Add the cut `V.θ ≥ θᵏ + ⟨πᵏ, x′ - xᵏ⟩`.
 function _add_cut(V::ConvexApproximation, θᵏ, πᵏ, xᵏ, μᵀy=JuMP.AffExpr(0.0); cut_selection::Bool=true)
-    model = JuMP.owner_model(V.θ)
+    model = JuMP.owner_model(V.theta)
     for (key, x) in xᵏ
         θᵏ -= πᵏ[key] * xᵏ[key]
     end
@@ -48,17 +48,15 @@ function _add_cut(V::ConvexApproximation, θᵏ, πᵏ, xᵏ, μᵀy=JuMP.AffExp
         _purge_cuts(V)
     end
     cut.constraint_ref = if is_minimization
-        @constraint(model,
-            V.θ + μᵀy >= θᵏ + sum(πᵏ[i] * V.x′[i] for i in keys(V.x′)))
+        @constraint(model, V.theta + μᵀy >= θᵏ + sum(πᵏ[i] * x for (i, x) in V.states))
     else
-        @constraint(model,
-            V.θ + μᵀy <= θᵏ + sum(πᵏ[i] * V.x′[i] for i in keys(V.x′)))
+        @constraint(model, V.theta + μᵀy <= θᵏ + sum(πᵏ[i] * x for (i, x) in V.states))
     end
     return
 end
 
 function _purge_cuts(V::ConvexApproximation)
-    model = JuMP.owner_model(V.θ)
+    model = JuMP.owner_model(V.theta)
     if length(V.cut_oracle.cuts_to_be_deleted) >= V.cut_oracle.deletion_minimum
         for cut in V.cut_oracle.cuts_to_be_deleted
             JuMP.delete(model, cut.constraint_ref)
@@ -143,11 +141,16 @@ struct InstanceFactory{T}
 end
 
 struct BellmanFunction <: AbstractBellmanFunction
-    θ_global::ConvexApproximation
-    θ_locals::Vector{ConvexApproximation}
+    global_theta::ConvexApproximation
+    local_thetas::Vector{ConvexApproximation}
     cut_type::CutType
 end
 
+"""
+    BellmanFunction(;
+        lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
+        cut_type::CutType = AVERAGE_CUT)
+"""
 function BellmanFunction(;
         lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
         cut_type::CutType = AVERAGE_CUT)
@@ -156,7 +159,9 @@ function BellmanFunction(;
         deletion_minimum = deletion_minimum, cut_type = cut_type)
 end
 
-bellman_term(bellman_function::BellmanFunction) = bellman_function.θ_global.θ
+function bellman_term(bellman_function::BellmanFunction)
+    return bellman_function.global_theta.theta
+end
 
 function initialize_bellman_function(
         factory::InstanceFactory{BellmanFunction}, model::PolicyGraph{T},
@@ -197,16 +202,16 @@ end
 
 # Internal function: helper used in _add_initial_bounds.
 function _add_objective_state_constraint(
-        θ::JuMP.VariableRef, y::NTuple{N, Float64},
+        theta::JuMP.VariableRef, y::NTuple{N, Float64},
         μ::NTuple{N, JuMP.VariableRef}) where {N}
-    model = JuMP.owner_model(θ)
-    lower_bound = JuMP.has_lower_bound(θ) ? JuMP.lower_bound(θ) : -Inf
-    upper_bound = JuMP.has_upper_bound(θ) ? JuMP.upper_bound(θ) : Inf
+    model = JuMP.owner_model(theta)
+    lower_bound = JuMP.has_lower_bound(theta) ? JuMP.lower_bound(theta) : -Inf
+    upper_bound = JuMP.has_upper_bound(theta) ? JuMP.upper_bound(theta) : Inf
     if lower_bound > -Inf
-        @constraint(model, sum(y[i] * μ[i] for i in 1:N) + θ >= lower_bound)
+        @constraint(model, sum(y[i] * μ[i] for i in 1:N) + theta >= lower_bound)
     end
     if upper_bound < Inf
-        @constraint(model, sum(y[i] * μ[i] for i in 1:N) + θ <= upper_bound)
+        @constraint(model, sum(y[i] * μ[i] for i in 1:N) + theta <= upper_bound)
     end
     if lower_bound ≈ upper_bound ≈ 0.0
         @constraint(model, [i=1:N], μ[i] == 0.0)
@@ -220,16 +225,16 @@ end
 # rectangular, we want to add a constraint at each extreme point. This involves
 # adding 2^N constraints where N = |μ|. This is only feasible for
 # low-dimensional problems, e.g., N < 5.
-_add_initial_bounds(obj_state::Nothing, θ) = nothing
-function _add_initial_bounds(obj_state::ObjectiveState, θ)
-    model = JuMP.owner_model(θ)
+_add_initial_bounds(obj_state::Nothing, theta) = nothing
+function _add_initial_bounds(obj_state::ObjectiveState, theta)
+    model = JuMP.owner_model(theta)
     if length(obj_state.μ) < 5
         for y in Base.product(zip(obj_state.lower_bound, obj_state.upper_bound)...)
-            _add_objective_state_constraint(θ, y, obj_state.μ)
+            _add_objective_state_constraint(theta, y, obj_state.μ)
         end
     else
-        _add_objective_state_constraint(θ, obj_state.lower_bound, obj_state.μ)
-        _add_objective_state_constraint(θ, obj_state.upper_bound, obj_state.μ)
+        _add_objective_state_constraint(theta, obj_state.lower_bound, obj_state.μ)
+        _add_objective_state_constraint(theta, obj_state.upper_bound, obj_state.μ)
     end
 end
 
@@ -275,9 +280,9 @@ end
 function _add_average_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
                           risk_adjusted_probability::Vector{Float64},
                           objective_realizations::Vector{Float64},
-                          duals::Vector{Dict{Symbol, Float64}})
+                          dual_variables::Vector{Dict{Symbol, Float64}})
     N = length(risk_adjusted_probability)
-    @assert N == length(objective_realizations) == length(duals)
+    @assert N == length(objective_realizations) == length(dual_variables)
     # Calculate the expected intercept and dual variables with respect to the
     # risk-adjusted probability distributino.
     πᵏ = Dict(key => 0.0 for key in keys(outgoing_state))
@@ -285,13 +290,13 @@ function _add_average_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
     for i in 1:length(objective_realizations)
         p = risk_adjusted_probability[i]
         θᵏ += p * objective_realizations[i]
-        for (key, dual) in duals[i]
+        for (key, dual) in dual_variables[i]
             πᵏ[key] += p * dual
         end
     end
     # Now add the average-cut to the subproblem. We include the objective-state
     # component μᵀy.
-    _add_cut(node.bellman_function.θ_global, θᵏ, πᵏ, outgoing_state,
+    _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state,
              get_objective_state_component(node))
     return
 end
@@ -299,26 +304,26 @@ end
 function _add_multi_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
                         risk_adjusted_probability::Vector{Float64},
                         objective_realizations::Vector{Float64},
-                        duals::Vector{Dict{Symbol, Float64}})
+                        dual_variables::Vector{Dict{Symbol, Float64}})
     N = length(risk_adjusted_probability)
-    @assert N == length(objective_realizations) == length(duals)
+    @assert N == length(objective_realizations) == length(dual_variables)
     bellman_function = node.bellman_function
-    for i in 1:length(duals)
+    for i in 1:length(dual_variables)
         # Do not include the objective state component μᵀy.
-        _add_cut(bellman_function.θ_locals[i], objective_realizations[i],
+        _add_cut(bellman_function.local_thetas[i], objective_realizations[i],
                  dual_variables[i], outgoing_state)
     end
-    model = JuMP.owner_model(bellman_function.θ_global)
+    model = JuMP.owner_model(bellman_function.global_theta.theta)
     μᵀy = get_objective_state_component(node)
     # TODO(odow): hash the risk_adjusted_probability and only add if it's a new
     # probability distribution.
     if JuMP.objective_sense(model) == MOI.MIN_SENSE
-        @constraint(model, bellman_function.ϴ_global.θ + μᵀy >= sum(
-            risk_adjusted_probability[i] * bellman_function.θ_locals[i].θ
+        @constraint(model, bellman_function.global_theta.theta + μᵀy >= sum(
+            risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
                 for i in 1:length(risk_adjusted_probability)))
     else
-        @constraint(model, bellman_function.ϴ_global.θ + μᵀy <= sum(
-            risk_adjusted_probability[i] * bellman_function.θ_locals[i].θ
+        @constraint(model, bellman_function.global_theta.theta + μᵀy <= sum(
+            risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
                 for i in 1:length(risk_adjusted_probability)))
     end
     return
@@ -328,22 +333,27 @@ end
 # won't have been added.
 # TODO(odow): a way to set different bounds for each variable in the multi-cut.
 function _add_locals_if_necessary(bellman_function::BellmanFunction, N::Int)
-    num_local_thetas = length(bellman_function.θ_locals)
+    num_local_thetas = length(bellman_function.local_thetas)
     if num_local_thetas == N
         # Do nothing. Already initialized.
     elseif num_local_thetas == 0
-        Θᴳ = bellman_function.θ_global.θ
-        model = JuMP.owner_model(Θᴳ)
-        for i in 1:N
-            θ = @variable(model)
-            if JuMP.has_lower_bound(Θᴳ)
-                JuMP.set_lower_bound(θ, JuMP.lower_bound(Θᴳ))
-            end
-            if JuMP.has_upper_bound(bellman_function.θ_global.θ)
-                JuMP.set_upper_bound(θ, JuMP.upper_bound(Θᴳ))
-            end
-            push!(bellman_function.θ_locals, ConvexApproximation(
-                θ, Θᴳ.x′; deletion_minimum=Θᴳ.deletion_minimum))
+        global_theta = bellman_function.global_theta
+        model = JuMP.owner_model(global_theta.theta)
+        local_thetas = @variable(model, [1:N])
+        if JuMP.has_lower_bound(global_theta.theta)
+            JuMP.set_lower_bound.(local_thetas, JuMP.lower_bound(global_theta.theta))
+        end
+        if JuMP.has_upper_bound(global_theta.theta)
+            JuMP.set_upper_bound.(local_thetas, JuMP.upper_bound(global_theta.theta))
+        end
+        for local_theta in local_thetas
+            push!(
+                bellman_function.local_thetas,
+                ConvexApproximation(
+                    local_theta, global_theta.states,
+                    global_theta.cut_oracle.deletion_minimum
+                )
+            )
         end
     else
         error("Expected $(N) local θ variables but there were $(num_local_thetas).")
@@ -364,12 +374,12 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
         if node.objective_state !== nothing
             error("Unable to write cuts to file because model contains " *
                   "objective states.")
-        elseif length(node.bellman_function.θ_locals) > 0
+        elseif length(node.bellman_function.local_thetas) > 0
             error("Unable to write cuts to file because model contains " *
                   "multi-cuts.")
         end
         cuts[node_name] = Dict{String, Float64}[]
-        for cut in node.bellman_function.θ_global.cut_oracle.cuts
+        for cut in node.bellman_function.global_theta.cut_oracle.cuts
             cut_dict = copy(cut.coefficients)
             cut_dict[:cut_intercept] = cut.intercept
             push!(cuts[node_name], cut_dict)
@@ -435,7 +445,7 @@ function read_cuts_from_file(
             # eveything works out okay.
             # Importantly, don't run cut selection when adding these cuts.
             _add_cut(
-                node.bellman_function.θ_global,
+                node.bellman_function.global_theta,
                 intercept,
                 coefficients,
                 Dict(key=>0.0 for key in keys(coefficients)),

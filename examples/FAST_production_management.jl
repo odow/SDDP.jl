@@ -10,14 +10,15 @@
 
 using SDDP, GLPK, Test
 
-function fast_production_management()
+function fast_production_management(;cut_type)
     DEMAND = [2, 10]
     H = 3
     N = 2
     C = [0.2, 0.7]
     S = 2 .+ [0.33, 0.54]
     model = SDDP.PolicyGraph(SDDP.LinearGraph(H),
-                bellman_function = SDDP.BellmanFunction(lower_bound = -50.0),
+                bellman_function = SDDP.BellmanFunction(
+                    lower_bound = -50.0, cut_type = cut_type),
                 optimizer = with_optimizer(GLPK.Optimizer)
                         ) do sp, t
         @variable(sp, x[1:N] >= 0, SDDP.State, initial_value = 0.0)
@@ -38,4 +39,5 @@ function fast_production_management()
     @test SDDP.calculate_bound(model) ≈ -23.96 atol = 1e-2
 end
 
-fast_production_management()
+fast_production_management(cut_type = SDDP.AVERAGE_CUT)
+fast_production_management(cut_type = SDDP.MULTI_CUT)

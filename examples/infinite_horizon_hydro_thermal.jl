@@ -5,7 +5,7 @@
 
 using SDDP, GLPK, Test, Statistics
 
-function infinite_hydro_thermal()
+function infinite_hydro_thermal(; cut_type)
     Ω = [
         (inflow = 0.0, demand = 7.5),
         (inflow = 5.0, demand = 5),
@@ -17,7 +17,8 @@ function infinite_hydro_thermal()
         [(:root_node => :week, 1.0), (:week => :week, 0.9)]
     )
     model = SDDP.PolicyGraph(graph,
-                bellman_function = SDDP.BellmanFunction(lower_bound = 0),
+                bellman_function = SDDP.BellmanFunction(
+                    lower_bound = 0, cut_type = cut_type),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
         @variable(subproblem,
@@ -55,4 +56,5 @@ function infinite_hydro_thermal()
     @test sample_mean - sample_ci <= 119.167 <= sample_mean + sample_ci
 end
 
-infinite_hydro_thermal()
+infinite_hydro_thermal(cut_type = SDDP.AVERAGE_CUT)
+infinite_hydro_thermal(cut_type = SDDP.MULTI_CUT)
