@@ -308,23 +308,22 @@ function _add_multi_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
     N = length(risk_adjusted_probability)
     @assert N == length(objective_realizations) == length(dual_variables)
     bellman_function = node.bellman_function
+    μᵀy = get_objective_state_component(node)
     for i in 1:length(dual_variables)
-        # Do not include the objective state component μᵀy.
         _add_cut(bellman_function.local_thetas[i], objective_realizations[i],
-                 dual_variables[i], outgoing_state)
+                 dual_variables[i], outgoing_state, μᵀy)
     end
     model = JuMP.owner_model(bellman_function.global_theta.theta)
-    μᵀy = get_objective_state_component(node)
-    # TODO(odow): hash the risk_adjusted_probability and only add if it's a new
-    # probability distribution.
+    cut_expr = @expression(model, sum(
+        risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
+        for i in 1:N) - (1 - sum(risk_adjusted_probability)) * μᵀy
+    )
+    # TODO(odow): hash the risk_adjusted_probability (or cut expression if
+    # sum(ξ)<1 and μᵀy != 0) and only add if it's a new constraint.
     if JuMP.objective_sense(model) == MOI.MIN_SENSE
-        @constraint(model, bellman_function.global_theta.theta + μᵀy >= sum(
-            risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
-                for i in 1:length(risk_adjusted_probability)))
+        @constraint(model, bellman_function.global_theta.theta >= cut_expr)
     else
-        @constraint(model, bellman_function.global_theta.theta + μᵀy <= sum(
-            risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
-                for i in 1:length(risk_adjusted_probability)))
+        @constraint(model, bellman_function.global_theta.theta <= cut_expr)
     end
     return
 end
