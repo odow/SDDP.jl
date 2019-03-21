@@ -8,7 +8,7 @@ using SDDP, Test
 using GLPK  # Required for Wasserstein.
 
 @testset "Expectation" begin
-    @test sprint(show, SDDP.Expectation()) == "Expectation()"
+    @test sprint(show, SDDP.Expectation()) == "SDDP.Expectation()"
     risk_adjusted_probability = Vector{Float64}(undef, 5)
     SDDP.adjust_probability(
         SDDP.Expectation(),
@@ -250,12 +250,12 @@ end
 end
 
 @testset "Wasserstein" begin
-    @test sprint(show, default_wasserstein(0.1)) == "SDDP.Wasserstein"
     function default_wasserstein(alpha)
         return SDDP.Wasserstein(with_optimizer(GLPK.Optimizer); alpha = alpha) do x, y
             return abs(x - y)
         end
     end
+    @test sprint(show, default_wasserstein(0.1)) == "SDDP.Wasserstein"
     @test_throws Exception default_wasserstein(-1.0)
     @testset ":Max Worst case" begin
         risk_adjusted_probability = Vector{Float64}(undef, 4)

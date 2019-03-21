@@ -289,6 +289,7 @@ end
     model = SDDP.LinearPolicyGraph(
             stages = 2, lower_bound = -1e10, direct_mode=false) do subproblem, t
         @variable(subproblem, x >= -1e7, SDDP.State, initial_value=1e-5)
+        @variable(subproblem, 1 <= y <= 5, Int)  # Note: this is just to test range fallback
         @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 1e-8)
         @stageobjective(subproblem, 1e9 * x.out)
     end
@@ -298,4 +299,36 @@ end
         io -> SDDP.numerical_stability_report(io, model, by_node=true))
     @test occursin("Numerical stability report for node: 1", report_2)
     @test occursin("Numerical stability report for node: 2", report_2)
+end
+
+
+@testset "objective_state" begin
+    model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0, direct_mode=false) do subproblem, t
+        @variable(subproblem, x, SDDP.State, initial_value=0)
+        SDDP.parameterize(subproblem, [1, 2]) do ω
+            price = SDDP.objective_state(subproblem)
+            @stageobjective(subproblem, price * x.out)
+        end
+    end
+    @test_throws ErrorException("No objective state defined.") SDDP.simulate(model, 1)
+
+    @test_throws ErrorException("add_objective_state can only be called once.") SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0, direct_mode=false) do subproblem, t
+        @variable(subproblem, x, SDDP.State, initial_value=0)
+        SDDP.add_objective_state(
+                subproblem, initial_value = 1.5, lower_bound = 0.75,
+                upper_bound = 2.25, lipschitz = 100.0) do y, ω
+            return y + ω
+        end
+        SDDP.add_objective_state(
+                subproblem, initial_value = 1.5, lower_bound = 0.75,
+                upper_bound = 2.25, lipschitz = 100.0) do y, ω
+            return y + ω
+        end
+        SDDP.parameterize(subproblem, [1, 2]) do ω
+            price = SDDP.objective_state(subproblem)
+            @stageobjective(subproblem, price * x.out)
+        end
+    end
 end

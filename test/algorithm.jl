@@ -48,12 +48,13 @@ end
             JuMP.set_lower_bound(x.out, ω)
         end
     end
-    SDDP.train(model; iteration_limit = 1, risk_measure = SDDP.Expectation())
+    SDDP.train(model; iteration_limit = 1, print_level = 0,
+        risk_measure = SDDP.Expectation())
     @test SDDP.termination_status(model) == :iteration_limit
-    SDDP.train(model; iteration_limit = 1,
+    SDDP.train(model; iteration_limit = 1, print_level = 0,
         risk_measure = Dict(1 => SDDP.Expectation(), 2 => SDDP.WorstCase()))
     @test SDDP.termination_status(model) == :iteration_limit
-    SDDP.train(model; iteration_limit = 1,
+    SDDP.train(model; iteration_limit = 1, print_level = 0,
         risk_measure = (idx) -> idx == 1 ? SDDP.Expectation() : SDDP.WorstCase()
     )
     @test SDDP.termination_status(model) == :iteration_limit
@@ -70,7 +71,7 @@ end
             JuMP.set_lower_bound(x.out, ω)
         end
     end
-    SDDP.train(model; iteration_limit = 4)
+    SDDP.train(model; iteration_limit = 4, print_level = 0)
     @test SDDP.termination_status(model) == :iteration_limit
     @testset "simulate" begin
         simulations = SDDP.simulate(model, 11, [:x])
@@ -114,7 +115,7 @@ end
         @constraint(node, x.out <= -1)
         @stageobjective(node, x.out)
     end
-    @test_throws Exception SDDP.train(model; iteration_limit = 1)
+    @test_throws Exception SDDP.train(model; iteration_limit = 1, print_level = 0)
     @test isfile("subproblem.mps")
     rm("subproblem.mps")
     @test isfile("subproblem.lp")
