@@ -290,7 +290,7 @@ end
 
 """
     PolicyGraph(builder::Function, graph::Graph{T};
-                bellman_function = AverageCut,
+                bellman_function = BellmanFunction,
                 optimizer = nothing,
                 direct_mode = true) where T
 
@@ -303,14 +303,14 @@ for details.)
         # ... subproblem definition ...
     end
     model = PolicyGraph(builder, graph;
-                        bellman_function = AverageCut,
+                        bellman_function = BellmanFunction,
                         optimizer = with_optimizer(GLPK.Optimizer),
                         direct_mode = false)
 
 Or, using the Julia `do ... end` syntax:
 
     model = PolicyGraph(graph;
-                        bellman_function = AverageCut,
+                        bellman_function = BellmanFunction,
                         optimizer = with_optimizer(GLPK.Optimizer),
                         direct_mode = true) do subproblem, index
         # ... subproblem definitions ...
@@ -331,7 +331,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             error("You must specify a bound on the objective value, through " *
                   "`lower_bound` if minimizing, or `upper_bound` if maximizing.")
         else
-            bellman_function = AverageCut(
+            bellman_function = BellmanFunction(
                 lower_bound = lower_bound, upper_bound = upper_bound)
         end
     end

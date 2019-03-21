@@ -17,7 +17,7 @@ function infinite_hydro_thermal()
         [(:root_node => :week, 1.0), (:week => :week, 0.9)]
     )
     model = SDDP.PolicyGraph(graph,
-                bellman_function = SDDP.AverageCut(lower_bound = 0),
+                bellman_function = SDDP.BellmanFunction(lower_bound = 0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
         @variable(subproblem,

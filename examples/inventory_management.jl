@@ -12,7 +12,7 @@ function infinite_lin_HD()
         [(:root_node => :week, 1.0), (:week => :week, 0.95)]
     )
     model = SDDP.PolicyGraph(graph,
-                bellman_function = SDDP.AverageCut(lower_bound = 0),
+                bellman_function = SDDP.BellmanFunction(lower_bound = 0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
 
@@ -63,7 +63,7 @@ function infinite_lin_DH()
         ]
     )
     model = SDDP.PolicyGraph(graph,
-                bellman_function = SDDP.AverageCut(lower_bound = 0),
+                bellman_function = SDDP.BellmanFunction(lower_bound = 0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do subproblem, node
         @variable(subproblem, -10 <= state <= 10, SDDP.State, initial_value = 0)

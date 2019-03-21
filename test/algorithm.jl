@@ -8,7 +8,7 @@ using SDDP, Test, GLPK
 @testset "Forward Pass" begin
     model = SDDP.PolicyGraph(SDDP.LinearGraph(2);
                 sense = :Max,
-                bellman_function = SDDP.AverageCut(upper_bound = 100.0),
+                bellman_function = SDDP.BellmanFunction(upper_bound = 100.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
@@ -39,7 +39,7 @@ end
 
 @testset "to nodal forms" begin
     model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                bellman_function = SDDP.AverageCut(lower_bound = 0.0),
+                bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
@@ -61,7 +61,7 @@ end
 
 @testset "solve" begin
     model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                bellman_function = SDDP.AverageCut(lower_bound = 0.0),
+                bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)

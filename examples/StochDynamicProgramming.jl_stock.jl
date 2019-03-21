@@ -22,7 +22,7 @@ using SDDP, GLPK, Test
 
 function stock_example()
     model = SDDP.PolicyGraph(SDDP.LinearGraph(5),
-                bellman_function = SDDP.AverageCut(lower_bound = -2),
+                bellman_function = SDDP.BellmanFunction(lower_bound = -2),
                 optimizer = with_optimizer(GLPK.Optimizer)
                                     ) do sp, stage
 

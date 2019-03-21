@@ -7,7 +7,7 @@ using SDDP, GLPK, Statistics, Test
 
 function biobjective_hydro()
     model = SDDP.PolicyGraph(SDDP.LinearGraph(3),
-                bellman_function = SDDP.AverageCut(lower_bound = 0.0),
+                bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
                 optimizer = with_optimizer(GLPK.Optimizer)
                         ) do subproblem, stage
         @variable(subproblem, 0 <= v <= 200, SDDP.State, initial_value = 50)

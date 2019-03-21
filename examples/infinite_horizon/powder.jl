@@ -44,7 +44,7 @@ function infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
 
     model = SDDP.PolicyGraph(graph,
         sense = :Max,
-        bellman_function = SDDP.AverageCut(upper_bound = 1e5),
+        bellman_function = SDDP.BellmanFunction(upper_bound = 1e5),
         optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag = 0)
             ) do subproblem, index
         # Unpack the node index.

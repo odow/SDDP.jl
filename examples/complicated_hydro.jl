@@ -10,7 +10,7 @@ const POWER_KNOTS = [55.0, 65.0, 70.0]
 model = SDDP.LinearPolicyGraph(
             stages = T,
             sense = :Min,
-            bellman_function = SDDP.AverageCut(
+            bellman_function = SDDP.BellmanFunction(
                 lower_bound = 0,
                 deletion_minimum = 1_000_000
             ),

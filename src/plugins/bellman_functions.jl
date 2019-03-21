@@ -134,14 +134,6 @@ end
 
 @enum(CutType, AVERAGE_CUT, MULTI_CUT)
 
-struct BellmanFunction <: AbstractBellmanFunction
-    θ_global::ConvexApproximation
-    θ_locals::Vector{ConvexApproximation}
-    cut_type::CutType
-end
-
-bellman_term(bellman_function::BellmanFunction) = bellman_function.θ_global.θ
-
 # Internal struct: this struct is just a cache for arguments until we can build
 # an actual instance of the type T at a later point.
 struct InstanceFactory{T}
@@ -150,19 +142,28 @@ struct InstanceFactory{T}
     InstanceFactory{T}(args...; kwargs...) where {T} = new{T}(args, kwargs)
 end
 
-function AverageCut(; lower_bound = -Inf, upper_bound = Inf,
-                      deletion_minimum::Int = 1)
+struct BellmanFunction <: AbstractBellmanFunction
+    θ_global::ConvexApproximation
+    θ_locals::Vector{ConvexApproximation}
+    cut_type::CutType
+end
+
+function BellmanFunction(;
+        lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
+        cut_type::CutType = AVERAGE_CUT)
     return InstanceFactory{BellmanFunction}(
         lower_bound = lower_bound, upper_bound = upper_bound,
-        deletion_minimum = deletion_minimum)
+        deletion_minimum = deletion_minimum, cut_type = cut_type)
 end
+
+bellman_term(bellman_function::BellmanFunction) = bellman_function.θ_global.θ
 
 function initialize_bellman_function(
         factory::InstanceFactory{BellmanFunction}, model::PolicyGraph{T},
         node::Node{T}) where {T}
-    lower_bound, upper_bound, deletion_minimum = -Inf, Inf, 0
+    lower_bound, upper_bound, deletion_minimum, cut_type = -Inf, Inf, 0, AVERAGE_CUT
     if length(factory.args) > 0
-        error("Positional arguments $(factory.args) ignored in AverageCut.")
+        error("Positional arguments $(factory.args) ignored in BellmanFunction.")
     end
     for (kw, value) in factory.kwargs
         if kw == :lower_bound
@@ -171,8 +172,10 @@ function initialize_bellman_function(
             upper_bound = value
         elseif kw == :deletion_minimum
             deletion_minimum = value
+        elseif kw == :cut_type
+            cut_type = value
         else
-            error("Keyword $(kw) not recognised as argument to AverageCut.")
+            error("Keyword $(kw) not recognised as argument to BellmanFunction.")
         end
     end
     if lower_bound == -Inf && upper_bound == Inf
@@ -188,14 +191,11 @@ function initialize_bellman_function(
     # this check will be skipped by dispatch.
     _add_initial_bounds(node.objective_state, Θᴳ)
     x′ = Dict(key => var.out for (key, var) in node.states)
-    return BellmanFunction(
-        ConvexApproximation(Θᴳ, x′, deletion_minimum),
-        ConvexApproximation[],
-        AVERAGE_CUT
-    )
+    return BellmanFunction(ConvexApproximation(Θᴳ, x′, deletion_minimum),
+                           ConvexApproximation[], cut_type)
 end
 
-# Internal function: helper used in add_initial_bounds.
+# Internal function: helper used in _add_initial_bounds.
 function _add_objective_state_constraint(
         θ::JuMP.VariableRef, y::NTuple{N, Float64},
         μ::NTuple{N, JuMP.VariableRef}) where {N}

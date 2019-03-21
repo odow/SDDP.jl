@@ -35,7 +35,7 @@ function newsvendor_example()
     model = SDDP.PolicyGraph(
             SDDP.LinearGraph(3),
             sense = :Max,
-            bellman_function = SDDP.AverageCut(upper_bound = 50.0),
+            bellman_function = SDDP.BellmanFunction(upper_bound = 50.0),
             optimizer = with_optimizer(GLPK.Optimizer)
             ) do subproblem, stage
         @variables(subproblem, begin
