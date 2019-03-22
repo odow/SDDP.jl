@@ -25,6 +25,7 @@ using SDDP, Test
         return 2 * data[:y]
     end
     SDDP.prep_html(plt, "test.html")
+    @test sprint(show, plt) == "A spaghetti plot with 2 scenarios and 3 stages."
     @test read("test.html", String) == read("control.html", String)
     rm("test.html")
 end

@@ -50,11 +50,7 @@ The scenario is a list of tuples (type `Vector{Tuple{T, <:Any}}`) where the
 first component of each tuple is the index of the node, and the second component
 is the stagewise-independent noise term observed in that node.
 """
-function sample_scenario(graph::PolicyGraph{T},
-                         sampling_scheme::AbstractSamplingScheme) where T
-    error("You need to overload the function SDDP.sample_scenario for the " *
-          "sampling scheme (sampling_scheme).")
-end
+function sample_scenario end
 
 # ============================== bellman_functions =========================== #
 
@@ -71,17 +67,14 @@ You need to define the following methods:
 abstract type AbstractBellmanFunction end
 
 """
-    initialize_bellman_function(::Type{F}, graph::PolicyGraph{T}, node::Node{T}
-                                    ) where {F<:AbstractBellmanFunction, T}
+    initialize_bellman_function(
+        ::Type{F}, graph::PolicyGraph{T}, node::Node{T}
+        ) where {F<:AbstractBellmanFunction, T}
 
 Return an instance of the Bellman function F for `node` in the policy graph
 `graph`.
 """
-function initialize_bellman_function(
-        ::Type{F}, graph::PolicyGraph{T}, node::Node{T}
-            ) where {F<:AbstractBellmanFunction, T}
-    error("Overload the function SDDP.initialize_bellman_function for $(F).")
-end
+function initialize_bellman_function end
 
 """
     refine_bellman_function(graph::PolicyGraph{T},
@@ -93,30 +86,16 @@ end
                             noise_supports::Vector{<:Noise},
                             original_probability::Vector{Float64},
                             objective_realizations::Vector{Float64}
-                                ) where T
+                            ) where T
 """
-function refine_bellman_function(graph::PolicyGraph{T},
-                                 node::Node{T},
-                                 bellman_function::AbstractBellmanFunction,
-                                 risk_measure::AbstractRiskMeasure,
-                                 outgoing_state::Dict{Symbol, Float64},
-                                 dual_variables::Vector{Dict{Symbol, Float64}},
-                                 noise_supports::Vector,
-                                 original_probability::Vector{Float64},
-                                 objective_realizations::Vector{Float64}
-                                     ) where T
-    error("SDDP.refine_bellman_function not implemented for " *
-          "$(bellman_function).")
-end
+function refine_bellman_function end
 
 """
     bellman_term(::AbstractBellmanFunction)
 
 Return a JuMP expression representing the Bellman function.
 """
-function bellman_term(bellman::AbstractBellmanFunction)
-    error("SDDP.bellman_term not implemented for $(bellman).")
-end
+function bellman_term end
 
 # =============================== stopping_rules ============================= #
 
@@ -138,19 +117,21 @@ struct Log
     time::Float64
 end
 
-function stopping_rule_status(stopping_rule::AbstractStoppingRule)
-    error("You need to overload the function SDDP.stopping_rule_status for " *
-          "the stopping rule (stopping_rule).")
-end
+"""
+    stopping_rule_status(::AbstractStoppingRule)::Symbol
 
-function convergence_test(
-    graph::PolicyGraph, log::Vector{Log}, stopping_rule::AbstractStoppingRule)
-    error("You need to overload the function SDDP.convergence_test for the " *
-          "stopping rule (stopping_rule).")
-end
+Return a symbol describing the stopping rule.
+"""
+function stopping_rule_status end
 
-function convergence_test(graph::PolicyGraph,
-                          log::Vector{Log},
+"""
+    convergence_test(model::PolicyGraph, log::Vector{Log}, ::AbstractStoppingRule)::Bool
+
+Return a `Bool` indicating if the algorithm should terminate the training.
+"""
+function convergence_test end
+
+function convergence_test(graph::PolicyGraph, log::Vector{Log},
                           stopping_rules::Vector{AbstractStoppingRule})
     for stopping_rule in stopping_rules
         if convergence_test(graph, log, stopping_rule)

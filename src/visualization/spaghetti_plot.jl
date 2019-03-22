@@ -107,9 +107,7 @@ function save(plt::SpaghettiPlot,
 			  filename::String = joinpath(tempdir(), string(Random.randstring(), ".html"));
 			  open::Bool = true)
 	prep_html(plt, filename)
-	if open
-		launch_file(filename)
-	end
+	open && launch_file(filename)
 	return
 end
 
@@ -135,7 +133,7 @@ function launch_file(filename)
         run(`xdg-open $(filename)`)
 	else
 		error("Unable to show spaghetti plot. Try opening the file " *
-		      "$(filename) manually.")
+			  "$(filename) manually.")
     end
 	return
 end

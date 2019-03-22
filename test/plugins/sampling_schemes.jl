@@ -52,3 +52,46 @@ using SDDP, Test
         end
     end
 end
+
+
+@testset "Historical" begin
+    @test_throws Exception SDDP.Historical([[1, 2], [3, 4]], [0.6, 0.6])
+    @testset "Single trajectory" begin
+        model = SDDP.LinearPolicyGraph(
+                stages = 2, lower_bound = 0.0, direct_mode = false) do node, stage
+            @variable(node, 0 <= x <= 1)
+            SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+                JuMP.set_upper_bound(x, ω)
+            end
+        end
+        scenario, terminated_due_to_cycle = SDDP.sample_scenario(
+            model, SDDP.Historical([(1, 0.1), (2, 0.2), (1, 0.3)])
+        )
+        @test length(scenario) == 3
+        @test !terminated_due_to_cycle
+        @test scenario == [(1, 0.1), (2, 0.2), (1, 0.3)]
+    end
+    @testset "Multiple historical" begin
+        model = SDDP.LinearPolicyGraph(
+                stages = 2, lower_bound = 0.0, direct_mode = false) do node, stage
+            @variable(node, 0 <= x <= 1)
+            SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+                JuMP.set_upper_bound(x, ω)
+            end
+        end
+        scenario_A = [(1, 0.1), (2, 0.2), (1, 0.3)]
+        scenario_B = [(1, 0.4), (2, 0.5)]
+        for i in 1:10
+            scenario, terminated_due_to_cycle = SDDP.sample_scenario(
+                model, SDDP.Historical([scenario_A, scenario_B], [0.2, 0.8])
+            )
+            if length(scenario) == 3
+                @test scenario == scenario_A
+            else
+                @test length(scenario) == 2
+                @test scenario == scenario_B
+            end
+            @test !terminated_due_to_cycle
+        end
+    end
+end

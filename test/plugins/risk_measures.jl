@@ -8,6 +8,7 @@ using SDDP, Test
 using GLPK  # Required for Wasserstein.
 
 @testset "Expectation" begin
+    @test sprint(show, SDDP.Expectation()) == "SDDP.Expectation()"
     risk_adjusted_probability = Vector{Float64}(undef, 5)
     SDDP.adjust_probability(
         SDDP.Expectation(),
@@ -104,6 +105,8 @@ end
 end
 
 @testset "EAV@R" begin
+    @test sprint(show, SDDP.EAVaR(lambda=0.2, beta=0.3)) ==
+        "A convex combination of 0.2 * SDDP.Expectation() + 0.8 * SDDP.AVaR(0.3)"
     @test_throws Exception SDDP.EAVaR(lambda=1.1)
     @test_throws Exception SDDP.EAVaR(lambda=-0.1)
     @test_throws Exception SDDP.EAVaR(beta=1.1)
@@ -163,6 +166,28 @@ end
 end
 
 @testset "ModifiedChiSquared" begin
+    @test sprint(show, SDDP.ModifiedChiSquared(0.1)) == "SDDP.ModifiedChiSquared(0.1)"
+    @testset "Min - R=0.0" begin
+        risk_adjusted_probability = Vector{Float64}(undef, 5)
+        SDDP.adjust_probability(
+            SDDP.ModifiedChiSquared(0.0),
+            risk_adjusted_probability,
+            fill(0.2, 5),
+            [:a, :b, :c, :d, :e],
+            [-2.0, -1.0, -3.0, -4.0, -5.0],
+            true)
+        @test risk_adjusted_probability ≈ [0.2, 0.2, 0.2, 0.2, 0.2] atol=1e-6
+    end
+    @testset "Non-uniform distribution" begin
+        risk_adjusted_probability = Vector{Float64}(undef, 5)
+        @test_throws Exception SDDP.adjust_probability(
+            SDDP.ModifiedChiSquared(0.1),
+            risk_adjusted_probability,
+            [0.1, 0.2, 0.3, 0.2, 0.2],
+            [:a, :b, :c, :d, :e],
+            [-2.0, -1.0, -3.0, -4.0, -5.0],
+            true)
+    end
     @testset "Min - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         SDDP.adjust_probability(
@@ -230,6 +255,7 @@ end
             return abs(x - y)
         end
     end
+    @test sprint(show, default_wasserstein(0.1)) == "SDDP.Wasserstein"
     @test_throws Exception default_wasserstein(-1.0)
     @testset ":Max Worst case" begin
         risk_adjusted_probability = Vector{Float64}(undef, 4)
