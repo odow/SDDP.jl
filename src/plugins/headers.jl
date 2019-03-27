@@ -11,7 +11,7 @@
 The abstract type for the risk measure interface.
 
 You need to define the following methods:
- - SDDP.adjust_probability
+ - [`SDDP.adjust_probability`](@ref)
 """
 abstract type AbstractRiskMeasure end
 
@@ -33,7 +33,7 @@ function adjust_probability end
 The abstract type for the sampling-scheme interface.
 
 You need to define the following methods:
- - SDDP.sample_scenario
+ - [`SDDP.sample_scenario`](@ref)
 """
 abstract type AbstractSamplingScheme end
 
@@ -60,9 +60,9 @@ function sample_scenario end
 The abstract type for the Bellman function interface.
 
 You need to define the following methods:
- - SDDP.initialize_bellman_function
- - SDDP.refine_bellman_function
- - SDDP.bellman_term
+ - [`SDDP.initialize_bellman_function`](@ref)
+ - [`SDDP.refine_bellman_function`](@ref)
+ - [`SDDP.bellman_term`](@ref)
 """
 abstract type AbstractBellmanFunction end
 
@@ -105,8 +105,8 @@ function bellman_term end
 The abstract type for the stopping-rule interface.
 
 You need to define the following methods:
- - SDDP.stopping_rule_status
- - SDDP.convergence_test
+ - [`SDDP.stopping_rule_status`](@ref)
+ - [`SDDP.convergence_test`](@ref)
 """
 abstract type AbstractStoppingRule end
 

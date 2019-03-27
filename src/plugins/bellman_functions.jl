@@ -16,7 +16,7 @@ mutable struct SampledState
     best_objective::Float64
 end
 
-struct LevelOneOracle
+mutable struct LevelOneOracle
     cuts::Vector{Cut}
     states::Vector{SampledState}
     cuts_to_be_deleted::Vector{Cut}

@@ -557,22 +557,40 @@ end
 """
     SDDP.train(model::PolicyGraph; kwargs...)
 
-Train the policy of the model. Keyword arguments are
- - iteration_limit: number of iterations to conduct before termination
- - time_limit: number of seconds to train before termination
- - print_level: control the level of printing to the screen
- - log_file: filepath at which to write a log of the training progress
+Train the policy for `model`. Keyword arguments:
+
+ - `iteration_limit::Int`: number of iterations to conduct before termination
+
+ - `time_limit::Float64`: number of seconds to train before termination
+
+ - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)
+
+ - `print_level`: control the level of printing to the screen
+
+ - `log_file`: filepath at which to write a log of the training progress
+
  - run_numerical_stability_report: generate a numerical stability report prior
    to solve
- - risk_measure
- - stoping_rules
- - sampling_scheme: a sampling scheme to use on the forward pass of the
+
+ - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
+    same children, it can cheaply add a cut discovered at one to the other. In
+    almost all cases this should be set to `true`.
+
+ - `cut_deletion_minimum::Int`: the minimum number of cuts to cache before
+    deleting  cuts from the subproblem. This is solver specific; however,
+    smaller values  result in smaller subproblems, at the expense of more time
+    spent performing cut selection.
+
+ - `risk_measure`: the risk measure to use at each node.
+
+ - `sampling_scheme`: a sampling scheme to use on the forward pass of the
    algorithm. Defaults to InSampleMonteCarlo().
- - refine_at_similar_nodes
 
 There is also a special option for infinite horizon problems
+
  - cycle_discretization_delta: the maximum distance between states allowed on
-   the forward pass.
+   the forward pass. This is for advanced users only and needs to be used in
+   conjunction with a different `sampling_scheme`.
 """
 function train(model::PolicyGraph;
                iteration_limit = nothing,
@@ -585,7 +603,8 @@ function train(model::PolicyGraph;
                sampling_scheme = SDDP.InSampleMonteCarlo(),
                cut_type = SDDP.AVERAGE_CUT,
                cycle_discretization_delta = 0.0,
-               refine_at_similar_nodes = true
+               refine_at_similar_nodes = true,
+               cut_deletion_minimum = 1
                )
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
@@ -631,9 +650,17 @@ function train(model::PolicyGraph;
         cycle_discretization_delta,
         refine_at_similar_nodes
     )
-    # Update the nodes with the selected cut type (AVERAGE_CUT or MULTI_CUT).
+    # Update the nodes with the selected cut type (AVERAGE_CUT or MULTI_CUT)
+    # and the cut deletion minimum.
+    if cut_deletion_minimum < 0
+        cut_deletion_minimum = typemax(Int)
+    end
     for (key, node) in model.nodes
         node.bellman_function.cut_type = cut_type
+        node.bellman_function.global_theta.cut_oracle.deletion_minimum = cut_deletion_minimum
+        for oracle in node.bellman_function.local_thetas
+            oracle.cut_oracle.deletion_minimum = cut_deletion_minimum
+        end
     end
     # The default status. This should never be seen by the user.
     status = :not_solved
