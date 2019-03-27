@@ -32,6 +32,28 @@ SDDP.write_cuts_to_file
 SDDP.read_cuts_from_file
 ```
 
+### Stopping rules
+
+```@docs
+SDDP.AbstractStoppingRule
+SDDP.stopping_rule_status
+SDDP.convergence_test
+```
+
+### Sampling schemes
+
+```@docs
+SDDP.AbstractSamplingScheme
+SDDP.sample_scenario
+```
+
+### Sampling schemes
+
+```@docs
+SDDP.AbstractRiskMeasure
+SDDP.adjust_probability
+```
+
 ## Simulating the policy
 
 ```@docs
