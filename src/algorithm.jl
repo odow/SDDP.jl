@@ -181,7 +181,7 @@ end
 
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
-function set_objective(model::PolicyGraph{T}, node::Node{T}) where T
+function set_objective(node::Node{T}) where T
     objective_state_component = get_objective_state_component(node)
     if objective_state_component != JuMP.AffExpr(0.0)
         node.stage_objective_set = false
@@ -189,7 +189,7 @@ function set_objective(model::PolicyGraph{T}, node::Node{T}) where T
     if !node.stage_objective_set
         JuMP.set_objective(
             node.subproblem,
-            model.objective_sense,
+            JuMP.objective_sense(node.subproblem),
             node.stage_objective + objective_state_component +
                 bellman_term(node.bellman_function)
         )
@@ -202,13 +202,37 @@ end
 stage_objective_value(stage_objective::Real) = stage_objective
 stage_objective_value(stage_objective) = JuMP.value(stage_objective)
 
-function write_to_file(subproblem::JuMP.Model, filename::String)
-    mps = MathOptFormat.MPS.Model()
-    MOI.copy_to(mps, JuMP.backend(subproblem))
-    MOI.write_to_file(mps, filename * ".mps")
-    lp = MathOptFormat.LP.Model()
-    MOI.copy_to(lp, JuMP.backend(subproblem))
-    MOI.write_to_file(lp, filename * ".lp")
+"""
+    write_subproblem_to_file(node::Node, filename::String; format=:both)
+
+Write the subproblem contained in `node` to the file `filename`.
+
+`format` should be one of `:mps`, `:lp`, or `:both`.
+"""
+function write_subproblem_to_file(node::Node, filename::String; format::Symbol=:both)
+    if format ∉ (:mps, :lp, :both)
+        error("Invalid `format=$(format)`. Must be `:mps`, `:lp`, or `:both`.")
+    end
+    if format == :mps || format == :both
+        mps = MathOptFormat.MPS.Model()
+        MOI.copy_to(mps, JuMP.backend(node.subproblem))
+        MOI.write_to_file(mps, filename * ".mps")
+    end
+    if format == :lp || format == :both
+        lp = MathOptFormat.LP.Model()
+        MOI.copy_to(lp, JuMP.backend(node.subproblem))
+        MOI.write_to_file(lp, filename * ".lp")
+    end
+end
+
+"""
+    parameterize(node::Node, noise)
+
+Parameterize node `node` with the noise `noise`.
+"""
+function parameterize(node::Node, noise)
+    node.parameterize(noise)
+    set_objective(node)
     return
 end
 
@@ -226,13 +250,12 @@ function solve_subproblem(model::PolicyGraph{T},
     # set the objective. Note that we set the objective every time incase
     # the user calls set_stage_objective in the parameterize function.
     set_incoming_state(node, state)
-    node.parameterize(noise)
-    set_objective(model, node)
+    parameterize(node, noise)
     JuMP.optimize!(node.subproblem)
     # Test for primal feasibility.
     primal_status = JuMP.primal_status(node.subproblem)
     if primal_status != JuMP.MOI.FEASIBLE_POINT
-        write_to_file(node.subproblem, "subproblem")
+        write_subproblem_to_file(node, "subproblem")
         error("Unable to retrieve primal solution from ", node.index, ".",
               "\n  Termination status: ", JuMP.termination_status(node.subproblem),
               "\n  Primal status:      ", primal_status,
@@ -247,7 +270,7 @@ function solve_subproblem(model::PolicyGraph{T},
     dual_values = if require_duals
         dual_status = JuMP.dual_status(node.subproblem)
         if dual_status != JuMP.MOI.FEASIBLE_POINT
-            write_to_file(node.subproblem, "subproblem.mps")
+            write_subproblem_to_file(node, "subproblem.mps")
             error("Unable to retrieve dual solution from ", node.index, ".",
                   "\n  Termination status: ", JuMP.termination_status(node.subproblem),
                   "\n  Primal status:      ", primal_status,
