@@ -8,14 +8,6 @@ DocTestSetup = quote
 end
 ```
 
-## Saving the policy
-
-Once you have finished training the policy, you can write the cuts to file using
-[`SDDP.write_cuts_to_file`](@ref). You can read these cuts into a new model
-using [`SDDP.read_cuts_from_file`](@ref). Note that the model must have the same
-number (and names) of the state variables, as well as the same number and names
-of the nodes.
-
 ## Multi-dimensional state variables
 
 Just like normal JuMP variables, it is possible to create containers of state
@@ -99,6 +91,5 @@ emissions : 0.5 x_out <= 1.0
     `JuMP.set_coefficient` sets the coefficient on the _canonicalized_
     constraint.
 
-This concludes or series of basic introductory tutorials for `SDDP.jl`. When
-you're ready, continue to our intermediate series of tutorials, beginning with
-[Intermediate I: risk](@ref).
+In the next tutorial, [Basic VIII: debugging](@ref) we discuss how to debug
+models built using `SDDP.jl`.

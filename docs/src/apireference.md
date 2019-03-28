@@ -69,3 +69,8 @@ SDDP.SpaghettiPlot
 SDDP.add_spaghetti
 SDDP.publication_plot
 ```
+## Debugging the model
+
+```@docs
+SDDP.write_subproblem_to_file
+```

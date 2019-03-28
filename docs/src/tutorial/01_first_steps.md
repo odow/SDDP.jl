@@ -240,6 +240,14 @@ Terminating training with status: iteration_limit
     For more information on the numerical stability report, read the
     [Numerical stability report](@ref) section.
 
+## Saving the policy
+
+Once you have finished training the policy, you can write the cuts to file using
+[`SDDP.write_cuts_to_file`](@ref). You can read these cuts into a new model
+using [`SDDP.read_cuts_from_file`](@ref). Note that the model must have the same
+number (and names) of the state variables, as well as the same number and names
+of the nodes.
+
 ## Simulating the policy
 
 Once you have a trained policy, you can simulate it using
