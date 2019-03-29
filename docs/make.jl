@@ -52,7 +52,8 @@ makedocs(
                 "tutorial/12_stopping_rules.md",
                 "tutorial/13_generic_graphs.md",
                 "tutorial/14_objective_states.md",
-                "tutorial/15_performance.md"
+                "tutorial/15_belief_states.md",
+                "tutorial/16_performance.md"
             ]
         ],
         "Reference" => "apireference.md"

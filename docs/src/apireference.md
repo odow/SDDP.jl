@@ -6,6 +6,7 @@
 SDDP.Graph
 SDDP.add_node
 SDDP.add_edge
+SDDP.add_ambiguity_set
 SDDP.LinearGraph
 SDDP.MarkovianGraph
 SDDP.LinearPolicyGraph

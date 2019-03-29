@@ -1,9 +1,13 @@
-#  Copyright 2018, Oscar Dowson.
+#  Copyright 2019, Oscar Dowson.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using SDDP, Gurobi, Random, Statistics, Test
+# This file implements the example described in
+#   Dowson, O., Morton, D.P., & Pagnoncelli, B. (2019). Partially observable
+#   multistage stochastic programming.
+
+using SDDP, GPLK, Random, Statistics, Test
 
 const demand_values = [1.0, 2.0]
 
@@ -26,8 +30,8 @@ function build_graph(model_name)
             ]
         )
         if model_name == "hidden"
-            SDDP.add_partition(graph, [:Ad, :Bd])
-            SDDP.add_partition(graph, [:Ah, :Bh])
+            SDDP.add_ambiguity_set(graph, [:Ad, :Bd])
+            SDDP.add_ambiguity_set(graph, [:Ah, :Bh])
         end
         return graph
     elseif model_name == "expected_value"
@@ -46,7 +50,7 @@ function solve_inventory_management_problem(model_name, risk_measure)
     graph = build_graph(model_name)
     model = SDDP.PolicyGraph(graph,
                 lower_bound = 0.0,
-                optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag=0),
+                optimizer = with_optimizer(GLPK.Optimizer),
                 lipschitz_belief = Dict(:Ah => 1e2, :Bh => 1e2, :Ad => 1e2, :Bd => 1e2)
                     ) do subproblem, node
         @variables(subproblem, begin
@@ -67,9 +71,9 @@ function solve_inventory_management_problem(model_name, risk_measure)
     end
     Random.seed!(123)
     SDDP.train(model; risk_measure=risk_measure, iteration_limit=200)
-    simulations = simulate_policy(model, model_name; terminate_on_leaf = false, discount=false)
-    expected_value = simulate_policy(model, model_name; terminate_on_leaf = false, discount=true)
-    return (model=model, simulations=simulations, expected_value=expected_value)
+    simulations = simulate_policy(model, model_name;
+        terminate_on_leaf = false, discount=true)
+    return (model=model, simulations=simulations)
 end
 
 function simulate_policy(model, model_name; terminate_on_leaf::Bool, discount::Bool)
@@ -126,39 +130,6 @@ function simulate_policy(model, model_name; terminate_on_leaf::Bool, discount::B
     return (simulations=simulations, objectives=objectives)
 end
 
-function get_hidden_value_function(hidden)
-    model = hidden[:Ad].subproblem
-    belief = hidden[:Ad].belief_state.belief
-    JuMP.set_upper_bound(model[:buy], 0)
-    B = 0:0.05:1
-    X = 0:0.1:2
-    if JuMP.has_lower_bound(model[:inventory].out)
-        JuMP.delete_lower_bound(model[:inventory].out)
-        JuMP.delete_upper_bound(model[:inventory].out)
-    end
-    Q = zeros(Float64, length(X), length(B))
-    for (j, b) in enumerate(B)
-        for (i, x) in enumerate(X)
-            JuMP.fix(model[:inventory].in, x)
-            JuMP.fix(model[:inventory].out, x)
-            belief[:Ad] = b
-            belief[:Bd] = 1 - b
-            SDDP.set_objective(hidden, hidden[:Ad])
-            JuMP.optimize!(model)
-            Q[i, j] = JuMP.objective_value(model)
-        end
-    end
-    open("value_function.dat", "w") do io
-        for (i, x) in enumerate(X)
-            for (j, b) in enumerate(B)
-                println(io, "$(x) $(b) $(Q[i, j])")
-            end
-            println(io)
-        end
-    end
-    return X, B, Q
-end
-
 function quantile_data(data...)
     return hcat([
         Statistics.quantile(
@@ -171,7 +142,6 @@ function run_paper_analysis()
     visible = solve_inventory_management_problem("visible", SDDP.Expectation())
 
     hidden = solve_inventory_management_problem("hidden", SDDP.Expectation())
-    get_hidden_value_function(hidden.model)
 
     expected_value = solve_inventory_management_problem(
         "expected_value", SDDP.Expectation())
@@ -190,93 +160,9 @@ function run_paper_analysis()
             println(io, join(quantiles[i, :], " "))
         end
     end
-
-    quantiles = quantile_data(
-        visible.expected_value.objectives,
-        hidden.expected_value.objectives,
-        expected_value.expected_value.objectives,
-        risk_averse_expected_value.expected_value.objectives
-    )
-    open("expected_value_quantiles.dat", "w") do io
-        for i in 1:size(quantiles, 1)
-            println(io, join(quantiles[i, :], " "))
-        end
-    end
-
-    open("expected_value_mean.dat", "w") do io
-        println(io, Statistics.mean(visible.expected_value.objectives))
-        println(io, Statistics.mean(hidden.expected_value.objectives))
-        println(io, Statistics.mean(expected_value.expected_value.objectives))
-        println(io, Statistics.mean(risk_averse_expected_value.expected_value.objectives))
-    end
 end
 
 if length(ARGS) > 0
     @assert ARGS[1] == "--run"
     run_paper_analysis()
 end
-
-# simulation = expected_value.simulations.simulations[1]
-# objectives = map(simulation -> begin
-#     y = 0.0
-#     for (i, d) in enumerate(simulation)
-#         if isodd(i)
-#             y += d[:buy]
-#         else
-#             y += 2 * d[:buy]
-#             y += d[:inventory].out
-#         end
-#     end
-#     return y
-# end, expected_value.simulations.simulations)
-#
-# demand = map(simulation -> begin
-#     y = 0.0
-#     for (i, d) in enumerate(simulation)
-#         if !isodd(i)
-#             y += d[:noise_term]
-#         end
-#     end
-#     return y
-# end, expected_value.simulations.simulations)
-
-objectives = map(simulation -> begin
-    y = 0.0
-    ρ = 1.0
-    for (i, d) in enumerate(simulation)
-        if isodd(i)
-            y += ρ * d[:buy]
-        else
-            y += ρ * 2 * d[:buy]
-            y += ρ * d[:inventory].out
-            ρ *= 1.0  # 0.9
-        end
-    end
-    return y
-end, risk_averse_expected_value.expected_value.simulations)
-
-X = map(
-    simulation -> map(d -> d[:inventory].out, simulation),
-    risk_averse_expected_value.expected_value.simulations
-)
-function foo(X)
-    return extrema(map(simulation -> begin
-        y = 0.0
-        for (i, d) in enumerate(simulation)
-            if !isodd(i)
-                y += d[:noise_term]
-            end
-        end
-        return y
-    end, X))
-end
-
-#
-plt =SDDP.SpaghettiPlot(risk_averse_expected_value.simulations.simulations[1:2])
-SDDP.add_spaghetti(plt) do data
-    data[:inventory].out
-end
-SDDP.add_spaghetti(plt) do data
-    data[:noise_term] === nothing ? 0.0 : data[:noise_term]
-end
-SDDP.save(plt)

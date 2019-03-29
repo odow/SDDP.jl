@@ -102,8 +102,8 @@ using SDDP, Test, GLPK
             graph = SDDP.Graph(:root)
             SDDP.add_node(graph, :x)
             SDDP.add_node(graph, :y)
-            SDDP.add_partition(graph, [:x])
-            SDDP.add_partition(graph, [:y])
+            SDDP.add_ambiguity_set(graph, [:x])
+            SDDP.add_ambiguity_set(graph, [:y])
             @test graph.belief_partition == [ [:x], [:y] ]
 
             graph = SDDP.Graph(:root, [:x, :y], [
@@ -113,6 +113,23 @@ using SDDP, Test, GLPK
                 belief_partition = [ [:x, :y] ]
             )
             @test graph.belief_partition == [ [:x, :y] ]
+            @test sprint(show, graph) == join([
+                "Root",
+                " root",
+                "Nodes",
+                " x",
+                " y",
+                "Arcs",
+                " root => x w.p. 0.5",
+                " root => y w.p. 0.5",
+                "Partition",
+                " {",
+                "    x",
+                "    y",
+                " }\n"
+            ], "\n")
+
+
 
             graph = SDDP.Graph(:root, [:x, :y], [
                 (:root => :x, 0.5),
@@ -120,6 +137,7 @@ using SDDP, Test, GLPK
                 ]
             )
             @test length(graph.belief_partition) == 0
+
         end
     end
 end

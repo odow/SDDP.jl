@@ -20,8 +20,8 @@ function inventory_management_problem()
             (:Bd => :Bh, 1.0), (:Bh => :Bd, 0.9)
         ]
     )
-    SDDP.add_partition(graph, [:Ad, :Bd])
-    SDDP.add_partition(graph, [:Ah, :Bh])
+    SDDP.add_ambiguity_set(graph, [:Ad, :Bd])
+    SDDP.add_ambiguity_set(graph, [:Ah, :Bh])
 
     model = SDDP.PolicyGraph(graph,
                 lower_bound = 0.0,

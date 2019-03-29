@@ -33,6 +33,7 @@ end
 # in the dictionary.
 sort_nodes(nodes::Vector{Int}) = sort!(nodes)
 sort_nodes(nodes::Vector{Tuple{Int, Int}}) = sort!(nodes)
+sort_nodes(nodes::Vector{Symbol}) = sort!(nodes)
 sort_nodes(nodes) = nodes
 
 function Base.show(io::IO, graph::Graph)
@@ -40,12 +41,27 @@ function Base.show(io::IO, graph::Graph)
     println(io, " ", graph.root_node)
     println(io, "Nodes")
     nodes = sort_nodes(collect(keys(graph.nodes)))
+    if first(nodes) != graph.root_node
+        splice!(nodes, findfirst(isequal(graph.root_node), nodes))
+        prepend!(nodes, [graph.root_node])
+    end
     println.(Ref(io), " ", filter(n -> n != graph.root_node, nodes))
     println(io, "Arcs")
     for node in nodes
         for (child, probability) in graph.nodes[node]
             println(io, " ", node, " => ", child, " w.p. ", probability)
         end
+    end
+    if length(graph.belief_partition) > 0
+        println(io, "Partition")
+        for element in graph.belief_partition
+            println(io, " {")
+            for node in sort_nodes(element)
+                println(io, "    ", node)
+            end
+            print(io, " }")
+        end
+        println(io)
     end
 end
 
@@ -120,17 +136,17 @@ function add_edge(graph::Graph{T}, edge::Pair{T, T},
 end
 
 """
-    add_partition(graph::Graph{T}, set::Vector{T})
+    add_ambiguity_set(graph::Graph{T}, set::Vector{T})
 
 Add `set` to the belief partition of `graph`.
 
 ### Examples
 
     graph = LinearGraph(3)
-    add_partition(graph, [1, 2])
-    add_partition(graph, [3])
+    add_ambiguity_set(graph, [1, 2])
+    add_ambiguity_set(graph, [3])
 """
-function add_partition(graph::Graph{T}, set::Vector{T}) where T
+function add_ambiguity_set(graph::Graph{T}, set::Vector{T}) where T
     push!(graph.belief_partition, set)
     return
 end
@@ -143,7 +159,7 @@ function Graph(root_node::T, nodes::Vector{T},
     for (edge, probability) in edges
         add_edge(graph, edge, probability)
     end
-    add_partition.(Ref(graph), belief_partition)
+    add_ambiguity_set.(Ref(graph), belief_partition)
     return graph
 end
 
