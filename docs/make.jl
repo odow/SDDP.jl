@@ -23,7 +23,15 @@ makedocs(
     clean = true,
     doctest = FIX_DOCTESTS ? :fix : true,
     # See https://github.com/JuliaDocs/Documenter.jl/issues/868
-    format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
+    format = Documenter.HTML(
+        assets = [
+            "deterministic_linear_policy_graph.png",
+            "publication_plot.png",
+            "spaghetti_plot.html",
+            "stochastic_linear_policy_graph.png",
+            "stochastic_markovian_policy_graph.png"
+        ],
+        prettyurls = get(ENV, "CI", nothing) == "true"),
     strict = true,
     pages = [
         "Home" => "index.md",
@@ -48,13 +56,6 @@ makedocs(
             ]
         ],
         "Reference" => "apireference.md"
-    ],
-    assets = [
-        "deterministic_linear_policy_graph.png",
-        "publication_plot.png",
-        "spaghetti_plot.html",
-        "stochastic_linear_policy_graph.png",
-        "stochastic_markovian_policy_graph.png"
     ],
     doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"]
 )

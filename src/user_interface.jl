@@ -11,21 +11,21 @@ struct Graph{T}
     nodes::Dict{T, Vector{Tuple{T, Float64}}}
     # A partition of the nodes into ambiguity sets.
     belief_partition::Vector{Vector{T}}
+end
 
-    """
-        Graph(root_node::T) where T
+"""
+    Graph(root_node::T) where T
 
-    Create an empty graph struture with the root node `root_node`.
-    """
-    function Graph(root_node::T) where T
-        return new{T}(
-            root_node,
-            Dict{T, Vector{Tuple{T, Float64}}}(
-                root_node => Tuple{T, Float64}[]
-            ),
-            Vector{T}[]
-        )
-    end
+Create an empty graph struture with the root node `root_node`.
+"""
+function Graph(root_node::T) where T
+    return Graph{T}(
+        root_node,
+        Dict{T, Vector{Tuple{T, Float64}}}(
+            root_node => Tuple{T, Float64}[]
+        ),
+        Vector{T}[]
+    )
 end
 
 # Helper utilities to sort the nodes for printing. This helps linear and
