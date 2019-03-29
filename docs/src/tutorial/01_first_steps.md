@@ -273,7 +273,7 @@ simulations[replication][stage]
 
 # output
 
-Dict{Symbol,Any} with 9 entries:
+Dict{Symbol,Any} with 10 entries:
   :volume             => State{Float64}(200.0, 150.0)
   :hydro_spill        => 0.0
   :bellman_term       => 0.0
@@ -283,6 +283,7 @@ Dict{Symbol,Any} with 9 entries:
   :objective_state    => nothing
   :thermal_generation => 100.0
   :hydro_generation   => 50.0
+  :belief             => Dict(2=>1.0)
 ```
 
 Ignore many of the entries for now. They will be relevant later. Of interest is

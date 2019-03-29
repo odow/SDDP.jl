@@ -11,7 +11,7 @@ const SDDP_TIMER = TimerOutputs.TimerOutput()
 # risk_measure = (node_index) -> node_index == 1 ? Expectation() : WorstCase()
 # It will return a dictionary with a key for each node_index in the policy
 # graph, and a corresponding value of whatever the user provided.
-function to_nodal_form(model::PolicyGraph{T}, element) where T
+function to_nodal_form(model::PolicyGraph{T}, element) where {T}
     # Note: we don't copy element here, so it element is mutable, you should use
     # to_nodal_form(model, x -> new_element()) instead. A good example is
     # Vector{T}; use to_nodal_form(model, i -> T[]).
@@ -22,9 +22,9 @@ function to_nodal_form(model::PolicyGraph{T}, element) where T
     return store
 end
 
-function to_nodal_form(graph::PolicyGraph{T}, builder::Function) where {T}
+function to_nodal_form(model::PolicyGraph{T}, builder::Function) where {T}
     store = Dict{T, Any}()
-    for node_index in keys(graph.nodes)
+    for node_index in keys(model.nodes)
         store[node_index] = builder(node_index)
     end
     V = typeof(first(values(store)))
@@ -34,8 +34,8 @@ function to_nodal_form(graph::PolicyGraph{T}, builder::Function) where {T}
     return Dict{T, V}(key => val for (key, val) in store)
 end
 
-function to_nodal_form(graph::PolicyGraph{T}, dict::Dict{T, V}) where {T, V}
-    for key in keys(graph.nodes)
+function to_nodal_form(model::PolicyGraph{T}, dict::Dict{T, V}) where {T, V}
+    for key in keys(model.nodes)
         if !haskey(dict, key)
             error("Missing key: $(key).")
         end
@@ -50,7 +50,7 @@ end
 #
 # TODO(odow): this is inefficient as it is O(n²) in the number of nodes, but
 # it's just a one-off hit so let's optimize later.
-function get_same_children(model::PolicyGraph{T}) where T
+function get_same_children(model::PolicyGraph{T}) where {T}
     same_children = Dict{T, Vector{T}}()
     # For each node in the model
     for (node_index_1, node_1) in model.nodes
@@ -75,16 +75,6 @@ function get_same_children(model::PolicyGraph{T}) where T
     return same_children
 end
 
-function build_Φ(model::PolicyGraph{T}) where T
-    Φ = Dict{Tuple{T, T}, Float64}()
-    for (node_index_1, node_1) in model.nodes
-        for child in node_1.children
-            Φ[(node_index_1, child.term)] = child.probability
-        end
-    end
-    return Φ
-end
-
 # Internal struct: storage for SDDP options and cached data. Users shouldn't
 # interact with this directly.
 struct Options{T}
@@ -107,7 +97,7 @@ struct Options{T}
     # A list of nodes that contain a subset of the children of node i.
     similar_children::Dict{T, Vector{T}}
     # Internal function: users should never construct this themselves.
-    function Options(policy_graph::PolicyGraph{T},
+    function Options(model::PolicyGraph{T},
                      initial_state::Dict{Symbol, Float64},
                      sampling_scheme::AbstractSamplingScheme,
                      risk_measures,
@@ -116,12 +106,12 @@ struct Options{T}
         return new{T}(
             initial_state,
             sampling_scheme,
-            to_nodal_form(policy_graph, x -> Dict{Symbol, Float64}[]),
-            to_nodal_form(policy_graph, risk_measures),
+            to_nodal_form(model, x -> Dict{Symbol, Float64}[]),
+            to_nodal_form(model, risk_measures),
             cycle_discretization_delta,
             refine_at_similar_nodes,
-            build_Φ(policy_graph),
-            get_same_children(policy_graph)
+            build_Φ(model),
+            get_same_children(model)
         )
     end
 end
@@ -183,7 +173,9 @@ end
 # cost/value-to-go term.
 function set_objective(node::Node{T}) where T
     objective_state_component = get_objective_state_component(node)
-    if objective_state_component != JuMP.AffExpr(0.0)
+    belief_state_component = get_belief_state_component(node)
+    if objective_state_component != JuMP.AffExpr(0.0) ||
+            belief_state_component != JuMP.AffExpr(0.0)
         node.stage_objective_set = false
     end
     if !node.stage_objective_set
@@ -191,10 +183,11 @@ function set_objective(node::Node{T}) where T
             node.subproblem,
             JuMP.objective_sense(node.subproblem),
             node.stage_objective + objective_state_component +
-                bellman_term(node.bellman_function)
+                belief_state_component + bellman_term(node.bellman_function)
         )
     end
     node.stage_objective_set = true
+    return
 end
 
 # Internal function: overload for the case where JuMP.value fails on a
@@ -244,11 +237,10 @@ function solve_subproblem(model::PolicyGraph{T},
                           node::Node{T},
                           state::Dict{Symbol, Float64},
                           noise,
-                          require_duals::Bool = true) where T
+                          require_duals::Bool = true) where {T}
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
-    # set the objective. Note that we set the objective every time incase
-    # the user calls set_stage_objective in the parameterize function.
+    # set the objective.
     set_incoming_state(node, state)
     parameterize(node, noise)
     JuMP.optimize!(node.subproblem)
@@ -310,9 +302,16 @@ function update_objective_state(obj_state, current_state, noise)
     return obj_state.state
 end
 
+# Internal function: calculate the initial belief state.
+function initialize_belief(model::PolicyGraph{T}) where {T}
+    current_belief = Dict{T, Float64}(keys(model.nodes) .=> 0.0)
+    current_belief[model.root_node] = 1.0
+    return current_belief
+end
+
 # Internal function: perform a single forward pass of the SDDP algorithm given
 # options.
-function forward_pass(model::PolicyGraph{T}, options::Options) where T
+function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
     TimerOutputs.@timeit SDDP_TIMER "sample_scenario" begin
@@ -321,6 +320,9 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where T
     end
     # Storage for the list of outgoing states that we visit on the forward pass.
     sampled_states = Dict{Symbol, Float64}[]
+    # Storage for the belief states: partition index and the belief dictionary.
+    belief_states = Tuple{Int, Dict{T, Float64}}[]
+    current_belief = initialize_belief(model)
     # Our initial incoming state.
     incoming_state_value = copy(options.initial_state)
     # A cumulator for the stage-objectives.
@@ -337,6 +339,14 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where T
             node.objective_state, objective_state_vector, noise)
         if objective_state_vector !== nothing
             push!(objective_states, objective_state_vector)
+        end
+        # Update belief state, etc.
+        if node.belief_state !== nothing
+            belief = node.belief_state::BeliefState{T}
+            partition_index = belief.partition_index
+            current_belief = belief.updater(
+                belief.belief, current_belief, partition_index, noise)
+            push!(belief_states, (partition_index, copy(current_belief)))
         end
         # ===== Begin: starting state for infinite horizon =====
         starting_states = options.starting_states[node_index]
@@ -392,7 +402,12 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where T
         end
     end
     # ===== End: drop off starting state if terminated due to cycle =====
-    return scenario_path, sampled_states, objective_states, cumulative_value
+    return (
+        scenario_path = scenario_path,
+        sampled_states = sampled_states,
+        objective_states = objective_states,
+        belief_states = belief_states,
+        cumulative_value = cumulative_value)
 end
 
 # Internal function: calculate the minimum distance between the state `state`
@@ -427,7 +442,24 @@ function backward_pass(model::PolicyGraph{T},
                        options::Options,
                        scenario_path::Vector{Tuple{T, NoiseType}},
                        sampled_states::Vector{Dict{Symbol, Float64}},
-                       objective_states::Vector{NTuple{N, Float64}}
+                       objective_states::Vector{NTuple{N, Float64}},
+                       belief_states::Vector{Tuple{Int, Dict{T, Float64}}}
+                           ) where {T, NoiseType, N}
+    if length(belief_states) > 0
+        backward_pass_with_belief(model, options, scenario_path, sampled_states,
+                                  objective_states, belief_states)
+    else
+        backward_pass_no_belief(model, options, scenario_path, sampled_states,
+                                objective_states)
+    end
+end
+
+function backward_pass_no_belief(
+        model::PolicyGraph{T},
+        options::Options,
+        scenario_path::Vector{Tuple{T, NoiseType}},
+        sampled_states::Vector{Dict{Symbol, Float64}},
+        objective_states::Vector{NTuple{N, Float64}}
                            ) where {T, NoiseType, N}
     for index in length(scenario_path):-1:1
         # Lookup node, noise realization, and outgoing state variables.
@@ -515,6 +547,102 @@ function backward_pass(model::PolicyGraph{T},
     end
 end
 
+function backward_pass_with_belief(
+        model::PolicyGraph{T},
+        options::Options,
+        scenario_path::Vector{Tuple{T, NoiseType}},
+        sampled_states::Vector{Dict{Symbol, Float64}},
+        objective_states::Vector{NTuple{N, Float64}},
+        belief_states::Vector{Tuple{Int, Dict{T, Float64}}}
+            ) where {T, NoiseType, N}
+    for index in length(scenario_path):-1:1
+        outgoing_state = sampled_states[index]
+        # We cache the (parent, child, noise) indices for the following vectors
+        # so that if we ever have to re-solve, we can look up the solution
+        # instead of solving another LP.
+        solution_indices = Dict{Tuple{T, Any}, Int}()
+        dual_variables = Dict{Symbol, Float64}[]
+        noise_supports = Noise[]
+        child_indices = T[]
+        original_probability = Float64[]
+        objective_realizations = Float64[]
+        belief_probability = Float64[]
+        #
+        partition_index, belief_state = belief_states[index]
+        for (node_index, belief) in belief_state
+            if belief > 0.0
+                node = model[node_index]
+                if length(node.children) == 0
+                    continue
+                end
+                # Solve all children.
+                for child in node.children
+                    child_node = model[child.term]
+                    for noise in child_node.noise_terms
+                        if haskey(solution_indices, (child.term, noise.term))
+                            sol_index = solution_indices[(child.term, noise.term)]
+                            push!(dual_variables, dual_variables[sol_index])
+                            push!(noise_supports, noise_supports[sol_index])
+                            push!(child_indices, child_node.index)
+                            push!(original_probability, original_probability[sol_index])
+                            push!(belief_probability, belief)
+                            push!(objective_realizations, objective_realizations[sol_index])
+                        else
+                            # Update belief state, etc.
+                            if child_node.belief_state !== nothing
+                                current_belief = child_node.belief_state::BeliefState{T}
+                                new_partition_index = current_belief.partition_index
+                                current_belief.updater(
+                                    current_belief.belief,
+                                    belief_state,
+                                    new_partition_index,
+                                    noise.term)
+                            end
+                            TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
+                                (new_outgoing_state, duals, stage_objective, obj) =
+                                    solve_subproblem(model, child_node,
+                                                     outgoing_state, noise.term)
+                            end
+                            push!(dual_variables, duals)
+                            push!(noise_supports, noise)
+                            push!(child_indices, child_node.index)
+                            push!(original_probability,
+                                child.probability * noise.probability
+                            )
+                            push!(belief_probability, belief)
+                            push!(objective_realizations, obj)
+                            solution_indices[(child.term, noise.term)] =
+                                length(dual_variables)
+                        end
+                    end
+                end
+            end
+        end
+        # We need to refine our estimate at all nodes in the partition.
+        for node_index in model.belief_partition[partition_index]
+            node = model[node_index]
+            # Update belief state, etc.
+            if node.belief_state !== nothing
+                current_belief = node.belief_state::BeliefState{T}
+                for (idx, belief) in belief_state
+                    current_belief.belief[idx] = belief
+                end
+            end
+            refine_bellman_function(
+                model,
+                node,
+                node.bellman_function,
+                options.risk_measures[node_index],
+                outgoing_state,
+                dual_variables,
+                noise_supports,
+                original_probability .* belief_probability,
+                objective_realizations
+            )
+        end
+    end
+end
+
 """
     SDDP.calculate_bound(model::PolicyGraph, state::Dict{Symbol, Float64},
                            risk_measure=Expectation())
@@ -523,14 +651,16 @@ Calculate the lower bound (if minimizing, otherwise upper bound) of the problem
 model at the point state, assuming the risk measure at the root node is
 risk_measure.
 """
-function calculate_bound(model::PolicyGraph,
+function calculate_bound(model::PolicyGraph{T},
                          root_state::Dict{Symbol, Float64} =
                             model.initial_root_state;
-                         risk_measure = Expectation())
+                         risk_measure = Expectation()) where {T}
     # Initialization.
     noise_supports = Any[]
     probabilities = Float64[]
     objectives = Float64[]
+    current_belief = initialize_belief(model)
+
     # Solve all problems that are children of the root node.
     for child in model.root_children
         node = model[child.term]
@@ -538,6 +668,13 @@ function calculate_bound(model::PolicyGraph,
             if node.objective_state !== nothing
                 update_objective_state(node.objective_state,
                     node.objective_state.initial_value, noise.term)
+            end
+            # Update belief state, etc.
+            if node.belief_state !== nothing
+                belief = node.belief_state::BeliefState{T}
+                partition_index = belief.partition_index
+                belief.updater(
+                    belief.belief, current_belief, partition_index, noise.term)
             end
             (outgoing_state, duals, stage_objective, obj) =
                 solve_subproblem(model, node, root_state, noise.term)
@@ -619,7 +756,7 @@ function train(model::PolicyGraph;
                iteration_limit = nothing,
                time_limit = nothing,
                print_level = 1,
-               log_file = "kokako.log",
+               log_file = "SDDP.log",
                run_numerical_stability_report::Bool = true,
                stopping_rules = AbstractStoppingRule[],
                risk_measure = SDDP.Expectation(),
@@ -694,18 +831,24 @@ function train(model::PolicyGraph;
         has_converged = false
         while !has_converged
             TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
-                scenario_path, sampled_states, objective_states,
-                    cumulative_value = forward_pass(model, options)
+                forward_trajectory = forward_pass(model, options)
             end
             TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
-                backward_pass(model, options, scenario_path, sampled_states,
-                              objective_states)
+                backward_pass(
+                    model, options, forward_trajectory.scenario_path,
+                    forward_trajectory.sampled_states,
+                    forward_trajectory.objective_states,
+                    forward_trajectory.belief_states)
             end
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
                 bound = calculate_bound(model)
             end
-            push!(log, Log(iteration_count, bound, cumulative_value,
-                time() - start_time)
+            push!(
+                log,
+                Log(
+                    iteration_count, bound, forward_trajectory.cumulative_value,
+                    time() - start_time
+                )
             )
             has_converged, status = convergence_test(model, log, stopping_rules)
             if print_level > 0
@@ -730,6 +873,10 @@ function train(model::PolicyGraph;
         if print_level > 1
             TimerOutputs.print_timer(stdout, SDDP_TIMER)
             TimerOutputs.print_timer(log_file_handle, SDDP_TIMER)
+            # Annoyingly, TimerOutputs doesn't end the print section with `\n`,
+            # so we do it here.
+            println(stdout)
+            println(log_file_handle)
         end
     end
     close(log_file_handle)
@@ -738,11 +885,11 @@ end
 
 # Internal function: helper to conduct a single simulation. Users should use the
 # documented, user-facing function SDDP.simulate instead.
-function _simulate(model::PolicyGraph,
+function _simulate(model::PolicyGraph{T},
                    variables::Vector{Symbol} = Symbol[];
                    sampling_scheme::AbstractSamplingScheme =
                        InSampleMonteCarlo(),
-                   custom_recorders = Dict{Symbol, Function}())
+                   custom_recorders = Dict{Symbol, Function}()) where {T}
     # Sample a scenario path.
     scenario_path, terminated_due_to_cycle = sample_scenario(
         model, sampling_scheme
@@ -751,6 +898,7 @@ function _simulate(model::PolicyGraph,
     simulation = Dict{Symbol, Any}[]
     # The incoming state values.
     incoming_state = copy(model.initial_root_state)
+    current_belief = initialize_belief(model)
     # A cumulator for the stage-objectives.
     cumulative_value = 0.0
 
@@ -766,6 +914,14 @@ function _simulate(model::PolicyGraph,
         if objective_state_vector !== nothing
             push!(objective_states, objective_state_vector)
         end
+        if node.belief_state !== nothing
+            belief = node.belief_state::BeliefState{T}
+            partition_index = belief.partition_index
+            current_belief = belief.updater(
+                belief.belief, current_belief, partition_index, noise)
+        else
+            current_belief = Dict(node_index => 1.0)
+        end
         # Solve the subproblem.
         outgoing_state, duals, stage_objective, objective = solve_subproblem(
             model, node, incoming_state, noise)
@@ -777,7 +933,8 @@ function _simulate(model::PolicyGraph,
             :noise_term => noise,
             :stage_objective => stage_objective,
             :bellman_term => objective - stage_objective,
-            :objective_state => objective_state_vector
+            :objective_state => objective_state_vector,
+            :belief => copy(current_belief)
         )
         if objective_state_vector !== nothing && N == 1
             store[:objective_state] = store[:objective_state][1]
@@ -794,14 +951,14 @@ function _simulate(model::PolicyGraph,
                 # always be the case...
                 store[variable] = JuMP.value.(node.subproblem[variable])
             else
-                error("No variable named $(variable) exists in the subproblem" *
-                     ". If you want to simulate the value of a variable, make" *
-                     " sure it is defined in _all_ subproblems.")
+                error("No variable named $(variable) exists in the subproblem.",
+                      " If you want to simulate the value of a variable, make ",
+                      "sure it is defined in _all_ subproblems.")
             end
         end
         # Loop through any custom recorders that the user provided.
-        for (sym, foo) in custom_recorders
-            store[sym] = foo(node.subproblem)
+        for (sym, recorder) in custom_recorders
+            store[sym] = recorder(node.subproblem)
         end
         # Add the store to our list.
         push!(simulation, store)
@@ -872,6 +1029,5 @@ function simulate(model::PolicyGraph,
                 variables;
                 sampling_scheme = sampling_scheme,
                 custom_recorders = custom_recorders)
-                for i in 1:number_replications
-            ]
+                for i in 1:number_replications]
 end

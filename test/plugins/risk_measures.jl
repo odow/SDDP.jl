@@ -166,7 +166,7 @@ end
 end
 
 @testset "ModifiedChiSquared" begin
-    @test sprint(show, SDDP.ModifiedChiSquared(0.1)) == "SDDP.ModifiedChiSquared(0.1)"
+    @test sprint(show, SDDP.ModifiedChiSquared(0.1)) == "ModifiedChiSquared with radius=0.1"
     @testset "Min - R=0.0" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         SDDP.adjust_probability(

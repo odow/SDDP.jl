@@ -1,4 +1,4 @@
-# Intermediate V: performance
+# Intermediate VI: performance
 
 SDDP is a computationally intensive algorithm. In this tutorial, we give
 suggestions for how the computational performance can be improved.

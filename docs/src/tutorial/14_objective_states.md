@@ -310,5 +310,5 @@ There are number of things to be aware of when using objective states.
     is a problem. If it isn't you'll get a good heuristic with no guarantee of
     global optimality.
 
-In the next tutorial, [Intermediate V: performance](@ref), we discuss how to
-improve the computational performance of `SDDP.jl` models.
+In the next tutorial, [Intermediate V: belief states](@ref), we discuss another
+extension to the SDDP algorithm that exploits a similar saddle function.
