@@ -149,6 +149,12 @@ version = "0.6.0"
 deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
+[[Literate]]
+deps = ["Base64", "JSON", "REPL", "Test"]
+git-tree-sha1 = "9ab90d884e1b229ca8a6beaa7dd0e1c502b253d4"
+uuid = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+version = "1.0.5"
+
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 

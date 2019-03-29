@@ -1,4 +1,9 @@
-using Documenter, SDDP
+using Documenter, SDDP, Literate
+
+# Run the farmer's problem first to precompile a bunch of SDDP.jl functions.
+# This is a little sneaky, but it avoids leaking long (6 sec) compilation times
+# into the examples.
+include(joinpath(@__DIR__, "src", "examples", "the_farmers_problem.jl"))
 
 "Call julia docs/make.jl --fix to rebuild the doctests."
 const FIX_DOCTESTS = length(ARGS) == 1 && ARGS[1] == "--fix"
@@ -16,6 +21,15 @@ function convert_line_endings()
     end
 end
 FIX_DOCTESTS && convert_line_endings()
+
+const EXAMPLES = Any[]
+for file in readdir(joinpath(@__DIR__, "src", "examples"))
+    !endswith(file, ".jl") && continue
+    filename = joinpath(@__DIR__, "src", "examples", file)
+    md_filename = replace(file, ".jl"=>".md")
+    push!(EXAMPLES, "examples/$(md_filename)")
+    Literate.markdown(filename, dirname(filename); documenter=true)
+end
 
 makedocs(
     sitename = "SDDP.jl",
@@ -47,6 +61,7 @@ makedocs(
                 "tutorial/15_performance.md"
             ]
         ],
+        "Examples" => EXAMPLES,
         "Reference" => "apireference.md"
     ],
     assets = [
