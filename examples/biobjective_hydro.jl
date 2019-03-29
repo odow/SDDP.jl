@@ -36,7 +36,7 @@ function biobjective_hydro()
             shortage_cost >= 80 - 4v.out
             objective_2 == shortage_cost
         end)
-        price_noise_terms = (stage == 1) ? [0.05, 0.15, 0.3, 0.7] : [0.0]
+        price_noise_terms = (stage == 1) ? [0.04, 0.12, 0.22, 0.64] : [0.0]
         Ω = [(a = i, λ = j) for i in 0.0:5:50.0 for j in price_noise_terms]
         SDDP.parameterize(subproblem, Ω) do ω
             JuMP.fix(a, ω.a)

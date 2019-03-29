@@ -17,24 +17,23 @@ using SDDP, Test, GLPK
             JuMP.set_upper_bound(x.out, ω)
         end
     end
-    scenario_path, sampled_states, objective_states, cumulative_value =
-        SDDP.forward_pass(
+    forward_trajectory = SDDP.forward_pass(
+        model,
+        SDDP.Options(
             model,
-            SDDP.Options(
-                model,
-                Dict(:x => 1.0),
-                SDDP.InSampleMonteCarlo(),
-                SDDP.Expectation(),
-                0.0,
-                true
-            )
+            Dict(:x => 1.0),
+            SDDP.InSampleMonteCarlo(),
+            SDDP.Expectation(),
+            0.0,
+            true
         )
+    )
     simulated_value = 0.0
-    for ((node_index, noise), state) in zip(scenario_path, sampled_states)
+    for ((node_index, noise), state) in zip(forward_trajectory.scenario_path, forward_trajectory.sampled_states)
         @test state[:x] == noise
         simulated_value += noise
     end
-    @test simulated_value == cumulative_value
+    @test simulated_value == forward_trajectory.cumulative_value
 end
 
 @testset "to nodal forms" begin
@@ -79,9 +78,9 @@ end
         @test all(length.(simulations) .== 2)
 
         simulation = simulations[1][1]
-        @test length(keys(simulation)) == 6
+        @test length(keys(simulation)) == 7
         @test sort(collect(keys(simulation))) ==
-            [:bellman_term, :node_index, :noise_term, :objective_state,
+            [:belief, :bellman_term, :node_index, :noise_term, :objective_state,
             :stage_objective, :x]
         @test typeof(simulation[:x]) == SDDP.State{Float64}
     end
@@ -96,13 +95,6 @@ end
     end
     simulations = SDDP.simulate(model, 1, [:x])
     @test simulations[1][1][:x] == [SDDP.State(2.0, 1.0), SDDP.State(4.0, 2.0)]
-end
-
-function MOI.get(::GLPK.Optimizer, ::MOI.ListOfVariableAttributesSet)
-    return MOI.AbstractVariableAttribute[MOI.VariableName()]
-end
-function MOI.get(::GLPK.Optimizer, ::MOI.ListOfConstraintAttributesSet)
-    return MOI.AbstractConstraintAttribute[MOI.ConstraintName()]
 end
 
 @testset "infeasible model" begin

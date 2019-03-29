@@ -28,6 +28,7 @@ using SDDP, Test, GLPK
             " 0 => 1 w.p. 1.0\n" *
             " 1 => 2 w.p. 1.0\n" *
             " 2 => 3 w.p. 1.0\n"
+        @test length(graph.belief_partition) == 0
     end
 
     @testset "MarkovianGraph" begin
@@ -54,6 +55,8 @@ using SDDP, Test, GLPK
             ])
             @test graph_1.root_node == graph_2.root_node
             @test graph_1.nodes == graph_2.nodes
+            @test length(graph_1.belief_partition) == 0
+            @test length(graph_2.belief_partition) == 0
         end
     end
 
@@ -94,6 +97,47 @@ using SDDP, Test, GLPK
             graph = SDDP.Graph(:root)
             SDDP.add_node(graph, :x)
             @test_throws Exception SDDP.add_edge(graph, :x => :root, 1.0)
+        end
+        @testset "Belief partition" begin
+            graph = SDDP.Graph(:root)
+            SDDP.add_node(graph, :x)
+            SDDP.add_node(graph, :y)
+            SDDP.add_ambiguity_set(graph, [:x])
+            SDDP.add_ambiguity_set(graph, [:y])
+            @test graph.belief_partition == [ [:x], [:y] ]
+
+            graph = SDDP.Graph(:root, [:x, :y], [
+                (:root => :x, 0.5),
+                (:root => :y, 0.5),
+                ],
+                belief_partition = [ [:x, :y] ]
+            )
+            @test graph.belief_partition == [ [:x, :y] ]
+            @test sprint(show, graph) == join([
+                "Root",
+                " root",
+                "Nodes",
+                " x",
+                " y",
+                "Arcs",
+                " root => x w.p. 0.5",
+                " root => y w.p. 0.5",
+                "Partition",
+                " {",
+                "    x",
+                "    y",
+                " }\n"
+            ], "\n")
+
+
+
+            graph = SDDP.Graph(:root, [:x, :y], [
+                (:root => :x, 0.5),
+                (:root => :y, 0.5),
+                ]
+            )
+            @test length(graph.belief_partition) == 0
+
         end
     end
 end
@@ -331,4 +375,50 @@ end
             @stageobjective(subproblem, price * x.out)
         end
     end
+end
+
+@testset "Belief Updater" begin
+    graph = SDDP.LinearGraph(2)
+    SDDP.add_edge(graph, 2 => 1, 0.9)
+    model = SDDP.PolicyGraph(graph,
+                               lower_bound = 0.0,
+                               direct_mode = false) do subproblem, node
+        beliefs = [[0.2, 0.8], [0.7, 0.3]]
+        SDDP.parameterize(subproblem, [:A, :B], beliefs[node]) do ω
+            return nothing
+        end
+    end
+    belief_updater = SDDP.construct_belief_update(model, [Set([1]), Set([2])])
+    belief = Dict(1 => 1.0, 2 => 0.0)
+    belief′ = copy(belief)
+    @test belief_updater(belief′, belief, 2, :A) == Dict(1 => 0.0, 2 => 1.0)
+    @test belief′ == Dict(1 => 0.0, 2 => 1.0)
+    belief = Dict(1 => 0.0, 2 => 1.0)
+    @test belief_updater(belief′, belief, 1, :B) == Dict(1 => 1.0, 2 => 0.0)
+    @test belief′ == Dict(1 => 1.0, 2 => 0.0)
+
+
+    belief_updater = SDDP.construct_belief_update(model, [Set([1, 2])])
+
+    belief = Dict(1 => 1.0, 2 => 0.0)
+    @test belief_updater(belief′, belief, 1, :A) == Dict(1 => 0.0, 2 => 1.0)
+    belief = Dict(1 => 0.0, 2 => 1.0)
+    @test belief_updater(belief′, belief, 1, :B) == Dict(1 => 1.0, 2 => 0.0)
+
+    function is_approx(x::Dict{T, Float64}, y::Dict{T, Float64}) where T
+        if length(x) != length(y)
+            return false
+        end
+        for (key, value) in x
+            if !(value ≈ y[key])
+                return false
+            end
+        end
+        return true
+    end
+    belief = Dict(1 => 0.6, 2 => 0.4)
+    @test is_approx(
+        belief_updater(belief′, belief, 1, :A),
+        Dict(1 => 6 / 41, 2 => 35 / 41)
+    )
 end

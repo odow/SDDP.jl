@@ -295,9 +295,10 @@ function _add_average_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
         end
     end
     # Now add the average-cut to the subproblem. We include the objective-state
-    # component μᵀy.
-    _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state,
-             get_objective_state_component(node))
+    # component μᵀy and the belief state (if it exists).
+    _add_cut(
+        node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state,
+        get_objective_state_component(node) + get_belief_state_component(node))
     return
 end
 
@@ -308,7 +309,7 @@ function _add_multi_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
     N = length(risk_adjusted_probability)
     @assert N == length(objective_realizations) == length(dual_variables)
     bellman_function = node.bellman_function
-    μᵀy = get_objective_state_component(node)
+    μᵀy = get_objective_state_component(node) + get_belief_state_component(node)
     for i in 1:length(dual_variables)
         _add_cut(bellman_function.local_thetas[i], objective_realizations[i],
                  dual_variables[i], outgoing_state, μᵀy)
