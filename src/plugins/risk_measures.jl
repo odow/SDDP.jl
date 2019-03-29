@@ -254,6 +254,10 @@ struct ModifiedChiSquared <: AbstractRiskMeasure
     end
 end
 
+function Base.show(io::IO, measure::ModifiedChiSquared)
+    print(io, "ModifiedChiSquared with radius=$(measure.radius)")
+end
+
 function adjust_probability(measure::ModifiedChiSquared,
                             risk_adjusted_probability::Vector{Float64},
                             original_probability::Vector{Float64},

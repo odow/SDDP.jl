@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using Kokako, Gurobi, Random, Statistics, Test
+using SDDP, Gurobi, Random, Statistics, Test
 
 const demand_values = [1.0, 2.0]
 
@@ -16,7 +16,7 @@ const demand_probs = Dict(
 "Create the policy graph for the problem."
 function build_graph(model_name)
     if model_name == "hidden" || model_name == "visible"
-        graph = Kokako.Graph(
+        graph = SDDP.Graph(
             :root_node,
             [:Ad, :Ah, :Bd, :Bh],
             [
@@ -26,12 +26,12 @@ function build_graph(model_name)
             ]
         )
         if model_name == "hidden"
-            Kokako.add_partition(graph, [:Ad, :Bd])
-            Kokako.add_partition(graph, [:Ah, :Bh])
+            SDDP.add_partition(graph, [:Ad, :Bd])
+            SDDP.add_partition(graph, [:Ah, :Bh])
         end
         return graph
     elseif model_name == "expected_value"
-        graph = Kokako.Graph(
+        graph = SDDP.Graph(
             :root_node,
             [:D, :H],
             [(:root_node => :D, 1.0), (:D => :H, 1.0), (:H => :D, 0.9)]
@@ -44,13 +44,13 @@ end
 
 function solve_inventory_management_problem(model_name, risk_measure)
     graph = build_graph(model_name)
-    model = Kokako.PolicyGraph(graph,
+    model = SDDP.PolicyGraph(graph,
                 lower_bound = 0.0,
                 optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag=0),
                 lipschitz_belief = Dict(:Ah => 1e2, :Bh => 1e2, :Ad => 1e2, :Bd => 1e2)
                     ) do subproblem, node
         @variables(subproblem, begin
-            0 <= inventory <= 2, (Kokako.State, initial_value = 0.0)
+            0 <= inventory <= 2, (SDDP.State, initial_value = 0.0)
             buy >= 0
             demand
         end)
@@ -59,14 +59,14 @@ function solve_inventory_management_problem(model_name, risk_measure)
             JuMP.fix(demand, 0)
             @stageobjective(subproblem, buy)
         else
-            Kokako.parameterize(subproblem, demand_values, demand_probs[node]) do ω
+            SDDP.parameterize(subproblem, demand_values, demand_probs[node]) do ω
                 JuMP.fix(demand, ω)
             end
             @stageobjective(subproblem, 2 * buy + inventory.out)
         end
     end
     Random.seed!(123)
-    Kokako.train(model; risk_measure=risk_measure, iteration_limit=200)
+    SDDP.train(model; risk_measure=risk_measure, iteration_limit=200)
     simulations = simulate_policy(model, model_name; terminate_on_leaf = false, discount=false)
     expected_value = simulate_policy(model, model_name; terminate_on_leaf = false, discount=true)
     return (model=model, simulations=simulations, expected_value=expected_value)
@@ -102,9 +102,9 @@ function simulate_policy(model, model_name; terminate_on_leaf::Bool, discount::B
     end
     simulations = Any[]
     for scenario in scenarios
-        push!(simulations, Kokako.simulate(
+        push!(simulations, SDDP.simulate(
             model, 1, [:inventory, :buy],
-            sampling_scheme = Kokako.Historical(scenario))[1]
+            sampling_scheme = SDDP.Historical(scenario))[1]
         )
     end
     function calculate_objective(simulation)
@@ -143,7 +143,7 @@ function get_hidden_value_function(hidden)
             JuMP.fix(model[:inventory].out, x)
             belief[:Ad] = b
             belief[:Bd] = 1 - b
-            Kokako.set_objective(hidden, hidden[:Ad])
+            SDDP.set_objective(hidden, hidden[:Ad])
             JuMP.optimize!(model)
             Q[i, j] = JuMP.objective_value(model)
         end
@@ -168,16 +168,16 @@ function quantile_data(data...)
 end
 
 function run_paper_analysis()
-    visible = solve_inventory_management_problem("visible", Kokako.Expectation())
+    visible = solve_inventory_management_problem("visible", SDDP.Expectation())
 
-    hidden = solve_inventory_management_problem("hidden", Kokako.Expectation())
+    hidden = solve_inventory_management_problem("hidden", SDDP.Expectation())
     get_hidden_value_function(hidden.model)
 
     expected_value = solve_inventory_management_problem(
-        "expected_value", Kokako.Expectation())
+        "expected_value", SDDP.Expectation())
 
     risk_averse_expected_value = solve_inventory_management_problem(
-        "expected_value", Kokako.ModifiedChiSquared(0.25))
+        "expected_value", SDDP.ModifiedChiSquared(0.25))
 
     quantiles = quantile_data(
         visible.simulations.objectives,
@@ -272,11 +272,11 @@ function foo(X)
 end
 
 #
-plt =Kokako.SpaghettiPlot(risk_averse_expected_value.simulations.simulations[1:2])
-Kokako.add_spaghetti(plt) do data
+plt =SDDP.SpaghettiPlot(risk_averse_expected_value.simulations.simulations[1:2])
+SDDP.add_spaghetti(plt) do data
     data[:inventory].out
 end
-Kokako.add_spaghetti(plt) do data
+SDDP.add_spaghetti(plt) do data
     data[:noise_term] === nothing ? 0.0 : data[:noise_term]
 end
-Kokako.save(plt)
+SDDP.save(plt)

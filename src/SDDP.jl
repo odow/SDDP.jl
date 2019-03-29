@@ -11,8 +11,6 @@ Reexport.@reexport using JuMP
 import JSON, Printf, Random, RecipesBase, TimerOutputs, Statistics
 import MathOptFormat
 
-import MathOptFormat
-
 export @stageobjective
 
 # Modelling interface.

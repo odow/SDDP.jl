@@ -12,6 +12,11 @@ struct Graph{T}
     # A partition of the nodes into ambiguity sets.
     belief_partition::Vector{Vector{T}}
 
+    """
+        Graph(root_node::T) where T
+
+    Create an empty graph struture with the root node `root_node`.
+    """
     function Graph(root_node::T) where T
         return new{T}(
             root_node,
@@ -42,16 +47,6 @@ function Base.show(io::IO, graph::Graph)
             println(io, " ", node, " => ", child, " w.p. ", probability)
         end
     end
-end
-
-"""
-    Graph(root_node::T) where T
-
-Create an empty graph struture with the root node `root_node`.
-"""
-function Graph(root_node::T) where T
-    return Graph(root_node, Dict{T, Vector{Tuple{T, Float64}}}(
-        root_node => Tuple{T, Float64}[]))
 end
 
 # Internal function used to validate the structure of a graph
@@ -344,7 +339,7 @@ end
 
 Create a linear policy graph with `stages` number of stages.
 
-See [`Kokako.PolicyGraph`](@ref) for the other keyword arguments.
+See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
 """
 function LinearPolicyGraph(builder::Function; stages::Int, kwargs...)
     if stages < 1
@@ -360,7 +355,7 @@ end
 Create a Markovian policy graph based on the transition matrices given in
 `transition_matrices`.
 
-See [`Kokako.PolicyGraph`](@ref) for the other keyword arguments.
+See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
 """
 function MarkovianPolicyGraph(builder::Function;
         transition_matrices::Vector{Array{Float64, 2}}, kwargs...)
@@ -378,7 +373,7 @@ end
         lipschitz_belief = Dict{T, Float64}()) where {T}
 
 Construct a policy graph based on the graph structure of `graph`. (See
-[`Kokako.Graph`](@ref) for details.)
+[`SDDP.Graph`](@ref) for details.)
 
 # Example
 
@@ -447,8 +442,8 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             # And for belief states.
             nothing
         )
-        subproblem.ext[:kokako_policy_graph] = policy_graph
-        policy_graph.nodes[node_index] = subproblem.ext[:kokako_node] = node
+        subproblem.ext[:sddp_policy_graph] = policy_graph
+        policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
         JuMP.set_objective_sense(subproblem, policy_graph.objective_sense)
         builder(subproblem, node_index)
         # Add a dummy noise here so that all nodes have at least one noise term.
@@ -542,12 +537,12 @@ end
 
 # Internal function: helper to get the node given a subproblem.
 function get_node(subproblem::JuMP.Model)
-    return subproblem.ext[:kokako_node]::Node
+    return subproblem.ext[:sddp_node]::Node
 end
 
 # Internal functino: helper to get the policy graph given a subproblem.
 function get_policy_graph(subproblem::JuMP.Model)
-    return subproblem.ext[:kokako_policy_graph]::PolicyGraph
+    return subproblem.ext[:sddp_policy_graph]::PolicyGraph
 end
 
 """
@@ -782,7 +777,7 @@ end
 
 Return the current objective state of the problem.
 
-Can only be called from [`Kokako.parameterize`](@ref).
+Can only be called from [`SDDP.parameterize`](@ref).
 """
 function objective_state(subproblem::JuMP.Model)
     objective_state = get_node(subproblem).objective_state
@@ -842,7 +837,7 @@ the probability of being in node i given the observation of ω. In addition
  - P(Y) = ∑ᵢ P(Xᵢ′) × P(ω ∈ Ωᵢ)
 """
 function construct_belief_update(
-        graph::Kokako.PolicyGraph{T}, partition::Vector{Set{T}}) where {T}
+        graph::SDDP.PolicyGraph{T}, partition::Vector{Set{T}}) where {T}
     # TODO: check that partition is proper.
     Φ = build_Φ(graph)  # Dict{Tuple{T, T}, Float64}
     Ω = Dict{T, Dict{Any, Float64}}()

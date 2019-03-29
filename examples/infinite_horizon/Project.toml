@@ -1,9 +1,0 @@
-[deps]
-Gurobi = "2e9cd046-0924-5485-92f1-d5272153d98b"
-JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
-Kokako = "f4570300-c277-11e8-125c-4912f86ce65d"
-LinQuadOptInterface = "f8899e07-120b-5979-ab1d-7b97bb9e1a48"
-Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
-ProfileView = "c46f51b8-102a-5cf2-8d2c-8597cb0e0da7"

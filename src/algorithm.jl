@@ -50,7 +50,7 @@ end
 #
 # TODO(odow): this is inefficient as it is O(n²) in the number of nodes, but
 # it's just a one-off hit so let's optimize later.
-function get_same_children(model::PolicyGraph{T}) where {T]
+function get_same_children(model::PolicyGraph{T}) where {T}
     same_children = Dict{T, Vector{T}}()
     # For each node in the model
     for (node_index_1, node_1) in model.nodes
@@ -75,16 +75,6 @@ function get_same_children(model::PolicyGraph{T}) where {T]
     return same_children
 end
 
-function build_Φ(model::PolicyGraph{T}) where {T}
-    Φ = Dict{Tuple{T, T}, Float64}()
-    for (node_index_1, node_1) in model.nodes
-        for child in node_1.children
-            Φ[(node_index_1, child.term)] = child.probability
-        end
-    end
-    return Φ
-end
-
 # Internal struct: storage for SDDP options and cached data. Users shouldn't
 # interact with this directly.
 struct Options{T}
@@ -107,7 +97,7 @@ struct Options{T}
     # A list of nodes that contain a subset of the children of node i.
     similar_children::Dict{T, Vector{T}}
     # Internal function: users should never construct this themselves.
-    function Options(policy_graph::PolicyGraph{T},
+    function Options(model::PolicyGraph{T},
                      initial_state::Dict{Symbol, Float64},
                      sampling_scheme::AbstractSamplingScheme,
                      risk_measures,
@@ -116,12 +106,12 @@ struct Options{T}
         return new{T}(
             initial_state,
             sampling_scheme,
-            to_nodal_form(policy_graph, x -> Dict{Symbol, Float64}[]),
-            to_nodal_form(policy_graph, risk_measures),
+            to_nodal_form(model, x -> Dict{Symbol, Float64}[]),
+            to_nodal_form(model, risk_measures),
             cycle_discretization_delta,
             refine_at_similar_nodes,
-            build_Φ(policy_graph),
-            get_same_children(policy_graph)
+            build_Φ(model),
+            get_same_children(model)
         )
     end
 end
@@ -313,9 +303,9 @@ function update_objective_state(obj_state, current_state, noise)
 end
 
 # Internal function: calculate the initial belief state.
-function initialize_belief(graph::PolicyGraph{T}) where {T}
-    current_belief = Dict{T, Float64}(keys(graph.nodes) .=> 0.0)
-    current_belief[graph.root_node] = 1.0
+function initialize_belief(model::PolicyGraph{T}) where {T}
+    current_belief = Dict{T, Float64}(keys(model.nodes) .=> 0.0)
+    current_belief[model.root_node] = 1.0
     return current_belief
 end
 
@@ -332,7 +322,7 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
     sampled_states = Dict{Symbol, Float64}[]
     # Storage for the belief states: partition index and the belief dictionary.
     belief_states = Tuple{Int, Dict{T, Float64}}[]
-    current_belief = initialize_belief(graph)
+    current_belief = initialize_belief(model)
     # Our initial incoming state.
     incoming_state_value = copy(options.initial_state)
     # A cumulator for the stage-objectives.
@@ -412,7 +402,12 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
         end
     end
     # ===== End: drop off starting state if terminated due to cycle =====
-    return scenario_path, sampled_states, objective_states, belief_states, cumulative_value
+    return (
+        scenario_path = scenario_path,
+        sampled_states = sampled_states,
+        objective_states = objective_states,
+        belief_states = belief_states,
+        cumulative_value = cumulative_value)
 end
 
 # Internal function: calculate the minimum distance between the state `state`
@@ -451,15 +446,16 @@ function backward_pass(model::PolicyGraph{T},
                        belief_states::Vector{Tuple{Int, Dict{T, Float64}}}
                            ) where {T, NoiseType, N}
     if length(belief_states) > 0
-        backward_pass_with_belief(
-            graph, options, scenario_path, sampled_states, objective_states, belief_states)
+        backward_pass_with_belief(model, options, scenario_path, sampled_states,
+                                  objective_states, belief_states)
     else
-        backward_pass_no_belief(graph, options, scenario_path, sampled_states, objective_states)
+        backward_pass_no_belief(model, options, scenario_path, sampled_states,
+                                objective_states)
     end
 end
 
 function backward_pass_no_belief(
-        graph::PolicyGraph{T},
+        model::PolicyGraph{T},
         options::Options,
         scenario_path::Vector{Tuple{T, NoiseType}},
         sampled_states::Vector{Dict{Symbol, Float64}},
@@ -552,7 +548,7 @@ function backward_pass_no_belief(
 end
 
 function backward_pass_with_belief(
-        graph::PolicyGraph{T},
+        model::PolicyGraph{T},
         options::Options,
         scenario_path::Vector{Tuple{T, NoiseType}},
         sampled_states::Vector{Dict{Symbol, Float64}},
@@ -575,13 +571,13 @@ function backward_pass_with_belief(
         partition_index, belief_state = belief_states[index]
         for (node_index, belief) in belief_state
             if belief > 0.0
-                node = graph[node_index]
+                node = model[node_index]
                 if length(node.children) == 0
                     continue
                 end
                 # Solve all children.
                 for child in node.children
-                    child_node = graph[child.term]
+                    child_node = model[child.term]
                     for noise in child_node.noise_terms
                         if haskey(solution_indices, (child.term, noise.term))
                             sol_index = solution_indices[(child.term, noise.term)]
@@ -594,19 +590,18 @@ function backward_pass_with_belief(
                         else
                             # Update belief state, etc.
                             if child_node.belief_state !== nothing
-                                kokako_belief = child_node.belief_state::BeliefState{T}
-                                new_partition_index = kokako_belief.partition_index
-                                kokako_belief.updater(
-                                    kokako_belief.belief,
+                                current_belief = child_node.belief_state::BeliefState{T}
+                                new_partition_index = current_belief.partition_index
+                                current_belief.updater(
+                                    current_belief.belief,
                                     belief_state,
                                     new_partition_index,
                                     noise.term)
                             end
                             TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
                                 (new_outgoing_state, duals, stage_objective, obj) =
-                                    solve_subproblem(
-                                        graph, child_node, outgoing_state, noise.term
-                                    )
+                                    solve_subproblem(model, child_node,
+                                                     outgoing_state, noise.term)
                             end
                             push!(dual_variables, duals)
                             push!(noise_supports, noise)
@@ -624,17 +619,17 @@ function backward_pass_with_belief(
             end
         end
         # We need to refine our estimate at all nodes in the partition.
-        for node_index in graph.belief_partition[partition_index]
-            node = graph[node_index]
+        for node_index in model.belief_partition[partition_index]
+            node = model[node_index]
             # Update belief state, etc.
             if node.belief_state !== nothing
-                kokako_belief = node.belief_state::BeliefState{T}
+                current_belief = node.belief_state::BeliefState{T}
                 for (idx, belief) in belief_state
-                    kokako_belief.belief[idx] = belief
+                    current_belief.belief[idx] = belief
                 end
             end
             refine_bellman_function(
-                graph,
+                model,
                 node,
                 node.bellman_function,
                 options.risk_measures[node_index],
@@ -656,15 +651,15 @@ Calculate the lower bound (if minimizing, otherwise upper bound) of the problem
 model at the point state, assuming the risk measure at the root node is
 risk_measure.
 """
-function calculate_bound(model::PolicyGraph,
+function calculate_bound(model::PolicyGraph{T},
                          root_state::Dict{Symbol, Float64} =
                             model.initial_root_state;
-                         risk_measure = Expectation())
+                         risk_measure = Expectation()) where {T}
     # Initialization.
     noise_supports = Any[]
     probabilities = Float64[]
     objectives = Float64[]
-    current_belief = initialize_belief(graph)
+    current_belief = initialize_belief(model)
 
     # Solve all problems that are children of the root node.
     for child in model.root_children
@@ -761,7 +756,7 @@ function train(model::PolicyGraph;
                iteration_limit = nothing,
                time_limit = nothing,
                print_level = 1,
-               log_file = "kokako.log",
+               log_file = "SDDP.log",
                run_numerical_stability_report::Bool = true,
                stopping_rules = AbstractStoppingRule[],
                risk_measure = SDDP.Expectation(),
@@ -836,18 +831,24 @@ function train(model::PolicyGraph;
         has_converged = false
         while !has_converged
             TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
-                scenario_path, sampled_states, objective_states, belief_states,
-                    cumulative_value = forward_pass(graph, options)
+                forward_trajectory = forward_pass(model, options)
             end
             TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
-                backward_pass(graph, options, scenario_path, sampled_states,
-                              objective_states, belief_states)
+                backward_pass(
+                    model, options, forward_trajectory.scenario_path,
+                    forward_trajectory.sampled_states,
+                    forward_trajectory.objective_states,
+                    forward_trajectory.belief_states)
             end
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
                 bound = calculate_bound(model)
             end
-            push!(log, Log(iteration_count, bound, cumulative_value,
-                time() - start_time)
+            push!(
+                log,
+                Log(
+                    iteration_count, bound, forward_trajectory.cumulative_value,
+                    time() - start_time
+                )
             )
             has_converged, status = convergence_test(model, log, stopping_rules)
             if print_level > 0
@@ -880,7 +881,7 @@ end
 
 # Internal function: helper to conduct a single simulation. Users should use the
 # documented, user-facing function SDDP.simulate instead.
-function _simulate(model::PolicyGraph,
+function _simulate(model::PolicyGraph{T},
                    variables::Vector{Symbol} = Symbol[];
                    sampling_scheme::AbstractSamplingScheme =
                        InSampleMonteCarlo(),
@@ -1024,6 +1025,5 @@ function simulate(model::PolicyGraph,
                 variables;
                 sampling_scheme = sampling_scheme,
                 custom_recorders = custom_recorders)
-                for i in 1:number_replications
-            ]
+                for i in 1:number_replications]
 end
