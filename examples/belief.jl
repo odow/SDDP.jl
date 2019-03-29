@@ -47,14 +47,13 @@ function inventory_management_problem()
 
     # Train the policy.
     Random.seed!(123)
-    SDDP.train(model; iteration_limit = 100, print_level = 1)
+    SDDP.train(model; iteration_limit = 100, print_level = 0)
     results = SDDP.simulate(model, 500)
     objectives = [
         sum(s[:stage_objective] for s in simulation) for simulation in results
     ]
     sample_mean = round(Statistics.mean(objectives); digits = 2)
     sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
-    println("Confidence_interval = $(sample_mean) ± $(sample_ci)")
     @test SDDP.calculate_bound(model) ≈ sample_mean atol = sample_ci
 end
 

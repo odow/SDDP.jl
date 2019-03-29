@@ -873,6 +873,10 @@ function train(model::PolicyGraph;
         if print_level > 1
             TimerOutputs.print_timer(stdout, SDDP_TIMER)
             TimerOutputs.print_timer(log_file_handle, SDDP_TIMER)
+            # Annoyingly, TimerOutputs doesn't end the print section with `\n`,
+            # so we do it here.
+            println(stdout)
+            println(log_file_handle)
         end
     end
     close(log_file_handle)
