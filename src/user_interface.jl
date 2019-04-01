@@ -287,6 +287,9 @@ mutable struct Node{T}
     objective_state::Union{Nothing, ObjectiveState}
     # For dynamic interpolation of belief states.
     belief_state::Union{Nothing, BeliefState{T}}
+    # An extension dictionary. This is a useful place for packages that extend
+    # SDDP.jl to stash things.
+    ext::Dict{Symbol, Any}
 end
 
 mutable struct PolicyGraph{T}
@@ -304,6 +307,10 @@ mutable struct PolicyGraph{T}
     belief_partition::Vector{Set{T}}
     # Storage for the most recent training results.
     most_recent_training_results
+    # An extension dictionary. This is a useful place for packages that extend
+    # SDDP.jl to stash things.
+    ext::Dict{Symbol, Any}
+
     function PolicyGraph(sense::Symbol, root_node::T) where {T}
         optimization_sense = if sense == :Min
             MOI.MIN_SENSE
@@ -312,8 +319,9 @@ mutable struct PolicyGraph{T}
         else
             error("The optimization sense must be :Min or :Max. It is $(sense).")
         end
-        return new{T}(optimization_sense, root_node, Noise{T}[],
-            Dict{Symbol, Float64}(), Dict{T, Node{T}}(), Set{T}[], nothing)
+        return new{T}(
+            optimization_sense, root_node, Noise{T}[],  Dict{Symbol, Float64}(),
+            Dict{T, Node{T}}(), Set{T}[], nothing, Dict{Symbol, Any}())
     end
 end
 
@@ -456,7 +464,8 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             # Likewise for the objective states.
             nothing,
             # And for belief states.
-            nothing
+            nothing,
+            Dict{Symbol, Any}()
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
