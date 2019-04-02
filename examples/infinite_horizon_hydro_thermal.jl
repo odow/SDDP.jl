@@ -56,5 +56,5 @@ function infinite_hydro_thermal(; cut_type)
     @test sample_mean - sample_ci <= 119.167 <= sample_mean + sample_ci
 end
 
-infinite_hydro_thermal(cut_type = SDDP.AVERAGE_CUT)
+infinite_hydro_thermal(cut_type = SDDP.SINGLE_CUT)
 infinite_hydro_thermal(cut_type = SDDP.MULTI_CUT)

@@ -130,7 +130,7 @@ function _level_one_update(oracle::LevelOneOracle, cut::Cut,
     return
 end
 
-@enum(CutType, AVERAGE_CUT, MULTI_CUT)
+@enum(CutType, SINGLE_CUT, MULTI_CUT)
 
 # Internal struct: this struct is just a cache for arguments until we can build
 # an actual instance of the type T at a later point.
@@ -144,16 +144,18 @@ mutable struct BellmanFunction <: AbstractBellmanFunction
     global_theta::ConvexApproximation
     local_thetas::Vector{ConvexApproximation}
     cut_type::CutType
+    # Hashes of the probability simplexes in multi-cut.
+    risk_set_cuts::Set{UInt}
 end
 
 """
     BellmanFunction(;
         lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
-        cut_type::CutType = AVERAGE_CUT)
+        cut_type::CutType = MULTI_CUT)
 """
 function BellmanFunction(;
         lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
-        cut_type::CutType = AVERAGE_CUT)
+        cut_type::CutType = MULTI_CUT)
     return InstanceFactory{BellmanFunction}(
         lower_bound = lower_bound, upper_bound = upper_bound,
         deletion_minimum = deletion_minimum, cut_type = cut_type)
@@ -166,7 +168,7 @@ end
 function initialize_bellman_function(
         factory::InstanceFactory{BellmanFunction}, model::PolicyGraph{T},
         node::Node{T}) where {T}
-    lower_bound, upper_bound, deletion_minimum, cut_type = -Inf, Inf, 0, AVERAGE_CUT
+    lower_bound, upper_bound, deletion_minimum, cut_type = -Inf, Inf, 0, SINGLE_CUT
     if length(factory.args) > 0
         error("Positional arguments $(factory.args) ignored in BellmanFunction.")
     end
@@ -197,7 +199,7 @@ function initialize_bellman_function(
     _add_initial_bounds(node.objective_state, Θᴳ)
     x′ = Dict(key => var.out for (key, var) in node.states)
     return BellmanFunction(ConvexApproximation(Θᴳ, x′, deletion_minimum),
-                           ConvexApproximation[], cut_type)
+                           ConvexApproximation[], cut_type, Set{UInt}())
 end
 
 # Internal function: helper used in _add_initial_bounds.
@@ -258,7 +260,7 @@ function refine_bellman_function(
         noise_supports, objective_realizations,
         model.objective_sense == MOI.MIN_SENSE)
     # The meat of the function.
-    if bellman_function.cut_type == AVERAGE_CUT
+    if bellman_function.cut_type == SINGLE_CUT
         _add_average_cut(
             node,
             outgoing_state,
@@ -319,12 +321,15 @@ function _add_multi_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
         risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
         for i in 1:N) - (1 - sum(risk_adjusted_probability)) * μᵀy
     )
-    # TODO(odow): hash the risk_adjusted_probability (or cut expression if
-    # sum(ξ)<1 and μᵀy != 0) and only add if it's a new constraint.
-    if JuMP.objective_sense(model) == MOI.MIN_SENSE
-        @constraint(model, bellman_function.global_theta.theta >= cut_expr)
-    else
-        @constraint(model, bellman_function.global_theta.theta <= cut_expr)
+    # TODO(odow): benchmark the has of a JuMP expression. Is it bad?
+    cut_hash = hash(cut_expr)
+    if !(cut_hash in bellman_function.risk_set_cuts)
+        push!(bellman_function.risk_set_cuts, cut_hash)
+        if JuMP.objective_sense(model) == MOI.MIN_SENSE
+            @constraint(model, bellman_function.global_theta.theta >= cut_expr)
+        else
+            @constraint(model, bellman_function.global_theta.theta <= cut_expr)
+        end
     end
     return
 end
@@ -374,15 +379,20 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
         if node.objective_state !== nothing
             error("Unable to write cuts to file because model contains " *
                   "objective states.")
-        elseif length(node.bellman_function.local_thetas) > 0
-            error("Unable to write cuts to file because model contains " *
-                  "multi-cuts.")
         end
         cuts[node_name] = Dict{String, Float64}[]
         for cut in node.bellman_function.global_theta.cut_oracle.cuts
             cut_dict = copy(cut.coefficients)
             cut_dict[:cut_intercept] = cut.intercept
             push!(cuts[node_name], cut_dict)
+        end
+        for (i, theta) in enumerate(node.bellman_function.local_thetas)
+            for cut in theta.cut_oracle.cuts
+                cut_dict = copy(cut.coefficients)
+                cut_dict[:cut_intercept] = cut.intercept
+                cut_dict[:local_theta] = i
+                push!(cuts[node_name], cut_dict)
+            end
         end
     end
     open(filename, "w") do io
@@ -444,13 +454,18 @@ function read_cuts_from_file(
             # to `θᴳ ≥ [θᵏ - ⟨πᵏ, xᵏ⟩] + ⟨πᵏ, x′⟩`. Thus, we pass `xᵏ=0` so that
             # eveything works out okay.
             # Importantly, don't run cut selection when adding these cuts.
-            _add_cut(
-                node.bellman_function.global_theta,
-                intercept,
-                coefficients,
-                Dict(key=>0.0 for key in keys(coefficients)),
-                cut_selection = false
-            )
+            theta_idx = get(json_cut, "local_theta", 0)
+            if theta_idx == 0
+                _add_cut(
+                    node.bellman_function.global_theta,
+                    intercept,
+                    coefficients,
+                    Dict(key=>0.0 for key in keys(coefficients)),
+                    cut_selection = false
+                )
+            else
+                error("Can't read in multi-cuts yet.")
+            end
         end
     end
     return

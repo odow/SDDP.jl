@@ -39,5 +39,5 @@ function fast_production_management(;cut_type)
     @test SDDP.calculate_bound(model) ≈ -23.96 atol = 1e-2
 end
 
-fast_production_management(cut_type = SDDP.AVERAGE_CUT)
+fast_production_management(cut_type = SDDP.SINGLE_CUT)
 fast_production_management(cut_type = SDDP.MULTI_CUT)

@@ -68,5 +68,5 @@ function newsvendor_example(;cut_type)
     @test round(Statistics.mean(objectives); digits = 2) ≈ 4.04 atol=0.1
 end
 
-newsvendor_example(cut_type = SDDP.AVERAGE_CUT)
+newsvendor_example(cut_type = SDDP.SINGLE_CUT)
 newsvendor_example(cut_type = SDDP.MULTI_CUT)

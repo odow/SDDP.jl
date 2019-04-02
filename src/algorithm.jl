@@ -729,8 +729,8 @@ Train the policy for `model`. Keyword arguments:
 
  - `log_file`: filepath at which to write a log of the training progress
 
- - run_numerical_stability_report: generate a numerical stability report prior
-   to solve
+ - `run_numerical_stability_report`: generate a numerical stability report prior
+    to solve
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
     same children, it can cheaply add a cut discovered at one to the other. In
@@ -744,7 +744,9 @@ Train the policy for `model`. Keyword arguments:
  - `risk_measure`: the risk measure to use at each node.
 
  - `sampling_scheme`: a sampling scheme to use on the forward pass of the
-   algorithm. Defaults to InSampleMonteCarlo().
+    algorithm. Defaults to InSampleMonteCarlo().
+
+ - `cut_type`: choose between `SINGLE_CUT` and `MULTI_CUT` versions of SDDP.
 
 There is also a special option for infinite horizon problems
 
@@ -761,7 +763,7 @@ function train(model::PolicyGraph;
                stopping_rules = AbstractStoppingRule[],
                risk_measure = SDDP.Expectation(),
                sampling_scheme = SDDP.InSampleMonteCarlo(),
-               cut_type = SDDP.AVERAGE_CUT,
+               cut_type = SDDP.SINGLE_CUT,
                cycle_discretization_delta = 0.0,
                refine_at_similar_nodes = true,
                cut_deletion_minimum = 1
@@ -810,7 +812,7 @@ function train(model::PolicyGraph;
         cycle_discretization_delta,
         refine_at_similar_nodes
     )
-    # Update the nodes with the selected cut type (AVERAGE_CUT or MULTI_CUT)
+    # Update the nodes with the selected cut type (SINGLE_CUT or MULTI_CUT)
     # and the cut deletion minimum.
     if cut_deletion_minimum < 0
         cut_deletion_minimum = typemax(Int)
