@@ -14,6 +14,7 @@ const UNREGISTERED_URLS = [
 ]
 
 import Pkg
+Pkg.activate(dirname(@__DIR__))
 for url in UNREGISTERED_URLS
     Pkg.add(Pkg.PackageSpec(url=url))
 end
