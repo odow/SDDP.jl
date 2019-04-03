@@ -4,3 +4,4 @@ docs/build/*
 docs/spaghetti_plot.html
 docs/src/examples/*.md
 test/*.js
+Manifest.toml
