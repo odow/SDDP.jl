@@ -21,10 +21,10 @@
 using SDDP, GLPK, Test
 
 function test_multistock_example()
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(5),
-            optimizer = with_optimizer(GLPK.Optimizer),
-            bellman_function = SDDP.BellmanFunction(lower_bound = -5)
-                                    ) do subproblem, stage
+    model = SDDP.LinearPolicyGraph(
+            stages = 5,
+            lower_bound = -5.0,
+            optimizer = with_optimizer(GLPK.Optimizer)) do subproblem, stage
         @variable(subproblem,
             0 <= stock[i=1:3] <= 1, SDDP.State, initial_value = 0.5)
         @variables(subproblem, begin
@@ -47,7 +47,8 @@ function test_multistock_example()
             (sin(3 * stage) - 1) * sum(control)
         )
     end
-    SDDP.train(model, iteration_limit = 100, print_level = 0)
+    SDDP.train(model, iteration_limit = 100, print_level = 0,
+        cut_type = SDDP.SINGLE_CUT)
     @test SDDP.calculate_bound(model) ≈ -4.349 atol = 0.01
 
     simulation_results = SDDP.simulate(model, 5000)

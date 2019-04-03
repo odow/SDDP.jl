@@ -47,7 +47,7 @@ function inventory_management_problem()
 
     # Train the policy.
     Random.seed!(123)
-    SDDP.train(model; iteration_limit = 100, print_level = 0)
+    SDDP.train(model; iteration_limit = 100, print_level = 1, cut_type = SDDP.SINGLE_CUT)
     results = SDDP.simulate(model, 500)
     objectives = [
         sum(s[:stage_objective] for s in simulation) for simulation in results

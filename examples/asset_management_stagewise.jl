@@ -60,5 +60,5 @@ function asset_management_stagewise(; cut_type)
     @test SDDP.calculate_bound(model) ≈ 1.278 atol=1e-3
 end
 
-asset_management_stagewise(cut_type = SDDP.AVERAGE_CUT)
+asset_management_stagewise(cut_type = SDDP.SINGLE_CUT)
 asset_management_stagewise(cut_type = SDDP.MULTI_CUT)

@@ -37,16 +37,21 @@ speed-ups.
   algorithm (e.g., [`Method=1` in Gurobi](https://www.gurobi.com/documentation/8.1/refman/method.html)
   ) is usually a performance win.
 
-## Average cut vs multi-cut
+### Single-cut vs. multi-cut
 
-There are two competing ways that cuts can be created in SDDP: _average_ cut and
-_multi_-cut. These can be specified as follows
-```julia
-SDDP.train(model; cut_type = SDDP.AVERAGE_CUT)
-SDDP.train(model; cut_type = SDDP.MULTI_CUT)
-```
+There are two competing ways that cuts can be created in SDDP: _single_-cut and
+_multi_-cut. By default, `SDDP.jl` uses the _single-cut_ version of SDDP.
 
 The performance of each method is problem-dependent. We recommend that you try
-both in order to see which one performs better. In general, the _average_ cut
+both in order to see which one performs better. In general, the _single_-cut
 method works better when the number of realizations of the stagewise-independent
-random variable is large.
+random variable is large, whereas the multi-cut method works better on small
+problems. However, the multi-cut method can cause numerical stability problems,
+particularly if used in conjunction with objective or belief state variables.
+
+You can switch between the methods by passing the relevant flag to `cut_type` in
+[`SDDP.train`](@ref).
+```julia
+SDDP.train(model; cut_type = SDDP.SINGLE_CUT)
+SDDP.train(model; cut_type = SDDP.MULTI_CUT)
+```

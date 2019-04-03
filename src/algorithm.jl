@@ -202,7 +202,9 @@ Write the subproblem contained in `node` to the file `filename`.
 
 `format` should be one of `:mps`, `:lp`, or `:both`.
 """
-function write_subproblem_to_file(node::Node, filename::String; format::Symbol=:both)
+function write_subproblem_to_file(
+        node::Node, filename::String;
+        format::Symbol=:both, throw_error::Bool = false)
     if format ∉ (:mps, :lp, :both)
         error("Invalid `format=$(format)`. Must be `:mps`, `:lp`, or `:both`.")
     end
@@ -215,6 +217,16 @@ function write_subproblem_to_file(node::Node, filename::String; format::Symbol=:
         lp = MathOptFormat.LP.Model()
         MOI.copy_to(lp, JuMP.backend(node.subproblem))
         MOI.write_to_file(lp, filename * ".lp")
+    end
+    if throw_error
+        error("Unable to retrieve dual solution from ", node.index, ".",
+              "\n  Termination status: ", JuMP.termination_status(node.subproblem),
+              "\n  Primal status:      ", JuMP.primal_status(node.subproblem),
+              "\n  Dual status:        ", JuMP.dual_status(node.subproblem),
+              ".\n An MPS file was written to `subproblem.mps` and an LP file ",
+              "written to `subproblem.lp`. See ",
+              "https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1",
+              " for more information.")
     end
 end
 
@@ -245,29 +257,16 @@ function solve_subproblem(model::PolicyGraph{T},
     parameterize(node, noise)
     JuMP.optimize!(node.subproblem)
     # Test for primal feasibility.
-    primal_status = JuMP.primal_status(node.subproblem)
-    if primal_status != JuMP.MOI.FEASIBLE_POINT
-        write_subproblem_to_file(node, "subproblem")
-        error("Unable to retrieve primal solution from ", node.index, ".",
-              "\n  Termination status: ", JuMP.termination_status(node.subproblem),
-              "\n  Primal status:      ", primal_status,
-              "\n  Dual status:        ", JuMP.dual_status(node.subproblem),
-              ".\n An MPS file was written to `subproblem.mps` and an LP file ",
-              "written to `subproblem.lp`.")
+    if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+        write_subproblem_to_file(node, "subproblem", throw_error = true)
     end
     # If require_duals = true, check for dual feasibility and return a dict with
     # the dual on the fixed constraint associated with each incoming state
     # variable. If require_duals=false, return an empty dictionary for
     # type-stability.
     dual_values = if require_duals
-        dual_status = JuMP.dual_status(node.subproblem)
-        if dual_status != JuMP.MOI.FEASIBLE_POINT
-            write_subproblem_to_file(node, "subproblem.mps")
-            error("Unable to retrieve dual solution from ", node.index, ".",
-                  "\n  Termination status: ", JuMP.termination_status(node.subproblem),
-                  "\n  Primal status:      ", primal_status,
-                  "\n  Dual status:        ", dual_status,
-                  ".\n An MPS file was written to `subproblem.mps`")
+        if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+            write_subproblem_to_file(node, "subproblem", throw_error = true)
         end
         get_dual_variables(node)
     else
@@ -729,8 +728,8 @@ Train the policy for `model`. Keyword arguments:
 
  - `log_file`: filepath at which to write a log of the training progress
 
- - run_numerical_stability_report: generate a numerical stability report prior
-   to solve
+ - `run_numerical_stability_report`: generate a numerical stability report prior
+    to solve
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
     same children, it can cheaply add a cut discovered at one to the other. In
@@ -744,7 +743,9 @@ Train the policy for `model`. Keyword arguments:
  - `risk_measure`: the risk measure to use at each node.
 
  - `sampling_scheme`: a sampling scheme to use on the forward pass of the
-   algorithm. Defaults to InSampleMonteCarlo().
+    algorithm. Defaults to InSampleMonteCarlo().
+
+ - `cut_type`: choose between `SINGLE_CUT` and `MULTI_CUT` versions of SDDP.
 
 There is also a special option for infinite horizon problems
 
@@ -761,7 +762,7 @@ function train(model::PolicyGraph;
                stopping_rules = AbstractStoppingRule[],
                risk_measure = SDDP.Expectation(),
                sampling_scheme = SDDP.InSampleMonteCarlo(),
-               cut_type = SDDP.AVERAGE_CUT,
+               cut_type = SDDP.SINGLE_CUT,
                cycle_discretization_delta = 0.0,
                refine_at_similar_nodes = true,
                cut_deletion_minimum = 1
@@ -810,7 +811,7 @@ function train(model::PolicyGraph;
         cycle_discretization_delta,
         refine_at_similar_nodes
     )
-    # Update the nodes with the selected cut type (AVERAGE_CUT or MULTI_CUT)
+    # Update the nodes with the selected cut type (SINGLE_CUT or MULTI_CUT)
     # and the cut deletion minimum.
     if cut_deletion_minimum < 0
         cut_deletion_minimum = typemax(Int)
