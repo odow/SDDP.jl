@@ -11,10 +11,10 @@
 using SDDP, GLPK, Test
 
 function test_prob52_3stages()
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(3),
-                bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-                optimizer = with_optimizer(GLPK.Optimizer)
-                ) do sp, t
+    model = SDDP.LinearPolicyGraph(
+                stages = 3,
+                lower_bound = 0.0,
+                optimizer = with_optimizer(GLPK.Optimizer)) do sp, t
         n = 4
         m = 3
         ic = [16, 5, 32, 2]
@@ -34,7 +34,7 @@ function test_prob52_3stages()
             [i=1:n], sum(y[i, :]) <= x[i].in
             [j=1:m], sum(y[:, j]) + penalty >= ξ[j]
         end)
-        @stageobjective(sp, ic'v + C' * y * T + 1e6 * penalty)
+        @stageobjective(sp, ic'v + C' * y * T + 1e5 * penalty)
         if t != 1 # no uncertainty in first stage
             SDDP.parameterize(sp, 1:size(D2, 2), p2) do ω
                 for j in 1:m
@@ -48,9 +48,6 @@ function test_prob52_3stages()
     end
     SDDP.train(model, iteration_limit = 30, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 406712.49 atol = 0.1
-    # sim = simulate(mod, 1, [:x, :penalty])
-    # @test length(sim) == 1
-    # @test isapprox(sim[1][:x][1], [2986,0,7329,854])
 end
 
 test_prob52_3stages()

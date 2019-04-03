@@ -91,6 +91,19 @@ By default, a numerical stability check is run when you call
 [`SDDP.train`](@ref), although it can be turned off by passing
 `run_numerical_stability_report = false`.
 
+### Single-cut vs. multi-cut
+
+By default, `SDDP.jl` uses the _multi-cut_ version of SDDP. This typically
+results in faster convergence, but can lead to numerical stability problems,
+particularly if used in conjunction with objective or belief state variables.
+
+If you run into numerical issues, try using the _single-cut_ version of SDDP by
+passing the relevant flag to `cut_type` in [`SDDP.train`](@ref).
+```julia
+SDDP.train(model; cut_type = SDDP.SINGLE_CUT)
+SDDP.train(model; cut_type = SDDP.MULTI_CUT)
+```
+
 ### Solver-specific options
 
 If you have a particularly troublesome model, you should investigate setting
