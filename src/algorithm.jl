@@ -762,7 +762,7 @@ function train(model::PolicyGraph;
                stopping_rules = AbstractStoppingRule[],
                risk_measure = SDDP.Expectation(),
                sampling_scheme = SDDP.InSampleMonteCarlo(),
-               cut_type = SDDP.MULTI_CUT,
+               cut_type = SDDP.SINGLE_CUT,
                cycle_discretization_delta = 0.0,
                refine_at_similar_nodes = true,
                cut_deletion_minimum = 1
