@@ -17,3 +17,4 @@ import Pkg
 for url in UNREGISTERED_URLS
     Pkg.add(Pkg.PackageSpec(url=url))
 end
+Pkg.resolve()
