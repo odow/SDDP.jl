@@ -69,7 +69,8 @@ using SDDP, Test, GLPK
         )
         model = create_model(graph)
         @test SDDP.calculate_bound(model) ≈ 9.17 atol=0.1
-        SDDP.train(model; iteration_limit = 50, print_level = 0)
+        SDDP.train(model; iteration_limit = 50, print_level = 0,
+                   cut_type = SDDP.MULTI_CUT)
         @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
         SDDP.write_cuts_to_file(model, "model.cuts.json")
         model_2 = create_model(graph)

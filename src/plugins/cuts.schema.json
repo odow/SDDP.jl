@@ -1,0 +1,56 @@
+{
+    "$schema": "https://json-schema.org/schema#",
+    "$id": "https://github.com/odow/SDDP.jl/tree/master/src/plugins/cuts.schema.json",
+    "title": "The schema for SDDP.jl cuts",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "required": ["node"],
+        "properties": {
+            "node": {
+                "type": "string"
+            },
+            "single_cuts": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Cut"
+                }
+            },
+            "multi_cuts": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Cut",
+                    "required": ["realization"],
+                    "properties": {
+                        "realization": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "risk_set_cuts": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "Cut": {
+            "type": "object",
+            "required": ["intercept", "coefficients"],
+            "properties": {
+                "intercept": {
+                    "type": "number"
+                },
+                "coefficients": {
+                    "type": "object"
+                }
+            }
+        }
+    }
+}
