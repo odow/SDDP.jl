@@ -7,7 +7,7 @@
 #   Dowson, O., Morton, D.P., & Pagnoncelli, B. (2019). Partially observable
 #   multistage stochastic programming.
 
-using SDDP, GPLK, Random, Statistics, Test
+using SDDP, GLPK, Random, Statistics, Test
 
 const demand_values = [1.0, 2.0]
 
@@ -99,7 +99,7 @@ function simulate_policy(model, model_name; terminate_on_leaf::Bool, discount::B
                 push!(scenario, (Ah, r < demand_probs[:Ah][1] ? 1 : 2))
             else
                 push!(scenario, (Bd, nothing))
-                push!(scenario, (Ah, r < demand_probs[:Bh][1] ? 1 : 2))
+                push!(scenario, (Bh, r < demand_probs[:Bh][1] ? 1 : 2))
             end
         end
         push!(scenarios, scenario)
