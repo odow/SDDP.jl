@@ -59,7 +59,7 @@ If you use `SDDP.jl`, we ask that you please cite the following
 	title = {{SDDP}.jl: a {Julia} package for stochastic dual dynamic programming},
 	url = {http://www.optimization-online.org/DB_HTML/2017/12/6388.html},
 	journal = {Optimization Online},
-	author = {Dowson, Oscar and Kapelevich, Lea},
+	author = {Dowson, O. and Kapelevich, L.},
 	year = {2017}
 }
 ```
@@ -72,7 +72,19 @@ following [paper](http://www.optimization-online.org/DB_HTML/2018/11/6914.html):
       optimization problems},
 	url = {http://www.optimization-online.org/DB_HTML/2018/11/6914.html},
 	journal = {Optimization Online},
-	author = {Dowson, Oscar},
+	author = {Dowson, O.},
 	year = {2018}
+}
+```
+
+If you use the partially observable functionality, we ask that you please cite the
+following [paper](http://www.optimization-online.org/DB_HTML/2019/03/7141.html):
+```
+@article{dowson_pomsp,
+	title = {Partially observable multistage stochastic programming},
+	url = {http://www.optimization-online.org/DB_HTML/2019/03/7141.html},
+	journal = {Optimization Online},
+	author = {Dowson, O., Morton, D.P., and Pagnoncelli, B.},
+	year = {2019}
 }
 ```
