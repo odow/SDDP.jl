@@ -4,7 +4,7 @@ CurrentModule = SDDP
 
 # SDDP.jl
 
-!!! warn
+!!! warning
     `SDDP.jl` under went a major re-write to be compatible with JuMP v0.19 and
     Julia v1.0. The [Upgrading guide](@ref) has advice on how to upgrade your
     existing `SDDP.jl` models.
@@ -14,7 +14,7 @@ programming problems using *stochastic dual dynamic programming*. In this
 manual, we're going to assume a reasonable amount of background knowledge about
 stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 
-!!! info
+!!! tip
     If you haven't used JuMP before, we recommend that you read the
     [JuMP documentation](http://www.juliaopt.org/JuMP.jl/latest/) and try
     building and solving JuMP models _before_ trying `SDDP.jl`.

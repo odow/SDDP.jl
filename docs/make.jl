@@ -36,7 +36,6 @@ makedocs(
     authors  = "Oscar Dowson",
     clean = true,
     doctest = FIX_DOCTESTS ? :fix : true,
-    # See https://github.com/JuliaDocs/Documenter.jl/issues/868
     format = Documenter.HTML(
         assets = [
             "deterministic_linear_policy_graph.png",
@@ -45,6 +44,7 @@ makedocs(
             "stochastic_linear_policy_graph.png",
             "stochastic_markovian_policy_graph.png"
         ],
+        # See https://github.com/JuliaDocs/Documenter.jl/issues/868
         prettyurls = get(ENV, "CI", nothing) == "true"),
     strict = true,
     pages = [

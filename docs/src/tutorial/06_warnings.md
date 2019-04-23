@@ -25,7 +25,7 @@ In almost all cases, the cause of this is poor problem scaling. For our purpose,
 poor problem scaling means having variables with very large numbers and
 variables with very small numbers in the same model.
 
-!!! info
+!!! tip
     Gurobi has an excellent [set of articles](http://www.gurobi.com/documentation/8.1/refman/numerics_gurobi_guidelines.html)
     on numerical issues and how to avoid them.
 

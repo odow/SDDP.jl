@@ -111,7 +111,7 @@ A policy graph with 5 nodes.
  Node indices: (1, 1), (2, 1), (2, 2), (3, 1), (3, 2)
 ```
 
-!!! info
+!!! tip
     For more information on [`SDDP.MarkovianPolicyGraph`](@ref)s, read
     [Intermediate III: policy graphs](@ref).
 
