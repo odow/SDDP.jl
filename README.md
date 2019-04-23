@@ -1,4 +1,4 @@
-# SDDP
+<img src="https://raw.githubusercontent.com/odow/SDDP.jl/d138d51b10e54333ef6c9b36db2e95c6be45afba/docs/src/assets/logo_text.png" alt="logo" width="400px"/>
 
 | **Documentation** | **Build Status** | **Coverage** |
 |:-----------------:|:--------------------:|:----------------:|
