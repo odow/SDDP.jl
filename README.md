@@ -1,57 +1,16 @@
 <img src="https://raw.githubusercontent.com/odow/SDDP.jl/d138d51b10e54333ef6c9b36db2e95c6be45afba/docs/src/assets/logo_text.png" alt="logo" width="400px"/>
 
+---
+
 | **Documentation** | **Build Status** | **Coverage** |
 |:-----------------:|:--------------------:|:----------------:|
 | [![][docs-latest-img]][docs-latest-url] | [![Build Status][build-img]][build-url] | [![Codecov branch][codecov-img]][codecov-url]
 
-## Installation
+`SDDP.jl` is a package for solving large multistage convex stochastic programming 
+problems using _stochastic dual dynamic programming_. You can find the documentation
+at https://odow.github.io/SDDP.jl/latest/.
 
-To install `SDDP.jl`, open a Julia REPL and run
-```julia
-julia> ] add https://github.com/odow/SDDP.jl
-```
-
-If you get an error like:
-`ERROR: Unsatisfiable requirements detected for package MathOptFormat`,
-run
-
-```julia
-julia> ] add https://github.com/odow/MathOptFormat.jl
-julia> ] add https://github.com/odow/SDDP.jl
-```
-
-## Want the old version?
-
-Still using Julia 0.6 and things broke when you went `Pkg.update()`? Run
-```julia
-julia> Pkg.checkout("SDDP", "release-v0")
-```
-
-## Documentation
-
-You can find the documentation at https://odow.github.io/SDDP.jl/latest/.
-
-**If you are struggling to figure out how to use something, raise a Github issue!**
-
-## Other Packages
-
-`SDDP.jl` isn't the only Julia package for solving multi-stage stochastic programs.
-You may want to checkout [StructDualDynProg.jl](https://github.com/blegat/StructDualDynProg.jl)
-or [StochDynamicProgramming.jl](https://github.com/JuliaOpt/StochDynamicProgramming.jl)
-to see if they better suit your needs.
-
-## Citing SDDP.jl
-
-If you use SDDP.jl, we ask that you please cite the following [paper](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf):
-```
-@article{dowson_sddp.jl,
-	title = {{SDDP}.jl: a {Julia} package for {Stochastic} {Dual} {Dynamic} {Programming}},
-	url = {http://www.optimization-online.org/DB_HTML/2017/12/6388.html},
-	journal = {Optimization Online},
-	author = {Dowson, Oscar and Kapelevich, Lea},
-	year = {2017}
-}
-```
+If you need help, file a Github issue: https://github.com/odow/SDDP.jl/issues/new
 
 [build-img]: https://travis-ci.org/odow/SDDP.jl.svg?branch=master
 [build-url]: https://travis-ci.org/odow/SDDP.jl
