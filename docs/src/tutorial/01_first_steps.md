@@ -159,7 +159,7 @@ A policy graph with 3 nodes.
 
 Wasn't that easy! Let's walk through some of the non-obvious features.
 
-!!! info
+!!! tip
     For more information on [`SDDP.LinearPolicyGraph`](@ref)s, read
     [Intermediate III: policy graphs](@ref).
 
@@ -236,7 +236,7 @@ Terminating training with status: iteration_limit
 -------------------------------------------------------
 ```
 
-!!! info
+!!! tip
     For more information on the numerical stability report, read the
     [Numerical stability report](@ref) section.
 

@@ -34,7 +34,7 @@ the objective states. Thus, the method builds an outer approximation of the
 cost-to-go function in the normal state-space, and an inner approximation of the
 cost-to-go function in the objective state-space.
 
-!!! warn
+!!! warning
     Support for objective states in `SDDP.jl` is experimental. Models are
     considerably more computational intensive, the interface is less
     user-friendly, and there are [subtle gotchas to be aware of](@ref
