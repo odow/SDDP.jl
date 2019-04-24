@@ -141,11 +141,16 @@ end
 
 Add `set` to the belief partition of `graph`.
 
+`lipschitz` is a vector of Lipschitz constants, with one element for each node
+in `set`. The Lipschitz constant is the maximum slope of the cost-to-go function
+with respect to the belief state associated with each node at any point in the
+state-space.
+
 ### Examples
 
     graph = LinearGraph(3)
-    add_ambiguity_set(graph, [1, 2])
-    add_ambiguity_set(graph, [3])
+    add_ambiguity_set(graph, [1, 2], [1e3, 1e2])
+    add_ambiguity_set(graph, [3], [1e5])
 """
 function add_ambiguity_set(
         graph::Graph{T}, set::Vector{T}, lipschitz::Vector{Float64}) where T
@@ -160,6 +165,21 @@ function add_ambiguity_set(
     return
 end
 
+"""
+    add_ambiguity_set(graph::Graph{T}, set::Vector{T}, lipschitz::Float64)
+
+Add `set` to the belief partition of `graph`.
+
+`lipschitz` is a Lipschitz constant for each node in `set`. The Lipschitz
+constant is the maximum slope of the cost-to-go function with respect to the
+belief state associated with each node at any point in the state-space.
+
+### Examples
+
+    graph = LinearGraph(3)
+    add_ambiguity_set(graph, [1, 2], 1e3)
+    add_ambiguity_set(graph, [3], 1e5)
+"""
 function add_ambiguity_set(
         graph::Graph{T}, set::Vector{T}, lipschitz::Float64=1e5) where T
     return add_ambiguity_set(graph, set, fill(lipschitz, length(set)))
