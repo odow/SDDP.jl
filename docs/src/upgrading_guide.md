@@ -103,13 +103,17 @@ state `x`, we now refer to `x.in` and `x.out`. Here is another example:
 # becomes
 
 @variable(subproblem, 0 <= x[i=1:2] <= 1, SDDP.State, initial_value = i)
+```
 
+```julia
 x0[1]
 
 # becomes
 
 x[1].in
+```
 
+```julia
 x[2]
 
 # becomes
@@ -132,6 +136,23 @@ setnoiseprobability!(subproblem, [0.5, 0.2, 0.3])
 @constraint(subproblem, 2x <= ω)
 SDDP.parameterize(subproblem, [1, 2, 3], [0.5, 0.2, 0.3]) do ϕ
     JuMP.fix(ω, ϕ)
+end
+```
+
+If you had multiple `@rhsnoise` constraints, use:
+```julia
+@rhsnoise(subproblem, ω = [1, 2, 3], 2x <= ω)
+@rhsnoise(subproblem, ω = [4, 5, 6], y >= 3ω)
+setnoiseprobability!(subproblem, [0.5, 0.2, 0.3])
+
+# becomes
+
+@variable(subproblem, ω[1:2])
+@constraint(subproblem, 2x <= ω[1])
+@constraint(subproblem, y >= 3 * ω[2])
+SDDP.parameterize(subproblem, [(1, 4), (2, 5), (3, 6)], [0.5, 0.2, 0.3]) do ϕ
+    JuMP.fix(ω[1], ϕ[1])
+    JuMP.fix(ω[2], ϕ[2])
 end
 ```
 
