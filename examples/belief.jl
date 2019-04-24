@@ -20,14 +20,13 @@ function inventory_management_problem()
             (:Bd => :Bh, 1.0), (:Bh => :Bd, 0.9)
         ]
     )
-    SDDP.add_ambiguity_set(graph, [:Ad, :Bd])
-    SDDP.add_ambiguity_set(graph, [:Ah, :Bh])
+    SDDP.add_ambiguity_set(graph, [:Ad, :Bd], 1e2)
+    SDDP.add_ambiguity_set(graph, [:Ah, :Bh], 1e2)
 
-    model = SDDP.PolicyGraph(graph,
-                lower_bound = 0.0,
-                optimizer = with_optimizer(GLPK.Optimizer),
-                lipschitz_belief = Dict(:Ah => 1e2, :Bh => 1e2, :Ad => 1e2, :Bd => 1e2)
-                    ) do subproblem, node
+    model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0.0,
+            optimizer = with_optimizer(GLPK.Optimizer)) do subproblem, node
         @variables(subproblem, begin
             0 <= inventory <= 2, (SDDP.State, initial_value = 0.0)
             buy >= 0

@@ -30,8 +30,8 @@ function build_graph(model_name)
             ]
         )
         if model_name == "hidden"
-            SDDP.add_ambiguity_set(graph, [:Ad, :Bd])
-            SDDP.add_ambiguity_set(graph, [:Ah, :Bh])
+            SDDP.add_ambiguity_set(graph, [:Ad, :Bd], 1e2)
+            SDDP.add_ambiguity_set(graph, [:Ah, :Bh], 1e2)
         end
         return graph
     elseif model_name == "expected_value"
@@ -49,10 +49,8 @@ end
 function solve_inventory_management_problem(model_name, risk_measure)
     graph = build_graph(model_name)
     model = SDDP.PolicyGraph(graph,
-                lower_bound = 0.0,
-                optimizer = with_optimizer(GLPK.Optimizer),
-                lipschitz_belief = Dict(:Ah => 1e2, :Bh => 1e2, :Ad => 1e2, :Bd => 1e2)
-                    ) do subproblem, node
+            lower_bound = 0.0,
+            optimizer = with_optimizer(GLPK.Optimizer)) do subproblem, node
         @variables(subproblem, begin
             0 <= inventory <= 2, (SDDP.State, initial_value = 0.0)
             buy >= 0

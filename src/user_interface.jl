@@ -11,6 +11,7 @@ struct Graph{T}
     nodes::Dict{T, Vector{Tuple{T, Float64}}}
     # A partition of the nodes into ambiguity sets.
     belief_partition::Vector{Vector{T}}
+    belief_lipschitz::Vector{Vector{Float64}}
 end
 
 """
@@ -24,7 +25,7 @@ function Graph(root_node::T) where T
         Dict{T, Vector{Tuple{T, Float64}}}(
             root_node => Tuple{T, Float64}[]
         ),
-        Vector{T}[]
+        Vector{T}[], Vector{Float64}[]
     )
 end
 
@@ -136,7 +137,7 @@ function add_edge(graph::Graph{T}, edge::Pair{T, T},
 end
 
 """
-    add_ambiguity_set(graph::Graph{T}, set::Vector{T})
+    add_ambiguity_set(graph::Graph{T}, set::Vector{T}, lipschitz::Vector{Float64})
 
 Add `set` to the belief partition of `graph`.
 
@@ -146,20 +147,34 @@ Add `set` to the belief partition of `graph`.
     add_ambiguity_set(graph, [1, 2])
     add_ambiguity_set(graph, [3])
 """
-function add_ambiguity_set(graph::Graph{T}, set::Vector{T}) where T
+function add_ambiguity_set(
+        graph::Graph{T}, set::Vector{T}, lipschitz::Vector{Float64}) where T
+    if any(l -> l < 0.0, lipschitz)
+        error("Cannot provide negative Lipschitz constant: $(lipschitz)")
+    elseif length(set) != length(lipschitz)
+        error("You must provide on Lipschitz contsant for every element in " *
+              "the ambiguity set.")
+    end
     push!(graph.belief_partition, set)
+    push!(graph.belief_lipschitz, lipschitz)
     return
+end
+
+function add_ambiguity_set(
+        graph::Graph{T}, set::Vector{T}, lipschitz::Float64=1e5) where T
+    return add_ambiguity_set(graph, set, fill(lipschitz, length(set)))
 end
 
 function Graph(root_node::T, nodes::Vector{T},
                edges::Vector{Tuple{Pair{T, T}, Float64}};
-               belief_partition::Vector{Vector{T}} = Vector{T}[]) where T
+               belief_partition::Vector{Vector{T}} = Vector{T}[],
+               belief_lipschitz::Vector{Vector{Float64}} = Vector{Float64}[]) where {T}
     graph = Graph(root_node)
     add_node.(Ref(graph), nodes)
     for (edge, probability) in edges
         add_edge(graph, edge, probability)
     end
-    add_ambiguity_set.(Ref(graph), belief_partition)
+    add_ambiguity_set.(Ref(graph), belief_partition, belief_lipschitz)
     return graph
 end
 
@@ -393,8 +408,7 @@ end
         lower_bound = -Inf,
         upper_bound = Inf,
         optimizer = nothing,
-        direct_mode = true,
-        lipschitz_belief = Dict{T, Float64}()) where {T}
+        direct_mode = true) where {T}
 
 Construct a policy graph based on the graph structure of `graph`. (See
 [`SDDP.Graph`](@ref) for details.)
@@ -425,8 +439,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
                      lower_bound = -Inf,
                      upper_bound = Inf,
                      optimizer = nothing,
-                     direct_mode = true,
-                     lipschitz_belief = Dict{T, Float64}()) where {T}
+                     direct_mode = true) where {T}
     # Spend a one-off cost validating the graph.
     _validate_graph(graph)
     # Construct a basic policy graph. We will add to it in the remainder of this
@@ -495,15 +508,15 @@ function PolicyGraph(builder::Function, graph::Graph{T};
     end
     # Initialize belief states.
     if length(graph.belief_partition) > 0
-        initialize_belief_states(policy_graph, graph, lipschitz_belief)
+        initialize_belief_states(policy_graph, graph)
     end
 
     return policy_graph
 end
 
 # Internal function: set up ::BeliefState for each node.
-function initialize_belief_states(policy_graph::PolicyGraph{T}, graph::Graph{T},
-                                  lipschitz_belief) where {T}
+function initialize_belief_states(
+        policy_graph::PolicyGraph{T}, graph::Graph{T}) where {T}
     # Pre-compute the function `belief_updater`. See `construct_belief_update`
     # for details.
     belief_updater = construct_belief_update(
@@ -524,11 +537,9 @@ function initialize_belief_states(policy_graph::PolicyGraph{T}, graph::Graph{T},
             # <b, μ> + θ ≥ α + <β, x>
             # We need one variable for each non-zero belief state.
             μ = Dict{T, JuMP.VariableRef}()
-            for n in partition
-                μ[n] = @variable(node.subproblem,
-                    lower_bound = -get(lipschitz_belief, n, 1e5),
-                    upper_bound = get(lipschitz_belief, n, 1e5)
-                )
+            for (node_name, L) in zip(partition, graph.belief_lipschitz[partition_index])
+                μ[node_name] = @variable(
+                    node.subproblem, lower_bound = -L, upper_bound = L)
             end
             add_initial_bounds(node, μ)
             # Attach the belief state as an extension.

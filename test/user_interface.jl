@@ -110,7 +110,8 @@ using SDDP, Test, GLPK
                 (:root => :x, 0.5),
                 (:root => :y, 0.5),
                 ],
-                belief_partition = [ [:x, :y] ]
+                belief_partition = [[:x, :y]],
+                belief_lipschitz = [[1.0, 1.0]]
             )
             @test graph.belief_partition == [ [:x, :y] ]
             @test sprint(show, graph) == join([
