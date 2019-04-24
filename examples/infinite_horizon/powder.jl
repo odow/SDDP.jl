@@ -1,10 +1,9 @@
 #  Copyright 2017-19, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  This Source Code Form is subject to the terms of the Mozilla Public License,
+#  v. 2.0. If a copy of the MPL was not distributed with this file, You can
+#  obtain one at http://mozilla.org/MPL/2.0/.
 
-using SDDP, Test, JSON, Gurobi, Plots
-using Profile, ProfileView, Random
+using SDDP, Test, JSON, Gurobi, Plots, Random
 
 """
     infinite_powder(; discount_factor = 0.75, stocking_rate::Float64 = NaN,
@@ -14,7 +13,7 @@ Create an instance of the infinite horizon POWDER model. If `stocking_rate =
 NaN`, we use the value from the file `data_filename`.
 """
 function infinite_powder(;
-        discount_factor = 0.75, stocking_rate::Float64 = NaN,
+        discount_factor = 0.95, stocking_rate::Float64 = NaN,
         data_filename = "powder_data.json")
     data = JSON.parsefile(joinpath(@__DIR__, data_filename))
     # Allow over-ride of the stocking rate contained in data.
@@ -44,10 +43,12 @@ function infinite_powder(;
         )
     end
 
-    model = SDDP.PolicyGraph(graph,
-        sense = :Max,
-        bellman_function = SDDP.BellmanFunction(upper_bound = 1e5),
-        optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag = 0)
+    gurobi_env = Gurobi.Env()
+    model = SDDP.PolicyGraph(
+            graph,
+            sense = :Max,
+            upper_bound = 1e6,
+            optimizer = with_optimizer(Gurobi.Optimizer, gurobi_env, OutputFlag = 0)
             ) do subproblem, index
         # Unpack the node index.
         stage, markov_state = index
@@ -203,9 +204,6 @@ function visualize_policy(model, filename)
             max_depth = 52 * 5
         )
     )
-    open(filename * ".json", "w") do io
-        write(io, JSON.json(simulations))
-    end
     xticks = (1:26:5*52, repeat(["Aug", "Feb"], outer=5))
     plot(
         SDDP.publicationplot(simulations,
@@ -233,7 +231,7 @@ end
 function estimate_statistical_bound(model, filename)
     # Simulate to estimate the lower (statistical) bound. Note that we need to
     # set `terminate_on_dummy_leaf = true`.
-    bound_simulations = SDDP.simulate(model, 10_000,
+    bound_simulations = SDDP.simulate(model, 1_000,
         sampling_scheme = SDDP.InSampleMonteCarlo(
             terminate_on_cycle = false,
             terminate_on_dummy_leaf = true
@@ -243,44 +241,54 @@ function estimate_statistical_bound(model, filename)
         sum(x[:stage_objective] for x in sim) for sim in bound_simulations
     ]
 
-    function modified_cox(X, α = 1.96)
-        N = length(X)
-        logX = log.(X)
-        μ = Statistics.mean(logX)
-        σ² = Statistics.var(logX)
-        half_width = α * sqrt(σ² / N + σ²^2 / (2N - 2))
-        return exp(μ + σ² / 2 - half_width), exp(μ + σ² / 2 + half_width)
-    end
-    println(modified_cox(objectives))
     open(filename * ".json", "w") do io
         write(io, JSON.json(objectives))
     end
 end
 
-function profile_powder()
-    # Force compilation.
-    model = infinite_powder(discount_factor = 0.75, stocking_rate = 3.0)
-    Profile.clear()
-    @profile SDDP.train(model, iteration_limit = 1, print_level = 0)
-
-    model = infinite_powder(discount_factor = 0.75, stocking_rate = 3.0)
-    Profile.clear()
-    @profile SDDP.train(model, iteration_limit = 50, print_level = 0)
-    ProfileView.view()
-end
-
 # The experiments can be run by calling `julia powder.jl run`.
 if length(ARGS) > 0
     if ARGS[1] == "run"
-        model = infinite_powder(discount_factor = 0.75, stocking_rate = 3.0)
+        model = infinite_powder(discount_factor = 0.95, stocking_rate = 3.0)
+        Random.seed!(123)
+        SDDP.train(model,
+            iteration_limit = 1_000, print_level = 1,
+            log_file = "powder_complete.log")
+        Random.seed!(456)
+        visualize_policy(model, "powder_visualization")
+
+        model = infinite_powder(discount_factor = 0.95, stocking_rate = 3.0)
         for loop in 1:5
             Random.seed!(123 * loop)
-            SDDP.train(model, iteration_limit = 100, print_level = 1,
+            SDDP.train(model,
+                iteration_limit = 200, print_level = 1,
                 log_file = "powder_$(loop).log")
             Random.seed!(456 * loop)
-            visualize_policy(model, "powder_visualization_$(loop)")
-            Random.seed!(456 * loop)
             estimate_statistical_bound(model, "powder_bound_$(loop)")
+        end
+    elseif ARGS[1] == "summarize"
+        using Statistics
+        function modified_cox(X, α = 1.96)
+            N = length(X)
+            logX = log.(X)
+            μ = Statistics.mean(logX)
+            σ² = Statistics.var(logX)
+            half_width = α * sqrt(σ² / N + σ²^2 / (2N - 2))
+            return exp(μ + σ² / 2 - half_width), exp(μ + σ² / 2 + half_width)
+        end
+        function normal(X, α=1.96)
+            N = length(X)
+            μ = Statistics.mean(X)
+            σ = Statistics.std(X)
+            return μ + α * σ / sqrt(N), μ - α * σ / sqrt(N)
+        end
+        for i in 1:5
+            data = JSON.parsefile("powder_bound_$(i).json", use_mmap=false)
+            println(i, " ", modified_cox(data))
+        end
+        for i in 1:5
+            data = JSON.parsefile("powder_bound_$(i).json", use_mmap=false)
+            println(i, " ", normal(data))
         end
     end
 end

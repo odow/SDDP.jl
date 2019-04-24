@@ -1,0 +1,8 @@
+[deps]
+Gurobi = "2e9cd046-0924-5485-92f1-d5272153d98b"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+MathOptFormat = "f4570300-c277-12e8-125c-4912f86ce65d"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SDDP = "f4570300-c277-11e8-125c-4912f86ce65d"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
