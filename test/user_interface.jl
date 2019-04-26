@@ -102,6 +102,13 @@ using SDDP, Test, GLPK
             graph = SDDP.Graph(:root)
             SDDP.add_node(graph, :x)
             SDDP.add_node(graph, :y)
+            @test_throws ErrorException(
+                "You must provide on Lipschitz contsant for every element in " *
+                "the ambiguity set."
+                ) SDDP.add_ambiguity_set(graph, [:x], Float64[])
+            @test_throws ErrorException(
+                "Cannot provide negative Lipschitz constant: [-1.0]"
+                ) SDDP.add_ambiguity_set(graph, [:x], -1.0)
             SDDP.add_ambiguity_set(graph, [:x])
             SDDP.add_ambiguity_set(graph, [:y])
             @test graph.belief_partition == [ [:x], [:y] ]
@@ -110,7 +117,8 @@ using SDDP, Test, GLPK
                 (:root => :x, 0.5),
                 (:root => :y, 0.5),
                 ],
-                belief_partition = [ [:x, :y] ]
+                belief_partition = [[:x, :y]],
+                belief_lipschitz = [[1.0, 1.0]]
             )
             @test graph.belief_partition == [ [:x, :y] ]
             @test sprint(show, graph) == join([
