@@ -48,7 +48,7 @@ end
     Random.seed!(123)
     @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0)], rule)
     @test !SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0)], rule)
-    @test !SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0)], rule)
+    @test SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0)], rule)
 end
 
 @testset "BoundStalling" begin
