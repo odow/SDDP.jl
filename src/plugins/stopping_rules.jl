@@ -84,7 +84,16 @@ function convergence_test(graph::PolicyGraph, log::Vector{Log},
                 print_value(sample_mean + sample_ci), "]")
     end
     current_bound = log[end].bound
-    return sample_mean - sample_ci  <= current_bound <= sample_mean + sample_ci
+
+    if graph.objective_sense == MOI.MIN_SENSE
+        return sample_mean - sample_ci  <= current_bound
+    elseif graph.objective_sense == MOI.MAX_SENSE
+        return current_bound <= sample_mean + sample_ci
+    else
+        #If sense is none of the above for some awkward reason, return to previous criteria
+        return sample_mean - sample_ci  <= current_bound <= sample_mean + sample_ci
+    end
+
 end
 
 # ======================= Bound-stalling Stopping Rule ======================= #
