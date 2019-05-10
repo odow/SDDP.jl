@@ -91,5 +91,13 @@ emissions : 0.5 x_out <= 1.0
     `JuMP.set_coefficient` sets the coefficient on the _canonicalized_
     constraint.
 
+## Integrality
+
+The fundamental reason why SDDP works is convexity. This necessitates continuous
+variables. If your model includes binary or integer variables (e.g., [`air_conditioning.jl`](https://github.com/odow/SDDP.jl/blob/master/examples/air_conditioning.jl))
+`SDDP.jl` will contruct a (sub-optimal) policy using the continuous relaxation of the
+problem. But, when you simulate this policy, `SDDP.jl` will solve the original mixed-integer
+problem.
+
 In the next tutorial, [Basic VIII: debugging](@ref) we discuss how to debug
 models built using `SDDP.jl`.
