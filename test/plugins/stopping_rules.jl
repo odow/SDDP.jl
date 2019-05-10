@@ -49,6 +49,25 @@ end
     @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0)], rule)
     @test !SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0)], rule)
     @test SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0)], rule)
+
+    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
+                               bellman_function = SDDP.BellmanFunction(upper_bound = 6.0),
+                               optimizer = with_optimizer(GLPK.Optimizer),
+                               sense = :Max
+                               ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            JuMP.set_upper_bound(x.out, ω)
+        end
+        @stageobjective(node, x.out)
+    end
+    SDDP.train(model, iteration_limit = 1)
+    rule = SDDP.Statistical(num_replications = 20)
+    @test SDDP.stopping_rule_status(rule) == :statistical
+    Random.seed!(123)
+    @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0)], rule)
+    @test SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0)], rule)
+    @test !SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0)], rule)
 end
 
 @testset "BoundStalling" begin
