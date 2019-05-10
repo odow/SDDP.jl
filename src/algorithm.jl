@@ -248,8 +248,8 @@ end
 function solve_subproblem(model::PolicyGraph{T},
                           node::Node{T},
                           state::Dict{Symbol, Float64},
-                          noise,
-                          require_duals::Bool = true) where {T}
+                          noise;
+                          require_duals::Bool) where {T}
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
     # set the objective.
@@ -272,10 +272,12 @@ function solve_subproblem(model::PolicyGraph{T},
     else
         Dict{Symbol, Float64}()
     end
-    return get_outgoing_state(node),  # The outgoing state variable x'.
-           dual_values,  # The dual variables on the incoming state variables.
-           stage_objective_value(node.stage_objective),
-           JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
+    return (
+        state = get_outgoing_state(node),  # The outgoing state variable x'.
+        duals = dual_values,  # The dual variables on the incoming state variables.
+        stage_objective = stage_objective_value(node.stage_objective),
+        objective = JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
+    )
 end
 
 # Internal function to get the objective state at the root node.
@@ -371,18 +373,17 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
         # ===== End: starting state for infinite horizon =====
         # Solve the subproblem, note that `require_duals = false`.
         TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
-            (outgoing_state_value, duals, stage_objective, objective) =
-                solve_subproblem(
-                    model, node, incoming_state_value, noise, false)
+            subproblem_results = solve_subproblem(
+                model, node, incoming_state_value, noise, require_duals = false)
         end
         # Cumulate the stage_objective.
-        cumulative_value += stage_objective
-        # Add the outgoing state variable to the list of states we have sampled
-        # on this forward pass.
-        push!(sampled_states, outgoing_state_value)
+        cumulative_value += subproblem_results.stage_objective
         # Set the outgoing state value as the incoming state value for the next
         # node.
-        incoming_state_value = copy(outgoing_state_value)
+        incoming_state_value = copy(subproblem_results.state)
+        # Add the outgoing state variable to the list of states we have sampled
+        # on this forward pass.
+        push!(sampled_states, incoming_state_value)
     end
     if terminated_due_to_cycle
         # Get the last node in the scenario.
@@ -495,17 +496,16 @@ function backward_pass_no_belief(
                         objective_states[index], noise.term)
                 end
                 TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
-                    (new_outgoing_state, duals, stage_objective, obj) =
-                        solve_subproblem(
-                            model, child_node, outgoing_state, noise.term
-                        )
+                    subproblem_results = solve_subproblem(
+                        model, child_node, outgoing_state, noise.term,
+                        require_duals = true)
                 end
-                push!(dual_variables, duals)
+                push!(dual_variables, subproblem_results.duals)
                 push!(noise_supports, noise)
                 push!(child_indices, child_node.index)
                 push!(original_probability,
                     child.probability * noise.probability)
-                push!(objective_realizations, obj)
+                push!(objective_realizations, subproblem_results.objective)
             end
         end
         refine_bellman_function(
@@ -598,18 +598,18 @@ function backward_pass_with_belief(
                                     noise.term)
                             end
                             TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
-                                (new_outgoing_state, duals, stage_objective, obj) =
-                                    solve_subproblem(model, child_node,
-                                                     outgoing_state, noise.term)
+                                subproblem_results = solve_subproblem(
+                                    model, child_node, outgoing_state,
+                                    noise.term, require_duals = true)
                             end
-                            push!(dual_variables, duals)
+                            push!(dual_variables, subproblem_results.duals)
                             push!(noise_supports, noise)
                             push!(child_indices, child_node.index)
                             push!(original_probability,
                                 child.probability * noise.probability
                             )
                             push!(belief_probability, belief)
-                            push!(objective_realizations, obj)
+                            push!(objective_realizations, subproblem_results.objective)
                             solution_indices[(child.term, noise.term)] =
                                 length(dual_variables)
                         end
@@ -675,9 +675,9 @@ function calculate_bound(model::PolicyGraph{T},
                 belief.updater(
                     belief.belief, current_belief, partition_index, noise.term)
             end
-            (outgoing_state, duals, stage_objective, obj) =
-                solve_subproblem(model, node, root_state, noise.term)
-            push!(objectives, obj)
+            subproblem_results = solve_subproblem(
+                model, node, root_state, noise.term, require_duals = false)
+            push!(objectives, subproblem_results.objective)
             push!(probabilities, child.probability * noise.probability)
             push!(noise_supports, noise.term)
         end
@@ -711,6 +711,48 @@ function termination_status(model::PolicyGraph)
     else
         return model.most_recent_training_results.status
     end
+end
+
+"""
+    relax_integrality(model::PolicyGraph)::NTuple{Vector{VariableRef}, 2}
+
+Relax all binary and integer constraints in all subproblems in `model`. Return
+two vectors, the first containing a list of binary variables, and the second
+containing a list of integer variables.
+
+See also [`enforce_integrality`](@ref).
+"""
+function relax_integrality(model::PolicyGraph)
+    binaries = JuMP.VariableRef[]
+    integers = JuMP.VariableRef[]
+    for (key, node) in model.nodes
+        for x in JuMP.all_variables(node.subproblem)
+            if JuMP.is_binary(x)
+                JuMP.unset_binary(x)
+                push!(binaries, x)
+            elseif JuMP.is_integer(x)
+                JuMP.unset_integer(x)
+                push!(integers, x)
+            end
+        end
+    end
+    return binaries, integers
+end
+
+"""
+    enforce_integrality(
+        binaries::Vector{VariableRef}, integers::Vector{VariableRef})
+
+Set all variables in `binaries` to `SingleVariable-in-ZeroOne()`, and all
+variables in `integers` to `SingleVariable-in-Integer()`.
+
+See also [`relax_integrality`](@ref).
+"""
+function enforce_integrality(
+        binaries::Vector{VariableRef}, integers::Vector{VariableRef})
+    JuMP.set_integer.(integers)
+    JuMP.set_binary.(binaries)
+    return
 end
 
 """
@@ -823,6 +865,10 @@ function train(model::PolicyGraph;
             oracle.cut_oracle.deletion_minimum = cut_deletion_minimum
         end
     end
+
+    # Handle integrality
+    binaries, integers = relax_integrality(model)
+
     # The default status. This should never be seen by the user.
     status = :not_solved
     log = Log[]
@@ -865,6 +911,9 @@ function train(model::PolicyGraph;
             close(log_file_handle)
             rethrow(ex)
         end
+    finally
+        # Remember to reset any relaxed integralities.
+        enforce_integrality(binaries, integers)
     end
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
@@ -924,16 +973,16 @@ function _simulate(model::PolicyGraph{T},
             current_belief = Dict(node_index => 1.0)
         end
         # Solve the subproblem.
-        outgoing_state, duals, stage_objective, objective = solve_subproblem(
-            model, node, incoming_state, noise)
+        subproblem_results = solve_subproblem(
+            model, node, incoming_state, noise, require_duals = false)
         # Add the stage-objective
-        cumulative_value += stage_objective
+        cumulative_value += subproblem_results.stage_objective
         # Record useful variables from the solve.
         store = Dict{Symbol, Any}(
             :node_index => node_index,
             :noise_term => noise,
-            :stage_objective => stage_objective,
-            :bellman_term => objective - stage_objective,
+            :stage_objective => subproblem_results.stage_objective,
+            :bellman_term => subproblem_results.objective - subproblem_results.stage_objective,
             :objective_state => objective_state_vector,
             :belief => copy(current_belief)
         )
@@ -964,7 +1013,7 @@ function _simulate(model::PolicyGraph{T},
         # Add the store to our list.
         push!(simulation, store)
         # Set outgoing state as the incoming state for the next node.
-        incoming_state = copy(outgoing_state)
+        incoming_state = copy(subproblem_results.state)
     end
     return simulation
 end
