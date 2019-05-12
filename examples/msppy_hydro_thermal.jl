@@ -5,7 +5,7 @@
 
 # This example is taken from MSPPy: https://github.com/lingquant/msppy/blob/dc85a2e8fa5243b3d5096d59085d9caad3ff2ede/examples/hydro_thermal/julia/test.jl
 #
-# The original author was Linquant Ding (@lingquant), but it was modified by
+# The original author was Lingquant Ding (@lingquant), but it was modified by
 # Oscar Dowson (@odow) to meet the latest SDDP.jl syntax.
 #
 # The original model and data is from:
