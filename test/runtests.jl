@@ -12,7 +12,8 @@ end
 const EXCLUDED_EXAMPLES = [
     "inventory_management.jl",
     "daniel_hydro_complete.jl",
-    "partially_observable_paper.jl"
+    "partially_observable_paper.jl",
+    "msppy_hydro_thermal.jl"
 ]
 
 const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
