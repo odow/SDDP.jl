@@ -936,14 +936,14 @@ end
 # Internal function: helper to conduct a single simulation. Users should use the
 # documented, user-facing function SDDP.simulate instead.
 function _simulate(model::PolicyGraph{T},
-                   variables::Vector{Symbol} = Symbol[];
-                   sampling_scheme::AbstractSamplingScheme =
-                       InSampleMonteCarlo(),
-                   custom_recorders = Dict{Symbol, Function}()) where {T}
+                   variables::Vector{Symbol};
+                   sampling_scheme::AbstractSamplingScheme,
+                   custom_recorders::Dict{Symbol, Function},
+                   require_duals::Bool) where {T}
     # Sample a scenario path.
     scenario_path, terminated_due_to_cycle = sample_scenario(
-        model, sampling_scheme
-    )
+        model, sampling_scheme)
+
     # Storage for the simulation results.
     simulation = Dict{Symbol, Any}[]
     # The incoming state values.
@@ -1024,7 +1024,8 @@ end
              variables::Vector{Symbol} = Symbol[];
              sampling_scheme::AbstractSamplingScheme =
                  InSampleMonteCarlo(),
-             custom_recorders = Dict{Symbol, Function}()
+             custom_recorders = Dict{Symbol, Function}(),
+             require_duals::Bool = true
      )::Vector{Vector{Dict{Symbol, Any}}}
 
 Perform a simulation of the policy model with `number_replications` replications
@@ -1067,17 +1068,19 @@ The value of the dual in the first stage of the second replication can be
 accessed as:
 
     simulation_results[2][1][:constraint_dual]
+
+If you do not require dual variables (or if they are not available), pass
+`require_duals = false`.
 """
 function simulate(model::PolicyGraph,
                   number_replications::Int = 1,
                   variables::Vector{Symbol} = Symbol[];
                   sampling_scheme::AbstractSamplingScheme =
                       InSampleMonteCarlo(),
-                  custom_recorders = Dict{Symbol, Function}())
-    return [_simulate(
-                model,
-                variables;
-                sampling_scheme = sampling_scheme,
-                custom_recorders = custom_recorders)
-                for i in 1:number_replications]
+                  custom_recorders = Dict{Symbol, Function}(),
+                  require_duals::Bool = true)
+    return map(i -> _simulate(
+            model, variables; sampling_scheme = sampling_scheme,
+            custom_recorders = custom_recorders, require_duals = require_duals),
+        1:number_replications)
 end
