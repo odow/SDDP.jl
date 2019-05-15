@@ -29,10 +29,13 @@ function sldp_example_one()
             x⁺ >= x.out
             x⁻ >= x.in
         end)
-        SDDP.parameterize(φ -> JuMP.fix(ω, φ), sp, range(-0.1, stop=0.1, length=10))
+        points = [-0.5, 0.3, 0.4, 1.1, 1.5]
+        SDDP.parameterize(φ -> JuMP.fix(ω, φ), sp, [points; -points])
     end
     SDDP.train(model, iteration_limit = 100, print_level = 0)
-    @test SDDP.calculate_bound(model) <= 4.0
+    # TODO(odow): include the actual set of points when known, and update this
+    # bound. The paper reports a bound of [3.085, 3.313].
+    @test SDDP.calculate_bound(model) ≈ 5.49 atol=0.1
 end
 
 sldp_example_one()
