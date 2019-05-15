@@ -935,11 +935,11 @@ end
 
 # Internal function: helper to conduct a single simulation. Users should use the
 # documented, user-facing function SDDP.simulate instead.
-function _simulate(model::PolicyGraph,
+function _simulate(model::PolicyGraph{T},
                    variables::Vector{Symbol};
                    sampling_scheme::AbstractSamplingScheme,
                    custom_recorders::Dict{Symbol, Function},
-                   require_duals::Bool)
+                   require_duals::Bool) where {T}
     # Sample a scenario path.
     scenario_path, terminated_due_to_cycle = sample_scenario(
         model, sampling_scheme)
