@@ -438,206 +438,131 @@ end
 # scenario_path, refining the bellman function at sampled_states. Assumes that
 # scenario_path does not end in a leaf node (i.e., the forward pass was solved
 # with include_last_node = false)
-function backward_pass(model::PolicyGraph{T},
-                       options::Options,
-                       scenario_path::Vector{Tuple{T, NoiseType}},
-                       sampled_states::Vector{Dict{Symbol, Float64}},
-                       objective_states::Vector{NTuple{N, Float64}},
-                       belief_states::Vector{Tuple{Int, Dict{T, Float64}}}
-                           ) where {T, NoiseType, N}
-    if length(belief_states) > 0
-        backward_pass_with_belief(model, options, scenario_path, sampled_states,
-                                  objective_states, belief_states)
-    else
-        backward_pass_no_belief(model, options, scenario_path, sampled_states,
-                                objective_states)
-    end
-end
-
-function backward_pass_no_belief(
+function backward_pass(
         model::PolicyGraph{T},
         options::Options,
         scenario_path::Vector{Tuple{T, NoiseType}},
         sampled_states::Vector{Dict{Symbol, Float64}},
-        objective_states::Vector{NTuple{N, Float64}}
-                           ) where {T, NoiseType, N}
+        objective_states::Vector{NTuple{N, Float64}},
+        belief_states::Vector{Tuple{Int, Dict{T, Float64}}}) where {T, NoiseType, N}
     for index in length(scenario_path):-1:1
-        # Lookup node, noise realization, and outgoing state variables.
-        node_index, noise = scenario_path[index]
         outgoing_state = sampled_states[index]
-        node = model[node_index]
-        # If our node has no children, it means that we terminated the forward
-        # pass at a leaf node. In this case, we don't need to add any cuts so we
-        # can skip back up the scenario path one node. This should only ever be
-        # true on the last node, but it probably doesn't hurt to check every
-        # time in case someone wants to implement a really weird sampling
-        # scheme.
-        if length(node.children) == 0
-            continue
+        objective_state = get(objective_states, index, nothing)
+        partition_index, belief_state = get(belief_states, index, (0, nothing))
+        items = BackwardPassItems(T, Noise)
+        if belief_state !== nothing
+            # Update the cost-to-go function for partially observable model.
+            for (node_index, belief) in belief_state
+                belief == 0.0 && continue
+                solve_all_children(
+                    model, model[node_index], items, belief, belief_state,
+                    objective_state, outgoing_state)
+            end
+            # We need to refine our estimate at all nodes in the partition.
+            for node_index in model.belief_partition[partition_index]
+                node = model[node_index]
+                # Update belief state, etc.
+                current_belief = node.belief_state::BeliefState{T}
+                for (idx, belief) in belief_state
+                    current_belief.belief[idx] = belief
+                end
+                refine_bellman_function(
+                    model, node, node.bellman_function,
+                    options.risk_measures[node_index], outgoing_state,
+                    items.duals, items.supports,
+                    items.probability .* items.belief, items.objectives)
+            end
+        else
+            node_index, _ = scenario_path[index]
+            node = model[node_index]
+            if length(node.children) == 0
+                continue
+            end
+            solve_all_children(
+                model, node, items, 1.0, belief_state, objective_state,
+                outgoing_state)
+            refine_bellman_function(
+                model, node, node.bellman_function,
+                options.risk_measures[node_index], outgoing_state,
+                items.duals, items.supports, items.probability, items.objectives)
+            if options.refine_at_similar_nodes
+                # Refine the bellman function at other nodes with the same
+                # children, e.g., in the same stage of a Markovian policy graph.
+                for other_index in options.similar_children[node_index]
+                    copied_probability = similar(items.probability)
+                    other_node = model[other_index]
+                    for (idx, child_index) in enumerate(items.nodes)
+                        copied_probability[idx] =
+                            get(options.Φ, (other_index, child_index), 0.0) *
+                            items.supports[idx].probability
+                    end
+                    refine_bellman_function(
+                        model, node, node.bellman_function,
+                        options.risk_measures[other_index], outgoing_state,
+                        items.duals, items.supports, copied_probability,
+                        items.objectives)
+                end
+            end
         end
-        # Initialization.
-        noise_supports = Noise[]
-        child_indices = T[]
-        original_probability = Float64[]
-        dual_variables = Dict{Symbol, Float64}[]
-        objective_realizations = Float64[]
-        if length(node.children) == 0
-            error("The `scenario_path` passed to the backward pass should not" *
-                  " contain a leaf node.")
-        end
-        # Solve all children.
-        for child in node.children
-            child_node = model[child.term]
-            for noise in child_node.noise_terms
-                # There are multiple ways to check this. Here is one. Another
-                # could be that |objective_state| = |scenario_path|.
-                if child_node.objective_state !== nothing
-                    update_objective_state(child_node.objective_state,
-                        objective_states[index], noise.term)
+    end
+end
+
+struct BackwardPassItems{T, U}
+    "Given a (node, noise) tuple, index the element in the array."
+    cached_solutions::Dict{Tuple{T, Any}, Int}
+    duals::Vector{Dict{Symbol, Float64}}
+    supports::Vector{U}
+    nodes::Vector{T}
+    probability::Vector{Float64}
+    objectives::Vector{Float64}
+    belief::Vector{Float64}
+    function BackwardPassItems(T, U)
+        return new{T, U}(
+            Dict{Tuple{T, Any}, Int}(), Dict{Symbol, Float64}[], U[], T[],
+            Float64[], Float64[], Float64[])
+    end
+end
+
+function solve_all_children(
+        model::PolicyGraph{T}, node::Node{T}, items::BackwardPassItems,
+        belief::Float64, belief_state, objective_state,
+        outgoing_state::Dict{Symbol, Float64}) where {T}
+    for child in node.children
+        child_node = model[child.term]
+        for noise in child_node.noise_terms
+            if haskey(items.cached_solutions, (child.term, noise.term))
+                sol_index = items.cached_solutions[(child.term, noise.term)]
+                push!(items.duals, items.duals[sol_index])
+                push!(items.supports, items.supports[sol_index])
+                push!(items.nodes, child_node.index)
+                push!(items.probability, items.probability[sol_index])
+                push!(items.objectives, items.objectives[sol_index])
+                push!(items.belief, belief)
+            else
+                # Update belief state, etc.
+                if belief_state !== nothing
+                    current_belief = child_node.belief_state::BeliefState{T}
+                    current_belief.updater(
+                        current_belief.belief, belief_state,
+                        current_belief.partition_index, noise.term)
+                end
+                if objective_state !== nothing
+                    update_objective_state(
+                        child_node.objective_state, objective_state, noise.term)
                 end
                 TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
                     subproblem_results = solve_subproblem(
                         model, child_node, outgoing_state, noise.term,
                         require_duals = true)
                 end
-                push!(dual_variables, subproblem_results.duals)
-                push!(noise_supports, noise)
-                push!(child_indices, child_node.index)
-                push!(original_probability,
-                    child.probability * noise.probability)
-                push!(objective_realizations, subproblem_results.objective)
+                push!(items.duals, subproblem_results.duals)
+                push!(items.supports, noise)
+                push!(items.nodes, child_node.index)
+                push!(items.probability, child.probability * noise.probability)
+                push!(items.objectives, subproblem_results.objective)
+                push!(items.belief, belief)
+                items.cached_solutions[(child.term, noise.term)] = length(items.duals)
             end
-        end
-        refine_bellman_function(
-            model,
-            node,
-            node.bellman_function,
-            options.risk_measures[node_index],
-            outgoing_state,
-            dual_variables,
-            noise_supports,
-            original_probability,
-            objective_realizations
-        )
-        if options.refine_at_similar_nodes
-            # Refine the bellman function at other nodes with the same children,
-            # e.g., in the same stage of a Markovian policy graph.
-            for other_index in options.similar_children[node_index]
-                copied_probability = similar(original_probability)
-                other_node = model[other_index]
-                for (idx, child_index) in enumerate(child_indices)
-                    copied_probability[idx] =
-                        get(options.Φ, (other_index, child_index), 0.0) *
-                        noise_supports[idx].probability
-                end
-                refine_bellman_function(
-                    model,
-                    other_node,
-                    other_node.bellman_function,
-                    options.risk_measures[other_index],
-                    outgoing_state,
-                    dual_variables,
-                    noise_supports,
-                    copied_probability,
-                    objective_realizations
-                )
-            end
-        end
-    end
-end
-
-function backward_pass_with_belief(
-        model::PolicyGraph{T},
-        options::Options,
-        scenario_path::Vector{Tuple{T, NoiseType}},
-        sampled_states::Vector{Dict{Symbol, Float64}},
-        objective_states::Vector{NTuple{N, Float64}},
-        belief_states::Vector{Tuple{Int, Dict{T, Float64}}}
-            ) where {T, NoiseType, N}
-    for index in length(scenario_path):-1:1
-        outgoing_state = sampled_states[index]
-        # We cache the (parent, child, noise) indices for the following vectors
-        # so that if we ever have to re-solve, we can look up the solution
-        # instead of solving another LP.
-        solution_indices = Dict{Tuple{T, Any}, Int}()
-        dual_variables = Dict{Symbol, Float64}[]
-        noise_supports = Noise[]
-        child_indices = T[]
-        original_probability = Float64[]
-        objective_realizations = Float64[]
-        belief_probability = Float64[]
-        #
-        partition_index, belief_state = belief_states[index]
-        for (node_index, belief) in belief_state
-            if belief > 0.0
-                node = model[node_index]
-                if length(node.children) == 0
-                    continue
-                end
-                # Solve all children.
-                for child in node.children
-                    child_node = model[child.term]
-                    for noise in child_node.noise_terms
-                        if haskey(solution_indices, (child.term, noise.term))
-                            sol_index = solution_indices[(child.term, noise.term)]
-                            push!(dual_variables, dual_variables[sol_index])
-                            push!(noise_supports, noise_supports[sol_index])
-                            push!(child_indices, child_node.index)
-                            push!(original_probability, original_probability[sol_index])
-                            push!(belief_probability, belief)
-                            push!(objective_realizations, objective_realizations[sol_index])
-                        else
-                            # Update belief state, etc.
-                            if child_node.belief_state !== nothing
-                                current_belief = child_node.belief_state::BeliefState{T}
-                                new_partition_index = current_belief.partition_index
-                                current_belief.updater(
-                                    current_belief.belief,
-                                    belief_state,
-                                    new_partition_index,
-                                    noise.term)
-                            end
-                            TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
-                                subproblem_results = solve_subproblem(
-                                    model, child_node, outgoing_state,
-                                    noise.term, require_duals = true)
-                            end
-                            push!(dual_variables, subproblem_results.duals)
-                            push!(noise_supports, noise)
-                            push!(child_indices, child_node.index)
-                            push!(original_probability,
-                                child.probability * noise.probability
-                            )
-                            push!(belief_probability, belief)
-                            push!(objective_realizations, subproblem_results.objective)
-                            solution_indices[(child.term, noise.term)] =
-                                length(dual_variables)
-                        end
-                    end
-                end
-            end
-        end
-        # We need to refine our estimate at all nodes in the partition.
-        for node_index in model.belief_partition[partition_index]
-            node = model[node_index]
-            # Update belief state, etc.
-            if node.belief_state !== nothing
-                current_belief = node.belief_state::BeliefState{T}
-                for (idx, belief) in belief_state
-                    current_belief.belief[idx] = belief
-                end
-            end
-            refine_bellman_function(
-                model,
-                node,
-                node.bellman_function,
-                options.risk_measures[node_index],
-                outgoing_state,
-                dual_variables,
-                noise_supports,
-                original_probability .* belief_probability,
-                objective_realizations
-            )
         end
     end
 end
