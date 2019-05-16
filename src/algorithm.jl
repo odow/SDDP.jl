@@ -540,15 +540,13 @@ function solve_all_children(
                 push!(items.belief, belief)
             else
                 # Update belief state, etc.
-                if child_node.belief_state !== nothing
-                    @assert belief_state !== nothing
+                if belief_state !== nothing
                     current_belief = child_node.belief_state::BeliefState{T}
                     current_belief.updater(
                         current_belief.belief, belief_state,
                         current_belief.partition_index, noise.term)
                 end
-                if child_node.objective_state !== nothing
-                    @assert objective_state !== nothing
+                if objective_state !== nothing
                     update_objective_state(
                         child_node.objective_state, objective_state, noise.term)
                 end
@@ -561,8 +559,8 @@ function solve_all_children(
                 push!(items.supports, noise)
                 push!(items.nodes, child_node.index)
                 push!(items.probability, child.probability * noise.probability)
-                push!(items.belief, belief)
                 push!(items.objectives, subproblem_results.objective)
+                push!(items.belief, belief)
                 items.cached_solutions[(child.term, noise.term)] = length(items.duals)
             end
         end
