@@ -1,0 +1,84 @@
+<!--
+    Copyright 2017-19, Oscar Dowson.
+    This Source Code Form is subject to the terms of the Mozilla Public License,
+    v. 2.0. If a copy of the MPL was not distributed with this file, You can
+    obtain one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <h1>SDDP.jl</h1>
+    <div id="plot"></div>
+    <script>
+        var iterations = [1, 2, 3, 4];
+        var bounds = [1, 2, 3, 4];
+        var simulations = [0, 3, 1, 2];
+        var time = [0.5, 0.6, 0.8, 1.1];
+        var bound_trace = {
+            x: iterations,
+            y: bounds,
+            name: 'Bound',
+            type: 'lines',
+            xaxis: 'x1',
+            yaxis: 'y1'
+        };
+        var simulation_trace = {
+            x: iterations,
+            y: simulations,
+            name: 'Simulations',
+            type: 'markers',
+            xaxis: 'x1',
+            yaxis: 'y1'
+        };
+        var time_trace = {
+            x: iterations,
+            y: time,
+            name: 'Solution time',
+            type: 'lines',
+            xaxis: 'x2',
+            yaxis: 'y2'
+        }
+
+        var cnt = 0;
+        var interval = setInterval(function() {
+            Plotly.extendTraces('plot', {
+                y: [
+                    [1],
+                    [2]
+                ]
+            }, [0, 1, 2])
+
+            cnt = cnt+1;
+            if(cnt === 100) clearInterval(interval);
+            },
+            500);
+
+        Plotly.newPlot(
+            'plot',
+            [bound_trace, simulation_trace, time_trace],
+            {
+                grid: {rows: 1, columns: 2, pattern: 'independent'},
+                showlegend: false,
+                xaxis: {
+                    title: 'Iteration'
+                },
+                xaxis2: {
+                    title: 'Iteration'
+                },
+                yaxis: {
+                    title: 'Objective'
+                },
+                yaxis2: {
+                    title: 'Solution time (s)'
+                }
+            });
+    </script>
+
+</body>
+
+</html>
