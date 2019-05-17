@@ -35,4 +35,7 @@ include("plugins/stopping_rules.jl")
 include("visualization/publication_plot.jl")
 include("visualization/spaghetti_plot.jl")
 
+# Modelling aids.
+include("modelling_aids.jl")
+
 end
