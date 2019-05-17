@@ -16,8 +16,8 @@ function inventory_management_problem()
         [:Ad, :Ah, :Bd, :Bh],
         [
             (:root_node => :Ad, 0.5), (:root_node => :Bd, 0.5),
-            (:Ad => :Ah, 1.0), (:Ah => :Ad, 0.9),
-            (:Bd => :Bh, 1.0), (:Bh => :Bd, 0.9)
+            (:Ad => :Ah, 1.0), (:Ah => :Ad, 0.8), (:Ah => :Bd, 0.1),
+            (:Bd => :Bh, 1.0), (:Bh => :Bd, 0.8), (:Bh => :Ad, 0.1),
         ]
     )
     SDDP.add_ambiguity_set(graph, [:Ad, :Bd], 1e2)
