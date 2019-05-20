@@ -322,6 +322,8 @@ mutable struct Node{T}
     objective_state::Union{Nothing, ObjectiveState}
     # For dynamic interpolation of belief states.
     belief_state::Union{Nothing, BeliefState{T}}
+    # An over-loadable hook for the JuMP.optimize! function.
+    optimize_hook::Union{Nothing, Function}
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol, Any}
@@ -498,6 +500,9 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             nothing,
             # And for belief states.
             nothing,
+            # The optimize hook defaults to nothing.
+            nothing,
+            # The extension dictionary.
             Dict{Symbol, Any}()
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
