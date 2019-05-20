@@ -725,7 +725,7 @@ There is also a special option for infinite-horizon problems
 function train(
     model::PolicyGraph;
     iteration_limit::Union{Int, Nothing} = nothing,
-    time_limit::Union{Int, Float64} = nothing,
+    time_limit::Union{Real, Nothing} = nothing,
     print_level::Int = 1,
     log_file::String = "SDDP.log",
     run_numerical_stability_report::Bool = true,
