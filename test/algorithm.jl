@@ -126,7 +126,7 @@ end
         @stageobjective(sp, (stage + markov_state) * x.out)
     end
     SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = false)
-    @test SDDP.calculate_bound(model) ≈ 5.7
+    @test SDDP.calculate_bound(model) ≈ 5.7 || SDDP.calculate_bound(model) ≈ 6.3
     mi1 = length(model[(1,1)].bellman_function.global_theta.cut_oracle.cuts)
     mi2 = length(model[(1,2)].bellman_function.global_theta.cut_oracle.cuts)
     @test mi1 + mi2 == 1
