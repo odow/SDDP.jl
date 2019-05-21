@@ -497,7 +497,7 @@ function backward_pass(
                             items.supports[idx].probability
                     end
                     refine_bellman_function(
-                        model, node, node.bellman_function,
+                        model, other_node, other_node.bellman_function,
                         options.risk_measures[other_index], outgoing_state,
                         items.duals, items.supports, copied_probability,
                         items.objectives)
