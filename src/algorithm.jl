@@ -685,55 +685,58 @@ end
 
 Train the policy for `model`. Keyword arguments:
 
- - `iteration_limit::Int`: number of iterations to conduct before termination
+ - `iteration_limit::Int`: number of iterations to conduct before termination.
 
- - `time_limit::Float64`: number of seconds to train before termination
+ - `time_limit::Float64`: number of seconds to train before termination.
 
- - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)
+ - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)s.
 
- - `print_level`: control the level of printing to the screen
+ - `print_level::Int`: control the level of printing to the screen. Defaults to
+    `1`. Set to `0` to disable all printing.
 
- - `log_file`: filepath at which to write a log of the training progress
+ - `log_file::String`: filepath at which to write a log of the training progress.
+    Defaults to `SDDP.log`. 
 
- - `run_numerical_stability_report`: generate a numerical stability report prior
-    to solve
+ - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability 
+    report prior to solve. Defaults to `true`.
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
     same children, it can cheaply add a cut discovered at one to the other. In
     almost all cases this should be set to `true`.
 
  - `cut_deletion_minimum::Int`: the minimum number of cuts to cache before
-    deleting  cuts from the subproblem. This is solver specific; however,
-    smaller values  result in smaller subproblems, at the expense of more time
-    spent performing cut selection.
+    deleting  cuts from the subproblem. The impact on performance is solver 
+    specific; however, smaller values result in smaller subproblems (and therefore
+    quicker solves), at the expense of more time spent performing cut selection.
 
- - `risk_measure`: the risk measure to use at each node.
+ - `risk_measure`: the risk measure to use at each node. Defaults to [`Expectation`](@ref).
 
  - `sampling_scheme`: a sampling scheme to use on the forward pass of the
-    algorithm. Defaults to InSampleMonteCarlo().
+    algorithm. Defaults to [`InSampleMonteCarlo`](@ref).
 
- - `cut_type`: choose between `SINGLE_CUT` and `MULTI_CUT` versions of SDDP.
+ - `cut_type`: choose between `SDDP.SINGLE_CUT` and `SDDP.MULTI_CUT` versions of SDDP.
 
-There is also a special option for infinite horizon problems
+There is also a special option for infinite-horizon problems
 
- - cycle_discretization_delta: the maximum distance between states allowed on
+ - `cycle_discretization_delta`: the maximum distance between states allowed on
    the forward pass. This is for advanced users only and needs to be used in
    conjunction with a different `sampling_scheme`.
 """
-function train(model::PolicyGraph;
-               iteration_limit = nothing,
-               time_limit = nothing,
-               print_level = 1,
-               log_file = "SDDP.log",
-               run_numerical_stability_report::Bool = true,
-               stopping_rules = AbstractStoppingRule[],
-               risk_measure = SDDP.Expectation(),
-               sampling_scheme = SDDP.InSampleMonteCarlo(),
-               cut_type = SDDP.SINGLE_CUT,
-               cycle_discretization_delta = 0.0,
-               refine_at_similar_nodes = true,
-               cut_deletion_minimum = 1
-               )
+function train(
+    model::PolicyGraph;
+    iteration_limit::Union{Int, Nothing} = nothing,
+    time_limit::Union{Real, Nothing} = nothing,
+    print_level::Int = 1,
+    log_file::String = "SDDP.log",
+    run_numerical_stability_report::Bool = true,
+    stopping_rules = AbstractStoppingRule[],
+    risk_measure = SDDP.Expectation(),
+    sampling_scheme = SDDP.InSampleMonteCarlo(),
+    cut_type = SDDP.SINGLE_CUT,
+    cycle_discretization_delta::Float64 = 0.0,
+    refine_at_similar_nodes::Bool = true,
+    cut_deletion_minimum::Int = 1
+)
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
     log_file_handle = open(log_file, "a")
