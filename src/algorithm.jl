@@ -453,6 +453,8 @@ function backward_pass(model::PolicyGraph{T},
     end
 end
 
+
+
 function backward_pass_no_belief(
         model::PolicyGraph{T},
         options::Options,
@@ -485,9 +487,11 @@ function backward_pass_no_belief(
                   " contain a leaf node.")
         end
         # Solve all children.
+        backward_sampler = MonteCarloSampler()
+
         for child in node.children
             child_node = model[child.term]
-            for noise in child_node.noise_terms
+            for noise in sample_backward_noise_terms(backward_sampler, child_node)
                 # There are multiple ways to check this. Here is one. Another
                 # could be that |objective_state| = |scenario_path|.
                 if child_node.objective_state !== nothing
