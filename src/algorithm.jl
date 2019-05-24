@@ -245,23 +245,30 @@ end
 # incoming state variables state and realization of the stagewise-independent
 # noise term noise. If require_duals=true, also return the dual variables
 # associated with the fixed constraint of the incoming state variables.
-function solve_subproblem(model::PolicyGraph{T},
-                          node::Node{T},
-                          state::Dict{Symbol, Float64},
-                          noise,
-                          scenario_path::Vector{Tuple{T, <:Any}};
-                          require_duals::Bool) where {T}
+function solve_subproblem(
+    model::PolicyGraph{T},
+    node::Node{T},
+    state::Dict{Symbol, Float64},
+    noise,
+    scenario_path::Vector{Tuple{T, <:Any}};
+    require_duals::Bool
+) where {T}
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
     # set the objective.
     set_incoming_state(node, state)
     parameterize(node, noise)
-    if node.optimize_hook !== nothing
-        node.optimize_hook(
-            model, node, state, noise, scenario_path, require_duals)
+
+    pre_optimize_ret = if node.pre_optimize_hook !== nothing
+        node.pre_optimize_hook(
+            model, node, state, noise, scenario_path, require_duals
+        )
     else
-        JuMP.optimize!(node.subproblem)
+        nothing
     end
+
+    JuMP.optimize!(node.subproblem)
+
     # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         write_subproblem_to_file(node, "subproblem", throw_error = true)
@@ -278,11 +285,18 @@ function solve_subproblem(model::PolicyGraph{T},
     else
         Dict{Symbol, Float64}()
     end
+
+    state = get_outgoing_state(node)
+    stage_objective = stage_objective_value(node.stage_objective)
+    objective = JuMP.objective_value(node.subproblem)
+
+    if node.post_optimize_hook !== nothing
+        node.post_optimize_hook(pre_optimize_ret)
+    end
+
     return (
-        state = get_outgoing_state(node),  # The outgoing state variable x'.
-        duals = dual_values,  # The dual variables on the incoming state variables.
-        stage_objective = stage_objective_value(node.stage_objective),
-        objective = JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
+        state = state, duals = dual_values, objective = objective,
+        stage_objective = stage_objective
     )
 end
 
@@ -712,9 +726,9 @@ Train the policy for `model`. Keyword arguments:
     `1`. Set to `0` to disable all printing.
 
  - `log_file::String`: filepath at which to write a log of the training progress.
-    Defaults to `SDDP.log`. 
+    Defaults to `SDDP.log`.
 
- - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability 
+ - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability
     report prior to solve. Defaults to `true`.
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
@@ -722,7 +736,7 @@ Train the policy for `model`. Keyword arguments:
     almost all cases this should be set to `true`.
 
  - `cut_deletion_minimum::Int`: the minimum number of cuts to cache before
-    deleting  cuts from the subproblem. The impact on performance is solver 
+    deleting  cuts from the subproblem. The impact on performance is solver
     specific; however, smaller values result in smaller subproblems (and therefore
     quicker solves), at the expense of more time spent performing cut selection.
 
