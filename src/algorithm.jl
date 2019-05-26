@@ -444,7 +444,8 @@ function backward_pass(
         scenario_path::Vector{Tuple{T, NoiseType}},
         sampled_states::Vector{Dict{Symbol, Float64}},
         objective_states::Vector{NTuple{N, Float64}},
-        belief_states::Vector{Tuple{Int, Dict{T, Float64}}}) where {T, NoiseType, N}
+        belief_states::Vector{Tuple{Int, Dict{T, Float64}}},
+        backward_pass_sampler::AbstractBackwardPassSampler = CompleteSampler()) where {T, NoiseType, N}
     for index in length(scenario_path):-1:1
         outgoing_state = sampled_states[index]
         objective_state = get(objective_states, index, nothing)
@@ -456,7 +457,7 @@ function backward_pass(
                 belief == 0.0 && continue
                 solve_all_children(
                     model, model[node_index], items, belief, belief_state,
-                    objective_state, outgoing_state)
+                    objective_state, outgoing_state,backward_pass_sampler)
             end
             # We need to refine our estimate at all nodes in the partition.
             for node_index in model.belief_partition[partition_index]
@@ -480,7 +481,7 @@ function backward_pass(
             end
             solve_all_children(
                 model, node, items, 1.0, belief_state, objective_state,
-                outgoing_state)
+                outgoing_state,backward_pass_sampler)
             refine_bellman_function(
                 model, node, node.bellman_function,
                 options.risk_measures[node_index], outgoing_state,
@@ -526,10 +527,14 @@ end
 function solve_all_children(
         model::PolicyGraph{T}, node::Node{T}, items::BackwardPassItems,
         belief::Float64, belief_state, objective_state,
-        outgoing_state::Dict{Symbol, Float64}) where {T}
+        outgoing_state::Dict{Symbol, Float64},
+        backward_pass_sampler::AbstractBackwardPassSampler = CompleteSampler()) where {T}
+
+
     for child in node.children
         child_node = model[child.term]
-        for noise in child_node.noise_terms
+        sampled_noises = sample_backward_noise_terms(backward_pass_sampler,child_node)
+        for noise in sampled_noises
             if haskey(items.cached_solutions, (child.term, noise.term))
                 sol_index = items.cached_solutions[(child.term, noise.term)]
                 push!(items.duals, items.duals[sol_index])
@@ -695,9 +700,9 @@ Train the policy for `model`. Keyword arguments:
     `1`. Set to `0` to disable all printing.
 
  - `log_file::String`: filepath at which to write a log of the training progress.
-    Defaults to `SDDP.log`. 
+    Defaults to `SDDP.log`.
 
- - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability 
+ - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability
     report prior to solve. Defaults to `true`.
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
@@ -705,7 +710,7 @@ Train the policy for `model`. Keyword arguments:
     almost all cases this should be set to `true`.
 
  - `cut_deletion_minimum::Int`: the minimum number of cuts to cache before
-    deleting  cuts from the subproblem. The impact on performance is solver 
+    deleting  cuts from the subproblem. The impact on performance is solver
     specific; however, smaller values result in smaller subproblems (and therefore
     quicker solves), at the expense of more time spent performing cut selection.
 
@@ -735,7 +740,8 @@ function train(
     cut_type = SDDP.SINGLE_CUT,
     cycle_discretization_delta::Float64 = 0.0,
     refine_at_similar_nodes::Bool = true,
-    cut_deletion_minimum::Int = 1
+    cut_deletion_minimum::Int = 1,
+    backward_pass_sampler::AbstractBackwardPassSampler = CompleteSampler()
 )
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
@@ -813,7 +819,8 @@ function train(
                     model, options, forward_trajectory.scenario_path,
                     forward_trajectory.sampled_states,
                     forward_trajectory.objective_states,
-                    forward_trajectory.belief_states)
+                    forward_trajectory.belief_states,
+                    backward_pass_sampler)
             end
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
                 bound = calculate_bound(model)
