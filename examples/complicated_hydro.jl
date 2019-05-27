@@ -1,4 +1,4 @@
-using SDDP, JSON, GLPK
+using SDDP, JSON, GLPK, Test
 
 const DATA = JSON.parsefile(joinpath(@__DIR__, "complicated_hydro.json"))
 
@@ -72,6 +72,6 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(model, iteration_limit = 50, print_level = 0)
+SDDP.train(model, iteration_limit = 50, print_level = 1, dashboard = true)
 
 @test SDDP.calculate_bound(model) ≈ 129_469 atol=1

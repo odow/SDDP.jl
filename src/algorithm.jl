@@ -695,9 +695,9 @@ Train the policy for `model`. Keyword arguments:
     `1`. Set to `0` to disable all printing.
 
  - `log_file::String`: filepath at which to write a log of the training progress.
-    Defaults to `SDDP.log`. 
+    Defaults to `SDDP.log`.
 
- - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability 
+ - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability
     report prior to solve. Defaults to `true`.
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
@@ -705,7 +705,7 @@ Train the policy for `model`. Keyword arguments:
     almost all cases this should be set to `true`.
 
  - `cut_deletion_minimum::Int`: the minimum number of cuts to cache before
-    deleting  cuts from the subproblem. The impact on performance is solver 
+    deleting  cuts from the subproblem. The impact on performance is solver
     specific; however, smaller values result in smaller subproblems (and therefore
     quicker solves), at the expense of more time spent performing cut selection.
 
@@ -716,11 +716,14 @@ Train the policy for `model`. Keyword arguments:
 
  - `cut_type`: choose between `SDDP.SINGLE_CUT` and `SDDP.MULTI_CUT` versions of SDDP.
 
-There is also a special option for infinite-horizon problems
+ - `dashboard::Bool`: open a visualization of the training over time. Defaults
+    to `false`.
+
+There is also a special option for infinite horizon problems
 
  - `cycle_discretization_delta`: the maximum distance between states allowed on
-   the forward pass. This is for advanced users only and needs to be used in
-   conjunction with a different `sampling_scheme`.
+    the forward pass. This is for advanced users only and needs to be used in
+    conjunction with a different `sampling_scheme`.
 """
 function train(
     model::PolicyGraph;
@@ -735,7 +738,8 @@ function train(
     cut_type = SDDP.SINGLE_CUT,
     cycle_discretization_delta::Float64 = 0.0,
     refine_at_similar_nodes::Bool = true,
-    cut_deletion_minimum::Int = 1
+    cut_deletion_minimum::Int = 1,
+    dashboard::Bool = false
 )
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
@@ -797,6 +801,13 @@ function train(
     # Handle integrality
     binaries, integers = relax_integrality(model)
 
+    dashboard_callback = if dashboard
+        launch_dashboard()
+    else
+        (::Any, ::Any) -> nothing
+    end
+    dashboard_time = 0.0
+
     # The default status. This should never be seen by the user.
     status = :not_solved
     log = Log[]
@@ -822,14 +833,20 @@ function train(
                 log,
                 Log(
                     iteration_count, bound, forward_trajectory.cumulative_value,
-                    time() - start_time
+                    time() - start_time - dashboard_time
                 )
             )
             has_converged, status = convergence_test(model, log, stopping_rules)
+
+            dashboard_start = time()
+            dashboard_callback(log[end], false)
+            dashboard_time += time() - dashboard_start
+
             if print_level > 0
                 print_iteration(stdout, log[end])
                 print_iteration(log_file_handle, log[end])
             end
+
             iteration_count += 1
         end
     catch ex
@@ -842,6 +859,8 @@ function train(
     finally
         # Remember to reset any relaxed integralities.
         enforce_integrality(binaries, integers)
+        # And close the dashboard callback if necessary.
+        dashboard_callback(log[end], true)
     end
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
