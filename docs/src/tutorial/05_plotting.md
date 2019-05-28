@@ -20,6 +20,10 @@ SDDP.train(model; dashboard = true)
 By default, `dashboard = false` because there is an initial overhead associated
 with opening and preparing the plot.
 
+!!! warning
+    The dashboard is experimental. There are known bugs associated with it, e.g.,
+    https://github.com/odow/SDDP.jl/issues/226.
+
 ## Preliminaries
 
 The next two plot types help visualize the policy. Thus, we first need to
