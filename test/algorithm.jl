@@ -113,3 +113,36 @@ end
     @test isfile("subproblem.lp")
     rm("subproblem.lp")
 end
+
+@testset "refine_at_similar_nodes" begin
+    model = SDDP.MarkovianPolicyGraph(
+        transition_matrices = [ [0.5 0.5], [0.2 0.8; 0.8 0.2]],
+        optimizer = with_optimizer(GLPK.Optimizer),
+        lower_bound = 0.0
+    ) do sp, index
+        stage, markov_state = index
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+        @constraint(sp, x.out >= stage)
+        @stageobjective(sp, (stage + markov_state) * x.out)
+    end
+    SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = false)
+    @test SDDP.calculate_bound(model) ≈ 5.7 || SDDP.calculate_bound(model) ≈ 6.3
+    mi1 = length(model[(1,1)].bellman_function.global_theta.cut_oracle.cuts)
+    mi2 = length(model[(1,2)].bellman_function.global_theta.cut_oracle.cuts)
+    @test mi1 + mi2 == 1
+
+    model = SDDP.MarkovianPolicyGraph(
+        transition_matrices = [ [0.5 0.5], [0.2 0.8; 0.8 0.2]],
+        optimizer = with_optimizer(GLPK.Optimizer),
+        lower_bound = 0.0
+    ) do sp, index
+        stage, markov_state = index
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+        @constraint(sp, x.out >= stage)
+        @stageobjective(sp, (stage + markov_state) * x.out)
+    end
+    SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = true)
+    @test SDDP.calculate_bound(model) ≈ 9.5
+    @test length(model[(1, 1)].bellman_function.global_theta.cut_oracle.cuts) == 1
+    @test length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts) == 1
+end

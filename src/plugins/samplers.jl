@@ -5,20 +5,23 @@ abstract type AbstractBackwardPassSampler end
 
 struct CompleteSampler <: AbstractBackwardPassSampler end
 
-struct MonteCarloSampler <: AbstractBackwardPassSampler end
+struct MonteCarloSampler <: AbstractBackwardPassSampler
+    number_of_samples ::Integer
+end
 
 sample_backward_noise_terms(::CompleteSampler, node) = node.noise_terms
 
-function sample_backward_noise_terms(::MonteCarloSampler, node)
+function sample_backward_noise_terms(mcs::MonteCarloSampler, node)
     sampled = Noise[]
     terms = [noise.term for noise in node.noise_terms]
 
-    sampled_t = sample(terms,10)
+    n_samples = min(length(node.noise_terms),mcs.number_of_samples)
+    sampled_t = sample(terms,n_samples)
     u=unique(sampled_t)
     d=Dict([(i,count(x->x==i,sampled_t)) for i in u])
 
     for i in 1:length(u)
-        push!(sampled,Noise(u[i],1/d[u[i]]))
+        push!(sampled,Noise(u[i],d[u[i]]/n_samples))
     end
     return sampled
 end

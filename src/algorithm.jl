@@ -248,8 +248,8 @@ end
 function solve_subproblem(model::PolicyGraph{T},
                           node::Node{T},
                           state::Dict{Symbol, Float64},
-                          noise,
-                          require_duals::Bool = true) where {T}
+                          noise;
+                          require_duals::Bool) where {T}
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
     # set the objective.
@@ -272,10 +272,12 @@ function solve_subproblem(model::PolicyGraph{T},
     else
         Dict{Symbol, Float64}()
     end
-    return get_outgoing_state(node),  # The outgoing state variable x'.
-           dual_values,  # The dual variables on the incoming state variables.
-           stage_objective_value(node.stage_objective),
-           JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
+    return (
+        state = get_outgoing_state(node),  # The outgoing state variable x'.
+        duals = dual_values,  # The dual variables on the incoming state variables.
+        stage_objective = stage_objective_value(node.stage_objective),
+        objective = JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
+    )
 end
 
 # Internal function to get the objective state at the root node.
@@ -371,18 +373,17 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
         # ===== End: starting state for infinite horizon =====
         # Solve the subproblem, note that `require_duals = false`.
         TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
-            (outgoing_state_value, duals, stage_objective, objective) =
-                solve_subproblem(
-                    model, node, incoming_state_value, noise, false)
+            subproblem_results = solve_subproblem(
+                model, node, incoming_state_value, noise, require_duals = false)
         end
         # Cumulate the stage_objective.
-        cumulative_value += stage_objective
-        # Add the outgoing state variable to the list of states we have sampled
-        # on this forward pass.
-        push!(sampled_states, outgoing_state_value)
+        cumulative_value += subproblem_results.stage_objective
         # Set the outgoing state value as the incoming state value for the next
         # node.
-        incoming_state_value = copy(outgoing_state_value)
+        incoming_state_value = copy(subproblem_results.state)
+        # Add the outgoing state variable to the list of states we have sampled
+        # on this forward pass.
+        push!(sampled_states, incoming_state_value)
     end
     if terminated_due_to_cycle
         # Get the last node in the scenario.
@@ -437,211 +438,136 @@ end
 # scenario_path, refining the bellman function at sampled_states. Assumes that
 # scenario_path does not end in a leaf node (i.e., the forward pass was solved
 # with include_last_node = false)
-function backward_pass(model::PolicyGraph{T},
-                       options::Options,
-                       scenario_path::Vector{Tuple{T, NoiseType}},
-                       sampled_states::Vector{Dict{Symbol, Float64}},
-                       objective_states::Vector{NTuple{N, Float64}},
-                       belief_states::Vector{Tuple{Int, Dict{T, Float64}}}
-                           ) where {T, NoiseType, N}
-    if length(belief_states) > 0
-        backward_pass_with_belief(model, options, scenario_path, sampled_states,
-                                  objective_states, belief_states)
-    else
-        backward_pass_no_belief(model, options, scenario_path, sampled_states,
-                                objective_states)
-    end
-end
-
-
-
-function backward_pass_no_belief(
-        model::PolicyGraph{T},
-        options::Options,
-        scenario_path::Vector{Tuple{T, NoiseType}},
-        sampled_states::Vector{Dict{Symbol, Float64}},
-        objective_states::Vector{NTuple{N, Float64}}
-                           ) where {T, NoiseType, N}
-    for index in length(scenario_path):-1:1
-        # Lookup node, noise realization, and outgoing state variables.
-        node_index, noise = scenario_path[index]
-        outgoing_state = sampled_states[index]
-        node = model[node_index]
-        # If our node has no children, it means that we terminated the forward
-        # pass at a leaf node. In this case, we don't need to add any cuts so we
-        # can skip back up the scenario path one node. This should only ever be
-        # true on the last node, but it probably doesn't hurt to check every
-        # time in case someone wants to implement a really weird sampling
-        # scheme.
-        if length(node.children) == 0
-            continue
-        end
-        # Initialization.
-        noise_supports = Noise[]
-        child_indices = T[]
-        original_probability = Float64[]
-        dual_variables = Dict{Symbol, Float64}[]
-        objective_realizations = Float64[]
-        if length(node.children) == 0
-            error("The `scenario_path` passed to the backward pass should not" *
-                  " contain a leaf node.")
-        end
-        # Solve all children.
-        backward_sampler = MonteCarloSampler()
-
-        for child in node.children
-            child_node = model[child.term]
-            for noise in sample_backward_noise_terms(backward_sampler, child_node)
-                # There are multiple ways to check this. Here is one. Another
-                # could be that |objective_state| = |scenario_path|.
-                if child_node.objective_state !== nothing
-                    update_objective_state(child_node.objective_state,
-                        objective_states[index], noise.term)
-                end
-                TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
-                    (new_outgoing_state, duals, stage_objective, obj) =
-                        solve_subproblem(
-                            model, child_node, outgoing_state, noise.term
-                        )
-                end
-                push!(dual_variables, duals)
-                push!(noise_supports, noise)
-                push!(child_indices, child_node.index)
-                push!(original_probability,
-                    child.probability * noise.probability)
-                push!(objective_realizations, obj)
-            end
-        end
-        refine_bellman_function(
-            model,
-            node,
-            node.bellman_function,
-            options.risk_measures[node_index],
-            outgoing_state,
-            dual_variables,
-            noise_supports,
-            original_probability,
-            objective_realizations
-        )
-        if options.refine_at_similar_nodes
-            # Refine the bellman function at other nodes with the same children,
-            # e.g., in the same stage of a Markovian policy graph.
-            for other_index in options.similar_children[node_index]
-                copied_probability = similar(original_probability)
-                other_node = model[other_index]
-                for (idx, child_index) in enumerate(child_indices)
-                    copied_probability[idx] =
-                        get(options.Φ, (other_index, child_index), 0.0) *
-                        noise_supports[idx].probability
-                end
-                refine_bellman_function(
-                    model,
-                    other_node,
-                    other_node.bellman_function,
-                    options.risk_measures[other_index],
-                    outgoing_state,
-                    dual_variables,
-                    noise_supports,
-                    copied_probability,
-                    objective_realizations
-                )
-            end
-        end
-    end
-end
-
-function backward_pass_with_belief(
+function backward_pass(
         model::PolicyGraph{T},
         options::Options,
         scenario_path::Vector{Tuple{T, NoiseType}},
         sampled_states::Vector{Dict{Symbol, Float64}},
         objective_states::Vector{NTuple{N, Float64}},
-        belief_states::Vector{Tuple{Int, Dict{T, Float64}}}
-            ) where {T, NoiseType, N}
+        belief_states::Vector{Tuple{Int, Dict{T, Float64}}},
+        backward_pass_sampler::AbstractBackwardPassSampler = CompleteSampler()) where {T, NoiseType, N}
     for index in length(scenario_path):-1:1
         outgoing_state = sampled_states[index]
-        # We cache the (parent, child, noise) indices for the following vectors
-        # so that if we ever have to re-solve, we can look up the solution
-        # instead of solving another LP.
-        solution_indices = Dict{Tuple{T, Any}, Int}()
-        dual_variables = Dict{Symbol, Float64}[]
-        noise_supports = Noise[]
-        child_indices = T[]
-        original_probability = Float64[]
-        objective_realizations = Float64[]
-        belief_probability = Float64[]
-        #
-        partition_index, belief_state = belief_states[index]
-        for (node_index, belief) in belief_state
-            if belief > 0.0
-                node = model[node_index]
-                if length(node.children) == 0
-                    continue
-                end
-                # Solve all children.
-                for child in node.children
-                    child_node = model[child.term]
-                    for noise in child_node.noise_terms
-                        if haskey(solution_indices, (child.term, noise.term))
-                            sol_index = solution_indices[(child.term, noise.term)]
-                            push!(dual_variables, dual_variables[sol_index])
-                            push!(noise_supports, noise_supports[sol_index])
-                            push!(child_indices, child_node.index)
-                            push!(original_probability, original_probability[sol_index])
-                            push!(belief_probability, belief)
-                            push!(objective_realizations, objective_realizations[sol_index])
-                        else
-                            # Update belief state, etc.
-                            if child_node.belief_state !== nothing
-                                current_belief = child_node.belief_state::BeliefState{T}
-                                new_partition_index = current_belief.partition_index
-                                current_belief.updater(
-                                    current_belief.belief,
-                                    belief_state,
-                                    new_partition_index,
-                                    noise.term)
-                            end
-                            TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
-                                (new_outgoing_state, duals, stage_objective, obj) =
-                                    solve_subproblem(model, child_node,
-                                                     outgoing_state, noise.term)
-                            end
-                            push!(dual_variables, duals)
-                            push!(noise_supports, noise)
-                            push!(child_indices, child_node.index)
-                            push!(original_probability,
-                                child.probability * noise.probability
-                            )
-                            push!(belief_probability, belief)
-                            push!(objective_realizations, obj)
-                            solution_indices[(child.term, noise.term)] =
-                                length(dual_variables)
-                        end
-                    end
-                end
+        objective_state = get(objective_states, index, nothing)
+        partition_index, belief_state = get(belief_states, index, (0, nothing))
+        items = BackwardPassItems(T, Noise)
+        if belief_state !== nothing
+            # Update the cost-to-go function for partially observable model.
+            for (node_index, belief) in belief_state
+                belief == 0.0 && continue
+                solve_all_children(
+                    model, model[node_index], items, belief, belief_state,
+                    objective_state, outgoing_state,backward_pass_sampler)
             end
-        end
-        # We need to refine our estimate at all nodes in the partition.
-        for node_index in model.belief_partition[partition_index]
-            node = model[node_index]
-            # Update belief state, etc.
-            if node.belief_state !== nothing
+            # We need to refine our estimate at all nodes in the partition.
+            for node_index in model.belief_partition[partition_index]
+                node = model[node_index]
+                # Update belief state, etc.
                 current_belief = node.belief_state::BeliefState{T}
                 for (idx, belief) in belief_state
                     current_belief.belief[idx] = belief
                 end
+                refine_bellman_function(
+                    model, node, node.bellman_function,
+                    options.risk_measures[node_index], outgoing_state,
+                    items.duals, items.supports,
+                    items.probability .* items.belief, items.objectives)
             end
+        else
+            node_index, _ = scenario_path[index]
+            node = model[node_index]
+            if length(node.children) == 0
+                continue
+            end
+            solve_all_children(
+                model, node, items, 1.0, belief_state, objective_state,
+                outgoing_state,backward_pass_sampler)
             refine_bellman_function(
-                model,
-                node,
-                node.bellman_function,
-                options.risk_measures[node_index],
-                outgoing_state,
-                dual_variables,
-                noise_supports,
-                original_probability .* belief_probability,
-                objective_realizations
-            )
+                model, node, node.bellman_function,
+                options.risk_measures[node_index], outgoing_state,
+                items.duals, items.supports, items.probability, items.objectives)
+            if options.refine_at_similar_nodes
+                # Refine the bellman function at other nodes with the same
+                # children, e.g., in the same stage of a Markovian policy graph.
+                for other_index in options.similar_children[node_index]
+                    copied_probability = similar(items.probability)
+                    other_node = model[other_index]
+                    for (idx, child_index) in enumerate(items.nodes)
+                        copied_probability[idx] =
+                            get(options.Φ, (other_index, child_index), 0.0) *
+                            items.supports[idx].probability
+                    end
+                    refine_bellman_function(
+                        model, other_node, other_node.bellman_function,
+                        options.risk_measures[other_index], outgoing_state,
+                        items.duals, items.supports, copied_probability,
+                        items.objectives)
+                end
+            end
+        end
+    end
+end
+
+struct BackwardPassItems{T, U}
+    "Given a (node, noise) tuple, index the element in the array."
+    cached_solutions::Dict{Tuple{T, Any}, Int}
+    duals::Vector{Dict{Symbol, Float64}}
+    supports::Vector{U}
+    nodes::Vector{T}
+    probability::Vector{Float64}
+    objectives::Vector{Float64}
+    belief::Vector{Float64}
+    function BackwardPassItems(T, U)
+        return new{T, U}(
+            Dict{Tuple{T, Any}, Int}(), Dict{Symbol, Float64}[], U[], T[],
+            Float64[], Float64[], Float64[])
+    end
+end
+
+function solve_all_children(
+        model::PolicyGraph{T}, node::Node{T}, items::BackwardPassItems,
+        belief::Float64, belief_state, objective_state,
+        outgoing_state::Dict{Symbol, Float64},
+        backward_pass_sampler::AbstractBackwardPassSampler = CompleteSampler()) where {T}
+
+
+    for child in node.children
+        child_node = model[child.term]
+        sampled_noises = sample_backward_noise_terms(backward_pass_sampler,child_node)
+        for noise in sampled_noises
+            if haskey(items.cached_solutions, (child.term, noise.term))
+                sol_index = items.cached_solutions[(child.term, noise.term)]
+                push!(items.duals, items.duals[sol_index])
+                push!(items.supports, items.supports[sol_index])
+                push!(items.nodes, child_node.index)
+                push!(items.probability, items.probability[sol_index])
+                push!(items.objectives, items.objectives[sol_index])
+                push!(items.belief, belief)
+            else
+                # Update belief state, etc.
+                if belief_state !== nothing
+                    current_belief = child_node.belief_state::BeliefState{T}
+                    current_belief.updater(
+                        current_belief.belief, belief_state,
+                        current_belief.partition_index, noise.term)
+                end
+                if objective_state !== nothing
+                    update_objective_state(
+                        child_node.objective_state, objective_state, noise.term)
+                end
+                TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
+                    subproblem_results = solve_subproblem(
+                        model, child_node, outgoing_state, noise.term,
+                        require_duals = true)
+                end
+                push!(items.duals, subproblem_results.duals)
+                push!(items.supports, noise)
+                push!(items.nodes, child_node.index)
+                push!(items.probability, child.probability * noise.probability)
+                push!(items.objectives, subproblem_results.objective)
+                push!(items.belief, belief)
+                items.cached_solutions[(child.term, noise.term)] = length(items.duals)
+            end
         end
     end
 end
@@ -679,9 +605,9 @@ function calculate_bound(model::PolicyGraph{T},
                 belief.updater(
                     belief.belief, current_belief, partition_index, noise.term)
             end
-            (outgoing_state, duals, stage_objective, obj) =
-                solve_subproblem(model, node, root_state, noise.term)
-            push!(objectives, obj)
+            subproblem_results = solve_subproblem(
+                model, node, root_state, noise.term, require_duals = false)
+            push!(objectives, subproblem_results.objective)
             push!(probabilities, child.probability * noise.probability)
             push!(noise_supports, noise.term)
         end
@@ -718,59 +644,105 @@ function termination_status(model::PolicyGraph)
 end
 
 """
+    relax_integrality(model::PolicyGraph)::NTuple{Vector{VariableRef}, 2}
+
+Relax all binary and integer constraints in all subproblems in `model`. Return
+two vectors, the first containing a list of binary variables, and the second
+containing a list of integer variables.
+
+See also [`enforce_integrality`](@ref).
+"""
+function relax_integrality(model::PolicyGraph)
+    binaries = JuMP.VariableRef[]
+    integers = JuMP.VariableRef[]
+    for (key, node) in model.nodes
+        for x in JuMP.all_variables(node.subproblem)
+            if JuMP.is_binary(x)
+                JuMP.unset_binary(x)
+                push!(binaries, x)
+            elseif JuMP.is_integer(x)
+                JuMP.unset_integer(x)
+                push!(integers, x)
+            end
+        end
+    end
+    return binaries, integers
+end
+
+"""
+    enforce_integrality(
+        binaries::Vector{VariableRef}, integers::Vector{VariableRef})
+
+Set all variables in `binaries` to `SingleVariable-in-ZeroOne()`, and all
+variables in `integers` to `SingleVariable-in-Integer()`.
+
+See also [`relax_integrality`](@ref).
+"""
+function enforce_integrality(
+        binaries::Vector{VariableRef}, integers::Vector{VariableRef})
+    JuMP.set_integer.(integers)
+    JuMP.set_binary.(binaries)
+    return
+end
+
+"""
     SDDP.train(model::PolicyGraph; kwargs...)
 
 Train the policy for `model`. Keyword arguments:
 
- - `iteration_limit::Int`: number of iterations to conduct before termination
+ - `iteration_limit::Int`: number of iterations to conduct before termination.
 
- - `time_limit::Float64`: number of seconds to train before termination
+ - `time_limit::Float64`: number of seconds to train before termination.
 
- - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)
+ - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)s.
 
- - `print_level`: control the level of printing to the screen
+ - `print_level::Int`: control the level of printing to the screen. Defaults to
+    `1`. Set to `0` to disable all printing.
 
- - `log_file`: filepath at which to write a log of the training progress
+ - `log_file::String`: filepath at which to write a log of the training progress.
+    Defaults to `SDDP.log`.
 
- - `run_numerical_stability_report`: generate a numerical stability report prior
-    to solve
+ - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability
+    report prior to solve. Defaults to `true`.
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
     same children, it can cheaply add a cut discovered at one to the other. In
     almost all cases this should be set to `true`.
 
  - `cut_deletion_minimum::Int`: the minimum number of cuts to cache before
-    deleting  cuts from the subproblem. This is solver specific; however,
-    smaller values  result in smaller subproblems, at the expense of more time
-    spent performing cut selection.
+    deleting  cuts from the subproblem. The impact on performance is solver
+    specific; however, smaller values result in smaller subproblems (and therefore
+    quicker solves), at the expense of more time spent performing cut selection.
 
- - `risk_measure`: the risk measure to use at each node.
+ - `risk_measure`: the risk measure to use at each node. Defaults to [`Expectation`](@ref).
 
  - `sampling_scheme`: a sampling scheme to use on the forward pass of the
-    algorithm. Defaults to InSampleMonteCarlo().
+    algorithm. Defaults to [`InSampleMonteCarlo`](@ref).
 
- - `cut_type`: choose between `SINGLE_CUT` and `MULTI_CUT` versions of SDDP.
+ - `cut_type`: choose between `SDDP.SINGLE_CUT` and `SDDP.MULTI_CUT` versions of SDDP.
 
-There is also a special option for infinite horizon problems
+There is also a special option for infinite-horizon problems
 
- - cycle_discretization_delta: the maximum distance between states allowed on
+ - `cycle_discretization_delta`: the maximum distance between states allowed on
    the forward pass. This is for advanced users only and needs to be used in
    conjunction with a different `sampling_scheme`.
 """
-function train(model::PolicyGraph;
-               iteration_limit = nothing,
-               time_limit = nothing,
-               print_level = 1,
-               log_file = "SDDP.log",
-               run_numerical_stability_report::Bool = true,
-               stopping_rules = AbstractStoppingRule[],
-               risk_measure = SDDP.Expectation(),
-               sampling_scheme = SDDP.InSampleMonteCarlo(),
-               cut_type = SDDP.SINGLE_CUT,
-               cycle_discretization_delta = 0.0,
-               refine_at_similar_nodes = true,
-               cut_deletion_minimum = 1
-               )
+function train(
+    model::PolicyGraph;
+    iteration_limit::Union{Int, Nothing} = nothing,
+    time_limit::Union{Real, Nothing} = nothing,
+    print_level::Int = 1,
+    log_file::String = "SDDP.log",
+    run_numerical_stability_report::Bool = true,
+    stopping_rules = AbstractStoppingRule[],
+    risk_measure = SDDP.Expectation(),
+    sampling_scheme = SDDP.InSampleMonteCarlo(),
+    cut_type = SDDP.SINGLE_CUT,
+    cycle_discretization_delta::Float64 = 0.0,
+    refine_at_similar_nodes::Bool = true,
+    cut_deletion_minimum::Int = 1,
+    backward_pass_sampler::AbstractBackwardPassSampler = CompleteSampler()
+)
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
     log_file_handle = open(log_file, "a")
@@ -827,6 +799,10 @@ function train(model::PolicyGraph;
             oracle.cut_oracle.deletion_minimum = cut_deletion_minimum
         end
     end
+
+    # Handle integrality
+    binaries, integers = relax_integrality(model)
+
     # The default status. This should never be seen by the user.
     status = :not_solved
     log = Log[]
@@ -843,7 +819,8 @@ function train(model::PolicyGraph;
                     model, options, forward_trajectory.scenario_path,
                     forward_trajectory.sampled_states,
                     forward_trajectory.objective_states,
-                    forward_trajectory.belief_states)
+                    forward_trajectory.belief_states,
+                    backward_pass_sampler)
             end
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
                 bound = calculate_bound(model)
@@ -869,6 +846,9 @@ function train(model::PolicyGraph;
             close(log_file_handle)
             rethrow(ex)
         end
+    finally
+        # Remember to reset any relaxed integralities.
+        enforce_integrality(binaries, integers)
     end
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
@@ -891,14 +871,14 @@ end
 # Internal function: helper to conduct a single simulation. Users should use the
 # documented, user-facing function SDDP.simulate instead.
 function _simulate(model::PolicyGraph{T},
-                   variables::Vector{Symbol} = Symbol[];
-                   sampling_scheme::AbstractSamplingScheme =
-                       InSampleMonteCarlo(),
-                   custom_recorders = Dict{Symbol, Function}()) where {T}
+                   variables::Vector{Symbol};
+                   sampling_scheme::AbstractSamplingScheme,
+                   custom_recorders::Dict{Symbol, Function},
+                   require_duals::Bool) where {T}
     # Sample a scenario path.
     scenario_path, terminated_due_to_cycle = sample_scenario(
-        model, sampling_scheme
-    )
+        model, sampling_scheme)
+
     # Storage for the simulation results.
     simulation = Dict{Symbol, Any}[]
     # The incoming state values.
@@ -928,16 +908,16 @@ function _simulate(model::PolicyGraph{T},
             current_belief = Dict(node_index => 1.0)
         end
         # Solve the subproblem.
-        outgoing_state, duals, stage_objective, objective = solve_subproblem(
-            model, node, incoming_state, noise)
+        subproblem_results = solve_subproblem(
+            model, node, incoming_state, noise, require_duals = false)
         # Add the stage-objective
-        cumulative_value += stage_objective
+        cumulative_value += subproblem_results.stage_objective
         # Record useful variables from the solve.
         store = Dict{Symbol, Any}(
             :node_index => node_index,
             :noise_term => noise,
-            :stage_objective => stage_objective,
-            :bellman_term => objective - stage_objective,
+            :stage_objective => subproblem_results.stage_objective,
+            :bellman_term => subproblem_results.objective - subproblem_results.stage_objective,
             :objective_state => objective_state_vector,
             :belief => copy(current_belief)
         )
@@ -968,7 +948,7 @@ function _simulate(model::PolicyGraph{T},
         # Add the store to our list.
         push!(simulation, store)
         # Set outgoing state as the incoming state for the next node.
-        incoming_state = copy(outgoing_state)
+        incoming_state = copy(subproblem_results.state)
     end
     return simulation
 end
@@ -979,7 +959,8 @@ end
              variables::Vector{Symbol} = Symbol[];
              sampling_scheme::AbstractSamplingScheme =
                  InSampleMonteCarlo(),
-             custom_recorders = Dict{Symbol, Function}()
+             custom_recorders = Dict{Symbol, Function}(),
+             require_duals::Bool = true
      )::Vector{Vector{Dict{Symbol, Any}}}
 
 Perform a simulation of the policy model with `number_replications` replications
@@ -1022,17 +1003,19 @@ The value of the dual in the first stage of the second replication can be
 accessed as:
 
     simulation_results[2][1][:constraint_dual]
+
+If you do not require dual variables (or if they are not available), pass
+`require_duals = false`.
 """
 function simulate(model::PolicyGraph,
                   number_replications::Int = 1,
                   variables::Vector{Symbol} = Symbol[];
                   sampling_scheme::AbstractSamplingScheme =
                       InSampleMonteCarlo(),
-                  custom_recorders = Dict{Symbol, Function}())
-    return [_simulate(
-                model,
-                variables;
-                sampling_scheme = sampling_scheme,
-                custom_recorders = custom_recorders)
-                for i in 1:number_replications]
+                  custom_recorders = Dict{Symbol, Function}(),
+                  require_duals::Bool = true)
+    return map(i -> _simulate(
+            model, variables; sampling_scheme = sampling_scheme,
+            custom_recorders = custom_recorders, require_duals = require_duals),
+        1:number_replications)
 end
