@@ -61,7 +61,7 @@ function tiger_problem()
     end
 
     # Train the policy.
-    SDDP.train(model; iteration_limit = 50, print_level = 1)
+    SDDP.train(model; iteration_limit = 50, print_level = 1, dashboard = true)
 
     simulations = SDDP.simulate(model, 100, [:x],
         sampling_scheme = SDDP.InSampleMonteCarlo(

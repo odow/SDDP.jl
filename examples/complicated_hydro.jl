@@ -1,4 +1,4 @@
-using SDDP, JSON, GLPK
+using SDDP, JSON, GLPK, Test
 
 const DATA = JSON.parsefile(joinpath(@__DIR__, "complicated_hydro.json"))
 
