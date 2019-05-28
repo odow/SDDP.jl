@@ -67,8 +67,7 @@
                 if (connection.readyState == 0) {
                     // Connection is opening.
                 } else if (connection.readyState == 1) {
-                    // To prevent time-outs, send this 'ready' message every
-                    // 250 ms.
+                    // Tell Julia that we're ready to receive data.
                     if (send_ready == false) {
                         connection.send("ready");
                         send_ready = true;

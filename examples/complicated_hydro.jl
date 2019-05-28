@@ -72,6 +72,6 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(model, iteration_limit = 50, print_level = 1, dashboard = true)
+SDDP.train(model, iteration_limit = 50, print_level = 0)
 
 @test SDDP.calculate_bound(model) ≈ 129_469 atol=1
