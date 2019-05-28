@@ -10,8 +10,9 @@ function read_dir(dir, exclude = String[])
 end
 
 const EXCLUDED_EXAMPLES = [
-    "inventory_management.jl",
     "daniel_hydro_complete.jl",
+    "inventory_management.jl",
+    "msppy_hydro_thermal.jl",
     "partially_observable_paper.jl",
     "tiger_problem.jl"
 ]
