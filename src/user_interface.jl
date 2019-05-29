@@ -330,6 +330,16 @@ mutable struct Node{T}
     ext::Dict{Symbol, Any}
 end
 
+function pre_optimize_hook(f::Function, node::Node)
+    node.pre_optimize_hook = f
+    return
+end
+
+function post_optimize_hook(f::Function, node::Node)
+    node.post_optimize_hook = f
+    return
+end
+
 mutable struct PolicyGraph{T}
     # Must be MOI.MIN_SENSE or MOI.MAX_SENSE
     objective_sense::MOI.OptimizationSense
