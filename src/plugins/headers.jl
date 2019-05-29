@@ -140,3 +140,24 @@ function convergence_test(graph::PolicyGraph, log::Vector{Log},
     end
     return false, :not_solved
 end
+
+# =============================== backward samplers============================= #
+
+"""
+    AbstractBackwardPassSampler
+
+The abstract type for backward samplers interface.
+
+You need to define the following methods:
+ - [`SDDP.sample_backward_noise_terms`](@ref)
+
+"""
+
+abstract type AbstractBackwardPassSampler end
+
+"""
+    sample_backward_noise_terms(backward_pass_sampler::AbstractStoppingRule, node::Node{T})::Vector{Noise}
+
+Returns a ::Vector{Noise} of noises sampled from `node.noise_terms` using `backward_pass_sampler`
+"""
+function sample_backward_noise_terms end

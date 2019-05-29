@@ -532,41 +532,43 @@ function solve_all_children(
 
 
     for child in node.children
-        child_node = model[child.term]
-        sampled_noises = sample_backward_noise_terms(backward_pass_sampler,child_node)
-        for noise in sampled_noises
-            if haskey(items.cached_solutions, (child.term, noise.term))
-                sol_index = items.cached_solutions[(child.term, noise.term)]
-                push!(items.duals, items.duals[sol_index])
-                push!(items.supports, items.supports[sol_index])
-                push!(items.nodes, child_node.index)
-                push!(items.probability, items.probability[sol_index])
-                push!(items.objectives, items.objectives[sol_index])
-                push!(items.belief, belief)
-            else
-                # Update belief state, etc.
-                if belief_state !== nothing
-                    current_belief = child_node.belief_state::BeliefState{T}
-                    current_belief.updater(
-                        current_belief.belief, belief_state,
-                        current_belief.partition_index, noise.term)
+        if (child.probability > 0)
+            child_node = model[child.term]
+            sampled_noises = sample_backward_noise_terms(backward_pass_sampler,child_node)
+            for noise in sampled_noises
+                if haskey(items.cached_solutions, (child.term, noise.term))
+                    sol_index = items.cached_solutions[(child.term, noise.term)]
+                    push!(items.duals, items.duals[sol_index])
+                    push!(items.supports, items.supports[sol_index])
+                    push!(items.nodes, child_node.index)
+                    push!(items.probability, items.probability[sol_index])
+                    push!(items.objectives, items.objectives[sol_index])
+                    push!(items.belief, belief)
+                else
+                    # Update belief state, etc.
+                    if belief_state !== nothing
+                        current_belief = child_node.belief_state::BeliefState{T}
+                        current_belief.updater(
+                            current_belief.belief, belief_state,
+                            current_belief.partition_index, noise.term)
+                    end
+                    if objective_state !== nothing
+                        update_objective_state(
+                            child_node.objective_state, objective_state, noise.term)
+                    end
+                    TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
+                        subproblem_results = solve_subproblem(
+                            model, child_node, outgoing_state, noise.term,
+                            require_duals = true)
+                    end
+                    push!(items.duals, subproblem_results.duals)
+                    push!(items.supports, noise)
+                    push!(items.nodes, child_node.index)
+                    push!(items.probability, child.probability * noise.probability)
+                    push!(items.objectives, subproblem_results.objective)
+                    push!(items.belief, belief)
+                    items.cached_solutions[(child.term, noise.term)] = length(items.duals)
                 end
-                if objective_state !== nothing
-                    update_objective_state(
-                        child_node.objective_state, objective_state, noise.term)
-                end
-                TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
-                    subproblem_results = solve_subproblem(
-                        model, child_node, outgoing_state, noise.term,
-                        require_duals = true)
-                end
-                push!(items.duals, subproblem_results.duals)
-                push!(items.supports, noise)
-                push!(items.nodes, child_node.index)
-                push!(items.probability, child.probability * noise.probability)
-                push!(items.objectives, subproblem_results.objective)
-                push!(items.belief, belief)
-                items.cached_solutions[(child.term, noise.term)] = length(items.duals)
             end
         end
     end
@@ -592,24 +594,26 @@ function calculate_bound(model::PolicyGraph{T},
 
     # Solve all problems that are children of the root node.
     for child in model.root_children
-        node = model[child.term]
-        for noise in node.noise_terms
-            if node.objective_state !== nothing
-                update_objective_state(node.objective_state,
-                    node.objective_state.initial_value, noise.term)
+        if (child.probability > 0)
+            node = model[child.term]
+            for noise in node.noise_terms
+                if node.objective_state !== nothing
+                    update_objective_state(node.objective_state,
+                        node.objective_state.initial_value, noise.term)
+                end
+                # Update belief state, etc.
+                if node.belief_state !== nothing
+                    belief = node.belief_state::BeliefState{T}
+                    partition_index = belief.partition_index
+                    belief.updater(
+                        belief.belief, current_belief, partition_index, noise.term)
+                end
+                subproblem_results = solve_subproblem(
+                    model, node, root_state, noise.term, require_duals = false)
+                push!(objectives, subproblem_results.objective)
+                push!(probabilities, child.probability * noise.probability)
+                push!(noise_supports, noise.term)
             end
-            # Update belief state, etc.
-            if node.belief_state !== nothing
-                belief = node.belief_state::BeliefState{T}
-                partition_index = belief.partition_index
-                belief.updater(
-                    belief.belief, current_belief, partition_index, noise.term)
-            end
-            subproblem_results = solve_subproblem(
-                model, node, root_state, noise.term, require_duals = false)
-            push!(objectives, subproblem_results.objective)
-            push!(probabilities, child.probability * noise.probability)
-            push!(noise_supports, noise.term)
         end
     end
     # Now compute the risk-adjusted probability measure:
