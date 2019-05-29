@@ -12,7 +12,6 @@ end
 const EXCLUDED_EXAMPLES = [
     "inventory_management.jl",
     "msppy_hydro_thermal.jl",
-    "partially_observable_paper.jl",
     "tiger_problem.jl"
 ]
 
