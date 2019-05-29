@@ -27,7 +27,7 @@ function sldp_example_one()
         @constraints(sp, begin
             x.out == x.in + 2 * u - 1 + ω
             x⁺ >= x.out
-            x⁻ >= x.out
+            x⁻ >= -x.out
         end)
         points = [
             -0.3089653673606697, -0.2718277412744214, -0.09611178608243474,
@@ -35,7 +35,7 @@ function sldp_example_one()
         SDDP.parameterize(φ -> JuMP.fix(ω, φ), sp, [points; -points])
     end
     SDDP.train(model, iteration_limit = 100, print_level = 0)
-    @test SDDP.calculate_bound(model) <= 3.313
+    @test SDDP.calculate_bound(model) <= 1.1675
 end
 
 sldp_example_one()

@@ -19,7 +19,7 @@ function no_strong_duality()
         @constraint(sp, x.in == x.out)
     end
 
-    SDDP.train(model, iteration_limit = 20)
+    SDDP.train(model, iteration_limit = 20, print_level = 0)
 
     @test SDDP.calculate_bound(model) ≈ 2.0 atol=1e-8
 end

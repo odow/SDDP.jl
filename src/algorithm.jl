@@ -245,17 +245,30 @@ end
 # incoming state variables state and realization of the stagewise-independent
 # noise term noise. If require_duals=true, also return the dual variables
 # associated with the fixed constraint of the incoming state variables.
-function solve_subproblem(model::PolicyGraph{T},
-                          node::Node{T},
-                          state::Dict{Symbol, Float64},
-                          noise;
-                          require_duals::Bool) where {T}
+function solve_subproblem(
+    model::PolicyGraph{T},
+    node::Node{T},
+    state::Dict{Symbol, Float64},
+    noise,
+    scenario_path::Vector{Tuple{T, <:Any}};
+    require_duals::Bool
+) where {T}
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
     # set the objective.
     set_incoming_state(node, state)
     parameterize(node, noise)
+
+    pre_optimize_ret = if node.pre_optimize_hook !== nothing
+        node.pre_optimize_hook(
+            model, node, state, noise, scenario_path, require_duals
+        )
+    else
+        nothing
+    end
+
     JuMP.optimize!(node.subproblem)
+
     # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         write_subproblem_to_file(node, "subproblem", throw_error = true)
@@ -272,11 +285,18 @@ function solve_subproblem(model::PolicyGraph{T},
     else
         Dict{Symbol, Float64}()
     end
+
+    state = get_outgoing_state(node)
+    stage_objective = stage_objective_value(node.stage_objective)
+    objective = JuMP.objective_value(node.subproblem)
+
+    if node.post_optimize_hook !== nothing
+        node.post_optimize_hook(pre_optimize_ret)
+    end
+
     return (
-        state = get_outgoing_state(node),  # The outgoing state variable x'.
-        duals = dual_values,  # The dual variables on the incoming state variables.
-        stage_objective = stage_objective_value(node.stage_objective),
-        objective = JuMP.objective_value(node.subproblem)  # C(x, u, ω) + θ
+        state = state, duals = dual_values, objective = objective,
+        stage_objective = stage_objective
     )
 end
 
@@ -333,7 +353,7 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
         model[scenario_path[1][1]])
     objective_states = NTuple{N, Float64}[]
     # Iterate down the scenario.
-    for (node_index, noise) in scenario_path
+    for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
         # Objective state interpolation.
         objective_state_vector = update_objective_state(
@@ -374,7 +394,8 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
         # Solve the subproblem, note that `require_duals = false`.
         TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
             subproblem_results = solve_subproblem(
-                model, node, incoming_state_value, noise, require_duals = false)
+                model, node, incoming_state_value, noise,
+                scenario_path[1:depth], require_duals = false)
         end
         # Cumulate the stage_objective.
         cumulative_value += subproblem_results.stage_objective
@@ -456,7 +477,7 @@ function backward_pass(
                 belief == 0.0 && continue
                 solve_all_children(
                     model, model[node_index], items, belief, belief_state,
-                    objective_state, outgoing_state)
+                    objective_state, outgoing_state, scenario_path[1:index])
             end
             # We need to refine our estimate at all nodes in the partition.
             for node_index in model.belief_partition[partition_index]
@@ -480,7 +501,7 @@ function backward_pass(
             end
             solve_all_children(
                 model, node, items, 1.0, belief_state, objective_state,
-                outgoing_state)
+                outgoing_state, scenario_path[1:index])
             refine_bellman_function(
                 model, node, node.bellman_function,
                 options.risk_measures[node_index], outgoing_state,
@@ -497,7 +518,7 @@ function backward_pass(
                             items.supports[idx].probability
                     end
                     refine_bellman_function(
-                        model, node, node.bellman_function,
+                        model, other_node, other_node.bellman_function,
                         options.risk_measures[other_index], outgoing_state,
                         items.duals, items.supports, copied_probability,
                         items.objectives)
@@ -526,10 +547,16 @@ end
 function solve_all_children(
         model::PolicyGraph{T}, node::Node{T}, items::BackwardPassItems,
         belief::Float64, belief_state, objective_state,
-        outgoing_state::Dict{Symbol, Float64}) where {T}
+        outgoing_state::Dict{Symbol, Float64}, scenario_path) where {T}
+    length_scenario_path = length(scenario_path)
     for child in node.children
         child_node = model[child.term]
         for noise in child_node.noise_terms
+            if length(scenario_path) == length_scenario_path
+                push!(scenario_path, (child.term, noise.term))
+            else
+                scenario_path[end] = (child.term, noise.term)
+            end
             if haskey(items.cached_solutions, (child.term, noise.term))
                 sol_index = items.cached_solutions[(child.term, noise.term)]
                 push!(items.duals, items.duals[sol_index])
@@ -553,7 +580,7 @@ function solve_all_children(
                 TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
                     subproblem_results = solve_subproblem(
                         model, child_node, outgoing_state, noise.term,
-                        require_duals = true)
+                        scenario_path, require_duals = true)
                 end
                 push!(items.duals, subproblem_results.duals)
                 push!(items.supports, noise)
@@ -564,6 +591,12 @@ function solve_all_children(
                 items.cached_solutions[(child.term, noise.term)] = length(items.duals)
             end
         end
+    end
+    if length(scenario_path) == length_scenario_path
+        # No-op. There weren't any children to solve.
+    else
+        # Drop the last element (i.e., the one we added).
+        pop!(scenario_path)
     end
 end
 
@@ -601,7 +634,8 @@ function calculate_bound(model::PolicyGraph{T},
                     belief.belief, current_belief, partition_index, noise.term)
             end
             subproblem_results = solve_subproblem(
-                model, node, root_state, noise.term, require_duals = false)
+                model, node, root_state, noise.term,
+                Tuple{T, Any}[(child.term, noise.term)], require_duals = false)
             push!(objectives, subproblem_results.objective)
             push!(probabilities, child.probability * noise.probability)
             push!(noise_supports, noise.term)
@@ -609,12 +643,9 @@ function calculate_bound(model::PolicyGraph{T},
     end
     # Now compute the risk-adjusted probability measure:
     risk_adjusted_probability = similar(probabilities)
-    adjust_probability(risk_measure,
-                       risk_adjusted_probability,
-                       probabilities,
-                       noise_supports,
-                       objectives,
-                       model.objective_sense == MOI.MIN_SENSE)
+    adjust_probability(
+        risk_measure, risk_adjusted_probability, probabilities, noise_supports,
+        objectives, model.objective_sense == MOI.MIN_SENSE)
     # Finally, calculate the risk-adjusted value.
     return sum(obj * prob for (obj, prob) in
         zip(objectives, risk_adjusted_probability))
@@ -685,55 +716,62 @@ end
 
 Train the policy for `model`. Keyword arguments:
 
- - `iteration_limit::Int`: number of iterations to conduct before termination
+ - `iteration_limit::Int`: number of iterations to conduct before termination.
 
- - `time_limit::Float64`: number of seconds to train before termination
+ - `time_limit::Float64`: number of seconds to train before termination.
 
- - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)
+ - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)s.
 
- - `print_level`: control the level of printing to the screen
+ - `print_level::Int`: control the level of printing to the screen. Defaults to
+    `1`. Set to `0` to disable all printing.
 
- - `log_file`: filepath at which to write a log of the training progress
+ - `log_file::String`: filepath at which to write a log of the training progress.
+    Defaults to `SDDP.log`.
 
- - `run_numerical_stability_report`: generate a numerical stability report prior
-    to solve
+ - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability
+    report prior to solve. Defaults to `true`.
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
     same children, it can cheaply add a cut discovered at one to the other. In
     almost all cases this should be set to `true`.
 
  - `cut_deletion_minimum::Int`: the minimum number of cuts to cache before
-    deleting  cuts from the subproblem. This is solver specific; however,
-    smaller values  result in smaller subproblems, at the expense of more time
-    spent performing cut selection.
+    deleting  cuts from the subproblem. The impact on performance is solver
+    specific; however, smaller values result in smaller subproblems (and therefore
+    quicker solves), at the expense of more time spent performing cut selection.
 
- - `risk_measure`: the risk measure to use at each node.
+ - `risk_measure`: the risk measure to use at each node. Defaults to [`Expectation`](@ref).
 
  - `sampling_scheme`: a sampling scheme to use on the forward pass of the
-    algorithm. Defaults to InSampleMonteCarlo().
+    algorithm. Defaults to [`InSampleMonteCarlo`](@ref).
 
- - `cut_type`: choose between `SINGLE_CUT` and `MULTI_CUT` versions of SDDP.
+ - `cut_type`: choose between `SDDP.SINGLE_CUT` and `SDDP.MULTI_CUT` versions of SDDP.
+
+ - `dashboard::Bool`: open a visualization of the training over time. Defaults
+    to `false`.
 
 There is also a special option for infinite horizon problems
 
- - cycle_discretization_delta: the maximum distance between states allowed on
-   the forward pass. This is for advanced users only and needs to be used in
-   conjunction with a different `sampling_scheme`.
+ - `cycle_discretization_delta`: the maximum distance between states allowed on
+    the forward pass. This is for advanced users only and needs to be used in
+    conjunction with a different `sampling_scheme`.
 """
-function train(model::PolicyGraph;
-               iteration_limit = nothing,
-               time_limit = nothing,
-               print_level = 1,
-               log_file = "SDDP.log",
-               run_numerical_stability_report::Bool = true,
-               stopping_rules = AbstractStoppingRule[],
-               risk_measure = SDDP.Expectation(),
-               sampling_scheme = SDDP.InSampleMonteCarlo(),
-               cut_type = SDDP.SINGLE_CUT,
-               cycle_discretization_delta = 0.0,
-               refine_at_similar_nodes = true,
-               cut_deletion_minimum = 1
-               )
+function train(
+    model::PolicyGraph;
+    iteration_limit::Union{Int, Nothing} = nothing,
+    time_limit::Union{Real, Nothing} = nothing,
+    print_level::Int = 1,
+    log_file::String = "SDDP.log",
+    run_numerical_stability_report::Bool = true,
+    stopping_rules = AbstractStoppingRule[],
+    risk_measure = SDDP.Expectation(),
+    sampling_scheme = SDDP.InSampleMonteCarlo(),
+    cut_type = SDDP.SINGLE_CUT,
+    cycle_discretization_delta::Float64 = 0.0,
+    refine_at_similar_nodes::Bool = true,
+    cut_deletion_minimum::Int = 1,
+    dashboard::Bool = false
+)
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
     log_file_handle = open(log_file, "a")
@@ -794,6 +832,13 @@ function train(model::PolicyGraph;
     # Handle integrality
     binaries, integers = relax_integrality(model)
 
+    dashboard_callback = if dashboard
+        launch_dashboard()
+    else
+        (::Any, ::Any) -> nothing
+    end
+    dashboard_time = 0.0
+
     # The default status. This should never be seen by the user.
     status = :not_solved
     log = Log[]
@@ -819,14 +864,20 @@ function train(model::PolicyGraph;
                 log,
                 Log(
                     iteration_count, bound, forward_trajectory.cumulative_value,
-                    time() - start_time
+                    time() - start_time - dashboard_time
                 )
             )
             has_converged, status = convergence_test(model, log, stopping_rules)
+
+            dashboard_start = time()
+            dashboard_callback(log[end], false)
+            dashboard_time += time() - dashboard_start
+
             if print_level > 0
                 print_iteration(stdout, log[end])
                 print_iteration(log_file_handle, log[end])
             end
+
             iteration_count += 1
         end
     catch ex
@@ -839,6 +890,8 @@ function train(model::PolicyGraph;
     finally
         # Remember to reset any relaxed integralities.
         enforce_integrality(binaries, integers)
+        # And close the dashboard callback if necessary.
+        dashboard_callback(log[end], true)
     end
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
@@ -881,7 +934,7 @@ function _simulate(model::PolicyGraph{T},
     objective_state_vector, N = initialize_objective_state(
         model[scenario_path[1][1]])
     objective_states = NTuple{N, Float64}[]
-    for (node_index, noise) in scenario_path
+    for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
         # Objective state interpolation.
         objective_state_vector = update_objective_state(node.objective_state,
@@ -899,7 +952,8 @@ function _simulate(model::PolicyGraph{T},
         end
         # Solve the subproblem.
         subproblem_results = solve_subproblem(
-            model, node, incoming_state, noise, require_duals = false)
+            model, node, incoming_state, noise,
+            scenario_path[1:depth], require_duals = false)
         # Add the stage-objective
         cumulative_value += subproblem_results.stage_objective
         # Record useful variables from the solve.

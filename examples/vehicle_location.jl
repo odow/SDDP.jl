@@ -83,7 +83,7 @@ function vehicle_location_model()
                 for b in bases, v in vehicles))
         end
     end
-    SDDP.train(model, iteration_limit = 50)
+    SDDP.train(model, iteration_limit = 50, print_level = 0)
     @test isapprox(SDDP.calculate_bound(model), 1700.0, atol=5)
 end
 
