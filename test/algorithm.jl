@@ -125,7 +125,7 @@ end
         @constraint(sp, x.out >= stage)
         @stageobjective(sp, (stage + markov_state) * x.out)
     end
-    SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = false)
+    SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = false, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 5.7 || SDDP.calculate_bound(model) ≈ 6.3
     mi1 = length(model[(1,1)].bellman_function.global_theta.cut_oracle.cuts)
     mi2 = length(model[(1,2)].bellman_function.global_theta.cut_oracle.cuts)
@@ -141,8 +141,36 @@ end
         @constraint(sp, x.out >= stage)
         @stageobjective(sp, (stage + markov_state) * x.out)
     end
-    SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = true)
+    SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = true, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 9.5
     @test length(model[(1, 1)].bellman_function.global_theta.cut_oracle.cuts) == 1
     @test length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts) == 1
+end
+
+@testset "optimize_hook" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        optimizer = with_optimizer(GLPK.Optimizer),
+        lower_bound = 0.0
+    ) do  sp, t
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0)
+        @stageobjective(sp, x.out)
+    end
+    pre_optimize_called = 0
+    post_optimize_called = 0
+    node = model[1]
+    SDDP.pre_optimize_hook(node) do model, node, state, noise, scenario_path, require_duals
+        pre_optimize_called = 1
+        return pre_optimize_called
+    end
+    SDDP.post_optimize_hook(node) do ret
+        post_optimize_called = ret + 2
+        return
+    end
+    SDDP.solve_subproblem(
+        model, node, Dict(:x => 0.0), nothing, Tuple{Int, Any}[(1, nothing)];
+        require_duals = false
+    )
+    @test pre_optimize_called == 1
+    @test post_optimize_called == 3
 end
