@@ -1,22 +1,32 @@
-include("../user_interface.jl")
-using StatsBase
+import StatsBase
 
-abstract type AbstractBackwardPassSampler end
 
+"""
+     CompleteSampler()
+
+ Backward sampler that returns all noises of the corresponding node.
+ """
 struct CompleteSampler <: AbstractBackwardPassSampler end
+sample_backward_noise_terms(::CompleteSampler, node) = node.noise_terms
 
+
+"""
+     MonteCarloSampler(number_of_samples ::Integer)
+
+ Backward sampler that returns `number_of_samples` noises sampled
+ with replacement from noises on the corresponding node.
+ """
 struct MonteCarloSampler <: AbstractBackwardPassSampler
     number_of_samples ::Integer
 end
 
-sample_backward_noise_terms(::CompleteSampler, node) = node.noise_terms
 
 function sample_backward_noise_terms(mcs::MonteCarloSampler, node)
     sampled = Noise[]
     terms = [noise.term for noise in node.noise_terms]
 
     n_samples = min(length(node.noise_terms),mcs.number_of_samples)
-    sampled_t = sample(terms,n_samples)
+    sampled_t = StatsBase.sample(terms,n_samples)
     u=unique(sampled_t)
     d=Dict([(i,count(x->x==i,sampled_t)) for i in u])
 

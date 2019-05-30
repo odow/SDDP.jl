@@ -457,7 +457,7 @@ function backward_pass(
                 belief == 0.0 && continue
                 solve_all_children(
                     model, model[node_index], items, belief, belief_state,
-                    objective_state, outgoing_state,backward_pass_sampler)
+                    objective_state, outgoing_state, backward_pass_sampler)
             end
             # We need to refine our estimate at all nodes in the partition.
             for node_index in model.belief_partition[partition_index]
@@ -481,7 +481,7 @@ function backward_pass(
             end
             solve_all_children(
                 model, node, items, 1.0, belief_state, objective_state,
-                outgoing_state,backward_pass_sampler)
+                outgoing_state, backward_pass_sampler)
             refine_bellman_function(
                 model, node, node.bellman_function,
                 options.risk_measures[node_index], outgoing_state,
@@ -532,8 +532,11 @@ function solve_all_children(
 
 
     for child in node.children
+        if isapprox(child.probability, 0.0, atol=1e-6)
+            continue
+        end
         child_node = model[child.term]
-        sampled_noises = sample_backward_noise_terms(backward_pass_sampler,child_node)
+        sampled_noises = sample_backward_noise_terms(backward_pass_sampler, child_node)
         for noise in sampled_noises
             if haskey(items.cached_solutions, (child.term, noise.term))
                 sol_index = items.cached_solutions[(child.term, noise.term)]
@@ -592,6 +595,9 @@ function calculate_bound(model::PolicyGraph{T},
 
     # Solve all problems that are children of the root node.
     for child in model.root_children
+        if isapprox(child.probability, 0.0, atol=1e-6)
+            continue
+        end
         node = model[child.term]
         for noise in node.noise_terms
             if node.objective_state !== nothing
