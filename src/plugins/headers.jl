@@ -152,7 +152,6 @@ You need to define the following methods:
  - [`SDDP.sample_backward_noise_terms`](@ref)
 
 """
-
 abstract type AbstractBackwardPassSampler end
 
 """

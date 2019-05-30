@@ -4,8 +4,7 @@ import StatsBase
 """
      CompleteSampler()
 
- Backward sampler that returns all noises of the cosrresponding node.
-
+ Backward sampler that returns all noises of the corresponding node.
  """
 struct CompleteSampler <: AbstractBackwardPassSampler end
 sample_backward_noise_terms(::CompleteSampler, node) = node.noise_terms
@@ -16,7 +15,6 @@ sample_backward_noise_terms(::CompleteSampler, node) = node.noise_terms
 
  Backward sampler that returns `number_of_samples` noises sampled
  with replacement from noises on the corresponding node.
-
  """
 struct MonteCarloSampler <: AbstractBackwardPassSampler
     number_of_samples ::Integer

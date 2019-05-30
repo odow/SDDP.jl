@@ -19,7 +19,6 @@ include("user_interface.jl")
 # Default definitions for SDDP related modular utilities.
 include("plugins/headers.jl")
 
-
 # Printing utilities.
 include("print.jl")
 
