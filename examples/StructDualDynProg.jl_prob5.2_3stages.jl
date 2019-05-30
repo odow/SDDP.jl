@@ -46,6 +46,11 @@ function test_prob52_3stages()
             @constraint(sp, sum(v) == 0)
         end
     end
+
+    det = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+    JuMP.optimize!(det)
+    @test JuMP.objective_value(det) ≈ 406712.49 atol = 0.1
+
     SDDP.train(model, iteration_limit = 30, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 406712.49 atol = 0.1
 end

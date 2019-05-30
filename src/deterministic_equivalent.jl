@@ -17,7 +17,7 @@ end
 
 function add_node_to_scenario_tree(
     parent::Vector{ScenarioTreeNode{T}}, pg::PolicyGraph{T},
-    node::Node{T}, probability::Float64, added_nodes::Set{T}
+    node::Node{T}, probability::Float64
 ) where {T}
     if node.objective_state !== nothing
         error("Objective states detected! Unable to formulate deterministic equivalent.")
@@ -33,16 +33,9 @@ function add_node_to_scenario_tree(
             Dict{Symbol, State{JuMP.VariableRef}}()
         )
         for child in node.children
-            if child.term in added_nodes
-                error(
-                    "Cycle detected in the policy graph! Unable to formulate " *
-                    "deterministic equivalent."
-                )
-            end
-            push!(added_nodes, child.term)
             add_node_to_scenario_tree(
                 scenario_node.children, pg, pg[child.term],
-                probability * noise.probability * child.probability, added_nodes
+                probability * noise.probability * child.probability
             )
         end
         push!(parent, scenario_node)
@@ -67,14 +60,26 @@ function copy_and_replace_variables(
     )
 end
 
+function copy_and_replace_variables(
+    src::Any, ::Dict{JuMP.VariableRef, JuMP.VariableRef}
+)
+    error(
+        "`copy_and_replace_variables` is not implemented for functions like " *
+        "`$(src)`."
+    )
+end
+
 function add_scenario_to_ef(model::JuMP.Model, child::ScenarioTreeNode)
     node = child.node
     parameterize(node, child.noise)
     # Add variables:
     src_variables = JuMP.all_variables(node.subproblem)
     x = @variable(model, [1:length(src_variables)])
-    # TODO: set nice names.
-    var_src_to_dest = Dict(s => d for (s, d) in zip(src_variables, x))
+    var_src_to_dest = Dict{JuMP.VariableRef, JuMP.VariableRef}()
+    for (src, dest) in zip(src_variables, x)
+        var_src_to_dest[src] = dest
+        JuMP.set_name(dest, JuMP.name(src))
+    end
     # Add constraints:
     for (F, S) in JuMP.list_of_constraint_types(node.subproblem)
         for con in JuMP.all_constraints(node.subproblem, F, S)
@@ -117,10 +122,9 @@ end
 function deterministic_equivalent(pg::PolicyGraph{T}, optimizer=nothing) where {T}
     # Step 1: convert the policy graph into a scenario tree.
     tree = ScenarioTree{T}(ScenarioTreeNode{T}[])
-    added_nodes = Set{T}()
     for child in pg.root_children
         add_node_to_scenario_tree(
-            tree.children, pg, pg[child.term], child.probability, added_nodes
+            tree.children, pg, pg[child.term], child.probability
         )
     end
     # Step 2: create a extensive-form JuMP model and add subproblems.
