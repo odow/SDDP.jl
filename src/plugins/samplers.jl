@@ -24,14 +24,14 @@ end
 function sample_backward_noise_terms(mcs::MonteCarloSampler, node)
     sampled = Noise[]
     terms = [noise.term for noise in node.noise_terms]
+    weights = [noise.probability for noise in node.noise_terms]
 
-    n_samples = min(length(node.noise_terms),mcs.number_of_samples)
-    sampled_t = StatsBase.sample(terms,n_samples)
+    sampled_t = StatsBase.sample(terms,StatsBase.Weights(weights),mcs.number_of_samples)
     u=unique(sampled_t)
     d=Dict([(i,count(x->x==i,sampled_t)) for i in u])
 
     for i in 1:length(u)
-        push!(sampled,Noise(u[i],d[u[i]]/n_samples))
+        push!(sampled,Noise(u[i],d[u[i]]/mcs.number_of_samples))
     end
     return sampled
 end
