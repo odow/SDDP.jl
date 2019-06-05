@@ -110,13 +110,6 @@ You need to define the following methods:
 """
 abstract type AbstractStoppingRule end
 
-struct Log
-    iteration::Int
-    bound::Float64
-    simulation_value::Float64
-    time::Float64
-end
-
 """
     stopping_rule_status(::AbstractStoppingRule)::Symbol
 

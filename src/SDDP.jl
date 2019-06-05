@@ -8,13 +8,20 @@ module SDDP
 import Reexport
 Reexport.@reexport using JuMP
 
-import JSON, Printf, Random, RecipesBase, TimerOutputs, Statistics
+import HTTP, JSON, Printf, Random, RecipesBase, TimerOutputs, Statistics
 import MathOptFormat
 
 export @stageobjective
 
 # Modelling interface.
 include("user_interface.jl")
+
+struct Log
+    iteration::Int
+    bound::Float64
+    simulation_value::Float64
+    time::Float64
+end
 
 # Default definitions for SDDP related modular utilities.
 include("plugins/headers.jl")
@@ -35,5 +42,6 @@ include("plugins/samplers.jl")
 # Visualization related code.
 include("visualization/publication_plot.jl")
 include("visualization/spaghetti_plot.jl")
+include("visualization/dashboard.jl")
 
 end

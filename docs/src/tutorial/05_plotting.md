@@ -10,11 +10,26 @@ the solution looks like. Luckily, `SDDP.jl` includes a number of plotting
 tools to help us do that. In this tutorial, we explain the tools and make some
 pretty pictures.
 
+## Convergence dashboard
+
+If the text-based logging isn't to your liking, you can open a visualization of
+the training by passing  `dashboard = true` to [`SDDP.train`](@ref).
+```julia
+SDDP.train(model; dashboard = true)
+```
+By default, `dashboard = false` because there is an initial overhead associated
+with opening and preparing the plot.
+
+!!! warning
+    The dashboard is experimental. There are known bugs associated with it, e.g.,
+    https://github.com/odow/SDDP.jl/issues/226.
+
 ## Preliminaries
 
-First, we need to create a policy and simulate some trajectories. So, let's take
-the model from  [Basic IV: Markov uncertainty](@ref), train it for 20
-iterations, and then simulate 100 Monte Carlo realizations of the policy.
+The next two plot types help visualize the policy. Thus, we first need to
+create a policy and simulate some trajectories. So, let's take the model from
+[Basic IV: Markov uncertainty](@ref), train it for 20 iterations, and then
+simulate 100 Monte Carlo realizations of the policy.
 
 ```jldoctest tutorial_five
 using SDDP, GLPK
