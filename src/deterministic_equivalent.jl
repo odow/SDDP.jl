@@ -3,6 +3,10 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+function throw_detequiv_error(msg::String)
+    error("Unable to formulate deterministic equivalent: ", msg)
+end
+
 struct ScenarioTreeNode{T}
     node::Node{T}
     noise::Any
@@ -15,14 +19,39 @@ struct ScenarioTree{T}
     children::Vector{ScenarioTreeNode{T}}
 end
 
+function is_cyclic_recusrsion(
+    pg::PolicyGraph{T}, to_visit::Set{T}, visited::Set{T}
+) where {T}
+    if length(to_visit) == 0
+        return true
+    end
+    v = pop!(to_visit)
+    if v in visited
+        return false
+    end
+    push!(visited, v)
+    for child in pg[v].children
+        push!(to_visit, child.term)
+    end
+    return is_cyclic_recusrsion(pg, to_visit, visited)
+end
+
+function is_cyclic(pg::PolicyGraph{T}) where {T}
+    visited = Set{T}()
+    to_visit = Set{T}(keys(pg.nodes))
+    return is_cyclic_recusrsion(pg, to_visit, visited)
+end
+
 function add_node_to_scenario_tree(
     parent::Vector{ScenarioTreeNode{T}}, pg::PolicyGraph{T},
-    node::Node{T}, probability::Float64
+    node::Node{T}, probability::Float64, check_time_limit::Function
 ) where {T}
     if node.objective_state !== nothing
-        error("Objective states detected! Unable to formulate deterministic equivalent.")
+        throw_detequiv_error("Objective states detected!")
     elseif node.belief_state !== nothing
-        error("Belief states detected! Unable to formulate deterministic equivalent.")
+        throw_detequiv_error("Belief states detected!")
+    else
+        check_time_limit()
     end
     for noise in node.noise_terms
         scenario_node = ScenarioTreeNode(
@@ -35,7 +64,8 @@ function add_node_to_scenario_tree(
         for child in node.children
             add_node_to_scenario_tree(
                 scenario_node.children, pg, pg[child.term],
-                probability * noise.probability * child.probability
+                probability * noise.probability * child.probability,
+                check_time_limit
             )
         end
         push!(parent, scenario_node)
@@ -63,13 +93,13 @@ end
 function copy_and_replace_variables(
     src::Any, ::Dict{JuMP.VariableRef, JuMP.VariableRef}
 )
-    error(
-        "`copy_and_replace_variables` is not implemented for functions like " *
-        "`$(src)`."
-    )
+    throw_detequiv_error("`copy_and_replace_variables` is not implemented for functions like `$(src)`.")
 end
 
-function add_scenario_to_ef(model::JuMP.Model, child::ScenarioTreeNode)
+function add_scenario_to_ef(
+    model::JuMP.Model, child::ScenarioTreeNode, check_time_limit::Function
+)
+    check_time_limit()
     node = child.node
     parameterize(node, child.noise)
     # Add variables:
@@ -105,36 +135,69 @@ function add_scenario_to_ef(model::JuMP.Model, child::ScenarioTreeNode)
     end
     # Recurse down the tree.
     for child_2 in child.children
-        add_scenario_to_ef(model, child_2)
+        add_scenario_to_ef(model, child_2, check_time_limit)
     end
     return
 end
 
-function add_linking_constraints(model::JuMP.Model, node::ScenarioTreeNode)
+function add_linking_constraints(
+    model::JuMP.Model, node::ScenarioTreeNode, check_time_limit::Function
+)
+    check_time_limit()
     for child in node.children
         for key in keys(node.states)
             @constraint(model, node.states[key].out == child.states[key].in)
         end
-        add_linking_constraints(model, child)
+        add_linking_constraints(model, child, check_time_limit)
     end
 end
 
-function deterministic_equivalent(pg::PolicyGraph{T}, optimizer=nothing) where {T}
+"""
+    deterministic_equivalent(
+        pg::PolicyGraph{T},
+        optimizer::Union{JuMP.OptimizerFactory, Nothing} = nothing;
+        time_limit::Union{Float64, Nothing} = 60.0
+    )
+
+Form a JuMP model that represents the deterministic equivalent of the problem.
+
+## Examples
+
+    deterministic_equivalent(model)
+    deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+"""
+function deterministic_equivalent(
+    pg::PolicyGraph{T},
+    optimizer::Union{JuMP.OptimizerFactory, Nothing} = nothing,
+    time_limit::Union{Float64, Nothing} = 60.0
+) where {T}
+    # Step 0: helper function for the time limit.
+    start_time = time()
+    time_limit = time_limit === nothing ? typemax(Float64) : time_limit
+    function check_time_limit()
+        if time() - start_time > time_limit::Float64
+            throw_detequiv_error("Time limit exceeded!")
+        end
+    end
     # Step 1: convert the policy graph into a scenario tree.
+    if is_cyclic(pg)
+        throw_detequiv_error("Cyclic policy graph detected!")
+    end
     tree = ScenarioTree{T}(ScenarioTreeNode{T}[])
     for child in pg.root_children
         add_node_to_scenario_tree(
-            tree.children, pg, pg[child.term], child.probability
+            tree.children, pg, pg[child.term], child.probability,
+            check_time_limit
         )
     end
     # Step 2: create a extensive-form JuMP model and add subproblems.
     model = optimizer === nothing ? JuMP.Model() : JuMP.Model(optimizer)
     for child in tree.children
-        add_scenario_to_ef(model, child)
+        add_scenario_to_ef(model, child, check_time_limit)
     end
     # Step 3: add linking constraints between the nodes in the scenario tree.
     for child in tree.children
-        add_linking_constraints(model, child)
+        add_linking_constraints(model, child, check_time_limit)
         for (key, value) in pg.initial_root_state
             JuMP.fix(child.states[key].in, value; force=true)
         end

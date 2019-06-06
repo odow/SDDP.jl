@@ -104,6 +104,37 @@ y == 3.3
 julia> rm("subproblem.lp")  # Clean up.
 ```
 
+## Solve the determinstic equivalent
+
+Sometimes, it can be helpful to solve the deterministic equivalent of a
+problem in order to obtain an exact solution to the problem. To obtain a JuMP
+model that represents the deterministic equivalent, use [`SDDP.deterministic_equivalent`](@ref).
+The returned model is just a normal JuMP model. Use JuMP to optimize it and
+query the solution.
+
+```jldoctest tutorial_eight; filter=r"5.4725[0]+[0-9]"
+julia> det_equiv = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+A JuMP Model
+Feasibility problem with:
+Variables: 24
+`VariableRef`-in-`MathOptInterface.EqualTo{Float64}`: 8 constraints
+`VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 6 constraints
+`VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 4 constraints
+`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 10 constraints
+Model mode: AUTOMATIC
+CachingOptimizer state: EMPTY_OPTIMIZER
+Solver name: GLPK
+
+julia> optimize!(det_equiv)
+
+julia> objective_value(det_equiv)
+-5.4725
+```
+
+!!! warning
+    The determinstic equivalent scales poorly with problem size. Only use this
+    on small problems!
+
 This concludes or series of basic introductory tutorials for `SDDP.jl`. When
 you're ready, continue to our intermediate series of tutorials, beginning with
 [Intermediate I: risk](@ref).
