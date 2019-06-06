@@ -54,12 +54,7 @@ variables and constraints don't have names. They don't matter, so ignore them.
 
 ```jldoctest tutorial_eight; filter=r"MathOptFormat\ .+?MathOptFormat\.jl"
 julia> SDDP.write_subproblem_to_file(model[1], "subproblem", format=:lp)
-┌ Warning: Blank name detected for variable MathOptInterface.VariableIndex(4). Renamed to x4.
-└ @ MathOptFormat ~/.julia/packages/MathOptFormat/iRtuE/src/MathOptFormat.jl:95
-┌ Warning: Blank name detected for constraint MathOptInterface.ConstraintIndex{MathOptInterface.SingleVariable,MathOptInterface.EqualTo{Float64}}(1). Renamed to c1.
-└ @ MathOptFormat ~/.julia/packages/MathOptFormat/iRtuE/src/MathOptFormat.jl:54
-┌ Warning: Blank name detected for constraint MathOptInterface.ConstraintIndex{MathOptInterface.SingleVariable,MathOptInterface.GreaterThan{Float64}}(2). Renamed to c2.
-└ @ MathOptFormat ~/.julia/packages/MathOptFormat/iRtuE/src/MathOptFormat.jl:54
+
 ```
 
 We can check the file by reading it back in again.
@@ -85,12 +80,7 @@ are not in the original problem formulation.
 julia> SDDP.parameterize(model[1], 3.3)
 
 julia> SDDP.write_subproblem_to_file(model[1], "subproblem", format=:lp)
-┌ Warning: Blank name detected for variable MathOptInterface.VariableIndex(4). Renamed to x4.
-└ @ MathOptFormat ~/.julia/packages/MathOptFormat/iRtuE/src/MathOptFormat.jl:95
-┌ Warning: Blank name detected for constraint MathOptInterface.ConstraintIndex{MathOptInterface.SingleVariable,MathOptInterface.EqualTo{Float64}}(1). Renamed to c1.
-└ @ MathOptFormat ~/.julia/packages/MathOptFormat/iRtuE/src/MathOptFormat.jl:54
-┌ Warning: Blank name detected for constraint MathOptInterface.ConstraintIndex{MathOptInterface.SingleVariable,MathOptInterface.GreaterThan{Float64}}(2). Renamed to c2.
-└ @ MathOptFormat ~/.julia/packages/MathOptFormat/iRtuE/src/MathOptFormat.jl:54
+
 
 julia> read("subproblem.lp") |> String |> print
 minimize
@@ -128,7 +118,7 @@ Solver name: GLPK
 julia> optimize!(det_equiv)
 
 julia> objective_value(det_equiv)
--5.4725
+-5.472500000000001
 ```
 
 !!! warning
