@@ -27,6 +27,11 @@ function fast_quickstart()
             @stageobjective(sp, -2s)
         end
     end
+
+    det = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+    JuMP.optimize!(det)
+    @test JuMP.objective_value(det) == -2
+
     SDDP.train(model, iteration_limit = 3, print_level = 0)
     @test SDDP.calculate_bound(model) == -2
 end
