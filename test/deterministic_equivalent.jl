@@ -62,7 +62,7 @@ using SDDP, Test, GLPK
     @testset "Cyclic Markovian" begin
         graph = SDDP.MarkovianGraph([[0.5 0.5], [0.2 0.8; 0.8 0.2]])
         SDDP.add_edge(graph, (2, 1) => (1, 1), 0.9)
-        model = SDDP.MarkovianPolicyGraph(
+        model = SDDP.PolicyGraph(
             graph, lower_bound = 0, optimizer = with_optimizer(GLPK.Optimizer)
         ) do sp, t
             @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
