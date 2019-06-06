@@ -19,27 +19,54 @@ struct ScenarioTree{T}
     children::Vector{ScenarioTreeNode{T}}
 end
 
-function is_cyclic_recusrsion(
-    pg::PolicyGraph{T}, to_visit::Set{T}, visited::Set{T}
-) where {T}
-    if length(to_visit) == 0
-        return true
-    end
-    v = pop!(to_visit)
-    if v in visited
-        return false
-    end
-    push!(visited, v)
-    for child in pg[v].children
-        push!(to_visit, child.term)
-    end
-    return is_cyclic_recusrsion(pg, to_visit, visited)
-end
+function is_cyclic(G::PolicyGraph{T}) where {T}
+    # We implement Tarjan's strongly connected components algorithm to detect
+    # cycles in a directed graph in O(|V| + |E|) time. See this Wiki for details
+    # https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+    # The notation here follows the pseudocode in the Wikipedia article, rather
+    # than the typical JuMP style guide.
+    strongly_connected_components = Set{T}[]
 
-function is_cyclic(pg::PolicyGraph{T}) where {T}
-    visited = Set{T}()
-    to_visit = Set{T}(keys(pg.nodes))
-    return is_cyclic_recusrsion(pg, to_visit, visited)
+    index_counter = 0
+    S = Set{T}()
+    low_link = Dict{T, Int}()
+    index = Dict{T, Int}()
+    on_stack = Dict{T, Bool}()
+
+    function strong_connect(v)
+        index[v] = index_counter
+        low_link[v] = index_counter
+        index_counter += 1
+        push!(S, v)
+        on_stack[v] = true
+        for child in G[v].children
+            w = child.term
+            if !haskey(index, w)
+                strong_connect(w)
+                low_link[v] = min(low_link[v], low_link[w])
+            elseif on_stack[w]
+                low_link[v] = min(low_link[v], index[w])
+            end
+        end
+        if low_link[v] == index[v]
+            scc = Set{T}()
+            while length(S) > 0
+                w = pop!(S)
+                on_stack[w] = false
+                push!(scc, w)
+                if w == v
+                    break
+                end
+            end
+            push!(strongly_connected_components, scc)
+        end
+    end
+    for v in keys(G.nodes)
+        if !haskey(index, v)
+            strong_connect(v)
+        end
+    end
+    return length(strongly_connected_components) != length(G.nodes)
 end
 
 function add_node_to_scenario_tree(
@@ -156,7 +183,7 @@ end
     deterministic_equivalent(
         pg::PolicyGraph{T},
         optimizer::Union{JuMP.OptimizerFactory, Nothing} = nothing;
-        time_limit::Union{Float64, Nothing} = 60.0
+        time_limit::Union{Real, Nothing} = 60.0
     )
 
 Form a JuMP model that represents the deterministic equivalent of the problem.
@@ -168,12 +195,12 @@ Form a JuMP model that represents the deterministic equivalent of the problem.
 """
 function deterministic_equivalent(
     pg::PolicyGraph{T},
-    optimizer::Union{JuMP.OptimizerFactory, Nothing} = nothing,
-    time_limit::Union{Float64, Nothing} = 60.0
+    optimizer::Union{JuMP.OptimizerFactory, Nothing} = nothing;
+    time_limit::Union{Real, Nothing} = 60.0
 ) where {T}
     # Step 0: helper function for the time limit.
     start_time = time()
-    time_limit = time_limit === nothing ? typemax(Float64) : time_limit
+    time_limit = time_limit === nothing ? typemax(Float64) : Float64(time_limit)
     function check_time_limit()
         if time() - start_time > time_limit::Float64
             throw_detequiv_error("Time limit exceeded!")
