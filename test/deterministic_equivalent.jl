@@ -6,37 +6,73 @@
 using SDDP, Test, GLPK
 
 @testset "cyclic checks" begin
-    graph = SDDP.LinearGraph(2)
-    model = SDDP.PolicyGraph(
-        graph, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer)
-    ) do sp, t
-        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-        @stageobjective(sp, x.out)
+    @testset "Acyclic linear" begin
+        graph = SDDP.LinearGraph(2)
+        model = SDDP.PolicyGraph(
+            graph, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer)
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
+        @test SDDP.is_cyclic(model) == false
+        @test typeof(SDDP.deterministic_equivalent(model)) == JuMP.Model
     end
-    @test SDDP.is_cyclic(model) == false
-    @test typeof(SDDP.deterministic_equivalent(model)) == JuMP.Model
-
-    SDDP.add_edge(graph, 2 => 1, 0.9)
-    model = SDDP.PolicyGraph(
-        graph, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer)
-    ) do sp, t
-        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-        @stageobjective(sp, x.out)
+    @testset "Cyclic linear" begin
+        graph = SDDP.LinearGraph(2)
+        SDDP.add_edge(graph, 2 => 1, 0.9)
+        model = SDDP.PolicyGraph(
+            graph, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer)
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
+        @test SDDP.is_cyclic(model) == true
+        @test_throws ErrorException(
+            "Unable to formulate deterministic equivalent: Cyclic policy graph detected!"
+        ) SDDP.deterministic_equivalent(model)
     end
-    @test SDDP.is_cyclic(model) == true
-    @test_throws ErrorException(
-        "Unable to formulate deterministic equivalent: Cyclic policy graph detected!"
-    ) SDDP.deterministic_equivalent(model)
-
-    model = SDDP.MarkovianPolicyGraph(
-        transition_matrices = [ [0.5 0.5], [0.2 0.8; 0.8 0.2]],
-        lower_bound = 0, optimizer = with_optimizer(GLPK.Optimizer)
-    ) do sp, t
-        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-        @stageobjective(sp, x.out)
+    @testset "Cyclic single node" begin
+        graph = SDDP.Graph(
+            :root,
+            [:node],
+            [(:root => :node, 1.0), (:node => :node, 0.9)]
+        )
+        model = SDDP.PolicyGraph(
+            graph, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer)
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
+        @test SDDP.is_cyclic(model) == true
+        @test_throws ErrorException(
+            "Unable to formulate deterministic equivalent: Cyclic policy graph detected!"
+        ) SDDP.deterministic_equivalent(model)
     end
-    @test SDDP.is_cyclic(model) == false
-    @test typeof(SDDP.deterministic_equivalent(model)) == JuMP.Model
+    @testset "Acyclic Markovian" begin
+        model = SDDP.MarkovianPolicyGraph(
+            transition_matrices = [ [0.5 0.5], [0.2 0.8; 0.8 0.2]],
+            lower_bound = 0, optimizer = with_optimizer(GLPK.Optimizer)
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
+        @test SDDP.is_cyclic(model) == false
+        @test typeof(SDDP.deterministic_equivalent(model)) == JuMP.Model
+    end
+    @testset "Cyclic Markovian" begin
+        graph = SDDP.MarkovianGraph([[0.5 0.5], [0.2 0.8; 0.8 0.2]])
+        SDDP.add_edge(graph, (2, 1) => (1, 1), 0.9)
+        model = SDDP.MarkovianPolicyGraph(
+            graph, lower_bound = 0, optimizer = with_optimizer(GLPK.Optimizer)
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
+        @test SDDP.is_cyclic(model) == true
+        @test_throws ErrorException(
+            "Unable to formulate deterministic equivalent: Cyclic policy graph detected!"
+        ) SDDP.deterministic_equivalent(model)
+    end
 end
 
 @testset "time_limit" begin

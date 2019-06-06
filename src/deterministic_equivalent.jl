@@ -25,14 +25,16 @@ function is_cyclic(G::PolicyGraph{T}) where {T}
     # https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
     # The notation here follows the pseudocode in the Wikipedia article, rather
     # than the typical JuMP style guide.
-    strongly_connected_components = Set{T}[]
-
+    #
+    # Since we're only checking for cyclic graphs, we can stop as soon as on is
+    # found. A cyclic graph has a stongly connected component with at least two
+    # components, or it has a node with connects to itself. That means we don't
+    # need to store the set of all strongly connected components.
     index_counter = 0
-    S = Set{T}()
+    S = T[]
     low_link = Dict{T, Int}()
     index = Dict{T, Int}()
     on_stack = Dict{T, Bool}()
-
     function strong_connect(v)
         index[v] = index_counter
         low_link[v] = index_counter
@@ -41,32 +43,46 @@ function is_cyclic(G::PolicyGraph{T}) where {T}
         on_stack[v] = true
         for child in G[v].children
             w = child.term
+            if v == w
+                # Cycle detected: Type I: a node that loops to itself.
+                return true
+            end
             if !haskey(index, w)
-                strong_connect(w)
+                if strong_connect(w)
+                    # A cycle was detected further down the tree. Propogate it
+                    # upwards.
+                    return true
+                end
                 low_link[v] = min(low_link[v], low_link[w])
             elseif on_stack[w]
                 low_link[v] = min(low_link[v], index[w])
             end
         end
         if low_link[v] == index[v]
-            scc = Set{T}()
-            while length(S) > 0
+            scc = T[]
+            w = G.root_node
+            while v != w
                 w = pop!(S)
                 on_stack[w] = false
                 push!(scc, w)
-                if w == v
-                    break
-                end
             end
-            push!(strongly_connected_components, scc)
+            if length(scc) > 1
+                # Cycle detected: Type II: a strongly connected component with
+                # more than one element.
+                return true
+            end
         end
+        return false  # No cycle detected.
     end
     for v in keys(G.nodes)
         if !haskey(index, v)
-            strong_connect(v)
+            if strong_connect(v)
+                # Cycle detected!
+                return true
+            end
         end
     end
-    return length(strongly_connected_components) != length(G.nodes)
+    return false
 end
 
 function add_node_to_scenario_tree(
