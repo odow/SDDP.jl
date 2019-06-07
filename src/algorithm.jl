@@ -157,17 +157,30 @@ end
 # Internal function: get the values of the dual variables associated with the
 # fixed incoming state variables. Requires node.subproblem to have been solved
 # with DualStatus == FeasiblePoint.
-function get_dual_variables(node::Node)
+function get_dual_variables(node::Node; lagrangian::Bool = true)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
     dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
-    values = Dict{Symbol, Float64}()
-    for (name, state) in node.states
-        ref = JuMP.FixRef(state.in)
-        values[name] = dual_sign * JuMP.dual(ref)
+    dual_values = Dict{Symbol, Float64}()
+    if !lagrangian
+        for (name, state) in node.states
+            ref = JuMP.FixRef(state.in)
+            dual_values[name] = dual_sign * JuMP.dual(ref)
+        end
+    else
+        # TODO implement smart choice for initial duals
+        dual_vars = zeros(length(node.states))
+        solver_obj = JuMP.objective_value(node.subproblem)
+        kelley_obj = _kelley(node, dual_vars)
+        @assert isapprox(solver_obj, kelley_obj, atol = 1e-5, rtol = 1e-5)
+        for (i, name) in enumerate(keys(node.states))
+            dual_values[name] = -dual_vars[i] # TODO think about sign for minimization
+        end
     end
-    return values
+    # @show (best_actual, bestmult)
+    return dual_values
 end
+
 
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
@@ -267,6 +280,7 @@ function solve_subproblem(
         nothing
     end
 
+    # solve the MIP (faster to do this extra solve and get an objective value than look for duals without it)
     JuMP.optimize!(node.subproblem)
 
     # Test for primal feasibility.
