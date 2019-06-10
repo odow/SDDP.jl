@@ -263,9 +263,9 @@ function solve_subproblem(
     node::Node{T},
     state::Dict{Symbol, Float64},
     noise,
-    scenario_path::Vector{Tuple{T, <:Any}};
+    scenario_path::Vector{Tuple{T, S}};
     require_duals::Bool
-) where {T}
+) where {T, S}
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
     # set the objective.

@@ -45,4 +45,7 @@ include("visualization/publication_plot.jl")
 include("visualization/spaghetti_plot.jl")
 include("visualization/dashboard.jl")
 
+# Other solvers.
+include("deterministic_equivalent.jl")
+
 end

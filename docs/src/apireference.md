@@ -75,4 +75,5 @@ SDDP.publication_plot
 
 ```@docs
 SDDP.write_subproblem_to_file
+SDDP.deterministic_equivalent
 ```
