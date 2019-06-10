@@ -282,6 +282,13 @@ struct State{T}
     out::T
 end
 
+# struct BinaryState{T}
+#     # The incoming state variable.
+#     in::T
+#     # The outgoing state variable.
+#     out::T
+# end
+
 mutable struct ObjectiveState{N}
     update::Function
     initial_value::NTuple{N, Float64}
@@ -520,7 +527,12 @@ function PolicyGraph(builder::Function, graph::Graph{T};
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
         JuMP.set_objective_sense(subproblem, policy_graph.objective_sense)
-        builder(subproblem, node_index)
+        builder(subproblem, node_index) # or something like that, less hacky
+        if haskey(subproblem.ext, :issddip)
+            node.ext[:issddip] = true
+        else
+            node.ext[:issddip] = false
+        end
         # Add a dummy noise here so that all nodes have at least one noise term.
         if length(node.noise_terms) == 0
             push!(node.noise_terms, Noise(nothing, 1.0))
@@ -749,7 +761,8 @@ function JuMP.build_variable(
             false, NaN,  # upper bound
             false, NaN,  # fixed value
             false, NaN,  # start value
-            false, false # binary and integer
+            false, false, # binary and integer, state in doesn't need integrality constraints
+            # info.binary, info.integer # binary and integer
         ),
         info,
         initial_value
@@ -758,12 +771,19 @@ end
 
 function JuMP.add_variable(
         subproblem::JuMP.Model, state_info::StateInfo, name::String)
-    state = State(
-        JuMP.add_variable(
-            subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
-        JuMP.add_variable(
-            subproblem, JuMP.ScalarVariable(state_info.out), name * "_out")
-    )
+
+    if !haskey(subproblem.ext, :issddip) || state_info.out.binary
+        state = State(
+            JuMP.add_variable(
+                subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
+            JuMP.add_variable(
+                subproblem, JuMP.ScalarVariable(state_info.out), name * "_out")
+        )
+    elseif state_info.out.integer
+        # something
+    else
+        # something
+    end
     node = get_node(subproblem)
     sym_name = Symbol(name)
     @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.

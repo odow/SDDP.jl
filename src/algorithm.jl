@@ -157,12 +157,12 @@ end
 # Internal function: get the values of the dual variables associated with the
 # fixed incoming state variables. Requires node.subproblem to have been solved
 # with DualStatus == FeasiblePoint.
-function get_dual_variables(node::Node; lagrangian::Bool = true)
+function get_dual_variables(node::Node)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
     dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
     dual_values = Dict{Symbol, Float64}()
-    if !lagrangian
+    if !node.ext[:issddip]
         for (name, state) in node.states
             ref = JuMP.FixRef(state.in)
             dual_values[name] = dual_sign * JuMP.dual(ref)

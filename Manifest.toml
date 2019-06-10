@@ -165,8 +165,6 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[MathOptFormat]]
 deps = ["DataStructures", "GZip", "HTTP", "JSON", "JSONSchema", "MathOptInterface"]
 git-tree-sha1 = "ae8782df3e898a8445195e6550a845ca64b279e2"
-repo-rev = "master"
-repo-url = "https://github.com/odow/MathOptFormat.jl"
 uuid = "f4570300-c277-12e8-125c-4912f86ce65d"
 version = "0.1.0"
 

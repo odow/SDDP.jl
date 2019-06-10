@@ -10,6 +10,8 @@ model = SDDP.LinearPolicyGraph(
     lower_bound = 0,
     optimizer = with_optimizer(GLPK.Optimizer)) do sp, stage
 
+    sp.ext[:issdddip] = true
+
     @variable(sp, 0 <= x[i in 1:2] <= 1, SDDP.State, initial_value = 0)
     @variable(sp, y)
 
@@ -27,7 +29,7 @@ end
 dual_vars = -2 * ones(2)
 node = model.nodes[2]
 obj = SDDP._kelley(node, dual_vars)
-@test all(duals .>= -ones(2))
+@test all(dual_vars .>= -ones(2))
 @test obj == 0.0
 
 
@@ -37,6 +39,8 @@ model = SDDP.LinearPolicyGraph(
     sense = :Min,
     lower_bound = 0,
     optimizer = with_optimizer(GLPK.Optimizer)) do sp, stage
+
+    sp.ext[:issdddip] = true
 
     @variable(sp, 0 <= x[i in 1:2] <= 1, SDDP.State, initial_value = 1)
     @variable(sp, y)
@@ -58,7 +62,7 @@ end
 dual_vars = -2 * ones(2)
 node = model.nodes[2]
 obj = SDDP._kelley(node, dual_vars)
-@test sum(duals) <= 1
+@test sum(dual_vars) <= 1
 @test obj == 0.0
 
 

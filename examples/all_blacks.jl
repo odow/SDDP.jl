@@ -17,8 +17,10 @@ model = SDDP.LinearPolicyGraph(
     upper_bound = 100.0,
     optimizer = with_optimizer(GLPK.Optimizer)) do sp, stage
 
+    sp.ext[:issddip] = true # or something like that
+
     # Seat remaining?
-    @variable(sp, 0 <= x[i in 1:N] <= 1, SDDP.State, initial_value = 1) # TODO why were bounds needed if binary?
+    @variable(sp, 0 <= x[i in 1:N] <= 1, SDDP.State, Bin, initial_value = 1) # TODO why were bounds needed if binary?
     # Action: accept offer, or don't accept offer
     @variable(sp, accept_offer, Bin)
     # @variable(sp, 0 <= accept_offer <= 1)
