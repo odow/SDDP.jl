@@ -8,8 +8,11 @@ module SDDP
 import Reexport
 Reexport.@reexport using JuMP
 
-import HTTP, JSON, Printf, Random, RecipesBase, TimerOutputs, Statistics
-import MathOptFormat
+import HTTP, JSON, MathOptFormat, Printf, Random, TimerOutputs, Statistics
+
+# Work-around for https://github.com/JuliaPlots/RecipesBase.jl/pull/55
+# Change this back to `import RecipesBase` once the fix is tagged.
+using RecipesBase
 
 export @stageobjective
 
