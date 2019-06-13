@@ -82,6 +82,7 @@ struct Options{T}
     initial_state::Dict{Symbol, Float64}
     # The sampling scheme to use on the forward pass.
     sampling_scheme::AbstractSamplingScheme
+    backward_sampling_scheme::AbstractBackwardSamplingScheme
     # Storage for the set of possible sampling states at each node. We only use
     # this if there is a cycle in the policy graph.
     starting_states::Dict{T, Vector{Dict{Symbol, Float64}}}
@@ -100,12 +101,14 @@ struct Options{T}
     function Options(model::PolicyGraph{T},
                      initial_state::Dict{Symbol, Float64},
                      sampling_scheme::AbstractSamplingScheme,
+                     backward_sampling_scheme::AbstractBackwardSamplingScheme,
                      risk_measures,
                      cycle_discretization_delta::Float64,
                      refine_at_similar_nodes::Bool) where {T, S}
         return new{T}(
             initial_state,
             sampling_scheme,
+            backward_sampling_scheme,
             to_nodal_form(model, x -> Dict{Symbol, Float64}[]),
             to_nodal_form(model, risk_measures),
             cycle_discretization_delta,
@@ -465,8 +468,7 @@ function backward_pass(
         scenario_path::Vector{Tuple{T, NoiseType}},
         sampled_states::Vector{Dict{Symbol, Float64}},
         objective_states::Vector{NTuple{N, Float64}},
-        belief_states::Vector{Tuple{Int, Dict{T, Float64}}},
-        backward_pass_sampler::AbstractBackwardPassSampler = CompleteSampler()) where {T, NoiseType, N}
+        belief_states::Vector{Tuple{Int, Dict{T, Float64}}}) where {T, NoiseType, N}
     for index in length(scenario_path):-1:1
         outgoing_state = sampled_states[index]
         objective_state = get(objective_states, index, nothing)
@@ -478,7 +480,8 @@ function backward_pass(
                 belief == 0.0 && continue
                 solve_all_children(
                     model, model[node_index], items, belief, belief_state,
-                    objective_state, outgoing_state, backward_pass_sampler,
+                    objective_state, outgoing_state,
+                    options.backward_sampling_scheme,
                     scenario_path[1:index])
             end
             # We need to refine our estimate at all nodes in the partition.
@@ -503,7 +506,8 @@ function backward_pass(
             end
             solve_all_children(
                 model, node, items, 1.0, belief_state, objective_state,
-                outgoing_state, backward_pass_sampler, scenario_path[1:index]
+                outgoing_state, options.backward_sampling_scheme,
+                scenario_path[1:index]
             )
             refine_bellman_function(
                 model, node, node.bellman_function,
@@ -551,7 +555,7 @@ function solve_all_children(
     model::PolicyGraph{T}, node::Node{T}, items::BackwardPassItems,
     belief::Float64, belief_state, objective_state,
     outgoing_state::Dict{Symbol, Float64},
-    backward_pass_sampler::AbstractBackwardPassSampler,
+    backward_sampling_scheme::AbstractBackwardSamplingScheme,
     scenario_path
 ) where {T}
     length_scenario_path = length(scenario_path)
@@ -560,8 +564,7 @@ function solve_all_children(
             continue
         end
         child_node = model[child.term]
-        sampled_noises = sample_backward_noise_terms(backward_pass_sampler, child_node)
-        for noise in sampled_noises
+        for noise in sample_backward_noise_terms(backward_sampling_scheme, child_node)
             if length(scenario_path) == length_scenario_path
                 push!(scenario_path, (child.term, noise.term))
             else
@@ -758,8 +761,8 @@ Train the policy for `model`. Keyword arguments:
  - `sampling_scheme`: a sampling scheme to use on the forward pass of the
     algorithm. Defaults to [`InSampleMonteCarlo`](@ref).
 
- - `backward_pass_sampler`: a backward pass sampling scheme to use on the backward 
-   pass of the algorithm. Defaults to `CompleteSampler`.
+ - `backward_sampling_scheme`: a backward pass sampling scheme to use on the
+    backward pass of the algorithm. Defaults to `CompleteSampler`.
 
  - `cut_type`: choose between `SDDP.SINGLE_CUT` and `SDDP.MULTI_CUT` versions of SDDP.
 
@@ -786,7 +789,7 @@ function train(
     cycle_discretization_delta::Float64 = 0.0,
     refine_at_similar_nodes::Bool = true,
     cut_deletion_minimum::Int = 1,
-    backward_pass_sampler::AbstractBackwardPassSampler = SDDP.CompleteSampler(),
+    backward_sampling_scheme::AbstractBackwardSamplingScheme = SDDP.CompleteSampler(),
     dashboard::Bool = false
 )
     # Reset the TimerOutput.
@@ -829,6 +832,7 @@ function train(
         model,
         model.initial_root_state,
         sampling_scheme,
+        backward_sampling_scheme,
         risk_measure,
         cycle_discretization_delta,
         refine_at_similar_nodes
@@ -872,8 +876,7 @@ function train(
                     model, options, forward_trajectory.scenario_path,
                     forward_trajectory.sampled_states,
                     forward_trajectory.objective_states,
-                    forward_trajectory.belief_states,
-                    backward_pass_sampler)
+                    forward_trajectory.belief_states)
             end
             TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
                 bound = calculate_bound(model)

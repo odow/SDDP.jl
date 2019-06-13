@@ -37,7 +37,7 @@ include("plugins/risk_measures.jl")
 include("plugins/sampling_schemes.jl")
 include("plugins/bellman_functions.jl")
 include("plugins/stopping_rules.jl")
-include("plugins/samplers.jl")
+include("plugins/backward_sampling_schemes.jl")
 
 # Visualization related code.
 include("visualization/publication_plot.jl")
