@@ -891,7 +891,7 @@ function train(
         # Remember to reset any relaxed integralities.
         enforce_integrality(binaries, integers)
         # And close the dashboard callback if necessary.
-        dashboard_callback(log[end], true)
+        dashboard_callback(nothing, true)
     end
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results

@@ -67,7 +67,7 @@ function tiger_problem()
         sampling_scheme = SDDP.InSampleMonteCarlo(
             max_depth = 30, terminate_on_dummy_leaf = false))
 
-    plt = SDDP.SpaghettiPlot(s)
+    plt = SDDP.SpaghettiPlot(simulations)
     SDDP.add_spaghetti(plt, cumulative=true) do data
         data[:stage_objective]
     end

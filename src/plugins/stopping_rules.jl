@@ -119,7 +119,9 @@ function convergence_test(graph::PolicyGraph{T}, log::Vector{Log},
     end
     for iteration in 1:rule.num_previous_iterations
         idx = length(log) - iteration
-        if abs(log[idx].bound - log[idx + 1].bound) > rule.tolerance
+        if idx < 1
+            break  # Skip: we haven't seen enough iterations yet.
+        elseif abs(log[idx].bound - log[idx + 1].bound) > rule.tolerance
             return false
         end
     end
