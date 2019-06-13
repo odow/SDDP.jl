@@ -6,3 +6,4 @@ docs/src/examples/*.md
 test/*.js
 *.DS_Store
 .vscode/*
+Manifest.toml
