@@ -20,11 +20,19 @@
 =#
 using SDDP, GLPK, Test
 
-function air_conditioning_model()
+function air_conditioning_model(sddip)
     model = SDDP.LinearPolicyGraph(
             stages = 3, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer)) do sp, stage
-        @variable(sp, stored_production >= 0, SDDP.State, initial_value = 0)
+
+        if sddip
+            sp.ext[:issddip] = true
+            state_ub = 100
+        else
+            state_ub = NaN
+        end
+
+        @variable(sp, 0 <= stored_production <= state_ub, SDDP.State, Int, initial_value = 0)
         @variable(sp, 0 <= production <= 200, Int)
         @variable(sp, overtime >= 0, Int)
         @variable(sp, demand)
@@ -35,8 +43,10 @@ function air_conditioning_model()
         @stageobjective(sp,
             100 * production + 300 * overtime + 50 * stored_production.out)
     end
-    SDDP.train(model, iteration_limit = 20, print_level = 0)
+    SDDP.train(model, iteration_limit = 20, print_level = 1)
     @test SDDP.calculate_bound(model) ≈ 62_500.0
 end
 
-air_conditioning_model()
+for sddip in [true, false]
+    air_conditioning_model(sddip)
+end

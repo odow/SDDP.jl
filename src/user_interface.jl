@@ -769,27 +769,46 @@ function JuMP.build_variable(
     )
 end
 
+# TODO warning that if issddip and not bin/int variable will be expanded as a float
+
 function JuMP.add_variable(
         subproblem::JuMP.Model, state_info::StateInfo, name::String)
 
+    state = State(
+        JuMP.add_variable(
+            subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
+        JuMP.add_variable(
+            subproblem, JuMP.ScalarVariable(state_info.out), name * "_out")
+    )
+
     if !haskey(subproblem.ext, :issddip) || state_info.out.binary
-        state = State(
-            JuMP.add_variable(
-                subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
-            JuMP.add_variable(
-                subproblem, JuMP.ScalarVariable(state_info.out), name * "_out")
-        )
+        # Only in this case we treat `state` as a real state variable
+        node = get_node(subproblem)
+        sym_name = Symbol(name)
+        @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.
+        node.states[sym_name] = state
+        graph = get_policy_graph(subproblem)
+        graph.initial_root_state[sym_name] = state_info.initial_value
+
     elseif state_info.out.integer
-        # something
+        if !isfinite(state_info.out.upper_bound)
+            error("When using SDDiP, state variables require an upper bound.")
+        end
+
+        num_vars = bitsrequired(state_info.out.upper_bound)
+        initial_value = binexpand(Int(state_info.initial_value), length = num_vars)
+
+        binary_vars = JuMP.@variable(
+            subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
+            SDDP.State, Bin, initial_value = initial_value[i])
+
+        JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars]))
+        JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].in for i in 1:num_vars]))
+
     else
         # something
     end
-    node = get_node(subproblem)
-    sym_name = Symbol(name)
-    @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.
-    node.states[sym_name] = state
-    graph = get_policy_graph(subproblem)
-    graph.initial_root_state[sym_name] = state_info.initial_value
+
     return state
 end
 

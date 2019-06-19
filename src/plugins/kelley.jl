@@ -1,7 +1,7 @@
 using GLPK
 using LinearAlgebra
 
-function solve_primal(node::Node, dual_vars::Vector{Float64}, slacks)
+function _solve_primal(node::Node, dual_vars::Vector{Float64}, slacks)
     model = node.subproblem
     # Set the Lagrangian the objective in the primal model
     old_obj = JuMP.objective_function(model)
@@ -85,7 +85,7 @@ function _kelley(node::Node, dual_vars::Vector{Float64})
     while iteration < iteration_limit
         iteration += 1
         # Evaluate the real function and a subgradient
-        (f_actual, fdash) = solve_primal(node, dual_vars, slacks)
+        (f_actual, fdash) = _solve_primal(node, dual_vars, slacks)
 
         # update the model and update best function value so far
         if dualsense == MOI.MIN_SENSE
