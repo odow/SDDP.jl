@@ -41,13 +41,13 @@ function launch_dashboard()
     end
     launch_file(joinpath(@__DIR__, "dashboard.html"))
     # Return the plotting callback.
-    return (log::Log, close_flag::Bool) -> begin
+    return (log::Union{Log, Nothing}, close_flag::Bool) -> begin
         if close_flag
             # We've received the signal to close the websocket because SDDP has
             # terminated.
             close(server_to_client)
             close(client_to_server)
-        else
+        elseif log !== nothing
             # Send the latest log to the client.
             put!(server_to_client, log)
             # Wait for the signal that Plotly has updated the plot.

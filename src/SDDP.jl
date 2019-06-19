@@ -8,8 +8,11 @@ module SDDP
 import Reexport
 Reexport.@reexport using JuMP
 
-import HTTP, JSON, Printf, Random, RecipesBase, TimerOutputs, Statistics
-import MathOptFormat
+import HTTP, JSON, MathOptFormat, Printf, Random, TimerOutputs, Statistics
+
+# Work-around for https://github.com/JuliaPlots/RecipesBase.jl/pull/55
+# Change this back to `import RecipesBase` once the fix is tagged.
+using RecipesBase
 
 export @stageobjective
 
@@ -42,6 +45,7 @@ include("plugins/bellman_functions.jl")
 include("plugins/stopping_rules.jl")
 include("plugins/kelley.jl")
 
+include("plugins/backward_sampling_schemes.jl")
 
 # Visualization related code.
 include("visualization/publication_plot.jl")

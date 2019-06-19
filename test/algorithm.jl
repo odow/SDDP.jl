@@ -23,6 +23,7 @@ using SDDP, Test, GLPK
             model,
             Dict(:x => 1.0),
             SDDP.InSampleMonteCarlo(),
+            SDDP.CompleteSampler(),
             SDDP.Expectation(),
             0.0,
             true
