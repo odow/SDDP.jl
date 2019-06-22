@@ -803,10 +803,22 @@ function JuMP.add_variable(
             SDDP.State, Bin, initial_value = initial_value[i])
 
         JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars]))
-        JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].in for i in 1:num_vars]))
+        JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars]))
 
     else
-        # something
+        if !isfinite(state_info.out.upper_bound)
+            error("When using SDDiP, state variables require an upper bound.")
+        end
+
+        num_vars = bitsrequired(float(state_info.out.upper_bound), 0.1)
+        initial_value = binexpand(state_info.initial_value, length = num_vars)
+
+        binary_vars = JuMP.@variable(
+            subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
+            SDDP.State, Bin, initial_value = initial_value[i])
+
+        JuMP.@constraint(subproblem, state.in == bincontract(Float64, [binary_vars[i].in for i in 1:num_vars], 0.1))
+        JuMP.@constraint(subproblem, state.out == bincontract(Float64, [binary_vars[i].out for i in 1:num_vars], 0.1))
     end
 
     return state

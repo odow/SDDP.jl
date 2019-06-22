@@ -13,43 +13,48 @@
 
 using SDDP, GLPK, Test
 
-function booking_management_model(NUMBER_OF_DAYS, NUMBER_OF_ROOMS, NUMBER_OF_REQUESTS)
+function booking_management_model(num_days, num_rooms, num_requests, sddip)
     # maximum revenue that could be accrued.
-    MAX_REVENUE = (NUMBER_OF_ROOMS + NUMBER_OF_REQUESTS) * NUMBER_OF_DAYS * NUMBER_OF_ROOMS
+    max_revenue = (num_rooms + num_requests) * num_days * num_rooms
 
     #=
-        BOOKING_REQUESTS is a vector of {0,1} arrays of size
-        (NUMBER_OF_DAYS x NUMBER_OF_ROOMS) if the room is requested.
+        booking_requests is a vector of {0,1} arrays of size
+        (num_days x num_rooms) if the room is requested.
     =#
-    BOOKING_REQUESTS = Array{Int, 2}[]
-    for room in 1:NUMBER_OF_ROOMS
-        for day in 1:NUMBER_OF_DAYS
+    booking_requests = Array{Int, 2}[]
+    for room in 1:num_rooms
+        for day in 1:num_days
             # note: length_of_stay is 0 indexed to avoid unncecessary +/- 1
             # on the indexing
-            for length_of_stay in 0:(NUMBER_OF_DAYS - day)
-                booking_request = zeros(Int, (NUMBER_OF_ROOMS, NUMBER_OF_DAYS))
-                booking_request[room:room, day .+ (0:length_of_stay)] .= 1
-                push!(BOOKING_REQUESTS, booking_request)
+            for length_of_stay in 0:(num_days - day)
+                req = zeros(Int, (num_rooms, num_days))
+                req[room:room, day .+ (0:length_of_stay)] .= 1
+                push!(booking_requests, req)
             end
         end
     end
 
     model = SDDP.LinearPolicyGraph(
-            stages = NUMBER_OF_REQUESTS, upper_bound = MAX_REVENUE,
+            stages = num_requests, upper_bound = max_revenue,
             sense = :Max, optimizer = with_optimizer(GLPK.Optimizer)
             ) do sp, stage
+
+        if sddip
+            sp.ext[:issddip] = true
+        end
+
         @variable(sp,
-            0 <= vacancy[room=1:NUMBER_OF_ROOMS, day=1:NUMBER_OF_DAYS] <= 1,
-            SDDP.State, initial_value = 1)
+            0 <= vacancy[room=1:num_rooms, day=1:num_days] <= 1,
+            SDDP.State, Bin, initial_value = 1)
         @variables(sp, begin
             # Accept request for booking of room for length of time.
             0 <= accept_request <= 1, Bin
             # Accept a booking for an individual room on an individual day.
-            0 <= room_request_accepted[1:NUMBER_OF_ROOMS, 1:NUMBER_OF_DAYS] <= 1, Bin
+            0 <= room_request_accepted[1:num_rooms, 1:num_days] <= 1, Bin
             # Helper for JuMP.fix
-            booking_request[1:NUMBER_OF_ROOMS, 1:NUMBER_OF_DAYS]
+            req[1:num_rooms, 1:num_days]
         end)
-        for room in 1:NUMBER_OF_ROOMS, day in 1:NUMBER_OF_DAYS
+        for room in 1:num_rooms, day in 1:num_days
             @constraints(sp, begin
                 # Update vacancy if we accept a room request
                 vacancy[room, day].out == vacancy[room, day].in - room_request_accepted[room, day]
@@ -58,30 +63,32 @@ function booking_management_model(NUMBER_OF_DAYS, NUMBER_OF_ROOMS, NUMBER_OF_REQ
                 # Can't accept invididual room request if entire request is declined
                 room_request_accepted[room, day] <= accept_request
                 # Can't accept request if room not requested
-                room_request_accepted[room, day] <= booking_request[room, day]
+                room_request_accepted[room, day] <= req[room, day]
                 # Accept all individual rooms is entire request is accepted
-                room_request_accepted[room, day] + (1-accept_request) >= booking_request[room, day]
+                room_request_accepted[room, day] + (1-accept_request) >= req[room, day]
             end)
         end
-        SDDP.parameterize(sp, BOOKING_REQUESTS) do request
-            JuMP.fix.(booking_request, request)
+        SDDP.parameterize(sp, booking_requests) do request
+            JuMP.fix.(req, request)
         end
         @stageobjective(sp, sum(
             (room + stage - 1) * room_request_accepted[room, day]
-            for room in 1:NUMBER_OF_ROOMS for day in 1:NUMBER_OF_DAYS
+            for room in 1:num_rooms for day in 1:num_days
             )
         )
     end
 end
 
-function booking_management()
-    m_1_2_5 = booking_management_model(1, 2, 5)
+function booking_management(sddip::Bool)
+    m_1_2_5 = booking_management_model(1, 2, 5, sddip)
     SDDP.train(m_1_2_5, iteration_limit = 10, print_level = 0)
     @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol=0.02)
 
-    m_2_2_3 = booking_management_model(2, 2, 3)
+    m_2_2_3 = booking_management_model(2, 2, 3, sddip)
     SDDP.train(m_2_2_3, iteration_limit = 40, print_level = 0)
     @test isapprox(SDDP.calculate_bound(m_2_2_3), 6.13, atol=0.02)
 end
 
-booking_management()
+for sddip in [true, false]
+    booking_management(sddip)
+end

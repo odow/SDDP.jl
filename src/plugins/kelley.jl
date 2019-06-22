@@ -37,7 +37,6 @@ function _kelley(node::Node, dual_vars::Vector{Float64})
     old_rhs = Dict()
     slacks = []
     for (name, state) in node.states
-        ref = JuMP.FixRef(state.in)
         old_rhs[name] = JuMP.fix_value(state.in)
         push!(slacks, state.in - old_rhs[name])
         # push!(old_rhs, JuMP.fix_value(state.in))
@@ -52,7 +51,6 @@ function _kelley(node::Node, dual_vars::Vector{Float64})
     # TODO make inputs
     iteration_limit = 100
 
-    model = node.subproblem
     N = length(dual_vars)
 
     # storage for the best multiplier found so far

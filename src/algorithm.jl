@@ -163,9 +163,12 @@ end
 function get_dual_variables(node::Node)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
-    dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
     dual_values = Dict{Symbol, Float64}()
     if !node.ext[:issddip]
+        if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+            write_subproblem_to_file(node, "subproblem", throw_error = true)
+        end
+        dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
         for (name, state) in node.states
             ref = JuMP.FixRef(state.in)
             dual_values[name] = dual_sign * JuMP.dual(ref)
@@ -177,10 +180,9 @@ function get_dual_variables(node::Node)
         kelley_obj = _kelley(node, dual_vars)
         @assert isapprox(solver_obj, kelley_obj, atol = 1e-5, rtol = 1e-5)
         for (i, name) in enumerate(keys(node.states))
-            dual_values[name] = -dual_vars[i] # TODO think about sign for minimization
+            dual_values[name] = -dual_vars[i]
         end
     end
-    # @show (best_actual, bestmult)
     return dual_values
 end
 
@@ -295,9 +297,6 @@ function solve_subproblem(
     # variable. If require_duals=false, return an empty dictionary for
     # type-stability.
     dual_values = if require_duals
-        if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-            write_subproblem_to_file(node, "subproblem", throw_error = true)
-        end
         get_dual_variables(node)
     else
         Dict{Symbol, Float64}()
@@ -865,7 +864,12 @@ function train(
     end
 
     # Handle integrality
-    binaries, integers = relax_integrality(model)
+    # TODO clean when implemented a non-hacky way to check if not SDDiP
+    if !haskey(model.nodes[1].ext, :issddip)
+        binaries, integers = relax_integrality(model)
+    else
+        binaries, integers = JuMP.VariableRef[], JuMP.VariableRef[]
+    end
 
     dashboard_callback = if dashboard
         launch_dashboard()
