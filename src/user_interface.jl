@@ -282,13 +282,6 @@ struct State{T}
     out::T
 end
 
-# struct BinaryState{T}
-#     # The incoming state variable.
-#     in::T
-#     # The outgoing state variable.
-#     out::T
-# end
-
 mutable struct ObjectiveState{N}
     update::Function
     initial_value::NTuple{N, Float64}
@@ -479,6 +472,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
                      lower_bound = -Inf,
                      upper_bound = Inf,
                      optimizer = nothing,
+                     SDDiP = false,
                      direct_mode = true) where {T}
     # Spend a one-off cost validating the graph.
     _validate_graph(graph)
@@ -527,12 +521,8 @@ function PolicyGraph(builder::Function, graph::Graph{T};
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
         JuMP.set_objective_sense(subproblem, policy_graph.objective_sense)
-        builder(subproblem, node_index) # or something like that, less hacky
-        if haskey(subproblem.ext, :issddip)
-            node.ext[:issddip] = true
-        else
-            node.ext[:issddip] = false
-        end
+        node.ext[:issddip] = SDDiP
+        builder(subproblem, node_index)
         # Add a dummy noise here so that all nodes have at least one noise term.
         if length(node.noise_terms) == 0
             push!(node.noise_terms, Noise(nothing, 1.0))
@@ -781,44 +771,42 @@ function JuMP.add_variable(
             subproblem, JuMP.ScalarVariable(state_info.out), name * "_out")
     )
 
-    if !haskey(subproblem.ext, :issddip) || state_info.out.binary
+    node = get_node(subproblem)
+    if !node.ext[:issddip] || state_info.out.binary
         # Only in this case we treat `state` as a real state variable
-        node = get_node(subproblem)
         sym_name = Symbol(name)
         @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.
         node.states[sym_name] = state
         graph = get_policy_graph(subproblem)
         graph.initial_root_state[sym_name] = state_info.initial_value
-
-    elseif state_info.out.integer
-        if !isfinite(state_info.out.upper_bound)
-            error("When using SDDiP, state variables require an upper bound.")
-        end
-
-        num_vars = bitsrequired(state_info.out.upper_bound)
-        initial_value = binexpand(Int(state_info.initial_value), length = num_vars)
-
-        binary_vars = JuMP.@variable(
-            subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
-            SDDP.State, Bin, initial_value = initial_value[i])
-
-        JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars]))
-        JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars]))
-
     else
+        # TODO add test
         if !isfinite(state_info.out.upper_bound)
             error("When using SDDiP, state variables require an upper bound.")
         end
 
-        num_vars = bitsrequired(float(state_info.out.upper_bound), 0.1)
-        initial_value = binexpand(state_info.initial_value, length = num_vars)
+        if state_info.out.integer
+            num_vars = bitsrequired(state_info.out.upper_bound)
+            initial_value = binexpand(Int(state_info.initial_value), length = num_vars)
 
-        binary_vars = JuMP.@variable(
-            subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
-            SDDP.State, Bin, initial_value = initial_value[i])
+            binary_vars = JuMP.@variable(
+                subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
+                SDDP.State, Bin, initial_value = initial_value[i])
 
-        JuMP.@constraint(subproblem, state.in == bincontract(Float64, [binary_vars[i].in for i in 1:num_vars], 0.1))
-        JuMP.@constraint(subproblem, state.out == bincontract(Float64, [binary_vars[i].out for i in 1:num_vars], 0.1))
+            JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars]))
+            JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars]))
+
+        else
+            num_vars = bitsrequired(float(state_info.out.upper_bound), 0.1)
+            initial_value = binexpand(state_info.initial_value, length = num_vars)
+
+            binary_vars = JuMP.@variable(
+                subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
+                SDDP.State, Bin, initial_value = initial_value[i])
+
+            JuMP.@constraint(subproblem, state.in == bincontract(Float64, [binary_vars[i].in for i in 1:num_vars], 0.1))
+            JuMP.@constraint(subproblem, state.out == bincontract(Float64, [binary_vars[i].out for i in 1:num_vars], 0.1))
+        end
     end
 
     return state

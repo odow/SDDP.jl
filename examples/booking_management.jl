@@ -13,7 +13,7 @@
 
 using SDDP, GLPK, Test
 
-function booking_management_model(num_days, num_rooms, num_requests, sddip)
+function booking_management_model(num_days, num_rooms, num_requests, SDDiP)
     # maximum revenue that could be accrued.
     max_revenue = (num_rooms + num_requests) * num_days * num_rooms
 
@@ -36,7 +36,8 @@ function booking_management_model(num_days, num_rooms, num_requests, sddip)
 
     model = SDDP.LinearPolicyGraph(
             stages = num_requests, upper_bound = max_revenue,
-            sense = :Max, optimizer = with_optimizer(GLPK.Optimizer)
+            sense = :Max, optimizer = with_optimizer(GLPK.Optimizer),
+            SDDiP = SDDiP
             ) do sp, stage
 
         if sddip
@@ -89,6 +90,6 @@ function booking_management(sddip::Bool)
     @test isapprox(SDDP.calculate_bound(m_2_2_3), 6.13, atol=0.02)
 end
 
-for sddip in [true, false]
-    booking_management(sddip)
+for SDDiP in [true, false]
+    booking_management(SDDiP)
 end

@@ -865,7 +865,7 @@ function train(
 
     # Handle integrality
     # TODO clean when implemented a non-hacky way to check if not SDDiP
-    if !haskey(model.nodes[1].ext, :issddip)
+    if !model.nodes[1].ext[:issddip]
         binaries, integers = relax_integrality(model)
     else
         binaries, integers = JuMP.VariableRef[], JuMP.VariableRef[]

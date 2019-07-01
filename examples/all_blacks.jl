@@ -1,13 +1,5 @@
 using SDDP, GLPK, Test
 
-#=
-TODO s
-
-- user is reponsible for making all state variables binary
-
-=#
-
-
 # Number of time periods, number of seats, R_ij = evenue from selling seat i at time j, offer_ij = whether an offer for seat i will come at time j
 (T, N, R, offer) = (3, 2, [3 3 6; 3 3 6], [1 1 0; 1 0 1])
 
@@ -15,9 +7,8 @@ model = SDDP.LinearPolicyGraph(
     stages = T,
     sense = :Max,
     upper_bound = 100.0,
-    optimizer = with_optimizer(GLPK.Optimizer)) do sp, stage
-
-    sp.ext[:issddip] = true # or something like that
+    optimizer = with_optimizer(GLPK.Optimizer),
+    SDDiP = true) do sp, stage
 
     # Seat remaining?
     @variable(sp, 0 <= x[i in 1:N] <= 1, SDDP.State, Bin, initial_value = 1) # TODO why were bounds needed if binary?
@@ -46,7 +37,7 @@ end
 # (obj, duals) = SDDP._kelley(n, dual_vars)
 
 
-SDDP.train(model, iteration_limit = 20, print_level = 1)
+SDDP.train(model, iteration_limit = 10, print_level = 1)
 @test SDDP.calculate_bound(model) ≈ 9.0
 
 
