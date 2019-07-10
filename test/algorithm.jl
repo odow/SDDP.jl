@@ -175,3 +175,97 @@ end
     @test pre_optimize_called == 1
     @test post_optimize_called == 3
 end
+
+@testset "relax_integrality and enforce_integrality" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 2, lower_bound = 0.0,
+        direct_mode = false
+    ) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 2.0)
+        @variable(sp, b1, Bin)
+        @variable(sp, 0.2 <= b2, Bin)
+        @variable(sp, 0.5 <= b3 <= 1.2, Bin)
+        @variable(sp, i1, Int)
+        @variable(sp, 6.2 >= i2, Int)
+        @variable(sp, -8 <= i3 <= 2, Int)
+        @stageobjective(sp, b1 + b2 + b2 + i3 + i1)
+    end
+
+    for node in [model[1], model[2]]
+        @test JuMP.is_binary(node.subproblem[:b1])
+        @test !JuMP.has_lower_bound(node.subproblem[:b1])
+        @test !JuMP.has_upper_bound(node.subproblem[:b1])
+
+        @test JuMP.is_binary(node.subproblem[:b2])
+        @test JuMP.lower_bound(node.subproblem[:b2]) == 0.2
+        @test !JuMP.has_upper_bound(node.subproblem[:b2])
+
+        @test JuMP.is_binary(node.subproblem[:b3])
+        @test JuMP.lower_bound(node.subproblem[:b3]) == 0.5
+        @test JuMP.upper_bound(node.subproblem[:b3]) == 1.2
+
+        @test JuMP.is_integer(node.subproblem[:i1])
+        @test !JuMP.has_lower_bound(node.subproblem[:i1])
+        @test !JuMP.has_upper_bound(node.subproblem[:i1])
+
+        @test JuMP.is_integer(node.subproblem[:i2])
+        @test JuMP.upper_bound(node.subproblem[:i2]) == 6.2
+        @test !JuMP.has_lower_bound(node.subproblem[:i2])
+
+        @test JuMP.is_integer(node.subproblem[:i3])
+        @test JuMP.lower_bound(node.subproblem[:i3]) == -8
+        @test JuMP.upper_bound(node.subproblem[:i3]) == 2
+    end
+    binaries, integers = SDDP.relax_integrality(model)
+    for node in [model[1], model[2]]
+        @test !JuMP.is_binary(node.subproblem[:b1])
+        @test JuMP.lower_bound(node.subproblem[:b1]) == 0.0
+        @test JuMP.upper_bound(node.subproblem[:b1]) == 1.0
+
+        @test !JuMP.is_binary(node.subproblem[:b2])
+        @test JuMP.lower_bound(node.subproblem[:b2]) == 0.2
+        @test JuMP.upper_bound(node.subproblem[:b2]) == 1.0
+
+        @test !JuMP.is_binary(node.subproblem[:b3])
+        @test JuMP.lower_bound(node.subproblem[:b3]) == 0.5
+        @test JuMP.upper_bound(node.subproblem[:b3]) == 1.0
+
+        @test !JuMP.is_integer(node.subproblem[:i1])
+        @test !JuMP.has_lower_bound(node.subproblem[:i1])
+        @test !JuMP.has_upper_bound(node.subproblem[:i1])
+
+        @test !JuMP.is_integer(node.subproblem[:i2])
+        @test JuMP.upper_bound(node.subproblem[:i2]) == 6.2
+        @test !JuMP.has_lower_bound(node.subproblem[:i2])
+
+        @test !JuMP.is_integer(node.subproblem[:i3])
+        @test JuMP.lower_bound(node.subproblem[:i3]) == -8
+        @test JuMP.upper_bound(node.subproblem[:i3]) == 2
+    end
+    SDDP.enforce_integrality(binaries, integers)
+    for node in [model[1], model[2]]
+        @test JuMP.is_binary(node.subproblem[:b1])
+        @test !JuMP.has_lower_bound(node.subproblem[:b1])
+        @test !JuMP.has_upper_bound(node.subproblem[:b1])
+
+        @test JuMP.is_binary(node.subproblem[:b2])
+        @test JuMP.lower_bound(node.subproblem[:b2]) == 0.2
+        @test !JuMP.has_upper_bound(node.subproblem[:b2])
+
+        @test JuMP.is_binary(node.subproblem[:b3])
+        @test JuMP.lower_bound(node.subproblem[:b3]) == 0.5
+        @test JuMP.upper_bound(node.subproblem[:b3]) == 1.2
+
+        @test JuMP.is_integer(node.subproblem[:i1])
+        @test !JuMP.has_lower_bound(node.subproblem[:i1])
+        @test !JuMP.has_upper_bound(node.subproblem[:i1])
+
+        @test JuMP.is_integer(node.subproblem[:i2])
+        @test JuMP.upper_bound(node.subproblem[:i2]) == 6.2
+        @test !JuMP.has_lower_bound(node.subproblem[:i2])
+
+        @test JuMP.is_integer(node.subproblem[:i3])
+        @test JuMP.lower_bound(node.subproblem[:i3]) == -8
+        @test JuMP.upper_bound(node.subproblem[:i3]) == 2
+    end
+end
