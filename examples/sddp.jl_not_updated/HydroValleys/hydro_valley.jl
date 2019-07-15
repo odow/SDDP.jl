@@ -42,8 +42,6 @@ struct Reservoir
 end
 
 function hydrovalleymodel(;
-        riskmeasure=Expectation(),
-        cutoracle=DefaultCutOracle(),
         hasstagewiseinflows::Bool=true,
         hasmarkovprice::Bool=true,
         sense::Symbol=:Max
@@ -53,9 +51,10 @@ function hydrovalleymodel(;
         Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0, 20, 50]),
         Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0, 0,  20])
     ]
+
     turbine(i) = valley_chain[i].turbine
 
-    # Prices[stage, markov state]
+    # Prices[t, markov state]
     prices = [
         1 2 0;
         2 1 0;
@@ -74,43 +73,45 @@ function hydrovalleymodel(;
     end
 
     flipobj = (sense == :Max) ? 1.0 : -1.0
+    lower = (sense == :Max) ? -Inf : -1e6
+    upper = (sense == :Max) ? 1e6 : Inf
 
     N = length(valley_chain)
 
     # Initialise SDDP Model
-    m = SDDPModel(
-                sense           = sense,
-                stages          = 3,
-                objective_bound = flipobj * 1e6,
-                markov_transition = transition,
-                risk_measure    = riskmeasure,
-                cut_oracle      = cutoracle,
-                solver          = ClpSolver()
-                                        ) do sp, stage, markov_state
+    m = SDDP.MarkovianPolicyGraph(
+            sense                 = sense
+            , lower_bound         = lower
+            , upper_bound         = upper
+            , transition_matrices = transition
+            , optimizer           = with_optimizer(Clp.Optimizer)) do subproblem, node
+        t, markov_state = node
 
         # ------------------------------------------------------------------
         #   SDDP State Variables
         # Level of upper reservoir
-        @state(sp, valley_chain[r].min <= reservoir[r=1:N] <= valley_chain[r].max, reservoir0==valley_chain[r].initial)
+        @variable(subproblem, valley_chain[r].min <= reservoir[r=1:N] <= valley_chain[r].max, SDDP.State, initial_value = valley_chain[r].initial)
 
         # ------------------------------------------------------------------
         #   Additional variables
-        @variables(sp, begin
+        @variables(subproblem, begin
             outflow[r=1:N]      >= 0
             spill[r=1:N]        >= 0
             inflow[r=1:N]       >= 0
             generation_quantity >= 0 # Total quantity of water
             # Proportion of levels to dispatch on
             0 <= dispatch[r=1:N, level=1:length(turbine(r).flowknots)] <= 1
+            rainfall[i=1:N]
         end)
 
         # ------------------------------------------------------------------
         # Constraints
-        @constraints(sp, begin
+        @constraints(subproblem, begin
             # flow from upper reservoir
-            reservoir[1] == reservoir0[1] + inflow[1] - outflow[1] - spill[1]
+            reservoir[1].out == reservoir[1].in + inflow[1] - outflow[1] - spill[1]
+
             # other flows
-            flow[i=2:N], reservoir[i] == reservoir0[i] + inflow[i] - outflow[i] - spill[i] + outflow[i-1] + spill[i-1]
+            flow[i=2:N], reservoir[i].out == reservoir[i].in + inflow[i] - outflow[i] - spill[i] + outflow[i-1] + spill[i-1]
 
             # Total quantity generated
             generation_quantity == sum(turbine(r).powerknots[level] * dispatch[r,level] for r in 1:N for level in 1:length(turbine(r).powerknots))
@@ -124,21 +125,24 @@ function hydrovalleymodel(;
         end)
 
         # rainfall noises
-        for i in 1:N
-            if hasstagewiseinflows && stage > 1 # in future stages random inflows
-                @rhsnoise(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
-            else # in the first stage deterministic inflow
-                @constraint(sp, inflow[i] <= valley_chain[i].inflows[1])
+        if hasstagewiseinflows && t > 1 # in future stages random inflows
+            @constraint(subproblem, inflow_noise[i=1:N], inflow[i] <= rainfall[i])
+
+            SDDP.parameterize(subproblem, [(valley_chain[1].inflows[i], valley_chain[2].inflows[i]) for i = 1:length(transition)]) do ω
+                for i in 1:N
+                    JuMP.fix(rainfall[i], ω[i])
+                end
             end
+        else # in the first stage deterministic inflow
+            @constraint(subproblem, initial_inflow_noise[i=1:N], inflow[i] <= valley_chain[i].inflows[1])
         end
 
         # ------------------------------------------------------------------
         #   Objective Function
         if hasmarkovprice
-            @stageobjective(sp, flipobj * (prices[stage, markov_state]*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N)))
+            @stageobjective(subproblem, flipobj * (prices[t, markov_state] * generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N)))
         else
-            @stageobjective(sp, flipobj * (prices[stage, 1]*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N)))
+            @stageobjective(subproblem, flipobj * (prices[t, 1] * generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N)))
         end
-
     end
 end
