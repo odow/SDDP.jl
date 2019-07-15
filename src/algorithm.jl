@@ -699,7 +699,48 @@ function termination_status(model::PolicyGraph)
 end
 
 """
-    relax_integrality(model::PolicyGraph)::NTuple{Vector{VariableRef}, 2}
+    relax_integrality(model::JuMP.Model)
+
+Relax all binary and integer constraints in `model`.
+Returns two vectors:
+the first containing a list of binary variables and previous bounds,
+and the second containing a list of integer variables.
+
+See also [`enforce_integrality`](@ref).
+"""
+function relax_integrality(m::JuMP.Model)
+    # Note: if integrality restriction is added via @constraint then this loop doesn't catch it.
+    binaries = Tuple{JuMP.VariableRef, Float64, Float64}[]
+    integers = JuMP.VariableRef[]
+    # Run through all variables on model and unset integrality
+    for x in JuMP.all_variables(m)
+        if JuMP.is_binary(x)
+            x_lb, x_ub = NaN, NaN
+            JuMP.unset_binary(x)
+            # Store upper and lower bounds
+            if JuMP.has_lower_bound(x)
+                x_lb = JuMP.lower_bound(x)
+                JuMP.set_lower_bound(x, max(x_lb, 0.0))
+            else
+                JuMP.set_lower_bound(x, 0.0)
+            end
+            if JuMP.has_upper_bound(x)
+                x_ub = JuMP.upper_bound(x)
+                JuMP.set_upper_bound(x, min(x_ub, 1.0))
+            else
+                JuMP.set_upper_bound(x, 1.0)
+            end
+            push!(binaries, (x, x_lb, x_ub))
+        elseif JuMP.is_integer(x)
+            JuMP.unset_integer(x)
+            push!(integers, x)
+        end
+    end
+    return binaries, integers
+end
+
+"""
+    relax_integrality(model::PolicyGraph)
 
 Relax all binary and integer constraints in all subproblems in `model`. Return
 two vectors, the first containing a list of binary variables, and the second
@@ -708,25 +749,20 @@ containing a list of integer variables.
 See also [`enforce_integrality`](@ref).
 """
 function relax_integrality(model::PolicyGraph)
-    binaries = JuMP.VariableRef[]
+    binaries = Tuple{JuMP.VariableRef, Float64, Float64}[]
     integers = JuMP.VariableRef[]
     for (key, node) in model.nodes
-        for x in JuMP.all_variables(node.subproblem)
-            if JuMP.is_binary(x)
-                JuMP.unset_binary(x)
-                push!(binaries, x)
-            elseif JuMP.is_integer(x)
-                JuMP.unset_integer(x)
-                push!(integers, x)
-            end
-        end
+        bins, ints = relax_integrality(node.subproblem)
+        append!(binaries, bins)
+        append!(integers, ints)
     end
     return binaries, integers
 end
 
 """
     enforce_integrality(
-        binaries::Vector{VariableRef}, integers::Vector{VariableRef})
+        binaries::Vector{Tuple{JuMP.VariableRef, Float64, Float64}},
+        integers::Vector{VariableRef})
 
 Set all variables in `binaries` to `SingleVariable-in-ZeroOne()`, and all
 variables in `integers` to `SingleVariable-in-Integer()`.
@@ -734,9 +770,23 @@ variables in `integers` to `SingleVariable-in-Integer()`.
 See also [`relax_integrality`](@ref).
 """
 function enforce_integrality(
-        binaries::Vector{VariableRef}, integers::Vector{VariableRef})
+    binaries::Vector{Tuple{JuMP.VariableRef, Float64, Float64}},
+    integers::Vector{VariableRef}
+)
     JuMP.set_integer.(integers)
-    JuMP.set_binary.(binaries)
+    for (x, x_lb, x_ub) in binaries
+        if isnan(x_lb)
+            JuMP.delete_lower_bound(x)
+        else
+            JuMP.set_lower_bound(x, x_lb)
+        end
+        if isnan(x_ub)
+            JuMP.delete_upper_bound(x)
+        else
+            JuMP.set_upper_bound(x, x_ub)
+        end
+        JuMP.set_binary(x)
+    end
     return
 end
 
