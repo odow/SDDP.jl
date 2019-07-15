@@ -1,11 +1,25 @@
-#  Copyright 2017, Oscar Dowson
+#  Copyright 2017-19, Oscar Dowson.
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-export binexpand, bincontract, bitsrequired
+abstract type AbstractMIPSolver end
+
+struct ContinuousRelaxation <: AbstractMIPSolver end
+
+mutable struct SDDiP <: AbstractMIPSolver
+    factory::JuMP.OptimizerFactory
+    max_iter::Int
+
+    function SDDiP(factory::JuMP.OptimizerFactory; max_iter::Int = 100)
+        return new(factory, max_iter)
+    end
+end
 
 # Cache these for speed
-const log2inv = 1 / log(2)
+const _log2inv = 1 / log(2)
 # dereferencing an array is faster than a 2^x call
-const _2i_ = Int[2^(i-1) for i in 1:floor(Int, log(typemax(Int)) * log2inv)+1]
+const _2i_ = Int[2^(i-1) for i in 1:floor(Int, log(typemax(Int)) * _log2inv)+1]
 const _2i_L = length(_2i_)
 
 function binexpand!(y::Vector{Int}, x::Int)
@@ -25,11 +39,11 @@ function binexpand!(y::Vector{Int}, x::Int)
 end
 
 function bitsrequired(x::Int)
-    floor(Int, log(x) * log2inv) + 1
+    floor(Int, log(x) * _log2inv) + 1
 end
 function bitsrequired(x::Float64, eps::Float64=0.1)
     xx = round(Int, x / eps)
-    floor(Int, log(xx) * log2inv) + 1
+    floor(Int, log(xx) * _log2inv) + 1
 end
 
 """

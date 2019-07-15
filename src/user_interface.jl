@@ -325,6 +325,8 @@ mutable struct Node{T}
     # An over-loadable hook for the JuMP.optimize! function.
     pre_optimize_hook::Union{Nothing, Function}
     post_optimize_hook::Union{Nothing, Function}
+    # Approach for handling discrete variables.
+    mip_solver::AbstractMIPSolver
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol, Any}
@@ -472,8 +474,8 @@ function PolicyGraph(builder::Function, graph::Graph{T};
                      lower_bound = -Inf,
                      upper_bound = Inf,
                      optimizer = nothing,
-                     SDDiP = false,
-                     direct_mode = true) where {T}
+                     direct_mode = true,
+                     mip_solver = ContinuousRelaxation()) where {T}
     # Spend a one-off cost validating the graph.
     _validate_graph(graph)
     # Construct a basic policy graph. We will add to it in the remainder of this
@@ -515,13 +517,13 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             # The optimize hook defaults to nothing.
             nothing,
             nothing,
+            mip_solver,
             # The extension dictionary.
             Dict{Symbol, Any}()
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
         JuMP.set_objective_sense(subproblem, policy_graph.objective_sense)
-        node.ext[:issddip] = SDDiP
         builder(subproblem, node_index)
         # Add a dummy noise here so that all nodes have at least one noise term.
         if length(node.noise_terms) == 0
@@ -772,7 +774,7 @@ function JuMP.add_variable(
     )
 
     node = get_node(subproblem)
-    if !node.ext[:issddip] || state_info.out.binary
+    if node.mip_solver == ContinuousRelaxation() || state_info.out.binary
         # Only in this case we treat `state` as a real state variable
         sym_name = Symbol(name)
         @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.

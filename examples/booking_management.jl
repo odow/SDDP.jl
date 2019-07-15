@@ -13,7 +13,7 @@
 
 using SDDP, GLPK, Test
 
-function booking_management_model(num_days, num_rooms, num_requests, SDDiP)
+function booking_management_model(num_days, num_rooms, num_requests, mip_solver)
     # maximum revenue that could be accrued.
     max_revenue = (num_rooms + num_requests) * num_days * num_rooms
 
@@ -37,12 +37,8 @@ function booking_management_model(num_days, num_rooms, num_requests, SDDiP)
     model = SDDP.LinearPolicyGraph(
             stages = num_requests, upper_bound = max_revenue,
             sense = :Max, optimizer = with_optimizer(GLPK.Optimizer),
-            SDDiP = SDDiP
+            mip_solver = mip_solver
             ) do sp, stage
-
-        if sddip
-            sp.ext[:issddip] = true
-        end
 
         @variable(sp,
             0 <= vacancy[room=1:num_rooms, day=1:num_days] <= 1,
@@ -80,16 +76,24 @@ function booking_management_model(num_days, num_rooms, num_requests, SDDiP)
     end
 end
 
-function booking_management(sddip::Bool)
-    m_1_2_5 = booking_management_model(1, 2, 5, sddip)
+function booking_management(mip_solver)
+    m_1_2_5 = booking_management_model(1, 2, 5, mip_solver)
     SDDP.train(m_1_2_5, iteration_limit = 10, print_level = 0)
-    @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol=0.02)
+    if mip_solver == SDDP.ContinuousRelaxation()
+        @test SDDP.calculate_bound(m_1_2_5) > 7.25
+    else
+        @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol=0.02)
+    end
 
-    m_2_2_3 = booking_management_model(2, 2, 3, sddip)
+    m_2_2_3 = booking_management_model(2, 2, 3, mip_solver)
     SDDP.train(m_2_2_3, iteration_limit = 40, print_level = 0)
-    @test isapprox(SDDP.calculate_bound(m_2_2_3), 6.13, atol=0.02)
+    if mip_solver == SDDP.ContinuousRelaxation()
+        @test SDDP.calculate_bound(m_1_2_5) > 6.13
+    else
+        @test isapprox(SDDP.calculate_bound(m_2_2_3), 6.13, atol=0.02)
+    end
 end
 
-for SDDiP in [true, false]
-    booking_management(SDDiP)
+for mip_solver in [SDDP.SDDiP(with_optimizer(GLPK.Optimizer)), SDDP.ContinuousRelaxation()]
+    booking_management(mip_solver)
 end

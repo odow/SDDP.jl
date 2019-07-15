@@ -16,8 +16,7 @@ using RecipesBase
 
 export @stageobjective
 
-# TODO move this somewhere more appropriate
-include("binary_expansion.jl")
+include("MIP_utils.jl")
 
 # Modelling interface.
 include("user_interface.jl")

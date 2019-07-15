@@ -24,14 +24,12 @@ function _solve_primal(node::Node, dual_vars::Vector{Float64}, slacks)
     return (JuMP.objective_value(model), JuMP.value.(subgradient))
 end
 
-function _kelley(node::Node, dual_vars::Vector{Float64})
-
-    # println(node.subproblem)
+function _kelley(node::Node, dual_vars::Vector{Float64}, mip_solver::SDDiP)
     model = node.subproblem
-
-    # get bounds
-    JuMP.optimize!(model) # TODO should be safe to assume sp was solved earlier
-    @assert JuMP.termination_status(model) == JuMP.MOI.OPTIMAL
+    # Assume the model has been solved. Solving the MIP is usually very quick
+    # relative to solving for the Lagrangian duals, so we cheat and use the
+    # solved model's objective as our bound while searching for the optimal duals
+    @assert JuMP.termination_status(model) == MOI.OPTIMAL
     obj = JuMP.objective_value(model)
 
     old_rhs = Dict()
@@ -46,13 +44,8 @@ function _kelley(node::Node, dual_vars::Vector{Float64})
         JuMP.set_upper_bound(state.in, 1)
     end
 
-    # println(node.subproblem)
-
-    # TODO make inputs
-    iteration_limit = 100
 
     N = length(dual_vars)
-
     # storage for the best multiplier found so far
     bestmult = copy(dual_vars)
     # dual problem has the opposite sense to the primal
@@ -61,7 +54,7 @@ function _kelley(node::Node, dual_vars::Vector{Float64})
     fdash = zeros(N)
 
     # The approximate model will be a made from linear hyperplanes
-    approx_model = JuMP.Model(JuMP.with_optimizer(GLPK.Optimizer)) # TODO use subproblems' optimizer
+    approx_model = JuMP.Model(mip_solver.factory)
 
     @variables approx_model begin
         θ # objective of the approximate model
@@ -80,7 +73,7 @@ function _kelley(node::Node, dual_vars::Vector{Float64})
 
     iteration = 0
 
-    while iteration < iteration_limit
+    while iteration < mip_solver.max_iter
         iteration += 1
         # Evaluate the real function and a subgradient
         (f_actual, fdash) = _solve_primal(node, dual_vars, slacks)

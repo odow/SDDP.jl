@@ -160,32 +160,34 @@ end
 # Internal function: get the values of the dual variables associated with the
 # fixed incoming state variables. Requires node.subproblem to have been solved
 # with DualStatus == FeasiblePoint.
-function get_dual_variables(node::Node)
+function get_dual_variables(node::Node, ::AbstractMIPSolver)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
     dual_values = Dict{Symbol, Float64}()
-    if !node.ext[:issddip]
-        if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-            write_subproblem_to_file(node, "subproblem", throw_error = true)
-        end
-        dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
-        for (name, state) in node.states
-            ref = JuMP.FixRef(state.in)
-            dual_values[name] = dual_sign * JuMP.dual(ref)
-        end
-    else
-        # TODO implement smart choice for initial duals
-        dual_vars = zeros(length(node.states))
-        solver_obj = JuMP.objective_value(node.subproblem)
-        kelley_obj = _kelley(node, dual_vars)
-        @assert isapprox(solver_obj, kelley_obj, atol = 1e-5, rtol = 1e-5)
-        for (i, name) in enumerate(keys(node.states))
-            dual_values[name] = -dual_vars[i]
-        end
+    if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+        write_subproblem_to_file(node, "subproblem", throw_error = true)
+    end
+    dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
+    for (name, state) in node.states
+        ref = JuMP.FixRef(state.in)
+        dual_values[name] = dual_sign * JuMP.dual(ref)
     end
     return dual_values
 end
 
+function get_dual_variables(node::Node, mip_solver::SDDiP)
+    dual_values = Dict{Symbol, Float64}()
+    # TODO implement smart choice for initial duals
+    dual_vars = zeros(length(node.states))
+    solver_obj = JuMP.objective_value(node.subproblem)
+    kelley_obj = _kelley(node, dual_vars, mip_solver)
+    # TODO return consistent error to AbstractMIPSolver method
+    @assert isapprox(solver_obj, kelley_obj, atol = 1e-5, rtol = 1e-5)
+    for (i, name) in enumerate(keys(node.states))
+        dual_values[name] = -dual_vars[i]
+    end
+    return dual_values
+end
 
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
@@ -297,7 +299,7 @@ function solve_subproblem(
     # variable. If require_duals=false, return an empty dictionary for
     # type-stability.
     dual_values = if require_duals
-        get_dual_variables(node)
+        get_dual_variables(node, node.mip_solver)
     else
         Dict{Symbol, Float64}()
     end
@@ -915,10 +917,10 @@ function train(
 
     # Handle integrality
     # TODO clean when implemented a non-hacky way to check if not SDDiP
-    if !model.nodes[1].ext[:issddip]
+    if model.nodes[1].mip_solver == ContinuousRelaxation()
         binaries, integers = relax_integrality(model)
     else
-        binaries, integers = JuMP.VariableRef[], JuMP.VariableRef[]
+        binaries, integers = Tuple{JuMP.VariableRef, Float64, Float64}[], JuMP.VariableRef[]
     end
 
     dashboard_callback = if dashboard

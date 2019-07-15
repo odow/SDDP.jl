@@ -20,11 +20,11 @@
 =#
 using SDDP, GLPK, Test
 
-function air_conditioning_model(SDDiP::Bool)
+function air_conditioning_model(mip_solver)
     model = SDDP.LinearPolicyGraph(
             stages = 3, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer),
-            SDDiP = SDDiP) do sp, stage
+            mip_solver = mip_solver) do sp, stage
 
         @variable(sp, 0 <= stored_production <= 100, SDDP.State, initial_value = 0)
         @variable(sp, 0 <= production <= 200, Int)
@@ -41,6 +41,6 @@ function air_conditioning_model(SDDiP::Bool)
     @test SDDP.calculate_bound(model) ≈ 62_500.0
 end
 
-for SDDiP in [true, false]
-    air_conditioning_model(SDDiP)
+for mip_solver in [SDDP.SDDiP(with_optimizer(GLPK.Optimizer)), SDDP.ContinuousRelaxation()]
+    air_conditioning_model(mip_solver)
 end

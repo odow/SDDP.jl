@@ -17,9 +17,8 @@ rho = 0.99 # discounting rate
 function generation_expansion_model()
     model = SDDP.LinearPolicyGraph(
             stages = 5, lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer)) do sp, stage
-
-        sp.ext[:issddip] = true
+            optimizer = with_optimizer(GLPK.Optimizer),
+            mip_solver = SDDP.SDDiP(with_optimizer(GLPK.Optimizer))) do sp, stage
 
         @variable(sp, 0 <= invested[1:num_units] <= 1, SDDP.State, Int, initial_value = 0)
         @variables(sp, begin
@@ -48,6 +47,5 @@ function generation_expansion_model()
     SDDP.train(model, iteration_limit = 50, print_level = 1)
     @test SDDP.calculate_bound(model) ≈ 460_533.0
 end
-
 
 generation_expansion_model()
