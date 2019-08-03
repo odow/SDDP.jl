@@ -788,8 +788,8 @@ function JuMP.add_variable(
         end
 
         if state_info.out.integer
-            num_vars = bitsrequired(state_info.out.upper_bound)
-            initial_value = binexpand(Int(state_info.initial_value), length = num_vars)
+            initial_value = binexpand(Int(state_info.initial_value), state_info.out.upper_bound)
+            num_vars = length(initial_value)
 
             binary_vars = JuMP.@variable(
                 subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
@@ -797,10 +797,9 @@ function JuMP.add_variable(
 
             JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars]))
             JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars]))
-
         else
-            num_vars = bitsrequired(float(state_info.out.upper_bound), 0.1)
-            initial_value = binexpand(state_info.initial_value, length = num_vars)
+            initial_value = binexpand(state_info.initial_value, state_info.out.upper_bound)
+            num_vars = length(initial_value)
 
             binary_vars = JuMP.@variable(
                 subproblem, [i in 1:num_vars], base_name = "_bin_" * name,

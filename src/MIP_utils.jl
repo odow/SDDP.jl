@@ -16,9 +16,8 @@ mutable struct SDDiP <: AbstractMIPSolver
     end
 end
 
-# Cache these for speed
-const _log2inv = 1 / log(2)
-# dereferencing an array is faster than a 2^x call
+const _log2inv = inv(log(2))
+# # dereferencing an array is faster than a 2^x call
 const _2i_ = Int[2^(i-1) for i in 1:floor(Int, log(typemax(Int)) * _log2inv)+1]
 const _2i_L = length(_2i_)
 
@@ -27,7 +26,7 @@ function binexpand!(y::Vector{Int}, x::Int)
         error("Values to be expanded must be nonnegative. Currently x = $x.")
     end
     @inbounds for i in length(y):-1:1
-        k = _2i_[i]
+        k = 2^(i - 1)
         if x >= k
             y[i] = 1
             x -= k
@@ -36,73 +35,41 @@ function binexpand!(y::Vector{Int}, x::Int)
     if x > 0
         error("Unable to expand binary. Overflow of $x.")
     end
+    return y
 end
 
-function bitsrequired(x::Int)
-    floor(Int, log(x) * _log2inv) + 1
-end
-function bitsrequired(x::Float64, eps::Float64=0.1)
-    xx = round(Int, x / eps)
-    floor(Int, log(xx) * _log2inv) + 1
+bitsrequired(x::Int) = floor(Int, log(x) * _log2inv) + 1
+bitsrequired(x::Float64, eps::Float64 = 0.1) = floor(Int, log(round(Int, x / eps)) * _log2inv) + 1
+
+initial_value_err = "Cannot perform binary expansion on a negative number." *
+    "Initial values of state variables must be nonnegative."
+upper_bound_err =  "Cannot perform binary expansion on zero-length vector." *
+    "Upper bounds of state variables must be positive."
+
+"""
+    binexpand(x::Int, maximum)
+
+Returns a vector of binary coefficients for the binary expansion of `x`.
+Length of the result is determined by the number of bits required to represent
+`maximum` in binary.
+"""
+function binexpand(x::Int, maximum) # TODO type maximum- can be float or int
+    x < 0 && throw(initial_value_err)
+    maximum <= 0 && throw(upper_bound_err)
+    y = zeros(Int, bitsrequired(floor(Int, maximum)))
+    return binexpand!(y, x)
 end
 
 """
-    binexpand(x::Int; length::Int=-1, maximum::Real=-1)
+    binexpand(x::Float64, maximum, eps::Float64 = 0.1)
 
-Returns an array of 0/1 coefficients for the binary expansion of `x`.
-If trailing zeroes are needed, use `length` to specify the length of the output.
+Returns a vector of binary coefficients for the binary expansion of `x`.
+Length of the result is determined by the number of bits required to represent
+`maximum` in binary.
 """
-function binexpand(x::Int; length::Int=-1, maximum::Real=-1)
-    x < 0 && error("Cannot perform binary expansion on a negative number.")
-    if maximum != -1
-        if length != -1
-            warn("Length is being ignored.")
-        end
-        length = bitsrequired(floor(Int, maximum))
-    end
-    if length == -1
-        y = zeros(Int, bitsrequired(x))
-    else
-        y = zeros(Int, length)
-    end
-    binexpand!(y, x)
-    y
-end
-
-"""
-    binexpand(x::Float64, eps::Float64=0.1; length::Int=-1, maximum::Real=-1)
-
-Returns an array of 0/1 coefficients for the binary expansion of `x`.
-If trailing zeroes are needed, use `length` to specify the length of the output.
-"""
-function binexpand(x::Float64, eps::Float64=0.1; length::Int=-1, maximum::Real=-1)
-    x < 0 && error("Cannot perform binary expansion on a negative number.")
-    if eps <= 0.0
-        error("Epsilon tolerance for Float binary expansion must be strictly greater than 0.")
-    end
-    xx = round(Int, x / eps)
-    if maximum != -1
-        if length != -1
-            warn("Length is being ignored.")
-        end
-        length = bitsrequired(floor(Int, maximum / eps))
-    end
-    binexpand(xx, length=length)
-end
-
-function bincontract_2i_(y::Vector{T}) where T
-    x = zero(T)
-    @inbounds for i in 1:length(y)
-        x += _2i_[i] * y[i]
-    end
-    x
-end
-function bincontract_pow(y::Vector{T}) where T
-    x = zero(T)
-    @inbounds for i in 1:length(y)
-        x += 2^(i-1) * y[i]
-    end
-    x
+function binexpand(x::Float64, maximum, eps::Float64 = 0.1)
+    @assert eps > 0
+    return binexpand(round(Int, x / eps), round(Int, maximum / eps))
 end
 
 """
@@ -110,18 +77,18 @@ end
 
 For vector `y`, evaluates ∑ᵢ 2ⁱ⁻¹yᵢ.
 """
-function bincontract(y::Vector{T}) where T
-    if length(y) < _2i_L
-        bincontract_2i_(y)
-    else
-        bincontract_pow(y)
+function bincontract(y::Vector{T}) where {T}
+    if length(y) > floor(Int, log(typemax(Int)) * _log2inv) + 1
+        error("Overflow of input of length $(length(y)).")
     end
+    x = zero(T)
+    @inbounds for i in eachindex(y)
+        x += 2^(i - 1) * y[i]
+    end
+    return x
 end
 
-function bincontract(::Type{Float64}, y::Vector{T}, eps::Float64=0.1) where T
-    if eps <= 0
-        error("Epsilon tolerance for Float binary contraction must be strictly greater than 0.")
-    end
-    xx = bincontract(y)
-    xx * eps
+function bincontract(::Type{Float64}, y::Vector{T}, eps::Float64) where {T}
+    @assert eps > 0
+    return bincontract(y) * eps
 end

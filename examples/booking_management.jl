@@ -80,7 +80,7 @@ function booking_management(mip_solver)
     m_1_2_5 = booking_management_model(1, 2, 5, mip_solver)
     SDDP.train(m_1_2_5, iteration_limit = 10, print_level = 0)
     if mip_solver == SDDP.ContinuousRelaxation()
-        @test SDDP.calculate_bound(m_1_2_5) > 7.25
+        @test SDDP.calculate_bound(m_1_2_5) >= 7.25
     else
         @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol=0.02)
     end
