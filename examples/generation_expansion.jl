@@ -18,7 +18,7 @@ function generation_expansion_model()
     model = SDDP.LinearPolicyGraph(
             stages = 5, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer),
-            mip_solver = SDDP.SDDiP(with_optimizer(GLPK.Optimizer))) do sp, stage
+            mip_solver = SDDP.SDDiP()) do sp, stage
 
         @variable(sp, 0 <= invested[1:num_units] <= 1, SDDP.State, Int, initial_value = 0)
         @variables(sp, begin

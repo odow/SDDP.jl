@@ -3,23 +3,30 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+
 abstract type AbstractMIPSolver end
 
 struct ContinuousRelaxation <: AbstractMIPSolver end
 
 mutable struct SDDiP <: AbstractMIPSolver
-    factory::JuMP.OptimizerFactory
     max_iter::Int
+    optimizer::JuMP.OptimizerFactory
 
-    function SDDiP(factory::JuMP.OptimizerFactory; max_iter::Int = 100)
-        return new(factory, max_iter)
+    function SDDiP(; max_iter::Int = 100)
+        mip_solver = new()
+        mip_solver.max_iter = max_iter
+        return mip_solver
     end
 end
 
+set_optimizer!(mip_solver::AbstractMIPSolver, ::JuMP.OptimizerFactory) = mip_solver
+
+function set_optimizer!(mip_solver::SDDiP, optimizer::JuMP.OptimizerFactory)
+    mip_solver.optimizer = optimizer
+    return mip_solver
+end
+
 const _log2inv = inv(log(2))
-# # dereferencing an array is faster than a 2^x call
-const _2i_ = Int[2^(i-1) for i in 1:floor(Int, log(typemax(Int)) * _log2inv)+1]
-const _2i_L = length(_2i_)
 
 function binexpand!(y::Vector{Int}, x::Int)
     if x < 0

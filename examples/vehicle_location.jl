@@ -42,7 +42,7 @@ function vehicle_location_model()
     model = SDDP.LinearPolicyGraph(
             stages = 10, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer),
-            mip_solver = SDDP.SDDiP(with_optimizer(GLPK.Optimizer))) do sp, t
+            mip_solver = SDDP.SDDiP() do sp, t
         # Current location of each vehicle at each base.
         @variable(sp,
             0 <= location[b=bases, v=vehicles] <= 1, SDDP.State,

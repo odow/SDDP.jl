@@ -41,6 +41,6 @@ function air_conditioning_model(mip_solver)
     @test SDDP.calculate_bound(model) ≈ 62_500.0
 end
 
-for mip_solver in [SDDP.SDDiP(with_optimizer(GLPK.Optimizer)), SDDP.ContinuousRelaxation()]
+for mip_solver in [SDDP.SDDiP(), SDDP.ContinuousRelaxation()]
     air_conditioning_model(mip_solver)
 end

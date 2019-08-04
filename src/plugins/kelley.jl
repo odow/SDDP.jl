@@ -54,7 +54,7 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, mip_solver::SDDiP)
     fdash = zeros(N)
 
     # The approximate model will be a made from linear hyperplanes
-    approx_model = JuMP.Model(mip_solver.factory)
+    approx_model = JuMP.Model(mip_solver.optimizer)
 
     @variables approx_model begin
         θ # objective of the approximate model

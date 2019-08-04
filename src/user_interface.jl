@@ -497,6 +497,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             continue
         end
         subproblem = construct_subproblem(optimizer, direct_mode)
+        set_optimizer!(mip_solver, optimizer)
         node = Node(
             node_index,
             subproblem,

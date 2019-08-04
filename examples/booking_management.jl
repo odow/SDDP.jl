@@ -94,6 +94,6 @@ function booking_management(mip_solver)
     end
 end
 
-for mip_solver in [SDDP.SDDiP(with_optimizer(GLPK.Optimizer)), SDDP.ContinuousRelaxation()]
+for mip_solver in [SDDP.SDDiP(), SDDP.ContinuousRelaxation()]
     booking_management(mip_solver)
 end

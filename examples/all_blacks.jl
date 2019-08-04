@@ -8,7 +8,7 @@ model = SDDP.LinearPolicyGraph(
     sense = :Max,
     upper_bound = 100.0,
     optimizer = with_optimizer(GLPK.Optimizer),
-    mip_solver = SDDP.SDDiP(with_optimizer(GLPK.Optimizer))) do sp, stage
+    mip_solver = SDDP.SDDiP()) do sp, stage
 
     # Seat remaining?
     @variable(sp, 0 <= x[i in 1:N] <= 1, SDDP.State, Bin, initial_value = 1) # TODO why were bounds needed if binary?
