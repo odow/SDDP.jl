@@ -1,24 +1,30 @@
+#  Copyright 2017-19, Oscar Dowson, Lea Kapelevich.
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 using JuMP, SDDP, LinearAlgebra, GLPK, Test
 
-build_cost = 1e4
-use_cost = 4
-num_units = 20
-capacities = ones(num_units)
-demand_vals = [
-    5 5 5 5 5 5 5 5
-    4 3 1 3 0 9 8 17
-    0 9 4 2 19 19 13 7
-    25 11 4 14 4 6 15 12
-    6 7 5 3 8 4 17 13
-    ]
-penalty = 5e5 # for not meething demand
-rho = 0.99 # discounting rate
-
-function generation_expansion_model()
+function generation_expansion()
+    build_cost = 1e4
+    use_cost = 4
+    num_units = 20
+    capacities = ones(num_units)
+    demand_vals = [
+        5 5 5 5 5 5 5 5
+        4 3 1 3 0 9 8 17
+        0 9 4 2 19 19 13 7
+        25 11 4 14 4 6 15 12
+        6 7 5 3 8 4 17 13
+        ]
+    # Cost of unmet demand
+    penalty = 5e5
+    # Discounting rate
+    rho = 0.99
     model = SDDP.LinearPolicyGraph(
             stages = 5, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer),
-            mip_solver = SDDP.SDDiP()) do sp, stage
+            integrality_handler = SDDP.SDDiP()) do sp, stage
 
         @variable(sp, 0 <= invested[1:num_units] <= 1, SDDP.State, Int, initial_value = 0)
         @variables(sp, begin
@@ -48,4 +54,4 @@ function generation_expansion_model()
     @test SDDP.calculate_bound(model) ≈ 460_533.0
 end
 
-generation_expansion_model()
+generation_expansion()

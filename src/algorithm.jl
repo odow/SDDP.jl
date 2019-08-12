@@ -160,7 +160,7 @@ end
 # Internal function: get the values of the dual variables associated with the
 # fixed incoming state variables. Requires node.subproblem to have been solved
 # with DualStatus == FeasiblePoint.
-function get_dual_variables(node::Node, ::AbstractMIPSolver)
+function get_dual_variables(node::Node, ::AbstractIntegralityHandler)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
     dual_values = Dict{Symbol, Float64}()
@@ -175,13 +175,13 @@ function get_dual_variables(node::Node, ::AbstractMIPSolver)
     return dual_values
 end
 
-function get_dual_variables(node::Node, mip_solver::SDDiP)
+function get_dual_variables(node::Node, integrality_handler::SDDiP)
     dual_values = Dict{Symbol, Float64}()
     # TODO implement smart choice for initial duals
     dual_vars = zeros(length(node.states))
     solver_obj = JuMP.objective_value(node.subproblem)
-    kelley_obj = _kelley(node, dual_vars, mip_solver)
-    # TODO return consistent error to AbstractMIPSolver method
+    kelley_obj = _kelley(node, dual_vars, integrality_handler)
+    # TODO return consistent error to AbstractIntegralityHandler method
     @assert isapprox(solver_obj, kelley_obj, atol = 1e-5, rtol = 1e-5)
     for (i, name) in enumerate(keys(node.states))
         dual_values[name] = -dual_vars[i]
@@ -299,7 +299,7 @@ function solve_subproblem(
     # variable. If require_duals=false, return an empty dictionary for
     # type-stability.
     dual_values = if require_duals
-        get_dual_variables(node, node.mip_solver)
+        get_dual_variables(node, node.integrality_handler)
     else
         Dict{Symbol, Float64}()
     end
@@ -917,7 +917,7 @@ function train(
 
     # Handle integrality
     # TODO clean when implemented a non-hacky way to check if not SDDiP
-    if model.nodes[1].mip_solver == ContinuousRelaxation()
+    if model.nodes[1].integrality_handler == ContinuousRelaxation()
         binaries, integers = relax_integrality(model)
     else
         binaries, integers = Tuple{JuMP.VariableRef, Float64, Float64}[], JuMP.VariableRef[]

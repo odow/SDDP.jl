@@ -326,7 +326,7 @@ mutable struct Node{T}
     pre_optimize_hook::Union{Nothing, Function}
     post_optimize_hook::Union{Nothing, Function}
     # Approach for handling discrete variables.
-    mip_solver::AbstractMIPSolver
+    integrality_handler::AbstractIntegralityHandler
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol, Any}
@@ -475,7 +475,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
                      upper_bound = Inf,
                      optimizer = nothing,
                      direct_mode = true,
-                     mip_solver = ContinuousRelaxation()) where {T}
+                     integrality_handler = ContinuousRelaxation()) where {T}
     # Spend a one-off cost validating the graph.
     _validate_graph(graph)
     # Construct a basic policy graph. We will add to it in the remainder of this
@@ -497,7 +497,6 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             continue
         end
         subproblem = construct_subproblem(optimizer, direct_mode)
-        set_optimizer!(mip_solver, optimizer)
         node = Node(
             node_index,
             subproblem,
@@ -518,7 +517,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             # The optimize hook defaults to nothing.
             nothing,
             nothing,
-            mip_solver,
+            integrality_handler,
             # The extension dictionary.
             Dict{Symbol, Any}()
         )
@@ -530,6 +529,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
         if length(node.noise_terms) == 0
             push!(node.noise_terms, Noise(nothing, 1.0))
         end
+        update_integrality_handler!(integrality_handler, optimizer, length(node.states))
     end
     # Loop back through and add the arcs/children.
     for (node_index, children) in graph.nodes
@@ -737,11 +737,12 @@ struct StateInfo
     in::JuMP.VariableInfo
     out::JuMP.VariableInfo
     initial_value::Float64
+    eps::Float64 # TODO this is pretty invasive- alternative would be to use SDDiPState and SDDiPStateInfo and add new add_variable function, but then relying on user to use SDDiPState
 end
 
 function JuMP.build_variable(
         _error::Function, info::JuMP.VariableInfo, ::Type{State};
-        initial_value = NaN,
+        initial_value = NaN, eps = 0.1,
         kwargs...)
     if isnan(initial_value)
         _error("When creating a state variable, you must set the " *
@@ -754,11 +755,11 @@ function JuMP.build_variable(
             false, NaN,  # upper bound
             false, NaN,  # fixed value
             false, NaN,  # start value
-            false, false, # binary and integer, state in doesn't need integrality constraints
-            # info.binary, info.integer # binary and integer
+            false, false, # binary and integer
         ),
         info,
-        initial_value
+        initial_value,
+        eps
     )
 end
 
@@ -775,7 +776,7 @@ function JuMP.add_variable(
     )
 
     node = get_node(subproblem)
-    if node.mip_solver == ContinuousRelaxation() || state_info.out.binary
+    if node.integrality_handler == ContinuousRelaxation() || state_info.out.binary
         # Only in this case we treat `state` as a real state variable
         sym_name = Symbol(name)
         @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.
@@ -806,8 +807,8 @@ function JuMP.add_variable(
                 subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
                 SDDP.State, Bin, initial_value = initial_value[i])
 
-            JuMP.@constraint(subproblem, state.in == bincontract(Float64, [binary_vars[i].in for i in 1:num_vars], 0.1))
-            JuMP.@constraint(subproblem, state.out == bincontract(Float64, [binary_vars[i].out for i in 1:num_vars], 0.1))
+            JuMP.@constraint(subproblem, state.in == bincontract(Float64, [binary_vars[i].in for i in 1:num_vars], state_info.eps))
+            JuMP.@constraint(subproblem, state.out == bincontract(Float64, [binary_vars[i].out for i in 1:num_vars], state_info.eps))
         end
     end
 

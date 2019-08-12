@@ -1,29 +1,55 @@
-#  Copyright 2017-19, Oscar Dowson.
+#  Copyright 2017-19, Oscar Dowson, Lea Kapelevich.
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+"""
+    AbstractIntegralityHandler
 
-abstract type AbstractMIPSolver end
+The abstract type for the integrality handlers interface.
+"""
+abstract type AbstractIntegralityHandler end
 
-struct ContinuousRelaxation <: AbstractMIPSolver end
+"""
+    ContinuousRelaxation
 
-mutable struct SDDiP <: AbstractMIPSolver
+The continuous relaxation integrality handler. Duals are obtained in the
+backward pass by solving a continuous relaxation for each subproblem.
+Integrality constraints are retained in policy simulation.
+"""
+struct ContinuousRelaxation <: AbstractIntegralityHandler end
+
+"""
+    SDDiP
+
+The SDDiP integrality handler introduced by Zhou, J., Ahmed, S., Sun, X.A. in
+Nested Decomposition of Multistage Stochastic Integer Programs with Binary State
+Variables (2016).
+
+Calculates duals by solving the Lagrangian dual for each subproblem.
+"""
+mutable struct SDDiP <: AbstractIntegralityHandler
     max_iter::Int
     optimizer::JuMP.OptimizerFactory
+    subgradients::Vector{Float64}
+    slacks::Vector{GenericAffExpr{Float64, VariableRef}}
+    old_rhs::Vector{Float64}
 
     function SDDiP(; max_iter::Int = 100)
-        mip_solver = new()
-        mip_solver.max_iter = max_iter
-        return mip_solver
+        integrality_handler = new()
+        integrality_handler.max_iter = max_iter
+        return integrality_handler
     end
 end
 
-set_optimizer!(mip_solver::AbstractMIPSolver, ::JuMP.OptimizerFactory) = mip_solver
+update_integrality_handler!(integrality_handler::AbstractIntegralityHandler, ::JuMP.OptimizerFactory, ::Int) = integrality_handler
 
-function set_optimizer!(mip_solver::SDDiP, optimizer::JuMP.OptimizerFactory)
-    mip_solver.optimizer = optimizer
-    return mip_solver
+function update_integrality_handler!(integrality_handler::SDDiP, optimizer::JuMP.OptimizerFactory, num_states::Int)
+    integrality_handler.optimizer = optimizer
+    integrality_handler.subgradients = Vector{Float64}(undef, num_states)
+    integrality_handler.slacks = Vector{GenericAffExpr{Float64, VariableRef}}(undef, num_states)
+    integrality_handler.old_rhs = Vector{Float64}(undef, num_states)
+    return integrality_handler
 end
 
 const _log2inv = inv(log(2))
