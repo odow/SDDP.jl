@@ -38,7 +38,7 @@ function stockastic_all_blacks()
         @constraint(sp, accept_offer .<= offers_made)
     end
 
-    SDDP.train(model, iteration_limit = 30, print_level = 1)
+    SDDP.train(model, iteration_limit = 10, print_level = 1)
     @test SDDP.calculate_bound(model) ≈ 8.0
 end
 

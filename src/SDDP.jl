@@ -16,7 +16,7 @@ using RecipesBase
 
 export @stageobjective
 
-include("MIP_utils.jl")
+include("integrality_handlers.jl")
 
 # Modelling interface.
 include("user_interface.jl")

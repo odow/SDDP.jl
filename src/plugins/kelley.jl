@@ -9,11 +9,12 @@ function _solve_primal!(subgradients::Vector{Float64}, node::Node, dual_vars::Ve
     new_obj = old_obj + fact * dot(dual_vars, slacks)
     JuMP.set_objective_function(model, new_obj)
     JuMP.optimize!(model)
+    lagrangian_obj = JuMP.objective_value(model) # TODO moi/solver issue? gurobi/cplex can't get objective after modification
 
     # Reset old objective, update subgradients using slack values
     JuMP.set_objective_function(model, old_obj)
     subgradients .= fact .* JuMP.value.(slacks)
-    return JuMP.objective_value(model)
+    return lagrangian_obj
 end
 
 function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SDDiP)
@@ -32,33 +33,34 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
         JuMP.set_upper_bound(state.in, 1)
     end
 
+    # Subgradient at current solution
     subgradients = integrality_handler.subgradients
-    # Storage for the best multipliers found so far
-    bestmult = copy(dual_vars)
+    # Best multipliers found so far
+    best_mult = integrality_handler.best_mult
     # Dual problem has the opposite sense to the primal
     dualsense = (JuMP.objective_sense(model) == JuMP.MOI.MIN_SENSE ? JuMP.MOI.MAX_SENSE : JuMP.MOI.MIN_SENSE)
 
     # Approximation of Lagrangian dual as a function of the multipliers
     approx_model = JuMP.Model(integrality_handler.optimizer)
 
+    # Objective estimate and Lagrangian duals
     @variables approx_model begin
-        θ # objective of approx_model
-        x[1:length(dual_vars)] # Lagrangian duals
+        θ
+        x[1:length(dual_vars)]
     end
     JuMP.@objective(approx_model, dualsense, θ)
 
     if dualsense == MOI.MIN_SENSE
         JuMP.set_lower_bound(θ, obj)
-        (best_actual, f_actual, f_approx) = (Inf, Inf, -Inf) # TODO could make first one obj
+        (best_actual, f_actual, f_approx) = (Inf, Inf, -Inf)
     else
         JuMP.set_upper_bound(θ, obj)
         (best_actual, f_actual, f_approx) = (-Inf, -Inf, Inf)
     end
 
-    iteration = 0
-
-    while iteration < integrality_handler.max_iter
-        iteration += 1
+    iter = 0
+    while iter < integrality_handler.max_iter
+        iter += 1
         # Evaluate the real function and a subgradient
         f_actual = _solve_primal!(subgradients, node, dual_vars, integrality_handler.slacks)
 
@@ -67,13 +69,13 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
             JuMP.@constraint(approx_model, θ >= f_actual + dot(subgradients, x - dual_vars))
             if f_actual <= best_actual
                 best_actual = f_actual
-                bestmult .= dual_vars
+                best_mult .= dual_vars
             end
         else
             JuMP.@constraint(approx_model, θ <= f_actual + dot(subgradients, x - dual_vars))
             if f_actual >= best_actual
                 best_actual = f_actual
-                bestmult .= dual_vars
+                best_mult .= dual_vars
             end
         end
         # Get a bound from the approximate model
@@ -83,7 +85,7 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
 
         # More reliable than checking whether subgradient is zero
         if isapprox(best_actual, f_approx, atol = 1e-8, rtol = 1e-8)
-            dual_vars .= bestmult
+            dual_vars .= best_mult
             if dualsense == JuMP.MOI.MIN_SENSE
                 dual_vars .*= -1
             end
@@ -93,10 +95,8 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
 
             return best_actual
         end
-
         # Next iterate
         dual_vars .= value.(x)
     end
-    error("could not solve for Lagrangian duals")
-
+    error("Could not solve for Lagrangian duals.")
 end

@@ -32,8 +32,9 @@ mutable struct SDDiP <: AbstractIntegralityHandler
     max_iter::Int
     optimizer::JuMP.OptimizerFactory
     subgradients::Vector{Float64}
-    slacks::Vector{GenericAffExpr{Float64, VariableRef}}
     old_rhs::Vector{Float64}
+    best_mult::Vector{Float64}
+    slacks::Vector{GenericAffExpr{Float64, VariableRef}}
 
     function SDDiP(; max_iter::Int = 100)
         integrality_handler = new()
@@ -47,8 +48,9 @@ update_integrality_handler!(integrality_handler::AbstractIntegralityHandler, ::J
 function update_integrality_handler!(integrality_handler::SDDiP, optimizer::JuMP.OptimizerFactory, num_states::Int)
     integrality_handler.optimizer = optimizer
     integrality_handler.subgradients = Vector{Float64}(undef, num_states)
+    integrality_handler.old_rhs = similar(integrality_handler.subgradients)
+    integrality_handler.best_mult = similar(integrality_handler.subgradients)
     integrality_handler.slacks = Vector{GenericAffExpr{Float64, VariableRef}}(undef, num_states)
-    integrality_handler.old_rhs = Vector{Float64}(undef, num_states)
     return integrality_handler
 end
 
