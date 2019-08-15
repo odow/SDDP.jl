@@ -157,38 +157,6 @@ function get_outgoing_state(node::Node)
     return values
 end
 
-# Internal function: get the values of the dual variables associated with the
-# fixed incoming state variables. Requires node.subproblem to have been solved
-# with DualStatus == FeasiblePoint.
-function get_dual_variables(node::Node, ::AbstractIntegralityHandler)
-    # Note: due to JuMP's dual convention, we need to flip the sign for
-    # maximization problems.
-    dual_values = Dict{Symbol, Float64}()
-    if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-        write_subproblem_to_file(node, "subproblem", throw_error = true)
-    end
-    dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
-    for (name, state) in node.states
-        ref = JuMP.FixRef(state.in)
-        dual_values[name] = dual_sign * JuMP.dual(ref)
-    end
-    return dual_values
-end
-
-function get_dual_variables(node::Node, integrality_handler::SDDiP)
-    dual_values = Dict{Symbol, Float64}()
-    # TODO implement smart choice for initial duals
-    dual_vars = zeros(length(node.states))
-    solver_obj = JuMP.objective_value(node.subproblem)
-    kelley_obj = _kelley(node, dual_vars, integrality_handler)
-    # TODO return consistent error to AbstractIntegralityHandler method
-    @assert isapprox(solver_obj, kelley_obj, atol = 1e-5, rtol = 1e-5)
-    for (i, name) in enumerate(keys(node.states))
-        dual_values[name] = -dual_vars[i]
-    end
-    return dual_values
-end
-
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
 function set_objective(node::Node{T}) where T
@@ -289,6 +257,9 @@ function solve_subproblem(
 
     # solve the MIP (faster to do this extra solve and get an objective value than look for duals without it)
     JuMP.optimize!(node.subproblem)
+    state = get_outgoing_state(node)
+    stage_objective = stage_objective_value(node.stage_objective)
+    objective = JuMP.objective_value(node.subproblem)
 
     # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
@@ -303,10 +274,6 @@ function solve_subproblem(
     else
         Dict{Symbol, Float64}()
     end
-
-    state = get_outgoing_state(node)
-    stage_objective = stage_objective_value(node.stage_objective)
-    objective = JuMP.objective_value(node.subproblem)
 
     if node.post_optimize_hook !== nothing
         node.post_optimize_hook(pre_optimize_ret)

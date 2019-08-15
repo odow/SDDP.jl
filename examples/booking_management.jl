@@ -86,7 +86,7 @@ function booking_management(integrality_handler)
     end
 
     m_2_2_3 = booking_management_model(2, 2, 3, integrality_handler)
-    SDDP.train(m_2_2_3, iteration_limit = 40, print_level = 0)
+    SDDP.train(m_2_2_3, iteration_limit = 50, print_level = 0)
     if integrality_handler == SDDP.ContinuousRelaxation()
         @test SDDP.calculate_bound(m_1_2_5) > 6.13
     else

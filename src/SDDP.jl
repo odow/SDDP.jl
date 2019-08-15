@@ -16,7 +16,7 @@ using RecipesBase
 
 export @stageobjective
 
-include("integrality_handlers.jl")
+include("binary_expansion.jl")
 
 # Modelling interface.
 include("user_interface.jl")
@@ -42,7 +42,7 @@ include("plugins/risk_measures.jl")
 include("plugins/sampling_schemes.jl")
 include("plugins/bellman_functions.jl")
 include("plugins/stopping_rules.jl")
-include("plugins/kelley.jl")
+include("plugins/integrality_handlers.jl")
 
 include("plugins/backward_sampling_schemes.jl")
 

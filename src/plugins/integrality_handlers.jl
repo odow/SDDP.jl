@@ -1,5 +1,91 @@
+#  Copyright 2017-19, Oscar Dowson, Lea Kapelevich.
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using LinearAlgebra
+
+# ========================= Fallbacks ======================================== #
+update_integrality_handler!(integrality_handler::AbstractIntegralityHandler, ::JuMP.OptimizerFactory, ::Int) = integrality_handler
+
+# ========================= Continuous relaxation ============================ #
+
+"""
+    ContinuousRelaxation()
+
+The continuous relaxation integrality handler. Duals are obtained in the
+backward pass by solving a continuous relaxation of each subproblem.
+Integrality constraints are retained in policy simulation.
+"""
+struct ContinuousRelaxation <: AbstractIntegralityHandler end
+
+# Requires node.subproblem to have been solved with DualStatus == FeasiblePoint
+function get_dual_variables(node::Node, ::ContinuousRelaxation)
+    # Note: due to JuMP's dual convention, we need to flip the sign for
+    # maximization problems.
+    dual_values = Dict{Symbol, Float64}()
+    if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+        write_subproblem_to_file(node, "subproblem", throw_error = true)
+    end
+    dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
+    for (name, state) in node.states
+        ref = JuMP.FixRef(state.in)
+        dual_values[name] = dual_sign * JuMP.dual(ref)
+    end
+    return dual_values
+end
+
+# =========================== SDDiP ========================================== #
+
+"""
+    SDDiP(; max_iter::Int = 100)
+
+The SDDiP integrality handler introduced by Zhou, J., Ahmed, S., Sun, X.A. in
+Nested Decomposition of Multistage Stochastic Integer Programs with Binary State
+Variables (2016).
+
+Calculates duals by solving the Lagrangian dual for each subproblem.
+"""
+mutable struct SDDiP <: AbstractIntegralityHandler
+    max_iter::Int
+    optimizer::JuMP.OptimizerFactory
+    subgradients::Vector{Float64}
+    old_rhs::Vector{Float64}
+    best_mult::Vector{Float64}
+    slacks::Vector{GenericAffExpr{Float64, VariableRef}}
+
+    function SDDiP(; max_iter::Int = 100)
+        integrality_handler = new()
+        integrality_handler.max_iter = max_iter
+        return integrality_handler
+    end
+end
+
+
+function update_integrality_handler!(
+    integrality_handler::SDDiP, optimizer::JuMP.OptimizerFactory,
+    num_states::Int)
+    integrality_handler.optimizer = optimizer
+    integrality_handler.subgradients = Vector{Float64}(undef, num_states)
+    integrality_handler.old_rhs = similar(integrality_handler.subgradients)
+    integrality_handler.best_mult = similar(integrality_handler.subgradients)
+    integrality_handler.slacks = Vector{GenericAffExpr{Float64, VariableRef}}(undef, num_states)
+    return integrality_handler
+end
+
+function get_dual_variables(node::Node, integrality_handler::SDDiP)
+    dual_values = Dict{Symbol, Float64}()
+    # TODO implement smart choice for initial duals
+    dual_vars = zeros(length(node.states))
+    solver_obj = JuMP.objective_value(node.subproblem)
+    kelley_obj = _kelley(node, dual_vars, integrality_handler)::Float64
+    # TODO return consistent error to AbstractIntegralityHandler method
+    @assert isapprox(solver_obj, kelley_obj, atol = 1e-5, rtol = 1e-5)
+    for (i, name) in enumerate(keys(node.states))
+        dual_values[name] = -dual_vars[i]
+    end
+    return dual_values
+end
 
 function _solve_primal!(subgradients::Vector{Float64}, node::Node, dual_vars::Vector{Float64}, slacks)
     model = node.subproblem

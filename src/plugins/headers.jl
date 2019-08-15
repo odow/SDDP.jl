@@ -156,3 +156,28 @@ Returns a `Vector{Noise}` of noises sampled from `node.noise_terms` using
 `backward_sampling_scheme`
 """
 function sample_backward_noise_terms end
+
+# =========================== integrality_handlers =========================== #
+
+"""
+    AbstractIntegralityHandler
+
+The abstract type for the integrality handlers interface.
+"""
+abstract type AbstractIntegralityHandler end
+
+"""
+    update_integrality_handler!(integrality_handler::AbstractIntegralityHandler, ::JuMP.OptimizerFactory, ::Int)
+
+Helper function to set up `integrality_handler`, allocating any necessary
+storage. Fallback returns integrality_handler.
+"""
+function update_integrality_handler! end
+
+"""
+    get_dual_variables(node::Node, integrality_handler::AbstractIntegralityHandler)
+
+Returns the values of the dual variables associated with the fixed incoming
+state variables into `node`.
+"""
+function get_dual_variables end

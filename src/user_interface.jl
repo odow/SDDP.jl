@@ -326,7 +326,7 @@ mutable struct Node{T}
     pre_optimize_hook::Union{Nothing, Function}
     post_optimize_hook::Union{Nothing, Function}
     # Approach for handling discrete variables.
-    integrality_handler::AbstractIntegralityHandler
+    integrality_handler # TODO either leave untyped or define ::AbstractIntegralityHandler
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol, Any}
@@ -737,12 +737,11 @@ struct StateInfo
     in::JuMP.VariableInfo
     out::JuMP.VariableInfo
     initial_value::Float64
-    eps::Float64 # TODO this is pretty invasive- alternative would be to use SDDiPState and SDDiPStateInfo and add new add_variable function, but then relying on user to use SDDiPState
 end
 
 function JuMP.build_variable(
         _error::Function, info::JuMP.VariableInfo, ::Type{State};
-        initial_value = NaN, eps = 0.1,
+        initial_value = NaN,
         kwargs...)
     if isnan(initial_value)
         _error("When creating a state variable, you must set the " *
@@ -758,8 +757,7 @@ function JuMP.build_variable(
             false, false, # binary and integer
         ),
         info,
-        initial_value,
-        eps
+        initial_value
     )
 end
 
@@ -807,8 +805,9 @@ function JuMP.add_variable(
                 subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
                 SDDP.State, Bin, initial_value = initial_value[i])
 
-            JuMP.@constraint(subproblem, state.in == bincontract(Float64, [binary_vars[i].in for i in 1:num_vars], state_info.eps))
-            JuMP.@constraint(subproblem, state.out == bincontract(Float64, [binary_vars[i].out for i in 1:num_vars], state_info.eps))
+            # TODO allow for user-specified epsilon in place of default precision 0.1
+            JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars], 0.1))
+            JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars], 0.1))
         end
     end
 

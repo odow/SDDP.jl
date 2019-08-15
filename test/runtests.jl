@@ -11,6 +11,7 @@ end
 
 const EXCLUDED_EXAMPLES = [
     "inventory_management.jl",
+    "generation_expansion.jl", # too tough for GLPK
     "msppy_hydro_thermal.jl",
     "tiger_problem.jl"
 ]
