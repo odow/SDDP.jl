@@ -18,7 +18,7 @@ function all_blacks()
         integrality_handler = SDDP.SDDiP()) do sp, stage
 
         # Seat remaining?
-        @variable(sp, 0 <= x[i in 1:N] <= 1, SDDP.State, Bin, initial_value = 1)
+        @variable(sp, 0 <= x[1:N] <= 1, SDDP.State, Bin, initial_value = 1)
         # Action: accept offer, or don't accept offer
         @variable(sp, accept_offer, Bin)
         # Balance on seats
