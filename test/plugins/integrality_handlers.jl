@@ -30,10 +30,13 @@ function easy_single_stage(integrality_handler)
     JuMP.optimize!(node.subproblem)
     dual_vars = SDDP.get_dual_variables(node, integrality_handler)
 
-    if integrality_handler == SDDP.SDDiP()
-        @test all(values(dual_vars) .>= -ones(2))
-    else
+    if integrality_handler == SDDP.ContinuousRelaxation()
         @test all(values(dual_vars) .<= ones(2))
+    else
+        @test all(values(dual_vars) .>= -ones(2))
+        # Cannot add a variable without an upper bound
+        @test_throws Exception @variable(node.subproblem, w, SDDP.State, initial_value = 0)
+        @test_throws Exception @variable(node.subproblem, w, Int, SDDP.State, initial_value = 0)
     end
 end
 
@@ -66,10 +69,10 @@ function xor_single_stage(integrality_handler)
     JuMP.optimize!(node.subproblem)
     dual_vars = SDDP.get_dual_variables(node, integrality_handler)
 
-    if integrality_handler == SDDP.SDDiP()
-        @test sum(values(dual_vars)) <= 1
-    else
+    if integrality_handler == SDDP.ContinuousRelaxation()
         @test sum(values(dual_vars)) >= -1
+    else
+        @test sum(values(dual_vars)) <= 1
     end
 end
 

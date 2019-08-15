@@ -761,8 +761,6 @@ function JuMP.build_variable(
     )
 end
 
-# TODO warning that if issddip and not bin/int variable will be expanded as a float
-
 function JuMP.add_variable(
         subproblem::JuMP.Model, state_info::StateInfo, name::String)
 
@@ -782,7 +780,6 @@ function JuMP.add_variable(
         graph = get_policy_graph(subproblem)
         graph.initial_root_state[sym_name] = state_info.initial_value
     else
-        # TODO add test
         if !isfinite(state_info.out.upper_bound)
             error("When using SDDiP, state variables require an upper bound.")
         end

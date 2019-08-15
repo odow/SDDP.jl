@@ -167,7 +167,9 @@ The abstract type for the integrality handlers interface.
 abstract type AbstractIntegralityHandler end
 
 """
-    update_integrality_handler!(integrality_handler::AbstractIntegralityHandler, ::JuMP.OptimizerFactory, ::Int)
+    update_integrality_handler!(
+        integrality_handler::AbstractIntegralityHandler,
+        optimizer::JuMP.OptimizerFactory, num_states::Int)
 
 Helper function to set up `integrality_handler`, allocating any necessary
 storage. Fallback returns integrality_handler.

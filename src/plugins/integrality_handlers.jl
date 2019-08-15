@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using LinearAlgebra
+import LinearAlgebra.dot
 
 # ========================= Fallbacks ======================================== #
 update_integrality_handler!(integrality_handler::AbstractIntegralityHandler, ::JuMP.OptimizerFactory, ::Int) = integrality_handler
@@ -78,9 +78,13 @@ function get_dual_variables(node::Node, integrality_handler::SDDiP)
     # TODO implement smart choice for initial duals
     dual_vars = zeros(length(node.states))
     solver_obj = JuMP.objective_value(node.subproblem)
-    kelley_obj = _kelley(node, dual_vars, integrality_handler)::Float64
-    # TODO return consistent error to AbstractIntegralityHandler method
-    @assert isapprox(solver_obj, kelley_obj, atol = 1e-5, rtol = 1e-5)
+    try
+        kelley_obj = _kelley(node, dual_vars, integrality_handler)::Float64
+        @assert isapprox(solver_obj, kelley_obj, atol = 1e-8, rtol = 1e-8)
+    catch e
+        write_subproblem_to_file(node, "subproblem", throw_error = false)
+        rethrow(e)
+    end
     for (i, name) in enumerate(keys(node.states))
         dual_values[name] = -dual_vars[i]
     end

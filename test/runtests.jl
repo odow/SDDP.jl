@@ -13,7 +13,8 @@ const EXCLUDED_EXAMPLES = [
     "inventory_management.jl",
     "generation_expansion.jl", # too tough for GLPK
     "msppy_hydro_thermal.jl",
-    "tiger_problem.jl"
+    "tiger_problem.jl",
+    "vehice_location.jl" # too tough
 ]
 
 const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")

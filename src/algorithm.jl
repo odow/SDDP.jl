@@ -883,7 +883,6 @@ function train(
     end
 
     # Handle integrality
-    # TODO clean when implemented a non-hacky way to check if not SDDiP
     if model.nodes[1].integrality_handler == ContinuousRelaxation()
         binaries, integers = relax_integrality(model)
     else

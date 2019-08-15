@@ -7,11 +7,6 @@ const _log2inv = inv(log(2))
 _bitsrequired(x::Int) = floor(Int, log(x) * _log2inv) + 1
 _bitsrequired(x::Float64, eps::Float64 = 0.1) = _bitsrequired(round(Int, x / eps))
 
-initial_value_err = "Cannot perform binary expansion on a negative number." *
-    "Initial values of state variables must be nonnegative."
-upper_bound_err =  "Cannot perform binary expansion on zero-length vector." *
-    "Upper bounds of state variables must be positive."
-
 """
     binexpand(x::Int, maximum::Int)
 
@@ -20,8 +15,10 @@ Length of the result is determined by the number of bits required to represent
 `maximum` in binary.
 """
 function binexpand(x::Int, maximum::Int)
-    x < 0 && throw(initial_value_err)
-    maximum <= 0 && throw(upper_bound_err)
+    x < 0 && error("Cannot perform binary expansion on a negative number." *
+        "Initial values of state variables must be nonnegative.")
+    maximum <= 0 && error("Cannot perform binary expansion on zero-length " *
+        "vector. Upper bounds of state variables must be positive.")
     y = zeros(Int, _bitsrequired(maximum))
     @inbounds for i in length(y):-1:1
         k = 2^(i - 1)
@@ -54,9 +51,6 @@ end
 For vector `y`, evaluates ∑ᵢ 2ⁱ⁻¹yᵢ.
 """
 function bincontract(y::Vector{T}) where {T}
-    if length(y) > floor(Int, log(typemax(Int)) * _log2inv) + 1
-        error("Overflow of input of length $(length(y)).")
-    end
     x = zero(T)
     @inbounds for i in eachindex(y)
         x += 2^(i - 1) * y[i]
@@ -64,4 +58,9 @@ function bincontract(y::Vector{T}) where {T}
     return x
 end
 
+"""
+    bincontract(y::Vector, eps::Float64)
+
+For vector `y`, evaluates ∑ᵢ 2ⁱ⁻¹yᵢ * `eps`.
+"""
 bincontract(y::Vector, eps::Float64) = bincontract(y) * eps
