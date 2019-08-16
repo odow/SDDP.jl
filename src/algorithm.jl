@@ -255,7 +255,6 @@ function solve_subproblem(
         nothing
     end
 
-    # solve the MIP (faster to do this extra solve and get an objective value than look for duals without it)
     JuMP.optimize!(node.subproblem)
     state = get_outgoing_state(node)
     stage_objective = stage_objective_value(node.stage_objective)

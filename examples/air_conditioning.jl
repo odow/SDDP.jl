@@ -25,7 +25,6 @@ function air_conditioning_model(integrality_handler)
             stages = 3, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer),
             integrality_handler = integrality_handler) do sp, stage
-
         @variable(sp, 0 <= stored_production <= 100, Int, SDDP.State, initial_value = 0)
         @variable(sp, 0 <= production <= 200, Int)
         @variable(sp, overtime >= 0, Int)
@@ -37,7 +36,7 @@ function air_conditioning_model(integrality_handler)
         @stageobjective(sp,
             100 * production + 300 * overtime + 50 * stored_production.out)
     end
-    SDDP.train(model, iteration_limit = 20, print_level = 1)
+    SDDP.train(model, iteration_limit = 20, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 62_500.0
 end
 

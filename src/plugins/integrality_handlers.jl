@@ -44,7 +44,8 @@ The SDDiP integrality handler introduced by Zhou, J., Ahmed, S., Sun, X.A. in
 Nested Decomposition of Multistage Stochastic Integer Programs with Binary State
 Variables (2016).
 
-Calculates duals by solving the Lagrangian dual for each subproblem.
+Calculates duals by solving the Lagrangian dual for each subproblem. All state
+variables are assumed to take nonnegative values only.
 """
 mutable struct SDDiP <: AbstractIntegralityHandler
     max_iter::Int

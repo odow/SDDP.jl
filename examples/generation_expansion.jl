@@ -4,8 +4,9 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using JuMP, SDDP, LinearAlgebra, GLPK, Test
+# using Gurobi
 
-function generation_expansion()
+function generation_expansion(integrality_handler)
     build_cost = 1e4
     use_cost = 4
     num_units = 20
@@ -24,7 +25,8 @@ function generation_expansion()
     model = SDDP.LinearPolicyGraph(
             stages = 5, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer),
-            integrality_handler = SDDP.SDDiP()) do sp, stage
+            # optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag = 0),
+            integrality_handler = integrality_handler) do sp, stage
 
         @variable(sp, 0 <= invested[1:num_units] <= 1, SDDP.State, Int, initial_value = 0)
         @variables(sp, begin
@@ -50,8 +52,10 @@ function generation_expansion()
         @expression(sp, investment_cost, build_cost * sum(invested[i].out - invested[i].in for i in 1:num_units))
         @stageobjective(sp, (investment_cost + generation * use_cost) * rho^(stage - 1) + penalty * unmet)
     end
-    SDDP.train(model, iteration_limit = 50, print_level = 1)
-    @test SDDP.calculate_bound(model) ≈ 460_533.0
+    SDDP.train(model, iteration_limit = 200, print_level = 1)
+    @test SDDP.calculate_bound(model) ≈ 460_532 atol=1
 end
 
-generation_expansion()
+for integrality_handler in [SDDP.SDDiP(), SDDP.ContinuousRelaxation()]
+    generation_expansion(integrality_handler)
+end

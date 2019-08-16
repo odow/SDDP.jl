@@ -754,7 +754,7 @@ function JuMP.build_variable(
             false, NaN,  # upper bound
             false, NaN,  # fixed value
             false, NaN,  # start value
-            false, false, # binary and integer
+            false, false # binary and integer
         ),
         info,
         initial_value
@@ -763,14 +763,12 @@ end
 
 function JuMP.add_variable(
         subproblem::JuMP.Model, state_info::StateInfo, name::String)
-
     state = State(
         JuMP.add_variable(
             subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
         JuMP.add_variable(
             subproblem, JuMP.ScalarVariable(state_info.out), name * "_out")
     )
-
     node = get_node(subproblem)
     if node.integrality_handler == ContinuousRelaxation() || state_info.out.binary
         # Only in this case we treat `state` as a real state variable
