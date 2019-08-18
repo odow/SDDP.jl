@@ -5,8 +5,38 @@
 
 import LinearAlgebra.dot
 
-# ========================= Fallbacks ======================================== #
-update_integrality_handler!(integrality_handler::AbstractIntegralityHandler, ::JuMP.OptimizerFactory, ::Int) = integrality_handler
+# ========================= General method =================================== #
+
+"""
+    enforce_integrality(
+        binaries::Vector{Tuple{JuMP.VariableRef, Float64, Float64}},
+        integers::Vector{VariableRef})
+
+Set all variables in `binaries` to `SingleVariable-in-ZeroOne()`, and all
+variables in `integers` to `SingleVariable-in-Integer()`.
+
+See also [`relax_integrality`](@ref).
+"""
+function enforce_integrality(
+    binaries::Vector{Tuple{JuMP.VariableRef, Float64, Float64}},
+    integers::Vector{VariableRef}
+)
+    JuMP.set_integer.(integers)
+    for (x, x_lb, x_ub) in binaries
+        if isnan(x_lb)
+            JuMP.delete_lower_bound(x)
+        else
+            JuMP.set_lower_bound(x, x_lb)
+        end
+        if isnan(x_ub)
+            JuMP.delete_upper_bound(x)
+        else
+            JuMP.set_upper_bound(x, x_ub)
+        end
+        JuMP.set_binary(x)
+    end
+    return
+end
 
 # ========================= Continuous relaxation ============================ #
 
@@ -35,33 +65,77 @@ function get_dual_variables(node::Node, ::ContinuousRelaxation)
     return dual_values
 end
 
+function relax_integrality(model::PolicyGraph, ::ContinuousRelaxation)
+    binaries = Tuple{JuMP.VariableRef, Float64, Float64}[]
+    integers = JuMP.VariableRef[]
+    for (key, node) in model.nodes
+        bins, ints = _relax_integrality(node.subproblem)
+        append!(binaries, bins)
+        append!(integers, ints)
+    end
+    return binaries, integers
+end
+
+# Relax all binary and integer constraints in `model`. Returns two vectors:
+# the first containing a list of binary variables and previous bounds,
+# and the second containing a list of integer variables.
+function _relax_integrality(m::JuMP.Model)
+    # Note: if integrality restriction is added via @constraint then this loop doesn't catch it.
+    binaries = Tuple{JuMP.VariableRef, Float64, Float64}[]
+    integers = JuMP.VariableRef[]
+    # Run through all variables on model and unset integrality
+    for x in JuMP.all_variables(m)
+        if JuMP.is_binary(x)
+            x_lb, x_ub = NaN, NaN
+            JuMP.unset_binary(x)
+            # Store upper and lower bounds
+            if JuMP.has_lower_bound(x)
+                x_lb = JuMP.lower_bound(x)
+                JuMP.set_lower_bound(x, max(x_lb, 0.0))
+            else
+                JuMP.set_lower_bound(x, 0.0)
+            end
+            if JuMP.has_upper_bound(x)
+                x_ub = JuMP.upper_bound(x)
+                JuMP.set_upper_bound(x, min(x_ub, 1.0))
+            else
+                JuMP.set_upper_bound(x, 1.0)
+            end
+            push!(binaries, (x, x_lb, x_ub))
+        elseif JuMP.is_integer(x)
+            JuMP.unset_integer(x)
+            push!(integers, x)
+        end
+    end
+    return binaries, integers
+end
+
 # =========================== SDDiP ========================================== #
 
 """
-    SDDiP(; max_iter::Int = 100)
+    SDDiP(; iteration_limit::Int = 100)
 
-The SDDiP integrality handler introduced by Zhou, J., Ahmed, S., Sun, X.A. in
-Nested Decomposition of Multistage Stochastic Integer Programs with Binary State
-Variables (2016).
+The SDDiP integrality handler introduced by Zou, J., Ahmed, S. & Sun, X.A.
+Math. Program. (2019) 175: 461. Stochastic dual dynamic integer programming.
+https://doi.org/10.1007/s10107-018-1249-5.
 
 Calculates duals by solving the Lagrangian dual for each subproblem. All state
 variables are assumed to take nonnegative values only.
 """
 mutable struct SDDiP <: AbstractIntegralityHandler
-    max_iter::Int
+    iteration_limit::Int
     optimizer::JuMP.OptimizerFactory
     subgradients::Vector{Float64}
     old_rhs::Vector{Float64}
     best_mult::Vector{Float64}
     slacks::Vector{GenericAffExpr{Float64, VariableRef}}
 
-    function SDDiP(; max_iter::Int = 100)
+    function SDDiP(; iteration_limit::Int = 100)
         integrality_handler = new()
-        integrality_handler.max_iter = max_iter
+        integrality_handler.iteration_limit = iteration_limit
         return integrality_handler
     end
 end
-
 
 function update_integrality_handler!(
     integrality_handler::SDDiP, optimizer::JuMP.OptimizerFactory,
@@ -81,16 +155,20 @@ function get_dual_variables(node::Node, integrality_handler::SDDiP)
     solver_obj = JuMP.objective_value(node.subproblem)
     try
         kelley_obj = _kelley(node, dual_vars, integrality_handler)::Float64
+        # TODO allow these tolerances to be modified
         @assert isapprox(solver_obj, kelley_obj, atol = 1e-8, rtol = 1e-8)
     catch e
         write_subproblem_to_file(node, "subproblem", throw_error = false)
         rethrow(e)
     end
     for (i, name) in enumerate(keys(node.states))
+        # TODO (maybe) change dual signs inside kelley to match LP duals
         dual_values[name] = -dual_vars[i]
     end
     return dual_values
 end
+
+relax_integrality(::PolicyGraph, ::SDDiP) = Tuple{JuMP.VariableRef, Float64, Float64}[], JuMP.VariableRef[]
 
 function _solve_primal!(subgradients::Vector{Float64}, node::Node, dual_vars::Vector{Float64}, slacks)
     model = node.subproblem
@@ -150,7 +228,7 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
     end
 
     iter = 0
-    while iter < integrality_handler.max_iter
+    while iter < integrality_handler.iteration_limit
         iter += 1
         # Evaluate the real function and a subgradient
         f_actual = _solve_primal!(subgradients, node, dual_vars, integrality_handler.slacks)
@@ -189,5 +267,5 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
         # Next iterate
         dual_vars .= value.(x)
     end
-    error("Could not solve for Lagrangian duals.")
+    error("Could not solve for Lagrangian duals. Iteration limit exceeded.")
 end

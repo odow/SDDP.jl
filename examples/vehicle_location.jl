@@ -24,7 +24,7 @@ cost of the driving distance.
 
 using SDDP, GLPK, Test
 
-function vehicle_location_model()
+function vehicle_location_model(integrality_handler)
     hospital_location = 0
     bases = vcat(hospital_location, [20, 40, 60, 80, 100])
     vehicles = [1, 2, 3]
@@ -42,7 +42,7 @@ function vehicle_location_model()
     model = SDDP.LinearPolicyGraph(
             stages = 10, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer),
-            integrality_handler = SDDP.SDDiP()) do sp, t
+            integrality_handler = integrality_handler) do sp, t
         # Current location of each vehicle at each base.
         @variable(sp,
             0 <= location[b=bases, v=vehicles] <= 1, SDDP.State,
@@ -84,8 +84,16 @@ function vehicle_location_model()
                 for b in bases, v in vehicles))
         end
     end
-    SDDP.train(model, iteration_limit = 50, print_level = 0)
-    @test isapprox(SDDP.calculate_bound(model), 1700.0, atol=5)
+    SDDP.train(model, iteration_limit = 50, print_level = 1)
+    if integrality_handler == SDDP.ContinuousRelaxation()
+        @test isapprox(SDDP.calculate_bound(model), 1700, atol=5)
+    end
 end
 
-vehicle_location_model()
+# Solve a continuous relaxation only, tough for SDDiP
+for integrality_handler in [
+    # SDDP.SDDiP(),
+    SDDP.ContinuousRelaxation()
+    ]
+    vehicle_location_model(integrality_handler)
+end

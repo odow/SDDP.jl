@@ -172,14 +172,35 @@ abstract type AbstractIntegralityHandler end
         optimizer::JuMP.OptimizerFactory, num_states::Int)
 
 Helper function to set up `integrality_handler`, allocating any necessary
-storage. Fallback returns integrality_handler.
+storage, given `num_states` state variables.
 """
 function update_integrality_handler! end
+
+# Fallback
+update_integrality_handler!(integrality_handler::AbstractIntegralityHandler,
+    ::JuMP.OptimizerFactory, ::Int) = integrality_handler
+
+# Do nothing if no optimizer is set e.g. in tests
+update_integrality_handler!(integrality_handler::AbstractIntegralityHandler,
+    ::Nothing, ::Int) = integrality_handler
 
 """
     get_dual_variables(node::Node, integrality_handler::AbstractIntegralityHandler)
 
-Returns the values of the dual variables associated with the fixed incoming
-state variables into `node`.
+Returns a `Dict{Symbol, Float64}` where the keys are the names of the state
+variables and the values are the dual variables associated with the fishing
+constraint at `node`.
 """
 function get_dual_variables end
+
+"""
+    relax_integrality(model::PolicyGraph, integrality_handler::AbstractIntegralityHandler)
+
+Performs any binary/integer relaxations prior to the backward pass.
+Returns two vectors, the first containing a list of binary variables, and the
+second containing a list of integer variables. Integrality or binary constraints
+will be enforced for variables in these lists during policy simulation.
+
+See also [`enforce_integrality`](@ref).
+"""
+function relax_integrality end

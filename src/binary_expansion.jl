@@ -5,7 +5,6 @@
 
 const _log2inv = inv(log(2))
 _bitsrequired(x::Int) = floor(Int, log(x) * _log2inv) + 1
-_bitsrequired(x::Float64, eps::Float64 = 0.1) = _bitsrequired(round(Int, x / eps))
 
 """
     binexpand(x::Int, maximum::Int)
