@@ -3,8 +3,6 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using Distributed
-
 const SDDP_TIMER = TimerOutputs.TimerOutput()
 
 # to_nodal_form is an internal helper function so users can pass arguments like:
@@ -1130,10 +1128,21 @@ function simulate(model::PolicyGraph,
                   sampling_scheme::AbstractSamplingScheme =
                       InSampleMonteCarlo(),
                   custom_recorders = Dict{Symbol, Function}(),
-                  require_duals::Bool = true)
-    wp = CachingPool(workers())
-    return pmap(wp, (i) -> _simulate(
+                  require_duals::Bool = true,
+                  parallel_workers = Distributed.workers())
+
+    if length(parallel_workers) < 2 
+        return map(i -> _simulate(
             model, variables; sampling_scheme = sampling_scheme,
             custom_recorders = custom_recorders, require_duals = require_duals),
         1:number_replications)
+    else
+        wp = Distributed.CachingPool(parallel_workers)
+        let model = model
+            return pmap(wp, (i) -> _simulate(
+                    model, variables; sampling_scheme = sampling_scheme,
+                    custom_recorders = custom_recorders, require_duals = require_duals),
+                1:number_replications)
+        end
+    end
 end

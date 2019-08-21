@@ -98,6 +98,21 @@ end
     @test simulations[1][1][:x] == [SDDP.State(2.0, 1.0), SDDP.State(4.0, 2.0)]
 end
 
+@testset "simulate parallel" begin
+    model = SDDP.LinearPolicyGraph(
+            stages=2, lower_bound=0.0, optimizer=with_optimizer(GLPK.Optimizer)
+            ) do sp, t
+        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
+        @stageobjective(sp, x[1].out + x[2].out)
+    end
+    Distributed.addprocs()
+    np = size(Distributed.workers(),1)
+    results = simulate(model, np, custom_recorders = Dict{Symbol, Function}(
+        :myid => (args...) -> myid()
+    ))
+    @test size(unique([results[s][1][:myid] for s=1:np]),1) == np
+end
+
 @testset "infeasible model" begin
     model = SDDP.LinearPolicyGraph(
                 stages = 2,
