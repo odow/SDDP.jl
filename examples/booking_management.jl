@@ -76,11 +76,11 @@ end
 
 function booking_management()
     m_1_2_5 = booking_management_model(1, 2, 5)
-    SDDP.train(m_1_2_5, iteration_limit = 10)
+    SDDP.train(m_1_2_5, iteration_limit = 10, print_level = 0)
     @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol=0.02)
 
     m_2_2_3 = booking_management_model(2, 2, 3)
-    SDDP.train(m_2_2_3, iteration_limit = 40)
+    SDDP.train(m_2_2_3, iteration_limit = 40, print_level = 0)
     @test isapprox(SDDP.calculate_bound(m_2_2_3), 6.13, atol=0.02)
 end
 

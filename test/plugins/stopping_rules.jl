@@ -42,7 +42,7 @@ end
         end
         @stageobjective(node, x.out)
     end
-    SDDP.train(model, iteration_limit = 1)
+    SDDP.train(model, iteration_limit = 1, print_level = 0)
     rule = SDDP.Statistical(num_replications = 20)
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)
@@ -61,7 +61,7 @@ end
         end
         @stageobjective(node, x.out)
     end
-    SDDP.train(model, iteration_limit = 1)
+    SDDP.train(model, iteration_limit = 1, print_level = 0)
     rule = SDDP.Statistical(num_replications = 20)
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)

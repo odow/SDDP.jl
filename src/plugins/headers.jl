@@ -110,13 +110,6 @@ You need to define the following methods:
 """
 abstract type AbstractStoppingRule end
 
-struct Log
-    iteration::Int
-    bound::Float64
-    simulation_value::Float64
-    time::Float64
-end
-
 """
     stopping_rule_status(::AbstractStoppingRule)::Symbol
 
@@ -140,3 +133,26 @@ function convergence_test(graph::PolicyGraph, log::Vector{Log},
     end
     return false, :not_solved
 end
+
+# ============================== backward_samplers =========================== #
+
+"""
+    AbstractBackwardSamplingScheme
+
+The abstract type for backward sampling scheme interface.
+
+You need to define the following methods:
+ - [`SDDP.sample_backward_noise_terms`](@ref)
+"""
+abstract type AbstractBackwardSamplingScheme end
+
+"""
+    sample_backward_noise_terms(
+        backward_sampling_scheme::AbstractBackwardSamplingScheme,
+        node::Node{T}
+    )::Vector{Noise}
+
+Returns a `Vector{Noise}` of noises sampled from `node.noise_terms` using
+`backward_sampling_scheme`
+"""
+function sample_backward_noise_terms end

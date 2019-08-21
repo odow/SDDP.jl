@@ -32,8 +32,11 @@ function fast_hydro_thermal()
         @stageobjective(sp, 5 * p)
     end
 
-    SDDP.train(model, iteration_limit = 10, print_level = 0)
+    det = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+    JuMP.optimize!(det)
+    @test JuMP.objective_value(det) == 10
 
+    SDDP.train(model, iteration_limit = 10, print_level = 0)
     @test SDDP.calculate_bound(model) == 10
 end
 

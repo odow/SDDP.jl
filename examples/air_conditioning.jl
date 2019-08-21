@@ -35,7 +35,7 @@ function air_conditioning_model()
         @stageobjective(sp,
             100 * production + 300 * overtime + 50 * stored_production.out)
     end
-    SDDP.train(model, iteration_limit = 20)
+    SDDP.train(model, iteration_limit = 20, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 62_500.0
 end
 

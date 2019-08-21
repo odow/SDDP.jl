@@ -1,0 +1,106 @@
+<!--
+    Copyright 2017-19, Oscar Dowson.
+    This Source Code Form is subject to the terms of the Mozilla Public License,
+    v. 2.0. If a copy of the MPL was not distributed with this file, You can
+    obtain one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <div id="plot"></div>
+    <script>
+    (function() {
+        Plotly.newPlot(
+            'plot', [{
+                x: [],
+                y: [],
+                name: 'Bound',
+                type: 'lines',
+                xaxis: 'x1',
+                yaxis: 'y1'
+            }, {
+                x: [],
+                y: [],
+                name: 'Simulations',
+                type: 'markers',
+                xaxis: 'x1',
+                yaxis: 'y1'
+            }, {
+                x: [],
+                y: [],
+                name: 'Solution time',
+                type: 'lines',
+                xaxis: 'x2',
+                yaxis: 'y2'
+            }], {
+                grid: {
+                    rows: 1,
+                    columns: 2,
+                    pattern: 'independent'
+                },
+                showlegend: false,
+                xaxis: {
+                    title: 'Iteration'
+                },
+                xaxis2: {
+                    title: 'Iteration'
+                },
+                yaxis: {
+                    title: 'Objective'
+                },
+                yaxis2: {
+                    title: 'Solution time (s)'
+                }
+            }
+        );
+        var plot_div = document.getElementById('plot')
+
+        var connection = new WebSocket('ws://localhost:8001');
+        connection.onopen = function () {
+            var send_ready = false;
+            setInterval(function() {
+                if (connection.readyState == 0) {
+                    // Connection is opening.
+                } else if (connection.readyState == 1) {
+                    // Tell Julia that we're ready to receive data.
+                    if (send_ready == false) {
+                        connection.send("ready");
+                        send_ready = true;
+                    }
+                    console.log('Still alive')
+                } else if (connection.readyState == 2) {
+                    // Connection is closing.
+
+                } else if (connection.readyState == 3) {
+                    // Connection is closed.
+                    return
+                }
+            }, 250);
+        };
+        connection.onerror = function (error) {
+            console.log('WebSocket Error');
+            console.log(error);
+        };
+        connection.onmessage = function (e) {
+            d = JSON.parse(e.data);
+            var iteration = d["iteration"];
+            Plotly.extendTraces(
+                plot_div,
+                {
+                    y: [[d["bound"]], [d["simulation"]], [d["time"]]],
+                    x: [[iteration], [iteration], [iteration]]
+                },
+                [0, 1, 2]
+            );
+            connection.send("ready");
+        };
+    })();
+    </script>
+</body>
+
+</html>

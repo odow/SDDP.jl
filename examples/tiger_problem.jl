@@ -61,13 +61,13 @@ function tiger_problem()
     end
 
     # Train the policy.
-    SDDP.train(model; iteration_limit = 50, print_level = 1)
+    SDDP.train(model; iteration_limit = 50, print_level = 1, dashboard = true)
 
     simulations = SDDP.simulate(model, 100, [:x],
         sampling_scheme = SDDP.InSampleMonteCarlo(
             max_depth = 30, terminate_on_dummy_leaf = false))
 
-    plt = SDDP.SpaghettiPlot(s)
+    plt = SDDP.SpaghettiPlot(simulations)
     SDDP.add_spaghetti(plt, cumulative=true) do data
         data[:stage_objective]
     end
