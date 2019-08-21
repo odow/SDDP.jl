@@ -1139,10 +1139,10 @@ function simulate(model::PolicyGraph,
     else
         wp = Distributed.CachingPool(parallel_workers)
         let model = model
-            return pmap(wp, (i) -> _simulate(
+            return Distributed.pmap(i -> _simulate(
                     model, variables; sampling_scheme = sampling_scheme,
                     custom_recorders = custom_recorders, require_duals = require_duals),
-                1:number_replications)
+                    wp, 1:number_replications)
         end
     end
 end
