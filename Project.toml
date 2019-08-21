@@ -4,6 +4,7 @@ authors = ["Oscar Dowson <oscar.dowson@northwestern.edu"]
 version = "0.0.0"
 
 [deps]
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
