@@ -5,10 +5,6 @@
 
 using Distributed, Test, GLPK, SDDP
 
-Distributed.addprocs()
-
-@everywhere using SDDP, GLPK
-
 @testset "Forward Pass" begin
     model = SDDP.PolicyGraph(SDDP.LinearGraph(2);
                 sense = :Max,
@@ -100,21 +96,6 @@ end
     end
     simulations = SDDP.simulate(model, 1, [:x])
     @test simulations[1][1][:x] == [SDDP.State(2.0, 1.0), SDDP.State(4.0, 2.0)]
-end
-
-@testset "simulate parallel" begin
-    model = SDDP.LinearPolicyGraph(
-            stages=2, lower_bound=0.0, optimizer=with_optimizer(GLPK.Optimizer)
-            ) do sp, t
-        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
-        @stageobjective(sp, x[1].out + x[2].out)
-    end
-    
-    np = size(Distributed.workers(),1)
-    results = SDDP.simulate(model, np, custom_recorders = Dict{Symbol, Function}(
-        :myid => (args...) -> Distributed.myid()
-    ))
-    @test size(unique([results[s][1][:myid] for s=1:np]),1) == np
 end
 
 @testset "infeasible model" begin
@@ -287,4 +268,23 @@ end
         @test JuMP.lower_bound(node.subproblem[:i3]) == -8
         @test JuMP.upper_bound(node.subproblem[:i3]) == 2
     end
+end
+
+@testset "simulate parallel" begin
+    Distributed.addprocs()
+    @everywhere import Pkg; Pkg.activate(".")
+    @everywhere using SDDP, GLPK
+    model = SDDP.LinearPolicyGraph(
+            stages=2, lower_bound=0.0, optimizer=with_optimizer(GLPK.Optimizer),
+            direct_mode = false
+            ) do sp, t
+        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
+        @stageobjective(sp, x[1].out + x[2].out)
+    end
+    
+    np = size(Distributed.workers(),1)
+    results = SDDP.simulate(model, np, custom_recorders = Dict{Symbol, Function}(
+        :myid => (args...) -> Distributed.myid()
+    ))
+    @test size(unique([results[s][1][:myid] for s=1:np]),1) == np
 end
