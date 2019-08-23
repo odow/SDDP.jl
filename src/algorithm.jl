@@ -1108,9 +1108,9 @@ For more complicated data, the `custom_recorders` keyword arguement can be used.
 For example, to record the dual of a constraint named `my_constraint`, pass the
 following:
 
-    simulation_results = simulate(model, number_replications=2;
-        custom_recorders = Dict(
-            :constraint_dual = (sp) -> JuMP.dual(sp[:my_constraint])
+    simulation_results = SDDP.simulate(model, 2;
+        custom_recorders = Dict{Symbol, Function}(
+            :constraint_dual => (sp) -> JuMP.dual(sp[:my_constraint])
         )
     )
 
