@@ -16,8 +16,6 @@ using RecipesBase
 
 export @stageobjective
 
-include("binary_expansion.jl")
-
 # Modelling interface.
 include("user_interface.jl")
 
@@ -30,6 +28,10 @@ end
 
 # Default definitions for SDDP related modular utilities.
 include("plugins/headers.jl")
+
+# Tools for overloading JuMP functions
+include("binary_expansion.jl")
+include("JuMP.jl")
 
 # Printing utilities.
 include("print.jl")

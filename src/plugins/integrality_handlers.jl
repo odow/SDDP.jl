@@ -5,7 +5,7 @@
 
 import LinearAlgebra.dot
 
-# ========================= General method =================================== #
+# ========================= General methods ================================== #
 
 """
     enforce_integrality(
@@ -38,6 +38,8 @@ function enforce_integrality(
     return
 end
 
+get_integrality_handler(subproblem::JuMP.Model) = get_node(subproblem).integrality_handler
+
 # ========================= Continuous relaxation ============================ #
 
 """
@@ -48,6 +50,18 @@ backward pass by solving a continuous relaxation of each subproblem.
 Integrality constraints are retained in policy simulation.
 """
 struct ContinuousRelaxation <: AbstractIntegralityHandler end
+
+function setup_state(
+        subproblem::JuMP.Model, state::State, state_info::StateInfo,
+        name::String, ::ContinuousRelaxation)
+    node = get_node(subproblem)
+    sym_name = Symbol(name)
+    @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.
+    node.states[sym_name] = state
+    graph = get_policy_graph(subproblem)
+    graph.initial_root_state[sym_name] = state_info.initial_value
+    return
+end
 
 # Requires node.subproblem to have been solved with DualStatus == FeasiblePoint
 function get_dual_variables(node::Node, ::ContinuousRelaxation)
@@ -146,6 +160,44 @@ function update_integrality_handler!(
     integrality_handler.best_mult = similar(integrality_handler.subgradients)
     integrality_handler.slacks = Vector{GenericAffExpr{Float64, VariableRef}}(undef, num_states)
     return integrality_handler
+end
+
+function setup_state(
+        subproblem::JuMP.Model, state::State, state_info::StateInfo,
+        name::String, ::SDDiP)
+    if state_info.out.binary
+        # Only in this case we treat `state` as a real state variable
+        setup_state(subproblem, state, state_info, name, ContinuousRelaxation())
+    else
+        if !isfinite(state_info.out.upper_bound)
+            error("When using SDDiP, state variables require an upper bound.")
+        end
+
+        if state_info.out.integer
+            # Initial value must be integral
+            initial_value = binexpand(Int(state_info.initial_value), floor(Int, state_info.out.upper_bound))
+            num_vars = length(initial_value)
+
+            binary_vars = JuMP.@variable(
+                subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
+                SDDP.State, Bin, initial_value = initial_value[i])
+
+            JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars]))
+            JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars]))
+        else
+            initial_value = binexpand(float(state_info.initial_value), float(state_info.out.upper_bound), 0.1)
+            num_vars = length(initial_value)
+
+            binary_vars = JuMP.@variable(
+                subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
+                SDDP.State, Bin, initial_value = initial_value[i])
+
+            # TODO allow for user-specified epsilon in place of default precision 0.1
+            JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars], 0.1))
+            JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars], 0.1))
+        end
+    end
+    return
 end
 
 function get_dual_variables(node::Node, integrality_handler::SDDiP)

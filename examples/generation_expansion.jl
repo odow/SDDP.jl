@@ -4,14 +4,13 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using JuMP, SDDP, LinearAlgebra, GLPK, Test
-# using Gurobi
 
 function generation_expansion(integrality_handler)
     build_cost = 1e4
     use_cost = 4
-    num_units = 20
+    num_units = 5
     capacities = ones(num_units)
-    demand_vals = [
+    demand_vals = 0.5 * [
         5 5 5 5 5 5 5 5
         4 3 1 3 0 9 8 17
         0 9 4 2 19 19 13 7
@@ -25,7 +24,6 @@ function generation_expansion(integrality_handler)
     model = SDDP.LinearPolicyGraph(
             stages = 5, lower_bound = 0.0,
             optimizer = with_optimizer(GLPK.Optimizer),
-            # optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag = 0),
             integrality_handler = integrality_handler) do sp, stage
 
         @variable(sp, 0 <= invested[1:num_units] <= 1, SDDP.State, Int, initial_value = 0)
@@ -42,8 +40,8 @@ function generation_expansion(integrality_handler)
             sum(capacities[i] * invested[i].out for i in 1:num_units) >= generation
             # Meet demand or pay a penalty
             unmet >= demand - sum(generation)
-            # Order the units to break symmetry, units are identical
-            [j in 1:(num_units - 1)], invested[j].out <= invested[j + 1].out
+            # For fewer iterations order the units to break symmetry, units are identical (tougher numerically)
+            # [j in 1:(num_units - 1)], invested[j].out <= invested[j + 1].out
         end)
 
         # Demand is uncertain
@@ -52,8 +50,8 @@ function generation_expansion(integrality_handler)
         @expression(sp, investment_cost, build_cost * sum(invested[i].out - invested[i].in for i in 1:num_units))
         @stageobjective(sp, (investment_cost + generation * use_cost) * rho^(stage - 1) + penalty * unmet)
     end
-    SDDP.train(model, iteration_limit = 200, print_level = 1)
-    @test SDDP.calculate_bound(model) ≈ 460_532 atol=1
+    SDDP.train(model, iteration_limit = 50, print_level = 1)
+    @test SDDP.calculate_bound(model) ≈ 2.078860e6 atol=1e3
 end
 
 # Solve a continuous relaxation only, tough for SDDiP

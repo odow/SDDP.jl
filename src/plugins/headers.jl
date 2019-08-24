@@ -204,3 +204,15 @@ will be enforced for variables in these lists during policy simulation.
 See also [`enforce_integrality`](@ref).
 """
 function relax_integrality end
+
+"""
+setup_state(
+        subproblem::JuMP.Model, state::State, state_info::StateInfo,
+        name::String,
+        integrality_handler::AbstractIntegralityHandler)
+
+Adds the state variable `state` to the node of `subproblem` and registers the
+initial root state in the policy graph of `subproblem`. May perform
+modifications needed by `integrality_handler.` Returns nothing.
+"""
+function setup_state end
