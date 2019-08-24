@@ -145,11 +145,12 @@ end
 
 # ### First stage problem
 
+# We can only plant a maximum of 500 acres, and we want to minimize the planting
+# cost
+
 function create_first_stage_problem(subproblem)
-    # We can only plant a maximum of 500 acres.
     @constraint(subproblem,
         sum(subproblem[:area][c].out for c in CROPS) <= MAX_AREA)
-    # Minimize the planting cost
     @stageobjective(subproblem,
         -sum(PLANTING_COST[c] * subproblem[:area][c].out for c in CROPS))
 end
