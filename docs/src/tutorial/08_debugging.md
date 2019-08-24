@@ -64,10 +64,11 @@ julia> read("subproblem.lp") |> String |> print
 minimize
 obj: 1.1 x_out + 1 x4
 subject to
-balance: 1 x_in - 1 x_out - 1 y == 0
+balance: 1 x_in - 1 x_out - 1 y = 0
 Bounds
 x4 >= 0
-y == 1.1
+y = 1.1
+End
 ```
 
 It is easy to see that `ω` has been set in the objective, and as the fixed value
@@ -86,10 +87,11 @@ julia> read("subproblem.lp") |> String |> print
 minimize
 obj: 3.3 x_out + 1 x4
 subject to
-balance: 1 x_in - 1 x_out - 1 y == 0
+balance: 1 x_in - 1 x_out - 1 y = 0
 Bounds
 x4 >= 0
-y == 3.3
+y = 3.3
+End
 
 julia> rm("subproblem.lp")  # Clean up.
 ```
