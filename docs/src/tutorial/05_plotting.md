@@ -145,7 +145,7 @@ See the [`SDDP.add_spaghetti`](@ref) documentation for all the arguments.
 
 Having built the plot, we now need to display it.
 
-```jldoctest tutorial_five
+```julia
 julia> SDDP.save(plt, "spaghetti_plot.html", open = true)
 ```
 
