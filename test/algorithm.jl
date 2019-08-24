@@ -271,8 +271,7 @@ end
 end
 
 @testset "simulate parallel" begin
-    Distributed.addprocs()
-    @everywhere import Pkg; Pkg.activate(".")
+    Distributed.addprocs(;exeflags="--project")
     @everywhere using SDDP, GLPK
     model = SDDP.LinearPolicyGraph(
             stages=2, lower_bound=0.0, optimizer=with_optimizer(GLPK.Optimizer),
