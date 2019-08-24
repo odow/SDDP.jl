@@ -98,6 +98,22 @@ end
     @test simulations[1][1][:x] == [SDDP.State(2.0, 1.0), SDDP.State(4.0, 2.0)]
 end
 
+@testset "simulate missing" begin
+    model = SDDP.LinearPolicyGraph(
+            stages=2, lower_bound=0.0, optimizer=with_optimizer(GLPK.Optimizer)
+    ) do sp, t
+        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
+        if t == 1
+            @variable(sp, y >= 0)
+        end
+        @stageobjective(sp, x[1].out + x[2].out)
+    end
+    @test_throws ErrorException SDDP.simulate(model, 1, [:y])
+    sims = SDDP.simulate(model, 1, [:y], skip_undefined_variables=true)
+    @test sims[1][1][:y] == 0.0
+    @test isnan(sims[1][2][:y])
+end
+
 @testset "infeasible model" begin
     model = SDDP.LinearPolicyGraph(
                 stages = 2,
