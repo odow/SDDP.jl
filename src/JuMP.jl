@@ -39,6 +39,7 @@ struct StateInfo
     in::JuMP.VariableInfo
     out::JuMP.VariableInfo
     initial_value::Float64
+    kwargs
 end
 
 function JuMP.build_variable(
@@ -59,7 +60,8 @@ function JuMP.build_variable(
             false, false # binary and integer
         ),
         info,
-        initial_value
+        initial_value,
+        kwargs
     )
 end
 

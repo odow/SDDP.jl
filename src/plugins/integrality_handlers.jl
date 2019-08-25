@@ -127,14 +127,18 @@ end
 # =========================== SDDiP ========================================== #
 
 """
-    SDDiP(; iteration_limit::Int = 100)
+    SDDiP(; iteration_limit::Int = 100, atol::Float64, rtol::Float64)
 
 The SDDiP integrality handler introduced by Zou, J., Ahmed, S. & Sun, X.A.
 Math. Program. (2019) 175: 461. Stochastic dual dynamic integer programming.
 https://doi.org/10.1007/s10107-018-1249-5.
 
-Calculates duals by solving the Lagrangian dual for each subproblem. All state
-variables are assumed to take nonnegative values only.
+Calculates duals by solving the Lagrangian dual for each subproblem. Kelley's
+method is used to compute Lagrange multipliers. `iteration_limit` controls the
+maximum number of iterations, and `atol` and `rtol` are the absolute and
+relative tolerances used in the termination criteria.
+
+All state variables are assumed to take nonnegative values only.
 """
 mutable struct SDDiP <: AbstractIntegralityHandler
     iteration_limit::Int
@@ -143,10 +147,15 @@ mutable struct SDDiP <: AbstractIntegralityHandler
     old_rhs::Vector{Float64}
     best_mult::Vector{Float64}
     slacks::Vector{GenericAffExpr{Float64, VariableRef}}
+    atol::Float64
+    rtol::Float64
 
-    function SDDiP(; iteration_limit::Int = 100)
+    function SDDiP(; iteration_limit::Int = 100, atol::Float64 = 1e-8,
+        rtol::Float64 = 1e-8)
         integrality_handler = new()
         integrality_handler.iteration_limit = iteration_limit
+        integrality_handler.atol = atol
+        integrality_handler.rtol = rtol
         return integrality_handler
     end
 end
@@ -185,16 +194,16 @@ function setup_state(
             JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars]))
             JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars]))
         else
-            initial_value = binexpand(float(state_info.initial_value), float(state_info.out.upper_bound), 0.1)
+            epsilon = (haskey(state_info.kwargs, :epsilon) ? state_info.kwargs[:epsilon] : 0.1)::Float64
+            initial_value = binexpand(float(state_info.initial_value), float(state_info.out.upper_bound), epsilon)
             num_vars = length(initial_value)
 
             binary_vars = JuMP.@variable(
                 subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
                 SDDP.State, Bin, initial_value = initial_value[i])
 
-            # TODO allow for user-specified epsilon in place of default precision 0.1
-            JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars], 0.1))
-            JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars], 0.1))
+            JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars], epsilon))
+            JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars], epsilon))
         end
     end
     return
@@ -207,7 +216,6 @@ function get_dual_variables(node::Node, integrality_handler::SDDiP)
     solver_obj = JuMP.objective_value(node.subproblem)
     try
         kelley_obj = _kelley(node, dual_vars, integrality_handler)::Float64
-        # TODO allow these tolerances to be modified
         @assert isapprox(solver_obj, kelley_obj, atol = 1e-8, rtol = 1e-8)
     catch e
         write_subproblem_to_file(node, "subproblem", throw_error = false)
@@ -230,7 +238,7 @@ function _solve_primal!(subgradients::Vector{Float64}, node::Node, dual_vars::Ve
     new_obj = old_obj + fact * dot(dual_vars, slacks)
     JuMP.set_objective_function(model, new_obj)
     JuMP.optimize!(model)
-    lagrangian_obj = JuMP.objective_value(model) # TODO moi/solver issue? gurobi/cplex can't get objective after modification
+    lagrangian_obj = JuMP.objective_value(model)
 
     # Reset old objective, update subgradients using slack values
     JuMP.set_objective_function(model, old_obj)
@@ -239,6 +247,8 @@ function _solve_primal!(subgradients::Vector{Float64}, node::Node, dual_vars::Ve
 end
 
 function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SDDiP)
+    atol = integrality_handler.atol
+    rtol = integrality_handler.rtol
     model = node.subproblem
     # Assume the model has been solved. Solving the MIP is usually very quick
     # relative to solving for the Lagrangian duals, so we cheat and use the
@@ -305,7 +315,7 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
         f_approx = JuMP.objective_value(approx_model)
 
         # More reliable than checking whether subgradient is zero
-        if isapprox(best_actual, f_approx, atol = 1e-8, rtol = 1e-8)
+        if isapprox(best_actual, f_approx, atol = atol, rtol = rtol)
             dual_vars .= best_mult
             if dualsense == JuMP.MOI.MIN_SENSE
                 dual_vars .*= -1

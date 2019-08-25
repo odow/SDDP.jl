@@ -205,3 +205,49 @@ end
             with_optimizer(GLPK.Optimizer), 3) == integrality_handler
     end
 end
+
+@testset "setup_state" begin
+    function new_model(add_state)
+        model = SDDP.PolicyGraph(SDDP.LinearGraph(2), lower_bound = 0.0,
+            integrality_handler = SDDP.SDDiP(),
+            direct_mode = false) do node, stage
+                add_state(node)
+            end
+        return model
+    end
+    bin_state(node) = @variable(node, x, SDDP.State, Bin, initial_value = 0)
+    model = new_model(bin_state)
+    for stage in 1:2
+        node = model[stage]
+        @test haskey(node.states, :x)
+        @test length(keys(node.states)) == 1
+        @test node.states[:x] == node.subproblem[:x]
+    end
+
+    int_noupper(node) = @variable(node, x, SDDP.State, Int, initial_value = 0)
+    @test_throws Exception new_model(int_noupper)
+    int_state(node) = @variable(node, x <= 5, SDDP.State, Int, initial_value = 0)
+    model = new_model(int_state)
+    first_state = Symbol("_bin_x[1]")
+    for stage in 1:2
+        node = model[stage]
+        @test haskey(node.states, first_state)
+        @test length(keys(node.states)) == 3
+    end
+    cont_noupper(node) = @variable(node, x, SDDP.State, initial_value = 0)
+    @test_throws Exception new_model(cont_noupper)
+    cont_state(node) = @variable(node, x <= 5, SDDP.State, initial_value = 0)
+    model = new_model(cont_state)
+    for stage in 1:2
+        node = model[stage]
+        @test haskey(node.states, first_state)
+        @test length(keys(node.states)) == 6
+    end
+    cont_state2(node) = @variable(node, x <= 5, SDDP.State, initial_value = 0, epsilon = 0.01)
+    model = new_model(cont_state2)
+    for stage in 1:2
+        node = model[stage]
+        @test haskey(node.states, first_state)
+        @test length(keys(node.states)) == 9
+    end
+end
