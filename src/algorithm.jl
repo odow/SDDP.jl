@@ -877,7 +877,8 @@ function _simulate(model::PolicyGraph{T},
                    variables::Vector{Symbol};
                    sampling_scheme::AbstractSamplingScheme,
                    custom_recorders::Dict{Symbol, Function},
-                   require_duals::Bool) where {T}
+                   require_duals::Bool,
+                   skip_undefined_variables::Bool) where {T}
     # Sample a scenario path.
     scenario_path, terminated_due_to_cycle = sample_scenario(
         model, sampling_scheme)
@@ -939,10 +940,13 @@ function _simulate(model::PolicyGraph{T},
                 # should be using Containers.SparseAxisArray, but this might not
                 # always be the case...
                 store[variable] = JuMP.value.(node.subproblem[variable])
+            elseif skip_undefined_variables
+                store[variable] = NaN
             else
                 error("No variable named $(variable) exists in the subproblem.",
                       " If you want to simulate the value of a variable, make ",
-                      "sure it is defined in _all_ subproblems.")
+                      "sure it is defined in _all_ subproblems, or pass ",
+                      "`skip_undefined_variables=true` to `simulate`.")
             end
         end
         # Loop through any custom recorders that the user provided.
@@ -964,7 +968,8 @@ end
              sampling_scheme::AbstractSamplingScheme =
                  InSampleMonteCarlo(),
              custom_recorders = Dict{Symbol, Function}(),
-             require_duals::Bool = true
+             require_duals::Bool = true,
+             skip_undefined_variables::Bool = false
      )::Vector{Vector{Dict{Symbol, Any}}}
 
 Perform a simulation of the policy model with `number_replications` replications
@@ -987,7 +992,7 @@ In addition to the special keys, the dictionary will contain the result of
 `JuMP.value(subproblem[key])` for each `key` in `variables`. This is
 useful to obtain the primal value of the state and control variables.
 
-For more complicated data, the `custom_recorders` keyword arguement can be used.
+For more complicated data, the `custom_recorders` keyword argument can be used.
 
     data = Dict{Symbol, Any}()
     for (key, recorder) in custom_recorders
@@ -997,9 +1002,9 @@ For more complicated data, the `custom_recorders` keyword arguement can be used.
 For example, to record the dual of a constraint named `my_constraint`, pass the
 following:
 
-    simulation_results = simulate(model, number_replications=2;
-        custom_recorders = Dict(
-            :constraint_dual = (sp) -> JuMP.dual(sp[:my_constraint])
+    simulation_results = SDDP.simulate(model, 2;
+        custom_recorders = Dict{Symbol, Function}(
+            :constraint_dual => (sp) -> JuMP.dual(sp[:my_constraint])
         )
     )
 
@@ -1010,6 +1015,10 @@ accessed as:
 
 If you do not require dual variables (or if they are not available), pass
 `require_duals = false`.
+
+If you attempt to simulate the value of a variable that is only defined in some
+of the stage problems, an error will be thrown. To over-ride this (and return a
+`NaN` instead), pass `skip_undefined_variables = true`.
 """
 function simulate(model::PolicyGraph,
                   number_replications::Int = 1,
@@ -1017,9 +1026,11 @@ function simulate(model::PolicyGraph,
                   sampling_scheme::AbstractSamplingScheme =
                       InSampleMonteCarlo(),
                   custom_recorders = Dict{Symbol, Function}(),
-                  require_duals::Bool = true)
+                  require_duals::Bool = true,
+                  skip_undefined_variables::Bool = false)
     return map(i -> _simulate(
             model, variables; sampling_scheme = sampling_scheme,
-            custom_recorders = custom_recorders, require_duals = require_duals),
+            custom_recorders = custom_recorders, require_duals = require_duals,
+            skip_undefined_variables = skip_undefined_variables),
         1:number_replications)
 end

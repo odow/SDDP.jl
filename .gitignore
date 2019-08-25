@@ -1,6 +1,7 @@
 *.log
 benchmark*
 docs/build/*
+docs/Manifest.toml
 docs/spaghetti_plot.html
 docs/src/examples/*.md
 test/*.js
