@@ -3,13 +3,18 @@
 #  distributed with this file, You can obtain one at
 #  http://mozilla.org/MPL/2.0/.
 
-function print_banner(io=stdout)
+function print_helper(f, io, args...)
+    f(stdout, args...)
+    f(io, args...)
+end
+
+function print_banner(io)
     println(io, "-------------------------------------------------------")
     println(io, "         SDDP.jl (c) Oscar Dowson, 2017-19")
     println(io)
 end
 
-function print_iteration_header(io=stdout)
+function print_iteration_header(io)
     println(io, " Iteration    Simulation       Bound         Time (s)")
 end
 
@@ -193,4 +198,28 @@ function numerical_stability_report(
         by_node::Bool=false, print::Bool=true, warn::Bool=true)
     numerical_stability_report(
         stdout, model, by_node=by_node, print=print, warn=warn)
+end
+
+###
+### Machine readable log
+###
+
+"""
+    write_log_to_csv(model::PolicyGraph, filename::String)
+
+Write the log of the most recent training to a csv for post-analysis.
+
+Assumes that the model has been trained via [`SDDP.train`](@ref).
+"""
+function write_log_to_csv(model::PolicyGraph, filename::String)
+    if model.most_recent_training_results === nothing
+        error("Unable to write the log to file because the model has not been trained.")
+    end
+    open(filename, "w") do io
+        println(io, "iteration, simulation, bound, time")
+        for log in model.most_recent_training_results.log
+            println(io, log.iteration, ", ", log.simulation_value, ", ",
+                log.bound, ", ", log.time)
+        end
+    end
 end

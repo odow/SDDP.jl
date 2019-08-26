@@ -19,13 +19,6 @@ export @stageobjective
 # Modelling interface.
 include("user_interface.jl")
 
-struct Log
-    iteration::Int
-    bound::Float64
-    simulation_value::Float64
-    time::Float64
-end
-
 # Default definitions for SDDP related modular utilities.
 include("plugins/headers.jl")
 
