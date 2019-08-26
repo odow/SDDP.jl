@@ -157,21 +157,6 @@ function get_outgoing_state(node::Node)
     return values
 end
 
-# Internal function: get the values of the dual variables associated with the
-# fixed incoming state variables. Requires node.subproblem to have been solved
-# with DualStatus == FeasiblePoint.
-function get_dual_variables(node::Node)
-    # Note: due to JuMP's dual convention, we need to flip the sign for
-    # maximization problems.
-    dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
-    values = Dict{Symbol, Float64}()
-    for (name, state) in node.states
-        ref = JuMP.FixRef(state.in)
-        values[name] = dual_sign * JuMP.dual(ref)
-    end
-    return values
-end
-
 # Internal function: set the objective of node to the stage objective, plus the
 # cost/value-to-go term.
 function set_objective(node::Node{T}) where T
@@ -271,6 +256,9 @@ function solve_subproblem(
     end
 
     JuMP.optimize!(node.subproblem)
+    state = get_outgoing_state(node)
+    stage_objective = stage_objective_value(node.stage_objective)
+    objective = JuMP.objective_value(node.subproblem)
 
     # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
@@ -281,17 +269,10 @@ function solve_subproblem(
     # variable. If require_duals=false, return an empty dictionary for
     # type-stability.
     dual_values = if require_duals
-        if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-            write_subproblem_to_file(node, "subproblem", throw_error = true)
-        end
-        get_dual_variables(node)
+        get_dual_variables(node, node.integrality_handler)
     else
         Dict{Symbol, Float64}()
     end
-
-    state = get_outgoing_state(node)
-    stage_objective = stage_objective_value(node.stage_objective)
-    objective = JuMP.objective_value(node.subproblem)
 
     if node.post_optimize_hook !== nothing
         node.post_optimize_hook(pre_optimize_ret)
@@ -686,98 +667,6 @@ function termination_status(model::PolicyGraph)
 end
 
 """
-    relax_integrality(model::JuMP.Model)
-
-Relax all binary and integer constraints in `model`.
-Returns two vectors:
-the first containing a list of binary variables and previous bounds,
-and the second containing a list of integer variables.
-
-See also [`enforce_integrality`](@ref).
-"""
-function relax_integrality(m::JuMP.Model)
-    # Note: if integrality restriction is added via @constraint then this loop doesn't catch it.
-    binaries = Tuple{JuMP.VariableRef, Float64, Float64}[]
-    integers = JuMP.VariableRef[]
-    # Run through all variables on model and unset integrality
-    for x in JuMP.all_variables(m)
-        if JuMP.is_binary(x)
-            x_lb, x_ub = NaN, NaN
-            JuMP.unset_binary(x)
-            # Store upper and lower bounds
-            if JuMP.has_lower_bound(x)
-                x_lb = JuMP.lower_bound(x)
-                JuMP.set_lower_bound(x, max(x_lb, 0.0))
-            else
-                JuMP.set_lower_bound(x, 0.0)
-            end
-            if JuMP.has_upper_bound(x)
-                x_ub = JuMP.upper_bound(x)
-                JuMP.set_upper_bound(x, min(x_ub, 1.0))
-            else
-                JuMP.set_upper_bound(x, 1.0)
-            end
-            push!(binaries, (x, x_lb, x_ub))
-        elseif JuMP.is_integer(x)
-            JuMP.unset_integer(x)
-            push!(integers, x)
-        end
-    end
-    return binaries, integers
-end
-
-"""
-    relax_integrality(model::PolicyGraph)
-
-Relax all binary and integer constraints in all subproblems in `model`. Return
-two vectors, the first containing a list of binary variables, and the second
-containing a list of integer variables.
-
-See also [`enforce_integrality`](@ref).
-"""
-function relax_integrality(model::PolicyGraph)
-    binaries = Tuple{JuMP.VariableRef, Float64, Float64}[]
-    integers = JuMP.VariableRef[]
-    for (key, node) in model.nodes
-        bins, ints = relax_integrality(node.subproblem)
-        append!(binaries, bins)
-        append!(integers, ints)
-    end
-    return binaries, integers
-end
-
-"""
-    enforce_integrality(
-        binaries::Vector{Tuple{JuMP.VariableRef, Float64, Float64}},
-        integers::Vector{VariableRef})
-
-Set all variables in `binaries` to `SingleVariable-in-ZeroOne()`, and all
-variables in `integers` to `SingleVariable-in-Integer()`.
-
-See also [`relax_integrality`](@ref).
-"""
-function enforce_integrality(
-    binaries::Vector{Tuple{JuMP.VariableRef, Float64, Float64}},
-    integers::Vector{VariableRef}
-)
-    JuMP.set_integer.(integers)
-    for (x, x_lb, x_ub) in binaries
-        if isnan(x_lb)
-            JuMP.delete_lower_bound(x)
-        else
-            JuMP.set_lower_bound(x, x_lb)
-        end
-        if isnan(x_ub)
-            JuMP.delete_upper_bound(x)
-        else
-            JuMP.set_upper_bound(x, x_ub)
-        end
-        JuMP.set_binary(x)
-    end
-    return
-end
-
-"""
     SDDP.train(model::PolicyGraph; kwargs...)
 
 Train the policy for `model`. Keyword arguments:
@@ -900,8 +789,8 @@ function train(
         end
     end
 
-    # Handle integrality
-    binaries, integers = relax_integrality(model)
+    # Perform relaxations required by integrality_handler
+    binaries, integers = relax_integrality(model, last(first(model.nodes)).integrality_handler)
 
     dashboard_callback = if dashboard
         launch_dashboard()

@@ -29,6 +29,10 @@ end
 # Default definitions for SDDP related modular utilities.
 include("plugins/headers.jl")
 
+# Tools for overloading JuMP functions
+include("binary_expansion.jl")
+include("JuMP.jl")
+
 # Printing utilities.
 include("print.jl")
 
@@ -40,6 +44,8 @@ include("plugins/risk_measures.jl")
 include("plugins/sampling_schemes.jl")
 include("plugins/bellman_functions.jl")
 include("plugins/stopping_rules.jl")
+include("plugins/integrality_handlers.jl")
+
 include("plugins/backward_sampling_schemes.jl")
 
 # Visualization related code.

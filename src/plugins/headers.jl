@@ -156,3 +156,63 @@ Returns a `Vector{Noise}` of noises sampled from `node.noise_terms` using
 `backward_sampling_scheme`
 """
 function sample_backward_noise_terms end
+
+# =========================== integrality_handlers =========================== #
+
+"""
+    AbstractIntegralityHandler
+
+The abstract type for the integrality handlers interface.
+"""
+abstract type AbstractIntegralityHandler end
+
+"""
+    update_integrality_handler!(
+        integrality_handler::AbstractIntegralityHandler,
+        optimizer::JuMP.OptimizerFactory, num_states::Int)
+
+Helper function to set up `integrality_handler`, allocating any necessary
+storage, given `num_states` state variables.
+"""
+function update_integrality_handler! end
+
+# Fallback
+update_integrality_handler!(integrality_handler::AbstractIntegralityHandler,
+    ::JuMP.OptimizerFactory, ::Int) = integrality_handler
+
+# Do nothing if no optimizer is set e.g. in tests
+update_integrality_handler!(integrality_handler::AbstractIntegralityHandler,
+    ::Nothing, ::Int) = integrality_handler
+
+"""
+    get_dual_variables(node::Node, integrality_handler::AbstractIntegralityHandler)
+
+Returns a `Dict{Symbol, Float64}` where the keys are the names of the state
+variables and the values are the dual variables associated with the fishing
+constraint at `node`.
+"""
+function get_dual_variables end
+
+"""
+    relax_integrality(model::PolicyGraph, integrality_handler::AbstractIntegralityHandler)
+
+Performs any binary/integer relaxations prior to the backward pass.
+Returns two vectors, the first containing a list of binary variables, and the
+second containing a list of integer variables. Integrality or binary constraints
+will be enforced for variables in these lists during policy simulation.
+
+See also [`enforce_integrality`](@ref).
+"""
+function relax_integrality end
+
+"""
+setup_state(
+        subproblem::JuMP.Model, state::State, state_info::StateInfo,
+        name::String,
+        integrality_handler::AbstractIntegralityHandler)
+
+Adds the state variable `state` to the node of `subproblem` and registers the
+initial root state in the policy graph of `subproblem`. May perform
+modifications needed by `integrality_handler.` Returns nothing.
+"""
+function setup_state end

@@ -20,11 +20,12 @@
 =#
 using SDDP, GLPK, Test
 
-function air_conditioning_model()
+function air_conditioning_model(integrality_handler)
     model = SDDP.LinearPolicyGraph(
             stages = 3, lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer)) do sp, stage
-        @variable(sp, stored_production >= 0, SDDP.State, initial_value = 0)
+            optimizer = with_optimizer(GLPK.Optimizer),
+            integrality_handler = integrality_handler) do sp, stage
+        @variable(sp, 0 <= stored_production <= 100, Int, SDDP.State, initial_value = 0)
         @variable(sp, 0 <= production <= 200, Int)
         @variable(sp, overtime >= 0, Int)
         @variable(sp, demand)
@@ -39,4 +40,6 @@ function air_conditioning_model()
     @test SDDP.calculate_bound(model) ≈ 62_500.0
 end
 
-air_conditioning_model()
+for integrality_handler in [SDDP.SDDiP(), SDDP.ContinuousRelaxation()]
+    air_conditioning_model(integrality_handler)
+end
