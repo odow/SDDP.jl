@@ -207,7 +207,7 @@ end
     SDDP.write_log_to_csv(model, "sddp.csv")
     log = read("sddp.csv", String)
     saved_log = """
-    iteration, bound, simulation_value, time
+    iteration, simulation, bound, time
     1, 3.0, 3.0, 2.993860960006714
     2, 3.0, 3.0, 2.994189739227295
     """

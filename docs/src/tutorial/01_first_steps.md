@@ -248,6 +248,10 @@ using [`SDDP.read_cuts_from_file`](@ref). Note that the model must have the same
 number (and names) of the state variables, as well as the same number and names
 of the nodes.
 
+You can also save the log to a CSV file using [`SDDP.write_log_to_csv`](@ref).
+This will create a CSV file with columns `iteration`, `simulation`, `bound`, and
+`time`.
+
 ## Simulating the policy
 
 Once you have a trained policy, you can simulate it using
