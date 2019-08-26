@@ -342,6 +342,18 @@ function post_optimize_hook(f::Function, node::Node)
     return
 end
 
+struct Log
+    iteration::Int
+    bound::Float64
+    simulation_value::Float64
+    time::Float64
+end
+
+struct TrainingResults
+    status::Symbol
+    log::Vector{Log}
+end
+
 mutable struct PolicyGraph{T}
     # Must be MOI.MIN_SENSE or MOI.MAX_SENSE
     objective_sense::MOI.OptimizationSense
@@ -356,7 +368,7 @@ mutable struct PolicyGraph{T}
     # Belief partition.
     belief_partition::Vector{Set{T}}
     # Storage for the most recent training results.
-    most_recent_training_results
+    most_recent_training_results::Union{Nothing, TrainingResults}
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol, Any}

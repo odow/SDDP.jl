@@ -648,11 +648,6 @@ function calculate_bound(model::PolicyGraph{T},
         zip(objectives, risk_adjusted_probability))
 end
 
-struct TrainingResults
-    status::Symbol
-    log::Vector{Log}
-end
-
 """
     termination_status(model::PolicyGraph)
 
@@ -736,20 +731,17 @@ function train(
     log_file_handle = open(log_file, "a")
 
     if print_level > 0
-        print_banner()
-        print_banner(log_file_handle)
+        print_helper(print_banner, log_file_handle)
     end
 
     if run_numerical_stability_report
-        # TODO: don't do this check twice.
-        numerical_stability_report(model, print = print_level > 0)
-        numerical_stability_report(
-            log_file_handle, model, print = print_level > 0)
+        report = sprint(
+            io -> numerical_stability_report(io, model, print=print_level>0))
+        print_helper(print, log_file_handle, report)
     end
 
     if print_level > 0
-        print_iteration_header()
-        print_iteration_header(log_file_handle)
+        print_helper(print_iteration_header, log_file_handle)
     end
     # Convert the vector to an AbstractStoppingRule. Otherwise if the user gives
     # something like stopping_rules = [SDDP.IterationLimit(100)], the vector
@@ -834,8 +826,7 @@ function train(
             dashboard_time += time() - dashboard_start
 
             if print_level > 0
-                print_iteration(stdout, log[end])
-                print_iteration(log_file_handle, log[end])
+                print_helper(print_iteration, log_file_handle, log[end])
             end
 
             iteration_count += 1
@@ -856,15 +847,12 @@ function train(
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
     if print_level > 0
-        print_footer(stdout, training_results)
-        print_footer(log_file_handle, training_results)
+        print_helper(print_footer, log_file_handle, training_results)
         if print_level > 1
-            TimerOutputs.print_timer(stdout, SDDP_TIMER)
-            TimerOutputs.print_timer(log_file_handle, SDDP_TIMER)
+            print_helper(TimerOutputs.print_timer, log_file_handle, SDDP_TIMER)
             # Annoyingly, TimerOutputs doesn't end the print section with `\n`,
             # so we do it here.
-            println(stdout)
-            println(log_file_handle)
+            print_helper(println, log_file_handle)
         end
     end
     close(log_file_handle)

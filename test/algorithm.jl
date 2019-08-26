@@ -191,3 +191,26 @@ end
     @test pre_optimize_called == 1
     @test post_optimize_called == 3
 end
+
+@testset "write_log_to_csv" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 2, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer)
+    ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
+        @stageobjective(node, x.out)
+        SDDP.parameterize(node, [stage], [1.0]) do ω
+            JuMP.set_lower_bound(x.out, ω)
+        end
+    end
+    @test_throws ErrorException SDDP.write_log_to_csv(model, "sddp.csv")
+    SDDP.train(model, iteration_limit = 2, print_level = 0)
+    SDDP.write_log_to_csv(model, "sddp.csv")
+    log = read("sddp.csv", String)
+    saved_log = """
+    iteration, bound, simulation_value, time
+    1, 3.0, 3.0, 2.993860960006714
+    2, 3.0, 3.0, 2.994189739227295
+    """
+    @test replace(log, r"[0-9\.]+\n" => "") == replace(saved_log, r"[0-9\.]+\n" => "")
+    rm("sddp.csv")
+end
