@@ -33,9 +33,9 @@ If you get an error like:
 run
 
 ```julia
-import Pkg
-Pkg.add("https://github.com/odow/MathOptFormat.jl.git")
-Pkg.add("https://github.com/odow/SDDP.jl.git")
+]
+add https://github.com/odow/MathOptFormat.jl.git
+add https://github.com/odow/SDDP.jl.git
 ```
 
 ### Want the old version?
