@@ -24,8 +24,8 @@ stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 You can install `SDDP.jl` as follows:
 
 ```julia
-import Pkg
-Pkg.add("https://github.com/odow/SDDP.jl.git")
+]
+add https://github.com/odow/SDDP.jl.git
 ```
 
 If you get an error like:
