@@ -62,11 +62,11 @@ We can check the file by reading it back in again.
 ```jldoctest tutorial_eight
 julia> read("subproblem.lp") |> String |> print
 minimize
-obj: 1.1 x_out + 1 x4
+obj: 1.1 x_out + 1 x2
 subject to
 balance: 1 x_in - 1 x_out - 1 y = 0
 Bounds
-x4 >= 0
+x2 >= 0
 y = 1.1
 End
 ```
@@ -85,11 +85,11 @@ julia> SDDP.write_subproblem_to_file(model[1], "subproblem", format=:lp)
 
 julia> read("subproblem.lp") |> String |> print
 minimize
-obj: 3.3 x_out + 1 x4
+obj: 3.3 x_out + 1 x2
 subject to
 balance: 1 x_in - 1 x_out - 1 y = 0
 Bounds
-x4 >= 0
+x2 >= 0
 y = 3.3
 End
 
@@ -109,10 +109,10 @@ julia> det_equiv = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Opti
 A JuMP Model
 Feasibility problem with:
 Variables: 24
+`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 10 constraints
 `VariableRef`-in-`MathOptInterface.EqualTo{Float64}`: 8 constraints
 `VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 6 constraints
 `VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 4 constraints
-`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 10 constraints
 Model mode: AUTOMATIC
 CachingOptimizer state: EMPTY_OPTIMIZER
 Solver name: GLPK
