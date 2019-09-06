@@ -48,6 +48,7 @@ end
 
 struct OutOfSampleMonteCarlo{T} <: AbstractSamplingScheme
     noise_terms::Dict{T, Vector{Noise}}
+    root_children::Vector{Noise{T}}
     children::Dict{T, Vector{Noise{T}}}
     terminate_on_cycle::Bool
     terminate_on_dummy_leaf::Bool
@@ -57,18 +58,27 @@ end
 """
     OutOfSampleMonteCarlo(
         f::Function, graph::PolicyGraph;
+        use_insample_transition::Bool = false,
         max_depth::Int = 0,
         terminate_on_cycle::Bool = false,
         terminate_on_dummy_leaf::Bool = true
     )
 
 Create a Monte Carlo sampler using out-of-sample probabilities and/or supports
-for the stagewise-independent noise terms, and out-of-sample probvabilities for
+for the stagewise-independent noise terms, and out-of-sample probabilities for
 the node-transition matrix.
 
 `f` is a function that takes the name of a node and returns a tuple containing a
 vector of new [`SDDP.Noise`](@ref) terms for the stagewise-independent noise,
 and a vector of new [`SDDP.Noise`](@ref) terms for the children of that node.
+
+If `f` is called with the name of the root node (e.g., `0` in a linear policy
+graph, `(0, 1)` in a Markovian Policy Graph), then return a vector of
+[`SDDP.Noise`](@ref) for the children of the root node.
+
+If `use_insample_transition`, the in-sample transition probabilities will be
+used. Therefore, `f` should only return a vector of the stagewise-independent
+noise terms, and `f` will not be called for the root node.
 
 If `terminate_on_cycle`, terminate the forward pass once a cycle is detected.
 If `max_depth > 0`, return once `max_depth` nodes have been sampled.
@@ -82,13 +92,23 @@ then `max_depth` must be set > 0.
 
     # Given linear policy graph `graph` with `T` stages:
     sampler = OutOfSampleMonteCarlo(graph) do node
-        noise_terms = [SDDP.Noise(1, 0.3), SDDP.Noise(2, 0.7)]
-        children = node < T ? [SDDP.Noise(node + 1, 1.0)] : SDDP.Noise{Int}[]
-        return noise_terms, children
+        if node == 0
+            return [SDDP.Noise(1, 1.0)]
+        else
+            noise_terms = [SDDP.Noise(node, 0.3), SDDP.Noise(node + 1, 0.7)]
+            children = node < T ? [SDDP.Noise(node + 1, 0.9)] : SDDP.Noise{Int}[]
+            return noise_terms, children
+        end
+    end
+
+    # Given linear policy graph `graph` with `T` stages:
+    sampler = OutOfSampleMonteCarlo(graph, use_insample_transition=true) do node
+        return [SDDP.Noise(node, 0.3), SDDP.Noise(node + 1, 0.7)]
     end
 """
 function OutOfSampleMonteCarlo(
     f::Function, graph::PolicyGraph{T};
+    use_insample_transition::Bool = false,
     max_depth::Int = 0,
     terminate_on_cycle::Bool = false,
     terminate_on_dummy_leaf::Bool = true
@@ -100,14 +120,24 @@ function OutOfSampleMonteCarlo(
     end
     noise_terms = Dict{T, Vector{Noise}}()
     children = Dict{T, Vector{Noise{T}}}()
+    root_children = if use_insample_transition
+        graph.root_children
+    else
+        f(graph.root_node)::Vector{Noise{T}}
+    end
     for key in keys(graph.nodes)
-        noise, child = f(key)
+        if use_insample_transition
+            noise, child = f(key)
+        else
+            child = graph.nodes[key].children
+            noise = f(key)
+        end
         noise_terms[key] = noise
         children[key] = child
     end
     return OutOfSampleMonteCarlo{T}(
-        noise_terms, children, terminate_on_cycle, terminate_on_dummy_leaf,
-        max_depth
+        noise_terms, root_children, children, terminate_on_cycle,
+        terminate_on_dummy_leaf, max_depth
     )
 end
 
@@ -144,8 +174,7 @@ end
 function get_root_children(
     sampling_scheme::OutOfSampleMonteCarlo{T}, graph::PolicyGraph{T}
 ) where {T}
-    error("TODO")
-    return nothing
+    return sampling_scheme.root_children
 end
 
 function sample_noise(noise_terms::Vector{<:Noise})
