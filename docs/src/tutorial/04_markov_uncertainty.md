@@ -113,7 +113,7 @@ A policy graph with 5 nodes.
 
 !!! tip
     For more information on [`SDDP.MarkovianPolicyGraph`](@ref)s, read
-    [Intermediate III: policy graphs](@ref).
+    [Create a general policy graph](@ref).
 
 ## Training and simulating the policy
 

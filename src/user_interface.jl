@@ -268,6 +268,12 @@ function MarkovianGraph(; stages::Int = 1,
     )
 end
 
+"""
+    Noise(support, probability)
+
+An atom of a discrete random variable at the point of support `support` and
+associated probability `probability`.
+"""
 struct Noise{T}
     # The noise term.
     term::T

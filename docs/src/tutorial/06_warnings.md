@@ -200,5 +200,5 @@ look out for.
   varies between models, but notice that `11.0` is quite close to `10.0`
   compared with `3.5` and `0.0`.
 
-This concludes our sixth tutorial for `SDDP.jl`. In our final basics tutorial,
-[Basic VII: modelling tips](@ref) we discuss some additional modelling tips.
+This concludes our sixth tutorial for `SDDP.jl`. You're now ready to start
+solving multistage stochastic programs with SDDP.jl!

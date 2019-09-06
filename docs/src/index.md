@@ -6,8 +6,8 @@ CurrentModule = SDDP
 
 !!! warning
     `SDDP.jl` under went a major re-write to be compatible with JuMP v0.19 and
-    Julia v1.0. The [Upgrading guide](@ref) has advice on how to upgrade your
-    existing `SDDP.jl` models.
+    Julia v1.0. The [Upgrade from the old SDDP.jl](@ref) guide has advice on
+    how to upgrade your existing `SDDP.jl` models.
 
 `SDDP.jl` is a package for solving large multistage convex stochastic
 programming problems using *stochastic dual dynamic programming*. In this
@@ -24,18 +24,7 @@ stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 You can install `SDDP.jl` as follows:
 
 ```julia
-]
-add https://github.com/odow/SDDP.jl.git
-```
-
-If you get an error like:
-`ERROR: Unsatisfiable requirements detected for package MathOptFormat`,
-run
-
-```julia
-]
-add https://github.com/odow/MathOptFormat.jl.git
-add https://github.com/odow/SDDP.jl.git
+julia> ] add https://github.com/odow/SDDP.jl.git
 ```
 
 ### Want the old version?

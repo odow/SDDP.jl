@@ -1,4 +1,4 @@
-# Basic VIII: debugging
+# Debug a model
 
 Building multistage stochastic programming models is hard. There are a lot of
 different pieces that need to be put together, and we typically have no idea of
@@ -126,7 +126,3 @@ julia> objective_value(det_equiv)
 !!! warning
     The determinstic equivalent scales poorly with problem size. Only use this
     on small problems!
-
-This concludes or series of basic introductory tutorials for `SDDP.jl`. When
-you're ready, continue to our intermediate series of tutorials, beginning with
-[Intermediate I: risk](@ref).

@@ -2,7 +2,7 @@
 CurrentModule = SDDP
 ```
 
-# Intermediate V: belief states
+# Advanced II: belief states
 
 `SDDP.jl` includes an implementation of the algorithm described in Dowson, O.,
 Morton, D.P., & Pagnoncelli, B. (2019). Partially observable multistage
@@ -14,7 +14,7 @@ In the mean-time, here is most of what you need to know.
 
 ## Defining the ambiguity partition
 
-Given a [`SDDP.Graph`](@ref) object (see [Intermediate III: policy graphs](@ref)
+Given a [`SDDP.Graph`](@ref) object (see [Create a general policy graph](@ref)
 for details), we can define the ambiguity partition using [`SDDP.add_ambiguity_set`](@ref).
 
 For example:
@@ -63,6 +63,3 @@ Partition
     (2, 2)
  }
 ```
-
-In the next tutorial, [Intermediate VI: performance](@ref), we discuss how to
-improve the computational performance of `SDDP.jl` models.
