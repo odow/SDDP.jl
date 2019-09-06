@@ -5,10 +5,16 @@
 
 # ========================= Monte Carlo Sampling Scheme ====================== #
 
+struct InSampleMonteCarlo <: AbstractSamplingScheme
+    max_depth::Int
+    terminate_on_cycle::Bool
+    terminate_on_dummy_leaf::Bool
+end
+
 """
     InSampleMonteCarlo(;
-        terminate_on_cycle = false,
         max_depth = 0,
+        terminate_on_cycle = false,
         terminate_on_dummy_leaf = true
     )
 
@@ -23,24 +29,126 @@ sampling a child node.
 Note that if `terminate_on_cycle = false` and `terminate_on_dummy_leaf = false`
 then `max_depth` must be set > 0.
 """
-struct InSampleMonteCarlo <: AbstractSamplingScheme
+function InSampleMonteCarlo(;
+    max_depth::Int = 0,
+    terminate_on_cycle::Bool = false,
+    terminate_on_dummy_leaf::Bool = true
+)
+    if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
+        error("terminate_on_cycle and terminate_on_dummy_leaf cannot both be " *
+              "false when max_depth=0."
+        )
+    end
+    return InSampleMonteCarlo(
+        max_depth, terminate_on_cycle, terminate_on_dummy_leaf
+    )
+end
+
+# ==================== OutOfSampleMonteCarlo Sampling Scheme ================= #
+
+struct OutOfSampleMonteCarlo{T} <: AbstractSamplingScheme
+    noise_terms::Dict{T, Vector{Noise}}
+    children::Dict{T, Vector{Noise{T}}}
     terminate_on_cycle::Bool
     terminate_on_dummy_leaf::Bool
     max_depth::Int
-    function InSampleMonteCarlo(;
-        terminate_on_cycle::Bool = false,
-        terminate_on_dummy_leaf::Bool = true,
-        max_depth::Int = 0)
-        if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
-            error("terminate_on_cycle and terminate_on_dummy_leaf cannot both" *
-                  " be false when max_depth=0.")
-        end
-        return new(terminate_on_cycle, terminate_on_dummy_leaf, max_depth)
-    end
 end
 
-# A helper utility for sampling a Noise using Monte Carlo.
-function sample_noise(::InSampleMonteCarlo, noise_terms::Vector{<:Noise})
+"""
+    OutOfSampleMonteCarlo(
+        f::Function, graph::PolicyGraph;
+        max_depth::Int = 0,
+        terminate_on_cycle::Bool = false,
+        terminate_on_dummy_leaf::Bool = true
+    )
+
+Create a Monte Carlo sampler using out-of-sample probabilities and/or supports
+for the stagewise-independent noise terms, and out-of-sample probvabilities for
+the node-transition matrix.
+
+`f` is a function that takes the name of a node and returns a tuple containing a
+vector of new [`SDDP.Noise`](@ref) terms for the stagewise-independent noise,
+and a vector of new [`SDDP.Noise`](@ref) terms for the children of that node.
+
+If `terminate_on_cycle`, terminate the forward pass once a cycle is detected.
+If `max_depth > 0`, return once `max_depth` nodes have been sampled.
+If `terminate_on_dummy_leaf`, terminate the forward pass with 1 - probability of
+sampling a child node.
+
+Note that if `terminate_on_cycle = false` and `terminate_on_dummy_leaf = false`
+then `max_depth` must be set > 0.
+
+### Example
+
+    # Given linear policy graph `graph` with `T` stages:
+    sampler = OutOfSampleMonteCarlo(graph) do node
+        noise_terms = [SDDP.Noise(1, 0.3), SDDP.Noise(2, 0.7)]
+        children = node < T ? [SDDP.Noise(node + 1, 1.0)] : SDDP.Noise{Int}[]
+        return noise_terms, children
+    end
+"""
+function OutOfSampleMonteCarlo(
+    f::Function, graph::PolicyGraph{T};
+    max_depth::Int = 0,
+    terminate_on_cycle::Bool = false,
+    terminate_on_dummy_leaf::Bool = true
+) where {T}
+    if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
+        error("terminate_on_cycle and terminate_on_dummy_leaf cannot both be " *
+              "false when max_depth=0."
+        )
+    end
+    noise_terms = Dict{T, Vector{Noise}}()
+    children = Dict{T, Vector{Noise{T}}}()
+    for key in keys(graph.nodes)
+        noise, child = f(key)
+        noise_terms[key] = noise
+        children[key] = child
+    end
+    return OutOfSampleMonteCarlo{T}(
+        noise_terms, children, terminate_on_cycle, terminate_on_dummy_leaf,
+        max_depth
+    )
+end
+
+function get_noise_terms(
+    sampling_scheme::InSampleMonteCarlo, node::Node{T}, node_index::T
+) where {T}
+    return node.noise_terms
+end
+
+function get_noise_terms(
+    sampling_scheme::OutOfSampleMonteCarlo{T}, node::Node{T}, node_index::T
+) where {T}
+    return sampling_scheme.noise_terms[node_index]
+end
+
+function get_children(
+    sampling_scheme::InSampleMonteCarlo, node::Node{T}, node_index::T
+) where {T}
+    return node.children
+end
+
+function get_children(
+    sampling_scheme::OutOfSampleMonteCarlo{T}, node::Node{T}, node_index::T
+) where {T}
+    return sampling_scheme.children[node_index]
+end
+
+function get_root_children(
+    sampling_scheme::InSampleMonteCarlo, graph::PolicyGraph{T}
+) where {T}
+    return graph.root_children
+end
+
+function get_root_children(
+    sampling_scheme::OutOfSampleMonteCarlo{T}, graph::PolicyGraph{T}
+) where {T}
+    error("TODO")
+    return nothing
+end
+
+function sample_noise(noise_terms::Vector{<:Noise})
     if length(noise_terms) == 0
         return nothing
     end
@@ -55,30 +163,28 @@ function sample_noise(::InSampleMonteCarlo, noise_terms::Vector{<:Noise})
             return noise.term
         end
     end
-    error("Internal SDDP error: unable to sample noise from $(noise_terms)" *
-          " using SDDP.InSampleMonteCarlo().")
+    error("Internal SDDP error: unable to sample noise from $(noise_terms)")
 end
 
-"""
-    sample_scenario(graph, ::InSampleMonteCarlo; kwargs...)
-
-Sample a scenario using the InSampleMonteCarlo sampler.
-"""
-function sample_scenario(graph::PolicyGraph{T},
-                         sampling_scheme::InSampleMonteCarlo) where T
+function sample_scenario(
+    graph::PolicyGraph{T},
+    sampling_scheme::Union{InSampleMonteCarlo, OutOfSampleMonteCarlo{T}}
+) where {T}
     # Storage for our scenario. Each tuple is (node_index, noise.term).
     scenario_path = Tuple{T, Any}[]
     # We only use visited_nodes if terminate_on_cycle=true. Just initialize
     # anyway.
     visited_nodes = Set{T}()
     # Begin by sampling a node from the children of the root node.
-    node_index = sample_noise(sampling_scheme, graph.root_children)::T
+    node_index = sample_noise(get_root_children(sampling_scheme, graph))::T
     while true
         node = graph[node_index]
-        noise = sample_noise(sampling_scheme, node.noise_terms)
+        noise_terms = get_noise_terms(sampling_scheme, node, node_index)
+        children = get_children(sampling_scheme, node, node_index)
+        noise = sample_noise(noise_terms)
         push!(scenario_path, (node_index, noise))
         # Termination conditions:
-        if length(node.children) == 0
+        if length(children) == 0
             # 1. Our node has no children, i.e., we are at a leaf node.
             return scenario_path, false
         elseif sampling_scheme.terminate_on_cycle && node_index in visited_nodes
@@ -88,7 +194,7 @@ function sample_scenario(graph::PolicyGraph{T},
             # 3. max_depth > 0 and we have explored max_depth number of nodes.
             return scenario_path, false
         elseif sampling_scheme.terminate_on_dummy_leaf &&
-                rand() < 1 - sum(child.probability for child in node.children)
+                rand() < 1 - sum(child.probability for child in children)
             # 4. we sample a "dummy" leaf node in the next step due to the
             # probability of the child nodes summing to less than one.
             return scenario_path, false
@@ -99,7 +205,7 @@ function sample_scenario(graph::PolicyGraph{T},
             push!(visited_nodes, node_index)
         end
         # Sample a new node to transition to.
-        node_index = sample_noise(sampling_scheme, node.children)::T
+        node_index = sample_noise(children)::T
     end
     # Throw an error because we should never end up here.
     error("Internal SDDP error: something went wrong sampling a scenario.")
@@ -164,5 +270,5 @@ function sample_scenario(graph::PolicyGraph{T},
                          # Ignore the other kwargs because the user is giving
                          # us the full scenario.
                          kwargs...) where {T, NoiseTerm}
-    return sample_noise(InSampleMonteCarlo(), sampling_scheme.scenarios), false
+    return sample_noise(sampling_scheme.scenarios), false
 end
