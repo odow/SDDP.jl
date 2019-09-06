@@ -127,12 +127,12 @@ function OutOfSampleMonteCarlo(
     end
     for key in keys(graph.nodes)
         if use_insample_transition
-            noise, child = f(key)
-        else
             child = graph.nodes[key].children
             noise = f(key)
+        else
+            noise, child = f(key)
         end
-        noise_terms[key] = noise
+        noise_terms[key] = convert(Vector{Noise}, noise)
         children[key] = child
     end
     return OutOfSampleMonteCarlo{T}(

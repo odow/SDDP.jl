@@ -49,6 +49,7 @@ SDDP.convergence_test
 SDDP.AbstractSamplingScheme
 SDDP.sample_scenario
 SDDP.InSampleMonteCarlo
+SDDP.OutOfSampleMonteCarlo
 ```
 
 ### Risk Measures
