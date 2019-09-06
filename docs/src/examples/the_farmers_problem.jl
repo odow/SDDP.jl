@@ -212,14 +212,14 @@ end
 # #### Random variables
 
 # Then, in the [`SDDP.parameterize`](@ref) function, we set the coefficient
-# using `JuMO.set_coefficient`.
+# using `JuMP.set_normalized_coefficient`.
 
 function second_stage_uncertainty(subproblem)
     @constraint(subproblem, uncertainty[c=CROPS],
         1.0 * subproblem[:area][c].in == subproblem[:yield][c])
     SDDP.parameterize(subproblem, [:good, :fair, :bad]) do ω
         for c in CROPS
-            JuMP.set_coefficient(
+            JuMP.set_normalized_coefficient(
                 uncertainty[c],
                 subproblem[:area][c].in,
                 MEAN_YIELD[c] * YIELD_MULTIPLIER[ω]

@@ -84,14 +84,14 @@ function vehicle_location_model(integrality_handler)
                 for b in bases, v in vehicles))
         end
     end
-    SDDP.train(model, iteration_limit = 50, print_level = 1)
+    SDDP.train(model, iteration_limit = 50, print_level = 0)
     if integrality_handler == SDDP.ContinuousRelaxation()
         @test isapprox(SDDP.calculate_bound(model), 1700, atol=5)
     end
 end
 
-# Solve a continuous relaxation only, tough for SDDiP
 for integrality_handler in [
+    # Solve a continuous relaxation only, tough for SDDiP
     # SDDP.SDDiP(),
     SDDP.ContinuousRelaxation()
     ]

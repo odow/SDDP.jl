@@ -61,7 +61,7 @@ julia> SDDP.simulate(model, 1);
 ## Noise in the constraint matrix
 
 `SDDP.jl` supports coefficients in the constraint matrix through the
-[`JuMP.set_coefficient`](http://www.juliaopt.org/JuMP.jl/v0.19/constraints/#JuMP.set_coefficient)
+[`JuMP.set_normalized_coefficient`](http://www.juliaopt.org/JuMP.jl/v0.20/constraints/#JuMP.set_normalized_coefficient)
 function.
 
 ```jldoctest; filter=r" \: .+?1.0"
@@ -71,7 +71,7 @@ julia> model = SDDP.LinearPolicyGraph(
            @variable(subproblem, x, SDDP.State, initial_value = 0.0)
            @constraint(subproblem, emissions, 1x.out <= 1)
            SDDP.parameterize(subproblem, [0.2, 0.5, 1.0]) do ω
-               JuMP.set_coefficient(emissions, x.out, ω)
+               JuMP.set_normalized_coefficient(emissions, x.out, ω)
                println(emissions)
            end
            @stageobjective(subproblem, -x.out)
@@ -86,15 +86,16 @@ emissions : 0.5 x_out <= 1.0
 ```
 
 !!! note
-    JuMP will canonicalize constraints by moving all variables to the left-hand
+    JuMP will normalize constraints by moving all variables to the left-hand
     side. Thus, `@constraint(model, 0 <= 1 - x.out)` becomes `x.out <= 1`.
-    `JuMP.set_coefficient` sets the coefficient on the _canonicalized_
+    `JuMP.set_normalized_coefficient` sets the coefficient on the _normalized_
     constraint.
 
 ## Integrality
 
 The fundamental reason why SDDP works is convexity. This necessitates continuous
-variables. If your model includes binary or integer variables (e.g., [`air_conditioning.jl`](https://github.com/odow/SDDP.jl/blob/master/examples/air_conditioning.jl))
+variables. If your model includes binary or integer variables (e.g.,
+[`air_conditioning.jl`](https://github.com/odow/SDDP.jl/blob/master/examples/air_conditioning.jl))
 `SDDP.jl` will contruct a (sub-optimal) policy using the continuous relaxation of the
 problem. But, when you simulate this policy, `SDDP.jl` will solve the original mixed-integer
 problem.

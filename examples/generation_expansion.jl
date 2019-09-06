@@ -50,12 +50,12 @@ function generation_expansion(integrality_handler)
         @expression(sp, investment_cost, build_cost * sum(invested[i].out - invested[i].in for i in 1:num_units))
         @stageobjective(sp, (investment_cost + generation * use_cost) * rho^(stage - 1) + penalty * unmet)
     end
-    SDDP.train(model, iteration_limit = 50, print_level = 1)
+    SDDP.train(model, iteration_limit = 50, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 2.078860e6 atol=1e3
 end
 
-# Solve a continuous relaxation only, tough for SDDiP
 for integrality_handler in [
+    # Solve a continuous relaxation only, tough for SDDiP
     # SDDP.SDDiP(),
     SDDP.ContinuousRelaxation()
     ]
