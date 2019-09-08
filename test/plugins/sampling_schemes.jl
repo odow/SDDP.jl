@@ -15,6 +15,10 @@ using SDDP, Test
                 JuMP.set_upper_bound(x, ω)
             end
         end
+        @test_throws ErrorException SDDP.InSampleMonteCarlo(
+            max_depth = 0, terminate_on_dummy_leaf = false,
+            terminate_on_cycle = false
+        )
         scenario, terminated_due_to_cycle = SDDP.sample_scenario(
             model, SDDP.InSampleMonteCarlo()
         )
@@ -63,6 +67,10 @@ end
                 JuMP.set_upper_bound(x, ω)
             end
         end
+        @test_throws ErrorException SDDP.OutOfSampleMonteCarlo(
+            (node) -> nothing, model, max_depth = 0,
+            terminate_on_dummy_leaf = false, terminate_on_cycle = false
+        )
         sampler = SDDP.OutOfSampleMonteCarlo(
             model, use_insample_transition = true
         ) do stage
