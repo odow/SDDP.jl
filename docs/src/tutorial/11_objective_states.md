@@ -2,7 +2,7 @@
 CurrentModule = SDDP
 ```
 
-# Intermediate IV: objective states
+# Advanced I: objective states
 
 There are many applications in which we want to model a price process that
 follows some auto-regressive process. Common examples include stock prices on
@@ -309,6 +309,3 @@ There are number of things to be aware of when using objective states.
     emptor](https://en.wikipedia.org/wiki/Caveat_emptor). It's up to you if this
     is a problem. If it isn't you'll get a good heuristic with no guarantee of
     global optimality.
-
-In the next tutorial, [Intermediate V: belief states](@ref), we discuss another
-extension to the SDDP algorithm that exploits a similar saddle function.

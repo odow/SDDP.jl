@@ -49,7 +49,17 @@ makedocs(
     strict = true,
     pages = [
         "Home" => "index.md",
-        "Upgrading guide" => "upgrading_guide.md",
+        "How-to guides" => Any[
+            "guides/risk.md",
+            "guides/stopping_rules.md",
+            "guides/generic_graphs.md",
+            "guides/debugging.md",
+            "guides/performance.md",
+            "guides/multidim_states.md",
+            "guides/multivariate_noise.md",
+            "guides/noise_constraint.md",
+            "guides/upgrading_guide.md"
+        ],
         "Tutorials" => Any[
             "Basic" => Any[
                 "tutorial/01_first_steps.md",
@@ -57,17 +67,12 @@ makedocs(
                 "tutorial/03_objective_uncertainty.md",
                 "tutorial/04_markov_uncertainty.md",
                 "tutorial/05_plotting.md",
-                "tutorial/06_warnings.md",
-                "tutorial/07_advanced_modelling.md",
-                "tutorial/08_debugging.md"
+                "tutorial/06_warnings.md"
             ],
-            "Intermediate" => Any[
-                "tutorial/11_risk.md",
-                "tutorial/12_stopping_rules.md",
-                "tutorial/13_generic_graphs.md",
-                "tutorial/14_objective_states.md",
-                "tutorial/15_belief_states.md",
-                "tutorial/16_performance.md"
+            "Advanced" => Any[
+                "tutorial/11_objective_states.md",
+                "tutorial/12_belief_states.md",
+                "tutorial/13_integrality.md"
             ]
         ],
         "Examples" => EXAMPLES,

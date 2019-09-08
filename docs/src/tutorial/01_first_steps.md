@@ -161,7 +161,7 @@ Wasn't that easy! Let's walk through some of the non-obvious features.
 
 !!! tip
     For more information on [`SDDP.LinearPolicyGraph`](@ref)s, read
-    [Intermediate III: policy graphs](@ref).
+    [Create a general policy graph](@ref).
 
 #### The keywords in the [`SDDP.LinearPolicyGraph`](@ref) constructor
 

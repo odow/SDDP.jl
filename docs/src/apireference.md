@@ -21,6 +21,7 @@ SDDP.PolicyGraph
 SDDP.parameterize
 SDDP.add_objective_state
 SDDP.objective_state
+SDDP.Noise
 ```
 
 ## Training the policy
@@ -55,6 +56,14 @@ SDDP.InSampleMonteCarlo
 ```@docs
 SDDP.AbstractRiskMeasure
 SDDP.adjust_probability
+```
+
+### Integrality handlers
+
+```@docs
+SDDP.AbstractIntegralityHandler
+SDDP.ContinuousRelaxation
+SDDP.SDDiP
 ```
 
 ## Simulating the policy

@@ -1,4 +1,4 @@
-# Intermediate II: stopping rules
+# Choose a stopping rule
 
 The theory of SDDP tells us that the algorithm converges to an optimal policy
 almost surely in a finite number of iterations. In practice, this number is very
@@ -40,7 +40,3 @@ SDDP.TimeLimit
 SDDP.Statistical
 SDDP.BoundStalling
 ```
-
-In the next tutorial, [Intermediate III: policy graphs](@ref), we discuss
-generic extensions to [`SDDP.LinearPolicyGraph`](@ref) and
-[`SDDP.MarkovianPolicyGraph`](@ref).

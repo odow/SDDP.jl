@@ -1,4 +1,4 @@
-# Intermediate III: policy graphs
+# Create a general policy graph
 
 ```@meta
 DocTestSetup = quote
@@ -147,6 +147,3 @@ literature.
 
 Note that the type of the names of all nodes (including the root node) must be
 the same. In this case, they are `Symbol`s.
-
-In the next tutorial, [Intermediate IV: objective states](@ref), we discuss how
-to model problems with stagewise-dependent objective uncertainty.

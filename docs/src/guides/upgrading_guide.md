@@ -1,4 +1,4 @@
-# Upgrading guide
+# Upgrade from the old SDDP.jl
 
 `SDDP.jl` under went a major re-write to be compatible with JuMP v0.19 and Julia
 v1.0.
@@ -187,4 +187,4 @@ the new syntax.
 #### Price interpolation
 
 The syntax for models with stagewise-dependent objective processes has
-completely changed. See [Intermediate IV: objective states](@ref) for details.
+completely changed. See [Advanced I: objective states](@ref) for details.

@@ -1,7 +1,7 @@
-# Intermediate VI: performance
+# Improve computational performance
 
-SDDP is a computationally intensive algorithm. In this tutorial, we give
-suggestions for how the computational performance can be improved.
+SDDP is a computationally intensive algorithm. Here are some suggestions for
+how the computational performance can be improved.
 
 ## Numerical stability (again)
 
