@@ -1,4 +1,4 @@
-# Add multi-dimensional state variables
+# Add a multi-dimensional state variable
 
 ```@meta
 DocTestSetup = quote
