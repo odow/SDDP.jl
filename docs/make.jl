@@ -31,50 +31,32 @@ for file in readdir(joinpath(@__DIR__, "src", "examples"))
     Literate.markdown(filename, dirname(filename); documenter=true)
 end
 
+const GUIDE_PAGES = Any[
+    "guides/$(page)"
+    for page in sort(readdir(joinpath(@__DIR__, "src", "guides")))
+]
+
+const TUTORIAL_PAGES = Any[
+    "tutorial/$(page)"
+    for page in sort(readdir(joinpath(@__DIR__, "src", "tutorial")))
+]
+
+const ASSETS = readdir(joinpath(@__DIR__, "src", "assets"))
+
 makedocs(
     sitename = "SDDP.jl",
     authors  = "Oscar Dowson",
     clean = true,
     doctest = FIX_DOCTESTS ? :fix : true,
     format = Documenter.HTML(
-        assets = [
-            "deterministic_linear_policy_graph.png",
-            "publication_plot.png",
-            "spaghetti_plot.html",
-            "stochastic_linear_policy_graph.png",
-            "stochastic_markovian_policy_graph.png"
-        ],
+        assets = ASSETS,
         # See https://github.com/JuliaDocs/Documenter.jl/issues/868
         prettyurls = get(ENV, "CI", nothing) == "true"),
     strict = true,
     pages = [
         "Home" => "index.md",
-        "How-to guides" => Any[
-            "guides/risk.md",
-            "guides/stopping_rules.md",
-            "guides/generic_graphs.md",
-            "guides/debugging.md",
-            "guides/performance.md",
-            "guides/multidim_states.md",
-            "guides/multivariate_noise.md",
-            "guides/noise_constraint.md",
-            "guides/upgrading_guide.md"
-        ],
-        "Tutorials" => Any[
-            "Basic" => Any[
-                "tutorial/01_first_steps.md",
-                "tutorial/02_adding_uncertainty.md",
-                "tutorial/03_objective_uncertainty.md",
-                "tutorial/04_markov_uncertainty.md",
-                "tutorial/05_plotting.md",
-                "tutorial/06_warnings.md"
-            ],
-            "Advanced" => Any[
-                "tutorial/11_objective_states.md",
-                "tutorial/12_belief_states.md",
-                "tutorial/13_integrality.md"
-            ]
-        ],
+        "How-to guides" => GUIDE_PAGES,
+        "Tutorials" => TUTORIAL_PAGES,
         "Examples" => EXAMPLES,
         "Reference" => "apireference.md"
     ],

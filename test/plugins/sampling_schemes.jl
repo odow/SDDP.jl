@@ -86,11 +86,10 @@ end
         sampler = SDDP.OutOfSampleMonteCarlo(
             model, use_insample_transition = false
         ) do stage
-            noise_terms = [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
             if stage == 0
                 return [SDDP.Noise(2, 1.0)]
             else
-                return noise_terms, SDDP.Noise{Int}[]
+                return SDDP.Noise{Int}[], [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
             end
         end
         scenario, terminated_due_to_cycle = SDDP.sample_scenario(model, sampler)

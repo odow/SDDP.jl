@@ -68,9 +68,10 @@ Create a Monte Carlo sampler using out-of-sample probabilities and/or supports
 for the stagewise-independent noise terms, and out-of-sample probabilities for
 the node-transition matrix.
 
-`f` is a function that takes the name of a node and returns a tuple containing a
-vector of new [`SDDP.Noise`](@ref) terms for the stagewise-independent noise,
-and a vector of new [`SDDP.Noise`](@ref) terms for the children of that node.
+`f` is a function that takes the name of a node and returns a tuple containing
+a vector of new [`SDDP.Noise`](@ref) terms for the children of that node, and
+a vector of new [`SDDP.Noise`](@ref) terms for the stagewise-independent
+noise.
 
 If `f` is called with the name of the root node (e.g., `0` in a linear policy
 graph, `(0, 1)` in a Markovian Policy Graph), then return a vector of
@@ -97,7 +98,7 @@ then `max_depth` must be set > 0.
         else
             noise_terms = [SDDP.Noise(node, 0.3), SDDP.Noise(node + 1, 0.7)]
             children = node < T ? [SDDP.Noise(node + 1, 0.9)] : SDDP.Noise{Int}[]
-            return noise_terms, children
+            return children, noise_terms
         end
     end
 
@@ -130,7 +131,7 @@ function OutOfSampleMonteCarlo(
             child = graph.nodes[key].children
             noise = f(key)
         else
-            noise, child = f(key)
+            child, noise = f(key)
         end
         noise_terms[key] = convert(Vector{Noise}, noise)
         children[key] = child
