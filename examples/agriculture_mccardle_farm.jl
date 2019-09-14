@@ -28,7 +28,7 @@ function test_mccardle_farm_model()
     q = [  # selling price per bale
         [4.5 4.5 4.5; 4.5 4.5 4.5; 4.5 4.5 4.5],
         [5.5 5.5 5.5; 5.5 5.5 5.5; 5.5 5.5 5.5],
-        [6.5 6.5 6.5; 6.5 6.5 6.5; 6.5 6.5 6.5]
+        [6.5 6.5 6.5; 6.5 6.5 6.5; 6.5 6.5 6.5],
     ]
     b = [  # predicted yield (bales/acres) from cutting i in weather j.
         30 75 37.5;
@@ -40,7 +40,7 @@ function test_mccardle_farm_model()
     r = [  # Cost per bale of hay from cutting i during weather condition j.
         [5 5 5; 5 5 5; 5 5 5],
         [6 6 6; 6 6 6; 6 6 6],
-        [7 7 7; 7 7 7; 7 7 7]
+        [7 7 7; 7 7 7; 7 7 7],
     ]
     M = 60.0  # max acreage for planting
     H = 0.0  # initial inventory
@@ -51,73 +51,85 @@ function test_mccardle_farm_model()
         ones(Float64, 1, 1),
         [0.14 0.69 0.17],
         [0.14 0.69 0.17; 0.14 0.69 0.17; 0.14 0.69 0.17],
-        [0.14 0.69 0.17; 0.14 0.69 0.17; 0.14 0.69 0.17]
+        [0.14 0.69 0.17; 0.14 0.69 0.17; 0.14 0.69 0.17],
     ])
 
-    model = SDDP.PolicyGraph(graph,
+    model =
+        SDDP.PolicyGraph(
+            graph,
             bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-            optimizer = with_optimizer(GLPK.Optimizer)
-                            ) do subproblem, index
-        stage, weather = index
+            optimizer = with_optimizer(GLPK.Optimizer),
+        ) do subproblem, index
+            stage, weather = index
         # ===================== State Variables =====================
         # Area planted.
-        @variable(subproblem, 0 <= acres <= M, SDDP.State, initial_value = M)
-        @variable(subproblem, bales[i = 1:3] >= 0,
-            SDDP.State, initial_value = (i == 1 ? H : 0))
-        # ===================== Variables =====================
-        @variables(subproblem, begin
-            buy[1:3] >= 0  # Quantity of bales to buy from each cutting.
-            sell[1:3] >= 0 # Quantity of bales to sell from each cutting.
-            eat[1:3] >= 0  # Quantity of bales to eat from each cutting.
-            pen_p[1:3] >= 0  # Penalties
-            pen_n[1:3] >= 0  # Penalties
-        end)
-        # ===================== Constraints =====================
-        if stage == 1
-            @constraint(subproblem, acres.out <= acres.in)
-            @constraint(subproblem, [i = 1:3], bales[i].in == bales[i].out)
-        else
-            @expression(subproblem, cut_ex[c=1:3],
-                bales[c].in + buy[c]  - eat[c] - sell[c] + pen_p[c] - pen_n[c])
-            @constraints(subproblem, begin
-                # Cannot plant more land than previously cropped.
-                acres.out <= acres.in
-                # In each stage we need to meet demand.
-                sum(eat) >= D[stage-1]
-                # We can buy and sell other cuttings.
-                bales[stage-1].out == cut_ex[stage - 1] +
-                    acres.in * b[stage - 1, weather]
-                [c = 1:3; c != stage - 1], bales[c].out == cut_ex[c]
-                # There is some maximum storage.
-                sum(bales[i].out for i in 1:3) <= w
-                # We can only sell what is in storage.
-                [c = 1:3], sell[c] <= bales[c].in
-                # Maximum sales quantity.
-                sum(sell) <= L
-            end)
-        end
-        # ===================== Stage objective =====================
-        if stage == 1
-            @stageobjective(subproblem, 0.0)
-        else
-            @stageobjective(subproblem,
-                1000 * (sum(pen_p) + sum(pen_n)) +
-                # cost of growing
-                C[stage - 1, weather] * acres.in +
-                sum(
-                    # inventory cost
-                    V[stage - 1] * bales[cutting].in * t[stage - 1] +
-                    # purchase cost
-                    r[cutting][stage - 1, weather] * buy[cutting] +
-                    # feed cost
-                    S[cutting, stage - 1] * eat[cutting] -
-                    # sell reward
-                    q[cutting][stage - 1, weather] * sell[cutting]
-                for cutting in 1:3)
+            @variable(subproblem, 0 <= acres <= M, SDDP.State, initial_value = M)
+            @variable(
+                subproblem,
+                bales[i = 1:3] >= 0,
+                SDDP.State,
+                initial_value = (i == 1 ? H : 0),
             )
+        # ===================== Variables =====================
+            @variables(subproblem, begin
+                buy[1:3] >= 0  # Quantity of bales to buy from each cutting.
+                sell[1:3] >= 0 # Quantity of bales to sell from each cutting.
+                eat[1:3] >= 0  # Quantity of bales to eat from each cutting.
+                pen_p[1:3] >= 0  # Penalties
+                pen_n[1:3] >= 0  # Penalties
+            end)
+        # ===================== Constraints =====================
+            if stage == 1
+                @constraint(subproblem, acres.out <= acres.in)
+                @constraint(subproblem, [i = 1:3], bales[i].in == bales[i].out)
+            else
+                @expression(
+                    subproblem,
+                    cut_ex[c = 1:3],
+                    bales[c].in + buy[c] - eat[c] - sell[c] + pen_p[c] - pen_n[c],
+                )
+                @constraints(
+                    subproblem,
+                    begin
+                # Cannot plant more land than previously cropped.
+                        acres.out <= acres.in
+                # In each stage we need to meet demand.
+                        sum(eat) >= D[stage-1]
+                # We can buy and sell other cuttings.
+                        bales[stage-1].out == cut_ex[stage-1] +
+                                              acres.in * b[stage-1, weather]
+                        [c = 1:3; c != stage - 1], bales[c].out == cut_ex[c]
+                # There is some maximum storage.
+                        sum(bales[i].out for i = 1:3) <= w
+                # We can only sell what is in storage.
+                        [c = 1:3], sell[c] <= bales[c].in
+                # Maximum sales quantity.
+                        sum(sell) <= L
+                    end,
+                )
+            end
+        # ===================== Stage objective =====================
+            if stage == 1
+                @stageobjective(subproblem, 0.0)
+            else
+                @stageobjective(
+                    subproblem,
+                    1000 * (sum(pen_p) + sum(pen_n)) +
+                # cost of growing
+                    C[stage-1, weather] * acres.in +
+                    sum(
+                    # inventory cost
+                    V[stage-1] * bales[cutting].in * t[stage-1] +
+                    # purchase cost
+                    r[cutting][stage-1, weather] * buy[cutting] +
+                    # feed cost
+                    S[cutting, stage-1] * eat[cutting] -
+                    # sell reward
+                    q[cutting][stage-1, weather] * sell[cutting] for cutting = 1:3),
+                )
+            end
+            return
         end
-        return
-    end
     SDDP.train(model, iteration_limit = 50, print_level = 0)
     @test SDDP.termination_status(model) == :iteration_limit
     @test SDDP.calculate_bound(model) ≈ 4074.1391 atol = 1e-5
