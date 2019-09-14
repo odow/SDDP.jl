@@ -8,7 +8,7 @@ struct Graph{T}
     root_node::T
     # nodes[x] returns a vector of the children of node x and their
     # probabilities.
-    nodes::Dict{T, Vector{Tuple{T, Float64}}}
+    nodes::Dict{T,Vector{Tuple{T,Float64}}}
     # A partition of the nodes into ambiguity sets.
     belief_partition::Vector{Vector{T}}
     belief_lipschitz::Vector{Vector{Float64}}
@@ -19,13 +19,12 @@ end
 
 Create an empty graph struture with the root node `root_node`.
 """
-function Graph(root_node::T) where T
+function Graph(root_node::T) where {T}
     return Graph{T}(
         root_node,
-        Dict{T, Vector{Tuple{T, Float64}}}(
-            root_node => Tuple{T, Float64}[]
-        ),
-        Vector{T}[], Vector{Float64}[]
+        Dict{T,Vector{Tuple{T,Float64}}}(root_node => Tuple{T,Float64}[]),
+        Vector{T}[],
+        Vector{Float64}[],
     )
 end
 
@@ -33,7 +32,7 @@ end
 # Markovian policy graphs where the nodes might be stored in an unusual ordering
 # in the dictionary.
 sort_nodes(nodes::Vector{Int}) = sort!(nodes)
-sort_nodes(nodes::Vector{Tuple{Int, Int}}) = sort!(nodes)
+sort_nodes(nodes::Vector{Tuple{Int,Int}}) = sort!(nodes)
 sort_nodes(nodes::Vector{Symbol}) = sort!(nodes)
 sort_nodes(nodes) = nodes
 
@@ -100,14 +99,14 @@ Add a node to the graph `graph`.
 
     add_node(graph, :A)
 """
-function add_node(graph::Graph{T}, node::T) where T
+function add_node(graph::Graph{T}, node::T) where {T}
     if haskey(graph.nodes, node) || node == graph.root_node
         error("Node $(node) already exists!")
     end
-    graph.nodes[node] = Tuple{T, Float64}[]
+    graph.nodes[node] = Tuple{T,Float64}[]
     return
 end
-function add_node(graph::Graph{T}, node) where T
+function add_node(graph::Graph{T}, node) where {T}
     error("Unable to add node $(node). Nodes must be of type $(T).")
 end
 
@@ -121,8 +120,7 @@ Add an edge to the graph `graph`.
     add_edge(graph, 1 => 2, 0.9)
     add_edge(graph, :root => :A, 1.0)
 """
-function add_edge(graph::Graph{T}, edge::Pair{T, T},
-                  probability::Float64) where T
+function add_edge(graph::Graph{T}, edge::Pair{T,T}, probability::Float64) where {T}
     (parent, child) = edge
     if !(parent == graph.root_node || haskey(graph.nodes, parent))
         error("Node $(parent) does not exist.")
@@ -153,7 +151,10 @@ state-space.
     add_ambiguity_set(graph, [3], [1e5])
 """
 function add_ambiguity_set(
-        graph::Graph{T}, set::Vector{T}, lipschitz::Vector{Float64}) where T
+    graph::Graph{T},
+    set::Vector{T},
+    lipschitz::Vector{Float64},
+) where {T}
     if any(l -> l < 0.0, lipschitz)
         error("Cannot provide negative Lipschitz constant: $(lipschitz)")
     elseif length(set) != length(lipschitz)
@@ -181,14 +182,20 @@ belief state associated with each node at any point in the state-space.
     add_ambiguity_set(graph, [3], 1e5)
 """
 function add_ambiguity_set(
-        graph::Graph{T}, set::Vector{T}, lipschitz::Float64=1e5) where T
+    graph::Graph{T},
+    set::Vector{T},
+    lipschitz::Float64 = 1e5,
+) where {T}
     return add_ambiguity_set(graph, set, fill(lipschitz, length(set)))
 end
 
-function Graph(root_node::T, nodes::Vector{T},
-               edges::Vector{Tuple{Pair{T, T}, Float64}};
-               belief_partition::Vector{Vector{T}} = Vector{T}[],
-               belief_lipschitz::Vector{Vector{Float64}} = Vector{Float64}[]) where {T}
+function Graph(
+    root_node::T,
+    nodes::Vector{T},
+    edges::Vector{Tuple{Pair{T,T},Float64}};
+    belief_partition::Vector{Vector{T}} = Vector{T}[],
+    belief_lipschitz::Vector{Vector{Float64}} = Vector{Float64}[],
+) where {T}
     graph = Graph(root_node)
     add_node.(Ref(graph), nodes)
     for (edge, probability) in edges
@@ -202,8 +209,8 @@ end
     LinearGraph(stages::Int)
 """
 function LinearGraph(stages::Int)
-    edges = Tuple{Pair{Int, Int}, Float64}[]
-    for t in 1:stages
+    edges = Tuple{Pair{Int,Int},Float64}[]
+    for t = 1:stages
         push!(edges, (t - 1 => t, 1.0))
     end
     return Graph(0, collect(1:stages), edges)
@@ -217,34 +224,36 @@ function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
         error("Expected the first transition matrix to be of size (1, N). It " *
               "is of size $(size(transition_matrices[1])).")
     end
-    node_type = Tuple{Int, Int}
+    node_type = Tuple{Int,Int}
     root_node = (0, 1)
     nodes = node_type[]
-    edges = Tuple{Pair{node_type, node_type}, Float64}[]
+    edges = Tuple{Pair{node_type,node_type},Float64}[]
     for (stage, transition) in enumerate(transition_matrices)
         if !all(transition .>= 0.0)
             error("Entries in the transition matrix must be non-negative.")
         end
-        if !all(0.0 .<= sum(transition; dims=2) .<= 1.0)
-            error("Rows in the transition matrix must sum to between 0.0 and " *
-                  "1.0.")
+        if !all(0.0 .<= sum(transition; dims = 2) .<= 1.0)
+            error("Rows in the transition matrix must sum to between 0.0 and " * "1.0.")
         end
         if stage > 1
             if size(transition_matrices[stage-1], 2) != size(transition, 1)
                 error("Transition matrix for stage $(stage) is the wrong size.")
             end
         end
-        for markov_state in 1:size(transition, 2)
+        for markov_state = 1:size(transition, 2)
             push!(nodes, (stage, markov_state))
         end
-        for markov_state in 1:size(transition, 2)
-            for last_markov_state in 1:size(transition, 1)
+        for markov_state = 1:size(transition, 2)
+            for last_markov_state = 1:size(transition, 1)
                 probability = transition[last_markov_state, markov_state]
                 if 0.0 < probability <= 1.0
-                    push!(edges, (
-                        (stage - 1, last_markov_state) => (stage, markov_state),
-                        probability
-                    ))
+                    push!(
+                        edges,
+                        (
+                         (stage - 1, last_markov_state) => (stage, markov_state),
+                         probability,
+                        ),
+                    )
                 end
             end
         end
@@ -259,13 +268,16 @@ end
 
 Construct a Markovian graph object.
 """
-function MarkovianGraph(; stages::Int = 1,
-                        transition_matrix::Matrix{Float64}=[1.0],
-                        root_node_transition::Vector{Float64}=[1.0])
-    return MarkovianGraph(
-        vcat([Base.reshape(root_node_transition, 1, length(root_node_transition))],
-             [transition_matrix for stage in 1:(stages - 1)])
-    )
+function MarkovianGraph(
+    ;
+    stages::Int = 1,
+    transition_matrix::Matrix{Float64} = [1.0],
+    root_node_transition::Vector{Float64} = [1.0],
+)
+    return MarkovianGraph(vcat(
+        [Base.reshape(root_node_transition, 1, length(root_node_transition))],
+        [transition_matrix for stage = 1:(stages-1)],
+    ))
 end
 
 """
@@ -290,18 +302,18 @@ end
 
 mutable struct ObjectiveState{N}
     update::Function
-    initial_value::NTuple{N, Float64}
-    state::NTuple{N, Float64}
-    lower_bound::NTuple{N, Float64}
-    upper_bound::NTuple{N, Float64}
-    μ::NTuple{N, JuMP.VariableRef}
+    initial_value::NTuple{N,Float64}
+    state::NTuple{N,Float64}
+    lower_bound::NTuple{N,Float64}
+    upper_bound::NTuple{N,Float64}
+    μ::NTuple{N,JuMP.VariableRef}
 end
 
 # Storage for belief-related things.
 struct BeliefState{T}
     partition_index::Int
-    belief::Dict{T, Float64}
-    μ::Dict{T, JuMP.VariableRef}
+    belief::Dict{T,Float64}
+    μ::Dict{T,JuMP.VariableRef}
     updater::Function
 end
 
@@ -318,24 +330,24 @@ mutable struct Node{T}
     # model based on the observation of the noise.
     parameterize::Function  # TODO(odow): make this a concrete type?
     # A list of the state variables in the model.
-    states::Dict{Symbol, State{JuMP.VariableRef}}
+    states::Dict{Symbol,State{JuMP.VariableRef}}
     # Stage objective
     stage_objective  # TODO(odow): make this a concrete type?
     stage_objective_set::Bool
     # Bellman function
     bellman_function  # TODO(odow): make this a concrete type?
     # For dynamic interpolation of objective states.
-    objective_state::Union{Nothing, ObjectiveState}
+    objective_state::Union{Nothing,ObjectiveState}
     # For dynamic interpolation of belief states.
-    belief_state::Union{Nothing, BeliefState{T}}
+    belief_state::Union{Nothing,BeliefState{T}}
     # An over-loadable hook for the JuMP.optimize! function.
-    pre_optimize_hook::Union{Nothing, Function}
-    post_optimize_hook::Union{Nothing, Function}
+    pre_optimize_hook::Union{Nothing,Function}
+    post_optimize_hook::Union{Nothing,Function}
     # Approach for handling discrete variables.
     integrality_handler # TODO either leave untyped or define ::AbstractIntegralityHandler
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
-    ext::Dict{Symbol, Any}
+    ext::Dict{Symbol,Any}
 end
 
 function pre_optimize_hook(f::Function, node::Node)
@@ -368,51 +380,61 @@ mutable struct PolicyGraph{T}
     # Children of the root node. child => probability.
     root_children::Vector{Noise{T}}
     # Starting value of the state variables.
-    initial_root_state::Dict{Symbol, Float64}
+    initial_root_state::Dict{Symbol,Float64}
     # All nodes in the graph.
-    nodes::Dict{T, Node{T}}
+    nodes::Dict{T,Node{T}}
     # Belief partition.
     belief_partition::Vector{Set{T}}
     # Storage for the most recent training results.
-    most_recent_training_results::Union{Nothing, TrainingResults}
+    most_recent_training_results::Union{Nothing,TrainingResults}
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
-    ext::Dict{Symbol, Any}
+    ext::Dict{Symbol,Any}
 
     function PolicyGraph(sense::Symbol, root_node::T) where {T}
-        optimization_sense = if sense == :Min
-            MOI.MIN_SENSE
-        elseif sense == :Max
-            MOI.MAX_SENSE
-        else
-            error("The optimization sense must be :Min or :Max. It is $(sense).")
-        end
+        optimization_sense =
+            if sense == :Min
+                MOI.MIN_SENSE
+            elseif sense == :Max
+                MOI.MAX_SENSE
+            else
+                error("The optimization sense must be :Min or :Max. It is $(sense).")
+            end
         return new{T}(
-            optimization_sense, root_node, Noise{T}[],  Dict{Symbol, Float64}(),
-            Dict{T, Node{T}}(), Set{T}[], nothing, Dict{Symbol, Any}())
+            optimization_sense,
+            root_node,
+            Noise{T}[],
+            Dict{Symbol,Float64}(),
+            Dict{T,Node{T}}(),
+            Set{T}[],
+            nothing,
+            Dict{Symbol,Any}(),
+        )
     end
 end
 
 function Base.show(io::IO, graph::PolicyGraph)
     println(io, "A policy graph with $(length(graph.nodes)) nodes.")
-    println(io, " Node indices: ",
-        join(sort_nodes(collect(keys(graph.nodes))), ", "))
+    println(io, " Node indices: ", join(sort_nodes(collect(keys(graph.nodes))), ", "))
 end
 
 # So we can query nodes in the graph as graph[node].
-function Base.getindex(graph::PolicyGraph{T}, index::T) where T
+function Base.getindex(graph::PolicyGraph{T}, index::T) where {T}
     return graph.nodes[index]
 end
 
 # Work around different JuMP modes (Automatic / Manual / Direct).
 function construct_subproblem(optimizer_factory, direct_mode::Bool)
-    subproblem = if direct_mode
-        instance = optimizer_factory.constructor(
-            optimizer_factory.args...; optimizer_factory.kwargs...)
-        JuMP.direct_model(instance)
-    else
-        JuMP.Model(optimizer_factory)
-    end
+    subproblem =
+        if direct_mode
+            instance = optimizer_factory.constructor(
+                optimizer_factory.args...;
+                optimizer_factory.kwargs...,
+            )
+            JuMP.direct_model(instance)
+        else
+            JuMP.Model(optimizer_factory)
+        end
     return subproblem
 end
 
@@ -420,8 +442,7 @@ end
 function construct_subproblem(optimizer_factory::Nothing, direct_mode::Bool)
     if direct_mode
         error("You must specify an optimizer in the form:\n" *
-              "    with_optimizer(Module.Opimizer, args...) if " *
-              "direct_mode=true.")
+              "    with_optimizer(Module.Opimizer, args...) if " * "direct_mode=true.")
     end
     return JuMP.Model()
 end
@@ -449,8 +470,11 @@ Create a Markovian policy graph based on the transition matrices given in
 
 See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
 """
-function MarkovianPolicyGraph(builder::Function;
-        transition_matrices::Vector{Array{Float64, 2}}, kwargs...)
+function MarkovianPolicyGraph(
+    builder::Function;
+    transition_matrices::Vector{Array{Float64,2}},
+    kwargs...,
+)
     return PolicyGraph(builder, MarkovianGraph(transition_matrices); kwargs...)
 end
 
@@ -486,14 +510,17 @@ Or, using the Julia `do ... end` syntax:
         # ... subproblem definitions ...
     end
 """
-function PolicyGraph(builder::Function, graph::Graph{T};
-                     sense = :Min,
-                     bellman_function = nothing,
-                     lower_bound = -Inf,
-                     upper_bound = Inf,
-                     optimizer = nothing,
-                     direct_mode = true,
-                     integrality_handler = ContinuousRelaxation()) where {T}
+function PolicyGraph(
+    builder::Function,
+    graph::Graph{T};
+    sense = :Min,
+    bellman_function = nothing,
+    lower_bound = -Inf,
+    upper_bound = Inf,
+    optimizer = nothing,
+    direct_mode = true,
+    integrality_handler = ContinuousRelaxation(),
+) where {T}
     # Spend a one-off cost validating the graph.
     _validate_graph(graph)
     # Construct a basic policy graph. We will add to it in the remainder of this
@@ -506,7 +533,9 @@ function PolicyGraph(builder::Function, graph::Graph{T};
                   "`lower_bound` if minimizing, or `upper_bound` if maximizing.")
         else
             bellman_function = BellmanFunction(
-                lower_bound = lower_bound, upper_bound = upper_bound)
+                lower_bound = lower_bound,
+                upper_bound = upper_bound,
+            )
         end
     end
     # Initialize nodes.
@@ -521,7 +550,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             Noise{T}[],
             Noise[],
             (ω) -> nothing,
-            Dict{Symbol, State{JuMP.VariableRef}}(),
+            Dict{Symbol,State{JuMP.VariableRef}}(),
             nothing,
             false,
             # Delay initializing the bellman function until later so that it can
@@ -537,7 +566,7 @@ function PolicyGraph(builder::Function, graph::Graph{T};
             nothing,
             integrality_handler,
             # The extension dictionary.
-            Dict{Symbol, Any}()
+            Dict{Symbol,Any}(),
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
@@ -560,7 +589,10 @@ function PolicyGraph(builder::Function, graph::Graph{T};
         end
         # Intialize the bellman function. (See note in creation of Node above.)
         node.bellman_function = initialize_bellman_function(
-            bellman_function, policy_graph, node)
+            bellman_function,
+            policy_graph,
+            node,
+        )
     end
     # Add root nodes
     for (child, probability) in graph.nodes[graph.root_node]
@@ -575,15 +607,13 @@ function PolicyGraph(builder::Function, graph::Graph{T};
 end
 
 # Internal function: set up ::BeliefState for each node.
-function initialize_belief_states(
-        policy_graph::PolicyGraph{T}, graph::Graph{T}) where {T}
+function initialize_belief_states(policy_graph::PolicyGraph{T}, graph::Graph{T}) where {T}
     # Pre-compute the function `belief_updater`. See `construct_belief_update`
     # for details.
-    belief_updater = construct_belief_update(
-        policy_graph, Set.(graph.belief_partition))
+    belief_updater = construct_belief_update(policy_graph, Set.(graph.belief_partition))
     # Initialize a belief dictionary (containing one element for each node in
     # the graph).
-    belief = Dict{T, Float64}(keys(graph.nodes) .=> 0.0)
+    belief = Dict{T,Float64}(keys(graph.nodes) .=> 0.0)
     delete!(belief, graph.root_node)
     # Now for each element in the partition...
     for (partition_index, partition) in enumerate(graph.belief_partition)
@@ -596,10 +626,9 @@ function initialize_belief_states(
             # Add the dual variable μ for the cut:
             # <b, μ> + θ ≥ α + <β, x>
             # We need one variable for each non-zero belief state.
-            μ = Dict{T, JuMP.VariableRef}()
+            μ = Dict{T,JuMP.VariableRef}()
             for (node_name, L) in zip(partition, graph.belief_lipschitz[partition_index])
-                μ[node_name] = @variable(
-                    node.subproblem, lower_bound = -L, upper_bound = L)
+                μ[node_name] = @variable(node.subproblem, lower_bound = -L, upper_bound = L)
             end
             add_initial_bounds(node, μ)
             # Attach the belief state as an extension.
@@ -607,7 +636,7 @@ function initialize_belief_states(
                 partition_index,
                 copy(belief),
                 μ,
-                belief_updater
+                belief_updater,
             )
         end
     end
@@ -662,12 +691,15 @@ arguments that are not in realizations (but still of type T).
         JuMP.set_upper_bound(x, ω)
     end
 """
-function parameterize(modify::Function,
-                      subproblem::JuMP.Model,
-                      realizations::AbstractVector{T},
-                      probability::AbstractVector{Float64} =
-                          fill(1.0 / length(realizations), length(realizations))
-                          ) where T
+function parameterize(
+    modify::Function,
+    subproblem::JuMP.Model,
+    realizations::AbstractVector{T},
+    probability::AbstractVector{Float64} = fill(
+        1.0 / length(realizations),
+        length(realizations),
+    ),
+) where {T}
     node = get_node(subproblem)
     if length(node.noise_terms) != 0
         error("Duplicate calls to SDDP.parameterize detected.")
@@ -705,17 +737,19 @@ Set the stage-objective of `subproblem` to `expr`.
     @stageobjective(subproblem, 2x + y)
 """
 macro stageobjective(subproblem, expr)
-    code = quote
-        set_stage_objective(
-            $(esc(subproblem)),
-            $(Expr(:macrocall,
-                Symbol("@expression"),
-                :LineNumber,
-                esc(subproblem),
-                esc(expr)
-            ))
-        )
-    end
+    code =
+        quote
+            set_stage_objective(
+                $(esc(subproblem)),
+                $(Expr(
+                    :macrocall,
+                    Symbol("@expression"),
+                    :LineNumber,
+                    esc(subproblem),
+                    esc(expr),
+                )),
+            )
+        end
     return code
 end
 
@@ -748,36 +782,69 @@ If the objective state is `N`-dimensional, each keyword argument must be an
 `NTuple{N, Float64}`. For example, `initial_value = (0.0, 1.0)`.
 """
 function add_objective_state(
-        update::Function, subproblem::JuMP.Model;
-        initial_value, lipschitz, lower_bound = -Inf, upper_bound = Inf)
-    return add_objective_state(update, subproblem, initial_value, lower_bound,
-        upper_bound, lipschitz)
+    update::Function,
+    subproblem::JuMP.Model;
+    initial_value,
+    lipschitz,
+    lower_bound = -Inf,
+    upper_bound = Inf,
+)
+    return add_objective_state(
+        update,
+        subproblem,
+        initial_value,
+        lower_bound,
+        upper_bound,
+        lipschitz,
+    )
 end
 
 # Internal function: add_objective_state with positional Float64 arguments.
 function add_objective_state(
-        update::Function, subproblem::JuMP.Model,
-        initial_value::Float64, lower_bound::Float64,
-        upper_bound::Float64, lipschitz::Float64)
-    return add_objective_state(update, subproblem, (initial_value,),
-        (lower_bound,), (upper_bound,), (lipschitz,))
+    update::Function,
+    subproblem::JuMP.Model,
+    initial_value::Float64,
+    lower_bound::Float64,
+    upper_bound::Float64,
+    lipschitz::Float64,
+)
+    return add_objective_state(
+        update,
+        subproblem,
+        (initial_value,),
+        (lower_bound,),
+        (upper_bound,),
+        (lipschitz,),
+    )
 end
 
 # Internal function: add_objective_state with positional NTuple arguments.
 function add_objective_state(
-        update::Function, subproblem::JuMP.Model,
-        initial_value::NTuple{N, Float64}, lower_bound::NTuple{N, Float64},
-        upper_bound::NTuple{N, Float64}, lipschitz::NTuple{N, Float64}) where {N}
+    update::Function,
+    subproblem::JuMP.Model,
+    initial_value::NTuple{N,Float64},
+    lower_bound::NTuple{N,Float64},
+    upper_bound::NTuple{N,Float64},
+    lipschitz::NTuple{N,Float64},
+) where {N}
     node = get_node(subproblem)
     if node.objective_state !== nothing
         error("add_objective_state can only be called once.")
     end
     μ = @variable(
-        subproblem, [i = 1:N],
-        lower_bound = -lipschitz[i], upper_bound = lipschitz[i])
+        subproblem,
+        [i = 1:N],
+        lower_bound = -lipschitz[i],
+        upper_bound = lipschitz[i],
+    )
     node.objective_state = ObjectiveState(
-        update, initial_value, initial_value, lower_bound, upper_bound,
-        tuple(μ...))
+        update,
+        initial_value,
+        initial_value,
+        lower_bound,
+        upper_bound,
+        tuple(μ...),
+    )
     return
 end
 
@@ -814,7 +881,7 @@ function get_objective_state_component(node::Node)
 end
 
 function build_Φ(graph::PolicyGraph{T}) where {T}
-    Φ = Dict{Tuple{T, T}, Float64}()
+    Φ = Dict{Tuple{T,T},Float64}()
     for (node_index_1, node_1) in graph.nodes
         for child in node_1.children
             Φ[(node_index_1, child.term)] = child.probability
@@ -846,21 +913,24 @@ the probability of being in node i given the observation of ω. In addition
  - P(Y) = ∑ᵢ P(Xᵢ′) × P(ω ∈ Ωᵢ)
 """
 function construct_belief_update(
-        graph::SDDP.PolicyGraph{T}, partition::Vector{Set{T}}) where {T}
+    graph::SDDP.PolicyGraph{T},
+    partition::Vector{Set{T}},
+) where {T}
     # TODO: check that partition is proper.
     Φ = build_Φ(graph)  # Dict{Tuple{T, T}, Float64}
-    Ω = Dict{T, Dict{Any, Float64}}()
+    Ω = Dict{T,Dict{Any,Float64}}()
     for (index, node) in graph.nodes
-        Ω[index] = Dict{Any, Float64}()
+        Ω[index] = Dict{Any,Float64}()
         for noise in node.noise_terms
             Ω[index][noise.term] = noise.probability
         end
     end
     function belief_updater(
-            outgoing_belief::Dict{T, Float64},
-            incoming_belief::Dict{T, Float64},
-            observed_partition::Int,
-            observed_noise)::Dict{T, Float64}
+        outgoing_belief::Dict{T,Float64},
+        incoming_belief::Dict{T,Float64},
+        observed_partition::Int,
+        observed_noise,
+    )::Dict{T,Float64}
         # P(Y) = ∑ᵢ Xᵢ × ∑ⱼ P(i->j) × P(ω ∈ Ωⱼ)
         PY = 0.0
         for (node_i, belief) in incoming_belief
@@ -873,14 +943,22 @@ function construct_belief_update(
             PY += belief * probability
         end
         if PY ≈ 0.0
-            error("Unable to update belief in partition ", observed_partition,
-                  " after observing ", observed_noise, ".The incoming belief ",
-                  "is:\n  ", incoming_belief)
+            error(
+                "Unable to update belief in partition ",
+                observed_partition,
+                " after observing ",
+                observed_noise,
+                ".The incoming belief ",
+                "is:\n  ",
+                incoming_belief,
+            )
         end
         # Now update each belief.
         for (node_i, belief) in incoming_belief
-            PX = sum(belief * get(Φ, (node_j, node_i), 0.0)
-                for (node_j, belief) in incoming_belief)
+            PX = sum(belief * get(Φ, (node_j, node_i), 0.0) for (
+                node_j,
+                belief,
+            ) in incoming_belief)
             PY_X = 0.0
             if node_i in partition[observed_partition]
                 PY_X += get(Ω[node_i], observed_noise, 0.0)
