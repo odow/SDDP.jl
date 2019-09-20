@@ -27,7 +27,7 @@ function widget_producer_example(DISCRETIZATION = 1)
     # distribution of price noises
     Φ = DiscreteDistribution([-0.050, -0.025, 0.0, 0.025, 0.050])
     # Minimum price
-    Pₗ  = 0.0
+    Pₗ = 0.0
     # Maximum price
     Pᵤ = 2.0
     # Price dynamics
@@ -38,118 +38,122 @@ function widget_producer_example(DISCRETIZATION = 1)
         return price - ρ * (price - μ) + noise
     end
 
-    value_function = if DISCRETIZATION == 1
-        (t,i) -> DynamicPriceInterpolation(
-            dynamics       = (p,w) -> pricedynamics(p,w,t,i),
-            initial_price  = P₀,
-            min_price      = Pₗ,
-            max_price      = Pᵤ,
-            noise          = Φ
-        )
-    else
-        (t,i) -> StaticPriceInterpolation(
-            dynamics       = (p,w) -> pricedynamics(p,w,t,i),
-            initial_price  = P₀,
+    value_function =
+        if DISCRETIZATION == 1
+            (t, i) -> DynamicPriceInterpolation(
+                dynamics = (p, w) -> pricedynamics(p, w, t, i),
+                initial_price = P₀,
+                min_price = Pₗ,
+                max_price = Pᵤ,
+                noise = Φ,
+            )
+        else
+            (t, i) -> StaticPriceInterpolation(
+                dynamics = (p, w) -> pricedynamics(p, w, t, i),
+                initial_price = P₀,
             # we need to ensure the ribs are not binding on the edge of the
             # price domain because sometimes the duals can be weird / numeric
             # error happens in the interpolation. I still haven't isolated the
             # exact cause, this this seems to fix the problem.
-            rib_locations  =  collect(linspace(Pₗ, Pᵤ, DISCRETIZATION)),
-            noise          = Φ
-        )
-    end
+                rib_locations = collect(linspace(Pₗ, Pᵤ, DISCRETIZATION)),
+                noise = Φ,
+            )
+        end
 
-    m = SDDPModel(
-        sense             = :Max,
-        stages            = T,
-        objective_bound   = 50.0,
-        solver            = ClpSolver(),
+    m =
+        SDDPModel(
+            sense = :Max,
+            stages = T,
+            objective_bound = 50.0,
+            solver = ClpSolver(),
         # risk_measure      = EAVaR(lambda=0.5, beta=0.25),
-        value_function    = value_function
-                                            ) do sp, t
+            value_function = value_function,
+        ) do sp, t
         #=
-        Data that defines problem size
-        =#
+                Data that defines problem size
+                =#
         # Perishability
-        λ = [0.98, 0.98]
-        P = length(λ)
+            λ = [0.98, 0.98]
+            P = length(λ)
         # Contango
-        γ = [1.0, 1.1]
-        M = length(γ)
+            γ = [1.0, 1.1]
+            M = length(γ)
         # production shut-down probability
-        Ω = DiscreteDistribution([1.0, 0.0], [0.98, 0.02])
+            Ω = DiscreteDistribution([1.0, 0.0], [0.98, 0.02])
         # transaction costs
-        ψ = 0.01
+            ψ = 0.01
         # spot premium to buy
-        κ = 5.0
+            κ = 5.0
         # max contracts to sell
-        cₘ = 10
+            cₘ = 10
 
-        @states(sp, begin
-            C[1:M] >= 0, C0 == 0 # number of contracts in future months 1,2,M
-            S[1:P] >= 0, S0 == 0 # stock levels in perishability levels
-            w      >= 0, w0 == 1 # factory is operating 1=true, 0=false
-        end)
-        @variables(sp, begin
-            d[1:P] >= 0 # deliver to contracts from perishability level p
-            s[1:P] >= 0 # sell on spot market from perishability level p
-            c[1:M] >= 0 # sell contracts m months in the future
-            b      >= 0 # buy widgets from spot
-        end)
-        @constraints(sp, begin
+            @states(sp, begin
+                C[1:M] >= 0, C0 == 0 # number of contracts in future months 1,2,M
+                S[1:P] >= 0, S0 == 0 # stock levels in perishability levels
+                w >= 0, w0 == 1 # factory is operating 1=true, 0=false
+            end)
+            @variables(sp, begin
+                d[1:P] >= 0 # deliver to contracts from perishability level p
+                s[1:P] >= 0 # sell on spot market from perishability level p
+                c[1:M] >= 0 # sell contracts m months in the future
+                b >= 0 # buy widgets from spot
+            end)
+            @constraints(sp, begin
             # age contracts + new sales
-            [m=1:(M-1)], C[m] == C0[m+1] + c[m]
+                [m = 1:(M-1)], C[m] == C0[m+1] + c[m]
             # in final month, only new sales
-            C[M] == c[M]
+                C[M] == c[M]
             # cannot sell more than cₘ
-            c .<= cₘ
+                c .<= cₘ
 
             # factory cannot restart once shut
-            w <= w0
+                w <= w0
 
             # initial stock is production plus buys,
             # less spot sales and deliveries.
             # if factory is operating (w=1), one unit is produced, otherwise,
             # 0 units are produced.
-            S[1] == w - s[1] - d[1] + b
+                S[1] == w - s[1] - d[1] + b
             # age the stock less spot sales and deliveries
-            [p=2:P], S[p] == λ[p] * S0[p-1] - s[p] - d[p]
+                [p = 2:P], S[p] == λ[p] * S0[p-1] - s[p] - d[p]
 
             # ensure deliveries meet contracted amount
-            C0[1] == sum(d[p] for p in 1:P)
+                C0[1] == sum(d[p] for p = 1:P)
 
             # can't offer a contract past final stage
-            [m=1:M; m>T-t], c[m] == 0
-        end)
-        if t != 1
+                [m = 1:M; m > T - t], c[m] == 0
+            end)
+            if t != 1
             # first stage is deterministic
             # otherwise there is a smal probabilty of shut-down
-            @rhsnoise(sp, ω=Ω, w <= SDDP.observation(ω))
-            setnoiseprobability!(sp, [SDDP.probability(ω) for ω in Ω])
-        end
+                @rhsnoise(sp, ω = Ω, w <= SDDP.observation(ω))
+                setnoiseprobability!(sp, [SDDP.probability(ω) for ω in Ω])
+            end
 
-        @stageobjective(sp, price -> price * (
+            @stageobjective(
+                sp,
+                price -> price *
+                         (
                 # spot sales
-                sum(s[p] for p in 1:P) +
+                sum(s[p] for p = 1:P) +
                 # contracts with contango
-                sum(γ[m] * c[m] for m in 1:M) -
+                sum(γ[m] * c[m] for m = 1:M) -
                 # spot buys
                 κ * b
                 # transaction cost
-            ) - ψ * sum(c[m] for m in 1:M)
-        )
-    end
+        ) - ψ * sum(c[m] for m = 1:M),
+            )
+        end
     return m
 end
 
 m = widget_producer_example()
 srand(123)
-status = SDDP.solve(m,
-    time_limit     = 5.0,
-    simulation = MonteCarloSimulation(
-        frequency = 100, min=100, step=100,max=1000
-    ),
-    print_level = 0
+status = SDDP.solve(
+    m,
+    time_limit = 5.0,
+    simulation = MonteCarloSimulation(frequency = 100, min = 100, step = 100, max = 1000),
+    print_level = 0,
 )
 @test status == :time_limit
 results = simulate(m, 1000, [:C, :S, :price, :s, :d, :b])

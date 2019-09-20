@@ -20,17 +20,12 @@
 using SDDP, JuMP, Clp, Base.Test
 
 # Initialise SDDP Model
-m = SDDPModel(
-                  sense = :Min,
-                 stages = 3,
-                 solver = ClpSolver(),
-        objective_bound = 0
-                                        ) do sp, t
+m = SDDPModel(sense = :Min, stages = 3, solver = ClpSolver(), objective_bound = 0) do sp, t
 
     # ------------------------------------------------------------------
     #   SDDP State Variables
     # Level of upper reservoir
-    @state(sp,    0 <= v <= 200, v0 == 50)
+    @state(sp, 0 <= v <= 200, v0 == 50)
 
     # ------------------------------------------------------------------
     #   Additional variables
@@ -42,7 +37,7 @@ m = SDDPModel(
     # s  - spillway
     @variable(sp, 0 <= g[1:2] <= 100)
     @variable(sp, 0 <= u <= 150)
-    @variable(sp, s >= 0 )
+    @variable(sp, s >= 0)
 
     # ------------------------------------------------------------------
     #   Constraints
@@ -55,29 +50,30 @@ m = SDDPModel(
     @rhsnoise(sp, a = linspace(50, 0, 10), v + u + s == v0 + a)
 
     # Objective function
-    @stageobjective(sp, 100*g[1] + 1000*g[2] )
+    @stageobjective(sp, 100 * g[1] + 1000 * g[2])
 end
 
 # For repeatability
 srand(11111)
 
-solvestatus = solve(m,
+solvestatus = solve(
+    m,
     iteration_limit = 20,
-    time_limit     = 600,
-    simulation     = MonteCarloSimulation(
-                        frequency = 5,
-                        min       = 10,
-                        step      = 10,
-                        max       = 100,
-                        terminate = true
-                    ),
-     print_level=0
+    time_limit = 600,
+    simulation = MonteCarloSimulation(
+        frequency = 5,
+        min = 10,
+        step = 10,
+        max = 100,
+        terminate = true,
+    ),
+    print_level = 0,
 )
 
 @test solvestatus == :converged
-@test isapprox(getbound(m), 57295, atol=1e-2)
+@test isapprox(getbound(m), 57295, atol = 1e-2)
 
-result = simulate(m, [:g, :u, :s, :demand_eq], noises=[1,1,1])
+result = simulate(m, [:g, :u, :s, :demand_eq], noises = [1, 1, 1])
 @test result[:g] == [[100.0, 0.0], [100.0, 0.0], [50.0, 0.0]]
 @test result[:u] == [50.0, 50.0, 100.0]
 @test result[:s] == [0, 0, 0]

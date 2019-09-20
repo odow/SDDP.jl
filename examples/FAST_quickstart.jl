@@ -11,22 +11,24 @@
 using SDDP, GLPK, Test
 
 function fast_quickstart()
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                bellman_function = SDDP.BellmanFunction(lower_bound = -5),
-                optimizer = with_optimizer(GLPK.Optimizer)
-                        ) do sp, t
-        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-        if t == 1
-            @stageobjective(sp, x.out)
-        else
-            @variable(sp, s >= 0)
-            @constraint(sp, s <= x.in)
-            SDDP.parameterize(sp, [2, 3]) do ω
-                JuMP.set_upper_bound(s, ω)
+    model =
+        SDDP.PolicyGraph(
+            SDDP.LinearGraph(2),
+            bellman_function = SDDP.BellmanFunction(lower_bound = -5),
+            optimizer = with_optimizer(GLPK.Optimizer),
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            if t == 1
+                @stageobjective(sp, x.out)
+            else
+                @variable(sp, s >= 0)
+                @constraint(sp, s <= x.in)
+                SDDP.parameterize(sp, [2, 3]) do ω
+                    JuMP.set_upper_bound(s, ω)
+                end
+                @stageobjective(sp, -2s)
             end
-            @stageobjective(sp, -2s)
         end
-    end
 
     det = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
     JuMP.optimize!(det)

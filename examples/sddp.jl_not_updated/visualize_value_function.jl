@@ -12,37 +12,41 @@ wb = [1.14, 1.12]
 Phi = [-1, 5]
 Psi = [0.02, 0.0]
 
-m = SDDPModel(
-    sense = :Min,
-    stages = 4,
-    objective_bound = -1000.0,
-    solver = ClpSolver(),
-    markov_transition = Array{Float64, 2}[
-        [1.0]',
-        [0.5 0.5],
-        [0.5 0.5; 0.5 0.5],
-        [0.5 0.5; 0.5 0.5]
-    ],
-    risk_measure = [Expectation(), Expectation(), EAVaR(lambda = 0.5, beta=0.5), Expectation()]
-                            ) do sp, t, i
-    @state(sp, xs >= 0, xsbar==0)
-    @state(sp, xb >= 0, xbbar==0)
-    if t == 1
-        @constraint(sp, xs + xb == 55 + xsbar + xbbar)
-        @stageobjective(sp, 0)
-    elseif t == 2 || t == 3
-        @rhsnoise(sp, phi=Phi, ws[i] * xsbar +
-            wb[i] * xbbar + phi == xs + xb)
-        @stageobjective(sp, psi = Psi, -psi * xs)
-        setnoiseprobability!(sp, [0.6, 0.4])
-    else
-        @variable(sp, u  >= 0)
-        @variable(sp, v >= 0)
-        @constraint(sp, ws[i] * xsbar + wb[i] * xbbar +
-            u - v == 80)
-        @stageobjective(sp, 4u - v)
+m =
+    SDDPModel(
+        sense = :Min,
+        stages = 4,
+        objective_bound = -1000.0,
+        solver = ClpSolver(),
+        markov_transition = Array{Float64,2}[
+            [1.0]',
+            [0.5 0.5],
+            [0.5 0.5; 0.5 0.5],
+            [0.5 0.5; 0.5 0.5],
+        ],
+        risk_measure = [
+            Expectation(),
+            Expectation(),
+            EAVaR(lambda = 0.5, beta = 0.5),
+            Expectation(),
+        ],
+    ) do sp, t, i
+        @state(sp, xs >= 0, xsbar == 0)
+        @state(sp, xb >= 0, xbbar == 0)
+        if t == 1
+            @constraint(sp, xs + xb == 55 + xsbar + xbbar)
+            @stageobjective(sp, 0)
+        elseif t == 2 || t == 3
+            @rhsnoise(sp, phi = Phi, ws[i] * xsbar + wb[i] * xbbar + phi == xs + xb)
+            @stageobjective(sp, psi = Psi, -psi * xs)
+            setnoiseprobability!(sp, [0.6, 0.4])
+        else
+            @variable(sp, u >= 0)
+            @variable(sp, v >= 0)
+            @constraint(sp, ws[i] * xsbar + wb[i] * xbbar + u - v == 80)
+            @stageobjective(sp, 4u - v)
+        end
     end
-end
 
 srand(111)
 status = solve(m, iteration_limit = 30, print_level = 0)

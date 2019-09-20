@@ -9,21 +9,19 @@ function infinite_trivial()
     graph = SDDP.Graph(
         :root_node,
         [:week],
-        [(:root_node => :week, 1.0), (:week => :week, 0.9)]
+        [(:root_node => :week, 1.0), (:week => :week, 0.9)],
     )
-    model = SDDP.PolicyGraph(graph,
-                bellman_function = SDDP.BellmanFunction(lower_bound = 0),
-                optimizer = with_optimizer(GLPK.Optimizer)
-                    ) do subproblem, node
-        @variable(subproblem, state, SDDP.State, initial_value = 0)
-        @constraint(subproblem, state.in == state.out)
-        @stageobjective(subproblem, 2.0)
-    end
-    SDDP.train(
-        model;
-        iteration_limit = 100,
-        print_level = 0
-    )
+    model =
+        SDDP.PolicyGraph(
+            graph,
+            bellman_function = SDDP.BellmanFunction(lower_bound = 0),
+            optimizer = with_optimizer(GLPK.Optimizer),
+        ) do subproblem, node
+            @variable(subproblem, state, SDDP.State, initial_value = 0)
+            @constraint(subproblem, state.in == state.out)
+            @stageobjective(subproblem, 2.0)
+        end
+    SDDP.train(model; iteration_limit = 100, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 2.0 / (1 - 0.9) atol = 1e-3
 end
 
