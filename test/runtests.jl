@@ -6,7 +6,7 @@
 using SDDP, Test, Random
 
 function read_dir(dir, exclude = String[])
-    return filter(s -> !(s in exclude) && endswith(s, ".jl"), readdir(dir))
+    return filter(s->!(s in exclude) && endswith(s, ".jl"), readdir(dir))
 end
 
 const EXCLUDED_EXAMPLES = [

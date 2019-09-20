@@ -11,28 +11,26 @@
 using SDDP, GLPK, Test
 
 function fast_hydro_thermal()
-    model =
-        SDDP.PolicyGraph(
-            SDDP.LinearGraph(2),
-            bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-            optimizer = with_optimizer(GLPK.Optimizer),
-        ) do sp, t
-            @variable(sp, 0 <= x <= 8, SDDP.State, initial_value = 0.0)
-            @variables(sp, begin
-                y >= 0
-                p >= 0
-                ξ
-            end)
-            @constraints(sp, begin
-                p + y >= 6
-                x.out <= x.in - y + ξ
-            end)
-            RAINFALL = (t == 1 ? [6] : [2, 10])
-            SDDP.parameterize(sp, RAINFALL) do ω
-                JuMP.fix(ξ, ω)
-            end
-            @stageobjective(sp, 5 * p)
+    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
+                bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+                optimizer = with_optimizer(GLPK.Optimizer)
+                        ) do sp, t
+        @variable(sp, 0 <= x <= 8, SDDP.State, initial_value = 0.0)
+        @variables(sp, begin
+            y >= 0
+            p >= 0
+            ξ
+        end)
+        @constraints(sp, begin
+            p + y >= 6
+            x.out <= x.in - y + ξ
+        end)
+        RAINFALL = (t == 1 ? [6] : [2, 10])
+        SDDP.parameterize(sp, RAINFALL) do ω
+            JuMP.fix(ξ, ω)
         end
+        @stageobjective(sp, 5 * p)
+    end
 
     det = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
     JuMP.optimize!(det)

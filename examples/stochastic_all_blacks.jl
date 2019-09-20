@@ -16,29 +16,27 @@ function stockastic_all_blacks()
     s = 3
     offers = [[[1, 1], [0, 0], [1, 1]], [[1, 0], [0, 0], [0, 0]], [[0, 1], [1, 0], [1, 1]]]
 
-    model =
-        SDDP.LinearPolicyGraph(
-            stages = T,
-            sense = :Max,
-            upper_bound = 100.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
-            integrality_handler = SDDP.SDDiP(),
-        ) do sp, stage
+    model = SDDP.LinearPolicyGraph(
+        stages = T,
+        sense = :Max,
+        upper_bound = 100.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
+        integrality_handler = SDDP.SDDiP()) do sp, stage
 
         # Seat remaining?
-            @variable(sp, 0 <= x[1:N] <= 1, SDDP.State, Bin, initial_value = 1)
+        @variable(sp, 0 <= x[1:N] <= 1, SDDP.State, Bin, initial_value = 1)
         # Action: accept offer, or don't accept offer
         # We are allowed to accept some of the seats offered but not others
-            @variable(sp, accept_offer[1:N], Bin)
-            @variable(sp, offers_made[1:N])
+        @variable(sp, accept_offer[1:N], Bin)
+        @variable(sp, offers_made[1:N])
         # Balance on seats
-            @constraint(sp, balance[iin1:N], x[i].in - x[i].out == accept_offer[i])
-            @stageobjective(sp, sum(R[i, stage] * accept_offer[i] for i = 1:N))
-            SDDP.parameterize(sp, offers[stage]) do o
-                JuMP.fix.(offers_made, o)
-            end
-            @constraint(sp, accept_offer .<= offers_made)
+        @constraint(sp, balance[i in 1:N], x[i].in - x[i].out == accept_offer[i])
+        @stageobjective(sp, sum(R[i, stage] * accept_offer[i] for i in 1:N))
+        SDDP.parameterize(sp, offers[stage]) do o
+            JuMP.fix.(offers_made, o)
         end
+        @constraint(sp, accept_offer .<= offers_made)
+    end
 
     SDDP.train(model, iteration_limit = 10, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 8.0
