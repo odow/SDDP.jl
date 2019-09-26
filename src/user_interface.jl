@@ -807,7 +807,7 @@ function get_objective_state_component(node::Node)
     objective_state = node.objective_state
     if objective_state !== nothing
         for (y, μ) in zip(objective_state.state, objective_state.μ)
-            objective_state_component += y * μ
+            JuMP.add_to_expression!(objective_state_component, y, μ)
         end
     end
     return objective_state_component
@@ -897,8 +897,8 @@ function get_belief_state_component(node::Node)
     belief_component = JuMP.AffExpr(0.0)
     if node.belief_state !== nothing
         belief = node.belief_state
-        for (key, value) in belief.μ
-            belief_component += belief.belief[key] * value
+        for (key, μ) in belief.μ
+            JuMP.add_to_expression!(belief_component, belief.belief[key], μ)
         end
     end
     return belief_component
