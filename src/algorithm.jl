@@ -170,8 +170,11 @@ function set_objective(node::Node{T}) where T
         JuMP.set_objective(
             node.subproblem,
             JuMP.objective_sense(node.subproblem),
-            node.stage_objective + objective_state_component +
+            @expression(
+                node.subproblem,
+                node.stage_objective + objective_state_component +
                 belief_state_component + bellman_term(node.bellman_function)
+            )
         )
     end
     node.stage_objective_set = true
