@@ -36,7 +36,14 @@ struct ConvexApproximation
 end
 
 # Add the cut `V.θ ≥ θᵏ + ⟨πᵏ, x′ - xᵏ⟩`.
-function _add_cut(V::ConvexApproximation, θᵏ, πᵏ, xᵏ, μᵀy=JuMP.AffExpr(0.0); cut_selection::Bool=true)
+function _add_cut(
+    V::ConvexApproximation,
+    θᵏ::Float64,
+    πᵏ::Dict{Symbol, Float64},
+    xᵏ::Dict{Symbol, Float64},
+    μᵀy = JuMP.AffExpr(0.0);
+    cut_selection::Bool = true
+)
     model = JuMP.owner_model(V.theta)
     for (key, x) in xᵏ
         θᵏ -= πᵏ[key] * xᵏ[key]
@@ -48,9 +55,15 @@ function _add_cut(V::ConvexApproximation, θᵏ, πᵏ, xᵏ, μᵀy=JuMP.AffExp
         _purge_cuts(V)
     end
     cut.constraint_ref = if is_minimization
-        @constraint(model, V.theta + μᵀy >= θᵏ + sum(πᵏ[i] * x for (i, x) in V.states))
+        @constraint(
+            model,
+            V.theta + μᵀy >= θᵏ + sum(πᵏ[i] * x for (i, x) in V.states)
+        )
     else
-        @constraint(model, V.theta + μᵀy <= θᵏ + sum(πᵏ[i] * x for (i, x) in V.states))
+        @constraint(
+            model,
+            V.theta + μᵀy <= θᵏ + sum(πᵏ[i] * x for (i, x) in V.states)
+        )
     end
     return
 end
@@ -83,8 +96,12 @@ end
 
 # Internal function: update the Level-One datastructures inside
 # `bellman_function`.
-function _level_one_update(oracle::LevelOneOracle, cut::Cut,
-                           state::Dict{Symbol, Float64}, is_minimization::Bool)
+function _level_one_update(
+    oracle::LevelOneOracle,
+    cut::Cut,
+    state::Dict{Symbol, Float64},
+    is_minimization::Bool
+)
     sampled_state = SampledState(state, cut, _eval_height(cut, state))
     # Loop through previously sampled states and compare the height of the most
     # recent cut against the current best. If this cut is an improvement, store
@@ -153,12 +170,19 @@ end
         lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
         cut_type::CutType = MULTI_CUT)
 """
-function BellmanFunction(;
-        lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
-        cut_type::CutType = MULTI_CUT)
+function BellmanFunction(
+    ;
+    lower_bound = -Inf,
+    upper_bound = Inf,
+    deletion_minimum::Int = 1,
+    cut_type::CutType = MULTI_CUT
+)
     return InstanceFactory{BellmanFunction}(
-        lower_bound = lower_bound, upper_bound = upper_bound,
-        deletion_minimum = deletion_minimum, cut_type = cut_type)
+        lower_bound = lower_bound,
+        upper_bound = upper_bound,
+        deletion_minimum = deletion_minimum,
+        cut_type = cut_type
+    )
 end
 
 function bellman_term(bellman_function::BellmanFunction)
@@ -166,8 +190,10 @@ function bellman_term(bellman_function::BellmanFunction)
 end
 
 function initialize_bellman_function(
-        factory::InstanceFactory{BellmanFunction}, model::PolicyGraph{T},
-        node::Node{T}) where {T}
+    factory::InstanceFactory{BellmanFunction},
+    model::PolicyGraph{T},
+    node::Node{T}
+) where {T}
     lower_bound, upper_bound, deletion_minimum, cut_type = -Inf, Inf, 0, SINGLE_CUT
     if length(factory.args) > 0
         error("Positional arguments $(factory.args) ignored in BellmanFunction.")
@@ -200,13 +226,18 @@ function initialize_bellman_function(
     x′ = Dict(key => var.out for (key, var) in node.states)
     return BellmanFunction(
         ConvexApproximation(Θᴳ, x′, deletion_minimum),
-        ConvexApproximation[], cut_type, Set{Vector{Float64}}())
+        ConvexApproximation[],
+        cut_type,
+        Set{Vector{Float64}}()
+    )
 end
 
 # Internal function: helper used in _add_initial_bounds.
 function _add_objective_state_constraint(
-        theta::JuMP.VariableRef, y::NTuple{N, Float64},
-        μ::NTuple{N, JuMP.VariableRef}) where {N}
+    theta::JuMP.VariableRef,
+    y::NTuple{N, Float64},
+    μ::NTuple{N, JuMP.VariableRef}
+) where {N}
     model = JuMP.owner_model(theta)
     lower_bound = JuMP.has_lower_bound(theta) ? JuMP.lower_bound(theta) : -Inf
     upper_bound = JuMP.has_upper_bound(theta) ? JuMP.upper_bound(theta) : Inf
@@ -242,24 +273,29 @@ function _add_initial_bounds(obj_state::ObjectiveState, theta)
 end
 
 function refine_bellman_function(
-            model::PolicyGraph{T},
-            node::Node{T},
-            bellman_function::BellmanFunction,
-            risk_measure::AbstractRiskMeasure,
-            outgoing_state::Dict{Symbol, Float64},
-            dual_variables::Vector{Dict{Symbol, Float64}},
-            noise_supports::Vector,
-            nominal_probability::Vector{Float64},
-            objective_realizations::Vector{Float64}) where {T}
+    model::PolicyGraph{T},
+    node::Node{T},
+    bellman_function::BellmanFunction,
+    risk_measure::AbstractRiskMeasure,
+    outgoing_state::Dict{Symbol, Float64},
+    dual_variables::Vector{Dict{Symbol, Float64}},
+    noise_supports::Vector,
+    nominal_probability::Vector{Float64},
+    objective_realizations::Vector{Float64}
+) where {T}
     # Sanity checks.
     @assert length(dual_variables) == length(noise_supports) ==
         length(nominal_probability) == length(objective_realizations)
     # Preliminaries that are common to all cut types.
     risk_adjusted_probability = similar(nominal_probability)
     adjust_probability(
-        risk_measure, risk_adjusted_probability, nominal_probability,
-        noise_supports, objective_realizations,
-        model.objective_sense == MOI.MIN_SENSE)
+        risk_measure,
+        risk_adjusted_probability,
+        nominal_probability,
+        noise_supports,
+        objective_realizations,
+        model.objective_sense == MOI.MIN_SENSE
+    )
     # The meat of the function.
     if bellman_function.cut_type == SINGLE_CUT
         _add_average_cut(
@@ -267,7 +303,8 @@ function refine_bellman_function(
             outgoing_state,
             risk_adjusted_probability,
             objective_realizations,
-            dual_variables)
+            dual_variables
+        )
     else  # Add a multi-cut
         @assert bellman_function.cut_type == MULTI_CUT
         _add_locals_if_necessary(bellman_function, length(dual_variables))
@@ -276,14 +313,18 @@ function refine_bellman_function(
             outgoing_state,
             risk_adjusted_probability,
             objective_realizations,
-            dual_variables)
+            dual_variables
+        )
     end
 end
 
-function _add_average_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
-                          risk_adjusted_probability::Vector{Float64},
-                          objective_realizations::Vector{Float64},
-                          dual_variables::Vector{Dict{Symbol, Float64}})
+function _add_average_cut(
+    node::Node,
+    outgoing_state::Dict{Symbol, Float64},
+    risk_adjusted_probability::Vector{Float64},
+    objective_realizations::Vector{Float64},
+    dual_variables::Vector{Dict{Symbol, Float64}}
+)
     N = length(risk_adjusted_probability)
     @assert N == length(objective_realizations) == length(dual_variables)
     # Calculate the expected intercept and dual variables with respect to the
@@ -299,28 +340,40 @@ function _add_average_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
     end
     # Now add the average-cut to the subproblem. We include the objective-state
     # component μᵀy and the belief state (if it exists).
-    _add_cut(
-        node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state,
-        get_objective_state_component(node) + get_belief_state_component(node))
+    μᵀy = get_objective_state_component(node)
+    JuMP.add_to_expression!(μᵀy, get_belief_state_component(node))
+    _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state, μᵀy)
     return
 end
 
-function _add_multi_cut(node::Node, outgoing_state::Dict{Symbol, Float64},
-                        risk_adjusted_probability::Vector{Float64},
-                        objective_realizations::Vector{Float64},
-                        dual_variables::Vector{Dict{Symbol, Float64}})
+function _add_multi_cut(
+    node::Node,
+    outgoing_state::Dict{Symbol, Float64},
+    risk_adjusted_probability::Vector{Float64},
+    objective_realizations::Vector{Float64},
+    dual_variables::Vector{Dict{Symbol, Float64}}
+)
     N = length(risk_adjusted_probability)
     @assert N == length(objective_realizations) == length(dual_variables)
     bellman_function = node.bellman_function
-    μᵀy = get_objective_state_component(node) + get_belief_state_component(node)
+    μᵀy = get_objective_state_component(node)
+    JuMP.add_to_expression!(μᵀy, get_belief_state_component(node))
     for i in 1:length(dual_variables)
-        _add_cut(bellman_function.local_thetas[i], objective_realizations[i],
-                 dual_variables[i], outgoing_state, μᵀy)
+        _add_cut(
+            bellman_function.local_thetas[i],
+            objective_realizations[i],
+            dual_variables[i],
+            outgoing_state,
+            μᵀy
+        )
     end
     model = JuMP.owner_model(bellman_function.global_theta.theta)
-    cut_expr = @expression(model, sum(
-        risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
-        for i in 1:N) - (1 - sum(risk_adjusted_probability)) * μᵀy
+    cut_expr = @expression(
+        model,
+        sum(
+            risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
+            for i in 1:N
+        ) - (1 - sum(risk_adjusted_probability)) * μᵀy
     )
     # TODO(odow): should we use `cut_expr` instead?
     ξ = copy(risk_adjusted_probability)
@@ -446,8 +499,10 @@ node given the string name `name`.
 See also [`SDDP.write_cuts_to_file`](@ref).
 """
 function read_cuts_from_file(
-        model::PolicyGraph{T}, filename::String;
-        node_name_parser::Function = _node_name_parser) where {T}
+    model::PolicyGraph{T},
+    filename::String;
+    node_name_parser::Function = _node_name_parser
+) where {T}
     # So the cuts are written to file after they have been normalized
     # to `θᴳ ≥ [θᵏ - ⟨πᵏ, xᵏ⟩] + ⟨πᵏ, x′⟩`. Thus, we pass `xᵏ=0` so that
     # eveything works out okay.
