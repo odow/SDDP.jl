@@ -260,3 +260,7 @@ thermal_generation = [stage[:thermal_generation] for stage in simulations[1]]
 # thermal generation and 0 MWh of hydro generation. In the second stage, use 100
 # MWh of thermal and 50 MWh of hydro. In the third and final stage, use 0 MWh of
 # thermal and 150 MWh of  hydro.
+
+# This concludes our first very simple tutorial for `SDDP.jl`. In the next
+# tutorial, [Basic II: adding uncertainty](@ref), we will extend this problem by
+# adding uncertainty.
