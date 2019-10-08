@@ -18,7 +18,7 @@
 
 # !!! warning
 #     The dashboard is experimental. There are known bugs associated with it,
-#     e.g., https://github.com/odow/SDDP.jl/issues/226.
+#     e.g., [SDDP.jl#226](https://github.com/odow/SDDP.jl/issues/226).
 
 # ## Preliminaries
 

@@ -84,5 +84,5 @@ println("Confidence interval: ", μ, " ± ", ci)
 println("Lower bound: ", round(SDDP.calculate_bound(model), digits = 2))
 
 # This concludes our third tutorial for `SDDP.jl`. In the next tutorial, [Basic
-# IV: Markov uncertainty], we add stagewise-dependence to the inflows using a
-# Markov chain.
+# IV: Markov uncertainty](@ref), we add stagewise-dependence to the inflows
+# using a Markov chain.
