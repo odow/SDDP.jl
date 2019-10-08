@@ -22,23 +22,31 @@ function convert_line_endings()
 end
 FIX_DOCTESTS && convert_line_endings()
 
-const EXAMPLES = Any[]
-for file in readdir(joinpath(@__DIR__, "src", "examples"))
-    !endswith(file, ".jl") && continue
-    filename = joinpath(@__DIR__, "src", "examples", file)
-    md_filename = replace(file, ".jl"=>".md")
-    push!(EXAMPLES, "examples/$(md_filename)")
-    Literate.markdown(filename, dirname(filename); documenter=true)
+for dir in ["examples", "tutorial"]
+    for file in sort(readdir(joinpath(@__DIR__, "src", dir)))
+        !endswith(file, ".jl") && continue
+        filename = joinpath(@__DIR__, "src", dir, file)
+        Literate.markdown(filename, dirname(filename); documenter=true)
+    end
 end
+
+const EXAMPLES = Any[
+    "examples/$(file)" for file  in filter(
+        f -> endswith(f, ".md"),
+        sort(readdir(joinpath(@__DIR__, "src", "examples")))
+    )
+]
+
+const TUTORIAL_PAGES = Any[
+    "tutorial/$(file)" for file  in filter(
+        f -> endswith(f, ".md"),
+        sort(readdir(joinpath(@__DIR__, "src", "tutorial")))
+    )
+]
 
 const GUIDE_PAGES = Any[
     "guides/$(page)"
     for page in sort(readdir(joinpath(@__DIR__, "src", "guides")))
-]
-
-const TUTORIAL_PAGES = Any[
-    "tutorial/$(page)"
-    for page in sort(readdir(joinpath(@__DIR__, "src", "tutorial")))
 ]
 
 const ASSETS = readdir(joinpath(@__DIR__, "src", "assets"))

@@ -4,6 +4,7 @@ docs/build/*
 docs/Manifest.toml
 docs/spaghetti_plot.html
 docs/src/examples/*.md
+docs/src/tutorial/01_first_steps.md
 test/*.js
 *.DS_Store
 .vscode/*
