@@ -6,20 +6,6 @@
 # tools to help us do that. In this tutorial, we explain the tools and make some
 # pretty pictures.
 
-# ## Convergence dashboard
-
-# If the text-based logging isn't to your liking, you can open a visualization of
-# the training by passing  `dashboard = true` to [`SDDP.train`](@ref).
-# ```julia
-# SDDP.train(model; dashboard = true)
-# ```
-# By default, `dashboard = false` because there is an initial overhead
-# associated with opening and preparing the plot.
-
-# !!! warning
-#     The dashboard is experimental. There are known bugs associated with it,
-#     e.g., [SDDP.jl#226](https://github.com/odow/SDDP.jl/issues/226).
-
 # ## Preliminaries
 
 # The next two plot types help visualize the policy. Thus, we first need to
@@ -130,7 +116,7 @@ SDDP.save(plt, "spaghetti_plot.html", open = true)
 # Instead of the interactive Javascript plots, you can also create some
 # publication ready plots using the [`SDDP.publication_plot`](@ref) function.
 
-# !!!info
+# !!! info
 #     You need to install the [Plots.jl](https://github.com/JuliaPlots/Plots)
 #     package for this to work. We used the `GR` backend (`gr()`), but any
 #     `Plots.jl` backend should work.
@@ -168,6 +154,20 @@ SDDP.save(plt, "spaghetti_plot.html", open = true)
 # ```julia
 # Plots.savefig("my_picture.pdf")
 # ```
+
+# ## Convergence dashboard
+
+# If the text-based logging isn't to your liking, you can open a visualization of
+# the training by passing  `dashboard = true` to [`SDDP.train`](@ref).
+# ```julia
+# SDDP.train(model; dashboard = true)
+# ```
+# By default, `dashboard = false` because there is an initial overhead
+# associated with opening and preparing the plot.
+
+# !!! warning
+#     The dashboard is experimental. There are known bugs associated with it,
+#     e.g., [SDDP.jl#226](https://github.com/odow/SDDP.jl/issues/226).
 
 # This concludes our fifth tutorial for `SDDP.jl`. In our next tutorial, [Basic
 # VI: words of warning](@ref) we discuss some of the issues that you should be

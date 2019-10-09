@@ -37,14 +37,11 @@
 
 # #### Stages
 
-# > We consider the problem of scheduling electrical generation over three time
-# periods
-
-# So, we have three stages: `t = 1, 2, 3`. Here is a picture of what this looks
-# like:
-
+# From the description, we have three stages: `t = 1, 2, 3`. Here is a picture
+# of what this looks like:
+#
 # ![Linear policy graph](../assets/deterministic_linear_policy_graph.png)
-
+#
 # Notice that the boxes form a _linear graph_. This will be important when we
 # get to the code. (We'll get to more complicated graphs in future tutorials.)
 
@@ -71,7 +68,7 @@
 # in the reservoir. It cannot be negative, and the maximum level is 200 units.
 # Thus, we have `0 <= volume <= 200`. Also, the description says that the
 # initial value of water in the reservoir (i.e., `volume.in` when `t = 1`) is
-# 200.
+# 200 units.
 
 # #### Control variables
 
@@ -155,6 +152,54 @@ end
 #     For more information on [`SDDP.LinearPolicyGraph`](@ref)s, read
 #     [Create a general policy graph](@ref).
 
+# #### What's this weird `do` syntax?
+
+# Julia's `do` syntax looks a little weird at first, but it's just a nice way of
+# making a function that can be passed to another function. For example:
+
+function outer(inner::Function)
+    inner(2)
+end
+
+outer() do x
+    println("x^2 = ", x^2)
+end
+
+# is equivalent to
+
+inner(x) = println("x^2 = ", x^2)
+outer(inner)
+
+# So, in our case, we could have gone:
+
+function subproblem_builder(subproblem::JuMP.Model, t::Int)
+    ## Define the state variable.
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
+    ## Define the control variables.
+    @variables(subproblem, begin
+        thermal_generation >= 0
+        hydro_generation   >= 0
+        hydro_spill        >= 0
+    end)
+    ## Define the constraints
+    @constraints(subproblem, begin
+        volume.out == volume.in - hydro_generation - hydro_spill
+        thermal_generation + hydro_generation == 150.0
+    end)
+    ## Define the objective for each stage `t`. Note that we can use `t` as an
+    ## index for t = 1, 2, 3.
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(subproblem, fuel_cost[t] * thermal_generation)
+end
+
+model = SDDP.LinearPolicyGraph(
+    subproblem_builder,
+    stages = 3,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = with_optimizer(GLPK.Optimizer)
+)
+
 # #### The keywords in the [`SDDP.LinearPolicyGraph`](@ref) constructor
 
 # Hopefully `stages` and `sense` are obvious. However, the other two are not so
@@ -165,8 +210,7 @@ end
 # bound.
 
 # `optimizer`: This is borrowed directly from JuMP's `Model` constructor:
-
-# Model(with_optimizer(GLPK.Optimizer))
+# (`Model(with_optimizer(GLPK.Optimizer))`)
 
 # #### Creating state variables
 
