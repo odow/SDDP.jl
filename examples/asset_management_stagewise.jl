@@ -21,43 +21,55 @@ function asset_management_stagewise(; cut_type)
     Psi = [0.02, 0.0]
 
     model = SDDP.MarkovianPolicyGraph(
-            sense = :Max,
-            transition_matrices = Array{Float64, 2}[
-                [1.0]', [0.5 0.5], [0.5 0.5; 0.5 0.5], [0.5 0.5; 0.5 0.5]],
-            bellman_function = SDDP.BellmanFunction(
-                upper_bound = 1000.0, cut_type = cut_type),
-            optimizer = with_optimizer(GLPK.Optimizer)) do subproblem, node
+        sense = :Max,
+        transition_matrices = Array{Float64,2}[
+            [1.0]',
+            [0.5 0.5],
+            [0.5 0.5; 0.5 0.5],
+            [0.5 0.5; 0.5 0.5],
+        ],
+        bellman_function = SDDP.BellmanFunction(
+            upper_bound = 1000.0,
+            cut_type = cut_type,
+        ),
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do subproblem, node
         t, i = node
-        @variable(subproblem, xs >= 0, SDDP.State, initial_value=0)
-        @variable(subproblem, xb >= 0, SDDP.State, initial_value=0)
+        @variable(subproblem, xs >= 0, SDDP.State, initial_value = 0)
+        @variable(subproblem, xb >= 0, SDDP.State, initial_value = 0)
         if t == 1
             @constraint(subproblem, xs.out + xb.out == 55 + xs.in + xb.in)
             @stageobjective(subproblem, 0)
         elseif t == 2 || t == 3
             @variable(subproblem, phi)
-            @constraint(subproblem, ws[i] * xs.in + wb[i] * xb.in + phi == xs.out + xb.out)
+            @constraint(
+                subproblem,
+                ws[i] * xs.in + wb[i] * xb.in + phi == xs.out + xb.out,
+            )
             SDDP.parameterize(subproblem, [1, 2], [0.6, 0.4]) do ω
                 JuMP.fix(phi, Phi[ω])
                 @stageobjective(subproblem, Psi[ω] * xs.out)
             end
         else
-            @variable(subproblem, u  >= 0)
+            @variable(subproblem, u >= 0)
             @variable(subproblem, v >= 0)
             @constraint(subproblem, ws[i] * xs.in + wb[i] * xb.in + u - v == 80)
             @stageobjective(subproblem, -4u + v)
         end
     end
-    SDDP.train(model;
+    SDDP.train(
+        model;
         iteration_limit = 100,
         print_level = 0,
         risk_measure = (node) -> begin
             if node[1] != 3
                 SDDP.Expectation()
             else
-                SDDP.EAVaR(lambda = 0.5, beta=0.5)
+                SDDP.EAVaR(lambda = 0.5, beta = 0.5)
             end
-        end)
-    @test SDDP.calculate_bound(model) ≈ 1.278 atol=1e-3
+        end,
+    )
+    @test SDDP.calculate_bound(model) ≈ 1.278 atol = 1e-3
 end
 
 asset_management_stagewise(cut_type = SDDP.SINGLE_CUT)

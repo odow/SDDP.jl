@@ -12,7 +12,7 @@ struct ScenarioTreeNode{T}
     noise::Any
     probability::Float64
     children::Vector{ScenarioTreeNode{T}}
-    states::Dict{Symbol, State{JuMP.VariableRef}}
+    states::Dict{Symbol,State{JuMP.VariableRef}}
 end
 
 struct ScenarioTree{T}
@@ -32,9 +32,9 @@ function is_cyclic(G::PolicyGraph{T}) where {T}
     # need to store the set of all strongly connected components.
     index_counter = 0
     S = T[]
-    low_link = Dict{T, Int}()
-    index = Dict{T, Int}()
-    on_stack = Dict{T, Bool}()
+    low_link = Dict{T,Int}()
+    index = Dict{T,Int}()
+    on_stack = Dict{T,Bool}()
     function strong_connect(v)
         index[v] = index_counter
         low_link[v] = index_counter
@@ -86,8 +86,11 @@ function is_cyclic(G::PolicyGraph{T}) where {T}
 end
 
 function add_node_to_scenario_tree(
-    parent::Vector{ScenarioTreeNode{T}}, pg::PolicyGraph{T},
-    node::Node{T}, probability::Float64, check_time_limit::Function
+    parent::Vector{ScenarioTreeNode{T}},
+    pg::PolicyGraph{T},
+    node::Node{T},
+    probability::Float64,
+    check_time_limit::Function,
 ) where {T}
     if node.objective_state !== nothing
         throw_detequiv_error("Objective states detected!")
@@ -102,13 +105,15 @@ function add_node_to_scenario_tree(
             noise.term,
             probability * noise.probability,
             ScenarioTreeNode{T}[],
-            Dict{Symbol, State{JuMP.VariableRef}}()
+            Dict{Symbol,State{JuMP.VariableRef}}(),
         )
         for child in node.children
             add_node_to_scenario_tree(
-                scenario_node.children, pg, pg[child.term],
+                scenario_node.children,
+                pg,
+                pg[child.term],
                 probability * noise.probability * child.probability,
-                check_time_limit
+                check_time_limit,
             )
         end
         push!(parent, scenario_node)
@@ -118,29 +123,29 @@ end
 
 function copy_and_replace_variables(
     src::JuMP.VariableRef,
-    src_to_dest_variable::Dict{JuMP.VariableRef, JuMP.VariableRef}
+    src_to_dest_variable::Dict{JuMP.VariableRef,JuMP.VariableRef},
 )
     return src_to_dest_variable[src]
 end
 
 function copy_and_replace_variables(
     src::JuMP.GenericAffExpr,
-    src_to_dest_variable::Dict{JuMP.VariableRef, JuMP.VariableRef}
+    src_to_dest_variable::Dict{JuMP.VariableRef,JuMP.VariableRef},
 )
     return JuMP.GenericAffExpr(
         src.constant,
-        (src_to_dest_variable[key] => val for (key, val) in src.terms)...
+        (src_to_dest_variable[key] => val for (key, val) in src.terms)...,
     )
 end
 
-function copy_and_replace_variables(
-    src::Any, ::Dict{JuMP.VariableRef, JuMP.VariableRef}
-)
+function copy_and_replace_variables(src::Any, ::Dict{JuMP.VariableRef,JuMP.VariableRef})
     throw_detequiv_error("`copy_and_replace_variables` is not implemented for functions like `$(src)`.")
 end
 
 function add_scenario_to_ef(
-    model::JuMP.Model, child::ScenarioTreeNode, check_time_limit::Function
+    model::JuMP.Model,
+    child::ScenarioTreeNode,
+    check_time_limit::Function,
 )
     check_time_limit()
     node = child.node
@@ -148,7 +153,7 @@ function add_scenario_to_ef(
     # Add variables:
     src_variables = JuMP.all_variables(node.subproblem)
     x = @variable(model, [1:length(src_variables)])
-    var_src_to_dest = Dict{JuMP.VariableRef, JuMP.VariableRef}()
+    var_src_to_dest = Dict{JuMP.VariableRef,JuMP.VariableRef}()
     for (src, dest) in zip(src_variables, x)
         var_src_to_dest[src] = dest
         JuMP.set_name(dest, JuMP.name(src))
@@ -163,18 +168,11 @@ function add_scenario_to_ef(
     end
     # Add objective:
     current = JuMP.objective_function(model)
-    subproblem_objective = copy_and_replace_variables(
-        node.stage_objective, var_src_to_dest
-    )
-    JuMP.set_objective_function(
-        model, current + child.probability * subproblem_objective
-    )
+    subproblem_objective = copy_and_replace_variables(node.stage_objective, var_src_to_dest)
+    JuMP.set_objective_function(model, current + child.probability * subproblem_objective)
     # Add state variables to child.states:
     for (key, state) in node.states
-        child.states[key] = State(
-            var_src_to_dest[state.in],
-            var_src_to_dest[state.out]
-        )
+        child.states[key] = State(var_src_to_dest[state.in], var_src_to_dest[state.out])
     end
     # Recurse down the tree.
     for child_2 in child.children
@@ -184,7 +182,9 @@ function add_scenario_to_ef(
 end
 
 function add_linking_constraints(
-    model::JuMP.Model, node::ScenarioTreeNode, check_time_limit::Function
+    model::JuMP.Model,
+    node::ScenarioTreeNode,
+    check_time_limit::Function,
 )
     check_time_limit()
     for child in node.children
@@ -211,8 +211,8 @@ Form a JuMP model that represents the deterministic equivalent of the problem.
 """
 function deterministic_equivalent(
     pg::PolicyGraph{T},
-    optimizer::Union{JuMP.OptimizerFactory, Nothing} = nothing;
-    time_limit::Union{Real, Nothing} = 60.0
+    optimizer::Union{JuMP.OptimizerFactory,Nothing} = nothing;
+    time_limit::Union{Real,Nothing} = 60.0,
 ) where {T}
     # Step 0: helper function for the time limit.
     start_time = time()
@@ -229,8 +229,11 @@ function deterministic_equivalent(
     tree = ScenarioTree{T}(ScenarioTreeNode{T}[])
     for child in pg.root_children
         add_node_to_scenario_tree(
-            tree.children, pg, pg[child.term], child.probability,
-            check_time_limit
+            tree.children,
+            pg,
+            pg[child.term],
+            child.probability,
+            check_time_limit,
         )
     end
     # Step 2: create a extensive-form JuMP model and add subproblems.
@@ -242,7 +245,7 @@ function deterministic_equivalent(
     for child in tree.children
         add_linking_constraints(model, child, check_time_limit)
         for (key, value) in pg.initial_root_state
-            JuMP.fix(child.states[key].in, value; force=true)
+            JuMP.fix(child.states[key].in, value; force = true)
         end
     end
     # Return the model

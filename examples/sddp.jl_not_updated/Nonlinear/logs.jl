@@ -7,15 +7,15 @@
 using JuMP, SDDP, Ipopt
 
 m = SDDPModel(
-    stages          = 2,
-    sense           = :Max,
+    stages = 2,
+    sense = :Max,
     objective_bound = 2.0,
-    solver          = IpoptSolver(print_level=0)
-        ) do sp, t
+    solver = IpoptSolver(print_level = 0),
+) do sp, t
 
-    @state(sp, x′ >= 1, x==1)
+    @state(sp, x′ >= 1, x == 1)
     if t == 1
-        @rhsnoise(sp, w=[1,2,3], x′ == w)
+        @rhsnoise(sp, w = [1, 2, 3], x′ == w)
         @stageobjective(sp, 0.0)
     else
         @variable(sp, y)
@@ -23,5 +23,5 @@ m = SDDPModel(
         @stageobjective(sp, y)
     end
 end
-solve(m, iteration_limit=10, print_level=0)
-@test isapprox(getbound(m), log(6) / 3, atol=1e-4)
+solve(m, iteration_limit = 10, print_level = 0)
+@test isapprox(getbound(m), log(6) / 3, atol = 1e-4)

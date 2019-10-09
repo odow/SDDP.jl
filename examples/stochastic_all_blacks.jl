@@ -21,7 +21,8 @@ function stockastic_all_blacks()
         sense = :Max,
         upper_bound = 100.0,
         optimizer = with_optimizer(GLPK.Optimizer),
-        integrality_handler = SDDP.SDDiP()) do sp, stage
+        integrality_handler = SDDP.SDDiP(),
+    ) do sp, stage
 
         # Seat remaining?
         @variable(sp, 0 <= x[1:N] <= 1, SDDP.State, Bin, initial_value = 1)
@@ -31,7 +32,7 @@ function stockastic_all_blacks()
         @variable(sp, offers_made[1:N])
         # Balance on seats
         @constraint(sp, balance[i in 1:N], x[i].in - x[i].out == accept_offer[i])
-        @stageobjective(sp, sum(R[i, stage] * accept_offer[i] for i in 1:N))
+        @stageobjective(sp, sum(R[i, stage] * accept_offer[i] for i = 1:N))
         SDDP.parameterize(sp, offers[stage]) do o
             JuMP.fix.(offers_made, o)
         end

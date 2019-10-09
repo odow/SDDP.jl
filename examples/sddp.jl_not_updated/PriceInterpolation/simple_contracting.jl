@@ -52,71 +52,85 @@ using SDDP, JuMP, Clp, Base.Test
 
 function contracting_example(DISCRETIZATION = 1)
     srand(10)
-    T             = 24
-    MIN_PRICE     = 3.0
+    T = 24
+    MIN_PRICE = 3.0
     INITIAL_PRICE = 6.0
-    MAX_PRICE     = 9.0
-    NOISES        = DiscreteDistribution([-0.1290, -0.1010, -0.0814, -0.0661, -0.0530,
-        -0.0412, -0.0303, -0.0199, -0.00987, 0.0, 0.00987, 0.0199, 0.0303, 0.0412,
-        0.0530, 0.0661, 0.0814, 0.1010, 0.1290])
+    MAX_PRICE = 9.0
+    NOISES = DiscreteDistribution([
+        -0.1290,
+        -0.1010,
+        -0.0814,
+        -0.0661,
+        -0.0530,
+        -0.0412,
+        -0.0303,
+        -0.0199,
+        -0.00987,
+        0.0,
+        0.00987,
+        0.0199,
+        0.0303,
+        0.0412,
+        0.0530,
+        0.0661,
+        0.0814,
+        0.1010,
+        0.1290,
+    ])
 
     function pricedynamics(price, noise, stage, markov)
          # Decreasing variance in changes in price over time
         σ² = linspace(1, 0, 24)
-        next_price = 1.01 * exp(log(price) + σ²[stage]*noise)
-        min(MAX_PRICE,max(MIN_PRICE, next_price))
+        next_price = 1.01 * exp(log(price) + σ²[stage] * noise)
+        min(MAX_PRICE, max(MIN_PRICE, next_price))
     end
 
     value_function = if DISCRETIZATION == 1
-        (t,i) -> DynamicPriceInterpolation(
-            dynamics       = (p,w) -> pricedynamics(p,w,t,i),
-            initial_price  = INITIAL_PRICE,
-            min_price      = MIN_PRICE,
-            max_price      = MAX_PRICE,
-            noise          = NOISES,
+        (t, i) -> DynamicPriceInterpolation(
+            dynamics = (p, w) -> pricedynamics(p, w, t, i),
+            initial_price = INITIAL_PRICE,
+            min_price = MIN_PRICE,
+            max_price = MAX_PRICE,
+            noise = NOISES,
             cut_oracle = SDDP.NanniciniOracle(typeof(INITIAL_PRICE), 20),
-            lipschitz_constant = 75.0
+            lipschitz_constant = 75.0,
         )
     else
-        (t,i) -> StaticPriceInterpolation(
-            dynamics       = (p,w) -> pricedynamics(p,w,t,i),
-            initial_price  = INITIAL_PRICE,
-            rib_locations  =  collect(linspace(MIN_PRICE, MAX_PRICE, DISCRETIZATION)),
-            noise          = NOISES,
-                cut_oracle = LevelOneCutOracle(),
+        (t, i) -> StaticPriceInterpolation(
+            dynamics = (p, w) -> pricedynamics(p, w, t, i),
+            initial_price = INITIAL_PRICE,
+            rib_locations = collect(linspace(MIN_PRICE, MAX_PRICE, DISCRETIZATION)),
+            noise = NOISES,
+            cut_oracle = LevelOneCutOracle(),
         )
     end
 
     m = SDDPModel(
-        sense             = :Max,
-        stages            = T,
-        objective_bound   = 200.0,
-        solver            = ClpSolver(),
-        risk_measure      = EAVaR(lambda=0.8, beta=0.5),
-        value_function    = value_function
-                                            ) do sp, t
+        sense = :Max,
+        stages = T,
+        objective_bound = 200.0,
+        solver = ClpSolver(),
+        risk_measure = EAVaR(lambda = 0.8, beta = 0.5),
+        value_function = value_function,
+    ) do sp, t
         @states(sp, begin
-             contracts >= 0, contracts0 == 0
+            contracts >= 0, contracts0 == 0
             production >= 0, production0 == 0
         end)
         @variable(sp, sell >= 0)
         @constraints(sp, begin
-            contracts  == contracts0 + sell
+            contracts == contracts0 + sell
             # place an upper limit to prevent attempted arbitrage when
             # value function approximation is poor
             contracts <= 2T
         end)
         @rhsnoise(sp, ε = [0, 1, 2], production == production0 + ε)
         if t == T
-            @stageobjective(sp,
-                price -> (production - contracts) * price
-            )
+            @stageobjective(sp, price -> (production - contracts) * price)
             @constraint(sp, sell == 0)
         else
             δ = 0.01 # transaction cost
-            @stageobjective(sp,
-                price -> sell * (price - δ)
-            )
+            @stageobjective(sp, price -> sell * (price - δ))
         end
     end
     return m
@@ -125,43 +139,52 @@ end
 # dynamic interpolation
 m = contracting_example()
 srand(123)
-SDDP.solve(m, iteration_limit = 50, cut_selection_frequency=10, print_level=0)
+SDDP.solve(m, iteration_limit = 50, cut_selection_frequency = 10, print_level = 0)
 @test SDDP.getbound(m) <= 175.0
 
 # historical simulation
-results = simulate(m, [:production, :contracts],
-    noises=fill(2, 24), pricenoises=fill(10, 24)
+results = simulate(
+    m,
+    [:production, :contracts],
+    noises = fill(2, 24),
+    pricenoises = fill(10, 24),
 )
-@test isapprox(results[:objective], 181, atol=1)
+@test isapprox(results[:objective], 181, atol = 1)
 results = simulate(m, 500)
-@test isapprox(mean(r[:objective] for r in results), 171.0, atol=1.0)
+@test isapprox(mean(r[:objective] for r in results), 171.0, atol = 1.0)
 
 # 3 fixed ribs
 m3 = contracting_example(3)
 srand(123)
-SDDP.solve(m3, iteration_limit = 10, cut_selection_frequency=5, print_level=0)
+SDDP.solve(m3, iteration_limit = 10, cut_selection_frequency = 5, print_level = 0)
 @test SDDP.getbound(m3) <= 150.0
 
 # historical simulation
-results = simulate(m3, [:production, :contracts],
-    noises=fill(2, 24), pricenoises=fill(10, 24)
+results = simulate(
+    m3,
+    [:production, :contracts],
+    noises = fill(2, 24),
+    pricenoises = fill(10, 24),
 )
-@test isapprox(results[:objective], 181.0, atol=1)
+@test isapprox(results[:objective], 181.0, atol = 1)
 results = simulate(m3, 500)
-@test isapprox(mean(r[:objective] for r in results), 177.0, atol=1.0)
+@test isapprox(mean(r[:objective] for r in results), 177.0, atol = 1.0)
 
 # 5 fixed ribs
 m5 = contracting_example(5)
 srand(123)
-SDDP.solve(m5, iteration_limit = 10, print_level=0)
+SDDP.solve(m5, iteration_limit = 10, print_level = 0)
 @test SDDP.getbound(m5) <= 150.0
 
 # historical simulation
-results = simulate(m5, [:production, :contracts],
-    noises=fill(2, 24), pricenoises=fill(10, 24)
+results = simulate(
+    m5,
+    [:production, :contracts],
+    noises = fill(2, 24),
+    pricenoises = fill(10, 24),
 )
-@test isapprox(results[:objective], 182.0, atol=1)
+@test isapprox(results[:objective], 182.0, atol = 1)
 results = simulate(m5, 500)
-@test isapprox(mean(r[:objective] for r in results), 179.0, atol=1.0)
+@test isapprox(mean(r[:objective] for r in results), 179.0, atol = 1.0)
 
 @test SDDP.getbound(m5) <= SDDP.getbound(m3)
