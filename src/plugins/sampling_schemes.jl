@@ -29,25 +29,27 @@ sampling a child node.
 Note that if `terminate_on_cycle = false` and `terminate_on_dummy_leaf = false`
 then `max_depth` must be set > 0.
 """
-function InSampleMonteCarlo(
-    ;
+function InSampleMonteCarlo(;
     max_depth::Int = 0,
     terminate_on_cycle::Bool = false,
-    terminate_on_dummy_leaf::Bool = true,
+    terminate_on_dummy_leaf::Bool = true
 )
     if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
         error("terminate_on_cycle and terminate_on_dummy_leaf cannot both be " *
-              "false when max_depth=0.")
+              "false when max_depth=0."
+        )
     end
-    return InSampleMonteCarlo(max_depth, terminate_on_cycle, terminate_on_dummy_leaf)
+    return InSampleMonteCarlo(
+        max_depth, terminate_on_cycle, terminate_on_dummy_leaf
+    )
 end
 
 # ==================== OutOfSampleMonteCarlo Sampling Scheme ================= #
 
 struct OutOfSampleMonteCarlo{T} <: AbstractSamplingScheme
-    noise_terms::Dict{T,Vector{Noise}}
+    noise_terms::Dict{T, Vector{Noise}}
     root_children::Vector{Noise{T}}
-    children::Dict{T,Vector{Noise{T}}}
+    children::Dict{T, Vector{Noise{T}}}
     terminate_on_cycle::Bool
     terminate_on_dummy_leaf::Bool
     max_depth::Int
@@ -106,19 +108,19 @@ then `max_depth` must be set > 0.
     end
 """
 function OutOfSampleMonteCarlo(
-    f::Function,
-    graph::PolicyGraph{T};
+    f::Function, graph::PolicyGraph{T};
     use_insample_transition::Bool = false,
     max_depth::Int = 0,
     terminate_on_cycle::Bool = false,
-    terminate_on_dummy_leaf::Bool = true,
+    terminate_on_dummy_leaf::Bool = true
 ) where {T}
     if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
         error("terminate_on_cycle and terminate_on_dummy_leaf cannot both be " *
-              "false when max_depth=0.")
+              "false when max_depth=0."
+        )
     end
-    noise_terms = Dict{T,Vector{Noise}}()
-    children = Dict{T,Vector{Noise{T}}}()
+    noise_terms = Dict{T, Vector{Noise}}()
+    children = Dict{T, Vector{Noise{T}}}()
     root_children = if use_insample_transition
         graph.root_children
     else
@@ -135,57 +137,43 @@ function OutOfSampleMonteCarlo(
         children[key] = child
     end
     return OutOfSampleMonteCarlo{T}(
-        noise_terms,
-        root_children,
-        children,
-        terminate_on_cycle,
-        terminate_on_dummy_leaf,
-        max_depth,
+        noise_terms, root_children, children, terminate_on_cycle,
+        terminate_on_dummy_leaf, max_depth
     )
 end
 
 function get_noise_terms(
-    sampling_scheme::InSampleMonteCarlo,
-    node::Node{T},
-    node_index::T,
+    sampling_scheme::InSampleMonteCarlo, node::Node{T}, node_index::T
 ) where {T}
     return node.noise_terms
 end
 
 function get_noise_terms(
-    sampling_scheme::OutOfSampleMonteCarlo{T},
-    node::Node{T},
-    node_index::T,
+    sampling_scheme::OutOfSampleMonteCarlo{T}, node::Node{T}, node_index::T
 ) where {T}
     return sampling_scheme.noise_terms[node_index]
 end
 
 function get_children(
-    sampling_scheme::InSampleMonteCarlo,
-    node::Node{T},
-    node_index::T,
+    sampling_scheme::InSampleMonteCarlo, node::Node{T}, node_index::T
 ) where {T}
     return node.children
 end
 
 function get_children(
-    sampling_scheme::OutOfSampleMonteCarlo{T},
-    node::Node{T},
-    node_index::T,
+    sampling_scheme::OutOfSampleMonteCarlo{T}, node::Node{T}, node_index::T
 ) where {T}
     return sampling_scheme.children[node_index]
 end
 
 function get_root_children(
-    sampling_scheme::InSampleMonteCarlo,
-    graph::PolicyGraph{T},
+    sampling_scheme::InSampleMonteCarlo, graph::PolicyGraph{T}
 ) where {T}
     return graph.root_children
 end
 
 function get_root_children(
-    sampling_scheme::OutOfSampleMonteCarlo{T},
-    graph::PolicyGraph{T},
+    sampling_scheme::OutOfSampleMonteCarlo{T}, graph::PolicyGraph{T}
 ) where {T}
     return sampling_scheme.root_children
 end
@@ -210,10 +198,10 @@ end
 
 function sample_scenario(
     graph::PolicyGraph{T},
-    sampling_scheme::Union{InSampleMonteCarlo,OutOfSampleMonteCarlo{T}},
+    sampling_scheme::Union{InSampleMonteCarlo, OutOfSampleMonteCarlo{T}}
 ) where {T}
     # Storage for our scenario. Each tuple is (node_index, noise.term).
-    scenario_path = Tuple{T,Any}[]
+    scenario_path = Tuple{T, Any}[]
     # We only use visited_nodes if terminate_on_cycle=true. Just initialize
     # anyway.
     visited_nodes = Set{T}()
@@ -236,7 +224,7 @@ function sample_scenario(
             # 3. max_depth > 0 and we have explored max_depth number of nodes.
             return scenario_path, false
         elseif sampling_scheme.terminate_on_dummy_leaf &&
-               rand() < 1 - sum(child.probability for child in children)
+                rand() < 1 - sum(child.probability for child in children)
             # 4. we sample a "dummy" leaf node in the next step due to the
             # probability of the child nodes summing to less than one.
             return scenario_path, false
@@ -255,8 +243,8 @@ end
 
 # ========================= Historical Sampling Scheme ======================= #
 
-struct Historical{T,S} <: AbstractSamplingScheme
-    scenarios::Vector{Noise{Vector{Tuple{T,S}}}}
+struct Historical{T, S} <: AbstractSamplingScheme
+    scenarios::Vector{Noise{Vector{Tuple{T, S}}}}
 end
 
 """
@@ -278,15 +266,15 @@ uniform probability.
         [0.2, 0.5, 0.3]
     )
 """
-function Historical(
-    scenarios::Vector{Vector{Tuple{T,S}}},
-    probability::Vector{Float64} = fill(1.0 / length(scenarios), length(scenarios)),
-) where {T,S}
+function Historical(scenarios::Vector{Vector{Tuple{T, S}}},
+                    probability::Vector{Float64} =
+                        fill(1.0 / length(scenarios), length(scenarios))
+                    ) where {T, S}
     if sum(probability) != 1.0
         error("Probability of historical scenarios must sum to 1. Currently: " *
               "$(sum(probability)).")
     end
-    output = Noise{Vector{Tuple{T,S}}}[]
+    output = Noise{Vector{Tuple{T, S}}}[]
     for (scenario, prob) in zip(scenarios, probability)
         push!(output, Noise(scenario, prob))
     end
@@ -303,16 +291,14 @@ A deterministic sampling scheme that always samples `scenario` with probability
 
     Historical([(1, 0.5), (2, 1.5), (3, 0.75)])
 """
-function Historical(scenario::Vector{Tuple{T,S}}) where {T,S}
+function Historical(scenario::Vector{Tuple{T, S}}) where {T, S}
     return Historical([scenario], [1.0])
 end
 
-function sample_scenario(
-    graph::PolicyGraph{T},
-    sampling_scheme::Historical{T,NoiseTerm};
+function sample_scenario(graph::PolicyGraph{T},
+                         sampling_scheme::Historical{T, NoiseTerm};
                          # Ignore the other kwargs because the user is giving
                          # us the full scenario.
-    kwargs...,
-) where {T,NoiseTerm}
+                         kwargs...) where {T, NoiseTerm}
     return sample_noise(sampling_scheme.scenarios), false
 end

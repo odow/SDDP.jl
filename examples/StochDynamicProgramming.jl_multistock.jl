@@ -21,36 +21,42 @@
 using SDDP, GLPK, Test
 
 function test_multistock_example()
-    model =
-        SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(
             stages = 5,
             lower_bound = -5.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
-        ) do subproblem, stage
-            @variable(subproblem, 0 <= stock[i = 1:3] <= 1, SDDP.State, initial_value = 0.5)
-            @variables(subproblem, begin
-                0 <= control[i = 1:3] <= 0.5
-                ξ[i = 1:3]  # Dummy for RHS noise.
-            end)
-            @constraints(
-                subproblem,
-                begin
-                    sum(control) - 0.5 * 3 <= 0
-                    [i = 1:3], stock[i].out == stock[i].in + control[i] - ξ[i]
-                end,
-            )
-            Ξ = collect(Base.product((0.0, 0.15, 0.3), (0.0, 0.15, 0.3), (0.0, 0.15, 0.3)))[:]
-            SDDP.parameterize(subproblem, Ξ) do ω
-                JuMP.fix.(ξ, ω)
-            end
-            @stageobjective(subproblem, (sin(3 * stage) - 1) * sum(control))
+            optimizer = with_optimizer(GLPK.Optimizer)) do subproblem, stage
+        @variable(subproblem,
+            0 <= stock[i=1:3] <= 1, SDDP.State, initial_value = 0.5)
+        @variables(subproblem, begin
+            0 <= control[i=1:3] <= 0.5
+            ξ[i=1:3]  # Dummy for RHS noise.
+        end)
+        @constraints(subproblem, begin
+            sum(control) - 0.5 * 3 <= 0
+            [i=1:3], stock[i].out == stock[i].in + control[i] - ξ[i]
+        end)
+        Ξ = collect(Base.product(
+                (0.0, 0.15, 0.3),
+                (0.0, 0.15, 0.3),
+                (0.0, 0.15, 0.3))
+            )[:]
+        SDDP.parameterize(subproblem, Ξ) do ω
+            JuMP.fix.(ξ, ω)
         end
-    SDDP.train(model, iteration_limit = 100, print_level = 0, cut_type = SDDP.SINGLE_CUT)
+        @stageobjective(subproblem,
+            (sin(3 * stage) - 1) * sum(control)
+        )
+    end
+    SDDP.train(model, iteration_limit = 100, print_level = 0,
+        cut_type = SDDP.SINGLE_CUT)
     @test SDDP.calculate_bound(model) ≈ -4.349 atol = 0.01
 
     simulation_results = SDDP.simulate(model, 5000)
     @test length(simulation_results) == 5000
-    @test SDDP.Statistics.mean(sum(data[:stage_objective] for data in simulation) for simulation in simulation_results) ≈ -4.349 atol = 0.02
+    @test SDDP.Statistics.mean(
+        sum(data[:stage_objective] for data in simulation)
+        for simulation in simulation_results
+    ) ≈ -4.349 atol = 0.02
 end
 
 test_multistock_example()

@@ -26,55 +26,46 @@ using SDDP, GLPK, Statistics, Test
 function joint_distribution(; kwargs...)
     names = tuple([first(kw) for kw in kwargs]...)
     values = tuple([last(kw) for kw in kwargs]...)
-    output_type = NamedTuple{names,Tuple{eltype.(values)...}}
+    output_type = NamedTuple{names, Tuple{eltype.(values)...}}
     distribution = map(output_type, Base.product(values...))
     return distribution[:]
 end
 
-function newsvendor_example(; cut_type)
-    model =
-        SDDP.PolicyGraph(
+function newsvendor_example(;cut_type)
+    model = SDDP.PolicyGraph(
             SDDP.LinearGraph(3),
             sense = :Max,
             upper_bound = 50.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
-        ) do subproblem, stage
-            @variables(subproblem, begin
-                x >= 0, (SDDP.State, initial_value = 2)
-                0 <= u <= 1
-                w
-            end)
-            @constraint(subproblem, x.out == x.in - u + w)
-            SDDP.add_objective_state(
-                subproblem,
-                initial_value = 1.5,
-                lower_bound = 0.75,
-                upper_bound = 2.25,
-                lipschitz = 100.0,
-            ) do y, ω
-                return y + ω.price_noise
-            end
-            noise_terms = joint_distribution(
-                demand = 0:0.05:0.5,
-                price_noise = [-0.25, -0.125, 0.125, 0.25],
-            )
-            SDDP.parameterize(subproblem, noise_terms) do ω
-                JuMP.fix(w, ω.demand)
-                price = SDDP.objective_state(subproblem)
-                @stageobjective(subproblem, price * u)
-            end
+            optimizer = with_optimizer(GLPK.Optimizer)
+            ) do subproblem, stage
+        @variables(subproblem, begin
+            x >= 0, (SDDP.State, initial_value = 2)
+            0 <= u <= 1
+            w
+        end)
+        @constraint(subproblem, x.out == x.in - u + w)
+        SDDP.add_objective_state(
+                subproblem, initial_value = 1.5, lower_bound = 0.75,
+                upper_bound = 2.25, lipschitz = 100.0) do y, ω
+            return y + ω.price_noise
         end
-    SDDP.train(
-        model,
-        iteration_limit = 100,
-        print_level = 0,
-        time_limit = 20.0,
-        cut_type = cut_type,
-    )
-    @test SDDP.calculate_bound(model) ≈ 4.04 atol = 0.05
+        noise_terms = joint_distribution(
+            demand = 0:0.05:0.5, price_noise = [-0.25, -0.125, 0.125, 0.25])
+        SDDP.parameterize(subproblem, noise_terms) do ω
+            JuMP.fix(w, ω.demand)
+            price = SDDP.objective_state(subproblem)
+            @stageobjective(subproblem, price * u)
+        end
+    end
+    SDDP.train(model,
+        iteration_limit = 100, print_level = 0, time_limit = 20.0,
+        cut_type = cut_type)
+    @test SDDP.calculate_bound(model) ≈ 4.04 atol=0.05
     results = SDDP.simulate(model, 500)
-    objectives = [sum(s[:stage_objective] for s in simulation) for simulation in results]
-    @test round(Statistics.mean(objectives); digits = 2) ≈ 4.04 atol = 0.1
+    objectives = [
+        sum(s[:stage_objective] for s in simulation) for simulation in results
+    ]
+    @test round(Statistics.mean(objectives); digits = 2) ≈ 4.04 atol=0.1
 end
 
 newsvendor_example(cut_type = SDDP.SINGLE_CUT)

@@ -13,14 +13,12 @@ to the nominal distribution.
 """
 struct Expectation <: AbstractRiskMeasure end
 
-function adjust_probability(
-    measure::Expectation,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    noise_support::Vector,
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
-)
+function adjust_probability(measure::Expectation,
+                            risk_adjusted_probability::Vector{Float64},
+                            original_probability::Vector{Float64},
+                            noise_support::Vector,
+                            objective_realizations::Vector{Float64},
+                            is_minimization::Bool)
     risk_adjusted_probability .= original_probability
     return
 end
@@ -35,24 +33,20 @@ outcome.
 """
 struct WorstCase <: AbstractRiskMeasure end
 
-function adjust_probability(
-    measure::WorstCase,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    noise_support::Vector,
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
-)
+function adjust_probability(measure::WorstCase,
+                            risk_adjusted_probability::Vector{Float64},
+                            original_probability::Vector{Float64},
+                            noise_support::Vector,
+                            objective_realizations::Vector{Float64},
+                            is_minimization::Bool)
     risk_adjusted_probability .= 0.0
     worst_index = 1
     worst_observation = is_minimization ? -Inf : Inf
-    for (index, (probability, observation)) in enumerate(zip(
-        original_probability,
-        objective_realizations,
-    ))
+    for (index, (probability, observation)) in enumerate(
+            zip(original_probability, objective_realizations))
         if probability > 0.0
             if (is_minimization && observation > worst_observation) ||
-               (!is_minimization && observation < worst_observation)
+                    (!is_minimization && observation < worst_observation)
                 worst_index = index
                 worst_observation = observation
             end
@@ -80,46 +74,38 @@ struct AVaR <: AbstractRiskMeasure
     β::Float64
     function AVaR(β::Float64)
         if !(0 <= β <= 1)
-            throw(ArgumentError("Risk-quantile β must be in [0, 1]. Currently it is $(β)."))
+            throw(ArgumentError(
+                "Risk-quantile β must be in [0, 1]. Currently it is $(β)."))
         end
         return new(β)
     end
 end
 
-function adjust_probability(
-    measure::AVaR,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    noise_support::Vector,
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
-)
-    if measure.β ≈ 0.0
-        return adjust_probability(
-            WorstCase(),
-            risk_adjusted_probability,
-            original_probability,
-            noise_support,
-            objective_realizations,
-            is_minimization,
-        )
-    elseif measure.β ≈ 1.0
-        return adjust_probability(
-            Expectation(),
-            risk_adjusted_probability,
-            original_probability,
-            noise_support,
-            objective_realizations,
-            is_minimization,
-        )
-    end
-    risk_adjusted_probability .= 0.0
-    quantile_collected = 0.0
-    for i in sortperm(objective_realizations, rev = is_minimization)
-        quantile_collected >= measure.β && break
-        avar_prob = min(original_probability[i], measure.β - quantile_collected) / measure.β
-        risk_adjusted_probability[i] = avar_prob
-        quantile_collected += avar_prob * measure.β
+function adjust_probability(measure::AVaR,
+                            risk_adjusted_probability::Vector{Float64},
+                            original_probability::Vector{Float64},
+                            noise_support::Vector,
+                            objective_realizations::Vector{Float64},
+                            is_minimization::Bool)
+     if measure.β ≈ 0.0
+         return adjust_probability(
+            WorstCase(), risk_adjusted_probability, original_probability,
+            noise_support, objective_realizations, is_minimization)
+     elseif measure.β ≈ 1.0
+         return adjust_probability(
+            Expectation(), risk_adjusted_probability, original_probability,
+            noise_support, objective_realizations, is_minimization)
+     end
+     risk_adjusted_probability .= 0.0
+     quantile_collected = 0.0
+     for i in sortperm(objective_realizations, rev = is_minimization)
+         quantile_collected >= measure.β && break
+         avar_prob = min(
+                original_probability[i],
+                measure.β - quantile_collected
+            ) / measure.β
+         risk_adjusted_probability[i] = avar_prob
+         quantile_collected += avar_prob * measure.β
     end
     return
 end
@@ -166,26 +152,19 @@ function Base.:*(lhs::Float64, rhs::AbstractRiskMeasure)
     return ConvexCombination(((lhs, rhs),))
 end
 
-function adjust_probability(
-    measure::ConvexCombination,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    noise_support::Vector,
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
-)
+function adjust_probability(measure::ConvexCombination,
+                            risk_adjusted_probability::Vector{Float64},
+                            original_probability::Vector{Float64},
+                            noise_support::Vector,
+                            objective_realizations::Vector{Float64},
+                            is_minimization::Bool)
     risk_adjusted_probability .= 0.0
     partial_distribution = similar(risk_adjusted_probability)
     for (weight, measure) in measure.measures
         partial_distribution .= 0.0
         adjust_probability(
-            measure,
-            partial_distribution,
-            original_probability,
-            noise_support,
-            objective_realizations,
-            is_minimization,
-        )
+            measure, partial_distribution, original_probability, noise_support,
+            objective_realizations, is_minimization)
         risk_adjusted_probability .+= weight * partial_distribution
     end
 end
@@ -210,7 +189,7 @@ Risk (also called Conditional Value @ Risk).
   Increasing values of `beta` are less risk averse. If `beta=0`, then the AV@R
   component is the worst case risk measure.
 """
-function EAVaR(; lambda::Float64 = 1.0, beta::Float64 = 1.0)
+function EAVaR(;lambda::Float64=1.0, beta::Float64=1.0)
     if !(0.0 <= lambda <= 1.0)
         error("Lambda must be in the range [0, 1]. Increasing values of " *
               "lambda are less risk averse. lambda=1 is identical to taking " *
@@ -218,7 +197,8 @@ function EAVaR(; lambda::Float64 = 1.0, beta::Float64 = 1.0)
     end
     if !(0.0 <= beta <= 1.0)
         error("Beta must be in the range [0, 1]. Increasing values of beta " *
-              "are less risk averse. lambda=1 is identical to taking the " * "expectation.")
+              "are less risk averse. lambda=1 is identical to taking the " *
+              "expectation.")
     end
     return lambda * Expectation() + (1 - lambda) * AVaR(beta)
 end
@@ -265,12 +245,10 @@ If the uncorrected standard deviation of the objecive realizations is less than
 struct ModifiedChiSquared <: AbstractRiskMeasure
     radius::Float64
     minimum_std::Float64
-    function ModifiedChiSquared(radius::Float64; minimum_std::Float64 = 1e-5)
+    function ModifiedChiSquared(radius::Float64; minimum_std::Float64=1e-5)
         if abs(radius) < 1e-9
-            @warn(
-                "Radius is very small. You should probably use " *
-                "`SDDP.Expectation()` instead.",
-            )
+            @warn("Radius is very small. You should probably use " *
+                  "`SDDP.Expectation()` instead.")
         end
         return new(radius, minimum_std)
     end
@@ -280,43 +258,26 @@ function Base.show(io::IO, measure::ModifiedChiSquared)
     print(io, "ModifiedChiSquared with radius=$(measure.radius)")
 end
 
-function adjust_probability(
-    measure::ModifiedChiSquared,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    noise_support::Vector,
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
-)
-    if Statistics.std(objective_realizations, corrected = false) < measure.minimum_std
+function adjust_probability(measure::ModifiedChiSquared,
+                            risk_adjusted_probability::Vector{Float64},
+                            original_probability::Vector{Float64},
+                            noise_support::Vector,
+                            objective_realizations::Vector{Float64},
+                            is_minimization::Bool)
+    if Statistics.std(objective_realizations, corrected=false) < measure.minimum_std
         return adjust_probability(
-            Expectation(),
-            risk_adjusted_probability,
-            original_probability,
-            noise_support,
-            objective_realizations,
-            is_minimization,
-        )
-    end
-    m = length(objective_realizations)
-    if all(x -> x ≈ 1 / m, original_probability)
-        uniform_dro(
-            measure,
-            risk_adjusted_probability,
-            original_probability,
-            objective_realizations,
-            is_minimization,
-        )
-    else
-        non_uniform_dro(
-            measure,
-            risk_adjusted_probability,
-            original_probability,
-            objective_realizations,
-            is_minimization,
-        )
-    end
-    return
+           Expectation(), risk_adjusted_probability, original_probability,
+           noise_support, objective_realizations, is_minimization)
+   end
+   m = length(objective_realizations)
+   if all(x-> x ≈ 1 / m, original_probability)
+       uniform_dro(measure, risk_adjusted_probability, original_probability,
+                   objective_realizations, is_minimization)
+   else
+       non_uniform_dro(measure, risk_adjusted_probability, original_probability,
+                       objective_realizations, is_minimization)
+   end
+   return
 end
 
 """
@@ -324,12 +285,11 @@ Algorithm (1) of Philpott et al. Assumes that the nominal distribution is _not_
 uniform.
 """
 function non_uniform_dro(
-    measure::ModifiedChiSquared,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
-)
+        measure::ModifiedChiSquared,
+        risk_adjusted_probability::Vector{Float64},
+        original_probability::Vector{Float64},
+        objective_realizations::Vector{Float64},
+        is_minimization::Bool)
     error("Current implementation of ModifiedChiSquared assumes that the " *
           "nominal distribution is uniform.")
 end
@@ -339,12 +299,11 @@ Algorithm (2) of Philpott et al. Assumes that the nominal distribution is
 uniform.
 """
 function uniform_dro(
-    measure::ModifiedChiSquared,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
-)
+        measure::ModifiedChiSquared,
+        risk_adjusted_probability::Vector{Float64},
+        original_probability::Vector{Float64},
+        objective_realizations::Vector{Float64},
+        is_minimization::Bool)
     m = length(objective_realizations)
     # Take a permuted view of `risk_adjusted_probability` so we can refer to
     # `p[i]` instead of `risk_adjusted_probability[perm[i]]`.
@@ -354,10 +313,10 @@ function uniform_dro(
     # Compute the new probabilities according to Algorithm (2) of the Philpott
     # et al. paper.
     # Step (1):
-    @inbounds for k = 0:m-2
+    @inbounds for k in 0:m-2
         # Step (1a):
-        z_bar = sum(z[i] for i = (k+1):m) / (m - k)
-        s² = sum(z[i]^2 - z_bar^2 for i = (k+1):m) / (m - k)
+        z_bar = sum(z[i] for i in (k+1):m) / (m - k)
+        s² = sum(z[i]^2 - z_bar^2 for i in (k+1):m) / (m - k)
         # Due to numerical error, s² may sometimes be a little bit negative.
         if s² < -1e-8
             error("Something unexpected happened with s² term: `$(s²) < 0.0`.")
@@ -374,7 +333,7 @@ function uniform_dro(
             p[k] = 0.0
         end
         if is_minimization
-            @inbounds for i = (k+1):m
+            @inbounds for i in (k+1):m
                 p[i] = term_1 + term_2 * (z[i] - z_bar)
             end
         else
@@ -384,7 +343,7 @@ function uniform_dro(
             # -ve of what it should be. `s` is fine since it is a difference of
             # squares. Thus, all we have to do is negate both z[i] and z_bar
             # here.
-            @inbounds for i = (k+1):m
+            @inbounds for i in (k+1):m
                 p[i] = term_1 + term_2 * (z_bar - z[i])
             end
         end
@@ -409,7 +368,7 @@ As `alpha` increases, the measure becomes more risk-averse. When `alpha=0`, the
 measure is equivalent to the expectation operator. As `alpha` increases, the
 measure approaches the Worst-case risk measure.
 """
-struct Wasserstein{T,F} <: AbstractRiskMeasure
+struct Wasserstein{T, F} <: AbstractRiskMeasure
     alpha::Float64
     solver_factory::T
     norm::F
@@ -417,43 +376,40 @@ struct Wasserstein{T,F} <: AbstractRiskMeasure
         if alpha < 0.0
             error("alpha cannot be $(alpha) as it must be in the range [0, ∞).")
         end
-        return new{typeof(solver_factory),typeof(norm)}(alpha, solver_factory, norm)
+        return new{typeof(solver_factory), typeof(norm)}(alpha, solver_factory, norm)
     end
 end
 Base.show(io::IO, measure::Wasserstein) = print(io, "SDDP.Wasserstein")
 
-function adjust_probability(
-    measure::Wasserstein,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    noise_support::Vector,
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
-)
+function adjust_probability(measure::Wasserstein,
+                            risk_adjusted_probability::Vector{Float64},
+                            original_probability::Vector{Float64},
+                            noise_support::Vector,
+                            objective_realizations::Vector{Float64},
+                            is_minimization::Bool)
     N = length(objective_realizations)
     wasserstein = JuMP.Model(measure.solver_factory)
     @variable(wasserstein, z[1:N, 1:N] >= 0)
     @variable(wasserstein, p[1:N] >= 0)
-    for i = 1:N
+    for i in 1:N
         @constraint(wasserstein, sum(z[:, i]) == original_probability[i])
         @constraint(wasserstein, sum(z[i, :]) == p[i])
     end
     @constraint(
         wasserstein,
-        sum(measure.norm(noise_support[i], noise_support[j]) * z[i, j] for i = 1:N, j = 1:N) <= measure.alpha,
+        sum(measure.norm(noise_support[i], noise_support[j]) * z[i, j]
+            for i in 1:N, j in 1:N) <= measure.alpha
     )
     objective_sense = is_minimization ? MOI.MAX_SENSE : MOI.MIN_SENSE
     @objective(
         wasserstein,
         objective_sense,
-        sum(objective_realizations[i] * p[i] for i = 1:N),
+        sum(objective_realizations[i] * p[i] for i in 1:N)
     )
     JuMP.optimize!(wasserstein)
     if JuMP.primal_status(wasserstein) != MOI.FEASIBLE_POINT
-        error(
-            "Unable to solver Wasserstein subproblem. Status: ",
-            JuMP.termination_status(wassserstein),
-        )
+        error("Unable to solver Wasserstein subproblem. Status: ",
+              JuMP.termination_status(wassserstein))
     end
     copyto!(risk_adjusted_probability, JuMP.value.(p))
     return

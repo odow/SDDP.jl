@@ -124,11 +124,8 @@ Return a `Bool` indicating if the algorithm should terminate the training.
 """
 function convergence_test end
 
-function convergence_test(
-    graph::PolicyGraph,
-    log::Vector{Log},
-    stopping_rules::Vector{AbstractStoppingRule},
-)
+function convergence_test(graph::PolicyGraph, log::Vector{Log},
+                          stopping_rules::Vector{AbstractStoppingRule})
     for stopping_rule in stopping_rules
         if convergence_test(graph, log, stopping_rule)
             return true, stopping_rule_status(stopping_rule)
@@ -180,18 +177,12 @@ storage, given `num_states` state variables.
 function update_integrality_handler! end
 
 # Fallback
-update_integrality_handler!(
-    integrality_handler::AbstractIntegralityHandler,
-    ::JuMP.OptimizerFactory,
-    ::Int,
-) = integrality_handler
+update_integrality_handler!(integrality_handler::AbstractIntegralityHandler,
+    ::JuMP.OptimizerFactory, ::Int) = integrality_handler
 
 # Do nothing if no optimizer is set e.g. in tests
-update_integrality_handler!(
-    integrality_handler::AbstractIntegralityHandler,
-    ::Nothing,
-    ::Int,
-) = integrality_handler
+update_integrality_handler!(integrality_handler::AbstractIntegralityHandler,
+    ::Nothing, ::Int) = integrality_handler
 
 """
     get_dual_variables(node::Node, integrality_handler::AbstractIntegralityHandler)

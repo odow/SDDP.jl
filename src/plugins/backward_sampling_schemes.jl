@@ -25,5 +25,8 @@ end
 
 function sample_backward_noise_terms(sampler::MonteCarloSampler, node::Node)
     prob = 1 / sampler.number_of_samples
-    return [Noise(sample_noise(node.noise_terms), prob) for _ = 1:sampler.number_of_samples]
+    return [
+        Noise(sample_noise(node.noise_terms), prob)
+        for _ in 1:sampler.number_of_samples
+    ]
 end
