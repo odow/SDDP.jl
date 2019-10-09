@@ -43,9 +43,12 @@ struct StateInfo
 end
 
 function JuMP.build_variable(
-        _error::Function, info::JuMP.VariableInfo, ::Type{State};
-        initial_value = NaN,
-        kwargs...)
+    _error::Function,
+    info::JuMP.VariableInfo,
+    ::Type{State};
+    initial_value = NaN,
+    kwargs...,
+)
     if isnan(initial_value)
         _error("When creating a state variable, you must set the " *
                "`initial_value` keyword to the value of the state variable at" *
@@ -53,25 +56,27 @@ function JuMP.build_variable(
     end
     return StateInfo(
         JuMP.VariableInfo(
-            false, NaN,  # lower bound
-            false, NaN,  # upper bound
-            false, NaN,  # fixed value
-            false, NaN,  # start value
-            false, false # binary and integer
+            false,
+            NaN,  # lower bound
+            false,
+            NaN,  # upper bound
+            false,
+            NaN,  # fixed value
+            false,
+            NaN,  # start value
+            false,
+            false, # binary and integer
         ),
         info,
         initial_value,
-        kwargs
+        kwargs,
     )
 end
 
-function JuMP.add_variable(
-        subproblem::JuMP.Model, state_info::StateInfo, name::String)
+function JuMP.add_variable(subproblem::JuMP.Model, state_info::StateInfo, name::String)
     state = State(
-        JuMP.add_variable(
-            subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
-        JuMP.add_variable(
-            subproblem, JuMP.ScalarVariable(state_info.out), name * "_out")
+        JuMP.add_variable(subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
+        JuMP.add_variable(subproblem, JuMP.ScalarVariable(state_info.out), name * "_out"),
     )
     integrality_handler = get_integrality_handler(subproblem)
     setup_state(subproblem, state, state_info, name, integrality_handler)

@@ -6,7 +6,7 @@
 using SDDP, Test, Random
 
 function read_dir(dir, exclude = String[])
-    return filter(s->!(s in exclude) && endswith(s, ".jl"), readdir(dir))
+    return filter(s -> !(s in exclude) && endswith(s, ".jl"), readdir(dir))
 end
 
 const EXCLUDED_EXAMPLES = [
@@ -34,3 +34,11 @@ const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
         end
     end
 end
+
+using JuliaFormatter
+# Format /src
+JuliaFormatter.format(joinpath(dirname(@__DIR__), "src"))
+# Format /test
+JuliaFormatter.format(@__DIR__)
+# Format /examples
+JuliaFormatter.format(joinpath(dirname(@__DIR__), "examples"))
