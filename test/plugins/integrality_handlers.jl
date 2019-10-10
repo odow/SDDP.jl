@@ -3,7 +3,9 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using SDDP, JuMP, GLPK, Test
+using GLPK
+using SDDP
+using Test
 
 @testset "get_dual_variables" begin
     # Single-stage model helps set up a node and subproblem to test dual
@@ -30,7 +32,7 @@ using SDDP, JuMP, GLPK, Test
         if integrality_handler == SDDP.ContinuousRelaxation()
             SDDP.relax_integrality(model, integrality_handler)
         end
-        JuMP.optimize!(node.subproblem)
+        optimize!(node.subproblem)
         dual_vars = SDDP.get_dual_variables(node, integrality_handler)
 
         if integrality_handler == SDDP.ContinuousRelaxation()
