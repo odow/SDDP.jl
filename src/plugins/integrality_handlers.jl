@@ -3,8 +3,6 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import LinearAlgebra.dot
-
 # ========================= General methods ================================== #
 
 """
@@ -235,7 +233,7 @@ function _solve_primal!(subgradients::Vector{Float64}, node::Node, dual_vars::Ve
     old_obj = JuMP.objective_function(model)
     # Set the Lagrangian the objective in the primal model
     fact = (JuMP.objective_sense(model) == JuMP.MOI.MIN_SENSE ? 1 : -1)
-    new_obj = old_obj + fact * dot(dual_vars, slacks)
+    new_obj = old_obj + fact * LinearAlgebra.dot(dual_vars, slacks)
     JuMP.set_objective_function(model, new_obj)
     JuMP.optimize!(model)
     lagrangian_obj = JuMP.objective_value(model)
@@ -297,13 +295,13 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
 
         # Update the model and update best function value so far
         if dualsense == MOI.MIN_SENSE
-            JuMP.@constraint(approx_model, θ >= f_actual + dot(subgradients, x - dual_vars))
+            JuMP.@constraint(approx_model, θ >= f_actual + LinearAlgebra.dot(subgradients, x - dual_vars))
             if f_actual <= best_actual
                 best_actual = f_actual
                 best_mult .= dual_vars
             end
         else
-            JuMP.@constraint(approx_model, θ <= f_actual + dot(subgradients, x - dual_vars))
+            JuMP.@constraint(approx_model, θ <= f_actual + LinearAlgebra.dot(subgradients, x - dual_vars))
             if f_actual >= best_actual
                 best_actual = f_actual
                 best_mult .= dual_vars

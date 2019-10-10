@@ -8,7 +8,14 @@ module SDDP
 import Reexport
 Reexport.@reexport using JuMP
 
-import HTTP, JSON, MathOptFormat, Printf, Random, TimerOutputs, Statistics
+import HTTP
+import JSON
+import LinearAlgebra
+import MathOptFormat
+import Printf
+import Random
+import Statistics
+import TimerOutputs
 
 # Work-around for https://github.com/JuliaPlots/RecipesBase.jl/pull/55
 # Change this back to `import RecipesBase` once the fix is tagged.
