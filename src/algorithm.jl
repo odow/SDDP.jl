@@ -194,30 +194,35 @@ Write the subproblem contained in `node` to the file `filename`.
 `format` should be one of `:mps`, `:lp`, or `:both`.
 """
 function write_subproblem_to_file(
-        node::Node, filename::String;
-        format::Symbol=:both, throw_error::Bool = false)
+    node::Node,
+    filename::String;
+    format::Symbol=:both,
+    throw_error::Bool = false,
+    warn::Bool = false
+)
     if format ∉ (:mps, :lp, :both)
         error("Invalid `format=$(format)`. Must be `:mps`, `:lp`, or `:both`.")
     end
     if format == :mps || format == :both
-        mps = MathOptFormat.MPS.Model()
+        mps = MathOptFormat.MPS.Model(warn = warn)
         MOI.copy_to(mps, JuMP.backend(node.subproblem))
         MOI.write_to_file(mps, filename * ".mps")
     end
     if format == :lp || format == :both
-        lp = MathOptFormat.LP.Model()
+        lp = MathOptFormat.LP.Model(warn = warn)
         MOI.copy_to(lp, JuMP.backend(node.subproblem))
         MOI.write_to_file(lp, filename * ".lp")
     end
     if throw_error
-        error("Unable to retrieve dual solution from ", node.index, ".",
-              "\n  Termination status: ", JuMP.termination_status(node.subproblem),
-              "\n  Primal status:      ", JuMP.primal_status(node.subproblem),
-              "\n  Dual status:        ", JuMP.dual_status(node.subproblem),
-              ".\n An MPS file was written to `subproblem.mps` and an LP file ",
-              "written to `subproblem.lp`. See ",
-              "https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1",
-              " for more information.")
+        error("""
+        Unable to retrieve dual solution from $(node.index).
+          Termination status: $(JuMP.termination_status(node.subproblem))
+          Primal status:      $(JuMP.primal_status(node.subproblem))
+          Dual status:        $(JuMP.dual_status(node.subproblem))
+        An MPS file was written to `subproblem.mps` and an LP file was written
+        to `subproblem.lp`. See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1
+        for more information.
+        """)
     end
 end
 
@@ -727,7 +732,8 @@ function train(
     refine_at_similar_nodes::Bool = true,
     cut_deletion_minimum::Int = 1,
     backward_sampling_scheme::AbstractBackwardSamplingScheme = SDDP.CompleteSampler(),
-    dashboard::Bool = false
+    dashboard::Bool = false,
+    bound_failure_detection_weight::Float64 = 1e-2
 )
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
@@ -822,6 +828,7 @@ function train(
                     time() - start_time - dashboard_time
                 )
             )
+
             has_converged, status = convergence_test(model, log, stopping_rules)
 
             dashboard_start = time()
@@ -833,6 +840,25 @@ function train(
             end
 
             iteration_count += 1
+
+            if length(log) > 1
+                offset = bound_failure_detection_weight * max(1.0, abs(log[end - 1].bound))
+                if model.objective_sense == MOI.MIN_SENSE
+                    if log[end].bound < log[end - 1].bound - offset
+                        error("""
+                        Uh oh! Something terrible went wrong! We should be
+                        minimizing but we detected a decrease in the lower bound.
+                        """)
+                    end
+                else
+                    if log[end].bound > log[end - 1].bound + offset
+                        error("""
+                        Uh oh! Something terrible went wrong! We should be
+                        maximizing but we detected an increase in the lower bound.
+                        """)
+                    end
+                end
+            end
         end
     catch ex
         if isa(ex, InterruptException)

@@ -148,7 +148,8 @@ mutable struct SDDiP <: AbstractIntegralityHandler
     iteration_limit::Int
     atol::Float64
     rtol::Float64
-    # Storage for use in Kelly's to avoid excessive memory allocation.
+    regularizing_weight::Float64
+    # Storage for use in Kelley's to avoid excessive memory allocation.
     optimizer::JuMP.OptimizerFactory
     subgradients::Vector{Float64}
     old_rhs::Vector{Float64}
@@ -159,12 +160,14 @@ mutable struct SDDiP <: AbstractIntegralityHandler
         ;
         iteration_limit::Int = 100,
         atol::Float64 = 1e-8,
-        rtol::Float64 = 1e-8
+        rtol::Float64 = 1e-8,
+        regularizing_weight::Float64 = 0.0
     )
         integrality_handler = new()
         integrality_handler.iteration_limit = iteration_limit
         integrality_handler.atol = atol
         integrality_handler.rtol = rtol
+        integrality_handler.regularizing_weight = regularizing_weight
         return integrality_handler
     end
 end
@@ -234,7 +237,7 @@ end
 function get_dual_variables(node::Node, integrality_handler::SDDiP)
     dual_values = Dict{Symbol, Float64}()
     # TODO: implement smart choice for initial duals.
-    # One possibility is to start with infeasible duals so that Kelly's works
+    # One possibility is to start with infeasible duals so that Kelley's works
     # towards a feasible one.
     dual_vars = zeros(length(node.states))
     solver_obj = JuMP.objective_value(node.subproblem)
@@ -244,6 +247,8 @@ function get_dual_variables(node::Node, integrality_handler::SDDiP)
             @warn("""
             SDDiP: objective of dual problem is far from the primal problem.
             Consider tighting the tolerances in SDDiP(; atol, rtol).
+            Primal objective: $(solver_obj)
+            Dual objective: $(kelley_obj)
             """)
         end
     catch e
@@ -289,13 +294,16 @@ end
 function _kelley(
     node::Node, dual_vars::Vector{Float64}, sddip::SDDiP
 )
-    # If it hasn't been already, solve the MIP. This is usually very quick
+    N = length(dual_vars)
+    @assert N == length(node.states)
+    sddip.best_mult .= NaN
+    sddip.subgradients .= NaN
+
+    # Check that the MIP has already been solved. This is usually very quick
     # relative to solving for the Lagrangian duals, so we cheat and use the
     # solved model's objective as our bound while searching for the optimal
     # duals.
-    if JuMP.termination_status(node.subproblem) != MOI.OPTIMAL
-        JuMP.optimize!(node.subproblem)
-    end
+    @assert JuMP.termination_status(node.subproblem) == MOI.OPTIMAL
 
     # Cache some information about the model.
     dual_sense = if JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE
@@ -303,6 +311,7 @@ function _kelley(
     else
         MOI.MIN_SENSE
     end
+    sgn = dual_sense == MOI.MIN_SENSE ? 1.0 : -1.0
     primal_bound = JuMP.objective_value(node.subproblem)
     old_objective = JuMP.objective_function(node.subproblem)
 
@@ -317,14 +326,28 @@ function _kelley(
 
     # Approximation of Lagrangian dual as a function of the multipliers.
     approx_model = JuMP.Model(sddip.optimizer)
-    θ = @variable(approx_model)
-    π = @variable(approx_model, [1:length(dual_vars)])
-    @objective(approx_model, dual_sense, θ)
+    @variables(approx_model, begin
+        theta
+        pi[1:N]
+        pi_p[1:N] >= 0
+        pi_n[1:N] >= 0
+    end)
+    @constraints(approx_model, begin
+        reg_p[i = 1:N], pi_p[i] - pi[i] >= 0.0
+        reg_n[i = 1:N], pi_n[i] + pi[i] >= 0.0
+    end)
+    @objective(
+        approx_model,
+        dual_sense,
+        theta + sgn * sddip.regularizing_weight * sum(
+                pi_p[i] + pi_n[i] for i in 1:N
+            ) / N
+        )
     if dual_sense == MOI.MIN_SENSE
-        JuMP.set_lower_bound(θ, primal_bound)
+        JuMP.set_lower_bound(theta, primal_bound)
         (best_actual, f_actual, f_approx) = (Inf, Inf, -Inf)
     else
-        JuMP.set_upper_bound(θ, primal_bound)
+        JuMP.set_upper_bound(theta, primal_bound)
         (best_actual, f_actual, f_approx) = (-Inf, -Inf, Inf)
     end
 
@@ -339,9 +362,8 @@ function _kelley(
         if dual_sense == MOI.MIN_SENSE
             @constraint(
                 approx_model,
-                θ >= f_actual + sum(
-                    sddip.subgradients[j] * (π[j] - dual_vars[j])
-                    for j in 1:length(dual_vars)
+                theta >= f_actual + sum(
+                    sddip.subgradients[j] * (pi[j] - dual_vars[j]) for j in 1:N
                 )
             )
             if f_actual <= best_actual
@@ -351,9 +373,8 @@ function _kelley(
         else
             @constraint(
                 approx_model,
-                θ <= f_actual + sum(
-                    sddip.subgradients[j] * (π[j] - dual_vars[j])
-                    for j in 1:length(dual_vars)
+                theta <= f_actual + sum(
+                    sddip.subgradients[j] * (pi[j] - dual_vars[j]) for j in 1:N
                 )
             )
             if f_actual >= best_actual
@@ -363,18 +384,21 @@ function _kelley(
         end
 
         # Get a bound from the approximate model.
+        for i in 1:N
+            # n.b.: even on the first iteration, we should have a non-NaN value
+            # for the best multipliers.
+            JuMP.set_normalized_rhs(reg_p[i], -sddip.best_mult[i])
+            JuMP.set_normalized_rhs(reg_n[i], sddip.best_mult[i])
+        end
         JuMP.optimize!(approx_model)
         @assert JuMP.termination_status(approx_model) == MOI.OPTIMAL
-        f_approx = JuMP.objective_value(approx_model)
+        f_approx = JuMP.value(theta)
 
         # More reliable than checking whether subgradient is zero, check that
         # the approximated objective is the same as the actual objective.
         if isapprox(best_actual, f_approx, atol = sddip.atol, rtol = sddip.rtol)
             # Before returning, clean up the problem.
-            dual_vars .= sddip.best_mult
-            if dual_sense == JuMP.MOI.MIN_SENSE
-                dual_vars .*= -1
-            end
+            dual_vars .= -sgn .* sddip.best_mult
             for (i, (name, state)) in enumerate(node.states)
                 JuMP.fix(state.in, sddip.old_rhs[i], force = true)
             end
@@ -383,11 +407,14 @@ function _kelley(
         end
 
         # Next iterate.
-        dual_vars .= value.(π)
+        dual_vars .= value.(pi)
     end
 
     # Make sure to restore the objective before throwing an error to prevent
     # corrupting the user's model.
+    for (i, (name, state)) in enumerate(node.states)
+        JuMP.fix(state.in, sddip.old_rhs[i], force = true)
+    end
     JuMP.set_objective_function(node.subproblem, old_objective)
 
     error("""
