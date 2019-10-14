@@ -264,11 +264,11 @@ function _solve_primal(
     subgradients::Vector{Float64},
     node::Node,
     dual_vars::Vector{Float64},
-    slacks::Vector{Tuple{VariableRef, Float64}}
+    slacks::Vector{Tuple{VariableRef, Float64}},
+    old_obj
 )
     N = length(subgradients)
     @assert N == length(dual_vars) == length(slacks)
-    old_obj = JuMP.objective_function(node.subproblem)
     sense = JuMP.objective_sense(node.subproblem)
     sign = sense == JuMP.MOI.MIN_SENSE ? 1 : -1
     @objective(
@@ -283,23 +283,30 @@ function _solve_primal(
     for i in 1:N
         subgradients[i] = sign * (JuMP.value(slacks[i][1]) - slacks[i][2])
     end
-    @objective(node.subproblem, sense, old_obj)
     return lagrangian_obj
 end
 
 function _kelley(
     node::Node, dual_vars::Vector{Float64}, sddip::SDDiP
 )
-    model = node.subproblem
-
-    # Assume the model has been solved. Solving the MIP is usually very quick
+    # If it hasn't been already, solve the MIP. This is usually very quick
     # relative to solving for the Lagrangian duals, so we cheat and use the
     # solved model's objective as our bound while searching for the optimal
     # duals.
-    @assert JuMP.termination_status(model) == MOI.OPTIMAL
-    obj = JuMP.objective_value(model)
-    dual_sense = JuMP.objective_sense(model) == MOI.MIN_SENSE ? MOI.MAX_SENSE : MOI.MIN_SENSE
+    if JuMP.termination_status(node.subproblem) != MOI.OPTIMAL
+        JuMP.optimize!(node.subproblem)
+    end
 
+    # Cache some information about the model.
+    dual_sense = if JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE
+        MOI.MAX_SENSE
+    else
+        MOI.MIN_SENSE
+    end
+    primal_bound = JuMP.objective_value(node.subproblem)
+    old_objective = JuMP.objective_function(node.subproblem)
+
+    # Collect information about the state variables.
     for (i, (name, state)) in enumerate(node.states)
         sddip.old_rhs[i] = JuMP.fix_value(state.in)
         sddip.slacks[i] = (state.in, sddip.old_rhs[i])
@@ -313,19 +320,19 @@ function _kelley(
     θ = @variable(approx_model)
     π = @variable(approx_model, [1:length(dual_vars)])
     @objective(approx_model, dual_sense, θ)
-
     if dual_sense == MOI.MIN_SENSE
-        JuMP.set_lower_bound(θ, obj)
+        JuMP.set_lower_bound(θ, primal_bound)
         (best_actual, f_actual, f_approx) = (Inf, Inf, -Inf)
     else
-        JuMP.set_upper_bound(θ, obj)
+        JuMP.set_upper_bound(θ, primal_bound)
         (best_actual, f_actual, f_approx) = (-Inf, -Inf, Inf)
     end
 
     for iter in 1:sddip.iteration_limit
-        # Evaluate the real function and a subgradient.
+        # Evaluate the real function and a subgradient. This will update the
+        # subgradients in `sddip.subgradients`!
         f_actual = _solve_primal(
-            sddip.subgradients, node, dual_vars, sddip.slacks
+            sddip.subgradients, node, dual_vars, sddip.slacks, old_objective
         )
 
         # Update the model and update best function value so far.
@@ -360,8 +367,10 @@ function _kelley(
         @assert JuMP.termination_status(approx_model) == MOI.OPTIMAL
         f_approx = JuMP.objective_value(approx_model)
 
-        # More reliable than checking whether subgradient is zero.
+        # More reliable than checking whether subgradient is zero, check that
+        # the approximated objective is the same as the actual objective.
         if isapprox(best_actual, f_approx, atol = sddip.atol, rtol = sddip.rtol)
+            # Before returning, clean up the problem.
             dual_vars .= sddip.best_mult
             if dual_sense == JuMP.MOI.MIN_SENSE
                 dual_vars .*= -1
@@ -369,12 +378,18 @@ function _kelley(
             for (i, (name, state)) in enumerate(node.states)
                 JuMP.fix(state.in, sddip.old_rhs[i], force = true)
             end
+            JuMP.set_objective_function(node.subproblem, old_objective)
             return best_actual
         end
 
         # Next iterate.
         dual_vars .= value.(π)
     end
+
+    # Make sure to restore the objective before throwing an error to prevent
+    # corrupting the user's model.
+    JuMP.set_objective_function(node.subproblem, old_objective)
+
     error("""
     Could not solve for Lagrangian duals. Iteration limit exceeded. A likely
     cause for this is degeneracy. Consider reformulating the model, or
