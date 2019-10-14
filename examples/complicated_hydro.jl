@@ -26,7 +26,7 @@ model = SDDP.LinearPolicyGraph(
         pour[1:3] >= 0
         hydro_generation >= 0
         0 <= dispatch[1:3, 1:3] <= 1
-        ω[1:3]
+        w[1:3]
     end)
     @constraints(subproblem, begin
         thermal_cost >= 10 * thermal_generation + 0
@@ -59,11 +59,11 @@ model = SDDP.LinearPolicyGraph(
             R = DATA["ar_matrix"]["$(t-1)"]["$(i-1)"]
             @constraint(subproblem,
                 inflow[i].out ==
-                    sum(get(R, "$(j-1)", 0.0) * inflow[j].in for j in 1:3) + ω[i])
+                    sum(get(R, "$(j-1)", 0.0) * inflow[j].in for j in 1:3) + w[i])
         end
         SDDP.parameterize(subproblem, [1, 2]) do ϕ
             for i in 1:3
-                JuMP.fix(ω[i], DATA["RHS_noise"][i][ϕ][t])
+                JuMP.fix(w[i], DATA["RHS_noise"][i][ϕ][t])
             end
         end
     end

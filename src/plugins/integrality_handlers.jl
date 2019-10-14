@@ -36,7 +36,9 @@ function enforce_integrality(
     return
 end
 
-get_integrality_handler(subproblem::JuMP.Model) = get_node(subproblem).integrality_handler
+function get_integrality_handler(subproblem::JuMP.Model)
+    return get_node(subproblem).integrality_handler
+end
 
 # ========================= Continuous relaxation ============================ #
 
@@ -50,8 +52,12 @@ Integrality constraints are retained in policy simulation.
 struct ContinuousRelaxation <: AbstractIntegralityHandler end
 
 function setup_state(
-        subproblem::JuMP.Model, state::State, state_info::StateInfo,
-        name::String, ::ContinuousRelaxation)
+    subproblem::JuMP.Model,
+    state::State,
+    state_info::StateInfo,
+    name::String,
+    ::ContinuousRelaxation
+)
     node = get_node(subproblem)
     sym_name = Symbol(name)
     @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.
@@ -66,7 +72,7 @@ function get_dual_variables(node::Node, ::ContinuousRelaxation)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
     dual_values = Dict{Symbol, Float64}()
-    if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+    if JuMP.dual_status(node.subproblem) != MOI.FEASIBLE_POINT
         write_subproblem_to_file(node, "subproblem", throw_error = true)
     end
     dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
@@ -148,8 +154,12 @@ mutable struct SDDiP <: AbstractIntegralityHandler
     atol::Float64
     rtol::Float64
 
-    function SDDiP(; iteration_limit::Int = 100, atol::Float64 = 1e-8,
-        rtol::Float64 = 1e-8)
+    function SDDiP(
+        ;
+        iteration_limit::Int = 100,
+        atol::Float64 = 1e-8,
+        rtol::Float64 = 1e-8
+    )
         integrality_handler = new()
         integrality_handler.iteration_limit = iteration_limit
         integrality_handler.atol = atol
@@ -159,8 +169,10 @@ mutable struct SDDiP <: AbstractIntegralityHandler
 end
 
 function update_integrality_handler!(
-    integrality_handler::SDDiP, optimizer::JuMP.OptimizerFactory,
-    num_states::Int)
+    integrality_handler::SDDiP,
+    optimizer::JuMP.OptimizerFactory,
+    num_states::Int
+)
     integrality_handler.optimizer = optimizer
     integrality_handler.subgradients = Vector{Float64}(undef, num_states)
     integrality_handler.old_rhs = similar(integrality_handler.subgradients)
@@ -170,51 +182,62 @@ function update_integrality_handler!(
 end
 
 function setup_state(
-        subproblem::JuMP.Model, state::State, state_info::StateInfo,
-        name::String, ::SDDiP)
+    subproblem::JuMP.Model,
+    state::State,
+    state_info::StateInfo,
+    name::String,
+    ::SDDiP
+)
     if state_info.out.binary
         # Only in this case we treat `state` as a real state variable
         setup_state(subproblem, state, state_info, name, ContinuousRelaxation())
-    else
-        if !isfinite(state_info.out.upper_bound)
-            error("When using SDDiP, state variables require an upper bound.")
-        end
-
-        if state_info.out.integer
-            # Initial value must be integral
-            initial_value = binexpand(Int(state_info.initial_value), floor(Int, state_info.out.upper_bound))
-            num_vars = length(initial_value)
-
-            binary_vars = JuMP.@variable(
-                subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
-                SDDP.State, Bin, initial_value = initial_value[i])
-
-            JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars]))
-            JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars]))
-        else
-            epsilon = (haskey(state_info.kwargs, :epsilon) ? state_info.kwargs[:epsilon] : 0.1)::Float64
-            initial_value = binexpand(float(state_info.initial_value), float(state_info.out.upper_bound), epsilon)
-            num_vars = length(initial_value)
-
-            binary_vars = JuMP.@variable(
-                subproblem, [i in 1:num_vars], base_name = "_bin_" * name,
-                SDDP.State, Bin, initial_value = initial_value[i])
-
-            JuMP.@constraint(subproblem, state.in == bincontract([binary_vars[i].in for i in 1:num_vars], epsilon))
-            JuMP.@constraint(subproblem, state.out == bincontract([binary_vars[i].out for i in 1:num_vars], epsilon))
-        end
+        return
     end
+    if !isfinite(state_info.out.upper_bound)
+        error("When using SDDiP, state variables require an upper bound.")
+    end
+    # epsilon, initial_value =
+    if state_info.out.integer
+        epsilon = 1.0
+        initial_value = binexpand(
+            Int(state_info.initial_value),
+            floor(Int, state_info.out.upper_bound)
+        )
+    else
+        epsilon = get(state_info.kwargs, :epsilon, 0.1)
+        initial_value = binexpand(
+            float(state_info.initial_value),
+            float(state_info.out.upper_bound),
+            epsilon
+        )
+    end
+    num_vars = length(initial_value)
+    binary_vars = JuMP.@variable(
+        subproblem,
+        [i in 1:num_vars],
+        SDDP.State,
+        Bin,
+        initial_value = initial_value[i],
+        base_name = "_bin_" * name
+    )
+    JuMP.@constraint(
+        subproblem,
+        state.in == bincontract([binary_vars[i].in for i in 1:num_vars], epsilon)
+    )
+    JuMP.@constraint(
+        subproblem,
+        state.out == bincontract([binary_vars[i].out for i in 1:num_vars], epsilon)
+    )
     return
 end
 
 function get_dual_variables(node::Node, integrality_handler::SDDiP)
     dual_values = Dict{Symbol, Float64}()
-    # TODO implement smart choice for initial duals
+    # TODO: implement smart choice for initial duals
     dual_vars = zeros(length(node.states))
     solver_obj = JuMP.objective_value(node.subproblem)
     try
         kelley_obj = _kelley(node, dual_vars, integrality_handler)::Float64
-        @assert isapprox(solver_obj, kelley_obj, atol = 1e-8, rtol = 1e-8)
     catch e
         write_subproblem_to_file(node, "subproblem", throw_error = false)
         rethrow(e)
@@ -226,31 +249,42 @@ function get_dual_variables(node::Node, integrality_handler::SDDiP)
     return dual_values
 end
 
-relax_integrality(::PolicyGraph, ::SDDiP) = Tuple{JuMP.VariableRef, Float64, Float64}[], JuMP.VariableRef[]
+function relax_integrality(::PolicyGraph, ::SDDiP)
+    return Tuple{JuMP.VariableRef, Float64, Float64}[], JuMP.VariableRef[]
+end
 
-function _solve_primal!(subgradients::Vector{Float64}, node::Node, dual_vars::Vector{Float64}, slacks)
+function _solve_primal(
+    subgradients::Vector{Float64},
+    node::Node,
+    dual_vars::Vector{Float64},
+    slacks
+)
     model = node.subproblem
     old_obj = JuMP.objective_function(model)
-    # Set the Lagrangian the objective in the primal model
+    # Set the Lagrangian the objective in the primal model.
     fact = (JuMP.objective_sense(model) == JuMP.MOI.MIN_SENSE ? 1 : -1)
-    new_obj = old_obj + fact * LinearAlgebra.dot(dual_vars, slacks)
+    new_obj = @expression(
+        model, old_obj + fact * LinearAlgebra.dot(dual_vars, slacks)
+    )
     JuMP.set_objective_function(model, new_obj)
     JuMP.optimize!(model)
     lagrangian_obj = JuMP.objective_value(model)
-
-    # Reset old objective, update subgradients using slack values
+    # Reset old objective, update subgradients using slack values.
     JuMP.set_objective_function(model, old_obj)
     subgradients .= fact .* JuMP.value.(slacks)
     return lagrangian_obj
 end
 
-function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SDDiP)
+function _kelley(
+    node::Node, dual_vars::Vector{Float64}, integrality_handler::SDDiP
+)
     atol = integrality_handler.atol
     rtol = integrality_handler.rtol
     model = node.subproblem
     # Assume the model has been solved. Solving the MIP is usually very quick
     # relative to solving for the Lagrangian duals, so we cheat and use the
-    # solved model's objective as our bound while searching for the optimal duals
+    # solved model's objective as our bound while searching for the optimal
+    # duals.
     @assert JuMP.termination_status(model) == MOI.OPTIMAL
     obj = JuMP.objective_value(model)
 
@@ -267,16 +301,14 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
     # Best multipliers found so far
     best_mult = integrality_handler.best_mult
     # Dual problem has the opposite sense to the primal
-    dualsense = (JuMP.objective_sense(model) == JuMP.MOI.MIN_SENSE ? JuMP.MOI.MAX_SENSE : JuMP.MOI.MIN_SENSE)
+    dualsense = JuMP.objective_sense(model) == MOI.MIN_SENSE ? MOI.MAX_SENSE : MOI.MIN_SENSE
 
     # Approximation of Lagrangian dual as a function of the multipliers
     approx_model = JuMP.Model(integrality_handler.optimizer)
 
     # Objective estimate and Lagrangian duals
-    @variables approx_model begin
-        θ
-        x[1:length(dual_vars)]
-    end
+    @variable(approx_model, θ)
+    @variable(approx_model, x[1:length(dual_vars)])
     JuMP.@objective(approx_model, dualsense, θ)
 
     if dualsense == MOI.MIN_SENSE
@@ -290,18 +322,26 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
     iter = 0
     while iter < integrality_handler.iteration_limit
         iter += 1
-        # Evaluate the real function and a subgradient
-        f_actual = _solve_primal!(subgradients, node, dual_vars, integrality_handler.slacks)
+        # Evaluate the real function and a subgradient.
+        f_actual = _solve_primal(
+            subgradients, node, dual_vars, integrality_handler.slacks
+        )
 
-        # Update the model and update best function value so far
+        # Update the model and update best function value so far.
         if dualsense == MOI.MIN_SENSE
-            JuMP.@constraint(approx_model, θ >= f_actual + LinearAlgebra.dot(subgradients, x - dual_vars))
+            @constraint(
+                approx_model,
+                θ >= f_actual + LinearAlgebra.dot(subgradients, x - dual_vars)
+            )
             if f_actual <= best_actual
                 best_actual = f_actual
                 best_mult .= dual_vars
             end
         else
-            JuMP.@constraint(approx_model, θ <= f_actual + LinearAlgebra.dot(subgradients, x - dual_vars))
+            @constraint(
+                approx_model,
+                θ <= f_actual + LinearAlgebra.dot(subgradients, x - dual_vars)
+            )
             if f_actual >= best_actual
                 best_actual = f_actual
                 best_mult .= dual_vars
@@ -309,7 +349,7 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
         end
         # Get a bound from the approximate model
         JuMP.optimize!(approx_model)
-        @assert JuMP.termination_status(approx_model) == JuMP.MOI.OPTIMAL
+        @assert JuMP.termination_status(approx_model) == MOI.OPTIMAL
         f_approx = JuMP.objective_value(approx_model)
 
         # More reliable than checking whether subgradient is zero
@@ -321,7 +361,6 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
             for (i, (name, state)) in enumerate(node.states)
                 JuMP.fix(state.in, integrality_handler.old_rhs[i], force = true)
             end
-
             return best_actual
         end
         # Next iterate
