@@ -197,7 +197,6 @@ function setup_state(
     if !isfinite(state_info.out.upper_bound)
         error("When using SDDiP, state variables require an upper bound.")
     end
-    # epsilon, initial_value =
     if state_info.out.integer
         epsilon = 1.0
         initial_value = binexpand(
@@ -375,8 +374,10 @@ function _kelley(
 
         # Next iterate.
         dual_vars .= value.(π)
-
-        @debug "Iteration $(iter): actual = $(f_actual); approx = $(f_approx)"
     end
-    error("Could not solve for Lagrangian duals. Iteration limit exceeded.")
+    error("""
+    Could not solve for Lagrangian duals. Iteration limit exceeded. A likely
+    cause for this is degeneracy. Consider reformulating the model, or
+    increasing the iteration limit in SDDiP(; iteration_limit).
+    """)
 end
