@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using JuMP, SDDP, LinearAlgebra, GLPK, Test
+using JuMP, SDDP, GLPK, Test
 
 function generation_expansion(integrality_handler)
     build_cost = 1e4

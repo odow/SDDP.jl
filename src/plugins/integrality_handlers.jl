@@ -146,13 +146,14 @@ All state variables are assumed to take nonnegative values only.
 """
 mutable struct SDDiP <: AbstractIntegralityHandler
     iteration_limit::Int
+    atol::Float64
+    rtol::Float64
+    # Storage for use in Kelly's to avoid excessive memory allocation.
     optimizer::JuMP.OptimizerFactory
     subgradients::Vector{Float64}
     old_rhs::Vector{Float64}
     best_mult::Vector{Float64}
-    slacks::Vector{GenericAffExpr{Float64, VariableRef}}
-    atol::Float64
-    rtol::Float64
+    slacks::Vector{Tuple{VariableRef, Float64}}
 
     function SDDiP(
         ;
@@ -175,9 +176,9 @@ function update_integrality_handler!(
 )
     integrality_handler.optimizer = optimizer
     integrality_handler.subgradients = Vector{Float64}(undef, num_states)
-    integrality_handler.old_rhs = similar(integrality_handler.subgradients)
-    integrality_handler.best_mult = similar(integrality_handler.subgradients)
-    integrality_handler.slacks = Vector{GenericAffExpr{Float64, VariableRef}}(undef, num_states)
+    integrality_handler.old_rhs = Vector{Float64}(undef, num_states)
+    integrality_handler.best_mult = Vector{Float64}(undef, num_states)
+    integrality_handler.slacks = Vector{Tuple{VariableRef, Float64}}(undef, num_states)
     return integrality_handler
 end
 
@@ -233,17 +234,24 @@ end
 
 function get_dual_variables(node::Node, integrality_handler::SDDiP)
     dual_values = Dict{Symbol, Float64}()
-    # TODO: implement smart choice for initial duals
+    # TODO: implement smart choice for initial duals.
+    # One possibility is to start with infeasible duals so that Kelly's works
+    # towards a feasible one.
     dual_vars = zeros(length(node.states))
     solver_obj = JuMP.objective_value(node.subproblem)
     try
         kelley_obj = _kelley(node, dual_vars, integrality_handler)::Float64
+        if !isapprox(solver_obj, kelley_obj, atol = 1e-4, rtol = 1e-3)
+            @warn("""
+            SDDiP: objective of dual problem is far from the primal problem.
+            Consider tighting the tolerances in SDDiP(; atol, rtol).
+            """)
+        end
     catch e
         write_subproblem_to_file(node, "subproblem", throw_error = false)
         rethrow(e)
     end
     for (i, name) in enumerate(keys(node.states))
-        # TODO (maybe) change dual signs inside kelley to match LP duals
         dual_values[name] = -dual_vars[i]
     end
     return dual_values
@@ -257,61 +265,57 @@ function _solve_primal(
     subgradients::Vector{Float64},
     node::Node,
     dual_vars::Vector{Float64},
-    slacks
+    slacks::Vector{Tuple{VariableRef, Float64}}
 )
-    model = node.subproblem
-    old_obj = JuMP.objective_function(model)
-    # Set the Lagrangian the objective in the primal model.
-    fact = (JuMP.objective_sense(model) == JuMP.MOI.MIN_SENSE ? 1 : -1)
-    new_obj = @expression(
-        model, old_obj + fact * LinearAlgebra.dot(dual_vars, slacks)
+    N = length(subgradients)
+    @assert N == length(dual_vars) == length(slacks)
+    old_obj = JuMP.objective_function(node.subproblem)
+    sense = JuMP.objective_sense(node.subproblem)
+    sign = sense == JuMP.MOI.MIN_SENSE ? 1 : -1
+    @objective(
+        node.subproblem,
+        sense,
+        old_obj + sign * sum(
+            dual_vars[i] * (slacks[i][1] - slacks[i][2]) for i in 1:N
+        )
     )
-    JuMP.set_objective_function(model, new_obj)
-    JuMP.optimize!(model)
-    lagrangian_obj = JuMP.objective_value(model)
-    # Reset old objective, update subgradients using slack values.
-    JuMP.set_objective_function(model, old_obj)
-    subgradients .= fact .* JuMP.value.(slacks)
+    JuMP.optimize!(node.subproblem)
+    lagrangian_obj = JuMP.objective_value(node.subproblem)
+    for i in 1:N
+        subgradients[i] = sign * (JuMP.value(slacks[i][1]) - slacks[i][2])
+    end
+    @objective(node.subproblem, sense, old_obj)
     return lagrangian_obj
 end
 
 function _kelley(
-    node::Node, dual_vars::Vector{Float64}, integrality_handler::SDDiP
+    node::Node, dual_vars::Vector{Float64}, sddip::SDDiP
 )
-    atol = integrality_handler.atol
-    rtol = integrality_handler.rtol
     model = node.subproblem
+
     # Assume the model has been solved. Solving the MIP is usually very quick
     # relative to solving for the Lagrangian duals, so we cheat and use the
     # solved model's objective as our bound while searching for the optimal
     # duals.
     @assert JuMP.termination_status(model) == MOI.OPTIMAL
     obj = JuMP.objective_value(model)
+    dual_sense = JuMP.objective_sense(model) == MOI.MIN_SENSE ? MOI.MAX_SENSE : MOI.MIN_SENSE
 
     for (i, (name, state)) in enumerate(node.states)
-        integrality_handler.old_rhs[i] = JuMP.fix_value(state.in)
-        integrality_handler.slacks[i] = state.in - integrality_handler.old_rhs[i]
+        sddip.old_rhs[i] = JuMP.fix_value(state.in)
+        sddip.slacks[i] = (state.in, sddip.old_rhs[i])
         JuMP.unfix(state.in)
-        JuMP.set_lower_bound(state.in, 0)
-        JuMP.set_upper_bound(state.in, 1)
+        JuMP.set_lower_bound(state.in, 0.0)
+        JuMP.set_upper_bound(state.in, 1.0)
     end
 
-    # Subgradient at current solution
-    subgradients = integrality_handler.subgradients
-    # Best multipliers found so far
-    best_mult = integrality_handler.best_mult
-    # Dual problem has the opposite sense to the primal
-    dualsense = JuMP.objective_sense(model) == MOI.MIN_SENSE ? MOI.MAX_SENSE : MOI.MIN_SENSE
+    # Approximation of Lagrangian dual as a function of the multipliers.
+    approx_model = JuMP.Model(sddip.optimizer)
+    θ = @variable(approx_model)
+    π = @variable(approx_model, [1:length(dual_vars)])
+    @objective(approx_model, dual_sense, θ)
 
-    # Approximation of Lagrangian dual as a function of the multipliers
-    approx_model = JuMP.Model(integrality_handler.optimizer)
-
-    # Objective estimate and Lagrangian duals
-    @variable(approx_model, θ)
-    @variable(approx_model, x[1:length(dual_vars)])
-    JuMP.@objective(approx_model, dualsense, θ)
-
-    if dualsense == MOI.MIN_SENSE
+    if dual_sense == MOI.MIN_SENSE
         JuMP.set_lower_bound(θ, obj)
         (best_actual, f_actual, f_approx) = (Inf, Inf, -Inf)
     else
@@ -319,52 +323,60 @@ function _kelley(
         (best_actual, f_actual, f_approx) = (-Inf, -Inf, Inf)
     end
 
-    iter = 0
-    while iter < integrality_handler.iteration_limit
-        iter += 1
+    for iter in 1:sddip.iteration_limit
         # Evaluate the real function and a subgradient.
         f_actual = _solve_primal(
-            subgradients, node, dual_vars, integrality_handler.slacks
+            sddip.subgradients, node, dual_vars, sddip.slacks
         )
 
         # Update the model and update best function value so far.
-        if dualsense == MOI.MIN_SENSE
+        if dual_sense == MOI.MIN_SENSE
             @constraint(
                 approx_model,
-                θ >= f_actual + LinearAlgebra.dot(subgradients, x - dual_vars)
+                θ >= f_actual + sum(
+                    sddip.subgradients[j] * (π[j] - dual_vars[j])
+                    for j in 1:length(dual_vars)
+                )
             )
             if f_actual <= best_actual
                 best_actual = f_actual
-                best_mult .= dual_vars
+                sddip.best_mult .= dual_vars
             end
         else
             @constraint(
                 approx_model,
-                θ <= f_actual + LinearAlgebra.dot(subgradients, x - dual_vars)
+                θ <= f_actual + sum(
+                    sddip.subgradients[j] * (π[j] - dual_vars[j])
+                    for j in 1:length(dual_vars)
+                )
             )
             if f_actual >= best_actual
                 best_actual = f_actual
-                best_mult .= dual_vars
+                sddip.best_mult .= dual_vars
             end
         end
-        # Get a bound from the approximate model
+
+        # Get a bound from the approximate model.
         JuMP.optimize!(approx_model)
         @assert JuMP.termination_status(approx_model) == MOI.OPTIMAL
         f_approx = JuMP.objective_value(approx_model)
 
-        # More reliable than checking whether subgradient is zero
-        if isapprox(best_actual, f_approx, atol = atol, rtol = rtol)
-            dual_vars .= best_mult
-            if dualsense == JuMP.MOI.MIN_SENSE
+        # More reliable than checking whether subgradient is zero.
+        if isapprox(best_actual, f_approx, atol = sddip.atol, rtol = sddip.rtol)
+            dual_vars .= sddip.best_mult
+            if dual_sense == JuMP.MOI.MIN_SENSE
                 dual_vars .*= -1
             end
             for (i, (name, state)) in enumerate(node.states)
-                JuMP.fix(state.in, integrality_handler.old_rhs[i], force = true)
+                JuMP.fix(state.in, sddip.old_rhs[i], force = true)
             end
             return best_actual
         end
-        # Next iterate
-        dual_vars .= value.(x)
+
+        # Next iterate.
+        dual_vars .= value.(π)
+
+        @debug "Iteration $(iter): actual = $(f_actual); approx = $(f_approx)"
     end
     error("Could not solve for Lagrangian duals. Iteration limit exceeded.")
 end

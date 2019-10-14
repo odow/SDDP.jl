@@ -10,7 +10,6 @@ Reexport.@reexport using JuMP
 
 import HTTP
 import JSON
-import LinearAlgebra
 import MathOptFormat
 import Printf
 import Random
