@@ -384,12 +384,15 @@ function _kelley(
         end
 
         # Get a bound from the approximate model.
-        for i in 1:N
-            # n.b.: even on the first iteration, we should have a non-NaN value
-            # for the best multipliers.
-            JuMP.set_normalized_rhs(reg_p[i], -sddip.best_mult[i])
-            JuMP.set_normalized_rhs(reg_n[i], sddip.best_mult[i])
-        end
+        # TODO(odow): regularizing around the best multiplier doesn't seem to
+        # work. In fact, with the air_conditioning problem, it hurts even when
+        # the regularizer_weight=0. Investigate why.
+        # for i = 1:N
+        #     # n.b.: even on the first iteration, we should have a non-NaN value
+        #     # for the best multipliers.
+        #     JuMP.set_normalized_rhs(reg_p[i], -sddip.best_mult[i])
+        #     JuMP.set_normalized_rhs(reg_n[i], sddip.best_mult[i])
+        # end
         JuMP.optimize!(approx_model)
         @assert JuMP.termination_status(approx_model) == MOI.OPTIMAL
         f_approx = JuMP.value(theta)
