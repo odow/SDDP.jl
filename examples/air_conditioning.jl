@@ -47,9 +47,13 @@ function air_conditioning_model(integrality_handler)
             JuMP.set_normalized_rhs(demand_con, -w)
         end
     end
-    SDDP.train(model, iteration_limit = 30, print_level = 0)
+    SDDP.train(model, iteration_limit = 30, print_level = 1)
     @test SDDP.calculate_bound(model) ≈ 62_500.0
 end
 
+using Logging
+Logging.global_logger(Logging.SimpleLogger(stderr, Logging.Debug))
+
 air_conditioning_model(SDDP.SDDiP())
+
 air_conditioning_model(SDDP.ContinuousRelaxation())

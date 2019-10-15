@@ -274,18 +274,18 @@ function _solve_primal(
 )
     N = length(subgradients)
     @assert N == length(dual_vars) == length(slacks)
-    sense = JuMP.objective_sense(node.subproblem)
-    sign = sense == JuMP.MOI.MIN_SENSE ? 1 : -1
+    primal_sense = JuMP.objective_sense(node.subproblem)
+    sign = primal_sense == JuMP.MOI.MIN_SENSE ? 1 : -1
     @objective(
         node.subproblem,
-        sense,
+        primal_sense,
         old_obj + sign * sum(
             dual_vars[i] * (slacks[i][1] - slacks[i][2]) for i in 1:N
         )
     )
     JuMP.optimize!(node.subproblem)
     lagrangian_obj = JuMP.objective_value(node.subproblem)
-    for i in 1:N
+    for i = 1:N
         subgradients[i] = sign * (JuMP.value(slacks[i][1]) - slacks[i][2])
     end
     return lagrangian_obj
@@ -298,6 +298,7 @@ function _kelley(
     @assert N == length(node.states)
     sddip.best_mult .= NaN
     sddip.subgradients .= NaN
+    σ = sddip.regularizing_weight
 
     # Check that the MIP has already been solved. This is usually very quick
     # relative to solving for the Lagrangian duals, so we cheat and use the
@@ -306,11 +307,8 @@ function _kelley(
     @assert JuMP.termination_status(node.subproblem) == MOI.OPTIMAL
 
     # Cache some information about the model.
-    dual_sense = if JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE
-        MOI.MAX_SENSE
-    else
-        MOI.MIN_SENSE
-    end
+    primal_sense = JuMP.objective_sense(node.subproblem)
+    dual_sense = primal_sense == MOI.MIN_SENSE ? MOI.MAX_SENSE : MOI.MIN_SENSE
     sgn = dual_sense == MOI.MIN_SENSE ? 1.0 : -1.0
     primal_bound = JuMP.objective_value(node.subproblem)
     old_objective = JuMP.objective_function(node.subproblem)
@@ -336,13 +334,9 @@ function _kelley(
         reg_p[i = 1:N], pi_p[i] - pi[i] >= 0.0
         reg_n[i = 1:N], pi_n[i] + pi[i] >= 0.0
     end)
-    @objective(
-        approx_model,
-        dual_sense,
-        theta + sgn * sddip.regularizing_weight * sum(
-                pi_p[i] + pi_n[i] for i in 1:N
-            ) / N
-        )
+    @expression(
+        approx_model, regularizing_term, sum(pi_p[i] + pi_n[i] for i in 1:N) / N
+    )
     if dual_sense == MOI.MIN_SENSE
         JuMP.set_lower_bound(theta, primal_bound)
         (best_actual, f_actual, f_approx) = (Inf, Inf, -Inf)
@@ -359,43 +353,38 @@ function _kelley(
         )
 
         # Update the model and update best function value so far.
-        if dual_sense == MOI.MIN_SENSE
-            @constraint(
-                approx_model,
-                theta >= f_actual + sum(
-                    sddip.subgradients[j] * (pi[j] - dual_vars[j]) for j in 1:N
-                )
+        @constraint(
+            approx_model,
+            sgn * theta >= sgn * f_actual + sgn * sum(
+                sddip.subgradients[j] * (pi[j] - dual_vars[j]) for j in 1:N
             )
-            if f_actual <= best_actual
-                best_actual = f_actual
-                sddip.best_mult .= dual_vars
-            end
-        else
-            @constraint(
-                approx_model,
-                theta <= f_actual + sum(
-                    sddip.subgradients[j] * (pi[j] - dual_vars[j]) for j in 1:N
-                )
-            )
-            if f_actual >= best_actual
-                best_actual = f_actual
-                sddip.best_mult .= dual_vars
-            end
+        )
+        if dual_sense == MOI.MIN_SENSE && f_actual < best_actual
+            best_actual = f_actual
+            sddip.best_mult .= dual_vars
+        else dual_sense == MOI.MAX_SENSE && f_actual > best_actual
+            best_actual = f_actual
+            sddip.best_mult .= dual_vars
         end
 
         # Get a bound from the approximate model.
         # TODO(odow): regularizing around the best multiplier doesn't seem to
         # work. In fact, with the air_conditioning problem, it hurts even when
         # the regularizer_weight=0. Investigate why.
-        # for i = 1:N
-        #     # n.b.: even on the first iteration, we should have a non-NaN value
-        #     # for the best multipliers.
-        #     JuMP.set_normalized_rhs(reg_p[i], -sddip.best_mult[i])
-        #     JuMP.set_normalized_rhs(reg_n[i], sddip.best_mult[i])
-        # end
+        for i = 1:N
+            # n.b.: even on the first iteration, we should have a non-NaN value
+            # for the best multipliers.
+            JuMP.set_normalized_rhs(reg_p[i], -sddip.best_mult[i])
+            JuMP.set_normalized_rhs(reg_n[i], sddip.best_mult[i])
+        end
+        @objective(
+            approx_model, dual_sense, theta + sgn * σ * regularizing_term
+        )
         JuMP.optimize!(approx_model)
         @assert JuMP.termination_status(approx_model) == MOI.OPTIMAL
         f_approx = JuMP.value(theta)
+        # TODO(odow): remove this debug.
+        @debug "$(iter), $(σ), $(value(regularizing_term)), $(f_approx), $(best_actual)"
 
         # More reliable than checking whether subgradient is zero, check that
         # the approximated objective is the same as the actual objective.
@@ -411,6 +400,7 @@ function _kelley(
 
         # Next iterate.
         dual_vars .= value.(pi)
+        σ = 0.9 * σ
     end
 
     # Make sure to restore the objective before throwing an error to prevent
