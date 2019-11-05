@@ -154,20 +154,21 @@ end
 
 @testset "PolicyGraph constructor" begin
     @testset "LinearGraph" begin
-        model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                                   lower_bound = 0.0,
-                                   direct_mode=false) do node, stage
+        model = SDDP.PolicyGraph(
+            SDDP.LinearGraph(2), lower_bound = 0.0, direct_mode=false
+        ) do node, stage
         end
 
-        @test_throws Exception SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                                                  lower_bound = 0.0
-                                                      ) do node, stage
+        @test_throws Exception SDDP.PolicyGraph(
+            SDDP.LinearGraph(2), lower_bound = 0.0
+        ) do node, stage
         end
         nodes = Set{Int}()
-        model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                                   lower_bound = 0.0,
-                                   optimizer = with_optimizer(GLPK.Optimizer)
-                                       ) do node, stage
+        model = SDDP.PolicyGraph(
+            SDDP.LinearGraph(2),
+            lower_bound = 0.0,
+            optimizer = with_optimizer(GLPK.Optimizer)
+        ) do node, stage
             push!(nodes, stage)
         end
         @test nodes == Set([1, 2])
@@ -185,8 +186,9 @@ end
             ]
         )
         nodes = Set{Tuple{Int, Int}}()
-        model = SDDP.PolicyGraph(graph, lower_bound = 0.0,
-                                   direct_mode = false) do node, stage
+        model = SDDP.PolicyGraph(
+            graph, lower_bound = 0.0, direct_mode = false
+        ) do node, stage
             push!(nodes, stage)
         end
         @test nodes == Set([(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (4, 2), (5, 1), (5, 2)])
@@ -195,13 +197,15 @@ end
     @testset "MarkovianPolicyGraph" begin
         nodes = Set{Tuple{Int, Int}}()
         model = SDDP.MarkovianPolicyGraph(
-                transition_matrices = [
-                    ones(Float64, (1, 1)),
-                    [0.5 0.5],
-                    [0.5 0.5; 0.3 0.4],
-                    [0.5 0.5; 0.3 0.4],
-                    [0.5 0.5; 0.3 0.4]],
-                lower_bound = 0.0, direct_mode = false) do node, stage
+            transition_matrices = [
+                ones(Float64, (1, 1)),
+                [0.5 0.5],
+                [0.5 0.5; 0.3 0.4],
+                [0.5 0.5; 0.3 0.4],
+                [0.5 0.5; 0.3 0.4]],
+            lower_bound = 0.0,
+            direct_mode = false
+        ) do node, stage
             push!(nodes, stage)
         end
         @test nodes == Set([(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (4, 2), (5, 1), (5, 2)])
@@ -219,8 +223,9 @@ end
             ]
         )
         nodes = Set{Symbol}()
-        model = SDDP.PolicyGraph(graph, lower_bound = 0.0,
-                                   direct_mode = false) do node, stage
+        model = SDDP.PolicyGraph(
+            graph, lower_bound = 0.0, direct_mode = false
+        ) do node, stage
             push!(nodes, stage)
         end
         @test nodes == Set([:stage_1, :stage_2, :stage_3])
@@ -228,9 +233,9 @@ end
 end
 
 @testset "SDDP.State" begin
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                               lower_bound = 0.0,
-                               direct_mode = false) do node, stage
+    model = SDDP.PolicyGraph(
+        SDDP.LinearGraph(2), lower_bound = 0.0, direct_mode = false
+    ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0)
     end
     for stage in 1:2
@@ -242,9 +247,9 @@ end
 end
 
 @testset "SDDP.parameterize" begin
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                               lower_bound = 0.0,
-                               direct_mode = false) do node, stage
+    model = SDDP.PolicyGraph(
+        SDDP.LinearGraph(2), lower_bound = 0.0, direct_mode = false
+    ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, [1, 2, 3], [0.4, 0.5, 0.1]) do ω
             JuMP.set_upper_bound(x, ω)
@@ -261,28 +266,49 @@ end
 
 @testset "SDDP.set_stage_objective" begin
     @testset ":Min" begin
-        model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                                   lower_bound = 0.0,
-                                   direct_mode = false) do node, stage
+        model = SDDP.PolicyGraph(
+            SDDP.LinearGraph(2),
+            sense = :Min,
+            lower_bound = 0.0,
+            direct_mode = false
+        ) do node, stage
             @variable(node, 0 <= x <= 1)
             @stageobjective(node, 2x)
         end
         node = model[2]
         @test node.stage_objective == 2 * node.subproblem[:x]
         @test model.objective_sense == SDDP.MOI.MIN_SENSE
+
+        @test_throws Exception SDDP.LinearPolicyGraph(
+            stages = 2,
+            sense = :Min,
+            upper_bound = 0.0,
+            direct_mode = false
+        ) do node, stage
+        end
     end
 
     @testset ":Max" begin
-        model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                                   lower_bound = 0.0,
-                                   sense = :Max,
-                                   direct_mode = false) do node, stage
+        model = SDDP.PolicyGraph(
+            SDDP.LinearGraph(2),
+            upper_bound = 0.0,
+            sense = :Max,
+            direct_mode = false
+        ) do node, stage
             @variable(node, 0 <= x <= 1)
             @stageobjective(node, 2x)
         end
         node = model[2]
         @test node.stage_objective == 2 * node.subproblem[:x]
         @test model.objective_sense == SDDP.MOI.MAX_SENSE
+
+        @test_throws Exception SDDP.LinearPolicyGraph(
+            stages = 2,
+            sense = :Max,
+            lower_bound = 0.0,
+            direct_mode = false
+        ) do node, stage
+        end
     end
 end
 
@@ -295,16 +321,28 @@ end
     end
     @testset "missing bounds" begin
         exception = ErrorException(
-            "You must specify a bound on the objective value, through " *
-            "`lower_bound` if minimizing, or `upper_bound` if maximizing.")
-        @test_throws exception SDDP.LinearPolicyGraph(stages = 1) do sp, t
+            "You must specify a finite lower bound on the objective value" *
+            " using the `lower_bound = value` keyword argument."
+        )
+        @test_throws exception SDDP.LinearPolicyGraph(
+            stages = 1, sense = :Min
+        ) do sp, t
+        end
+
+        exception = ErrorException(
+            "You must specify a finite upper bound on the objective value" *
+            " using the `upper_bound = value` keyword argument."
+        )
+        @test_throws exception SDDP.LinearPolicyGraph(
+            stages = 1, sense = :Max
+        ) do sp, t
         end
     end
     @testset "parameterize!" begin
         exception = ErrorException(
             "Duplicate calls to SDDP.parameterize detected.")
         @test_throws exception SDDP.LinearPolicyGraph(
-                stages = 2, lower_bound = 0.0, sense = :Max, direct_mode = false
+                stages = 2, upper_bound = 0.0, sense = :Max, direct_mode = false
                 ) do node, stage
             @variable(node, 0 <= x <= 1)
             SDDP.parameterize(node, [1, 2]) do ω
@@ -321,7 +359,7 @@ end
             "variable, you must set the `initial_value` keyword to the value " *
             "of the state variable at the root node.")
         @test_throws exception SDDP.LinearPolicyGraph(
-                stages = 2, lower_bound = 0.0, sense = :Max, direct_mode = false
+                stages = 2, upper_bound = 0.0, sense = :Max, direct_mode = false
                 ) do node, stage
             @variable(node, x, SDDP.State)
             @stageobjective(node, x.out)
@@ -330,7 +368,7 @@ end
 
     @testset "termination_status" begin
         model = SDDP.LinearPolicyGraph(
-            stages = 2, lower_bound = 0.0, sense = :Max, direct_mode = false
+            stages = 2, upper_bound = 0.0, sense = :Max, direct_mode = false
             ) do node, stage
             @variable(node, x, SDDP.State, initial_value = 0.0)
             @stageobjective(node, x.out)
