@@ -380,23 +380,26 @@ mutable struct PolicyGraph{T}
     ext::Dict{Symbol, Any}
 
     function PolicyGraph(sense::Symbol, root_node::T) where {T}
-        optimization_sense = if sense == :Min
-            MOI.MIN_SENSE
-        elseif sense == :Max
-            MOI.MAX_SENSE
-        else
-            error("The optimization sense must be :Min or :Max. It is $(sense).")
+        if sense != :Min && sense != :Max
+            error("The optimization sense must be `:Min` or `:Max`. It is $(sense).")
         end
+        optimization_sense = sense == :Min ? MOI.MIN_SENSE : MOI.MAX_SENSE
         return new{T}(
-            optimization_sense, root_node, Noise{T}[],  Dict{Symbol, Float64}(),
-            Dict{T, Node{T}}(), Set{T}[], nothing, Dict{Symbol, Any}())
+            optimization_sense,
+            root_node,
+            Noise{T}[],
+            Dict{Symbol, Float64}(),
+            Dict{T, Node{T}}(),
+            Set{T}[],
+            nothing,
+            Dict{Symbol, Any}()
+        )
     end
 end
 
 function Base.show(io::IO, graph::PolicyGraph)
     println(io, "A policy graph with $(length(graph.nodes)) nodes.")
-    println(io, " Node indices: ",
-        join(sort_nodes(collect(keys(graph.nodes))), ", "))
+    println(io, " Node indices: ", join(sort_nodes(collect(keys(graph.nodes))), ", "))
 end
 
 # So we can query nodes in the graph as graph[node].
@@ -406,14 +409,11 @@ end
 
 # Work around different JuMP modes (Automatic / Manual / Direct).
 function construct_subproblem(optimizer_factory, direct_mode::Bool)
-    subproblem = if direct_mode
-        instance = optimizer_factory.constructor(
-            optimizer_factory.args...; optimizer_factory.kwargs...)
-        JuMP.direct_model(instance)
+    if direct_mode
+        return JuMP.direct_model(optimizer_factory())
     else
-        JuMP.Model(optimizer_factory)
+        return JuMP.Model(optimizer_factory)
     end
-    return subproblem
 end
 
 # Work around different JuMP modes (Automatic / Manual / Direct).
@@ -441,27 +441,37 @@ function LinearPolicyGraph(builder::Function; stages::Int, kwargs...)
 end
 
 """
-    MarkovianPolicyGraph(builder::Function;
-        transition_matrices::Vector{Array{Float64, 2}}, kwargs...)
+    MarkovianPolicyGraph(
+        builder::Function;
+        transition_matrices::Vector{Array{Float64, 2}},
+        kwargs...
+    )
 
 Create a Markovian policy graph based on the transition matrices given in
 `transition_matrices`.
 
 See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
 """
-function MarkovianPolicyGraph(builder::Function;
-        transition_matrices::Vector{Array{Float64, 2}}, kwargs...)
+function MarkovianPolicyGraph(
+    builder::Function;
+    transition_matrices::Vector{Array{Float64, 2}},
+    kwargs...
+)
     return PolicyGraph(builder, MarkovianGraph(transition_matrices); kwargs...)
 end
 
 """
-    PolicyGraph(builder::Function, graph::Graph{T};
+    PolicyGraph(
+        builder::Function,
+        graph::Graph{T};
         sense = :Min,
-        bellman_function = nothing,
         lower_bound = -Inf,
         upper_bound = Inf,
         optimizer = nothing,
-        direct_mode = true) where {T}
+        bellman_function = nothing,
+        direct_mode = true,
+        integrality_handler = ContinuousRelaxation(),
+    ) where {T}
 
 Construct a policy graph based on the graph structure of `graph`. (See
 [`SDDP.Graph`](@ref) for details.)
@@ -472,28 +482,36 @@ Construct a policy graph based on the graph structure of `graph`. (See
         # ... subproblem definition ...
     end
 
-    model = PolicyGraph(builder, graph;
-                        lower_bound = 0.0,
-                        optimizer = with_optimizer(GLPK.Optimizer),
-                        direct_mode = false)
+    model = PolicyGraph(
+        builder,
+        graph;
+        lower_bound = 0.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
+        direct_mode = false
+    )
 
 Or, using the Julia `do ... end` syntax:
 
-    model = PolicyGraph(graph;
-                        lower_bound = 0.0,
-                        optimizer = with_optimizer(GLPK.Optimizer),
-                        direct_mode = true) do subproblem, index
+    model = PolicyGraph(
+        graph;
+        lower_bound = 0.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
+        direct_mode = true
+    ) do subproblem, index
         # ... subproblem definitions ...
     end
 """
-function PolicyGraph(builder::Function, graph::Graph{T};
-                     sense = :Min,
-                     bellman_function = nothing,
-                     lower_bound = -Inf,
-                     upper_bound = Inf,
-                     optimizer = nothing,
-                     direct_mode = true,
-                     integrality_handler = ContinuousRelaxation()) where {T}
+function PolicyGraph(
+    builder::Function,
+    graph::Graph{T};
+    sense = :Min,
+    lower_bound = -Inf,
+    upper_bound = Inf,
+    optimizer = nothing,
+    bellman_function = nothing,
+    direct_mode = true,
+    integrality_handler = ContinuousRelaxation(),
+) where {T}
     # Spend a one-off cost validating the graph.
     _validate_graph(graph)
     # Construct a basic policy graph. We will add to it in the remainder of this
@@ -501,9 +519,16 @@ function PolicyGraph(builder::Function, graph::Graph{T};
     policy_graph = PolicyGraph(sense, graph.root_node)
     # Create a Bellman function if one is not given.
     if bellman_function === nothing
-        if lower_bound === -Inf && upper_bound === Inf
-            error("You must specify a bound on the objective value, through " *
-                  "`lower_bound` if minimizing, or `upper_bound` if maximizing.")
+        if sense == :Min && lower_bound === -Inf
+            error(
+                "You must specify a finite lower bound on the objective value" *
+                " using the `lower_bound = value` keyword argument."
+            )
+        elseif sense == :Max && upper_bound === Inf
+            error(
+                "You must specify a finite upper bound on the objective value" *
+                " using the `upper_bound = value` keyword argument."
+            )
         else
             bellman_function = BellmanFunction(
                 lower_bound = lower_bound, upper_bound = upper_bound)
@@ -547,7 +572,9 @@ function PolicyGraph(builder::Function, graph::Graph{T};
         if length(node.noise_terms) == 0
             push!(node.noise_terms, Noise(nothing, 1.0))
         end
-        update_integrality_handler!(integrality_handler, optimizer, length(node.states))
+        update_integrality_handler!(
+            integrality_handler, optimizer, length(node.states)
+        )
     end
     # Loop back through and add the arcs/children.
     for (node_index, children) in graph.nodes
