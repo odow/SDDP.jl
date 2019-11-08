@@ -11,20 +11,21 @@
 using SDDP, GLPK, Test
 
 function test_prob52_2stages()
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-                optimizer = with_optimizer(GLPK.Optimizer)
-                ) do subproblem, stage
+    model = SDDP.PolicyGraph(
+        SDDP.LinearGraph(2),
+        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do subproblem, stage
         # ========== Problem data ==========
         n = 4
         m = 3
         ic = [16, 5, 32, 2]
         C = [25, 80, 6.5, 160]
         T = [8760, 7000, 1500] / 8760
-        D2 = [diff([0, 3919, 7329, 10315])  diff([0, 7086, 9004, 11169])]
+        D2 = [diff([0, 3919, 7329, 10315]) diff([0, 7086, 9004, 11169])]
         p2 = [0.9, 0.1]
         # ========== State Variables ==========
-        @variable(subproblem, x[i=1:n] >= 0, SDDP.State, initial_value = 0.0)
+        @variable(subproblem, x[i = 1:n] >= 0, SDDP.State, initial_value = 0.0)
         # ========== Variables ==========
         @variables(subproblem, begin
             y[1:n, 1:m] >= 0
@@ -34,9 +35,9 @@ function test_prob52_2stages()
         end)
         # ========== Constraints ==========
         @constraints(subproblem, begin
-            [i=1:n], x[i].out == x[i].in + v[i]
-            [i=1:n], sum(y[i, :]) <= x[i].in
-            [j=1:m], sum(y[:, j]) + penalty >= rhs_noise[j]
+            [i = 1:n], x[i].out == x[i].in + v[i]
+            [i = 1:n], sum(y[i, :]) <= x[i].in
+            [j = 1:m], sum(y[:, j]) + penalty >= rhs_noise[j]
         end)
         if stage == 2
             # No investment in last stage.
@@ -45,14 +46,13 @@ function test_prob52_2stages()
         # ========== Uncertainty ==========
         if stage != 1 # no uncertainty in first stage
             SDDP.parameterize(subproblem, 1:size(D2, 2), p2) do ω
-                for j in 1:m
+                for j = 1:m
                     JuMP.fix(rhs_noise[j], D2[j, ω])
                 end
             end
         end
         # ========== Stage objective ==========
-        @stageobjective(subproblem,
-            ic' * v +  C' * y * T + 1e6 * penalty)
+        @stageobjective(subproblem, ic' * v + C' * y * T + 1e6 * penalty)
         return
     end
 

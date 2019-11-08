@@ -12,32 +12,33 @@ using SDDP, GLPK, Test
 
 function test_prob52_3stages()
     model = SDDP.LinearPolicyGraph(
-                stages = 3,
-                lower_bound = 0.0,
-                optimizer = with_optimizer(GLPK.Optimizer)) do sp, t
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do sp, t
         n = 4
         m = 3
         ic = [16, 5, 32, 2]
         C = [25, 80, 6.5, 160]
         T = [8760, 7000, 1500] / 8760
-        D2 = [diff([0, 3919, 7329, 10315])  diff([0, 7086, 9004, 11169])]
+        D2 = [diff([0, 3919, 7329, 10315]) diff([0, 7086, 9004, 11169])]
         p2 = [0.9, 0.1]
-        @variable(sp, x[i=1:n] >= 0, SDDP.State, initial_value = 0.0)
+        @variable(sp, x[i = 1:n] >= 0, SDDP.State, initial_value = 0.0)
         @variables(sp, begin
             y[1:n, 1:m] >= 0
-            v[1:n]      >= 0
-            penalty     >= 0
-            ξ[j=1:m]
+            v[1:n] >= 0
+            penalty >= 0
+            ξ[j = 1:m]
         end)
         @constraints(sp, begin
-            [i=1:n], x[i].out == x[i].in + v[i]
-            [i=1:n], sum(y[i, :]) <= x[i].in
-            [j=1:m], sum(y[:, j]) + penalty >= ξ[j]
+            [i = 1:n], x[i].out == x[i].in + v[i]
+            [i = 1:n], sum(y[i, :]) <= x[i].in
+            [j = 1:m], sum(y[:, j]) + penalty >= ξ[j]
         end)
         @stageobjective(sp, ic'v + C' * y * T + 1e5 * penalty)
         if t != 1 # no uncertainty in first stage
             SDDP.parameterize(sp, 1:size(D2, 2), p2) do ω
-                for j in 1:m
+                for j = 1:m
                     JuMP.fix(ξ[j], D2[j, ω])
                 end
             end

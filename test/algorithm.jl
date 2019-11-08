@@ -8,11 +8,12 @@ using SDDP
 using Test
 
 @testset "Forward Pass" begin
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(2);
-                sense = :Max,
-                bellman_function = SDDP.BellmanFunction(upper_bound = 100.0),
-                optimizer = with_optimizer(GLPK.Optimizer)
-                    ) do node, stage
+    model = SDDP.PolicyGraph(
+        SDDP.LinearGraph(2);
+        sense = :Max,
+        bellman_function = SDDP.BellmanFunction(upper_bound = 100.0),
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
@@ -28,11 +29,14 @@ using Test
             SDDP.CompleteSampler(),
             SDDP.Expectation(),
             0.0,
-            true
-        )
+            true,
+        ),
     )
     simulated_value = 0.0
-    for ((node_index, noise), state) in zip(forward_trajectory.scenario_path, forward_trajectory.sampled_states)
+    for ((node_index, noise), state) in zip(
+        forward_trajectory.scenario_path,
+        forward_trajectory.sampled_states,
+    )
         @test state[:x] == noise
         simulated_value += noise
     end
@@ -40,33 +44,46 @@ using Test
 end
 
 @testset "to nodal forms" begin
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-                optimizer = with_optimizer(GLPK.Optimizer)
-                    ) do node, stage
+    model = SDDP.PolicyGraph(
+        SDDP.LinearGraph(2),
+        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
             JuMP.set_lower_bound(x.out, ω)
         end
     end
-    SDDP.train(model; iteration_limit = 1, print_level = 0,
-        risk_measure = SDDP.Expectation())
+    SDDP.train(
+        model;
+        iteration_limit = 1,
+        print_level = 0,
+        risk_measure = SDDP.Expectation(),
+    )
     @test SDDP.termination_status(model) == :iteration_limit
-    SDDP.train(model; iteration_limit = 1, print_level = 0,
-        risk_measure = Dict(1 => SDDP.Expectation(), 2 => SDDP.WorstCase()))
+    SDDP.train(
+        model;
+        iteration_limit = 1,
+        print_level = 0,
+        risk_measure = Dict(1 => SDDP.Expectation(), 2 => SDDP.WorstCase()),
+    )
     @test SDDP.termination_status(model) == :iteration_limit
-    SDDP.train(model; iteration_limit = 1, print_level = 0,
-        risk_measure = (idx) -> idx == 1 ? SDDP.Expectation() : SDDP.WorstCase()
+    SDDP.train(
+        model;
+        iteration_limit = 1,
+        print_level = 0,
+        risk_measure = (idx) -> idx == 1 ? SDDP.Expectation() : SDDP.WorstCase(),
     )
     @test SDDP.termination_status(model) == :iteration_limit
 end
 
 @testset "solve" begin
-    model = SDDP.PolicyGraph(SDDP.LinearGraph(2),
-                bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-                optimizer = with_optimizer(GLPK.Optimizer)
-                    ) do node, stage
+    model = SDDP.PolicyGraph(
+        SDDP.LinearGraph(2),
+        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
@@ -82,18 +99,26 @@ end
 
         simulation = simulations[1][1]
         @test length(keys(simulation)) == 7
-        @test sort(collect(keys(simulation))) ==
-            [:belief, :bellman_term, :node_index, :noise_term, :objective_state,
-            :stage_objective, :x]
+        @test sort(collect(keys(simulation))) == [
+            :belief,
+            :bellman_term,
+            :node_index,
+            :noise_term,
+            :objective_state,
+            :stage_objective,
+            :x,
+        ]
         @test typeof(simulation[:x]) == SDDP.State{Float64}
     end
 end
 
 @testset "simulate" begin
     model = SDDP.LinearPolicyGraph(
-            stages=2, lower_bound=0.0, optimizer=with_optimizer(GLPK.Optimizer)
-            ) do sp, t
-        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do sp, t
+        @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         @stageobjective(sp, x[1].out + x[2].out)
     end
     simulations = SDDP.simulate(model, 1, [:x])
@@ -102,26 +127,28 @@ end
 
 @testset "simulate missing" begin
     model = SDDP.LinearPolicyGraph(
-            stages=2, lower_bound=0.0, optimizer=with_optimizer(GLPK.Optimizer)
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
     ) do sp, t
-        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
+        @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         if t == 1
             @variable(sp, y >= 0)
         end
         @stageobjective(sp, x[1].out + x[2].out)
     end
     @test_throws ErrorException SDDP.simulate(model, 1, [:y])
-    sims = SDDP.simulate(model, 1, [:y], skip_undefined_variables=true)
+    sims = SDDP.simulate(model, 1, [:y], skip_undefined_variables = true)
     @test sims[1][1][:y] == 0.0
     @test isnan(sims[1][2][:y])
 end
 
 @testset "infeasible model" begin
     model = SDDP.LinearPolicyGraph(
-                stages = 2,
-                lower_bound = 0.0,
-                optimizer = with_optimizer(GLPK.Optimizer)
-                    ) do node, stage
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @constraint(node, x.out <= -1)
         @stageobjective(node, x.out)
@@ -135,9 +162,9 @@ end
 
 @testset "refine_at_similar_nodes" begin
     model = SDDP.MarkovianPolicyGraph(
-        transition_matrices = [ [0.5 0.5], [0.2 0.8; 0.8 0.2]],
+        transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
         optimizer = with_optimizer(GLPK.Optimizer),
-        lower_bound = 0.0
+        lower_bound = 0.0,
     ) do sp, index
         stage, markov_state = index
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
@@ -146,14 +173,14 @@ end
     end
     SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = false, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 5.7 || SDDP.calculate_bound(model) ≈ 6.3
-    mi1 = length(model[(1,1)].bellman_function.global_theta.cut_oracle.cuts)
-    mi2 = length(model[(1,2)].bellman_function.global_theta.cut_oracle.cuts)
+    mi1 = length(model[(1, 1)].bellman_function.global_theta.cut_oracle.cuts)
+    mi2 = length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts)
     @test mi1 + mi2 == 1
 
     model = SDDP.MarkovianPolicyGraph(
-        transition_matrices = [ [0.5 0.5], [0.2 0.8; 0.8 0.2]],
+        transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
         optimizer = with_optimizer(GLPK.Optimizer),
-        lower_bound = 0.0
+        lower_bound = 0.0,
     ) do sp, index
         stage, markov_state = index
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
@@ -170,8 +197,8 @@ end
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         optimizer = with_optimizer(GLPK.Optimizer),
-        lower_bound = 0.0
-    ) do  sp, t
+        lower_bound = 0.0,
+    ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0)
         @stageobjective(sp, x.out)
     end
@@ -187,8 +214,12 @@ end
         return
     end
     SDDP.solve_subproblem(
-        model, node, Dict(:x => 0.0), nothing, Tuple{Int, Any}[(1, nothing)];
-        require_duals = false
+        model,
+        node,
+        Dict(:x => 0.0),
+        nothing,
+        Tuple{Int,Any}[(1, nothing)];
+        require_duals = false,
     )
     @test pre_optimize_called == 1
     @test post_optimize_called == 3
@@ -196,7 +227,9 @@ end
 
 @testset "write_log_to_csv" begin
     model = SDDP.LinearPolicyGraph(
-        stages = 2, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer)
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
