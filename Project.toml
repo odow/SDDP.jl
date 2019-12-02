@@ -17,8 +17,15 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
-JuliaFormatter = "~0.1.18"
+GLPK = "0.12"
+HTTP = "0.8"
+JSON = "0.21"
+JuliaFormatter = "0.1.37"
 JuMP = "~0.20"
+MathOptFormat = "0.2"
+RecipesBase = "0.7"
+Reexport = "0.2"
+TimerOutputs = "0.5"
 julia = "1.0"
 
 [extras]
