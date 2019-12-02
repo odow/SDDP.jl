@@ -49,7 +49,9 @@ const GUIDE_PAGES = Any[
     for page in sort(readdir(joinpath(@__DIR__, "src", "guides")))
 ]
 
-const ASSETS = readdir(joinpath(@__DIR__, "src", "assets"))
+const ASSETS = [
+    "logo.ico"
+]
 
 makedocs(
     sitename = "SDDP.jl",

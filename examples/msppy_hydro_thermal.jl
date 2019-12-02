@@ -14,6 +14,8 @@
 # and risk averse stochastic dual dynamic programming method. European journal
 # of operational research, 224(2), 375–391.
 
+#! format: off
+
 using SDDP, Gurobi, Test
 
 function msppy_hydro_thermal()

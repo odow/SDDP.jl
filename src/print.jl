@@ -66,8 +66,12 @@ function _stringify_bounds(bounds::Vector{Float64})
 end
 
 function _print_numerical_stability_report(
-        io::IO, ranges::CoefficientRanges, print::Bool, warn::Bool)
-    warnings = Tuple{String, String}[]
+    io::IO,
+    ranges::CoefficientRanges,
+    print::Bool,
+    warn::Bool,
+)
+    warnings = Tuple{String,String}[]
     _print_coefficients(io, "Matrix", ranges.matrix, print, warnings)
     _print_coefficients(io, "Objective", ranges.objective, print, warnings)
     _print_coefficients(io, "Bounds", ranges.bounds, print, warnings)
@@ -78,9 +82,12 @@ function _print_numerical_stability_report(
             for (name, sense) in warnings
                 println(io, "  - $(name) range contains $(sense) coefficients")
             end
-            println(io, "Very large or small absolute values of coefficients\n",
-                    "can cause numerical stability issues. Consider\n",
-                    "reformulating the model.")
+            println(
+                io,
+                "Very large or small absolute values of coefficients\n",
+                "can cause numerical stability issues. Consider\n",
+                "reformulating the model.",
+            )
         else
             print && println(io, "No problems detected")
         end
@@ -88,10 +95,20 @@ function _print_numerical_stability_report(
     return
 end
 
-function _print_coefficients(io::IO, name::String, range, print::Bool, warnings::Vector{Tuple{String, String}})
+function _print_coefficients(
+    io::IO,
+    name::String,
+    range,
+    print::Bool,
+    warnings::Vector{Tuple{String,String}},
+)
     if print
-        println(io, "  Non-zero ", rpad(string(name, " range"), 17),
-                _stringify_bounds(range))
+        println(
+            io,
+            "  Non-zero ",
+            rpad(string(name, " range"), 17),
+            _stringify_bounds(range),
+        )
     end
     range[1] < 1e-4 && push!(warnings, (name, "small"))
     range[2] > 1e7 && push!(warnings, (name, "large"))
@@ -167,8 +184,12 @@ Print a report identifying possible numeric stability issues.
 - If `warn`, warn if the coefficients may cause numerical issues.
 """
 function numerical_stability_report(
-        io::IO, model::PolicyGraph;
-        by_node::Bool=false, print::Bool=true, warn::Bool=true)
+    io::IO,
+    model::PolicyGraph;
+    by_node::Bool = false,
+    print::Bool = true,
+    warn::Bool = true,
+)
     graph_ranges = CoefficientRanges()
     node_keys = sort_nodes(collect(keys(model.nodes)))
     for key in node_keys
@@ -194,10 +215,12 @@ function numerical_stability_report(
 end
 
 function numerical_stability_report(
-        model::PolicyGraph;
-        by_node::Bool=false, print::Bool=true, warn::Bool=true)
-    numerical_stability_report(
-        stdout, model, by_node=by_node, print=print, warn=warn)
+    model::PolicyGraph;
+    by_node::Bool = false,
+    print::Bool = true,
+    warn::Bool = true,
+)
+    numerical_stability_report(stdout, model, by_node = by_node, print = print, warn = warn)
 end
 
 ###
@@ -218,8 +241,16 @@ function write_log_to_csv(model::PolicyGraph, filename::String)
     open(filename, "w") do io
         println(io, "iteration, simulation, bound, time")
         for log in model.most_recent_training_results.log
-            println(io, log.iteration, ", ", log.simulation_value, ", ",
-                log.bound, ", ", log.time)
+            println(
+                io,
+                log.iteration,
+                ", ",
+                log.simulation_value,
+                ", ",
+                log.bound,
+                ", ",
+                log.time,
+            )
         end
     end
 end
