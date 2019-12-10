@@ -164,8 +164,7 @@ end
         lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
         cut_type::CutType = MULTI_CUT)
 """
-function BellmanFunction(
-    ;
+function BellmanFunction(;
     lower_bound = -Inf,
     upper_bound = Inf,
     deletion_minimum::Int = 1,
@@ -278,8 +277,10 @@ function refine_bellman_function(
     objective_realizations::Vector{Float64},
 ) where {T}
     # Sanity checks.
-    @assert length(dual_variables) == length(noise_supports) ==
-            length(nominal_probability) == length(objective_realizations)
+    @assert length(dual_variables) ==
+            length(noise_supports) ==
+            length(nominal_probability) ==
+            length(objective_realizations)
     # Preliminaries that are common to all cut types.
     risk_adjusted_probability = similar(nominal_probability)
     adjust_probability(
@@ -364,8 +365,10 @@ function _add_multi_cut(
     model = JuMP.owner_model(bellman_function.global_theta.theta)
     cut_expr = @expression(
         model,
-        sum(risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
-            for i = 1:N) - (1 - sum(risk_adjusted_probability)) * μᵀy
+        sum(
+            risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
+            for i = 1:N
+        ) - (1 - sum(risk_adjusted_probability)) * μᵀy
     )
     # TODO(odow): should we use `cut_expr` instead?
     ξ = copy(risk_adjusted_probability)
@@ -424,8 +427,10 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
     cuts = Dict{String,Any}[]
     for (node_name, node) in model.nodes
         if node.objective_state !== nothing
-            error("Unable to write cuts to file because model contains " *
-                  "objective states.")
+            error(
+                "Unable to write cuts to file because model contains " *
+                "objective states.",
+            )
         end
         node_cuts = Dict(
             "node" => string(node_name),
@@ -476,8 +481,10 @@ function _node_name_parser(::Type{NTuple{N,Int}}, name::String) where {N}
 end
 
 function _node_name_parser(T, name)
-    error("Unable to read name $(name). Provide a custom parser to " *
-          "`read_cuts_from_file` using the `node_name_parser` keyword.")
+    error(
+        "Unable to read name $(name). Provide a custom parser to " *
+        "`read_cuts_from_file` using the `node_name_parser` keyword.",
+    )
 end
 
 """
@@ -513,8 +520,8 @@ function read_cuts_from_file(
         bf = node.bellman_function
         # Loop through and add the single-cuts.
         for json_cut in node_cuts["single_cuts"]
-            coefficients = Dict{Symbol,Float64}(Symbol(k) => v
-                for (k, v) in json_cut["coefficients"])
+            coefficients =
+                Dict{Symbol,Float64}(Symbol(k) => v for (k, v) in json_cut["coefficients"])
             _add_cut(
                 bf.global_theta,
                 json_cut["intercept"],
@@ -532,8 +539,8 @@ function read_cuts_from_file(
             _add_locals_if_necessary(bf, length(first(node_cuts["risk_set_cuts"])))
         end
         for json_cut in node_cuts["multi_cuts"]
-            coefficients = Dict{Symbol,Float64}(Symbol(k) => v
-                for (k, v) in json_cut["coefficients"])
+            coefficients =
+                Dict{Symbol,Float64}(Symbol(k) => v for (k, v) in json_cut["coefficients"])
             _add_cut(
                 bf.local_thetas[json_cut["realization"]],
                 json_cut["intercept"],

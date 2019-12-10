@@ -14,10 +14,14 @@ Length of the result is determined by the number of bits required to represent
 `maximum` in binary.
 """
 function binexpand(x::Int, maximum::Int)
-    x < 0 && error("Cannot perform binary expansion on a negative number." *
-                   "Initial values of state variables must be nonnegative.")
-    maximum <= 0 && error("Cannot perform binary expansion on zero-length " *
-                          "vector. Upper bounds of state variables must be positive.")
+    x < 0 && error(
+        "Cannot perform binary expansion on a negative number." *
+        "Initial values of state variables must be nonnegative.",
+    )
+    maximum <= 0 && error(
+        "Cannot perform binary expansion on zero-length " *
+        "vector. Upper bounds of state variables must be positive.",
+    )
     y = zeros(Int, _bitsrequired(maximum))
     @inbounds for i = length(y):-1:1
         k = 2^(i - 1)

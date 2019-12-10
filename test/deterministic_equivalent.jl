@@ -33,7 +33,9 @@ using Test
             @stageobjective(sp, x.out)
         end
         @test SDDP.is_cyclic(model) == true
-        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(model)
+        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(
+            model,
+        )
     end
     @testset "Cyclic single node" begin
         graph = SDDP.Graph(:root, [:node], [(:root => :node, 1.0), (:node => :node, 0.9)])
@@ -46,7 +48,9 @@ using Test
             @stageobjective(sp, x.out)
         end
         @test SDDP.is_cyclic(model) == true
-        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(model)
+        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(
+            model,
+        )
     end
     @testset "Acyclic Markovian" begin
         model = SDDP.MarkovianPolicyGraph(
@@ -72,7 +76,9 @@ using Test
             @stageobjective(sp, x.out)
         end
         @test SDDP.is_cyclic(model) == true
-        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(model)
+        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(
+            model,
+        )
     end
 end
 
@@ -112,7 +118,9 @@ end
             @stageobjective(sp, p * x.out)
         end
     end
-    @test_throws ErrorException("Unable to formulate deterministic equivalent: Objective states detected!") SDDP.deterministic_equivalent(model)
+    @test_throws ErrorException("Unable to formulate deterministic equivalent: Objective states detected!") SDDP.deterministic_equivalent(
+        model,
+    )
 end
 
 @testset "belief_states" begin
@@ -127,5 +135,7 @@ end
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
     end
-    @test_throws ErrorException("Unable to formulate deterministic equivalent: Belief states detected!") SDDP.deterministic_equivalent(model)
+    @test_throws ErrorException("Unable to formulate deterministic equivalent: Belief states detected!") SDDP.deterministic_equivalent(
+        model,
+    )
 end

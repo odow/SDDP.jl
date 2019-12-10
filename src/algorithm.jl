@@ -174,7 +174,9 @@ function set_objective(node::Node{T}) where {T}
             JuMP.objective_sense(node.subproblem),
             @expression(
                 node.subproblem,
-                node.stage_objective + objective_state_component + belief_state_component +
+                node.stage_objective +
+                objective_state_component +
+                belief_state_component +
                 bellman_term(node.bellman_function)
             )
         )
@@ -335,10 +337,8 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
     TimerOutputs.@timeit SDDP_TIMER "sample_scenario" begin
-        scenario_path, terminated_due_to_cycle = sample_scenario(
-            model,
-            options.sampling_scheme,
-        )
+        scenario_path, terminated_due_to_cycle =
+            sample_scenario(model, options.sampling_scheme)
     end
     # Storage for the list of outgoing states that we visit on the forward pass.
     sampled_states = Dict{Symbol,Float64}[]
@@ -356,11 +356,8 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
     for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
         # Objective state interpolation.
-        objective_state_vector = update_objective_state(
-            node.objective_state,
-            objective_state_vector,
-            noise,
-        )
+        objective_state_vector =
+            update_objective_state(node.objective_state, objective_state_vector, noise)
         if objective_state_vector !== nothing
             push!(objective_states, objective_state_vector)
         end
@@ -368,12 +365,8 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
         if node.belief_state !== nothing
             belief = node.belief_state::BeliefState{T}
             partition_index = belief.partition_index
-            current_belief = belief.updater(
-                belief.belief,
-                current_belief,
-                partition_index,
-                noise,
-            )
+            current_belief =
+                belief.updater(belief.belief, current_belief, partition_index, noise)
             push!(belief_states, (partition_index, copy(current_belief)))
         end
         # ===== Begin: starting state for infinite horizon =====
@@ -382,7 +375,10 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
             # There is at least one other possible starting state. If our
             # incoming state is more than δ away from the other states, add it
             # as a possible starting state.
-            if distance(starting_states, incoming_state_value) > options.cycle_discretization_delta
+            if distance(
+                starting_states,
+                incoming_state_value,
+            ) > options.cycle_discretization_delta
                 push!(starting_states, incoming_state_value)
             end
             # TODO(odow):
@@ -426,7 +422,10 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
         incoming_state_value = sampled_states[end]
         # If this incoming state value is more than δ away from another state,
         # add it to the list.
-        if distance(starting_states, incoming_state_value) > options.cycle_discretization_delta
+        if distance(
+            starting_states,
+            incoming_state_value,
+        ) > options.cycle_discretization_delta
             push!(starting_states, incoming_state_value)
         end
     end
@@ -554,11 +553,9 @@ function backward_pass(
                     copied_probability = similar(items.probability)
                     other_node = model[other_index]
                     for (idx, child_index) in enumerate(items.nodes)
-                        copied_probability[idx] = get(
-                            options.Φ,
-                            (other_index, child_index),
-                            0.0,
-                        ) * items.supports[idx].probability
+                        copied_probability[idx] =
+                            get(options.Φ, (other_index, child_index), 0.0) *
+                            items.supports[idx].probability
                     end
                     refine_bellman_function(
                         model,
@@ -829,11 +826,8 @@ function train(
     end
 
     if run_numerical_stability_report
-        report = sprint(io -> numerical_stability_report(
-            io,
-            model,
-            print = print_level > 0,
-        ))
+        report =
+            sprint(io -> numerical_stability_report(io, model, print = print_level > 0))
         print_helper(print, log_file_handle, report)
     end
 
@@ -874,17 +868,16 @@ function train(
     end
     for (key, node) in model.nodes
         node.bellman_function.cut_type = cut_type
-        node.bellman_function.global_theta.cut_oracle.deletion_minimum = cut_deletion_minimum
+        node.bellman_function.global_theta.cut_oracle.deletion_minimum =
+            cut_deletion_minimum
         for oracle in node.bellman_function.local_thetas
             oracle.cut_oracle.deletion_minimum = cut_deletion_minimum
         end
     end
 
     # Perform relaxations required by integrality_handler
-    binaries, integers = relax_integrality(
-        model,
-        last(first(model.nodes)).integrality_handler,
-    )
+    binaries, integers =
+        relax_integrality(model, last(first(model.nodes)).integrality_handler)
 
     dashboard_callback = if dashboard
         launch_dashboard()
@@ -993,23 +986,16 @@ function _simulate(
     for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
         # Objective state interpolation.
-        objective_state_vector = update_objective_state(
-            node.objective_state,
-            objective_state_vector,
-            noise,
-        )
+        objective_state_vector =
+            update_objective_state(node.objective_state, objective_state_vector, noise)
         if objective_state_vector !== nothing
             push!(objective_states, objective_state_vector)
         end
         if node.belief_state !== nothing
             belief = node.belief_state::BeliefState{T}
             partition_index = belief.partition_index
-            current_belief = belief.updater(
-                belief.belief,
-                current_belief,
-                partition_index,
-                noise,
-            )
+            current_belief =
+                belief.updater(belief.belief, current_belief, partition_index, noise)
         else
             current_belief = Dict(node_index => 1.0)
         end
@@ -1029,8 +1015,8 @@ function _simulate(
             :node_index => node_index,
             :noise_term => noise,
             :stage_objective => subproblem_results.stage_objective,
-            :bellman_term => subproblem_results.objective -
-                             subproblem_results.stage_objective,
+            :bellman_term =>
+                subproblem_results.objective - subproblem_results.stage_objective,
             :objective_state => objective_state_vector,
             :belief => copy(current_belief),
         )

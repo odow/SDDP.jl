@@ -210,7 +210,8 @@ end
             [-2.0, -1.0, -3.0, -4.0, -5.0],
             true,
         )
-        @test risk_adjusted_probability ≈ [0.279057, 0.358114, 0.2, 0.120943, 0.0418861] atol = 1e-6
+        @test risk_adjusted_probability ≈ [0.279057, 0.358114, 0.2, 0.120943, 0.0418861] atol =
+            1e-6
     end
     @testset "Max - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
@@ -222,7 +223,8 @@ end
             [2.0, 1.0, 3.0, 4.0, 5.0],
             false,
         )
-        @test risk_adjusted_probability ≈ [0.279057, 0.358114, 0.2, 0.120943, 0.0418861] atol = 1e-6
+        @test risk_adjusted_probability ≈ [0.279057, 0.358114, 0.2, 0.120943, 0.0418861] atol =
+            1e-6
     end
     @testset "Min - R=0.4" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
@@ -234,7 +236,8 @@ end
             [-2.0, -1.0, -3.0, -4.0, -5.0],
             true,
         )
-        @test risk_adjusted_probability ≈ [0.324162, 0.472486, 0.175838, 0.027514, 0.0] atol = 1e-6
+        @test risk_adjusted_probability ≈ [0.324162, 0.472486, 0.175838, 0.027514, 0.0] atol =
+            1e-6
     end
     @testset "Max - R=0.4" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
@@ -246,7 +249,8 @@ end
             [2.0, 1.0, 3.0, 4.0, 5.0],
             false,
         )
-        @test risk_adjusted_probability ≈ [0.324162, 0.472486, 0.175838, 0.027514, 0.0] atol = 1e-6
+        @test risk_adjusted_probability ≈ [0.324162, 0.472486, 0.175838, 0.027514, 0.0] atol =
+            1e-6
     end
     @testset "Min - R=√0.8" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)

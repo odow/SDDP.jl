@@ -151,8 +151,10 @@ function launch_file(filename)
     elseif Sys.islinux() || Sys.isbsd()
         run(`xdg-open $(filename)`)
     else
-        error("Unable to show spaghetti plot. Try opening the file " *
-              "$(filename) manually.")
+        error(
+            "Unable to show spaghetti plot. Try opening the file " *
+            "$(filename) manually.",
+        )
     end
     return
 end

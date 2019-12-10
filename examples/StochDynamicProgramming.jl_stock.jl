@@ -43,8 +43,10 @@ function stock_example()
 
     simulation_results = SDDP.simulate(model, 1_000)
     @test length(simulation_results) == 1_000
-    @test SDDP.Statistics.mean(sum(data[:stage_objective] for data in simulation)
-        for simulation in simulation_results) ≈ -1.471 atol = 0.05
+    @test SDDP.Statistics.mean(
+        sum(data[:stage_objective] for data in simulation)
+        for simulation in simulation_results
+    ) ≈ -1.471 atol = 0.05
 end
 
 stock_example()

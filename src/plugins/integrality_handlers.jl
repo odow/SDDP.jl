@@ -170,10 +170,8 @@ function update_integrality_handler!(
     integrality_handler.subgradients = Vector{Float64}(undef, num_states)
     integrality_handler.old_rhs = similar(integrality_handler.subgradients)
     integrality_handler.best_mult = similar(integrality_handler.subgradients)
-    integrality_handler.slacks = Vector{GenericAffExpr{Float64,VariableRef}}(
-        undef,
-        num_states,
-    )
+    integrality_handler.slacks =
+        Vector{GenericAffExpr{Float64,VariableRef}}(undef, num_states)
     return integrality_handler
 end
 
@@ -218,8 +216,10 @@ function setup_state(
                 state.out == bincontract([binary_vars[i].out for i = 1:num_vars])
             )
         else
-            epsilon = (haskey(state_info.kwargs, :epsilon) ? state_info.kwargs[:epsilon] :
-                       0.1)::Float64
+            epsilon =
+                (
+                    haskey(state_info.kwargs, :epsilon) ? state_info.kwargs[:epsilon] : 0.1
+                )::Float64
             initial_value = binexpand(
                 float(state_info.initial_value),
                 float(state_info.out.upper_bound),
@@ -315,8 +315,10 @@ function _kelley(node::Node, dual_vars::Vector{Float64}, integrality_handler::SD
     # Best multipliers found so far
     best_mult = integrality_handler.best_mult
     # Dual problem has the opposite sense to the primal
-    dualsense = (JuMP.objective_sense(model) == JuMP.MOI.MIN_SENSE ? JuMP.MOI.MAX_SENSE :
-                 JuMP.MOI.MIN_SENSE)
+    dualsense = (
+        JuMP.objective_sense(model) == JuMP.MOI.MIN_SENSE ? JuMP.MOI.MAX_SENSE :
+            JuMP.MOI.MIN_SENSE
+    )
 
     # Approximation of Lagrangian dual as a function of the multipliers
     approx_model = JuMP.Model(integrality_handler.optimizer)

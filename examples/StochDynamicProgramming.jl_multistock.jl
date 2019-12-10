@@ -38,7 +38,7 @@ function test_multistock_example()
                 [i = 1:3], stock[i].out == stock[i].in + control[i] - ξ[i]
             end
         )
-        Ξ = collect(Base.product((0.0, 0.15, 0.3), (0.0, 0.15, 0.3), (0.0, 0.15, 0.3)))[:]
+        Ξ =     collect(Base.product((0.0, 0.15, 0.3), (0.0, 0.15, 0.3), (0.0, 0.15, 0.3)))[:]
         SDDP.parameterize(subproblem, Ξ) do ω
             JuMP.fix.(ξ, ω)
         end
@@ -49,8 +49,10 @@ function test_multistock_example()
 
     simulation_results = SDDP.simulate(model, 5000)
     @test length(simulation_results) == 5000
-    @test SDDP.Statistics.mean(sum(data[:stage_objective] for data in simulation)
-        for simulation in simulation_results) ≈ -4.349 atol = 0.02
+    @test SDDP.Statistics.mean(
+        sum(data[:stage_objective] for data in simulation)
+        for simulation in simulation_results
+    ) ≈ -4.349 atol = 0.02
 end
 
 test_multistock_example()

@@ -95,20 +95,20 @@ end
     @test SDDP.convergence_test(
         graph,
         [
-         SDDP.Log(1, 0.0, 0.0, 1.0),
-         SDDP.Log(2, 0.9, 0.0, 1.0),
-         SDDP.Log(3, 1.5, 0.0, 1.0),
-         SDDP.Log(4, 1.5, 0.0, 1.0),
+            SDDP.Log(1, 0.0, 0.0, 1.0),
+            SDDP.Log(2, 0.9, 0.0, 1.0),
+            SDDP.Log(3, 1.5, 0.0, 1.0),
+            SDDP.Log(4, 1.5, 0.0, 1.0),
         ],
         rule,
     )
     @test !SDDP.convergence_test(
         graph,
         [
-         SDDP.Log(1, 0.0, 0.0, 1.0),
-         SDDP.Log(2, 1.9, 0.0, 1.0),
-         SDDP.Log(3, 2.0, 0.0, 1.0),
-         SDDP.Log(4, 2.0, 0.0, 1.0),
+            SDDP.Log(1, 0.0, 0.0, 1.0),
+            SDDP.Log(2, 1.9, 0.0, 1.0),
+            SDDP.Log(3, 2.0, 0.0, 1.0),
+            SDDP.Log(4, 2.0, 0.0, 1.0),
         ],
         rule,
     )

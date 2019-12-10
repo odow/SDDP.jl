@@ -50,9 +50,11 @@ function JuMP.build_variable(
     kwargs...,
 )
     if isnan(initial_value)
-        _error("When creating a state variable, you must set the " *
-               "`initial_value` keyword to the value of the state variable at" *
-               " the root node.")
+        _error(
+            "When creating a state variable, you must set the " *
+            "`initial_value` keyword to the value of the state variable at" *
+            " the root node.",
+        )
     end
     return StateInfo(
         JuMP.VariableInfo(

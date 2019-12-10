@@ -211,7 +211,8 @@ end
         )
         @test length(integrality_handler.subgradients) ==
               length(integrality_handler.old_rhs) ==
-              length(integrality_handler.best_mult) == length(integrality_handler.slacks) ==
+              length(integrality_handler.best_mult) ==
+              length(integrality_handler.slacks) ==
               3
         @test integrality_handler.optimizer == with_optimizer(GLPK.Optimizer)
     end

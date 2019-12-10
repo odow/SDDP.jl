@@ -20,12 +20,12 @@ function build_graph(model_name)
             :root_node,
             [:Ad, :Ah, :Bd, :Bh],
             [
-             (:root_node => :Ad, 0.5),
-             (:root_node => :Bd, 0.5),
-             (:Ad => :Ah, 1.0),
-             (:Ah => :Ad, 0.9),
-             (:Bd => :Bh, 1.0),
-             (:Bh => :Bd, 0.9),
+                (:root_node => :Ad, 0.5),
+                (:root_node => :Bd, 0.5),
+                (:Ad => :Ah, 1.0),
+                (:Ah => :Ad, 0.9),
+                (:Bd => :Bh, 1.0),
+                (:Bh => :Bd, 0.9),
             ],
         )
         if model_name == "hidden"
@@ -52,14 +52,11 @@ function solve_inventory_management_problem(model_name, risk_measure)
         lower_bound = 0.0,
         optimizer = with_optimizer(GLPK.Optimizer),
     ) do subproblem, node
-        @variables(
-            subproblem,
-            begin
+        @variables(subproblem, begin
                 0 <= inventory <= 2, (SDDP.State, initial_value = 0.0)
                 buy >= 0
                 demand
-            end
-        )
+            end)
         @constraint(subproblem, demand == inventory.in - inventory.out + buy)
         if node == :Ad || node == :Bd || node == :D
             JuMP.fix(demand, 0)
@@ -73,12 +70,8 @@ function solve_inventory_management_problem(model_name, risk_measure)
     end
     Random.seed!(123)
     SDDP.train(model; risk_measure = risk_measure, iteration_limit = 200)
-    simulations = simulate_policy(
-        model,
-        model_name;
-        terminate_on_leaf = false,
-        discount = true,
-    )
+    simulations =
+        simulate_policy(model, model_name; terminate_on_leaf = false, discount = true)
     return (model = model, simulations = simulations)
 end
 
@@ -142,8 +135,9 @@ function simulate_policy(model, model_name; terminate_on_leaf::Bool, discount::B
 end
 
 function quantile_data(data...)
-    return hcat([Statistics.quantile(data_i, [0.0, 0.25, 0.5, 0.75, 1.0])
-        for data_i in data]...)
+    return hcat([
+        Statistics.quantile(data_i, [0.0, 0.25, 0.5, 0.75, 1.0]) for data_i in data
+    ]...)
 end
 
 function run_paper_analysis()
@@ -151,15 +145,11 @@ function run_paper_analysis()
 
     hidden = solve_inventory_management_problem("hidden", SDDP.Expectation())
 
-    expected_value = solve_inventory_management_problem(
-        "expected_value",
-        SDDP.Expectation(),
-    )
+    expected_value =
+        solve_inventory_management_problem("expected_value", SDDP.Expectation())
 
-    risk_averse_expected_value = solve_inventory_management_problem(
-        "expected_value",
-        SDDP.ModifiedChiSquared(0.25),
-    )
+    risk_averse_expected_value =
+        solve_inventory_management_problem("expected_value", SDDP.ModifiedChiSquared(0.25))
 
     quantiles = quantile_data(
         visible.simulations.objectives,

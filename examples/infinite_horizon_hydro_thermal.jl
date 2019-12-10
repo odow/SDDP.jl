@@ -11,22 +11,14 @@ function infinite_hydro_thermal(; cut_type)
         (inflow = 5.0, demand = 5),
         (inflow = 10.0, demand = 2.5),
     ]
-    graph = SDDP.Graph(
-        :root_node,
-        [:week],
-        [(:root_node => :week, 1.0), (:week => :week, 0.9)],
-    )
+    graph =
+        SDDP.Graph(:root_node, [:week], [(:root_node => :week, 1.0), (:week => :week, 0.9)])
     model = SDDP.PolicyGraph(
         graph,
         bellman_function = SDDP.BellmanFunction(lower_bound = 0, cut_type = cut_type),
         optimizer = with_optimizer(GLPK.Optimizer),
     ) do subproblem, node
-        @variable(
-            subproblem,
-            5.0 <= reservoir <= 15.0,
-            SDDP.State,
-            initial_value = 10.0
-        )
+        @variable(subproblem, 5.0 <= reservoir <= 15.0, SDDP.State, initial_value = 10.0)
         @variables(subproblem, begin
             thermal_generation >= 0
             hydro_generation >= 0

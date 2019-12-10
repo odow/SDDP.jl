@@ -11,10 +11,11 @@
 using SDDP, GLPK, Test
 
 function test_prob52_2stages()
-    model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
-        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
         optimizer = with_optimizer(GLPK.Optimizer),
+        direct_mode = true,
     ) do subproblem, stage
         # ========== Problem data ==========
         n = 4
@@ -58,9 +59,6 @@ function test_prob52_2stages()
 
     SDDP.train(model, iteration_limit = 50, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 340315.52 atol = 0.1
-    # sim = simulate(mod, 1, [:x, :penalty])
-    # @test length(sim) == 1
-    # @test isapprox(sim[1][:x][1], [5085,1311,3919,854])
 end
 
 test_prob52_2stages()

@@ -38,9 +38,9 @@ using Test
             SDDP.parameterize(
                 subproblem,
                 [
-                 (inflow = 0.0, demand = 7.5),
-                 (inflow = 5.0, demand = 5),
-                 (inflow = 10.0, demand = 2.5),
+                    (inflow = 0.0, demand = 7.5),
+                    (inflow = 5.0, demand = 5),
+                    (inflow = 10.0, demand = 2.5),
                 ],
             ) do ω
                 JuMP.fix(inflow, ω.inflow)
@@ -51,17 +51,21 @@ using Test
 
     graphs = [
         (
-         "Symbol",
-         SDDP.Graph(
-             :root_node,
-             [:week],
-             [(:root_node => :week, 1.0), (:week => :week, 0.9)],
-         ),
+            "Symbol",
+            SDDP.Graph(
+                :root_node,
+                [:week],
+                [(:root_node => :week, 1.0), (:week => :week, 0.9)],
+            ),
         ),
         ("Int", SDDP.Graph(0, [1], [(0 => 1, 1.0), (1 => 1, 0.9)])),
         (
-         "NTuple",
-         SDDP.Graph((0, 1), [(1, 1)], [((0, 1) => (1, 1), 1.0), ((1, 1) => (1, 1), 0.9)]),
+            "NTuple",
+            SDDP.Graph(
+                (0, 1),
+                [(1, 1)],
+                [((0, 1) => (1, 1), 1.0), ((1, 1) => (1, 1), 0.9)],
+            ),
         ),
     ]
     for (T, graph) in graphs

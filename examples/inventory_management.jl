@@ -31,8 +31,7 @@ function infinite_lin_HD()
         @constraints(
             subproblem,
             begin
-                state.out == state.in + order_quantity - demand + lost_demand -
-                             disposed_units
+                state.out == state.in + order_quantity - demand + lost_demand - disposed_units
                 backordered_units >= -state.out
                 held_units >= state.out
             end
@@ -62,9 +61,9 @@ function infinite_lin_DH()
         :root_node,
         [:decision, :recourse],
         [
-         (:root_node => :decision, 1.0),
-         (:decision => :recourse, 1.0),
-         (:recourse => :decision, 0.95),
+            (:root_node => :decision, 1.0),
+            (:decision => :recourse, 1.0),
+            (:recourse => :decision, 0.95),
         ],
     )
     model = SDDP.PolicyGraph(

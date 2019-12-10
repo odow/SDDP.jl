@@ -71,8 +71,10 @@ function _validate_graph(graph::Graph)
         if length(children) > 0
             probability = sum(child[2] for child in children)
             if !(0.0 <= probability <= 1.0)
-                error("Probability on edges leaving node $(node) sum to " *
-                      "$(probability), but this must be in [0.0, 1.0]")
+                error(
+                    "Probability on edges leaving node $(node) sum to " *
+                    "$(probability), but this must be in [0.0, 1.0]",
+                )
             end
         end
     end
@@ -80,12 +82,16 @@ function _validate_graph(graph::Graph)
         # The -1 accounts for the root node, which shouldn't be in the
         # partition.
         if graph.root_node in union(graph.belief_partition...)
-            error("Belief partition $(graph.belief_partition) cannot contain " *
-                  "the root node $(graph.root_node).")
+            error(
+                "Belief partition $(graph.belief_partition) cannot contain " *
+                "the root node $(graph.root_node).",
+            )
         end
         if length(graph.nodes) - 1 != length(union(graph.belief_partition...))
-            error("Belief partition $(graph.belief_partition) does not form a" *
-                  " valid partition of the nodes in the graph.")
+            error(
+                "Belief partition $(graph.belief_partition) does not form a" *
+                " valid partition of the nodes in the graph.",
+            )
         end
     end
 end
@@ -158,8 +164,10 @@ function add_ambiguity_set(
     if any(l -> l < 0.0, lipschitz)
         error("Cannot provide negative Lipschitz constant: $(lipschitz)")
     elseif length(set) != length(lipschitz)
-        error("You must provide on Lipschitz contsant for every element in " *
-              "the ambiguity set.")
+        error(
+            "You must provide on Lipschitz contsant for every element in " *
+            "the ambiguity set.",
+        )
     end
     push!(graph.belief_partition, set)
     push!(graph.belief_lipschitz, lipschitz)
@@ -221,8 +229,10 @@ end
 """
 function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
     if size(transition_matrices[1], 1) != 1
-        error("Expected the first transition matrix to be of size (1, N). It " *
-              "is of size $(size(transition_matrices[1])).")
+        error(
+            "Expected the first transition matrix to be of size (1, N). It " *
+            "is of size $(size(transition_matrices[1])).",
+        )
     end
     node_type = Tuple{Int,Int}
     root_node = (0, 1)
@@ -250,8 +260,8 @@ function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
                     push!(
                         edges,
                         (
-                         (stage - 1, last_markov_state) => (stage, markov_state),
-                         probability,
+                            (stage - 1, last_markov_state) => (stage, markov_state),
+                            probability,
                         ),
                     )
                 end
@@ -268,8 +278,7 @@ end
 
 Construct a Markovian graph object.
 """
-function MarkovianGraph(
-    ;
+function MarkovianGraph(;
     stages::Int = 1,
     transition_matrix::Matrix{Float64} = [1.0],
     root_node_transition::Vector{Float64} = [1.0],
@@ -431,8 +440,11 @@ end
 # Work around different JuMP modes (Automatic / Manual / Direct).
 function construct_subproblem(optimizer_factory::Nothing, direct_mode::Bool)
     if direct_mode
-        error("You must specify an optimizer in the form:\n" *
-              "    with_optimizer(Module.Opimizer, args...) if " * "direct_mode=true.")
+        error(
+            "You must specify an optimizer in the form:\n" *
+            "    with_optimizer(Module.Opimizer, args...) if " *
+            "direct_mode=true.",
+        )
     end
     return JuMP.Model()
 end
@@ -475,12 +487,12 @@ end
     PolicyGraph(
         builder::Function,
         graph::Graph{T};
-        sense = :Min,
+        sense::Symbol = :Min,
         lower_bound = -Inf,
         upper_bound = Inf,
         optimizer = nothing,
         bellman_function = nothing,
-        direct_mode = true,
+        direct_mode::Bool = false,
         integrality_handler = ContinuousRelaxation(),
     ) where {T}
 
@@ -515,12 +527,12 @@ Or, using the Julia `do ... end` syntax:
 function PolicyGraph(
     builder::Function,
     graph::Graph{T};
-    sense = :Min,
+    sense::Symbol = :Min,
     lower_bound = -Inf,
     upper_bound = Inf,
     optimizer = nothing,
     bellman_function = nothing,
-    direct_mode = true,
+    direct_mode::Bool = false,
     integrality_handler = ContinuousRelaxation(),
 ) where {T}
     # Spend a one-off cost validating the graph.
@@ -531,16 +543,18 @@ function PolicyGraph(
     # Create a Bellman function if one is not given.
     if bellman_function === nothing
         if sense == :Min && lower_bound === -Inf
-            error("You must specify a finite lower bound on the objective value" *
-                  " using the `lower_bound = value` keyword argument.")
-        elseif sense == :Max && upper_bound === Inf
-            error("You must specify a finite upper bound on the objective value" *
-                  " using the `upper_bound = value` keyword argument.")
-        else
-            bellman_function = BellmanFunction(
-                lower_bound = lower_bound,
-                upper_bound = upper_bound,
+            error(
+                "You must specify a finite lower bound on the objective value" *
+                " using the `lower_bound = value` keyword argument.",
             )
+        elseif sense == :Max && upper_bound === Inf
+            error(
+                "You must specify a finite upper bound on the objective value" *
+                " using the `upper_bound = value` keyword argument.",
+            )
+        else
+            bellman_function =
+                BellmanFunction(lower_bound = lower_bound, upper_bound = upper_bound)
         end
     end
     # Initialize nodes.
@@ -593,11 +607,8 @@ function PolicyGraph(
             push!(node.children, Noise(child, probability))
         end
         # Intialize the bellman function. (See note in creation of Node above.)
-        node.bellman_function = initialize_bellman_function(
-            bellman_function,
-            policy_graph,
-            node,
-        )
+        node.bellman_function =
+            initialize_bellman_function(bellman_function, policy_graph, node)
     end
     # Add root nodes
     for (child, probability) in graph.nodes[graph.root_node]
@@ -637,12 +648,8 @@ function initialize_belief_states(policy_graph::PolicyGraph{T}, graph::Graph{T})
             end
             add_initial_bounds(node, μ)
             # Attach the belief state as an extension.
-            node.belief_state = BeliefState{T}(
-                partition_index,
-                copy(belief),
-                μ,
-                belief_updater,
-            )
+            node.belief_state =
+                BeliefState{T}(partition_index, copy(belief), μ, belief_updater)
         end
     end
 end
@@ -959,8 +966,10 @@ function construct_belief_update(
         end
         # Now update each belief.
         for (node_i, belief) in incoming_belief
-            PX = sum(belief * get(Φ, (node_j, node_i), 0.0)
-                for (node_j, belief) in incoming_belief)
+            PX = sum(
+                belief * get(Φ, (node_j, node_i), 0.0)
+                for (node_j, belief) in incoming_belief
+            )
             PY_X = 0.0
             if node_i in partition[observed_partition]
                 PY_X += get(Ω[node_i], observed_noise, 0.0)
