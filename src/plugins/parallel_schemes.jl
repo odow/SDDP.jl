@@ -41,7 +41,7 @@ end
 A callback called on a slave whenever a new result is available.
 """
 function slave_update(model::PolicyGraph, result::IterationResult)
-    for (node, cuts) in result.cuts
+    for (node_index, cuts) in result.cuts
         for cut in cuts
             if cut === nothing
                 error(
@@ -50,7 +50,7 @@ function slave_update(model::PolicyGraph, result::IterationResult)
                 )
             end
             _add_cut(
-                node.bellman_function.global_theta,
+                model[node_index].bellman_function.global_theta,
                 cut.theta,
                 cut.pi,
                 cut.x,
@@ -73,18 +73,37 @@ function slave_loop(
     updates::Distributed.RemoteChannel{Channel{IterationResult{T}}},
     results::Distributed.RemoteChannel{Channel{IterationResult{T}}},
 ) where {T}
-    while isopen(jobs)
-        job = take!(jobs)
-        while isready(updates)
-            update = take!(updates)
-            slave_update(model, update)
+    try
+        while true
+            job = take!(jobs)
+            while isready(updates)
+                update = take!(updates)
+                slave_update(model, update)
+            end
+            result = iteration(model, job)
+            put!(results, result)
         end
-        result = iteration(model, job)
-        put!(results, result)
+    catch ex
+        if isa(ex, Distributed.RemoteException) && isa(ex.captured.ex, InvalidStateException)
+            # The master process must have closed on us. Bail out without
+            # consequence.
+            return
+        end
+        @show dump(ex)
+        rethrow(ex)
     end
 end
 
-function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Options) where {T}
+function send_to(pid, key, val)
+    Distributed.remotecall_fetch(Core.eval, pid, SDDP, Expr(:(=), key, val))
+    return
+end
+
+function master_loop(
+    async::Asynchronous,
+    model::PolicyGraph{T},
+    options::Options
+) where {T}
     # Initialize the remote channels. There are three types:
     # 1) jobs: master -> slaves: which stores a list of jobs that the slaves
     #       collectively pull from.
@@ -100,38 +119,47 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
     jobs = Distributed.RemoteChannel(() -> Channel{Options}(Inf))
     updates = Dict(
         pid => Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
-        for pid in slave_ids
+        for pid in async.slave_ids
     )
     results = Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
     for pid in async.slave_ids
-        Distributed.remotecall_fetch(
-            Core.eval,
-            pid,
-            SDDP,
-            Expr(:(=), :__async_model__, model),
-        )
+        send_to(pid, :__async_model__, model)
         put!(jobs, options)
         Distributed.remote_do(init_slave_loop, pid, jobs, updates[pid], results)
     end
 
-    while isopen(jobs)
-        wait(results)
-        while isready(results)
-            result = take!(results)
-            options.dashboard_callback(options.log[end], false)
-            if options.print_level > 0
-                print_helper(print_iteration, options.log_file_handle, options.log[end])
-            end
-            if result.converged
-                close(jobs)
-                return result.status
-            end
-            for pid in async.slave_ids
-                pid == result.pid && continue
-                put!(updates[pid], result)
-            end
-            put!(jobs, options)
+    while true
+        result = take!(results)
+        # Add the result to the current model!
+        slave_update(model, result)
+        push!(
+            options.log,
+            Log(
+                length(options.log) + 1,
+                result.bound,
+                result.cumulative_value,
+                time() - options.start_time,
+                result.pid
+            ),
+        )
+        options.dashboard_callback(options.log[end], false)
+        if options.print_level > 0
+            print_helper(
+                print_iteration, options.log_file_handle, options.log[end]
+            )
         end
+        if result.has_converged
+            close(jobs)
+            close(results)
+            for (_, ch) in updates
+                close(ch)
+            end
+            return result.status
+        end
+        for pid in async.slave_ids
+            pid == result.pid && continue
+            put!(updates[pid], result)
+        end
+        put!(jobs, options)
     end
-    return :error
 end
