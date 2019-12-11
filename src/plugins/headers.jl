@@ -225,3 +225,20 @@ initial root state in the policy graph of `subproblem`. May perform
 modifications needed by `integrality_handler.` Returns nothing.
 """
 function setup_state end
+
+# ============================= parallel schemes ============================= #
+
+"""
+    AbstractParallelScheme
+"""
+abstract type AbstractParallelScheme end
+
+"""
+    master_loop(
+        ::AbstractParallelScheme, model::PolicyGraph{T}, options::Options
+    )::Symbol where {T}
+
+The solve loop of the SDDP algorithm. Returns a symbol corresponding to the
+termination status.
+"""
+function master_loop end

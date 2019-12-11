@@ -293,7 +293,7 @@ function refine_bellman_function(
     )
     # The meat of the function.
     if bellman_function.cut_type == SINGLE_CUT
-        _add_average_cut(
+        return _add_average_cut(
             node,
             outgoing_state,
             risk_adjusted_probability,
@@ -303,7 +303,7 @@ function refine_bellman_function(
     else  # Add a multi-cut
         @assert bellman_function.cut_type == MULTI_CUT
         _add_locals_if_necessary(bellman_function, length(dual_variables))
-        _add_multi_cut(
+        return _add_multi_cut(
             node,
             outgoing_state,
             risk_adjusted_probability,
@@ -338,7 +338,11 @@ function _add_average_cut(
     μᵀy = get_objective_state_component(node)
     JuMP.add_to_expression!(μᵀy, get_belief_state_component(node))
     _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state, μᵀy)
-    return
+    return (
+        theta = θᵏ,
+        pi = πᵏ,
+        x = outgoing_state
+    )
 end
 
 function _add_multi_cut(

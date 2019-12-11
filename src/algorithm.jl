@@ -97,6 +97,12 @@ struct Options{T}
     Φ::Dict{Tuple{T,T},Float64}
     # A list of nodes that contain a subset of the children of node i.
     similar_children::Dict{T,Vector{T}}
+    stopping_rules::Vector{AbstractStoppingRule}
+    dashboard_callback::Function
+    print_level::Int
+    start_time::Float64
+    log::Vector{Log}
+    log_file_handle
     # Internal function: users should never construct this themselves.
     function Options(
         model::PolicyGraph{T},
@@ -106,6 +112,12 @@ struct Options{T}
         risk_measures,
         cycle_discretization_delta::Float64,
         refine_at_similar_nodes::Bool,
+        stopping_rules::Vector{AbstractStoppingRule},
+        dashboard_callback::Function,
+        print_level::Int,
+        start_time::Float64,
+        log::Vector{Log},
+        log_file_handle
     ) where {T,S}
         return new{T}(
             initial_state,
@@ -117,6 +129,12 @@ struct Options{T}
             refine_at_similar_nodes,
             build_Φ(model),
             get_same_children(model),
+            stopping_rules,
+            dashboard_callback,
+            print_level,
+            start_time,
+            log,
+            log_file_handle
         )
     end
 end
@@ -477,6 +495,8 @@ function backward_pass(
     objective_states::Vector{NTuple{N,Float64}},
     belief_states::Vector{Tuple{Int,Dict{T,Float64}}},
 ) where {T,NoiseType,N}
+    # TODO(odow): improve storage type.
+    cuts = Dict{T,Vector{Any}}(index => Any[] for index in keys(model.nodes))
     for index = length(scenario_path):-1:1
         outgoing_state = sampled_states[index]
         objective_state = get(objective_states, index, nothing)
@@ -506,7 +526,7 @@ function backward_pass(
                 for (idx, belief) in belief_state
                     current_belief.belief[idx] = belief
                 end
-                refine_bellman_function(
+                new_cuts = refine_bellman_function(
                     model,
                     node,
                     node.bellman_function,
@@ -517,6 +537,7 @@ function backward_pass(
                     items.probability .* items.belief,
                     items.objectives,
                 )
+                append!(cuts[node_index], new_cuts)
             end
         else
             node_index, _ = scenario_path[index]
@@ -535,7 +556,7 @@ function backward_pass(
                 options.backward_sampling_scheme,
                 scenario_path[1:index],
             )
-            refine_bellman_function(
+            new_cuts = refine_bellman_function(
                 model,
                 node,
                 node.bellman_function,
@@ -546,6 +567,7 @@ function backward_pass(
                 items.probability,
                 items.objectives,
             )
+            append!(cuts[node_index], new_cuts)
             if options.refine_at_similar_nodes
                 # Refine the bellman function at other nodes with the same
                 # children, e.g., in the same stage of a Markovian policy graph.
@@ -557,7 +579,7 @@ function backward_pass(
                             get(options.Φ, (other_index, child_index), 0.0) *
                             items.supports[idx].probability
                     end
-                    refine_bellman_function(
+                    new_cuts = refine_bellman_function(
                         model,
                         other_node,
                         other_node.bellman_function,
@@ -568,10 +590,12 @@ function backward_pass(
                         copied_probability,
                         items.objectives,
                     )
+                    append!(cuts[other_index], new_cuts)
                 end
             end
         end
     end
+    return cuts
 end
 
 struct BackwardPassItems{T,U}
@@ -739,6 +763,54 @@ function calculate_bound(
     return sum(obj * prob for (obj, prob) in zip(objectives, risk_adjusted_probability))
 end
 
+struct IterationResult{T}
+    pid::Int
+    bound::Float64
+    cumulative_value::Float64
+    has_converged::Bool
+    status::Symbol
+    cuts::Dict{T, Vector{Any}}
+end
+
+function iteration(model::PolicyGraph{T}, options::Options) where {T}
+    TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
+        forward_trajectory = forward_pass(model, options)
+    end
+    TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
+        cuts = backward_pass(
+            model,
+            options,
+            forward_trajectory.scenario_path,
+            forward_trajectory.sampled_states,
+            forward_trajectory.objective_states,
+            forward_trajectory.belief_states,
+        )
+    end
+    TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
+        bound = calculate_bound(model)
+    end
+    push!(
+        options.log,
+        Log(
+            length(options.log),
+            bound,
+            forward_trajectory.cumulative_value,
+            time() - options.start_time
+        )
+    )
+    has_converged, status = convergence_test(
+        model, options.log, options.stopping_rules
+    )
+    return IterationResult(
+        myid(),
+        bound,
+        forward_trajectory.cumulative_value,
+        has_converged,
+        status
+        cuts
+    )
+end
+
 """
     termination_status(model::PolicyGraph)
 
@@ -816,6 +888,7 @@ function train(
     cut_deletion_minimum::Int = 1,
     backward_sampling_scheme::AbstractBackwardSamplingScheme = SDDP.CompleteSampler(),
     dashboard::Bool = false,
+    parallel_scheme::AbstractParallelScheme = Serial()
 )
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
@@ -852,15 +925,7 @@ function train(
             "the call to SDDP.train via a keyboard interrupt ([CTRL+C])."
         )
     end
-    options = Options(
-        model,
-        model.initial_root_state,
-        sampling_scheme,
-        backward_sampling_scheme,
-        risk_measure,
-        cycle_discretization_delta,
-        refine_at_similar_nodes,
-    )
+
     # Update the nodes with the selected cut type (SINGLE_CUT or MULTI_CUT)
     # and the cut deletion minimum.
     if cut_deletion_minimum < 0
@@ -884,53 +949,29 @@ function train(
     else
         (::Any, ::Any) -> nothing
     end
-    dashboard_time = 0.0
 
-    # The default status. This should never be seen by the user.
     status = :not_solved
-    log = Log[]
+
+    start_time = time()
+
+    options = Options(
+        model,
+        model.initial_root_state,
+        sampling_scheme,
+        backward_sampling_scheme,
+        risk_measure,
+        cycle_discretization_delta,
+        refine_at_similar_nodes,
+        stopping_rules,
+        dashboard_callback,
+        print_level,
+        start_time,
+        log,
+        log_file_handle
+    )
+
     try
-        start_time = time()
-        iteration_count = 1
-        has_converged = false
-        while !has_converged
-            TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
-                forward_trajectory = forward_pass(model, options)
-            end
-            TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
-                backward_pass(
-                    model,
-                    options,
-                    forward_trajectory.scenario_path,
-                    forward_trajectory.sampled_states,
-                    forward_trajectory.objective_states,
-                    forward_trajectory.belief_states,
-                )
-            end
-            TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
-                bound = calculate_bound(model)
-            end
-            push!(
-                log,
-                Log(
-                    iteration_count,
-                    bound,
-                    forward_trajectory.cumulative_value,
-                    time() - start_time - dashboard_time,
-                ),
-            )
-            has_converged, status = convergence_test(model, log, stopping_rules)
-
-            dashboard_start = time()
-            dashboard_callback(log[end], false)
-            dashboard_time += time() - dashboard_start
-
-            if print_level > 0
-                print_helper(print_iteration, log_file_handle, log[end])
-            end
-
-            iteration_count += 1
-        end
+        status = master_loop(parallel_scheme, model, options)
     catch ex
         if isa(ex, InterruptException)
             status = :interrupted
