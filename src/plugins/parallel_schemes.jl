@@ -98,7 +98,6 @@ function slave_loop(
             # consequence.
             return
         end
-        @show dump(ex)
         rethrow(ex)
     end
 end
@@ -127,21 +126,25 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
         for pid in async.slave_ids
     )
     results = Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
+    @sync begin
+        for pid in async.slave_ids
+            @async send_to(pid, :__async_model__, model)
+        end
+    end
     for pid in async.slave_ids
-        send_to(pid, :__async_model__, model)
         put!(jobs, options)
         Distributed.remote_do(init_slave_loop, pid, jobs, updates[pid], results)
     end
-
     while true
         result = take!(results)
         # Add the result to the current model!
         slave_update(model, result)
+        bound = calculate_bound(model)
         push!(
             options.log,
             Log(
                 length(options.log) + 1,
-                result.bound,
+                bound,
                 result.cumulative_value,
                 time() - options.start_time,
                 result.pid,
