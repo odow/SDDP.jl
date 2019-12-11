@@ -796,12 +796,10 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             bound,
             forward_trajectory.cumulative_value,
             time() - options.start_time,
-            Distributed.myid()
+            Distributed.myid(),
         ),
     )
-    has_converged, status = convergence_test(
-        model, options.log, options.stopping_rules
-    )
+    has_converged, status = convergence_test(model, options.log, options.stopping_rules)
     return IterationResult(
         Distributed.myid(),
         bound,
@@ -907,6 +905,7 @@ function train(
     end
 
     if print_level > 0
+        print_helper(io -> println(io, "Solver: ", parallel_scheme, "\n"), log_file_handle)
         print_helper(print_iteration_header, log_file_handle)
     end
     # Convert the vector to an AbstractStoppingRule. Otherwise if the user gives

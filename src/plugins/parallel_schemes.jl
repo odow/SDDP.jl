@@ -9,6 +9,7 @@
 Run SDDP in serial mode.
 """
 struct Serial <: AbstractParallelScheme end
+Base.show(io::IO, ::Serial) = print(io, "serial mode")
 
 function master_loop(::Serial, model::PolicyGraph{T}, options::Options) where {T}
     while true
@@ -33,6 +34,9 @@ struct Asynchronous <: AbstractParallelScheme
     function Asynchronous(slave_ids::Vector{Int} = Distributed.workers())
         return new(slave_ids)
     end
+end
+function Base.show(io::IO, a::Asynchronous)
+    print(io, "Asynchronous mode with $(length(a.slave_ids)) procs.")
 end
 
 """
@@ -64,7 +68,11 @@ end
 
 # Use the "function-barrier" technique to avoid type-instabilities in slave_loop.
 function init_slave_loop(args...)
-    return slave_loop(SDDP.__async_model__::PolicyGraph, args...)
+    model = SDDP.__async_model__::PolicyGraph
+    for (key, node) in model.nodes
+        JuMP.set_optimizer(node.subproblem, node.optimizer)
+    end
+    return slave_loop(model, args...)
 end
 
 function slave_loop(
@@ -84,7 +92,8 @@ function slave_loop(
             put!(results, result)
         end
     catch ex
-        if isa(ex, Distributed.RemoteException) && isa(ex.captured.ex, InvalidStateException)
+        if isa(ex, Distributed.RemoteException) &&
+           isa(ex.captured.ex, InvalidStateException)
             # The master process must have closed on us. Bail out without
             # consequence.
             return
@@ -99,11 +108,7 @@ function send_to(pid, key, val)
     return
 end
 
-function master_loop(
-    async::Asynchronous,
-    model::PolicyGraph{T},
-    options::Options
-) where {T}
+function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Options) where {T}
     # Initialize the remote channels. There are three types:
     # 1) jobs: master -> slaves: which stores a list of jobs that the slaves
     #       collectively pull from.
@@ -139,14 +144,12 @@ function master_loop(
                 result.bound,
                 result.cumulative_value,
                 time() - options.start_time,
-                result.pid
+                result.pid,
             ),
         )
         options.dashboard_callback(options.log[end], false)
         if options.print_level > 0
-            print_helper(
-                print_iteration, options.log_file_handle, options.log[end]
-            )
+            print_helper(print_iteration, options.log_file_handle, options.log[end])
         end
         if result.has_converged
             close(jobs)

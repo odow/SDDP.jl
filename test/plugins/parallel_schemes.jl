@@ -7,7 +7,7 @@ using Distributed
 
 # !!! IMPORTANT !!!
 #
-# Workers started by addprocs() **DON'T** inherit their parents Pkg environment!
+# Workers **DON'T** inherit their parent's Pkg environment!
 # Here's the relevant Julia issue: https://github.com/JuliaLang/julia/issues/28781
 #
 # This can cause reeeeeaally hard to track down bugs because
@@ -16,7 +16,6 @@ using Distributed
 #    code loading.
 #
 # As hack, run the following script:
-procs = addprocs(4)
 @everywhere begin
     import Pkg
     Pkg.activate(".")
@@ -30,23 +29,20 @@ end
 
 @testset "Asynchronous" begin
     a = SDDP.Asynchronous()
-    @test a.slave_ids == procs
+    @test a.slave_ids == Distributed.workers()
     b = SDDP.Asynchronous([1, 2])
     @test b.slave_ids == [1, 2]
 end
 
 @testset "slave_update" begin
-    model = SDDP.LinearPolicyGraph(
-        stages = 2,
-        sense = :Min,
-        lower_bound = 0.0
-    ) do node, stage
-        @variable(node, x, SDDP.State, initial_value = 0.0)
-        @stageobjective(node, x.out)
-        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_upper_bound(x.out, ω)
+    model =
+        SDDP.LinearPolicyGraph(stages = 2, sense = :Min, lower_bound = 0.0) do node, stage
+            @variable(node, x, SDDP.State, initial_value = 0.0)
+            @stageobjective(node, x.out)
+            SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+                JuMP.set_upper_bound(x.out, ω)
+            end
         end
-    end
 
     result = SDDP.IterationResult(
         1,
@@ -55,63 +51,48 @@ end
         false,
         :not_converged,
         Dict(
-            1 => Any[(
-                theta = 1.0,
-                pi = Dict(:x => 2.0),
-                x = Dict(:x => 3.0)
-            )],
-            2 => Any[]
-        )
+            1 => Any[(theta = 1.0, pi = Dict(:x => 2.0), x = Dict(:x => 3.0))],
+            2 => Any[],
+        ),
     )
     SDDP.slave_update(model, result)
     cons = JuMP.all_constraints(
         model[1].subproblem,
         GenericAffExpr{Float64,VariableRef},
-        MOI.GreaterThan{Float64}
+        MOI.GreaterThan{Float64},
     )
     @test length(cons) == 1
-    @test replace(
-        sprint(print, cons[1]),
-        "≥" => ">="
-     ) ==  "noname - 2 x_out >= -5.0"
+    @test replace(sprint(print, cons[1]), "≥" => ">=") == "noname - 2 x_out >= -5.0"
 
-     result = SDDP.IterationResult(
+    result = SDDP.IterationResult(
         1,
         0.0,
         0.0,
         false,
         :not_converged,
         Dict(
-            1 => Any[
-                (
-                    theta = 1.0,
-                    pi = Dict(:x => 2.0),
-                    x = Dict(:x => 3.0)
-                ),
-                nothing
-            ],
-            2 => Any[]
-        )
+            1 => Any[(theta = 1.0, pi = Dict(:x => 2.0), x = Dict(:x => 3.0)), nothing],
+            2 => Any[],
+        ),
     )
     @test_throws ErrorException SDDP.slave_update(model, result)
 end
 
 @testset "send_to" begin
-    SDDP.send_to(procs[1], :__async_model__, 1)
-    @test remotecall_fetch(() -> SDDP.__async_model__, procs[1]) == 1
+    pids = Distributed.workers()
+    SDDP.send_to(pids[1], :__async_model__, 1)
+    @test remotecall_fetch(() -> SDDP.__async_model__, pids[1]) == 1
 
-    model = SDDP.LinearPolicyGraph(
-        stages = 2,
-        sense = :Min,
-        lower_bound = 0.0
-    ) do node, stage
-        @variable(node, x, SDDP.State, initial_value = 0.0)
-        @stageobjective(node, x.out)
-    end
-    SDDP.send_to(procs[1], :__async_model__, model)
-    @test typeof(
-        remotecall_fetch(() -> SDDP.__async_model__, procs[1])
-     ) == SDDP.PolicyGraph{Int}
+    model =
+        SDDP.LinearPolicyGraph(stages = 2, sense = :Min, lower_bound = 0.0) do node, stage
+            @variable(node, x, SDDP.State, initial_value = 0.0)
+            @stageobjective(node, x.out)
+        end
+    SDDP.send_to(pids[2], :__async_model__, model)
+    @test typeof(remotecall_fetch(
+        () -> SDDP.__async_model__,
+        pids[2],
+    )) == SDDP.PolicyGraph{Int}
 end
 
 @testset "Async solve" begin
@@ -119,7 +100,7 @@ end
         stages = 2,
         sense = :Min,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer)
+        optimizer = with_optimizer(GLPK.Optimizer),
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -127,12 +108,6 @@ end
             JuMP.set_lower_bound(x.out, ω)
         end
     end
-    SDDP.train(
-        model,
-        iteration_limit = 20,
-        parallel_scheme = SDDP.Asynchronous()
-    )
+    SDDP.train(model, iteration_limit = 20, parallel_scheme = SDDP.Asynchronous())
     @test SDDP.calculate_bound(model) == 6.0
 end
-
-Distributed.rmprocs(procs)

@@ -3,6 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+using Distributed
 using Random
 using SDDP
 using Test
@@ -18,7 +19,7 @@ const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
 
 @testset "SDDP.jl" begin
     @testset "Unit Tests" begin
-        @testset "plugins/$(file)" for file in read_dir("plugins")
+        @testset "plugins/$(file)" for file in read_dir("plugins", ["parallel_schemes.jl"])
             include(joinpath("plugins", file))
         end
         @testset "$(file)" for file in read_dir(".", ["runtests.jl"])
@@ -31,6 +32,12 @@ const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
             Random.seed!(12345)
             include(joinpath(EXAMPLES_DIR, example))
         end
+    end
+
+    @testset "Parallel" begin
+        procs = Distributed.addprocs(4)
+        include(joinpath("plugins", "parallel_schemes.jl"))
+        Distributed.rmprocs(procs)
     end
 end
 
