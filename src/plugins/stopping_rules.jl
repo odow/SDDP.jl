@@ -58,8 +58,7 @@ struct Statistical <: AbstractStoppingRule
     iteration_period::Int
     z_score::Float64
     verbose::Bool
-    function Statistical(
-        ;
+    function Statistical(;
         num_replications,
         iteration_period = 1,
         z_score = 1.96,

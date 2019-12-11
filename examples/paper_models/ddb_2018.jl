@@ -13,8 +13,7 @@
 
 using SDDP, GLPK, Test, Gurobi, Plots, StatsPlots
 
-function river_chain_example(
-    ;
+function river_chain_example(;
     ar1::Bool = true,
     N::Int = 2,
     lipschitz = 1e6,
@@ -55,8 +54,7 @@ function river_chain_example(
             begin
                 volume[1].out == volume[1].in - flow[1] - spill[1]
                 [i = 2:N],
-                volume[i].out == volume[i].in - flow[i] - spill[i] + flow[i-1] +
-                                 spill[i-1]
+                volume[i].out == volume[i].in - flow[i] - spill[i] + flow[i-1] + spill[i-1]
                 generation == sum(power_knots[j] * dispatch[i, j] for i = 1:N, j = 1:3)
                 [i = 1:N], flow[i] == sum(flow_knots[j] * dispatch[i, j] for j = 1:3)
                 [i = 1:N], sum(dispatch[i, j] for j = 1:3) <= 1
@@ -118,11 +116,8 @@ function example_one()
     A = zeros(length(x), length(p))
     for (j, pj) in enumerate(p)
         for (i, xi) in enumerate(x)
-            objective_state_vector = SDDP.update_objective_state(
-                node.objective_state,
-                [pj],
-                0.0,
-            )
+            objective_state_vector =
+                SDDP.update_objective_state(node.objective_state, [pj], 0.0)
             subproblem_results = SDDP.solve_subproblem(
                 model,
                 node,

@@ -11,11 +11,8 @@ function read_dir(dir, exclude = String[])
     return filter(s -> !(s in exclude) && endswith(s, ".jl"), readdir(dir))
 end
 
-const EXCLUDED_EXAMPLES = [
-    "inventory_management.jl",
-    "msppy_hydro_thermal.jl",
-    "tiger_problem.jl",
-]
+const EXCLUDED_EXAMPLES =
+    ["inventory_management.jl", "msppy_hydro_thermal.jl", "tiger_problem.jl"]
 
 const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
 

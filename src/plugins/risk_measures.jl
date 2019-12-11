@@ -46,10 +46,10 @@ function adjust_probability(
     risk_adjusted_probability .= 0.0
     worst_index = 1
     worst_observation = is_minimization ? -Inf : Inf
-    for (index, (probability, observation)) in enumerate(zip(
-        original_probability,
-        objective_realizations,
-    ))
+    for (
+        index,
+        (probability, observation),
+    ) in enumerate(zip(original_probability, objective_realizations))
         if probability > 0.0
             if (is_minimization && observation > worst_observation) ||
                (!is_minimization && observation < worst_observation)
@@ -212,13 +212,18 @@ Risk (also called Conditional Value @ Risk).
 """
 function EAVaR(; lambda::Float64 = 1.0, beta::Float64 = 1.0)
     if !(0.0 <= lambda <= 1.0)
-        error("Lambda must be in the range [0, 1]. Increasing values of " *
-              "lambda are less risk averse. lambda=1 is identical to taking " *
-              "the expectation.")
+        error(
+            "Lambda must be in the range [0, 1]. Increasing values of " *
+            "lambda are less risk averse. lambda=1 is identical to taking " *
+            "the expectation.",
+        )
     end
     if !(0.0 <= beta <= 1.0)
-        error("Beta must be in the range [0, 1]. Increasing values of beta " *
-              "are less risk averse. lambda=1 is identical to taking the " * "expectation.")
+        error(
+            "Beta must be in the range [0, 1]. Increasing values of beta " *
+            "are less risk averse. lambda=1 is identical to taking the " *
+            "expectation.",
+        )
     end
     return lambda * Expectation() + (1 - lambda) * AVaR(beta)
 end
@@ -330,8 +335,10 @@ function non_uniform_dro(
     objective_realizations::Vector{Float64},
     is_minimization::Bool,
 )
-    error("Current implementation of ModifiedChiSquared assumes that the " *
-          "nominal distribution is uniform.")
+    error(
+        "Current implementation of ModifiedChiSquared assumes that the " *
+        "nominal distribution is uniform.",
+    )
 end
 
 """
@@ -440,8 +447,9 @@ function adjust_probability(
     end
     @constraint(
         wasserstein,
-        sum(measure.norm(noise_support[i], noise_support[j]) * z[i, j]
-            for i = 1:N, j = 1:N) <= measure.alpha
+        sum(
+            measure.norm(noise_support[i], noise_support[j]) * z[i, j] for i = 1:N, j = 1:N
+        ) <= measure.alpha
     )
     objective_sense = is_minimization ? MOI.MAX_SENSE : MOI.MIN_SENSE
     @objective(

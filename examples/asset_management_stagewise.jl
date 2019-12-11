@@ -28,10 +28,7 @@ function asset_management_stagewise(; cut_type)
             [0.5 0.5; 0.5 0.5],
             [0.5 0.5; 0.5 0.5],
         ],
-        bellman_function = SDDP.BellmanFunction(
-            upper_bound = 1000.0,
-            cut_type = cut_type,
-        ),
+        bellman_function = SDDP.BellmanFunction(upper_bound = 1000.0, cut_type = cut_type),
         optimizer = with_optimizer(GLPK.Optimizer),
     ) do subproblem, node
         t, i = node
@@ -42,10 +39,7 @@ function asset_management_stagewise(; cut_type)
             @stageobjective(subproblem, 0)
         elseif t == 2 || t == 3
             @variable(subproblem, phi)
-            @constraint(
-                subproblem,
-                ws[i] * xs.in + wb[i] * xb.in + phi == xs.out + xb.out
-            )
+            @constraint(subproblem, ws[i] * xs.in + wb[i] * xb.in + phi == xs.out + xb.out)
             SDDP.parameterize(subproblem, [1, 2], [0.6, 0.4]) do ω
                 JuMP.fix(phi, Phi[ω])
                 @stageobjective(subproblem, Psi[ω] * xs.out)

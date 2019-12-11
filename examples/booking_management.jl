@@ -49,24 +49,23 @@ function booking_management_model(num_days, num_rooms, num_requests, integrality
             Bin,
             initial_value = 1
         )
-        @variables(
-            sp,
-            begin
+        @variables(sp, begin
             # Accept request for booking of room for length of time.
                 0 <= accept_request <= 1, Bin
             # Accept a booking for an individual room on an individual day.
                 0 <= room_request_accepted[1:num_rooms, 1:num_days] <= 1, Bin
             # Helper for JuMP.fix
                 req[1:num_rooms, 1:num_days]
-            end
-        )
+            end)
         for room = 1:num_rooms, day = 1:num_days
             @constraints(
                 sp,
                 begin
                 # Update vacancy if we accept a room request
-                    vacancy[room, day].out == vacancy[room, day].in -
-                                              room_request_accepted[room, day]
+                    vacancy[
+                        room,
+                        day,
+                    ].out == vacancy[room, day].in - room_request_accepted[room, day]
                 # Can't accept a request of a filled room
                     room_request_accepted[room, day] <= vacancy[room, day].in
                 # Can't accept invididual room request if entire request is declined
@@ -74,10 +73,8 @@ function booking_management_model(num_days, num_rooms, num_requests, integrality
                 # Can't accept request if room not requested
                     room_request_accepted[room, day] <= req[room, day]
                 # Accept all individual rooms is entire request is accepted
-                    room_request_accepted[room, day] + (1 - accept_request) >= req[
-                        room,
-                        day,
-                    ]
+                    room_request_accepted[room, day] +
+                    (1 - accept_request) >= req[room, day]
                 end
             )
         end
@@ -86,9 +83,11 @@ function booking_management_model(num_days, num_rooms, num_requests, integrality
         end
         @stageobjective(
             sp,
-            sum((room + stage - 1) * room_request_accepted[room, day]
+            sum(
+                (room + stage - 1) * room_request_accepted[room, day]
                 for room = 1:num_rooms
-                for day = 1:num_days)
+                for day = 1:num_days
+            )
         )
     end
 end
@@ -97,7 +96,7 @@ function booking_management(integrality_handler)
     m_1_2_5 = booking_management_model(1, 2, 5, integrality_handler)
     SDDP.train(m_1_2_5, iteration_limit = 10, print_level = 0)
     if integrality_handler == SDDP.ContinuousRelaxation()
-        @test SDDP.calculate_bound(m_1_2_5) >= 7.25
+        @test SDDP.calculate_bound(m_1_2_5) >= 7.25 - 1e-4
     else
         @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol = 0.02)
     end

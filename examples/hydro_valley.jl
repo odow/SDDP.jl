@@ -41,8 +41,7 @@ struct Reservoir
     inflows::Vector{Float64}
 end
 
-function hydrovalleymodel(
-    ;
+function hydrovalleymodel(;
     hasstagewiseinflows::Bool = true,
     hasmarkovprice::Bool = true,
     sense::Symbol = :Max,
@@ -120,21 +119,23 @@ function hydrovalleymodel(
 
             # other flows
                 flow[i = 2:N],
-                reservoir[i].out == reservoir[i].in + inflow[i] - outflow[i] -
-                                    spill[i] +
-                                    outflow[i-1] + spill[i-1]
+                reservoir[i].out == reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
+                                    outflow[i-1] +
+                                    spill[i-1]
 
             # Total quantity generated
-                generation_quantity == sum(turbine(r).powerknots[level] *
-                                           dispatch[r, level]
-                    for r = 1:N
-                    for level = 1:length(turbine(r).powerknots))
+                generation_quantity == sum(
+                    turbine(r).powerknots[level] * dispatch[r, level] for r = 1:N
+                    for level = 1:length(turbine(r).powerknots)
+                )
 
             # ------------------------------------------------------------------
             # Flow out
                 turbineflow[r = 1:N],
-                outflow[r] == sum(turbine(r).flowknots[level] * dispatch[r, level]
-                    for level = 1:length(turbine(r).flowknots))
+                outflow[r] == sum(
+                    turbine(r).flowknots[level] * dispatch[r, level]
+                    for level = 1:length(turbine(r).flowknots)
+                )
 
             # Dispatch combination of levels
                 dispatched[r = 1:N],
@@ -148,8 +149,10 @@ function hydrovalleymodel(
 
             SDDP.parameterize(
                 subproblem,
-                [(valley_chain[1].inflows[i], valley_chain[2].inflows[i])
-                    for i = 1:length(transition)],
+                [
+                    (valley_chain[1].inflows[i], valley_chain[2].inflows[i])
+                    for i = 1:length(transition)
+                ],
             ) do ω
                 for i = 1:N
                     JuMP.fix(rainfall[i], ω[i])
@@ -168,14 +171,18 @@ function hydrovalleymodel(
         if hasmarkovprice
             @stageobjective(
                 subproblem,
-                flipobj * (prices[t, markov_state] * generation_quantity -
-                 sum(valley_chain[i].spill_cost * spill[i] for i = 1:N))
+                flipobj * (
+                    prices[t, markov_state] * generation_quantity -
+                    sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
+                )
             )
         else
             @stageobjective(
                 subproblem,
-                flipobj * (prices[t, 1] * generation_quantity -
-                 sum(valley_chain[i].spill_cost * spill[i] for i = 1:N))
+                flipobj * (
+                    prices[t, 1] * generation_quantity -
+                    sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
+                )
             )
         end
     end
@@ -187,10 +194,8 @@ function test_hydro_valley_model()
     Random.seed!(11111)
 
     # deterministic
-    deterministic_model = hydrovalleymodel(
-        hasmarkovprice = false,
-        hasstagewiseinflows = false,
-    )
+    deterministic_model =
+        hydrovalleymodel(hasmarkovprice = false, hasstagewiseinflows = false)
     SDDP.train(
         deterministic_model,
         iteration_limit = 10,
@@ -210,10 +215,8 @@ function test_hydro_valley_model()
     @test SDDP.calculate_bound(markov_model) ≈ 851.8 atol = 1e-2
 
     # stagewise inflows and markov prices
-    markov_stagewise_model = hydrovalleymodel(
-        hasstagewiseinflows = true,
-        hasmarkovprice = true,
-    )
+    markov_stagewise_model =
+        hydrovalleymodel(hasstagewiseinflows = true, hasmarkovprice = true)
     SDDP.train(markov_stagewise_model, iteration_limit = 10, print_level = 0)
     @test SDDP.calculate_bound(markov_stagewise_model) ≈ 855.0 atol = 1e-3
 

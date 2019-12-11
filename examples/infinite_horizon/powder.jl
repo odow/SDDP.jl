@@ -12,8 +12,7 @@ using SDDP, Test, JSON, Gurobi, Plots, Random
 Create an instance of the infinite horizon POWDER model. If `stocking_rate =
 NaN`, we use the value from the file `data_filename`.
 """
-function infinite_powder(
-    ;
+function infinite_powder(;
     discount_factor = 0.95,
     stocking_rate::Float64 = NaN,
     data_filename = "powder_data.json",
@@ -75,32 +74,32 @@ function infinite_powder(
             # situaton where pasture_cover=0 and thus growth=0, effectively
             # killing all grass for all time.
                 (
-                 10 <= pasture_cover <= data["maximum_pasture_cover"],
-                 SDDP.State,
-                 initial_value = data["initial_pasture_cover"],
+                    10 <= pasture_cover <= data["maximum_pasture_cover"],
+                    SDDP.State,
+                    initial_value = data["initial_pasture_cover"],
                 )
             # Quantity of supplement in storage (kgDM/ha).
                 (
-                 stored_supplement >= 0,
-                 SDDP.State,
-                 initial_value = data["initial_storage"],
+                    stored_supplement >= 0,
+                    SDDP.State,
+                    initial_value = data["initial_storage"],
                 )
             # Soil moisture (mm).
                 (
-                 0 <= soil_moisture <= data["maximum_soil_moisture"],
-                 SDDP.State,
-                 initial_value = data["initial_soil_moisture"],
+                    0 <= soil_moisture <= data["maximum_soil_moisture"],
+                    SDDP.State,
+                    initial_value = data["initial_soil_moisture"],
                 )
             # Number of cows milking (cows/ha).
                 (
-                 0 <= cows_milking <= data["stocking_rate"],
-                 SDDP.State,
-                 initial_value = data["stocking_rate"],
+                    0 <= cows_milking <= data["stocking_rate"],
+                    SDDP.State,
+                    initial_value = data["stocking_rate"],
                 )
                 (
-                 0 <= milk_production <= data["maximum_milk_production"],
-                 SDDP.State,
-                 initial_value = 0.0,
+                    0 <= milk_production <= data["maximum_milk_production"],
+                    SDDP.State,
+                    initial_value = 0.0,
                 )
             end
         )
@@ -140,13 +139,15 @@ function infinite_powder(
             # ========== Energy balance ==========
                 data["pasture_energy_density"] * (feed_pasture + feed_storage) +
                 data["supplement_energy_density"] *
-                supplement >= data["stocking_rate"] *
-                              (data["energy_for_pregnancy"][stage] +
-                               data["energy_for_maintenance"] +
-                               data["energy_for_bcs_dry"][stage]) +
-                              cows_milking.in *
-                              (data["energy_for_bcs_milking"][stage] -
-                               data["energy_for_bcs_dry"][stage]) +
+                supplement >= data["stocking_rate"] * (
+                                  data["energy_for_pregnancy"][stage] +
+                                  data["energy_for_maintenance"] +
+                                  data["energy_for_bcs_dry"][stage]
+                              ) +
+                              cows_milking.in * (
+                                  data["energy_for_bcs_milking"][stage] -
+                                  data["energy_for_bcs_dry"][stage]
+                              ) +
                               energy_for_milk_production
 
             # ========== Milk production models ==========
@@ -167,12 +168,9 @@ function infinite_powder(
                 grass_growth <= g(p′) + g′(p′) * (pasture_cover.in - p′)
 
             # ========== Fat Evaluation Index Penalty ==========
-                fei_penalty >= cow_per_day *
-                               (0.00 + 0.25 * (supplement / cow_per_day - 3))
-                fei_penalty >= cow_per_day *
-                               (0.25 + 0.50 * (supplement / cow_per_day - 4))
-                fei_penalty >= cow_per_day *
-                               (0.75 + 1.00 * (supplement / cow_per_day - 5))
+                fei_penalty >= cow_per_day * (0.00 + 0.25 * (supplement / cow_per_day - 3))
+                fei_penalty >= cow_per_day * (0.25 + 0.50 * (supplement / cow_per_day - 4))
+                fei_penalty >= cow_per_day * (0.75 + 1.00 * (supplement / cow_per_day - 5))
             end
         )
 
@@ -218,13 +216,13 @@ function visualize_policy(model, filename)
         model,
         1_000,
         [
-         :cows_milking,
-         :pasture_cover,
-         :soil_moisture,
-         :grass_growth,
-         :supplement,
-         :weekly_milk_production,
-         :fei_penalty,
+            :cows_milking,
+            :pasture_cover,
+            :soil_moisture,
+            :grass_growth,
+            :supplement,
+            :weekly_milk_production,
+            :fei_penalty,
         ],
         sampling_scheme = SDDP.InSampleMonteCarlo(
             terminate_on_cycle = false,

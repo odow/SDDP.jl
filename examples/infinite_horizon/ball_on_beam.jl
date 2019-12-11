@@ -45,9 +45,9 @@ function infinite_ball_on_beam()
             subproblem,
             begin
                 r′.out - r′.in == Δt * (r.in * θ′.in^2 - g * sin(θ.in))
-                θ′.out - θ′.in == Δt * (-2 * m * r.in * r′.in +
-                                   -1 * m * g * r.in * cos(θ.in) + u) /
-                                  (m * r.in^2 + J)
+                θ′.out -
+                θ′.in == Δt * (-2 * m * r.in * r′.in + -1 * m * g * r.in * cos(θ.in) + u) /
+                         (m * r.in^2 + J)
             end
         )
         @stageobjective(

@@ -19,9 +19,19 @@ using Test
         @test graph.nodes[5] == Tuple{Int,Float64}[]
 
         graph = SDDP.LinearGraph(3)
-        @test sprint(show, graph) == "Root\n" * " 0\n" * "Nodes\n" * " 1\n" * " 2\n" *
-                                     " 3\n" * "Arcs\n" * " 0 => 1 w.p. 1.0\n" *
-                                     " 1 => 2 w.p. 1.0\n" * " 2 => 3 w.p. 1.0\n"
+        @test sprint(
+            show,
+            graph,
+        ) == "Root\n" *
+             " 0\n" *
+             "Nodes\n" *
+             " 1\n" *
+             " 2\n" *
+             " 3\n" *
+             "Arcs\n" *
+             " 0 => 1 w.p. 1.0\n" *
+             " 1 => 2 w.p. 1.0\n" *
+             " 2 => 3 w.p. 1.0\n"
         @test length(graph.belief_partition) == 0
     end
 
@@ -92,12 +102,10 @@ using Test
             graph = SDDP.Graph(:root)
             SDDP.add_node(graph, :x)
             SDDP.add_node(graph, :y)
-            @test_throws ErrorException("You must provide on Lipschitz contsant for every element in " *
-                                        "the ambiguity set.") SDDP.add_ambiguity_set(
-                graph,
-                [:x],
-                Float64[],
-            )
+            @test_throws ErrorException(
+                "You must provide on Lipschitz contsant for every element in " *
+                "the ambiguity set.",
+            ) SDDP.add_ambiguity_set(graph, [:x], Float64[])
             @test_throws ErrorException("Cannot provide negative Lipschitz constant: [-1.0]") SDDP.add_ambiguity_set(
                 graph,
                 [:x],
@@ -115,21 +123,24 @@ using Test
                 belief_lipschitz = [[1.0, 1.0]],
             )
             @test graph.belief_partition == [[:x, :y]]
-            @test sprint(show, graph) == join(
+            @test sprint(
+                show,
+                graph,
+            ) == join(
                 [
-                 "Root",
-                 " root",
-                 "Nodes",
-                 " x",
-                 " y",
-                 "Arcs",
-                 " root => x w.p. 0.5",
-                 " root => y w.p. 0.5",
-                 "Partition",
-                 " {",
-                 "    x",
-                 "    y",
-                 " }\n",
+                    "Root",
+                    " root",
+                    "Nodes",
+                    " x",
+                    " y",
+                    "Arcs",
+                    " root => x w.p. 0.5",
+                    " root => y w.p. 0.5",
+                    "Partition",
+                    " {",
+                    "    x",
+                    "    y",
+                    " }\n",
                 ],
                 "\n",
             )
@@ -155,6 +166,7 @@ end
         @test_throws Exception SDDP.PolicyGraph(
             SDDP.LinearGraph(2),
             lower_bound = 0.0,
+            direct_mode = true,
         ) do node, stage
         end
         nodes = Set{Int}()
@@ -228,10 +240,10 @@ end
             :root,
             [:stage_1, :stage_2, :stage_3],
             [
-             (:root => :stage_1, 1.0),
-             (:stage_1 => :stage_2, 1.0),
-             (:stage_2 => :stage_3, 1.0),
-             (:stage_3 => :stage_1, 0.9),
+                (:root => :stage_1, 1.0),
+                (:stage_1 => :stage_2, 1.0),
+                (:stage_2 => :stage_3, 1.0),
+                (:stage_3 => :stage_1, 0.9),
             ],
         )
         nodes = Set{Symbol}()
@@ -329,18 +341,23 @@ end
 
 @testset "Errors" begin
     @testset "<=0 stages" begin
-        exception = ErrorException("You must create a LinearPolicyGraph with `stages >= 1`.")
+        exception =
+            ErrorException("You must create a LinearPolicyGraph with `stages >= 1`.")
         @test_throws exception SDDP.LinearPolicyGraph(stages = 0) do sp, t
         end
     end
     @testset "missing bounds" begin
-        exception = ErrorException("You must specify a finite lower bound on the objective value" *
-                                   " using the `lower_bound = value` keyword argument.")
+        exception = ErrorException(
+            "You must specify a finite lower bound on the objective value" *
+            " using the `lower_bound = value` keyword argument.",
+        )
         @test_throws exception SDDP.LinearPolicyGraph(stages = 1, sense = :Min) do sp, t
         end
 
-        exception = ErrorException("You must specify a finite upper bound on the objective value" *
-                                   " using the `upper_bound = value` keyword argument.")
+        exception = ErrorException(
+            "You must specify a finite upper bound on the objective value" *
+            " using the `upper_bound = value` keyword argument.",
+        )
         @test_throws exception SDDP.LinearPolicyGraph(stages = 1, sense = :Max) do sp, t
         end
     end
@@ -362,9 +379,11 @@ end
         end
     end
     @testset "no initial_value" begin
-        exception = ErrorException("In `@variable(node, x, SDDP.State)`: When creating a state " *
-                                   "variable, you must set the `initial_value` keyword to the value " *
-                                   "of the state variable at the root node.")
+        exception = ErrorException(
+            "In `@variable(node, x, SDDP.State)`: When creating a state " *
+            "variable, you must set the `initial_value` keyword to the value " *
+            "of the state variable at the root node.",
+        )
         @test_throws exception SDDP.LinearPolicyGraph(
             stages = 2,
             upper_bound = 0.0,

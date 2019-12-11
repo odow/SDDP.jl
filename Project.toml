@@ -4,6 +4,7 @@ authors = ["Oscar Dowson <oscar.dowson@northwestern.edu"]
 version = "0.1.0"
 
 [deps]
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
@@ -20,8 +21,8 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 GLPK = "0.12"
 HTTP = "0.8"
 JSON = "0.21"
-JuliaFormatter = "0.1.37"
 JuMP = "~0.20"
+JuliaFormatter = "0.1.37"
 MathOptFormat = "0.2"
 RecipesBase = "0.7"
 Reexport = "0.2"

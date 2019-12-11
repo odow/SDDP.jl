@@ -44,8 +44,7 @@ function asset_management_simple()
             @variable(subproblem, short >= 0)
             @constraint(
                 subproblem,
-                rstock[markov_state] * stocks.in + rbonds[markov_state] * bonds.in -
-                over + short == 80
+                rstock[markov_state] * stocks.in + rbonds[markov_state] * bonds.in - over + short == 80
             )
             @stageobjective(subproblem, -over + 4 * short)
         end

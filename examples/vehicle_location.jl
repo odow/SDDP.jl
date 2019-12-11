@@ -64,8 +64,7 @@ function vehicle_location_model(integrality_handler)
         @expression(
             sp,
             base_balance[b in bases, v in vehicles],
-            location[b, v].in - dispatch[b, v] - sum(shift[b, :, v]) +
-            sum(shift[:, b, v])
+            location[b, v].in - dispatch[b, v] - sum(shift[b, :, v]) + sum(shift[:, b, v])
         )
 
         @constraints(
@@ -86,10 +85,10 @@ function vehicle_location_model(integrality_handler)
                 location[b, v].out == base_balance[b, v]
             # Update states for home/hospital bases.
                 [v in vehicles],
-                location[hospital_location, v].out == base_balance[
+                location[
                     hospital_location,
                     v,
-                ] + sum(dispatch[:, v])
+                ].out == base_balance[hospital_location, v] + sum(dispatch[:, v])
             end
         )
         SDDP.parameterize(sp, requests) do request
@@ -97,10 +96,11 @@ function vehicle_location_model(integrality_handler)
                 sp,
                 sum(
                 # Distance to travel from base to emergency and then to hospital.
-                dispatch[b, v] * dispatch_cost(b, request) +
+                    dispatch[b, v] * dispatch_cost(b, request) +
                 # Distance travelled by vehicles relocating bases.
-                sum(shift_cost(b, dest) * shift[b, dest, v] for dest in bases)
-                    for b in bases, v in vehicles)
+                    sum(shift_cost(b, dest) * shift[b, dest, v] for dest in bases)
+                    for b in bases, v in vehicles
+                )
             )
         end
     end

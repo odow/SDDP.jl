@@ -20,12 +20,12 @@ function tiger_problem()
         :root_node,
         [:Dl, :Dr, :Hl, :Hr],
         [
-         (:root_node => :Dl, 0.5),
-         (:root_node => :Dr, 0.5),
-         (:Dl => :Hl, 1.0),
-         (:Hl => :Dl, 0.98),
-         (:Dr => :Hr, 1.0),
-         (:Hr => :Dr, 0.98),
+            (:root_node => :Dl, 0.5),
+            (:root_node => :Dr, 0.5),
+            (:Dl => :Hl, 1.0),
+            (:Hl => :Dl, 0.98),
+            (:Dr => :Hr, 1.0),
+            (:Hr => :Dr, 0.98),
         ],
     )
     SDDP.add_ambiguity_set(graph, [:Dl, :Dr], 1e3)

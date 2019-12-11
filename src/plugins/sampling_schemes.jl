@@ -29,15 +29,16 @@ sampling a child node.
 Note that if `terminate_on_cycle = false` and `terminate_on_dummy_leaf = false`
 then `max_depth` must be set > 0.
 """
-function InSampleMonteCarlo(
-    ;
+function InSampleMonteCarlo(;
     max_depth::Int = 0,
     terminate_on_cycle::Bool = false,
     terminate_on_dummy_leaf::Bool = true,
 )
     if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
-        error("terminate_on_cycle and terminate_on_dummy_leaf cannot both be " *
-              "false when max_depth=0.")
+        error(
+            "terminate_on_cycle and terminate_on_dummy_leaf cannot both be " *
+            "false when max_depth=0.",
+        )
     end
     return InSampleMonteCarlo(max_depth, terminate_on_cycle, terminate_on_dummy_leaf)
 end
@@ -114,8 +115,10 @@ function OutOfSampleMonteCarlo(
     terminate_on_dummy_leaf::Bool = true,
 ) where {T}
     if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
-        error("terminate_on_cycle and terminate_on_dummy_leaf cannot both be " *
-              "false when max_depth=0.")
+        error(
+            "terminate_on_cycle and terminate_on_dummy_leaf cannot both be " *
+            "false when max_depth=0.",
+        )
     end
     noise_terms = Dict{T,Vector{Noise}}()
     children = Dict{T,Vector{Noise{T}}}()
@@ -283,8 +286,10 @@ function Historical(
     probability::Vector{Float64} = fill(1.0 / length(scenarios), length(scenarios)),
 ) where {T,S}
     if sum(probability) != 1.0
-        error("Probability of historical scenarios must sum to 1. Currently: " *
-              "$(sum(probability)).")
+        error(
+            "Probability of historical scenarios must sum to 1. Currently: " *
+            "$(sum(probability)).",
+        )
     end
     output = Noise{Vector{Tuple{T,S}}}[]
     for (scenario, prob) in zip(scenarios, probability)

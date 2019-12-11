@@ -23,10 +23,8 @@ using Test
             terminate_on_dummy_leaf = false,
             terminate_on_cycle = false,
         )
-        scenario, terminated_due_to_cycle = SDDP.sample_scenario(
-            model,
-            SDDP.InSampleMonteCarlo(),
-        )
+        scenario, terminated_due_to_cycle =
+            SDDP.sample_scenario(model, SDDP.InSampleMonteCarlo())
         @test length(scenario) == 2
         @test !terminated_due_to_cycle
         for (stage, (node, noise)) in enumerate(scenario)
@@ -94,7 +92,7 @@ end
                     return [SDDP.Noise(2, 1.0)]
                 else
                     return SDDP.Noise{Int}[],
-                        [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
+                    [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
                 end
             end
         scenario, terminated_due_to_cycle = SDDP.sample_scenario(model, sampler)
@@ -147,10 +145,8 @@ end
                 JuMP.set_upper_bound(x, ω)
             end
         end
-        scenario, terminated_due_to_cycle = SDDP.sample_scenario(
-            model,
-            SDDP.Historical([(1, 0.1), (2, 0.2), (1, 0.3)]),
-        )
+        scenario, terminated_due_to_cycle =
+            SDDP.sample_scenario(model, SDDP.Historical([(1, 0.1), (2, 0.2), (1, 0.3)]))
         @test length(scenario) == 3
         @test !terminated_due_to_cycle
         @test scenario == [(1, 0.1), (2, 0.2), (1, 0.3)]

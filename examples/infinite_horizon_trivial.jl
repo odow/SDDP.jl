@@ -6,11 +6,8 @@
 using SDDP, GLPK, Test
 
 function infinite_trivial()
-    graph = SDDP.Graph(
-        :root_node,
-        [:week],
-        [(:root_node => :week, 1.0), (:week => :week, 0.9)],
-    )
+    graph =
+        SDDP.Graph(:root_node, [:week], [(:root_node => :week, 1.0), (:week => :week, 0.9)])
     model = SDDP.PolicyGraph(
         graph,
         bellman_function = SDDP.BellmanFunction(lower_bound = 0),
