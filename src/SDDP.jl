@@ -46,7 +46,7 @@ include("plugins/sampling_schemes.jl")
 include("plugins/bellman_functions.jl")
 include("plugins/stopping_rules.jl")
 include("plugins/integrality_handlers.jl")
-include("plugins/parallel_schemesjl")
+include("plugins/parallel_schemes.jl")
 include("plugins/backward_sampling_schemes.jl")
 
 # Visualization related code.

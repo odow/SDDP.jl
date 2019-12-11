@@ -338,11 +338,7 @@ function _add_average_cut(
     μᵀy = get_objective_state_component(node)
     JuMP.add_to_expression!(μᵀy, get_belief_state_component(node))
     _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state, μᵀy)
-    return (
-        theta = θᵏ,
-        pi = πᵏ,
-        x = outgoing_state
-    )
+    return (theta = θᵏ, pi = πᵏ, x = outgoing_state)
 end
 
 function _add_multi_cut(

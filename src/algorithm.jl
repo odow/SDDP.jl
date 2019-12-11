@@ -117,7 +117,7 @@ struct Options{T}
         print_level::Int,
         start_time::Float64,
         log::Vector{Log},
-        log_file_handle
+        log_file_handle,
     ) where {T,S}
         return new{T}(
             initial_state,
@@ -134,7 +134,7 @@ struct Options{T}
             print_level,
             start_time,
             log,
-            log_file_handle
+            log_file_handle,
         )
     end
 end
@@ -537,7 +537,7 @@ function backward_pass(
                     items.probability .* items.belief,
                     items.objectives,
                 )
-                append!(cuts[node_index], new_cuts)
+                push!(cuts[node_index], new_cuts)
             end
         else
             node_index, _ = scenario_path[index]
@@ -567,7 +567,7 @@ function backward_pass(
                 items.probability,
                 items.objectives,
             )
-            append!(cuts[node_index], new_cuts)
+            push!(cuts[node_index], new_cuts)
             if options.refine_at_similar_nodes
                 # Refine the bellman function at other nodes with the same
                 # children, e.g., in the same stage of a Markovian policy graph.
@@ -590,7 +590,7 @@ function backward_pass(
                         copied_probability,
                         items.objectives,
                     )
-                    append!(cuts[other_index], new_cuts)
+                    push!(cuts[other_index], new_cuts)
                 end
             end
         end
@@ -769,7 +769,7 @@ struct IterationResult{T}
     cumulative_value::Float64
     has_converged::Bool
     status::Symbol
-    cuts::Dict{T, Vector{Any}}
+    cuts::Dict{T,Vector{Any}}
 end
 
 function iteration(model::PolicyGraph{T}, options::Options) where {T}
@@ -792,22 +792,20 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
     push!(
         options.log,
         Log(
-            length(options.log),
+            length(options.log) + 1,
             bound,
             forward_trajectory.cumulative_value,
-            time() - options.start_time
-        )
+            time() - options.start_time,
+        ),
     )
-    has_converged, status = convergence_test(
-        model, options.log, options.stopping_rules
-    )
+    has_converged, status = convergence_test(model, options.log, options.stopping_rules)
     return IterationResult(
-        myid(),
+        Distributed.myid(),
         bound,
         forward_trajectory.cumulative_value,
         has_converged,
-        status
-        cuts
+        status,
+        cuts,
     )
 end
 
@@ -888,11 +886,12 @@ function train(
     cut_deletion_minimum::Int = 1,
     backward_sampling_scheme::AbstractBackwardSamplingScheme = SDDP.CompleteSampler(),
     dashboard::Bool = false,
-    parallel_scheme::AbstractParallelScheme = Serial()
+    parallel_scheme::AbstractParallelScheme = Serial(),
 )
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
     log_file_handle = open(log_file, "a")
+    log = Log[]
 
     if print_level > 0
         print_helper(print_banner, log_file_handle)
@@ -950,10 +949,6 @@ function train(
         (::Any, ::Any) -> nothing
     end
 
-    status = :not_solved
-
-    start_time = time()
-
     options = Options(
         model,
         model.initial_root_state,
@@ -965,11 +960,12 @@ function train(
         stopping_rules,
         dashboard_callback,
         print_level,
-        start_time,
+        time(),
         log,
-        log_file_handle
+        log_file_handle,
     )
 
+    status = :not_solved
     try
         status = master_loop(parallel_scheme, model, options)
     catch ex

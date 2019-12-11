@@ -30,6 +30,12 @@ using Test
             SDDP.Expectation(),
             0.0,
             true,
+            SDDP.AbstractStoppingRule[],
+            (a, b) -> nothing,
+            0,
+            0.0,
+            SDDP.Log[],
+            IOBuffer(),
         ),
     )
     simulated_value = 0.0
