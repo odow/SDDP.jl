@@ -94,13 +94,26 @@ end
     SDDP.train(
         model,
         iteration_limit = 20,
-        parallel_scheme = SDDP.Asynchronous(; master_pause = 5.0) do m
+        parallel_scheme = SDDP.Asynchronous(; use_master = false) do m
             for (key, node) in m.nodes
                 JuMP.set_optimizer(node.subproblem, with_optimizer(GLPK.Optimizer))
             end
         end,
     )
-    @test any(l -> l.pid != 1, model.most_recent_training_results.log)
+    @test SDDP.termination_status(model) == :iteration_limit
+    @test all(l -> l.pid != 1, model.most_recent_training_results.log)
+    @test SDDP.calculate_bound(model) == 6.0
+    SDDP.train(
+        model,
+        iteration_limit = 20,
+        parallel_scheme = SDDP.Asynchronous(; use_master = true) do m
+            for (key, node) in m.nodes
+                JuMP.set_optimizer(node.subproblem, with_optimizer(GLPK.Optimizer))
+            end
+        end,
+    )
+    @test SDDP.termination_status(model) == :iteration_limit
+    @test any(l -> l.pid == 1, model.most_recent_training_results.log)
     @test SDDP.calculate_bound(model) == 6.0
 end
 
@@ -118,7 +131,7 @@ end
         model,
         20;
         custom_recorders = Dict{Symbol,Function}(:myid => (args...) -> Distributed.myid()),
-        parallel_scheme = SDDP.Asynchronous(),
+        parallel_scheme = SDDP.Asynchronous(use_master = false),
     )
-    @test length(unique([s[1][:myid] for s in simulations])) > 1
+    @test all([s[1][:myid] != 1 for s in simulations])
 end

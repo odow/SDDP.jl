@@ -42,7 +42,7 @@ end
 struct Asynchronous <: AbstractParallelScheme
     init_callback::Function
     slave_ids::Vector{Int}
-    master_pause::Float64
+    use_master::Bool
 
     """
         Asynchronous(init_callback::Function, slave_pids::Vector{Int} = workers())
@@ -55,9 +55,9 @@ struct Asynchronous <: AbstractParallelScheme
     function Asynchronous(
         init_callback::Function,
         slave_ids::Vector{Int} = Distributed.workers();
-        master_pause::Float64 = 0.1,
+        use_master::Bool = true,
     )
-        return new(init_callback, slave_ids, master_pause)
+        return new(init_callback, slave_ids, use_master)
     end
 
     """
@@ -67,7 +67,7 @@ struct Asynchronous <: AbstractParallelScheme
     """
     function Asynchronous(
         slave_ids::Vector{Int} = Distributed.workers();
-        master_pause::Float64 = 0.1,
+        use_master::Bool = true,
     )
         function init_callback(model)
             for (_, node) in model.nodes
@@ -77,7 +77,7 @@ struct Asynchronous <: AbstractParallelScheme
                 set_optimizer(node.subproblem, node.optimizer)
             end
         end
-        return new(init_callback, slave_ids, master_pause)
+        return new(init_callback, slave_ids, use_master)
     end
 end
 
@@ -187,7 +187,7 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
         # It also means that Asynchronous() can be our default setting, since if there are
         # no workers, ther should be no overhead, _and_ this inner loop is just the serial
         # implementation anyway.
-        while !isready(results)
+        while async.use_master && !isready(results)
             result = iteration(model, options)
             for (_, ch) in updates
                 put!(ch, result)
@@ -196,8 +196,6 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
             if result.has_converged
                 close(results)
                 return result.status
-            elseif length(async.slave_ids) > 0
-                sleep(async.master_pause)
             end
         end
         # We'll only reach here is isready(results) == true, so we won't hang waiting for a
