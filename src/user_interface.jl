@@ -354,7 +354,7 @@ mutable struct Node{T}
     post_optimize_hook::Union{Nothing,Function}
     # Approach for handling discrete variables.
     integrality_handler # TODO either leave untyped or define ::AbstractIntegralityHandler
-    #
+    # The user's optimizer. We use this in asynchronous mode.
     optimizer
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.

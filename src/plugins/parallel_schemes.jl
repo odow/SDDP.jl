@@ -3,6 +3,13 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+function log_iteration(options)
+    options.dashboard_callback(options.log[end], false)
+    if options.print_level > 0
+        print_helper(print_iteration, options.log_file_handle, options.log[end])
+    end
+end
+
 """
     Serial()
 
@@ -10,31 +17,57 @@ Run SDDP in serial mode.
 """
 struct Serial <: AbstractParallelScheme end
 Base.show(io::IO, ::Serial) = print(io, "serial mode")
+interrupt(::Serial) = nothing
 
 function master_loop(::Serial, model::PolicyGraph{T}, options::Options) where {T}
     while true
         result = iteration(model, options)
+        log_iteration(options)
         if result.has_converged
             return result.status
         end
-        options.dashboard_callback(options.log[end], false)
-        if options.print_level > 0
-            print_helper(print_iteration, options.log_file_handle, options.log[end])
-        end
     end
 end
 
-"""
-    Asynchronous(worker_ids::Vector{Int} = workers())
-
-Run SDDP in asynchronous mode, using all available workers.
-"""
 struct Asynchronous <: AbstractParallelScheme
+    init_callback::Function
     slave_ids::Vector{Int}
+
+    """
+        Asynchronous(init_callback::Function, slave_pids::Vector{Int} = workers())
+
+    Run SDDP in asynchronous mode workers with pid's `slave_pids`.
+
+    After initializing the models on each worker, call `init_callback(model)`. Note that
+    `init_callback` is run _locally on the worker_ and _not_ on the master thread.
+    """
+    function Asynchronous(
+        init_callback::Function,
+        slave_ids::Vector{Int} = Distributed.workers(),
+    )
+        return new(init_callback, slave_ids)
+    end
+
+    """
+        Asynchronous(slave_pids::Vector{Int} = workers())
+
+    Run SDDP in asynchronous mode workers with pid's `slave_pids`.
+    """
     function Asynchronous(slave_ids::Vector{Int} = Distributed.workers())
-        return new(slave_ids)
+        function init_callback(model)
+            for (_, node) in model.nodes
+                if node.optimizer === nothing
+                    error("Cannot use asynchronous solver with optimizers in direct mode.")
+                end
+                set_optimizer(node.subproblem, optimizer)
+            end
+        end
+        return new(init_callback, slave_ids)
     end
 end
+
+interrupt(a::Asynchronous) = Distributed.interrupt(a.slave_ids)
+
 function Base.show(io::IO, a::Asynchronous)
     print(io, "Asynchronous mode with $(length(a.slave_ids)) procs.")
 end
@@ -59,85 +92,113 @@ function slave_update(model::PolicyGraph, result::IterationResult)
                 cut.pi,
                 cut.x,
                 JuMP.AffExpr(0.0);
-                cut_selection = false,
+                cut_selection = true,
             )
         end
     end
     return
 end
 
-# Use the "function-barrier" technique to avoid type-instabilities in slave_loop.
-function init_slave_loop(args...)
-    model = SDDP.__async_model__::PolicyGraph
-    for (key, node) in model.nodes
-        JuMP.set_optimizer(node.subproblem, node.optimizer)
-    end
-    return slave_loop(model, args...)
-end
-
 function slave_loop(
+    async::Asynchronous,
     model::PolicyGraph{T},
-    jobs::Distributed.RemoteChannel{Channel{Options}},
+    options::Options,
     updates::Distributed.RemoteChannel{Channel{IterationResult{T}}},
     results::Distributed.RemoteChannel{Channel{IterationResult{T}}},
 ) where {T}
     try
-        while true
-            job = take!(jobs)
+        async.init_callback(model)
+        results_to_add = IterationResult{T}[]
+        while isopen(results)
+            put!(results, iteration(model, options))
+            # Instead of pulling a result from `updates` and adding it immediately, we want
+            # to pull as many as possible in a short amount of time, the add them all and
+            # start the loop again. Otherwise, by the time we've finished updating the
+            # slave, there might be a new update :(
             while isready(updates)
-                update = take!(updates)
-                slave_update(model, update)
+                push!(results_to_add, take!(updates))
             end
-            result = iteration(model, job)
-            put!(results, result)
+            for result in results_to_add
+                slave_update(model, result)
+            end
+            empty!(results_to_add)
         end
     catch ex
-        if isa(ex, Distributed.RemoteException) &&
-           isa(ex.captured.ex, InvalidStateException)
+        if isa(ex, Distributed.RemoteException) && (
+            isa(ex.captured.ex, InvalidStateException) ||
+            isa(ex.captured.ex, InterruptException)
+        )
             # The master process must have closed on us. Bail out without
             # consequence.
+            return
+        elseif isa(ex, InterruptException)
             return
         end
         rethrow(ex)
     end
 end
 
-function send_to(pid, key, val)
-    Distributed.remotecall_fetch(Core.eval, pid, SDDP, Expr(:(=), key, val))
-    return
-end
-
 function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Options) where {T}
-    # Initialize the remote channels. There are three types:
-    # 1) jobs: master -> slaves: which stores a list of jobs that the slaves
-    #       collectively pull from.
-    # 2) updates: master -> slaves[i]: a unique channel for each slave, which
+    # Initialize the remote channels. There are two types:
+    # 1) updates: master -> slaves[i]: a unique channel for each slave, which
     #       is used to distribute results found by other slaves.
-    # 3) results: slaves -> master: a channel which slaves collectively push to
+    # 2) results: slaves -> master: a channel which slaves collectively push to
     #       to feed the master new results.
-    #
-    # When initializing the slaves, we copy `model` to `SDDP.__async_model__`
-    # on each slave. This is a global variable (bad), but we use the
-    # function-barrier technique to improve performance when using model on each
-    # slave.
-    jobs = Distributed.RemoteChannel(() -> Channel{Options}(Inf))
     updates = Dict(
         pid => Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
         for pid in async.slave_ids
     )
     results = Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
-    @sync begin
-        for pid in async.slave_ids
-            @async send_to(pid, :__async_model__, model)
+    for pid in async.slave_ids
+        let model_pid = model, options_pid = options
+            Distributed.remote_do(
+                slave_loop,
+                pid,
+                async,
+                model_pid,
+                options_pid,
+                updates[pid],
+                results,
+            )
         end
     end
-    for pid in async.slave_ids
-        put!(jobs, options)
-        Distributed.remote_do(init_slave_loop, pid, jobs, updates[pid], results)
-    end
+
     while true
+        # Starting workers has a high overhead. We have to copy the models across, and then
+        # precompile all the methods on every process :(. While that's happening, let's
+        # start running iterations on master. It has the added benefit that if the master
+        # is ever idle waiting for a result from a slave, it will do some useful work :).
+        #
+        # It also means that Asynchronous() can be our default setting, since if there are
+        # no workers, ther should be no overhead, _and_ this inner loop is just the serial
+        # implementation anyway.
+        while !isready(results)
+            result = iteration(model, options)
+            for (_, ch) in updates
+                put!(ch, result)
+            end
+            log_iteration(options)
+            if result.has_converged
+                close(results)
+                return result.status
+            elseif length(async.slave_ids) > 0
+                sleep(0.1)
+            end
+        end
+        # We'll only reach here is isready(results) == true, so we won't hang waiting for a
+        # new result on take!. After we receive a new result from a slave, there are a few
+        # things to do:
+        # 1) send the result to the other slaves
+        # 2) update the master problem with the new cuts
+        # 3) compute the revised bound, update the log, and print to screen
+        # 4) test for convergence (e.g., bound stalling, time limit, iteration limit)
+        # 5) Exit, killing the running task on the workers.
         result = take!(results)
-        # Add the result to the current model!
+        for pid in async.slave_ids
+            if pid != result.pid
+                put!(updates[pid], result)
+            end
+        end
         slave_update(model, result)
         bound = calculate_bound(model)
         push!(
@@ -150,22 +211,11 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
                 result.pid,
             ),
         )
-        options.dashboard_callback(options.log[end], false)
-        if options.print_level > 0
-            print_helper(print_iteration, options.log_file_handle, options.log[end])
-        end
-        if result.has_converged
-            close(jobs)
+        log_iteration(options)
+        has_converged, status = convergence_test(model, options.log, options.stopping_rules)
+        if has_converged
             close(results)
-            for (_, ch) in updates
-                close(ch)
-            end
-            return result.status
+            return status
         end
-        for pid in async.slave_ids
-            pid == result.pid && continue
-            put!(updates[pid], result)
-        end
-        put!(jobs, options)
     end
 end

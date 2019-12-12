@@ -78,23 +78,6 @@ end
     @test_throws ErrorException SDDP.slave_update(model, result)
 end
 
-@testset "send_to" begin
-    pids = Distributed.workers()
-    SDDP.send_to(pids[1], :__async_model__, 1)
-    @test remotecall_fetch(() -> SDDP.__async_model__, pids[1]) == 1
-
-    model =
-        SDDP.LinearPolicyGraph(stages = 2, sense = :Min, lower_bound = 0.0) do node, stage
-            @variable(node, x, SDDP.State, initial_value = 0.0)
-            @stageobjective(node, x.out)
-        end
-    SDDP.send_to(pids[2], :__async_model__, model)
-    @test typeof(remotecall_fetch(
-        () -> SDDP.__async_model__,
-        pids[2],
-    )) == SDDP.PolicyGraph{Int}
-end
-
 @testset "Async solve" begin
     model = SDDP.LinearPolicyGraph(
         stages = 2,
@@ -108,6 +91,14 @@ end
             JuMP.set_lower_bound(x.out, ω)
         end
     end
-    SDDP.train(model, iteration_limit = 20, parallel_scheme = SDDP.Asynchronous())
+    SDDP.train(
+        model,
+        iteration_limit = 20,
+        parallel_scheme = SDDP.Asynchronous() do m
+            for (key, node) in m.nodes
+                JuMP.set_optimizer(node.subproblem, with_optimizer(GLPK.Optimizer))
+            end
+        end,
+    )
     @test SDDP.calculate_bound(model) == 6.0
 end

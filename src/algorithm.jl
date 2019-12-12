@@ -973,6 +973,7 @@ function train(
     catch ex
         if isa(ex, InterruptException)
             status = :interrupted
+            interrupt(parallel_scheme)
         else
             close(log_file_handle)
             rethrow(ex)
