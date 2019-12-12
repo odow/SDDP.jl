@@ -32,6 +32,7 @@ end
 struct Asynchronous <: AbstractParallelScheme
     init_callback::Function
     slave_ids::Vector{Int}
+    master_pause::Float64
 
     """
         Asynchronous(init_callback::Function, slave_pids::Vector{Int} = workers())
@@ -43,9 +44,10 @@ struct Asynchronous <: AbstractParallelScheme
     """
     function Asynchronous(
         init_callback::Function,
-        slave_ids::Vector{Int} = Distributed.workers(),
+        slave_ids::Vector{Int} = Distributed.workers();
+        master_pause::Float64 = 0.1
     )
-        return new(init_callback, slave_ids)
+        return new(init_callback, slave_ids, master_pause)
     end
 
     """
@@ -53,7 +55,9 @@ struct Asynchronous <: AbstractParallelScheme
 
     Run SDDP in asynchronous mode workers with pid's `slave_pids`.
     """
-    function Asynchronous(slave_ids::Vector{Int} = Distributed.workers())
+    function Asynchronous(
+        slave_ids::Vector{Int} = Distributed.workers(); master_pause::Float64 = 0.1
+    )
         function init_callback(model)
             for (_, node) in model.nodes
                 if node.optimizer === nothing
@@ -62,14 +66,14 @@ struct Asynchronous <: AbstractParallelScheme
                 set_optimizer(node.subproblem, optimizer)
             end
         end
-        return new(init_callback, slave_ids)
+        return new(init_callback, slave_ids, master_pause)
     end
 end
 
 interrupt(a::Asynchronous) = Distributed.interrupt(a.slave_ids)
 
 function Base.show(io::IO, a::Asynchronous)
-    print(io, "Asynchronous mode with $(length(a.slave_ids)) procs.")
+    print(io, "Asynchronous mode with $(length(a.slave_ids)) workers.")
 end
 
 """
@@ -182,7 +186,7 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
                 close(results)
                 return result.status
             elseif length(async.slave_ids) > 0
-                sleep(0.1)
+                sleep(async.master_pause)
             end
         end
         # We'll only reach here is isready(results) == true, so we won't hang waiting for a

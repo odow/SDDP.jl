@@ -94,11 +94,12 @@ end
     SDDP.train(
         model,
         iteration_limit = 20,
-        parallel_scheme = SDDP.Asynchronous() do m
+        parallel_scheme = SDDP.Asynchronous(; master_pause = 5.0) do m
             for (key, node) in m.nodes
                 JuMP.set_optimizer(node.subproblem, with_optimizer(GLPK.Optimizer))
             end
         end,
     )
+    @test any(l -> l.pid != 1, model.most_recent_training_results.log)
     @test SDDP.calculate_bound(model) == 6.0
 end
