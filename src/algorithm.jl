@@ -1164,16 +1164,16 @@ function simulate(
     custom_recorders = Dict{Symbol,Function}(),
     require_duals::Bool = true,
     skip_undefined_variables::Bool = false,
+    parallel_scheme::AbstractParallelScheme = Serial(),
 )
-    return map(
-        i -> _simulate(
-            model,
-            variables;
-            sampling_scheme = sampling_scheme,
-            custom_recorders = custom_recorders,
-            require_duals = require_duals,
-            skip_undefined_variables = skip_undefined_variables,
-        ),
-        1:number_replications,
+    return _simulate(
+        model,
+        parallel_scheme,
+        number_replications,
+        variables;
+        sampling_scheme = sampling_scheme,
+        custom_recorders = custom_recorders,
+        require_duals = require_duals,
+        skip_undefined_variables = skip_undefined_variables,
     )
 end

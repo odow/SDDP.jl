@@ -103,3 +103,22 @@ end
     @test any(l -> l.pid != 1, model.most_recent_training_results.log)
     @test SDDP.calculate_bound(model) == 6.0
 end
+
+@testset "simulate parallel" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
+        sense = :Min,
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do sp, t
+        @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
+        @stageobjective(sp, x[1].out + x[2].out)
+    end
+    simulations = SDDP.simulate(
+        model,
+        20;
+        custom_recorders = Dict{Symbol,Function}(:myid => (args...) -> Distributed.myid()),
+        parallel_scheme = SDDP.Asynchronous(),
+    )
+    @test length(unique([s[1][:myid] for s in simulations])) > 1
+end

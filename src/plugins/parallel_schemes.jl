@@ -29,6 +29,16 @@ function master_loop(::Serial, model::PolicyGraph{T}, options::Options) where {T
     end
 end
 
+function _simulate(
+    model::PolicyGraph,
+    ::Serial,
+    number_replications::Int,
+    variables::Vector{Symbol};
+    kwargs...,
+)
+    return map(i -> _simulate(model, variables; kwargs...), 1:number_replications)
+end
+
 struct Asynchronous <: AbstractParallelScheme
     init_callback::Function
     slave_ids::Vector{Int}
@@ -45,7 +55,7 @@ struct Asynchronous <: AbstractParallelScheme
     function Asynchronous(
         init_callback::Function,
         slave_ids::Vector{Int} = Distributed.workers();
-        master_pause::Float64 = 0.1
+        master_pause::Float64 = 0.1,
     )
         return new(init_callback, slave_ids, master_pause)
     end
@@ -56,14 +66,15 @@ struct Asynchronous <: AbstractParallelScheme
     Run SDDP in asynchronous mode workers with pid's `slave_pids`.
     """
     function Asynchronous(
-        slave_ids::Vector{Int} = Distributed.workers(); master_pause::Float64 = 0.1
+        slave_ids::Vector{Int} = Distributed.workers();
+        master_pause::Float64 = 0.1,
     )
         function init_callback(model)
             for (_, node) in model.nodes
                 if node.optimizer === nothing
                     error("Cannot use asynchronous solver with optimizers in direct mode.")
                 end
-                set_optimizer(node.subproblem, optimizer)
+                set_optimizer(node.subproblem, node.optimizer)
             end
         end
         return new(init_callback, slave_ids, master_pause)
@@ -220,6 +231,25 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
         if has_converged
             close(results)
             return status
+        end
+    end
+end
+
+function _simulate(
+    model::PolicyGraph,
+    async::Asynchronous,
+    number_replications::Int,
+    variables::Vector{Symbol};
+    kwargs...,
+)
+    wp = Distributed.CachingPool(async.slave_ids)
+    let model = model, init = false, async = async, variables = variables, kwargs = kwargs
+        return Distributed.pmap(wp, 1:number_replications) do _
+            if !init
+                async.init_callback(model)
+                init = true
+            end
+            _simulate(model, variables; kwargs...)
         end
     end
 end
