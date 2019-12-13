@@ -9,13 +9,15 @@ struct InSampleMonteCarlo <: AbstractSamplingScheme
     max_depth::Int
     terminate_on_cycle::Bool
     terminate_on_dummy_leaf::Bool
+    rollout_limit::Function
 end
 
 """
     InSampleMonteCarlo(;
-        max_depth = 0,
-        terminate_on_cycle = false,
-        terminate_on_dummy_leaf = true
+        max_depth::Int = 0,
+        terminate_on_cycle::Function = false,
+        terminate_on_dummy_leaf::Function = true,
+        rollout_limit::Function = (i::Int) -> typemax(Int)
     )
 
 A Monte Carlo sampling scheme using the in-sample data from the policy graph
@@ -28,11 +30,16 @@ sampling a child node.
 
 Note that if `terminate_on_cycle = false` and `terminate_on_dummy_leaf = false`
 then `max_depth` must be set > 0.
+
+You can use `rollout_limit` to set iteration specific depth limits. For example:
+
+    InSampleMonteCarlo(rollout_limit = i -> 2 * i)
 """
 function InSampleMonteCarlo(;
     max_depth::Int = 0,
     terminate_on_cycle::Bool = false,
     terminate_on_dummy_leaf::Bool = true,
+    rollout_limit::Function = i -> typemax(Int),
 )
     if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
         error(
@@ -40,7 +47,15 @@ function InSampleMonteCarlo(;
             "false when max_depth=0.",
         )
     end
-    return InSampleMonteCarlo(max_depth, terminate_on_cycle, terminate_on_dummy_leaf)
+    new_rollout = let i = 0
+        () -> (i += 1; rollout_limit(i))
+    end
+    return InSampleMonteCarlo(
+        max_depth,
+        terminate_on_cycle,
+        terminate_on_dummy_leaf,
+        new_rollout,
+    )
 end
 
 # ==================== OutOfSampleMonteCarlo Sampling Scheme ================= #
@@ -52,6 +67,7 @@ struct OutOfSampleMonteCarlo{T} <: AbstractSamplingScheme
     terminate_on_cycle::Bool
     terminate_on_dummy_leaf::Bool
     max_depth::Int
+    rollout_limit::Function
 end
 
 """
@@ -60,7 +76,8 @@ end
         use_insample_transition::Bool = false,
         max_depth::Int = 0,
         terminate_on_cycle::Bool = false,
-        terminate_on_dummy_leaf::Bool = true
+        terminate_on_dummy_leaf::Bool = true,
+        rollout_limit::Function = i -> typemax(Int),
     )
 
 Create a Monte Carlo sampler using out-of-sample probabilities and/or supports
@@ -88,6 +105,10 @@ sampling a child node.
 Note that if `terminate_on_cycle = false` and `terminate_on_dummy_leaf = false`
 then `max_depth` must be set > 0.
 
+You can use `rollout_limit` to set iteration specific depth limits. For example:
+
+    OutOfSampleMonteCarlo(rollout_limit = i -> 2 * i)
+
 ### Example
 
     # Given linear policy graph `graph` with `T` stages:
@@ -113,6 +134,7 @@ function OutOfSampleMonteCarlo(
     max_depth::Int = 0,
     terminate_on_cycle::Bool = false,
     terminate_on_dummy_leaf::Bool = true,
+    rollout_limit::Function = i -> typemax(Int),
 ) where {T}
     if !terminate_on_cycle && !terminate_on_dummy_leaf && max_depth == 0
         error(
@@ -137,6 +159,9 @@ function OutOfSampleMonteCarlo(
         noise_terms[key] = convert(Vector{Noise}, noise)
         children[key] = child
     end
+    new_rollout = let i = 0
+        () -> (i += 1; rollout_limit(i))
+    end
     return OutOfSampleMonteCarlo{T}(
         noise_terms,
         root_children,
@@ -144,6 +169,7 @@ function OutOfSampleMonteCarlo(
         terminate_on_cycle,
         terminate_on_dummy_leaf,
         max_depth,
+        new_rollout,
     )
 end
 
@@ -215,6 +241,7 @@ function sample_scenario(
     graph::PolicyGraph{T},
     sampling_scheme::Union{InSampleMonteCarlo,OutOfSampleMonteCarlo{T}},
 ) where {T}
+    max_depth = min(sampling_scheme.max_depth, sampling_scheme.rollout_limit())
     # Storage for our scenario. Each tuple is (node_index, noise.term).
     scenario_path = Tuple{T,Any}[]
     # We only use visited_nodes if terminate_on_cycle=true. Just initialize
