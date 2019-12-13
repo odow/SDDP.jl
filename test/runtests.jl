@@ -48,3 +48,4 @@ JuliaFormatter.format(joinpath(dirname(@__DIR__), "src"))
 JuliaFormatter.format(@__DIR__)
  # Format /examples
 JuliaFormatter.format(joinpath(dirname(@__DIR__), "examples"))
+

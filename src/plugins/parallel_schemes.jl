@@ -127,6 +127,10 @@ function slave_loop(
         results_to_add = IterationResult{T}[]
         while true
             result = iteration(model, options)
+            # The next four lines are subject to a race condition: if the master closes
+            # `results` _after_ the call to `isopen` and _before_` the call to `put!` has
+            # executed, we get an `InvalidStateException`. This gets trapped in the outer
+            # try-catch.
             if !isopen(results)
                 break
             end
@@ -144,18 +148,15 @@ function slave_loop(
             empty!(results_to_add)
         end
     catch ex
-        if should_bail(ex)
-            # The master process must have closed on us. Bail out without consequence.
-            return
-        end
-        rethrow(ex)
+        trap_error(ex)
     end
 end
 
-should_bail(::Any) = false
-should_bail(::InterruptException) = true
-should_bail(::InvalidStateException) = true
-should_bail(ex::Distributed.RemoteException) = should_bail(ex.captured)
+trap_error(ex::Exception) = throw(ex)
+trap_error(::InterruptException) = nothing
+trap_error(::InvalidStateException) = nothing
+trap_error(ex::CapturedException) = trap_error(ex.ex)
+trap_error(ex::Distributed.RemoteException) = trap_error(ex.captured)
 
 function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Options) where {T}
     # Initialize the remote channels. There are two types:
