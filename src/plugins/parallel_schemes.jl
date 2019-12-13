@@ -106,7 +106,8 @@ function slave_update(model::PolicyGraph, result::IterationResult)
                 cut.theta,
                 cut.pi,
                 cut.x,
-                JuMP.AffExpr(0.0);
+                nothing,
+                nothing;
                 cut_selection = true,
             )
         end
@@ -167,9 +168,10 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
         for pid in async.slave_ids
     )
     results = Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
+    futures = Distributed.Future[]
     for pid in async.slave_ids
         let model_pid = model, options_pid = options
-            Distributed.remote_do(
+            f = Distributed.remotecall(
                 slave_loop,
                 pid,
                 async,
@@ -178,6 +180,7 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
                 updates[pid],
                 results,
             )
+            push!(futures, f)
         end
     end
 
@@ -198,6 +201,7 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
             log_iteration(options)
             if result.has_converged
                 close(results)
+                wait.(futures)
                 return result.status
             end
         end
@@ -231,6 +235,7 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
         has_converged, status = convergence_test(model, options.log, options.stopping_rules)
         if has_converged
             close(results)
+            wait.(futures)
             return status
         end
     end

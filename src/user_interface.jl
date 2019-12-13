@@ -652,7 +652,6 @@ function PolicyGraph(
     if length(graph.belief_partition) > 0
         initialize_belief_states(policy_graph, graph)
     end
-
     return policy_graph
 end
 
@@ -684,6 +683,11 @@ function initialize_belief_states(policy_graph::PolicyGraph{T}, graph::Graph{T})
             # Attach the belief state as an extension.
             node.belief_state =
                 BeliefState{T}(partition_index, copy(belief), μ, belief_updater)
+
+            node.bellman_function.global_theta.belief_states = μ
+            for theta in node.bellman_function.local_thetas
+                theta.belief_states = μ
+            end
         end
     end
 end

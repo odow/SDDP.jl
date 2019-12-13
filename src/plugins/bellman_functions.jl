@@ -6,7 +6,8 @@
 mutable struct Cut
     intercept::Float64
     coefficients::Dict{Symbol,Float64}
-    μᵀy ## JuMP affine expression.
+    obj_y::Union{Nothing,NTuple{N,Float64} where {N}}
+    belief_y::Union{Nothing,Dict{T,Float64} where {T}}
     non_dominated_count::Int
     constraint_ref::Union{Nothing,JuMP.ConstraintRef}
 end
@@ -27,12 +28,27 @@ mutable struct LevelOneOracle
     end
 end
 
-struct ConvexApproximation
+mutable struct ConvexApproximation
     theta::JuMP.VariableRef
     states::Dict{Symbol,JuMP.VariableRef}
+    # TODO(odow): improve type stability
+    objective_states::Union{Nothing,NTuple{N,JuMP.VariableRef} where {N}}
+    belief_states::Union{Nothing,Dict{T,JuMP.VariableRef} where {T}}
     cut_oracle::LevelOneOracle
-    function ConvexApproximation(theta, states, deletion_minimum)
-        return new(theta, states, LevelOneOracle(deletion_minimum))
+    function ConvexApproximation(
+        theta::JuMP.VariableRef,
+        states::Dict{Symbol,JuMP.VariableRef},
+        objective_states,
+        belief_states,
+        deletion_minimum::Int,
+    )
+        return new(
+            theta,
+            states,
+            objective_states,
+            belief_states,
+            LevelOneOracle(deletion_minimum),
+        )
     end
 end
 
@@ -42,13 +58,14 @@ function _add_cut(
     θᵏ::Float64,
     πᵏ::Dict{Symbol,Float64},
     xᵏ::Dict{Symbol,Float64},
-    μᵀy = JuMP.AffExpr(0.0);
+    obj_y::Union{Nothing,NTuple{N,Float64}},
+    belief_y::Union{Nothing,Dict{T,Float64}};
     cut_selection::Bool = true,
-)
+) where {N,T}
     for (key, x) in xᵏ
         θᵏ -= πᵏ[key] * xᵏ[key]
     end
-    cut = Cut(θᵏ, πᵏ, μᵀy, 1, nothing)
+    cut = Cut(θᵏ, πᵏ, obj_y, belief_y, 1, nothing)
     add_cut_constraint_to_model(V, cut)
     if cut_selection
         _cut_selection_update(V, cut, xᵏ)
@@ -58,9 +75,20 @@ end
 
 function add_cut_constraint_to_model(V::ConvexApproximation, cut::Cut)
     model = JuMP.owner_model(V.theta)
+    yᵀμ = JuMP.AffExpr(0.0)
+    if V.objective_states !== nothing
+        for (y, μ) in zip(cut.obj_y, V.objective_states)
+            JuMP.add_to_expression!(yᵀμ, y, μ)
+        end
+    end
+    if V.belief_states !== nothing
+        for (k, μ) in V.belief_states
+            JuMP.add_to_expression!(yᵀμ, cut.belief_y[k], μ)
+        end
+    end
     expr = @expression(
         model,
-        V.theta + cut.μᵀy - sum(cut.coefficients[i] * x for (i, x) in V.states)
+        V.theta + yᵀμ - sum(cut.coefficients[i] * x for (i, x) in V.states)
     )
     cut.constraint_ref = if JuMP.objective_sense(model) == MOI.MIN_SENSE
         @constraint(model, expr >= cut.intercept)
@@ -90,8 +118,9 @@ function _cut_selection_update(
     cut::Cut,
     state::Dict{Symbol,Float64},
 )
-    if cut.μᵀy != JuMP.AffExpr(0.0)
+    if cut.obj_y !== nothing || cut.belief_y !== nothing
         # Skip cut selection if belief or objective states present.
+        push!(V.cut_oracle.cuts, cut)
         return
     end
     model = JuMP.owner_model(V.theta)
@@ -225,8 +254,10 @@ function initialize_bellman_function(
     # this check will be skipped by dispatch.
     _add_initial_bounds(node.objective_state, Θᴳ)
     x′ = Dict(key => var.out for (key, var) in node.states)
+    obj_μ = node.objective_state !== nothing ? node.objective_state.μ : nothing
+    belief_μ = node.belief_state !== nothing ? node.belief_state.μ : nothing
     return BellmanFunction(
-        ConvexApproximation(Θᴳ, x′, deletion_minimum),
+        ConvexApproximation(Θᴳ, x′, obj_μ, belief_μ, deletion_minimum),
         ConvexApproximation[],
         cut_type,
         Set{Vector{Float64}}(),
@@ -310,7 +341,7 @@ function refine_bellman_function(
         )
     else  # Add a multi-cut
         @assert bellman_function.cut_type == MULTI_CUT
-        _add_locals_if_necessary(bellman_function, length(dual_variables))
+        _add_locals_if_necessary(node, bellman_function, length(dual_variables))
         return _add_multi_cut(
             node,
             outgoing_state,
@@ -343,10 +374,10 @@ function _add_average_cut(
     end
     # Now add the average-cut to the subproblem. We include the objective-state
     # component μᵀy and the belief state (if it exists).
-    μᵀy = get_objective_state_component(node)
-    JuMP.add_to_expression!(μᵀy, get_belief_state_component(node))
-    _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state, μᵀy)
-    return (theta = θᵏ, pi = πᵏ, x = outgoing_state)
+    obj_y = node.objective_state === nothing ? nothing : node.objective_state.state
+    belief_y = node.belief_state === nothing ? nothing : node.belief_state.belief
+    _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state, obj_y, belief_y)
+    return (theta = θᵏ, pi = πᵏ, x = outgoing_state, obj_y = obj_y, belief_y = belief_y)
 end
 
 function _add_multi_cut(
@@ -367,7 +398,8 @@ function _add_multi_cut(
             objective_realizations[i],
             dual_variables[i],
             outgoing_state,
-            μᵀy,
+            node.objective_state === nothing ? nothing : node.objective_state.state,
+            node.belief_state === nothing ? nothing : node.belief_state.belief,
         )
     end
     model = JuMP.owner_model(bellman_function.global_theta.theta)
@@ -394,7 +426,7 @@ end
 # If we are adding a multi-cut for the first time, then the local θ variables
 # won't have been added.
 # TODO(odow): a way to set different bounds for each variable in the multi-cut.
-function _add_locals_if_necessary(bellman_function::BellmanFunction, N::Int)
+function _add_locals_if_necessary(node::Node, bellman_function::BellmanFunction, N::Int)
     num_local_thetas = length(bellman_function.local_thetas)
     if num_local_thetas == N
         # Do nothing. Already initialized.
@@ -414,6 +446,8 @@ function _add_locals_if_necessary(bellman_function::BellmanFunction, N::Int)
                 ConvexApproximation(
                     local_theta,
                     global_theta.states,
+                    node.objective_state === nothing ? nothing : node.objective_state.μ,
+                    node.belief_state === nothing ? nothing : node.belief_state.μ,
                     global_theta.cut_oracle.deletion_minimum,
                 ),
             )
@@ -434,10 +468,10 @@ See also [`SDDP.read_cuts_from_file`](@ref).
 function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
     cuts = Dict{String,Any}[]
     for (node_name, node) in model.nodes
-        if node.objective_state !== nothing
+        if node.objective_state !== nothing || node.belief_state !== nothing
             error(
                 "Unable to write cuts to file because model contains " *
-                "objective states.",
+                "objective states or belief states.",
             )
         end
         node_cuts = Dict(
@@ -534,7 +568,9 @@ function read_cuts_from_file(
                 bf.global_theta,
                 json_cut["intercept"],
                 coefficients,
-                Dict(key => 0.0 for key in keys(coefficients));
+                Dict(key => 0.0 for key in keys(coefficients)),
+                nothing,
+                nothing;
                 cut_selection = false,
             )
         end
@@ -544,7 +580,7 @@ function read_cuts_from_file(
         # There is one additional complication: if these cuts are being read
         # into a new model, the local theta variables may not exist yet.
         if length(node_cuts["risk_set_cuts"]) > 0
-            _add_locals_if_necessary(bf, length(first(node_cuts["risk_set_cuts"])))
+            _add_locals_if_necessary(node, bf, length(first(node_cuts["risk_set_cuts"])))
         end
         for json_cut in node_cuts["multi_cuts"]
             coefficients =
@@ -553,7 +589,9 @@ function read_cuts_from_file(
                 bf.local_thetas[json_cut["realization"]],
                 json_cut["intercept"],
                 coefficients,
-                Dict(key => 0.0 for key in keys(coefficients));
+                Dict(key => 0.0 for key in keys(coefficients)),
+                nothing,
+                nothing;
                 cut_selection = false,
             )
         end
