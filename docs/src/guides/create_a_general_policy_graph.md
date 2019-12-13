@@ -147,3 +147,23 @@ literature.
 
 Note that the type of the names of all nodes (including the root node) must be
 the same. In this case, they are `Symbol`s.
+
+## Simulating non-standard policy graphs
+
+If you simulate a policy graph with has a node with outgoing arcs that sum to less than one, you will end up with simulations of different lengths. The most common case is a linear policy graph with a single cycle.
+
+To simulate a fixed number of stages, use:
+```julia
+simulations = SDDP.simulate(
+    model,
+    1,
+    sampling_scheme = SDDP.InSampleMonteCarlo(
+        max_depth = 10,
+        terminate_on_dummy_leaf = false
+    )
+)
+```
+Here, `max_depth` controls the number of stages, and `terminate_on_dummy_leaf = false` stops
+us from terminating early.
+
+See also [Simulate using a different sampling scheme](@ref).
