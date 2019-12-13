@@ -9,13 +9,13 @@ function print_helper(f, io, args...)
 end
 
 function print_banner(io)
-    println(io, "-------------------------------------------------------")
-    println(io, "         SDDP.jl (c) Oscar Dowson, 2017-19")
+    println(io, "------------------------------------------------------------------")
+    println(io, "                SDDP.jl (c) Oscar Dowson, 2017-19")
     println(io)
 end
 
 function print_iteration_header(io)
-    println(io, " Iteration    Simulation       Bound         Time (s)")
+    println(io, " Iteration    Simulation       Bound         Time (s)    Proc. ID")
 end
 
 print_value(x::Real) = lpad(Printf.@sprintf("%1.6e", x), 13)
@@ -26,12 +26,13 @@ function print_iteration(io, log::Log)
     print(io, "   ", print_value(log.simulation_value))
     print(io, "  ", print_value(log.bound))
     print(io, "  ", print_value(log.time))
+    print(io, "  ", print_value(log.pid))
     println(io)
 end
 
 function print_footer(io, training_results)
     println(io, "\nTerminating training with status: $(training_results.status)")
-    println(io, "-------------------------------------------------------")
+    println(io, "------------------------------------------------------------------")
 end
 
 ###

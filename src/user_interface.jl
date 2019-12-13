@@ -354,6 +354,8 @@ mutable struct Node{T}
     post_optimize_hook::Union{Nothing,Function}
     # Approach for handling discrete variables.
     integrality_handler # TODO either leave untyped or define ::AbstractIntegralityHandler
+    # The user's optimizer. We use this in asynchronous mode.
+    optimizer
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol,Any}
@@ -374,6 +376,7 @@ struct Log
     bound::Float64
     simulation_value::Float64
     time::Float64
+    pid::Int
 end
 
 struct TrainingResults
@@ -584,6 +587,7 @@ function PolicyGraph(
             nothing,
             nothing,
             integrality_handler,
+            direct_mode ? nothing : optimizer,
             # The extension dictionary.
             Dict{Symbol,Any}(),
         )

@@ -6,6 +6,7 @@
 mutable struct Cut
     intercept::Float64
     coefficients::Dict{Symbol,Float64}
+    μᵀy ## JuMP affine expression.
     non_dominated_count::Int
     constraint_ref::Union{Nothing,JuMP.ConstraintRef}
 end
@@ -44,35 +45,30 @@ function _add_cut(
     μᵀy = JuMP.AffExpr(0.0);
     cut_selection::Bool = true,
 )
-    model = JuMP.owner_model(V.theta)
     for (key, x) in xᵏ
         θᵏ -= πᵏ[key] * xᵏ[key]
     end
-    is_minimization = JuMP.objective_sense(model) == MOI.MIN_SENSE
-    cut = Cut(θᵏ, πᵏ, 1, nothing)
-    if μᵀy == JuMP.AffExpr(0.0) && cut_selection
-        _level_one_update(V.cut_oracle, cut, xᵏ, is_minimization)
-        _purge_cuts(V)
-    end
-    cut.constraint_ref = if is_minimization
-        @constraint(model, V.theta + μᵀy >= θᵏ + sum(πᵏ[i] * x for (i, x) in V.states))
-    else
-        @constraint(model, V.theta + μᵀy <= θᵏ + sum(πᵏ[i] * x for (i, x) in V.states))
+    cut = Cut(θᵏ, πᵏ, μᵀy, 1, nothing)
+    add_cut_constraint_to_model(V, cut)
+    if cut_selection
+        _cut_selection_update(V, cut, xᵏ)
     end
     return
 end
 
-function _purge_cuts(V::ConvexApproximation)
+function add_cut_constraint_to_model(V::ConvexApproximation, cut::Cut)
     model = JuMP.owner_model(V.theta)
-    if length(V.cut_oracle.cuts_to_be_deleted) >= V.cut_oracle.deletion_minimum
-        for cut in V.cut_oracle.cuts_to_be_deleted
-            JuMP.delete(model, cut.constraint_ref)
-        end
-        empty!(V.cut_oracle.cuts_to_be_deleted)
+    expr = @expression(
+        model,
+        V.theta + cut.μᵀy - sum(cut.coefficients[i] * x for (i, x) in V.states)
+    )
+    cut.constraint_ref = if JuMP.objective_sense(model) == MOI.MIN_SENSE
+        @constraint(model, expr >= cut.intercept)
+    else
+        @constraint(model, expr <= cut.intercept)
     end
     return
 end
-
 
 # Internal function: calculate the height of `cut` evaluated at `state`.
 function _eval_height(cut::Cut, state::Dict{Symbol,Float64})
@@ -88,56 +84,68 @@ function _dominates(candidate, incumbent, minimization::Bool)
     return minimization ? candidate > incumbent : candidate < incumbent
 end
 
-# Internal function: update the Level-One datastructures inside
-# `bellman_function`.
-function _level_one_update(
-    oracle::LevelOneOracle,
+# Internal function: update the Level-One datastructures inside `bellman_function`.
+function _cut_selection_update(
+    V::ConvexApproximation,
     cut::Cut,
     state::Dict{Symbol,Float64},
-    is_minimization::Bool,
 )
+    if cut.μᵀy != JuMP.AffExpr(0.0)
+        # Skip cut selection if belief or objective states present.
+        return
+    end
+    model = JuMP.owner_model(V.theta)
+    is_minimization = JuMP.objective_sense(model) == MOI.MIN_SENSE
+    oracle = V.cut_oracle
+
     sampled_state = SampledState(state, cut, _eval_height(cut, state))
-    # Loop through previously sampled states and compare the height of the most
-    # recent cut against the current best. If this cut is an improvement, store
-    # this one instead.
+    # Loop through previously sampled states and compare the height of the most recent cut
+    # against the current best. If this new cut is an improvement, store this one instead.
     for old_state in oracle.states
         height = _eval_height(cut, old_state.state)
         if _dominates(height, old_state.best_objective, is_minimization)
             old_state.dominating_cut.non_dominated_count -= 1
-            if old_state.dominating_cut.non_dominated_count <= 0
-                push!(oracle.cuts_to_be_deleted, old_state.dominating_cut)
-            end
             cut.non_dominated_count += 1
             old_state.dominating_cut = cut
             old_state.best_objective = height
         end
     end
+    push!(oracle.states, sampled_state)
+
     # Now loop through previously discovered cuts and compare their height at
-    # the most recent sampled point in the state-space. If this cut is an
-    # improvement, store this one instead. Note that we have to do this because
-    # we might have previously thrown out a cut that is now relevant.
+    # `sampled_state`. If a cut is an improvement, add it to a queue to be added.
     for old_cut in oracle.cuts
-        # If the constriant ref is not nothing, this cut is already in the
-        # model, so it can't be better than the one we just found.
         if old_cut.constraint_ref !== nothing
-            continue
-        elseif !JuMP.is_valid(old_cut.constraint_ref)
-            old_cut.constraint_ref = nothing
+            # We only care about cuts not currently in the model.
             continue
         end
         height = _eval_height(old_cut, state)
-        if dominates(height, sampled_state.best_objective, is_minimization)
+        if _dominates(height, sampled_state.best_objective, is_minimization)
             sampled_state.dominating_cut.non_dominated_count -= 1
-            if sampled_state.dominating_cut.non_dominated_count <= 0
-                push!(oracle.cuts_to_be_deleted, sampled_state.dominating_cut)
-            end
             old_cut.non_dominated_count += 1
             sampled_state.dominating_cut = old_cut
             sampled_state.best_objective = height
+            add_cut_constraint_to_model(V, old_cut)
         end
     end
     push!(oracle.cuts, cut)
-    push!(oracle.states, sampled_state)
+
+    # Delete cuts that need to be deleted.
+    for cut in V.cut_oracle.cuts
+        if cut.non_dominated_count < 1
+            if cut.constraint_ref !== nothing
+                push!(oracle.cuts_to_be_deleted, cut)
+            end
+        end
+    end
+    if length(oracle.cuts_to_be_deleted) >= oracle.deletion_minimum
+        for cut in oracle.cuts_to_be_deleted
+            JuMP.delete(model, cut.constraint_ref)
+            cut.constraint_ref = nothing
+            cut.non_dominated_count = 0
+        end
+    end
+    empty!(oracle.cuts_to_be_deleted)
     return
 end
 
@@ -293,7 +301,7 @@ function refine_bellman_function(
     )
     # The meat of the function.
     if bellman_function.cut_type == SINGLE_CUT
-        _add_average_cut(
+        return _add_average_cut(
             node,
             outgoing_state,
             risk_adjusted_probability,
@@ -303,7 +311,7 @@ function refine_bellman_function(
     else  # Add a multi-cut
         @assert bellman_function.cut_type == MULTI_CUT
         _add_locals_if_necessary(bellman_function, length(dual_variables))
-        _add_multi_cut(
+        return _add_multi_cut(
             node,
             outgoing_state,
             risk_adjusted_probability,
@@ -338,7 +346,7 @@ function _add_average_cut(
     μᵀy = get_objective_state_component(node)
     JuMP.add_to_expression!(μᵀy, get_belief_state_component(node))
     _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state, μᵀy)
-    return
+    return (theta = θᵏ, pi = πᵏ, x = outgoing_state)
 end
 
 function _add_multi_cut(
@@ -526,7 +534,7 @@ function read_cuts_from_file(
                 bf.global_theta,
                 json_cut["intercept"],
                 coefficients,
-                Dict(key => 0.0 for key in keys(coefficients)),
+                Dict(key => 0.0 for key in keys(coefficients));
                 cut_selection = false,
             )
         end
@@ -545,7 +553,7 @@ function read_cuts_from_file(
                 bf.local_thetas[json_cut["realization"]],
                 json_cut["intercept"],
                 coefficients,
-                Dict(key => 0.0 for key in keys(coefficients)),
+                Dict(key => 0.0 for key in keys(coefficients));
                 cut_selection = false,
             )
         end
