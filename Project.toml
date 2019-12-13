@@ -19,7 +19,7 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
 GLPK = "0.12"
-HTTP = "0.8"
+HTTP = "0.8.1"
 JSON = "0.21"
 JuMP = "~0.20"
 JuliaFormatter = "0.1.37"
