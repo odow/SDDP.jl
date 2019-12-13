@@ -150,7 +150,9 @@ the same. In this case, they are `Symbol`s.
 
 ## Simulating non-standard policy graphs
 
-If you simulate a policy graph with has a node with outgoing arcs that sum to less than one, you will end up with simulations of different lengths. The most common case is a linear policy graph with a single cycle.
+If you simulate a policy graph with a node that has outgoing arcs that sum to less than one,
+you will end up with simulations of different lengths. (The most common case is an infinite
+horizon stochastic program, aka a linear policy graph with a single cycle.)
 
 To simulate a fixed number of stages, use:
 ```julia
