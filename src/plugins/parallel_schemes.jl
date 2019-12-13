@@ -124,8 +124,12 @@ function slave_loop(
     try
         async.init_callback(model)
         results_to_add = IterationResult{T}[]
-        while isopen(results)
-            put!(results, iteration(model, options))
+        while true
+            result = iteration(model, options)
+            if !isopen(results)
+                break
+            end
+            put!(results, result)
             # Instead of pulling a result from `updates` and adding it immediately, we want
             # to pull as many as possible in a short amount of time, the add them all and
             # start the loop again. Otherwise, by the time we've finished updating the
@@ -139,19 +143,18 @@ function slave_loop(
             empty!(results_to_add)
         end
     catch ex
-        if isa(ex, Distributed.RemoteException) && (
-            isa(ex.captured.ex, InvalidStateException) ||
-            isa(ex.captured.ex, InterruptException)
-        )
-            # The master process must have closed on us. Bail out without
-            # consequence.
-            return
-        elseif isa(ex, InterruptException)
+        if should_bail(ex)
+            # The master process must have closed on us. Bail out without consequence.
             return
         end
         rethrow(ex)
     end
 end
+
+should_bail(::Any) = false
+should_bail(::InterruptException) = true
+should_bail(::InvalidStateException) = true
+should_bail(ex::Distributed.RemoteException) = should_bail(ex.captured)
 
 function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Options) where {T}
     # Initialize the remote channels. There are two types:
