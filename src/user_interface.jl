@@ -227,6 +227,15 @@ end
 
 """
     MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
+
+Construct a Markovian graph from the vector of transition matrices.
+
+`transition_matrices[t][i, j]` gives the probability of transitioning from Markov state `i`
+in stage `t - 1` to Markov state `j` in stage `t`.
+
+The dimension of the first transition matrix should be `(1, N)`, and
+`transition_matrics[1][1, i]` is the probability of transitioning from the root node to the
+Markov state `i`.
 """
 function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
     if size(transition_matrices[1], 1) != 1
@@ -273,21 +282,35 @@ function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
 end
 
 """
-    MarkovianGraph(; stages::Int,
-                   transition_matrix::Matrix{Float64},
-                   root_node_transition::Vector{Float64})
+    MarkovianGraph(;
+        stages::Int,
+        transition_matrix::Matrix{Float64},
+        root_node_transition::Vector{Float64}
+    )
 
-Construct a Markovian graph object.
+Construct a Markovian graph object with `stages` number of stages and time-independent
+Markov transition probabilities.
+
+`transition_matrix` must be a square matrix, and the probability of transitioning from
+Markov state `i` in stage `t` to Markov state `j` in stage `t + 1` is given by
+`transition_matrix[i, j]`.
+
+`root_node_transition[i]` is the probability of transitioning from the root node to Markov
+state `i` in the first stage.
 """
 function MarkovianGraph(;
     stages::Int = 1,
     transition_matrix::Matrix{Float64} = [1.0],
     root_node_transition::Vector{Float64} = [1.0],
 )
-    return MarkovianGraph(vcat(
-        [Base.reshape(root_node_transition, 1, length(root_node_transition))],
-        [transition_matrix for stage = 1:(stages-1)],
-    ))
+    @assert size(transition_matrix, 1) == size(transition_matrix, 2)
+    @assert length(root_node_transition) == size(transition_matrix, 1)
+    return MarkovianGraph(
+        vcat(
+            [Base.reshape(root_node_transition, 1, length(root_node_transition))],
+            [transition_matrix for stage = 1:(stages-1)],
+        )
+    )
 end
 
 """
@@ -477,6 +500,14 @@ end
 Create a Markovian policy graph based on the transition matrices given in
 `transition_matrices`.
 
+`transition_matrices[t][i, j]` gives the probability of transitioning from Markov state `i`
+in stage `t - 1` to Markov state `j` in stage `t`.
+
+The dimension of the first transition matrix should be `(1, N)`, and
+`transition_matrics[1][1, i]` is the probability of transitioning from the root node to the
+Markov state `i`.
+
+See [`SDDP.MarkovianGraph`](@ref) for other ways of specifying a Markovian policy graph.
 See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
 """
 function MarkovianPolicyGraph(
