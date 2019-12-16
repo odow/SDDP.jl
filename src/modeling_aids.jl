@@ -82,6 +82,11 @@ we distribute nodes based on the relative variance of the stages.
 function allocate_support_budget(f::Function, budget::Int, scenarios::Int)
     states = Statistics.var([f()::Vector{Float64} for _ = 1:scenarios])
     s = sum(states)
+    if sum(states) ≈ 0.0
+        # If the sum of the variances is 0, then the simulator must be deterministic.
+        # Regardless of the budget, return a single Markov state for each stage.
+        return ones(Int, length(f()))
+    end
     for i = 1:length(states)
         states[i] = max(1, round(Int, states[i] / s * budget))
     end

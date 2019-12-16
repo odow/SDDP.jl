@@ -23,6 +23,12 @@ end
     @test sum(states) == 17
     @test all(states .> 0)
 
+    f() = [1.0, 2.0, 3.0]
+    @inferred SDDP.allocate_support_budget(f, 5, 10)
+    states = SDDP.allocate_support_budget(f, 5, 10)
+    @test states == [1, 1, 1]
+    @test all(states .> 0)
+
     states = [1, 3, 5]
     @test states === SDDP.allocate_support_budget(f, states, 19)
 end
