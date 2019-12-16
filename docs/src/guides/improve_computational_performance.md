@@ -88,7 +88,7 @@ Distributed.addprocs(N)
     ```
 
 Currently SDDP.jl supports to parallel schemes, [`SDDP.Serial`](@ref) and
-[`SDDP.Asynchronous](@ref). Instances of these parallel schemes should be passed to the
+[`SDDP.Asynchronous`](@ref). Instances of these parallel schemes should be passed to the
 `parallel_scheme` argument of [`SDDP.train`](@ref) and [`SDDP.simulate`](@ref).
 
 ```julia
