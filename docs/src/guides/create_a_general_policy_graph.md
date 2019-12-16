@@ -169,3 +169,38 @@ Here, `max_depth` controls the number of stages, and `terminate_on_dummy_leaf = 
 us from terminating early.
 
 See also [Simulate using a different sampling scheme](@ref).
+
+## Creating a Markovian graph automatically
+
+SDDP.jl can create a Markovian graph by automatically discretizing a one-dimensional
+stochastic process and fitting a Markov chain.
+
+To access this functionality, pass a function that takes no arguments and returns a
+`Vector{Float64}` to [`SDDP.MarkovianGraph`](@ref). To keyword arguments also need to be
+provided: `budget` is the total number of nodes in the Markovian graph, and `scenarios` is
+the number of realizations of the simulator function used to approximate the graph.
+
+In some cases, `scenarios` may be too small to provide a reasonable fit of the stochastic
+process. If so, SDDP.jl will automatically try to re-fit the Markov chain using more
+scenarios.
+
+```julia
+function simulator()
+    scenario = zeros(5)
+    for i = 2:5
+        scenario[i] = scenario[i - 1] + rand() - 0.5
+    end
+    return scenario
+end
+
+model = SDDP.PolicyGraph(
+    SDDP.MarkovianGraph(simulator; budget = 10, scenarios = 100),
+    sense = :Max,
+    upper_bound = 1e3
+) do subproblem, node
+    (stage, price) = node
+    @variable(subproblem, x >= 0, SDDP.State, initial_value = 1)
+    @constraint(subproblem, x.out <= x.in)
+    @stageobjective(subproblem, price * x.out)
+end
+```

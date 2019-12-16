@@ -33,6 +33,7 @@ end
 # in the dictionary.
 sort_nodes(nodes::Vector{Int}) = sort!(nodes)
 sort_nodes(nodes::Vector{Tuple{Int,Int}}) = sort!(nodes)
+sort_nodes(nodes::Vector{Tuple{Int,Float64}}) = sort!(nodes)
 sort_nodes(nodes::Vector{Symbol}) = sort!(nodes)
 sort_nodes(nodes) = nodes
 
