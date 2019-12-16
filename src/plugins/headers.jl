@@ -230,6 +230,8 @@ function setup_state end
 
 """
     AbstractParallelScheme
+
+Abstract type for different parallelism schemes.
 """
 abstract type AbstractParallelScheme end
 
@@ -242,3 +244,16 @@ The solve loop of the SDDP algorithm. Returns a symbol corresponding to the
 termination status.
 """
 function master_loop end
+
+"""
+    _simulate(
+        model::PolicyGraph,
+        ::AbstractParallelScheme,
+        number_replications::Int,
+        variables::Vector{Symbol};
+        kwargs...,
+    )
+
+Simulate the policy using the parallel scheme.
+"""
+function _simulate end

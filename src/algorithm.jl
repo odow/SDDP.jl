@@ -865,6 +865,9 @@ Train the policy for `model`. Keyword arguments:
  - `dashboard::Bool`: open a visualization of the training over time. Defaults
     to `false`.
 
+ - `parallel_scheme::AbstractParallelScheme`: specify a scheme for solving in parallel.
+    Defaults to `Serial()`.
+
 There is also a special option for infinite horizon problems
 
  - `cycle_discretization_delta`: the maximum distance between states allowed on
@@ -1098,14 +1101,16 @@ function _simulate(
 end
 
 """
-    simulate(model::PolicyGraph,
-             number_replications::Int = 1,
-             variables::Vector{Symbol} = Symbol[];
-             sampling_scheme::AbstractSamplingScheme =
-                 InSampleMonteCarlo(),
-             custom_recorders = Dict{Symbol, Function}(),
-             require_duals::Bool = true,
-             skip_undefined_variables::Bool = false
+    simulate(
+        model::PolicyGraph,
+        number_replications::Int = 1,
+        variables::Vector{Symbol} = Symbol[];
+        sampling_scheme::AbstractSamplingScheme =
+            InSampleMonteCarlo(),
+        custom_recorders = Dict{Symbol, Function}(),
+        require_duals::Bool = true,
+        skip_undefined_variables::Bool = false,
+        parallel_scheme::AbstractParallelScheme = Serial()
      )::Vector{Vector{Dict{Symbol, Any}}}
 
 Perform a simulation of the policy model with `number_replications` replications
@@ -1155,6 +1160,9 @@ If you do not require dual variables (or if they are not available), pass
 If you attempt to simulate the value of a variable that is only defined in some
 of the stage problems, an error will be thrown. To over-ride this (and return a
 `NaN` instead), pass `skip_undefined_variables = true`.
+
+Use `parallel_scheme::[AbstractParallelScheme](@ref)` to specify a scheme for simulating in
+parallel. Defaults to [`Serial`](@ref).
 """
 function simulate(
     model::PolicyGraph,
