@@ -26,6 +26,7 @@ export @stageobjective
 
 # Modelling interface.
 include("user_interface.jl")
+include("modeling_aids.jl")
 
 # Default definitions for SDDP related modular utilities.
 include("plugins/headers.jl")
