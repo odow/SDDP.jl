@@ -24,7 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-function find_min(x::Vector{T}, y::T) where {T <: Real}
+function find_min(x::Vector{T}, y::T) where {T<:Real}
     best_i = 0
     best_z = Inf
     for i = 1:length(x)
@@ -40,7 +40,7 @@ end
 function lattice_approximation(f::Function, states::Vector{Int}, scenarios::Int)
     path = f()::Vector{Float64}
     support = [fill(path[t], states[t]) for t = 1:length(states)]
-    probability = [zeros(states[t - 1], states[t]) for t = 2:length(states)]
+    probability = [zeros(states[t-1], states[t]) for t = 2:length(states)]
     prepend!(probability, Ref(zeros(1, states[1])))
     distance = 0.0
     for n = 1:scenarios
@@ -55,7 +55,8 @@ function lattice_approximation(f::Function, states::Vector{Int}, scenarios::Int)
             min_dist, best_idx = find_min(support[t], path[t])
             dist += min_dist^2
             probability[t][last_index, best_idx] += 1.0
-            support[t][best_idx] -= min_dist * (support[t][best_idx] - path[t]) / (3000 + n)^0.75
+            support[t][best_idx] -=
+                min_dist * (support[t][best_idx] - path[t]) / (3000 + n)^0.75
             last_index = best_idx
         end
         distance = (distance * (n - 1) + dist) / n
@@ -114,7 +115,9 @@ nodes between stages. Alternatively, `budget` can be a `Vector{Int}`, which deta
 number of Markov state to have in each stage.
 """
 function MarkovianGraph(
-    simulator::Function; budget::Union{Int, Vector{Int}}, scenarios::Int = 1000
+    simulator::Function;
+    budget::Union{Int,Vector{Int}},
+    scenarios::Int = 1000,
 )
     scenarios = max(scenarios, 10)
     states = allocate_support_budget(simulator, budget, scenarios)
@@ -127,7 +130,7 @@ function MarkovianGraph(
     for t = 2:length(support)
         for (j, sj) in enumerate(support[t])
             add_node(g, (t, sj))
-            for (i, si) in enumerate(support[t - 1])
+            for (i, si) in enumerate(support[t-1])
                 add_edge(g, (t - 1, si) => (t, sj), probability[t][i, j])
             end
         end

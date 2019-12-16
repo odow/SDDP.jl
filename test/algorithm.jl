@@ -161,11 +161,18 @@ end
         @constraint(node, x.out <= -1)
         @stageobjective(node, x.out)
     end
-    @test_throws Exception SDDP.train(model; iteration_limit = 1, print_level = 0)
-    @test isfile("subproblem.mps")
-    rm("subproblem.mps")
-    @test isfile("subproblem.lp")
-    rm("subproblem.lp")
+    ex = ErrorException("""
+    Unable to retrieve solution from 1.
+      Termination status: INFEASIBLE
+      Primal status:      NO_SOLUTION
+      Dual status:        INFEASIBILITY_CERTIFICATE.
+    A MathOptFormat file was written to `subproblem_1.mof.json`.
+    See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1
+    for more information.""")
+
+    @test_throws ex SDDP.train(model; iteration_limit = 1, print_level = 0)
+    @test isfile("subproblem_1.mof.json")
+    rm("subproblem_1.mof.json")
 end
 
 @testset "refine_at_similar_nodes" begin
