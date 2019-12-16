@@ -52,6 +52,14 @@ SDDP.InSampleMonteCarlo
 SDDP.OutOfSampleMonteCarlo
 ```
 
+### Parallel schemes
+
+```@docs
+SDDP.AbstractParallelScheme
+SDDP.Serial
+SDDP.Asynchronous
+```
+
 ### Risk Measures
 
 ```@docs

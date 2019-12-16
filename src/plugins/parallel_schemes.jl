@@ -43,42 +43,42 @@ struct Asynchronous <: AbstractParallelScheme
     init_callback::Function
     slave_ids::Vector{Int}
     use_master::Bool
+end
 
-    """
-        Asynchronous(init_callback::Function, slave_pids::Vector{Int} = workers())
+"""
+    Asynchronous(init_callback::Function, slave_pids::Vector{Int} = workers())
 
-    Run SDDP in asynchronous mode workers with pid's `slave_pids`.
+Run SDDP in asynchronous mode workers with pid's `slave_pids`.
 
-    After initializing the models on each worker, call `init_callback(model)`. Note that
-    `init_callback` is run _locally on the worker_ and _not_ on the master thread.
-    """
-    function Asynchronous(
-        init_callback::Function,
-        slave_ids::Vector{Int} = Distributed.workers();
-        use_master::Bool = true,
-    )
-        return new(init_callback, slave_ids, use_master)
-    end
+After initializing the models on each worker, call `init_callback(model)`. Note that
+`init_callback` is run _locally on the worker_ and _not_ on the master thread.
+"""
+function Asynchronous(
+    init_callback::Function,
+    slave_ids::Vector{Int} = Distributed.workers();
+    use_master::Bool = true,
+)
+    return Asynchronous(init_callback, slave_ids, use_master)
+end
 
-    """
-        Asynchronous(slave_pids::Vector{Int} = workers())
+"""
+    Asynchronous(slave_pids::Vector{Int} = workers())
 
-    Run SDDP in asynchronous mode workers with pid's `slave_pids`.
-    """
-    function Asynchronous(
-        slave_ids::Vector{Int} = Distributed.workers();
-        use_master::Bool = true,
-    )
-        function init_callback(model)
-            for (_, node) in model.nodes
-                if node.optimizer === nothing
-                    error("Cannot use asynchronous solver with optimizers in direct mode.")
-                end
-                set_optimizer(node.subproblem, node.optimizer)
+Run SDDP in asynchronous mode workers with pid's `slave_pids`.
+"""
+function Asynchronous(
+    slave_ids::Vector{Int} = Distributed.workers();
+    use_master::Bool = true,
+)
+    function init_callback(model)
+        for (_, node) in model.nodes
+            if node.optimizer === nothing
+                error("Cannot use asynchronous solver with optimizers in direct mode.")
             end
+            set_optimizer(node.subproblem, node.optimizer)
         end
-        return new(init_callback, slave_ids, use_master)
     end
+    return Asynchronous(init_callback, slave_ids, use_master)
 end
 
 interrupt(a::Asynchronous) = Distributed.interrupt(a.slave_ids)
