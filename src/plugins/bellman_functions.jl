@@ -270,17 +270,20 @@ function _add_objective_state_constraint(
     y::NTuple{N,Float64},
     μ::NTuple{N,JuMP.VariableRef},
 ) where {N}
+    is_finite = [-Inf < y[i] < Inf for i = 1:N]
     model = JuMP.owner_model(theta)
     lower_bound = JuMP.has_lower_bound(theta) ? JuMP.lower_bound(theta) : -Inf
     upper_bound = JuMP.has_upper_bound(theta) ? JuMP.upper_bound(theta) : Inf
-    if lower_bound > -Inf
-        @constraint(model, sum(y[i] * μ[i] for i = 1:N) + theta >= lower_bound)
-    end
-    if upper_bound < Inf
-        @constraint(model, sum(y[i] * μ[i] for i = 1:N) + theta <= upper_bound)
-    end
     if lower_bound ≈ upper_bound ≈ 0.0
         @constraint(model, [i = 1:N], μ[i] == 0.0)
+        return
+    end
+    expr = @expression(model, sum(y[i] * μ[i] for i = 1:N if is_finite[i]) + theta)
+    if lower_bound > -Inf
+        @constraint(model, expr >= lower_bound)
+    end
+    if upper_bound < Inf
+        @constraint(model, expr <= upper_bound)
     end
     return
 end

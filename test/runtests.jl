@@ -22,6 +22,9 @@ const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
         @testset "plugins/$(file)" for file in read_dir("plugins", ["parallel_schemes.jl"])
             include(joinpath("plugins", file))
         end
+        @testset "visualization/$(file)" for file in read_dir("visualization")
+            include(joinpath("visualization", file))
+        end
         @testset "$(file)" for file in read_dir(".", ["runtests.jl"])
             include(file)
         end
@@ -48,4 +51,3 @@ JuliaFormatter.format(joinpath(dirname(@__DIR__), "src"))
 JuliaFormatter.format(@__DIR__)
  # Format /examples
 JuliaFormatter.format(joinpath(dirname(@__DIR__), "examples"))
-

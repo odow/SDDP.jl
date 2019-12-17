@@ -44,6 +44,8 @@ struct ValueFunction{
     belief_state::B
 end
 
+JuMP.set_optimizer(v::ValueFunction, optimizer) = set_optimizer(v.model, optimizer)
+
 function _add_to_value_function(
     model::JuMP.Model,
     states::Dict{Symbol,JuMP.VariableRef},
@@ -59,24 +61,23 @@ function _add_to_value_function(
         set_upper_bound(theta, upper_bound(convex_approximation.theta))
     end
     for cut in convex_approximation.cut_oracle.cuts
-        cut_expr = AffExpr(cut.intercept)
-        for (key, coef) in cut.coefficients
-            if !haskey(states, key)
-                states[key] = @variable(model, base_name = "$(key)")
-            end
-            add_to_expression!(cut_expr, coef, states[key])
-        end
+        cut_expr = @expression(
+            model,
+            cut.intercept + sum(coef * states[key] for (key, coef) in cut.coefficients)
+        )
         if objective_state !== nothing
             @assert cut.obj_y !== nothing
-            for (y, μ) in zip(cut.obj_y, objective_state)
-                add_to_expression!(cut_expr, -y, μ)
-            end
+            cut_expr = @expression(
+                model,
+                cut_expr - sum(y * μ for (y, μ) in zip(cut.obj_y, objective_state))
+            )
         end
         if belief_state !== nothing
             @assert cut.belief_y !== nothing
-            for (key, μ) in belief_state
-                add_to_expression!(cut_expr, -cut.belief_y[key], μ)
-            end
+            cut_expr = @expression(
+                model,
+                cut_expr - sum(cut.belief_y[key] * μ for (key, μ) in belief_state)
+            )
         end
         if objective_sense(model) == MOI.MIN_SENSE
             @constraint(model, theta >= cut_expr)
@@ -87,16 +88,28 @@ function _add_to_value_function(
     return theta
 end
 
-function ValueFunction(node::Node{T}, optimizer) where {T}
+function ValueFunction(node::Node{T}) where {T}
     b = node.bellman_function
     sense = objective_sense(node.subproblem)
-    model = Model(optimizer)
+    model = Model()
+    if node.optimizer !== nothing
+        set_optimizer(model, node.optimizer)
+    end
     set_objective_sense(model, sense)
-    states = Dict{Symbol,VariableRef}()
+    states = Dict{Symbol,VariableRef}(
+        key => @variable(model, base_name = "$(key)") for (key, x) in node.states
+    )
     objective_state = if node.objective_state === nothing
         nothing
     else
-        VariableRef[@variable(model, lower_bound = lower_bound(μ), upper_bound = upper_bound(μ)) for μ in node.objective_state.μ]
+        tuple(
+            VariableRef[@variable(
+                model,
+                lower_bound = lower_bound(μ),
+                upper_bound = upper_bound(μ),
+                base_name = "_objective_state_$(i)"
+            ) for (i, μ) in enumerate(node.objective_state.μ)]...,
+        )
     end
     belief_state = if node.belief_state === nothing
         nothing
@@ -177,8 +190,9 @@ function evaluate(
     optimize!(V.model)
     obj = objective_value(V.model)
     duals = Dict{Symbol,Float64}()
+    sign = objective_sense(V.model) == MOI.MIN_SENSE ? 1.0 : -1.0
     for (key, var) in V.states
-        duals[key] = dual(FixRef(var))
+        duals[key] = sign * dual(FixRef(var))
     end
     return obj, duals
 end
