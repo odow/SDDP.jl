@@ -209,46 +209,23 @@ stage_objective_value(stage_objective::Real) = stage_objective
 stage_objective_value(stage_objective) = JuMP.value(stage_objective)
 
 """
-    write_subproblem_to_file(node::Node, filename::String; format=:both)
+    write_subproblem_to_file(node::Node, filename::String; throw_error::Bool = false)
 
 Write the subproblem contained in `node` to the file `filename`.
-
-`format` should be one of `:mps`, `:lp`, or `:both`.
 """
-function write_subproblem_to_file(
-    node::Node,
-    filename::String;
-    format::Symbol = :both,
-    throw_error::Bool = false,
-)
-    if format ∉ (:mps, :lp, :both)
-        error("Invalid `format=$(format)`. Must be `:mps`, `:lp`, or `:both`.")
-    end
-    if format == :mps || format == :both
-        mps = MathOptFormat.MPS.Model()
-        MOI.copy_to(mps, JuMP.backend(node.subproblem))
-        MOI.write_to_file(mps, filename * ".mps")
-    end
-    if format == :lp || format == :both
-        lp = MathOptFormat.LP.Model()
-        MOI.copy_to(lp, JuMP.backend(node.subproblem))
-        MOI.write_to_file(lp, filename * ".lp")
-    end
+function write_subproblem_to_file(node::Node, filename::String; throw_error::Bool = false)
+    model = MathOptFormat.Model(filename = filename)
+    MOI.copy_to(model, JuMP.backend(node.subproblem))
+    MOI.write_to_file(model, filename)
     if throw_error
         error(
-            "Unable to retrieve dual solution from ",
-            node.index,
-            ".",
-            "\n  Termination status: ",
-            JuMP.termination_status(node.subproblem),
-            "\n  Primal status:      ",
-            JuMP.primal_status(node.subproblem),
-            "\n  Dual status:        ",
-            JuMP.dual_status(node.subproblem),
-            ".\n An MPS file was written to `subproblem.mps` and an LP file ",
-            "written to `subproblem.lp`. See ",
-            "https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1",
-            " for more information.",
+            "Unable to retrieve solution from $(node.index).\n",
+            "  Termination status: $(JuMP.termination_status(node.subproblem))\n",
+            "  Primal status:      $(JuMP.primal_status(node.subproblem))\n",
+            "  Dual status:        $(JuMP.dual_status(node.subproblem)).\n",
+            "A MathOptFormat file was written to `$(filename)`.\n",
+            "See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1",
+            "\nfor more information.",
         )
     end
 end
@@ -295,7 +272,11 @@ function solve_subproblem(
 
     # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-        write_subproblem_to_file(node, "subproblem", throw_error = true)
+        write_subproblem_to_file(
+            node,
+            "subproblem_$(node.index).mof.json",
+            throw_error = true,
+        )
     end
     # If require_duals = true, check for dual feasibility and return a dict with
     # the dual on the fixed constraint associated with each incoming state

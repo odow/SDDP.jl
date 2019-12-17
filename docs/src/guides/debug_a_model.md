@@ -53,13 +53,8 @@ Now to write out the problem to a file. We'll get a few warnings because some
 variables and constraints don't have names. They don't matter, so ignore them.
 
 ```jldoctest tutorial_eight; filter=r"MathOptFormat\ .+?MathOptFormat\.jl"
-julia> SDDP.write_subproblem_to_file(model[1], "subproblem", format=:lp)
+julia> SDDP.write_subproblem_to_file(model[1], "subproblem.lp")
 
-```
-
-We can check the file by reading it back in again.
-
-```jldoctest tutorial_eight
 julia> read("subproblem.lp") |> String |> print
 minimize
 obj: 1.1 x_out + 1 x2
@@ -80,8 +75,7 @@ are not in the original problem formulation.
 ```jldoctest tutorial_eight; filter=r"MathOptFormat\ .+?MathOptFormat\.jl"
 julia> SDDP.parameterize(model[1], 3.3)
 
-julia> SDDP.write_subproblem_to_file(model[1], "subproblem", format=:lp)
-
+julia> SDDP.write_subproblem_to_file(model[1], "subproblem.lp")
 
 julia> read("subproblem.lp") |> String |> print
 minimize

@@ -34,9 +34,7 @@ end
 end
 
 @testset "lattice_approximation" begin
-    support, probability = SDDP.lattice_approximation(
-        () -> rand(5), [1, 2, 3, 4, 5], 100
-    )
+    support, probability = SDDP.lattice_approximation(() -> rand(5), [1, 2, 3, 4, 5], 100)
     for (t, s) in enumerate(support)
         @test length(s) == t
         @test all(x -> 0 <= x <= 1, s)
