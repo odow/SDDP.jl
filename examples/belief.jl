@@ -55,6 +55,7 @@ function inventory_management_problem()
     sample_mean = round(Statistics.mean(objectives); digits = 2)
     sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
     @test SDDP.calculate_bound(model) ≈ sample_mean atol = sample_ci
+    return model
 end
 
 inventory_management_problem()

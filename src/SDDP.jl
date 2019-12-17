@@ -54,6 +54,7 @@ include("plugins/backward_sampling_schemes.jl")
 include("visualization/publication_plot.jl")
 include("visualization/spaghetti_plot.jl")
 include("visualization/dashboard.jl")
+include("visualization/value_functions.jl")
 
 # Other solvers.
 include("deterministic_equivalent.jl")

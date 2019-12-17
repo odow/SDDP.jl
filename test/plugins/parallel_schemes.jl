@@ -136,24 +136,18 @@ end
     @test all([s[1][:myid] != 1 for s in simulations])
 end
 
-@testset "should_bail" begin
-    ch = Channel{Int}(1)
-    close(ch)
-    try
-        take!(ch)
-    catch ex
-        @test SDDP.should_bail(ex) == true
-    end
-
-    try
-        sqrt(-1)
-    catch ex
-        @test SDDP.should_bail(ex) == false
-    end
-
-    try
+@testset "trap_error" begin
+    @test SDDP.trap_error(InvalidStateException("a", :a)) === nothing
+    @test SDDP.trap_error(InterruptException()) === nothing
+    ex = DomainError(-1.0)
+    @test_throws ex SDDP.trap_error(ex)
+    flag = true
+    ex = try
         throw(InterruptException())
+        flag = false
     catch ex
-        @test SDDP.should_bail(ex) == true
+        Distributed.RemoteException(CapturedException(ex, catch_backtrace()))
     end
+    @test SDDP.trap_error(ex) === nothing
+    @test flag == true
 end
