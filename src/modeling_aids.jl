@@ -80,16 +80,21 @@ end
 Allocate the `budget` nodes amongst the stages for a Markovian approximation. By default,
 we distribute nodes based on the relative variance of the stages.
 """
-function allocate_support_budget(f::Function, budget::Int, scenarios::Int)
-    states = Statistics.var([f()::Vector{Float64} for _ = 1:scenarios])
-    s = sum(states)
-    if sum(states) ≈ 0.0
+function allocate_support_budget(f::Function, budget::Int, scenarios::Int)::Vector{Int}
+    stage_var = Statistics.var([f()::Vector{Float64} for _ = 1:scenarios])
+    states = ones(Int, length(stage_var))
+    if budget < length(stage_var)
+        @warn( "Budget for nodes is less than the number of stages. Using one node per stage.")
+        return states
+    end
+    s = sum(stage_var)
+    if s ≈ 0.0
         # If the sum of the variances is 0, then the simulator must be deterministic.
         # Regardless of the budget, return a single Markov state for each stage.
-        return ones(Int, length(f()))
+        return states
     end
     for i = 1:length(states)
-        states[i] = max(1, round(Int, states[i] / s * budget))
+        states[i] = max(1, round(Int, budget * stage_var[i] / s))
     end
     while sum(states) != budget
         if sum(states) > budget
@@ -98,7 +103,7 @@ function allocate_support_budget(f::Function, budget::Int, scenarios::Int)
             states[argmin(states)] += 1
         end
     end
-    return round.(Int, states)
+    return states
 end
 allocate_support_budget(f::Function, budget::Vector{Int}, scenarios::Int) = budget
 
