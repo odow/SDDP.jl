@@ -196,3 +196,92 @@ function evaluate(
     end
     return obj, duals
 end
+
+struct Point{Y,B}
+    x::Dict{Symbol,Float64}
+    y::Y
+    b::B
+end
+Point(x::Dict{Symbol,Float64}) = Point(x, nothing, nothing)
+
+function height(V::ValueFunction{Y,B}, x::Point{Y,B}) where {Y,B}
+    return evaluate(V, x.x; objective_state = x.y, belief_state = x.b)[1]
+end
+
+function get_axis(x::Vector{Dict{K,V}}) where {K,V}
+    @assert length(x) >= 2
+    changing_key = nothing
+    for (key, val) in x[1]
+        if val == x[2][key]
+            continue
+        elseif changing_key !== nothing
+            error("Too many elements are changing")
+        end
+        changing_key = key
+    end
+    return changing_key === nothing ? nothing : [xi[changing_key] for xi in x]
+end
+
+function get_axis(x::Vector{NTuple{N,T}}) where {N,T}
+    @assert length(x) >= 2
+    changing_index = nothing
+    for i = 1:N
+        if x[1][i] == x[2][i]
+            continue
+        elseif changing_index !== nothing
+            error("Too many elements are changing")
+        end
+        changing_index = i
+    end
+    return changing_index === nothing ? nothing : [xi[changing_index] for xi in x]
+end
+
+get_axis(x::Vector{Nothing}) = nothing
+
+function get_axis(X::Vector{Point{Y,B}}) where {Y,B}
+    for f in [x -> x.x, x -> x.y, x -> x.b]
+        x = get_axis(f.(X))
+        x !== nothing && return x
+    end
+    return nothing
+end
+
+function get_data(V::ValueFunction{Y,B}, X::Vector{Point{Y,B}}) where {Y,B}
+    x = get_axis(X)
+    if x === nothing
+        error("Unable to detect changing dimension")
+    end
+    y = height.(Ref(V), X)
+    return x, y, Float64[]
+end
+
+function get_data(V::ValueFunction{Y,B}, X::Matrix{Point{Y,B}}) where {Y,B}
+    x = get_axis(collect(X[:, 1]))
+    if x === nothing
+        error("Unable to detect changing row")
+    end
+    y = get_axis(collect(X[1, :]))
+    if y === nothing
+        error("Unable to detect changing column")
+    end
+    z = height.(Ref(V), X)
+    return [i for _ in y for i in x], [i for i in y for _ in x], vec(z)
+end
+
+function plot(
+    V::ValueFunction{Y,B},
+    X::Array{Point{Y,B}};
+    filename::String = joinpath(tempdir(), string(Random.randstring(), ".html")),
+    open::Bool = true,
+) where {Y,B}
+    x, y, z = get_data(V, X)
+    fill_template(
+        filename,
+        "<!--X-->" => JSON.json(x),
+        "<!--Y-->" => JSON.json(y),
+        "<!--Z-->" => JSON.json(z);
+        template = joinpath(@__DIR__, "value_functions.html"),
+        launch = open,
+    )
+    return
+end

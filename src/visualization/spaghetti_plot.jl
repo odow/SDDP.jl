@@ -111,6 +111,18 @@ function add_spaghetti(
     return
 end
 
+function fill_template(dest::String, args...; template::String, launch::Bool = false)
+    s = read(template, String)
+    for arg in args
+        s = replace(s, arg)
+    end
+    write(dest, s)
+    if launch
+        launch_file(dest)
+    end
+    return
+end
+
 """
 	save(plt::SpaghettiPlot[, filename::String]; open::Bool = true)
 
@@ -123,23 +135,14 @@ function save(
     filename::String = joinpath(tempdir(), string(Random.randstring(), ".html"));
     open::Bool = true,
 )
-    prep_html(plt, filename)
-    open && launch_file(filename)
-    return
-end
-
-function prep_html(plt::SpaghettiPlot, filename::String)
-    html_string = read(SPAGHETTI_HTML_FILE, String)
-    for pair in [
+    fill_template(
+        filename,
         "<!--DATA-->" => JSON.json(plt.data),
         "<!--D3.JS-->" => read(D3_JS_FILE, String),
-        "<!--SPAGHETTI_PLOT.JS-->" => read(SPAGHETTI_JS_FILE, String),
-    ]
-        html_string = replace(html_string, pair)
-    end
-    open(filename, "w") do io
-        write(io, html_string)
-    end
+        "<!--SPAGHETTI_PLOT.JS-->" => read(SPAGHETTI_JS_FILE, String);
+        template = SPAGHETTI_HTML_FILE,
+        launch = open,
+    )
     return
 end
 
@@ -151,10 +154,7 @@ function launch_file(filename)
     elseif Sys.islinux() || Sys.isbsd()
         run(`xdg-open $(filename)`)
     else
-        error(
-            "Unable to show spaghetti plot. Try opening the file " *
-            "$(filename) manually.",
-        )
+        error("Unable to show plot. Try opening the file $(filename) manually.")
     end
     return
 end

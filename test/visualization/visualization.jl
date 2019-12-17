@@ -26,7 +26,7 @@ using Test
     SDDP.add_spaghetti(plt, title = "y") do data
         return 2 * data[:y]
     end
-    SDDP.prep_html(plt, "test.html")
+    SDDP.save(plt, "test.html", open = false)
     @test sprint(show, plt) == "A spaghetti plot with 2 scenarios and 3 stages."
     @test read("test.html", String) == read("control.html", String)
     rm("test.html")
