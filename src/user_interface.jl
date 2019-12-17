@@ -305,12 +305,10 @@ function MarkovianGraph(;
 )
     @assert size(transition_matrix, 1) == size(transition_matrix, 2)
     @assert length(root_node_transition) == size(transition_matrix, 1)
-    return MarkovianGraph(
-        vcat(
-            [Base.reshape(root_node_transition, 1, length(root_node_transition))],
-            [transition_matrix for stage = 1:(stages-1)],
-        )
-    )
+    return MarkovianGraph(vcat(
+        [Base.reshape(root_node_transition, 1, length(root_node_transition))],
+        [transition_matrix for stage = 1:(stages-1)],
+    ))
 end
 
 """

@@ -24,7 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-function find_min(x::Vector{T}, y::T) where {T <: Real}
+function find_min(x::Vector{T}, y::T) where {T<:Real}
     best_i = 0
     best_z = Inf
     for i = 1:length(x)
@@ -40,7 +40,7 @@ end
 function lattice_approximation(f::Function, states::Vector{Int}, scenarios::Int)
     path = f()::Vector{Float64}
     support = [fill(path[t], states[t]) for t = 1:length(states)]
-    probability = [zeros(states[t - 1], states[t]) for t = 2:length(states)]
+    probability = [zeros(states[t-1], states[t]) for t = 2:length(states)]
     prepend!(probability, Ref(zeros(1, states[1])))
     distance = 0.0
     for n = 1:scenarios
@@ -55,7 +55,8 @@ function lattice_approximation(f::Function, states::Vector{Int}, scenarios::Int)
             min_dist, best_idx = find_min(support[t], path[t])
             dist += min_dist^2
             probability[t][last_index, best_idx] += 1.0
-            support[t][best_idx] -= min_dist * (support[t][best_idx] - path[t]) / (3000 + n)^0.75
+            support[t][best_idx] -=
+                min_dist * (support[t][best_idx] - path[t]) / (3000 + n)^0.75
             last_index = best_idx
         end
         distance = (distance * (n - 1) + dist) / n
@@ -79,16 +80,21 @@ end
 Allocate the `budget` nodes amongst the stages for a Markovian approximation. By default,
 we distribute nodes based on the relative variance of the stages.
 """
-function allocate_support_budget(f::Function, budget::Int, scenarios::Int)
-    states = Statistics.var([f()::Vector{Float64} for _ = 1:scenarios])
-    s = sum(states)
-    if sum(states) ≈ 0.0
+function allocate_support_budget(f::Function, budget::Int, scenarios::Int)::Vector{Int}
+    stage_var = Statistics.var([f()::Vector{Float64} for _ = 1:scenarios])
+    states = ones(Int, length(stage_var))
+    if budget < length(stage_var)
+        @warn( "Budget for nodes is less than the number of stages. Using one node per stage.")
+        return states
+    end
+    s = sum(stage_var)
+    if s ≈ 0.0
         # If the sum of the variances is 0, then the simulator must be deterministic.
         # Regardless of the budget, return a single Markov state for each stage.
-        return ones(Int, length(f()))
+        return states
     end
     for i = 1:length(states)
-        states[i] = max(1, round(Int, states[i] / s * budget))
+        states[i] = max(1, round(Int, budget * stage_var[i] / s))
     end
     while sum(states) != budget
         if sum(states) > budget
@@ -97,7 +103,7 @@ function allocate_support_budget(f::Function, budget::Int, scenarios::Int)
             states[argmin(states)] += 1
         end
     end
-    return round.(Int, states)
+    return states
 end
 allocate_support_budget(f::Function, budget::Vector{Int}, scenarios::Int) = budget
 
@@ -114,7 +120,9 @@ nodes between stages. Alternatively, `budget` can be a `Vector{Int}`, which deta
 number of Markov state to have in each stage.
 """
 function MarkovianGraph(
-    simulator::Function; budget::Union{Int, Vector{Int}}, scenarios::Int = 1000
+    simulator::Function;
+    budget::Union{Int,Vector{Int}},
+    scenarios::Int = 1000,
 )
     scenarios = max(scenarios, 10)
     states = allocate_support_budget(simulator, budget, scenarios)
@@ -127,7 +135,7 @@ function MarkovianGraph(
     for t = 2:length(support)
         for (j, sj) in enumerate(support[t])
             add_node(g, (t, sj))
-            for (i, si) in enumerate(support[t - 1])
+            for (i, si) in enumerate(support[t-1])
                 add_edge(g, (t - 1, si) => (t, sj), probability[t][i, j])
             end
         end

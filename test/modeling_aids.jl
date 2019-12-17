@@ -31,12 +31,12 @@ end
 
     states = [1, 3, 5]
     @test states === SDDP.allocate_support_budget(f, states, 19)
+
+    @test SDDP.allocate_support_budget(() -> rand(3), 2, 10) == [1, 1, 1]
 end
 
 @testset "lattice_approximation" begin
-    support, probability = SDDP.lattice_approximation(
-        () -> rand(5), [1, 2, 3, 4, 5], 100
-    )
+    support, probability = SDDP.lattice_approximation(() -> rand(5), [1, 2, 3, 4, 5], 100)
     for (t, s) in enumerate(support)
         @test length(s) == t
         @test all(x -> 0 <= x <= 1, s)
