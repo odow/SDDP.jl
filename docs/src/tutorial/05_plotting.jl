@@ -157,11 +157,17 @@ SDDP.plot(plt, "spaghetti_plot.html", open = true)
 
 # ## Plotting the value function
 
+# You can obtain an object representing the value function of a node using
+# [`SDDP.ValueFunction`](@ref).
+
 V = SDDP.ValueFunction(model[(1, 1)])
 
 # The value function can be evaluated using [`SDDP.evaluate`](@ref).
 
 SDDP.evaluate(V; volume = 1)
+
+# `evaluate` returns the heigh of the value function, and a subgradient with respect to the
+# convex state variables.
 
 # You can also plot the value function using [`SDDP.plot`](@ref)
 
