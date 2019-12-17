@@ -124,13 +124,13 @@ function fill_template(dest::String, args...; template::String, launch::Bool = f
 end
 
 """
-	save(plt::SpaghettiPlot[, filename::String]; open::Bool = true)
+	plot(plt::SpaghettiPlot[, filename::String]; open::Bool = true)
 
 The SpaghettiPlot plot `plt` to `filename`. If `filename` is not given, it will
 be saved to a temporary directory. If `open = true`, then a browser window will
 be opened to display the resulting HTML file.
 """
-function save(
+function plot(
     plt::SpaghettiPlot,
     filename::String = joinpath(tempdir(), string(Random.randstring(), ".html"));
     open::Bool = true,
@@ -144,6 +144,11 @@ function save(
         launch = open,
     )
     return
+end
+
+function save(p::SpaghettiPlot, args...; kwargs...)
+    Base.depwarn("`SDDP.save` is deprecated. Use `SDDP.plot` instead.", :save)
+    return plot(p, args...; kwargs...)
 end
 
 function launch_file(filename)

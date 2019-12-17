@@ -81,7 +81,7 @@ end
             @stageobjective(sp, price * x.out)
         end
     end
-    SDDP.train(model, iteration_limit = 2, print_level = 0)
+    SDDP.train(model, iteration_limit = 10, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
     @test_throws AssertionError SDDP.evaluate(V1, Dict(:x => 1.0))
     @test SDDP.evaluate(V1, Dict(:x => 1.0); objective_state = 1) == (2.5, Dict(:x => 2.5))
@@ -133,10 +133,6 @@ end
     end
     SDDP.train(model, iteration_limit = 3, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
-    SDDP.plot(V1, [SDDP.Point(Dict(:x => i, :y => 0.0)) for i = 0:0.1:2]; open = false)
-    SDDP.plot(
-        V1,
-        [SDDP.Point(Dict(:x => i, :y => j)) for i = 0:0.1:2, j = 0:0.1:2];
-        open = false,
-    )
+    SDDP.plot(V1; x = 0:0.1:2, y = 0, open = false)
+    SDDP.plot(V1; x = 0:0.1:2, y = 0:0.1:2, open = false)
 end

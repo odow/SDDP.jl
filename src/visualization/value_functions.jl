@@ -44,6 +44,8 @@ struct ValueFunction{
     belief_state::B
 end
 
+Base.show(io::IO, v::ValueFunction) = "An SDDP value function"
+
 JuMP.set_optimizer(v::ValueFunction, optimizer) = set_optimizer(v.model, optimizer)
 
 function _add_to_value_function(
@@ -197,6 +199,19 @@ function evaluate(
     return obj, duals
 end
 
+"""
+    evalute(V::ValueFunction{Nothing, Nothing}; kwargs...)
+
+Evalute the value function `V` at the point in the state-space specified by `kwargs`.
+
+### Example
+
+    evaluate(V; volume = 1)
+"""
+function evaluate(V::ValueFunction{Nothing,Nothing}; kwargs...)
+    return evaluate(V, Dict(k => float(v) for (k, v) in kwargs))
+end
+
 struct Point{Y,B}
     x::Dict{Symbol,Float64}
     y::Y
@@ -284,4 +299,49 @@ function plot(
         launch = open,
     )
     return
+end
+
+
+function plot(
+    V::ValueFunction{Nothing,Nothing};
+    filename::String = joinpath(tempdir(), string(Random.randstring(), ".html")),
+    open::Bool = true,
+    kwargs...,
+)
+    d = Dict{Symbol,Float64}()
+    variables = Symbol[]
+    for (key, val) in kwargs
+        if isa(val, AbstractVector)
+            push!(variables, key)
+        else
+            d[key] = float(val)
+        end
+    end
+    if length(variables) == 1
+        points = Point{Nothing,Nothing}[]
+        key = variables[1]
+        for val in kwargs[key]
+            d2 = copy(d)
+            d2[key] = val
+            push!(points, Point(d2))
+        end
+        return plot(V, points; filename = filename, open = open)
+    elseif length(variables) == 2
+        k1, k2 = variables
+        N1, N2 = length(kwargs[k1]), length(kwargs[k2])
+        points = Array{Point{Nothing,Nothing},2}(undef, N1, N2)
+        for i = 1:N1
+            for j = 1:N2
+                d2 = copy(d)
+                d2[k1] = kwargs[k1][i]
+                d2[k2] = kwargs[k2][j]
+                points[i, j] = Point(d2)
+            end
+        end
+        return plot(V, points; filename = filename, open = open)
+    end
+    error(
+        "Can only plot 1- or 2-dimensional value functions. You provided " *
+        "$(length(variables)).",
+    )
 end

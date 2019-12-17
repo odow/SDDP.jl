@@ -89,6 +89,7 @@ SDDP.Historical
 SDDP.SpaghettiPlot
 SDDP.add_spaghetti
 SDDP.publication_plot
+SDDP.plot
 ```
 ## Debugging the model
 

@@ -16,10 +16,11 @@
         Y = <!--Y-->;
         Z = <!--Z-->;
     (function() {
-        data = {x: X, y: Y, type: 'scatter', mode: 'markers', marker: {size: 2}}
+        data = {x: X, y: Y, type: 'scatter', mode: 'markers'}
         if (Z.length > 0) {
             data.z = Z
             data.type = 'scatter3d'
+            data.marker = {size: 2}
         }
         Plotly.newPlot('plot', [data], {showlegend: false});
     })();
