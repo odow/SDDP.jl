@@ -81,7 +81,7 @@ end
             @stageobjective(sp, price * x.out)
         end
     end
-    SDDP.train(model, iteration_limit = 2, print_level = 0)
+    SDDP.train(model, iteration_limit = 10, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
     @test_throws AssertionError SDDP.evaluate(V1, Dict(:x => 1.0))
     @test SDDP.evaluate(V1, Dict(:x => 1.0); objective_state = 1) == (2.5, Dict(:x => 2.5))
@@ -115,4 +115,24 @@ end
     V12 = SDDP.ValueFunction(model[(1, 2)])
     (y, duals) = SDDP.evaluate(V12, Dict(:x => 1.0); belief_state = b)
     @test duals[:x] ≈ y ≈ 1.68
+end
+
+@testset "plot" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        sense = :Min,
+        lower_bound = 0.0,
+        optimizer = with_optimizer(GLPK.Optimizer),
+    ) do sp, t
+        @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
+        @variable(sp, y >= 0, SDDP.State, initial_value = 0)
+        @constraint(sp, x.out >= x.in)
+        @constraint(sp, x.out >= 2 * x.in - 1)
+        @constraint(sp, y.out == y.in)
+        @stageobjective(sp, x.out + y.out)
+    end
+    SDDP.train(model, iteration_limit = 3, print_level = 0)
+    V1 = SDDP.ValueFunction(model[1])
+    SDDP.plot(V1; x = 0:0.1:2, y = 0, open = false)
+    SDDP.plot(V1; x = 0:0.1:2, y = 0:0.1:2, open = false)
 end

@@ -44,6 +44,8 @@ struct ValueFunction{
     belief_state::B
 end
 
+Base.show(io::IO, v::ValueFunction) = "An SDDP value function"
+
 JuMP.set_optimizer(v::ValueFunction, optimizer) = set_optimizer(v.model, optimizer)
 
 function _add_to_value_function(
@@ -195,4 +197,151 @@ function evaluate(
         duals[key] = sign * dual(FixRef(var))
     end
     return obj, duals
+end
+
+"""
+    evalute(V::ValueFunction{Nothing, Nothing}; kwargs...)
+
+Evalute the value function `V` at the point in the state-space specified by `kwargs`.
+
+### Example
+
+    evaluate(V; volume = 1)
+"""
+function evaluate(V::ValueFunction{Nothing,Nothing}; kwargs...)
+    return evaluate(V, Dict(k => float(v) for (k, v) in kwargs))
+end
+
+struct Point{Y,B}
+    x::Dict{Symbol,Float64}
+    y::Y
+    b::B
+end
+Point(x::Dict{Symbol,Float64}) = Point(x, nothing, nothing)
+
+function height(V::ValueFunction{Y,B}, x::Point{Y,B}) where {Y,B}
+    return evaluate(V, x.x; objective_state = x.y, belief_state = x.b)[1]
+end
+
+function get_axis(x::Vector{Dict{K,V}}) where {K,V}
+    @assert length(x) >= 2
+    changing_key = nothing
+    for (key, val) in x[1]
+        if val == x[2][key]
+            continue
+        elseif changing_key !== nothing
+            error("Too many elements are changing")
+        end
+        changing_key = key
+    end
+    return changing_key === nothing ? nothing : [xi[changing_key] for xi in x]
+end
+
+function get_axis(x::Vector{NTuple{N,T}}) where {N,T}
+    @assert length(x) >= 2
+    changing_index = nothing
+    for i = 1:N
+        if x[1][i] == x[2][i]
+            continue
+        elseif changing_index !== nothing
+            error("Too many elements are changing")
+        end
+        changing_index = i
+    end
+    return changing_index === nothing ? nothing : [xi[changing_index] for xi in x]
+end
+
+get_axis(x::Vector{Nothing}) = nothing
+
+function get_axis(X::Vector{Point{Y,B}}) where {Y,B}
+    for f in [x -> x.x, x -> x.y, x -> x.b]
+        x = get_axis(f.(X))
+        x !== nothing && return x
+    end
+    return nothing
+end
+
+function get_data(V::ValueFunction{Y,B}, X::Vector{Point{Y,B}}) where {Y,B}
+    x = get_axis(X)
+    if x === nothing
+        error("Unable to detect changing dimension")
+    end
+    y = height.(Ref(V), X)
+    return x, y, Float64[]
+end
+
+function get_data(V::ValueFunction{Y,B}, X::Matrix{Point{Y,B}}) where {Y,B}
+    x = get_axis(collect(X[:, 1]))
+    if x === nothing
+        error("Unable to detect changing row")
+    end
+    y = get_axis(collect(X[1, :]))
+    if y === nothing
+        error("Unable to detect changing column")
+    end
+    z = height.(Ref(V), X)
+    return [i for _ in y for i in x], [i for i in y for _ in x], vec(z)
+end
+
+function plot(
+    V::ValueFunction{Y,B},
+    X::Array{Point{Y,B}};
+    filename::String = joinpath(tempdir(), string(Random.randstring(), ".html")),
+    open::Bool = true,
+) where {Y,B}
+    x, y, z = get_data(V, X)
+    fill_template(
+        filename,
+        "<!--X-->" => JSON.json(x),
+        "<!--Y-->" => JSON.json(y),
+        "<!--Z-->" => JSON.json(z);
+        template = joinpath(@__DIR__, "value_functions.html"),
+        launch = open,
+    )
+    return
+end
+
+
+function plot(
+    V::ValueFunction{Nothing,Nothing};
+    filename::String = joinpath(tempdir(), string(Random.randstring(), ".html")),
+    open::Bool = true,
+    kwargs...,
+)
+    d = Dict{Symbol,Float64}()
+    variables = Symbol[]
+    for (key, val) in kwargs
+        if isa(val, AbstractVector)
+            push!(variables, key)
+        else
+            d[key] = float(val)
+        end
+    end
+    if length(variables) == 1
+        points = Point{Nothing,Nothing}[]
+        key = variables[1]
+        for val in kwargs[key]
+            d2 = copy(d)
+            d2[key] = val
+            push!(points, Point(d2))
+        end
+        return plot(V, points; filename = filename, open = open)
+    elseif length(variables) == 2
+        k1, k2 = variables
+        N1, N2 = length(kwargs[k1]), length(kwargs[k2])
+        points = Array{Point{Nothing,Nothing},2}(undef, N1, N2)
+        for i = 1:N1
+            for j = 1:N2
+                d2 = copy(d)
+                d2[k1] = kwargs[k1][i]
+                d2[k2] = kwargs[k2][j]
+                points[i, j] = Point(d2)
+            end
+        end
+        return plot(V, points; filename = filename, open = open)
+    end
+    error(
+        "Can only plot 1- or 2-dimensional value functions. You provided " *
+        "$(length(variables)).",
+    )
 end

@@ -1,0 +1,29 @@
+<!--
+    Copyright 2017-19, Oscar Dowson.
+    This Source Code Form is subject to the terms of the Mozilla Public License,
+    v. 2.0. If a copy of the MPL was not distributed with this file, You can
+    obtain one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div id="plot"></div>
+    <script>
+        X = <!--X-->;
+        Y = <!--Y-->;
+        Z = <!--Z-->;
+    (function() {
+        data = {x: X, y: Y, type: 'scatter', mode: 'markers'}
+        if (Z.length > 0) {
+            data.z = Z
+            data.type = 'scatter3d'
+            data.marker = {size: 2}
+        }
+        Plotly.newPlot('plot', [data], {showlegend: false});
+    })();
+    </script>
+</body>
+</html>

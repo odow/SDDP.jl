@@ -97,9 +97,9 @@ end
 # and `ymax`. See the [`SDDP.add_spaghetti`](@ref) documentation for all the
 # arguments.
 
-# Having built the plot, we now need to display it.
+# Having built the plot, we now need to display it using [`SDDP.plot`](@ref).
 
-SDDP.save(plt, "spaghetti_plot.html", open = true)
+SDDP.plot(plt, "spaghetti_plot.html", open = true)
 
 # This should open a webpage that looks like [this
 # one](../assets/spaghetti_plot.html).
@@ -154,6 +154,24 @@ SDDP.save(plt, "spaghetti_plot.html", open = true)
 # ```julia
 # Plots.savefig("my_picture.pdf")
 # ```
+
+# ## Plotting the value function
+
+# You can obtain an object representing the value function of a node using
+# [`SDDP.ValueFunction`](@ref).
+
+V = SDDP.ValueFunction(model[(1, 1)])
+
+# The value function can be evaluated using [`SDDP.evaluate`](@ref).
+
+SDDP.evaluate(V; volume = 1)
+
+# `evaluate` returns the heigh of the value function, and a subgradient with respect to the
+# convex state variables.
+
+# You can also plot the value function using [`SDDP.plot`](@ref)
+
+SDDP.plot(V, volume = 0:200)
 
 # ## Convergence dashboard
 
