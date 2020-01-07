@@ -19,19 +19,17 @@ using Test
         @test graph.nodes[5] == Tuple{Int,Float64}[]
 
         graph = SDDP.LinearGraph(3)
-        @test sprint(
-            show,
-            graph,
-        ) == "Root\n" *
-             " 0\n" *
-             "Nodes\n" *
-             " 1\n" *
-             " 2\n" *
-             " 3\n" *
-             "Arcs\n" *
-             " 0 => 1 w.p. 1.0\n" *
-             " 1 => 2 w.p. 1.0\n" *
-             " 2 => 3 w.p. 1.0\n"
+        @test sprint(show, graph) ==
+              "Root\n" *
+        " 0\n" *
+        "Nodes\n" *
+        " 1\n" *
+        " 2\n" *
+        " 3\n" *
+        "Arcs\n" *
+        " 0 => 1 w.p. 1.0\n" *
+        " 1 => 2 w.p. 1.0\n" *
+        " 2 => 3 w.p. 1.0\n"
         @test length(graph.belief_partition) == 0
     end
 
@@ -123,10 +121,7 @@ using Test
                 belief_lipschitz = [[1.0, 1.0]],
             )
             @test graph.belief_partition == [[:x, :y]]
-            @test sprint(
-                show,
-                graph,
-            ) == join(
+            @test sprint(show, graph) == join(
                 [
                     "Root",
                     " root",
@@ -194,17 +189,8 @@ end
             SDDP.PolicyGraph(graph, lower_bound = 0.0, direct_mode = false) do node, stage
                 push!(nodes, stage)
             end
-        @test nodes == Set([
-            (1, 1),
-            (2, 1),
-            (2, 2),
-            (3, 1),
-            (3, 2),
-            (4, 1),
-            (4, 2),
-            (5, 1),
-            (5, 2),
-        ])
+        @test nodes ==
+              Set([(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (4, 2), (5, 1), (5, 2)])
     end
 
     @testset "MarkovianPolicyGraph" begin
@@ -222,17 +208,8 @@ end
         ) do node, stage
             push!(nodes, stage)
         end
-        @test nodes == Set([
-            (1, 1),
-            (2, 1),
-            (2, 2),
-            (3, 1),
-            (3, 2),
-            (4, 1),
-            (4, 2),
-            (5, 1),
-            (5, 2),
-        ])
+        @test nodes ==
+              Set([(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (4, 2), (5, 1), (5, 2)])
     end
 
     @testset "General" begin

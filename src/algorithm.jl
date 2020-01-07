@@ -214,7 +214,7 @@ stage_objective_value(stage_objective) = JuMP.value(stage_objective)
 Write the subproblem contained in `node` to the file `filename`.
 """
 function write_subproblem_to_file(node::Node, filename::String; throw_error::Bool = false)
-    model = MathOptFormat.Model(filename = filename)
+    model = MOI.FileFormats.Model(filename = filename)
     MOI.copy_to(model, JuMP.backend(node.subproblem))
     MOI.write_to_file(model, filename)
     if throw_error
@@ -374,10 +374,8 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
             # There is at least one other possible starting state. If our
             # incoming state is more than δ away from the other states, add it
             # as a possible starting state.
-            if distance(
-                starting_states,
-                incoming_state_value,
-            ) > options.cycle_discretization_delta
+            if distance(starting_states, incoming_state_value) >
+               options.cycle_discretization_delta
                 push!(starting_states, incoming_state_value)
             end
             # TODO(odow):
@@ -421,10 +419,8 @@ function forward_pass(model::PolicyGraph{T}, options::Options) where {T}
         incoming_state_value = sampled_states[end]
         # If this incoming state value is more than δ away from another state,
         # add it to the list.
-        if distance(
-            starting_states,
-            incoming_state_value,
-        ) > options.cycle_discretization_delta
+        if distance(starting_states, incoming_state_value) >
+           options.cycle_discretization_delta
             push!(starting_states, incoming_state_value)
         end
     end

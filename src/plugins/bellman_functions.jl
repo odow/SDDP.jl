@@ -320,9 +320,9 @@ function refine_bellman_function(
 ) where {T}
     # Sanity checks.
     @assert length(dual_variables) ==
-            length(noise_supports) ==
-            length(nominal_probability) ==
-            length(objective_realizations)
+    length(noise_supports) ==
+    length(nominal_probability) ==
+    length(objective_realizations)
     # Preliminaries that are common to all cut types.
     risk_adjusted_probability = similar(nominal_probability)
     adjust_probability(

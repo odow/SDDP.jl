@@ -85,10 +85,8 @@ function vehicle_location_model(integrality_handler)
                 location[b, v].out == base_balance[b, v]
             # Update states for home/hospital bases.
                 [v in vehicles],
-                location[
-                    hospital_location,
-                    v,
-                ].out == base_balance[hospital_location, v] + sum(dispatch[:, v])
+                location[hospital_location, v].out ==
+                base_balance[hospital_location, v] + sum(dispatch[:, v])
             end
         )
         SDDP.parameterize(sp, requests) do request

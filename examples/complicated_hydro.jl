@@ -36,15 +36,16 @@ model = SDDP.LinearPolicyGraph(
             thermal_cost >= 10 * thermal_generation + 0
             thermal_cost >= 20 * thermal_generation - 500
             thermal_cost >= 50 * thermal_generation - 3_500
-            volume[1].out == volume[1].in + inflow[1].out - hydro_flow[1] - hydro_spill[1] + pour[1]
+            volume[1].out ==
+            volume[1].in + inflow[1].out - hydro_flow[1] - hydro_spill[1] + pour[1]
             [i = 2:3],
-            volume[i].out == volume[i].in + inflow[i].out - hydro_flow[i] - hydro_spill[i] +
-                             pour[i] +
-                             hydro_flow[i-1] +
-                             hydro_spill[i-1]
-            hydro_generation == sum(
-                sum(POWER_KNOTS[j] * dispatch[i, j] for j = 1:3) for i = 1:3
-            )
+            volume[i].out ==
+            volume[i].in + inflow[i].out - hydro_flow[i] - hydro_spill[i] +
+            pour[i] +
+            hydro_flow[i-1] +
+            hydro_spill[i-1]
+            hydro_generation ==
+            sum(sum(POWER_KNOTS[j] * dispatch[i, j] for j = 1:3) for i = 1:3)
             [i = 1:3], hydro_flow[i] == sum(FLOW_KNOTS[j] * dispatch[i, j] for j = 1:3)
             [i = 1:3], sum(dispatch[i, j] for j = 1:3) <= 1
             hydro_generation + thermal_generation >= 600
@@ -65,8 +66,8 @@ model = SDDP.LinearPolicyGraph(
             R = DATA["ar_matrix"]["$(t-1)"]["$(i-1)"]
             @constraint(
                 subproblem,
-                inflow[i].out == sum(get(R, "$(j-1)", 0.0) * inflow[j].in for j = 1:3) +
-                                 ω[i]
+                inflow[i].out ==
+                sum(get(R, "$(j-1)", 0.0) * inflow[j].in for j = 1:3) + ω[i]
             )
         end
         SDDP.parameterize(subproblem, [1, 2]) do ϕ

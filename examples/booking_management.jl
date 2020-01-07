@@ -62,10 +62,8 @@ function booking_management_model(num_days, num_rooms, num_requests, integrality
                 sp,
                 begin
                 # Update vacancy if we accept a room request
-                    vacancy[
-                        room,
-                        day,
-                    ].out == vacancy[room, day].in - room_request_accepted[room, day]
+                    vacancy[room, day].out ==
+                    vacancy[room, day].in - room_request_accepted[room, day]
                 # Can't accept a request of a filled room
                     room_request_accepted[room, day] <= vacancy[room, day].in
                 # Can't accept invididual room request if entire request is declined
@@ -73,8 +71,8 @@ function booking_management_model(num_days, num_rooms, num_requests, integrality
                 # Can't accept request if room not requested
                     room_request_accepted[room, day] <= req[room, day]
                 # Accept all individual rooms is entire request is accepted
-                    room_request_accepted[room, day] +
-                    (1 - accept_request) >= req[room, day]
+                    room_request_accepted[room, day] + (1 - accept_request) >=
+                    req[room, day]
                 end
             )
         end
