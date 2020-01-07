@@ -35,8 +35,8 @@ function asset_management_simple()
         elseif 1 < stage < 4
             @constraint(
                 subproblem,
-                rstock[markov_state] * stocks.in +
-                rbonds[markov_state] * bonds.in == stocks.out + bonds.out
+                rstock[markov_state] * stocks.in + rbonds[markov_state] * bonds.in ==
+                stocks.out + bonds.out
             )
             @stageobjective(subproblem, 0)
         else

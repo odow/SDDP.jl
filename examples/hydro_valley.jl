@@ -119,9 +119,10 @@ function hydrovalleymodel(;
 
             # other flows
                 flow[i = 2:N],
-                reservoir[i].out == reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
-                                    outflow[i-1] +
-                                    spill[i-1]
+                reservoir[i].out ==
+                reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
+                outflow[i-1] +
+                spill[i-1]
 
             # Total quantity generated
                 generation_quantity == sum(

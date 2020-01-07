@@ -46,10 +46,8 @@ function adjust_probability(
     risk_adjusted_probability .= 0.0
     worst_index = 1
     worst_observation = is_minimization ? -Inf : Inf
-    for (
-        index,
-        (probability, observation),
-    ) in enumerate(zip(original_probability, objective_realizations))
+    for (index, (probability, observation)) in
+        enumerate(zip(original_probability, objective_realizations))
         if probability > 0.0
             if (is_minimization && observation > worst_observation) ||
                (!is_minimization && observation < worst_observation)

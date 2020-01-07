@@ -12,7 +12,6 @@ import Distributed
 import HTTP
 import JSON
 import LinearAlgebra
-import MathOptFormat
 import Printf
 import Random
 import Statistics

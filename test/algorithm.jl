@@ -39,10 +39,8 @@ using Test
         ),
     )
     simulated_value = 0.0
-    for (
-        (node_index, noise),
-        state,
-    ) in zip(forward_trajectory.scenario_path, forward_trajectory.sampled_states)
+    for ((node_index, noise), state) in
+        zip(forward_trajectory.scenario_path, forward_trajectory.sampled_states)
         @test state[:x] == noise
         simulated_value += noise
     end
@@ -105,9 +103,7 @@ end
 
         simulation = simulations[1][1]
         @test length(keys(simulation)) == 7
-        @test sort(collect(keys(
-            simulation,
-        ))) == [
+        @test sort(collect(keys(simulation))) == [
             :belief,
             :bellman_term,
             :node_index,

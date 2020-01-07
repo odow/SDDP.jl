@@ -112,10 +112,8 @@ end
 end
 
 @testset "EAV@R" begin
-    @test sprint(
-        show,
-        SDDP.EAVaR(lambda = 0.2, beta = 0.3),
-    ) == "A convex combination of 0.2 * SDDP.Expectation() + 0.8 * SDDP.AVaR(0.3)"
+    @test sprint(show, SDDP.EAVaR(lambda = 0.2, beta = 0.3)) ==
+          "A convex combination of 0.2 * SDDP.Expectation() + 0.8 * SDDP.AVaR(0.3)"
     @test_throws Exception SDDP.EAVaR(lambda = 1.1)
     @test_throws Exception SDDP.EAVaR(lambda = -0.1)
     @test_throws Exception SDDP.EAVaR(beta = 1.1)
@@ -131,8 +129,8 @@ end
             [1.0, 2.0, 3.0, 4.0],
             false,
         )
-        @test risk_adjusted_probability ≈ 0.25 * nominal_probability +
-                                          0.75 * [1 / 2, 1 / 2, 0, 0]
+        @test risk_adjusted_probability ≈
+              0.25 * nominal_probability + 0.75 * [1 / 2, 1 / 2, 0, 0]
     end
     @testset "Min - (0.25, 0.2)" begin
         nominal_probability = [0.1, 0.2, 0.3, 0.4]

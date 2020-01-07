@@ -127,36 +127,36 @@ function infinite_powder(;
             subproblem,
             begin
             # ========== State constraints ==========
-                pasture_cover.out == pasture_cover.in + 7 * grass_growth - harvest -
-                                     feed_pasture
-                stored_supplement.out == stored_supplement.in +
-                                         data["harvesting_efficiency"] * harvest -
-                                         feed_storage
+                pasture_cover.out ==
+                pasture_cover.in + 7 * grass_growth - harvest - feed_pasture
+                stored_supplement.out ==
+                stored_supplement.in + data["harvesting_efficiency"] * harvest -
+                feed_storage
             # This is a <= do account for the maximum soil moisture; excess
             # water is assumed to drain away.
                 soil_moisture.out <= soil_moisture.in - evapotranspiration + rainfall
 
             # ========== Energy balance ==========
                 data["pasture_energy_density"] * (feed_pasture + feed_storage) +
-                data["supplement_energy_density"] *
-                supplement >= data["stocking_rate"] * (
-                                  data["energy_for_pregnancy"][stage] +
-                                  data["energy_for_maintenance"] +
-                                  data["energy_for_bcs_dry"][stage]
-                              ) +
-                              cows_milking.in * (
-                                  data["energy_for_bcs_milking"][stage] -
-                                  data["energy_for_bcs_dry"][stage]
-                              ) +
-                              energy_for_milk_production
+                data["supplement_energy_density"] * supplement >=
+                data["stocking_rate"] * (
+                    data["energy_for_pregnancy"][stage] +
+                    data["energy_for_maintenance"] +
+                    data["energy_for_bcs_dry"][stage]
+                ) +
+                cows_milking.in * (
+                    data["energy_for_bcs_milking"][stage] -
+                    data["energy_for_bcs_dry"][stage]
+                ) +
+                energy_for_milk_production
 
             # ========== Milk production models ==========
             # Upper bound on the energy that can be used for milk production.
-                energy_for_milk_production <= data["max_milk_energy"][stage] *
-                                              cows_milking.in
+                energy_for_milk_production <=
+                data["max_milk_energy"][stage] * cows_milking.in
             # Conversion between energy and physical milk
-                weekly_milk_production == energy_for_milk_production /
-                                          data["energy_content_of_milk"][stage]
+                weekly_milk_production ==
+                energy_for_milk_production / data["energy_content_of_milk"][stage]
             # Lower bound on milk production.
                 weekly_milk_production >= data["min_milk_production"] * cows_milking.in
 
