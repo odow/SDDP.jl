@@ -1,7 +1,7 @@
-#  Copyright 2017-19, Oscar Dowson. This Source Code Form is subject to the terms
-#  of the Mozilla Public License, v.2.0. If a copy of the MPL was not
-#  distributed with this file, You can obtain one at
-#  http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 function print_helper(f, io, args...)
     f(stdout, args...)
@@ -10,7 +10,7 @@ end
 
 function print_banner(io)
     println(io, "------------------------------------------------------------------")
-    println(io, "                SDDP.jl (c) Oscar Dowson, 2017-19")
+    println(io, "                SDDP.jl (c) Oscar Dowson, 2017-20")
     println(io)
 end
 
