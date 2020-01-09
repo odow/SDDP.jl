@@ -99,7 +99,7 @@ end
 
 # Having built the plot, we now need to display it using [`SDDP.plot`](@ref).
 
-SDDP.plot(plt, "spaghetti_plot.html", open = true)
+SDDP.plot(plt, "spaghetti_plot.html")
 
 # This should open a webpage that looks like [this
 # one](../assets/spaghetti_plot.html).
@@ -171,7 +171,9 @@ SDDP.evaluate(V; volume = 1)
 
 # You can also plot the value function using [`SDDP.plot`](@ref)
 
-SDDP.plot(V, volume = 0:200)
+SDDP.plot(V, volume = 0:200, filename = "value_function.html")
+
+# This should open a webpage that looks like [this one](../assets/value_function.html).
 
 # ## Convergence dashboard
 
