@@ -33,8 +33,12 @@ using Test
             @stageobjective(sp, x.out)
         end
         @test SDDP.is_cyclic(model) == true
-        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(
-            model,
+        @test_throws(
+            ErrorException(
+                "Unable to formulate deterministic equivalent: " *
+                "Cyclic policy graph detected!",
+            ),
+            SDDP.deterministic_equivalent(model)
         )
     end
     @testset "Cyclic single node" begin
@@ -48,8 +52,12 @@ using Test
             @stageobjective(sp, x.out)
         end
         @test SDDP.is_cyclic(model) == true
-        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(
-            model,
+        @test_throws(
+            ErrorException(
+                "Unable to formulate deterministic equivalent: " *
+                "Cyclic policy graph detected!",
+            ),
+            SDDP.deterministic_equivalent(model)
         )
     end
     @testset "Acyclic Markovian" begin
@@ -76,8 +84,12 @@ using Test
             @stageobjective(sp, x.out)
         end
         @test SDDP.is_cyclic(model) == true
-        @test_throws ErrorException("Unable to formulate deterministic equivalent: Cyclic policy graph detected!") SDDP.deterministic_equivalent(
-            model,
+        @test_throws(
+            ErrorException(
+                "Unable to formulate deterministic equivalent: " *
+                "Cyclic policy graph detected!",
+            ),
+            SDDP.deterministic_equivalent(model)
         )
     end
 end
@@ -91,9 +103,10 @@ end
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
     end
-    @test_throws ErrorException("Unable to formulate deterministic equivalent: Time limit exceeded!") SDDP.deterministic_equivalent(
-        model,
-        time_limit = 0.0,
+    @test_throws(
+        ErrorException("Unable to formulate deterministic equivalent: Time limit exceeded!"),
+        # We use a negative time limit to force error.
+        SDDP.deterministic_equivalent(model; time_limit = -10.0)
     )
 end
 
@@ -118,8 +131,9 @@ end
             @stageobjective(sp, p * x.out)
         end
     end
-    @test_throws ErrorException("Unable to formulate deterministic equivalent: Objective states detected!") SDDP.deterministic_equivalent(
-        model,
+    @test_throws(
+        ErrorException("Unable to formulate deterministic equivalent: Objective states detected!"),
+        SDDP.deterministic_equivalent(model)
     )
 end
 
@@ -135,7 +149,8 @@ end
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
     end
-    @test_throws ErrorException("Unable to formulate deterministic equivalent: Belief states detected!") SDDP.deterministic_equivalent(
-        model,
+    @test_throws(
+        ErrorException("Unable to formulate deterministic equivalent: Belief states detected!"),
+        SDDP.deterministic_equivalent(model)
     )
 end
