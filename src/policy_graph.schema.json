@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/schema#",
+  "$id": "https://github.com/odow/SDDP.jl/blob/master/src/policy_graph.schema.json",
+  "title": "The schema for a policy graph",
+  "type": "object",
+  "required": ["root", "nodes", "edges"],
+  "properties": {
+    "root": {
+      "type": "object",
+      "required": ["name", "states"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "initial_value"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "initial_value": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    "nodes": {
+      "additionalProperties": {
+        "$ref": "#/definitions/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/edge"
+      }
+    },
+    "belief_partitions": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "edge": {
+      "from": {
+        "type": "string"
+      },
+      "to": {
+        "type": "string"
+      },
+      "probability": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["subproblem", "states", "noise_terms"],
+      "properties": {
+        "subproblem": {
+          "$ref": "https://github.com/odow/MathOptFormat/blob/v0.4.0/mof.schema.json"
+        },
+        "states": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["in", "out"],
+            "properties": {
+              "in": {
+                "type": "string"
+              },
+              "out": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "noise_terms": {
+          "templates": {
+            "type": "array",
+            "items": {
+              "oneOf": [{
+                "$ref": "#/definitions/ScalarCoefficientChange"
+              }, {
+                "$ref": "#/definitions/ScalarConstantChange"
+              }]
+            }
+          },
+          "realizations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["probability"],
+              "properties": {
+                "probability": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+				},
+				"data": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"value": {
+								"type": "number"
+							}
+						}
+					}
+				}
+              }
+            }
+          }
+        }
+      }
+	},
+	"ScalarCoefficientChange": {
+	  "type": "object",
+	  "properties": {
+		"constraint": {
+		  "type": "string"
+		},
+		"variable": {
+		  "type": "string"
+		},
+		"parameter": {
+		  "type": "object",
+		  "required": ["name", "default"],
+		  "properties": {
+		    "name": {
+			  "type": "string"
+		    },
+			"default": {
+			  "type": "number"
+			}
+		  }
+		}
+	  }
+	},
+	"ScalarConstantChange": {
+	  "type": "object",
+	  "required": [],
+	  "properties": {
+
+	  }
+	}
+  }
+}
