@@ -1,0 +1,153 @@
+{
+  "nodes": {
+    "week": {
+      "subproblem": {
+        "name": "MathOptFormat Model",
+        "variables": [
+          {
+            "name": "x1"
+          },
+          {
+            "name": "x2"
+          },
+          {
+            "name": "x[1]_in"
+          },
+          {
+            "name": "x[1]_out"
+          },
+          {
+            "name": "x[2]_in"
+          },
+          {
+            "name": "x[2]_out"
+          }
+        ],
+        "constraints": [
+          {
+            "name": "c1",
+            "function": {
+              "constant": 0.0,
+              "head": "ScalarAffineFunction",
+              "terms": [
+                {
+                  "coefficient": 1.0,
+                  "variable": "x[1]_in"
+                },
+                {
+                  "coefficient": -1.0,
+                  "variable": "x[2]_out"
+                }
+              ]
+            },
+            "set": {
+              "head": "EqualTo",
+              "value": 0.0
+            }
+          },
+          {
+            "name": "c2",
+            "function": {
+              "constant": 0.0,
+              "head": "ScalarAffineFunction",
+              "terms": [
+                {
+                  "coefficient": 1.0,
+                  "variable": "x2"
+                },
+                {
+                  "coefficient": 1.0,
+                  "variable": "x1"
+                }
+              ]
+            },
+            "set": {
+              "head": "GreaterThan",
+              "lower": 0.0
+            }
+          },
+          {
+            "name": "c1_1",
+            "function": {
+              "head": "SingleVariable",
+              "variable": "x1"
+            },
+            "set": {
+              "head": "GreaterThan",
+              "lower": 0.0
+            }
+          },
+          {
+            "name": "c2_1",
+            "function": {
+              "head": "SingleVariable",
+              "variable": "x2"
+            },
+            "set": {
+              "head": "GreaterThan",
+              "lower": -100000.0
+            }
+          },
+          {
+            "name": "c2_2",
+            "function": {
+              "head": "SingleVariable",
+              "variable": "x2"
+            },
+            "set": {
+              "head": "LessThan",
+              "upper": 100000.0
+            }
+          }
+        ],
+        "objective": {
+          "function": {
+            "constant": 0.0,
+            "head": "ScalarAffineFunction",
+            "terms": []
+          },
+          "sense": "min"
+        },
+        "version": {
+          "major": 0,
+          "minor": 4
+        }
+      },
+      "noise_terms": [],
+      "states": {
+        "x[2]": {
+          "out": "x[2]_out",
+          "in": "x[2]_in"
+        },
+        "x[1]": {
+          "out": "x[1]_out",
+          "in": "x[1]_in"
+        }
+      }
+    }
+  },
+  "root": {
+    "name": "root_node",
+    "states": {
+      "x[2]": 2.0,
+      "x[1]": 1.0
+    }
+  },
+  "belief_partition": [
+    [
+      "week"
+    ]
+  ],
+  "edges": [
+    {
+      "probability": 1.0,
+      "to": "week",
+      "from": "root_node"
+    },
+    {
+      "probability": 0.9,
+      "to": "week",
+      "from": "week"
+    }
+  ]
+}
