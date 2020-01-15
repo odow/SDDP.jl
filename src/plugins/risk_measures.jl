@@ -22,7 +22,7 @@ function adjust_probability(
     is_minimization::Bool,
 )
     risk_adjusted_probability .= original_probability
-    return
+    return 0.0
 end
 
 # ========================== The Worst Case Operator ========================= #
@@ -57,7 +57,7 @@ function adjust_probability(
         end
     end
     risk_adjusted_probability[worst_index] = 1.0
-    return
+    return 0.0
 end
 
 # =================================== AV@R =================================== #
@@ -119,7 +119,7 @@ function adjust_probability(
         risk_adjusted_probability[i] = avar_prob
         quantile_collected += avar_prob * measure.β
     end
-    return
+    return 0.0
 end
 
 # ============================ ConvexCombination ============================= #
@@ -186,6 +186,7 @@ function adjust_probability(
         )
         risk_adjusted_probability .+= weight * partial_distribution
     end
+    return 0.0
 end
 
 # =================================== EAV@R ================================== #
@@ -319,7 +320,7 @@ function adjust_probability(
             is_minimization,
         )
     end
-    return
+    return 0.0
 end
 
 """
@@ -395,12 +396,12 @@ function uniform_dro(
         end
         # Step (1c)
         if p[k+1] >= 0.0
-            return
+            return 0.0
         end
     end
     # Step (2):
     p[end] = 1.0
-    return
+    return 0.0
 end
 
 # ================================= Wasserstein ============================== #
@@ -463,5 +464,5 @@ function adjust_probability(
         )
     end
     copyto!(risk_adjusted_probability, JuMP.value.(p))
-    return
+    return 0.0
 end

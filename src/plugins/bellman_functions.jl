@@ -325,7 +325,7 @@ function refine_bellman_function(
     length(objective_realizations)
     # Preliminaries that are common to all cut types.
     risk_adjusted_probability = similar(nominal_probability)
-    adjust_probability(
+    offset = adjust_probability(
         risk_measure,
         risk_adjusted_probability,
         nominal_probability,
@@ -341,6 +341,7 @@ function refine_bellman_function(
             risk_adjusted_probability,
             objective_realizations,
             dual_variables,
+            offset,
         )
     else  # Add a multi-cut
         @assert bellman_function.cut_type == MULTI_CUT
@@ -351,6 +352,7 @@ function refine_bellman_function(
             risk_adjusted_probability,
             objective_realizations,
             dual_variables,
+            offset,
         )
     end
 end
@@ -361,13 +363,14 @@ function _add_average_cut(
     risk_adjusted_probability::Vector{Float64},
     objective_realizations::Vector{Float64},
     dual_variables::Vector{Dict{Symbol,Float64}},
+    offset::Float64,
 )
     N = length(risk_adjusted_probability)
     @assert N == length(objective_realizations) == length(dual_variables)
     # Calculate the expected intercept and dual variables with respect to the
-    # risk-adjusted probability distributino.
+    # risk-adjusted probability distribution.
     πᵏ = Dict(key => 0.0 for key in keys(outgoing_state))
-    θᵏ = 0.0
+    θᵏ = offset
     for i = 1:length(objective_realizations)
         p = risk_adjusted_probability[i]
         θᵏ += p * objective_realizations[i]
@@ -389,6 +392,7 @@ function _add_multi_cut(
     risk_adjusted_probability::Vector{Float64},
     objective_realizations::Vector{Float64},
     dual_variables::Vector{Dict{Symbol,Float64}},
+    offset::Float64,
 )
     N = length(risk_adjusted_probability)
     @assert N == length(objective_realizations) == length(dual_variables)
@@ -411,7 +415,7 @@ function _add_multi_cut(
         sum(
             risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
             for i = 1:N
-        ) - (1 - sum(risk_adjusted_probability)) * μᵀy
+        ) - (1 - sum(risk_adjusted_probability)) * μᵀy + offset
     )
     # TODO(odow): should we use `cut_expr` instead?
     ξ = copy(risk_adjusted_probability)

@@ -728,7 +728,7 @@ function calculate_bound(
     end
     # Now compute the risk-adjusted probability measure:
     risk_adjusted_probability = similar(probabilities)
-    adjust_probability(
+    offset = adjust_probability(
         risk_measure,
         risk_adjusted_probability,
         probabilities,
@@ -737,7 +737,9 @@ function calculate_bound(
         model.objective_sense == MOI.MIN_SENSE,
     )
     # Finally, calculate the risk-adjusted value.
-    return sum(obj * prob for (obj, prob) in zip(objectives, risk_adjusted_probability))
+    return sum(
+        obj * prob for (obj, prob) in zip(objectives, risk_adjusted_probability)
+    ) + offset
 end
 
 struct IterationResult{T}
