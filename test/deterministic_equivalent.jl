@@ -154,3 +154,72 @@ end
         SDDP.deterministic_equivalent(model)
     )
 end
+
+@testset "Edge cases" begin
+    @testset "Constant objective" begin
+        model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer),
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, 1.0)
+        end
+        d = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+        optimize!(d)
+        @test objective_value(d) == 2.0
+    end
+
+    @testset "Constraint with no terms" begin
+        model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer),
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @constraint(sp, x.out <= x.out)
+            @stageobjective(sp, 1.0)
+        end
+        d = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+        optimize!(d)
+        @test objective_value(d) == 2.0
+    end
+
+    @testset "Quadratic Expr" begin
+        model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0.0,
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @constraint(sp, x.in^2 <= x.out)
+            @stageobjective(sp, x.out)
+        end
+        d = SDDP.deterministic_equivalent(model)
+        @test in(
+            (GenericQuadExpr{Float64,VariableRef}, MOI.LessThan{Float64}),
+            list_of_constraint_types(d)
+        )
+    end
+
+    @testset "Quadratic Expr no quad terms" begin
+        model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0.0,
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @constraint(sp, x.in^2 <= x.out + x.in^2)
+            @stageobjective(sp, x.out)
+        end
+        d = SDDP.deterministic_equivalent(model)
+        @test in(
+            (GenericQuadExpr{Float64,VariableRef}, MOI.LessThan{Float64}),
+            list_of_constraint_types(d)
+        )
+    end
+
+    @testset "Vector-valued functions" begin
+        model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0.0,
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @constraint(sp, [x.in, x.out] in MOI.SOS1([1.0, 2.0]))
+            @stageobjective(sp, x.out)
+        end
+        d = SDDP.deterministic_equivalent(model)
+        @test (Vector{VariableRef}, MOI.SOS1{Float64}) in list_of_constraint_types(d)
+    end
+end
