@@ -132,6 +132,9 @@ function copy_and_replace_variables(
     src::JuMP.GenericAffExpr,
     src_to_dest_variable::Dict{JuMP.VariableRef,JuMP.VariableRef},
 )
+    if length(src.terms) == 0
+        return src
+    end
     return JuMP.GenericAffExpr(
         src.constant,
         (src_to_dest_variable[key] => val for (key, val) in src.terms)...,
