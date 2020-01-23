@@ -121,6 +121,8 @@ function add_node_to_scenario_tree(
     return
 end
 
+copy_and_replace_variables(src::Real, ::Dict{JuMP.VariableRef,JuMP.VariableRef}) = src
+
 function copy_and_replace_variables(
     src::JuMP.VariableRef,
     src_to_dest_variable::Dict{JuMP.VariableRef,JuMP.VariableRef},
@@ -136,13 +138,14 @@ function copy_and_replace_variables(
         return src
     end
     return JuMP.GenericAffExpr(
-        src.constant,
-        (src_to_dest_variable[key] => val for (key, val) in src.terms)...,
+        src.constant, (src_to_dest_variable[key] => val for (key, val) in src.terms)...,
     )
 end
 
 function copy_and_replace_variables(src::Any, ::Dict{JuMP.VariableRef,JuMP.VariableRef})
-    throw_detequiv_error("`copy_and_replace_variables` is not implemented for functions like `$(src)`.")
+    throw_detequiv_error(
+        "`copy_and_replace_variables` is not implemented for functions like `$(src)`."
+    )
 end
 
 function add_scenario_to_ef(

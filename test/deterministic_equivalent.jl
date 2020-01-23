@@ -154,3 +154,30 @@ end
         SDDP.deterministic_equivalent(model)
     )
 end
+
+@testset "Edge cases" begin
+    @testset "Constant objective" begin
+        model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer),
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, 1.0)
+        end
+        d = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+        optimize!(d)
+        @test objective_value(d) == 2.0
+    end
+
+    @testset "Constraint with no terms" begin
+        model = SDDP.LinearPolicyGraph(
+            stages = 2, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer),
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @constraint(sp, x.out <= x.out)
+            @stageobjective(sp, 1.0)
+        end
+        d = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+        optimize!(d)
+        @test objective_value(d) == 2.0
+    end
+end
