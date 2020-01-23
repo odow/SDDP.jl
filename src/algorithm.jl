@@ -266,9 +266,6 @@ function solve_subproblem(
     end
 
     JuMP.optimize!(node.subproblem)
-    state = get_outgoing_state(node)
-    stage_objective = stage_objective_value(node.stage_objective)
-    objective = JuMP.objective_value(node.subproblem)
 
     # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
@@ -278,6 +275,11 @@ function solve_subproblem(
             throw_error = true,
         )
     end
+
+    state = get_outgoing_state(node)
+    stage_objective = stage_objective_value(node.stage_objective)
+    objective = JuMP.objective_value(node.subproblem)
+
     # If require_duals = true, check for dual feasibility and return a dict with
     # the dual on the fixed constraint associated with each incoming state
     # variable. If require_duals=false, return an empty dictionary for
