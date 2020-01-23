@@ -121,6 +121,12 @@ function add_node_to_scenario_tree(
     return
 end
 
+function copy_and_replace_variables(
+    src::Vector, map::Dict{JuMP.VariableRef,JuMP.VariableRef}
+)
+    return copy_and_replace_variables.(src, Ref(map))
+end
+
 copy_and_replace_variables(src::Real, ::Dict{JuMP.VariableRef,JuMP.VariableRef}) = src
 
 function copy_and_replace_variables(
@@ -142,10 +148,23 @@ function copy_and_replace_variables(
     )
 end
 
-function copy_and_replace_variables(src::Any, ::Dict{JuMP.VariableRef,JuMP.VariableRef})
-    throw_detequiv_error(
-        "`copy_and_replace_variables` is not implemented for functions like `$(src)`."
+function copy_and_replace_variables(
+    src::JuMP.GenericQuadExpr,
+    src_to_dest_variable::Dict{JuMP.VariableRef,JuMP.VariableRef},
+)
+    return JuMP.GenericQuadExpr(
+        copy_and_replace_variables(src.aff, src_to_dest_variable),
+        Pair{UnorderedPair{VariableRef},Float64}[
+            UnorderedPair{VariableRef}(
+                src_to_dest_variable[pair.a], src_to_dest_variable[pair.b]
+            ) => coef
+            for (pair, coef) in src.terms
+        ]
     )
+end
+
+function copy_and_replace_variables(src::Any, ::Dict{JuMP.VariableRef,JuMP.VariableRef})
+    throw_detequiv_error("`copy_and_replace_variables` is not implemented for functions like `$(src)`.")
 end
 
 function add_scenario_to_ef(
