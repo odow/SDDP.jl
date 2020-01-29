@@ -504,7 +504,7 @@ end
     """
 end
 
-@testset "String nodes unsorted" begin
+@testset "Tuple{Int,Float64} nodes sorted" begin
     @test SDDP.sort_nodes([(1, 1.0), (2, 0.1), (1, 0.5)]) == [(1, 0.5), (1, 1.0), (2, 0.1)]
     g = SDDP.Graph((0, 0.0), [(1, 1.0), (2, 0.1), (1, 0.5)], [((0, 0.0) => (2, 0.1), 1.0)])
     @test sprint(show, g) == """
