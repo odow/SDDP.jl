@@ -39,14 +39,14 @@ function generation_expansion(integrality_handler)
         @constraints(
             sp,
             begin
-            # Can't un-invest
+                # Can't un-invest
                 investment[i in 1:num_units], invested[i].out >= invested[i].in
-            # Generation capacity
+                # Generation capacity
                 sum(capacities[i] * invested[i].out for i = 1:num_units) >= generation
-            # Meet demand or pay a penalty
+                # Meet demand or pay a penalty
                 unmet >= demand - sum(generation)
-            # For fewer iterations order the units to break symmetry, units are identical (tougher numerically)
-            # [j in 1:(num_units - 1)], invested[j].out <= invested[j + 1].out
+                # For fewer iterations order the units to break symmetry, units are identical (tougher numerically)
+                # [j in 1:(num_units - 1)], invested[j].out <= invested[j + 1].out
             end
         )
 
@@ -60,7 +60,8 @@ function generation_expansion(integrality_handler)
         )
         @stageobjective(
             sp,
-            (investment_cost + generation * use_cost) * rho^(stage - 1) + penalty * unmet
+            (investment_cost + generation * use_cost) * rho^(stage - 1) +
+                penalty * unmet
         )
     end
     SDDP.train(model, iteration_limit = 50, print_level = 0)
@@ -68,8 +69,8 @@ function generation_expansion(integrality_handler)
 end
 
 for integrality_handler in [
-    # Solve a continuous relaxation only, tough for SDDiP
-    # SDDP.SDDiP(),
+# Solve a continuous relaxation only, tough for SDDiP
+# SDDP.SDDiP(),
 SDDP.ContinuousRelaxation()]
     generation_expansion(integrality_handler)
 end

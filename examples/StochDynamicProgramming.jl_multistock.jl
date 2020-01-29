@@ -38,7 +38,8 @@ function test_multistock_example()
                 [i = 1:3], stock[i].out == stock[i].in + control[i] - ξ[i]
             end
         )
-        Ξ =     collect(Base.product((0.0, 0.15, 0.3), (0.0, 0.15, 0.3), (0.0, 0.15, 0.3)))[:]
+        Ξ =
+                collect(Base.product((0.0, 0.15, 0.3), (0.0, 0.15, 0.3), (0.0, 0.15, 0.3)))[:]
         SDDP.parameterize(subproblem, Ξ) do ω
             JuMP.fix.(ξ, ω)
         end

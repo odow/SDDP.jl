@@ -739,9 +739,8 @@ function calculate_bound(
         model.objective_sense == MOI.MIN_SENSE,
     )
     # Finally, calculate the risk-adjusted value.
-    return sum(
-        obj * prob for (obj, prob) in zip(objectives, risk_adjusted_probability)
-    ) + offset
+    return sum(obj * prob for (obj, prob) in zip(objectives, risk_adjusted_probability)) +
+           offset
 end
 
 struct IterationResult{T}
@@ -1040,7 +1039,7 @@ function _simulate(
             :noise_term => noise,
             :stage_objective => subproblem_results.stage_objective,
             :bellman_term =>
-                subproblem_results.objective - subproblem_results.stage_objective,
+                    subproblem_results.objective - subproblem_results.stage_objective,
             :objective_state => objective_state_vector,
             :belief => copy(current_belief),
         )

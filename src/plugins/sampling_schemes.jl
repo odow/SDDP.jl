@@ -342,8 +342,8 @@ end
 function sample_scenario(
     graph::PolicyGraph{T},
     sampling_scheme::Historical{T,NoiseTerm};
-                         # Ignore the other kwargs because the user is giving
-                         # us the full scenario.
+    # Ignore the other kwargs because the user is giving
+    # us the full scenario.
     kwargs...,
 ) where {T,NoiseTerm}
     return sample_noise(sampling_scheme.scenarios), false

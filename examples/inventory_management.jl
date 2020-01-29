@@ -31,7 +31,8 @@ function infinite_lin_HD()
         @constraints(
             subproblem,
             begin
-                state.out == state.in + order_quantity - demand + lost_demand - disposed_units
+                state.out ==
+                    state.in + order_quantity - demand + lost_demand - disposed_units
                 backordered_units >= -state.out
                 held_units >= state.out
             end
@@ -88,7 +89,8 @@ function infinite_lin_DH()
                 subproblem,
                 begin
                     state.out ==
-                    state.in + order_quantity.in - demand + lost_demand - disposed_units
+                        state.in + order_quantity.in - demand + lost_demand -
+                        disposed_units
                     backordered_units >= -state.out
                     held_units >= state.out
                 end
