@@ -54,7 +54,8 @@ function river_chain_example(;
             begin
                 volume[1].out == volume[1].in - flow[1] - spill[1]
                 [i = 2:N],
-                volume[i].out == volume[i].in - flow[i] - spill[i] + flow[i-1] + spill[i-1]
+                volume[i].out ==
+                    volume[i].in - flow[i] - spill[i] + flow[i-1] + spill[i-1]
                 generation == sum(power_knots[j] * dispatch[i, j] for i = 1:N, j = 1:3)
                 [i = 1:N], flow[i] == sum(flow_knots[j] * dispatch[i, j] for j = 1:3)
                 [i = 1:N], sum(dispatch[i, j] for j = 1:3) <= 1

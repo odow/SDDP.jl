@@ -102,7 +102,7 @@ function hydrovalleymodel(;
                 spill[r = 1:N] >= 0
                 inflow[r = 1:N] >= 0
                 generation_quantity >= 0 # Total quantity of water
-            # Proportion of levels to dispatch on
+                # Proportion of levels to dispatch on
                 0 <= dispatch[r = 1:N, level = 1:length(turbine(r).flowknots)] <= 1
                 rainfall[i = 1:N]
             end
@@ -113,31 +113,31 @@ function hydrovalleymodel(;
         @constraints(
             subproblem,
             begin
-            # flow from upper reservoir
+                # flow from upper reservoir
                 reservoir[1].out == reservoir[1].in + inflow[1] - outflow[1] - spill[1]
 
-            # other flows
+                # other flows
                 flow[i = 2:N],
                 reservoir[i].out ==
-                reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
+                    reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
                 outflow[i-1] +
                 spill[i-1]
 
-            # Total quantity generated
+                # Total quantity generated
                 generation_quantity == sum(
                     turbine(r).powerknots[level] * dispatch[r, level] for r = 1:N
                     for level = 1:length(turbine(r).powerknots)
                 )
 
-            # ------------------------------------------------------------------
-            # Flow out
+                # ------------------------------------------------------------------
+                # Flow out
                 turbineflow[r = 1:N],
                 outflow[r] == sum(
                     turbine(r).flowknots[level] * dispatch[r, level]
                     for level = 1:length(turbine(r).flowknots)
                 )
 
-            # Dispatch combination of levels
+                # Dispatch combination of levels
                 dispatched[r = 1:N],
                 sum(dispatch[r, level] for level = 1:length(turbine(r).flowknots)) <= 1
             end
@@ -173,7 +173,7 @@ function hydrovalleymodel(;
                 subproblem,
                 flipobj * (
                     prices[t, markov_state] * generation_quantity -
-                    sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
+                        sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
                 )
             )
         else
@@ -181,7 +181,7 @@ function hydrovalleymodel(;
                 subproblem,
                 flipobj * (
                     prices[t, 1] * generation_quantity -
-                    sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
+                        sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
                 )
             )
         end

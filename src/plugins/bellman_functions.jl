@@ -608,7 +608,7 @@ function read_cuts_from_file(
             expr = @expression(
                 node.subproblem,
                 bf.global_theta.theta -
-                sum(p * V.theta for (p, V) in zip(json_cut, bf.local_thetas))
+                    sum(p * V.theta for (p, V) in zip(json_cut, bf.local_thetas))
             )
             if JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE
                 @constraint(node.subproblem, expr >= 0)

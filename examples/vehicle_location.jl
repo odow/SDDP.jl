@@ -64,39 +64,40 @@ function vehicle_location_model(integrality_handler)
         @expression(
             sp,
             base_balance[b in bases, v in vehicles],
-            location[b, v].in - dispatch[b, v] - sum(shift[b, :, v]) + sum(shift[:, b, v])
+            location[b, v].in - dispatch[b, v] - sum(shift[b, :, v]) +
+                sum(shift[:, b, v])
         )
 
         @constraints(
             sp,
             begin
-            # Only one vehicle dispatched to call.
+                # Only one vehicle dispatched to call.
                 sum(dispatch) == 1
-            # Can only dispatch vehicle from base if vehicle is at that base.
+                # Can only dispatch vehicle from base if vehicle is at that base.
                 [b in bases, v in vehicles], dispatch[b, v] <= location[b, v].in
-            # Can only shift vehicle if vehicle is at that src base.
+                # Can only shift vehicle if vehicle is at that src base.
                 [b in bases, v in vehicles], sum(shift[b, :, v]) <= location[b, v].in
-            # Can only shift vehicle if vehicle is not being dispatched.
+                # Can only shift vehicle if vehicle is not being dispatched.
                 [b in bases, v in vehicles], sum(shift[b, :, v]) + dispatch[b, v] <= 1
-            # Can't shift to same base.
+                # Can't shift to same base.
                 [b in bases, v in vehicles], shift[b, b, v] == 0
-            # Update states for non-home/non-hospital bases.
+                # Update states for non-home/non-hospital bases.
                 [b in bases[2:end], v in vehicles],
                 location[b, v].out == base_balance[b, v]
-            # Update states for home/hospital bases.
+                # Update states for home/hospital bases.
                 [v in vehicles],
                 location[hospital_location, v].out ==
-                base_balance[hospital_location, v] + sum(dispatch[:, v])
+                    base_balance[hospital_location, v] + sum(dispatch[:, v])
             end
         )
         SDDP.parameterize(sp, requests) do request
             @stageobjective(
                 sp,
                 sum(
-                # Distance to travel from base to emergency and then to hospital.
+                    # Distance to travel from base to emergency and then to hospital.
                     dispatch[b, v] * dispatch_cost(b, request) +
-                # Distance travelled by vehicles relocating bases.
-                    sum(shift_cost(b, dest) * shift[b, dest, v] for dest in bases)
+                        # Distance travelled by vehicles relocating bases.
+                        sum(shift_cost(b, dest) * shift[b, dest, v] for dest in bases)
                     for b in bases, v in vehicles
                 )
             )
@@ -109,8 +110,8 @@ function vehicle_location_model(integrality_handler)
 end
 
 for integrality_handler in [
-    # Solve a continuous relaxation only, tough for SDDiP
-    # SDDP.SDDiP(),
+# Solve a continuous relaxation only, tough for SDDiP
+# SDDP.SDDiP(),
 SDDP.ContinuousRelaxation()]
     vehicle_location_model(integrality_handler)
 end

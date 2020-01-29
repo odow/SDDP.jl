@@ -50,29 +50,29 @@ function booking_management_model(num_days, num_rooms, num_requests, integrality
             initial_value = 1
         )
         @variables(sp, begin
-            # Accept request for booking of room for length of time.
+                # Accept request for booking of room for length of time.
                 0 <= accept_request <= 1, Bin
-            # Accept a booking for an individual room on an individual day.
+                # Accept a booking for an individual room on an individual day.
                 0 <= room_request_accepted[1:num_rooms, 1:num_days] <= 1, Bin
-            # Helper for JuMP.fix
+                # Helper for JuMP.fix
                 req[1:num_rooms, 1:num_days]
             end)
         for room = 1:num_rooms, day = 1:num_days
             @constraints(
                 sp,
                 begin
-                # Update vacancy if we accept a room request
+                    # Update vacancy if we accept a room request
                     vacancy[room, day].out ==
-                    vacancy[room, day].in - room_request_accepted[room, day]
-                # Can't accept a request of a filled room
+                        vacancy[room, day].in - room_request_accepted[room, day]
+                    # Can't accept a request of a filled room
                     room_request_accepted[room, day] <= vacancy[room, day].in
-                # Can't accept invididual room request if entire request is declined
+                    # Can't accept invididual room request if entire request is declined
                     room_request_accepted[room, day] <= accept_request
-                # Can't accept request if room not requested
+                    # Can't accept request if room not requested
                     room_request_accepted[room, day] <= req[room, day]
-                # Accept all individual rooms is entire request is accepted
+                    # Accept all individual rooms is entire request is accepted
                     room_request_accepted[room, day] + (1 - accept_request) >=
-                    req[room, day]
+                        req[room, day]
                 end
             )
         end

@@ -326,14 +326,14 @@ end
     @testset "missing bounds" begin
         exception = ErrorException(
             "You must specify a finite lower bound on the objective value" *
-            " using the `lower_bound = value` keyword argument.",
+                " using the `lower_bound = value` keyword argument.",
         )
         @test_throws exception SDDP.LinearPolicyGraph(stages = 1, sense = :Min) do sp, t
         end
 
         exception = ErrorException(
             "You must specify a finite upper bound on the objective value" *
-            " using the `upper_bound = value` keyword argument.",
+                " using the `upper_bound = value` keyword argument.",
         )
         @test_throws exception SDDP.LinearPolicyGraph(stages = 1, sense = :Max) do sp, t
         end
