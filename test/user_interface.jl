@@ -491,3 +491,45 @@ end
     belief = Dict(1 => 0.6, 2 => 0.4)
     @test is_approx(belief_updater(belief′, belief, 1, :A), Dict(1 => 6 / 41, 2 => 35 / 41))
 end
+
+@testset "Ensure root printed first" begin
+    g = SDDP.Graph(:root, [:a], [(:root => :a, 1.0)])
+    @test sprint(show, g) == """
+    Root
+     root
+    Nodes
+     a
+    Arcs
+     root => a w.p. 1.0
+    """
+end
+
+@testset "Tuple{Int,Float64} nodes sorted" begin
+    @test SDDP.sort_nodes([(1, 1.0), (2, 0.1), (1, 0.5)]) == [(1, 0.5), (1, 1.0), (2, 0.1)]
+    g = SDDP.Graph((0, 0.0), [(1, 1.0), (2, 0.1), (1, 0.5)], [((0, 0.0) => (2, 0.1), 1.0)])
+    @test sprint(show, g) == """
+    Root
+     (0, 0.0)
+    Nodes
+     (1, 0.5)
+     (1, 1.0)
+     (2, 0.1)
+    Arcs
+     (0, 0.0) => (2, 0.1) w.p. 1.0
+    """
+end
+
+@testset "String nodes unsorted" begin
+    @test SDDP.sort_nodes(["c", "b"]) == ["c", "b"]
+    g = SDDP.Graph("a", ["c", "b"], [("a" => "b", 1.0), ("b" => "c", 1.0)])
+    @test sprint(show, g) == """
+    Root
+     a
+    Nodes
+     c
+     b
+    Arcs
+     a => b w.p. 1.0
+     b => c w.p. 1.0
+    """
+end
