@@ -19,7 +19,7 @@ function fast_production_management(; cut_type)
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(H),
         bellman_function = SDDP.BellmanFunction(lower_bound = -50.0, cut_type = cut_type),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x[1:N] >= 0, SDDP.State, initial_value = 0.0)
         @variables(sp, begin

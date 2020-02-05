@@ -79,7 +79,7 @@ function msppy_hydro_thermal()
     model = SDDP.LinearPolicyGraph(
             stages = 120, lower_bound = 0.0,
             optimizer = with_optimizer(Gurobi.Optimizer, env, OutputFlag=0)) do sp, t
-            # optimizer = with_optimizer(GLPK.Optimizer)) do sp, t
+            # optimizer = GLPK.Optimizer) do sp, t
         month = t % 12 == 0 ? 12 : t % 12  # Year to month conversion.
         @variable(sp,
             0 <= storedEnergy[i = 1:4] <= storedEnergy_ub[i],

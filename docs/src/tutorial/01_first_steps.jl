@@ -125,7 +125,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = with_optimizer(GLPK.Optimizer)
+    optimizer = GLPK.Optimizer
 ) do subproblem, t
     ## Define the state variable.
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
@@ -197,7 +197,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = with_optimizer(GLPK.Optimizer)
+    optimizer = GLPK.Optimizer
 )
 
 # #### The keywords in the [`SDDP.LinearPolicyGraph`](@ref) constructor
@@ -210,7 +210,7 @@ model = SDDP.LinearPolicyGraph(
 # bound.
 
 # `optimizer`: This is borrowed directly from JuMP's `Model` constructor:
-# (`Model(with_optimizer(GLPK.Optimizer))`)
+# (`Model(GLPK.Optimizer)`)
 
 # #### Creating state variables
 

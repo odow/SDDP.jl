@@ -96,7 +96,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = with_optimizer(GLPK.Optimizer)
+    optimizer = GLPK.Optimizer
 ) do subproblem, t
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 2)
     @variable(subproblem, u >= 0)
@@ -116,7 +116,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 10.0,
-    optimizer = with_optimizer(GLPK.Optimizer)
+    optimizer = GLPK.Optimizer
 ) do subproblem, t
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 2)
     @variable(subproblem, u >= 0)

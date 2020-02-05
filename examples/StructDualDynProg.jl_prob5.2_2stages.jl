@@ -14,7 +14,7 @@ function test_prob52_2stages()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         direct_mode = true,
     ) do subproblem, stage
         # ========== Problem data ==========

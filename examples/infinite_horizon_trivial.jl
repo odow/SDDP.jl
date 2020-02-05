@@ -11,7 +11,7 @@ function infinite_trivial()
     model = SDDP.PolicyGraph(
         graph,
         bellman_function = SDDP.BellmanFunction(lower_bound = 0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, node
         @variable(subproblem, state, SDDP.State, initial_value = 0)
         @constraint(subproblem, state.in == state.out)

@@ -168,7 +168,7 @@ end
         model = SDDP.PolicyGraph(
             SDDP.LinearGraph(2),
             lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
         ) do node, stage
             push!(nodes, stage)
         end

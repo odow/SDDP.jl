@@ -11,7 +11,7 @@ forming the Cartesian product of the random variables.
 
 ```jldoctest; filter=[r"\(value = \d, coefficient = \d\)", r"1\-element.+"s]
 julia> model = SDDP.LinearPolicyGraph(
-               stages=3, lower_bound = 0, optimizer = with_optimizer(GLPK.Optimizer)
+               stages=3, lower_bound = 0, optimizer = GLPK.Optimizer
                ) do subproblem, t
            @variable(subproblem, x, SDDP.State, initial_value = 0.0)
            support = [(value = v, coefficient = c) for v in [1, 2] for c in [3, 4, 5]]

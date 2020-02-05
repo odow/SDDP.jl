@@ -543,7 +543,7 @@ Construct a policy graph based on the graph structure of `graph`. (See
         builder,
         graph;
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         direct_mode = false
     )
 
@@ -552,7 +552,7 @@ Or, using the Julia `do ... end` syntax:
     model = PolicyGraph(
         graph;
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         direct_mode = true
     ) do subproblem, index
         # ... subproblem definitions ...

@@ -144,7 +144,7 @@ All state variables are assumed to take nonnegative values only.
 """
 mutable struct SDDiP <: AbstractIntegralityHandler
     iteration_limit::Int
-    optimizer::JuMP.OptimizerFactory
+    optimizer::Any
     subgradients::Vector{Float64}
     old_rhs::Vector{Float64}
     best_mult::Vector{Float64}
@@ -163,7 +163,7 @@ end
 
 function update_integrality_handler!(
     integrality_handler::SDDiP,
-    optimizer::JuMP.OptimizerFactory,
+    optimizer::Any,
     num_states::Int,
 )
     integrality_handler.optimizer = optimizer

@@ -14,7 +14,7 @@ function test_prob52_3stages()
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         n = 4
         m = 3
@@ -48,7 +48,7 @@ function test_prob52_3stages()
         end
     end
 
-    det = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+    det = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) ≈ 406712.49 atol = 0.1
 

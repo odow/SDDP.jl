@@ -14,7 +14,7 @@ function infinite_lin_HD()
     model = SDDP.PolicyGraph(
         graph,
         bellman_function = SDDP.BellmanFunction(lower_bound = 0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, node
 
         @variable(subproblem, -10 <= state <= 10, SDDP.State, initial_value = 0)
@@ -70,7 +70,7 @@ function infinite_lin_DH()
     model = SDDP.PolicyGraph(
         graph,
         bellman_function = SDDP.BellmanFunction(lower_bound = 0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, node
         @variable(subproblem, -10 <= state <= 10, SDDP.State, initial_value = 0)
         @variable(subproblem, 0 <= order_quantity, SDDP.State, initial_value = 0)

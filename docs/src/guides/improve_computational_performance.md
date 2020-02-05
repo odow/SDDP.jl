@@ -94,7 +94,7 @@ Currently SDDP.jl supports to parallel schemes, [`SDDP.Serial`](@ref) and
 ```julia
 using SDDP, GLPK
 model = SDDP.LinearPolicyGraph(
-  stages = 2, lower_bound = 0, optimizer = with_optimizer(GLPK.Optimizer)
+  stages = 2, lower_bound = 0, optimizer = GLPK.Optimizer
 ) do sp, t
      @variable(sp, x >= 0, SDDP.State, initial_value = 1)
      @stageobjective(sp, x.out)

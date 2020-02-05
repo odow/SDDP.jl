@@ -14,7 +14,7 @@ function sldp_example_one()
     model = SDDP.LinearPolicyGraph(
         stages = 8,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 2.0)
         @variables(sp, begin

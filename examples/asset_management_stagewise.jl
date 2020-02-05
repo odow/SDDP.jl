@@ -28,7 +28,7 @@ function asset_management_stagewise(; cut_type)
             [0.5 0.5; 0.5 0.5],
         ],
         bellman_function = SDDP.BellmanFunction(upper_bound = 1000.0, cut_type = cut_type),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, node
         t, i = node
         @variable(subproblem, xs >= 0, SDDP.State, initial_value = 0)

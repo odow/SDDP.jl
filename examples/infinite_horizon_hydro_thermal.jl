@@ -16,7 +16,7 @@ function infinite_hydro_thermal(; cut_type)
     model = SDDP.PolicyGraph(
         graph,
         bellman_function = SDDP.BellmanFunction(lower_bound = 0, cut_type = cut_type),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, node
         @variable(subproblem, 5.0 <= reservoir <= 15.0, SDDP.State, initial_value = 10.0)
         @variables(subproblem, begin

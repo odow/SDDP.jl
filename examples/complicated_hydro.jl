@@ -16,7 +16,7 @@ model = SDDP.LinearPolicyGraph(
     stages = T,
     sense = :Min,
     bellman_function = SDDP.BellmanFunction(lower_bound = 0, deletion_minimum = 1_000_000),
-    optimizer = with_optimizer(GLPK.Optimizer),
+    optimizer = GLPK.Optimizer,
 ) do subproblem, t
     @variable(subproblem, 0 <= volume[1:3] <= 200, SDDP.State, initial_value = 50)
     @variable(

@@ -128,7 +128,7 @@ julia> graph = SDDP.Graph(
 julia> model = SDDP.PolicyGraph(
                graph,
                lower_bound = 0,
-               optimizer = with_optimizer(GLPK.Optimizer)) do subproblem, node
+               optimizer = GLPK.Optimizer) do subproblem, node
            println("Called from node: ", node)
        end;
 Called from node: decision_node

@@ -11,7 +11,7 @@ variables.
 
 ```jldoctest; filter=r"A policy graph.+"s
 julia> model = SDDP.LinearPolicyGraph(
-           stages=1, lower_bound = 0, optimizer = with_optimizer(GLPK.Optimizer)
+           stages=1, lower_bound = 0, optimizer = GLPK.Optimizer
        ) do subproblem, t
            # A scalar state variable.
            @variable(subproblem, x >= 0, SDDP.State, initial_value = 0)

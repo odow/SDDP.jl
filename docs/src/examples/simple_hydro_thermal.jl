@@ -67,19 +67,19 @@ SDDP.add_edge(graph, 3 => 1, 0.95)
 # probability mass vector can also be provided.
 
 model = SDDP.PolicyGraph(
-  graph, sense = :Min, lower_bound = 0.0, optimizer = with_optimizer(GLPK.Optimizer)
+    graph, sense = :Min, lower_bound = 0.0, optimizer = GLPK.Optimizer
 ) do sp, t
-  @variable(sp, 5 <= x <= 15, SDDP.State, initial_value = 10)
-  @variable(sp, g_t >= 0)
-  @variable(sp, g_h >= 0)
-  @variable(sp, s >= 0)
-  @constraint(sp, balance, x.out - x.in + g_h + s == 0)
-  @constraint(sp, demand, g_h + g_t == 0)
-  @stageobjective(sp, s + t * g_t)
-  SDDP.parameterize(sp, [[0, 7.5], [3, 5], [10, 2.5]]) do w
-    set_normalized_rhs(balance, w[1])
-    set_normalized_rhs(demand, w[2])
-  end
+    @variable(sp, 5 <= x <= 15, SDDP.State, initial_value = 10)
+    @variable(sp, g_t >= 0)
+    @variable(sp, g_h >= 0)
+    @variable(sp, s >= 0)
+    @constraint(sp, balance, x.out - x.in + g_h + s == 0)
+    @constraint(sp, demand, g_h + g_t == 0)
+    @stageobjective(sp, s + t * g_t)
+    SDDP.parameterize(sp, [[0, 7.5], [3, 5], [10, 2.5]]) do w
+        set_normalized_rhs(balance, w[1])
+        set_normalized_rhs(demand, w[2])
+    end
 end
 
 # ## Training the policy

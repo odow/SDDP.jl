@@ -24,7 +24,7 @@ using SDDP, GLPK
 model = SDDP.LinearPolicyGraph(
             stages = 2,
             lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
             direct_mode = false
         ) do subproblem, t
     @variable(subproblem, x, SDDP.State, initial_value = 1)
@@ -103,7 +103,7 @@ The returned model is just a normal JuMP model. Use JuMP to optimize it and
 query the solution.
 
 ```jldoctest tutorial_eight; filter=r"5.4725[0]+[0-9]"
-julia> det_equiv = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+julia> det_equiv = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
 A JuMP Model
 Feasibility problem with:
 Variables: 24

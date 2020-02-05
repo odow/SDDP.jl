@@ -27,7 +27,7 @@ model = SDDP.MarkovianPolicyGraph(
     ],
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = with_optimizer(GLPK.Optimizer)
+    optimizer = GLPK.Optimizer
 ) do subproblem, node
     t, markov_state = node
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
