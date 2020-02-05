@@ -51,8 +51,9 @@ function infinite_powder(;
         graph,
         sense = :Max,
         upper_bound = 1e6,
-        optimizer = with_optimizer(Gurobi.Optimizer, gurobi_env, OutputFlag = 0),
+        optimizer = () -> Gurobi.Optimizer(gurobi_env),
     ) do subproblem, index
+        set_optimizer_attribute(subproblem, "OutputFlag", 0)
         # Unpack the node index.
         stage, markov_state = index
         # ========== Data Initialization ==========

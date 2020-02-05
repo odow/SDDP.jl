@@ -13,12 +13,10 @@ function infinite_lin_HD()
     )
     model = SDDP.PolicyGraph(
         graph,
-        bellman_function = SDDP.BellmanFunction(lower_bound = 0),
+        lower_bound = 0,
         optimizer = GLPK.Optimizer,
     ) do subproblem, node
-
         @variable(subproblem, -10 <= state <= 10, SDDP.State, initial_value = 0)
-
         @variables(subproblem, begin
             0 <= order_quantity
             0 <= lost_demand
@@ -27,24 +25,18 @@ function infinite_lin_HD()
             0 <= held_units
             demand
         end)
-
-        @constraints(
+        @constraint(subproblem, backordered_units >= -state.out)
+        @constraint(subproblem, held_units >= state.out)
+        @constraint(
             subproblem,
-            begin
-                state.out ==
-                    state.in + order_quantity - demand + lost_demand - disposed_units
-                backordered_units >= -state.out
-                held_units >= state.out
-            end
+            state.out ==state.in + order_quantity - demand + lost_demand - disposed_units
         )
-
         # Truncated normal on [0, 10] with mean 5 and sd 2.
         Pg = rand(Distributions.TruncatedNormal(5, 2, 0, 10), 50)
         sort!(Pg)
         SDDP.parameterize(subproblem, Pg) do ω
             JuMP.fix(demand, ω)
         end
-
         @stageobjective(
             subproblem,
             20 * order_quantity +  # Ordering cost cp.

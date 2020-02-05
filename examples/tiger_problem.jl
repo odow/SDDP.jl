@@ -13,7 +13,9 @@
 # close to 1, we use Gurobi instead of GLPK. GLPK complains about the basis
 # being close to singular.
 
-using SDDP, Gurobi, Test
+using SDDP
+using Gurobi
+using Test
 
 function tiger_problem()
     graph = SDDP.Graph(
@@ -34,8 +36,9 @@ function tiger_problem()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = -1000.0,
-        optimizer = with_optimizer(Gurobi.Optimizer, OutputFlag = 0),
+        optimizer = () -> Gurobi.Optimizer(),
     ) do subproblem, node
+        set_optimizer_attribute(subproblem, "OutputFlag", 0)
         @variable(subproblem, 0 <= x[[:s, :l, :r]] <= 1, SDDP.State, initial_value = 1)
         if node == :Dl || node == :Dr
             @stageobjective(subproblem, x[:s].out - x[:l].out - x[:r].out)

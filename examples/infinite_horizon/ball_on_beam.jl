@@ -15,10 +15,11 @@ function infinite_ball_on_beam()
     model = SDDP.PolicyGraph(
         graph,
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-        optimizer = with_optimizer(Ipopt.Optimizer, print_level = 0),
+        optimizer = Ipopt.Optimizer,
         direct_mode = false,
         sense = :Min,
     ) do subproblem, node
+        set_optimizer_attribute(subproblem, "print_level", 0)
         Δt = 0.1  # time-step (s)
         m = 0.1  # mass (kg)
         J = 0.5  # moment of inertia (kg m²)
