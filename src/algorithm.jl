@@ -267,6 +267,12 @@ function solve_subproblem(
 
     JuMP.optimize!(node.subproblem)
 
+    if haskey(model.ext, :total_solves)
+        model.ext[:total_solves] += 1
+    else
+        model.ext[:total_solves] = 1
+    end
+
     # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         write_subproblem_to_file(
@@ -777,6 +783,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             forward_trajectory.cumulative_value,
             time() - options.start_time,
             Distributed.myid(),
+            model.ext[:total_solves],
         ),
     )
     has_converged, status = convergence_test(model, options.log, options.stopping_rules)
