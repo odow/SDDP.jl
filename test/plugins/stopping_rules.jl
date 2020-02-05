@@ -18,8 +18,8 @@ using Test
     end
     rule = SDDP.TimeLimit(0.5)
     @test SDDP.stopping_rule_status(rule) == :time_limit
-    @test SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 1.0, 1)], rule)
-    @test !SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 0.1, 1)], rule)
+    @test SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1)], rule)
+    @test !SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)], rule)
 end
 
 @testset "IterationLimit" begin
@@ -34,10 +34,10 @@ end
     @test SDDP.stopping_rule_status(rule) == :iteration_limit
     @test SDDP.convergence_test(
         graph,
-        [SDDP.Log(1, 0.0, 0.0, 1.0, 1), SDDP.Log(2, 0.0, 0.0, 1.0, 1)],
+        [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1), SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1)],
         rule,
     )
-    @test !SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 0.1, 1)], rule)
+    @test !SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)], rule)
 end
 
 @testset "Statistical" begin
@@ -57,9 +57,9 @@ end
     rule = SDDP.Statistical(num_replications = 20)
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)
-    @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0, 1)], rule)
-    @test !SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0, 1)], rule)
-    @test SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0, 1)], rule)
+    @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1)], rule)
+    @test !SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1)], rule)
+    @test SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)], rule)
 
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
@@ -77,9 +77,9 @@ end
     rule = SDDP.Statistical(num_replications = 20)
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)
-    @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0, 1)], rule)
-    @test SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0, 1)], rule)
-    @test !SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0, 1)], rule)
+    @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1)], rule)
+    @test SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1)], rule)
+    @test !SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)], rule)
 end
 
 @testset "BoundStalling" begin
@@ -95,20 +95,20 @@ end
     @test SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1),
-            SDDP.Log(2, 0.9, 0.0, 1.0, 1),
-            SDDP.Log(3, 1.5, 0.0, 1.0, 1),
-            SDDP.Log(4, 1.5, 0.0, 1.0, 1),
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
+            SDDP.Log(2, 0.9, 0.0, 1.0, 1, 1),
+            SDDP.Log(3, 1.5, 0.0, 1.0, 1, 1),
+            SDDP.Log(4, 1.5, 0.0, 1.0, 1, 1),
         ],
         rule,
     )
     @test !SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1),
-            SDDP.Log(2, 1.9, 0.0, 1.0, 1),
-            SDDP.Log(3, 2.0, 0.0, 1.0, 1),
-            SDDP.Log(4, 2.0, 0.0, 1.0, 1),
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
+            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1),
+            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1),
+            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1),
         ],
         rule,
     )

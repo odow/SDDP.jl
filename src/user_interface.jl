@@ -399,6 +399,7 @@ struct Log
     simulation_value::Float64
     time::Float64
     pid::Int
+    total_solves::Int
 end
 
 struct TrainingResults

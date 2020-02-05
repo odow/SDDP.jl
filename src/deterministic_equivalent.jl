@@ -143,10 +143,9 @@ function copy_and_replace_variables(
 )
     return JuMP.GenericAffExpr(
         src.constant,
-        Pair{VariableRef,Float64}[src_to_dest_variable[key] => val for (
-            key,
-            val,
-        ) in src.terms],
+        Pair{VariableRef,Float64}[
+            src_to_dest_variable[key] => val for (key, val) in src.terms
+        ],
     )
 end
 
@@ -156,10 +155,13 @@ function copy_and_replace_variables(
 )
     return JuMP.GenericQuadExpr(
         copy_and_replace_variables(src.aff, src_to_dest_variable),
-        Pair{UnorderedPair{VariableRef},Float64}[UnorderedPair{VariableRef}(
-            src_to_dest_variable[pair.a],
-            src_to_dest_variable[pair.b],
-        ) => coef for (pair, coef) in src.terms],
+        Pair{UnorderedPair{VariableRef},Float64}[
+            UnorderedPair{VariableRef}(
+                src_to_dest_variable[pair.a],
+                src_to_dest_variable[pair.b],
+            ) => coef
+            for (pair, coef) in src.terms
+        ],
     )
 end
 

@@ -230,6 +230,7 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
                 result.cumulative_value,
                 time() - options.start_time,
                 result.pid,
+                model.ext[:total_solves],
             ),
         )
         log_iteration(options)
