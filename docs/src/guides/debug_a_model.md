@@ -63,6 +63,8 @@ balance: 1 x_in - 1 x_out - 1 y = 0
 Bounds
 x2 >= 0
 y = 1.1
+x_in free
+x_out free
 End
 ```
 
@@ -85,6 +87,8 @@ balance: 1 x_in - 1 x_out - 1 y = 0
 Bounds
 x2 >= 0
 y = 3.3
+x_in free
+x_out free
 End
 
 julia> rm("subproblem.lp")  # Clean up.
