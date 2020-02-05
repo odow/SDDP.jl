@@ -12,10 +12,10 @@ function read_dir(dir, exclude = String[])
     return filter(s -> !(s in exclude) && endswith(s, ".jl"), readdir(dir))
 end
 
-const EXCLUDED_EXAMPLES =
-    ["inventory_management.jl", "msppy_hydro_thermal.jl", "tiger_problem.jl"]
+# const EXCLUDED_EXAMPLES =
+#     ["inventory_management.jl", "msppy_hydro_thermal.jl", "tiger_problem.jl"]
 
-const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
+# const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
 
 @testset "SDDP.jl" begin
     @testset "Unit Tests" begin
@@ -30,12 +30,12 @@ const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
         end
     end
 
-    @testset "Examples" begin
-        @testset "$example" for example in read_dir(EXAMPLES_DIR, EXCLUDED_EXAMPLES)
-            Random.seed!(12345)
-            include(joinpath(EXAMPLES_DIR, example))
-        end
-    end
+    # @testset "Examples" begin
+    #     @testset "$example" for example in read_dir(EXAMPLES_DIR, EXCLUDED_EXAMPLES)
+    #         Random.seed!(12345)
+    #         include(joinpath(EXAMPLES_DIR, example))
+    #     end
+    # end
 
     @testset "Parallel" begin
         procs = Distributed.addprocs(4)
