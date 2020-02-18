@@ -281,7 +281,7 @@ SDDP.Wasserstein
 
 ```jldoctest intermediate_risk
 risk_measure = SDDP.Wasserstein(
-        with_optimizer(GLPK.Optimizer); alpha=0.5) do x, y
+        GLPK.Optimizer; alpha=0.5) do x, y
    return abs(x - y)
 end
 

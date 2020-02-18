@@ -12,7 +12,7 @@ function.
 
 ```jldoctest; filter=r" \: .+?1.0"
 julia> model = SDDP.LinearPolicyGraph(
-               stages=3, lower_bound = 0, optimizer = with_optimizer(GLPK.Optimizer)
+               stages=3, lower_bound = 0, optimizer = GLPK.Optimizer
                ) do subproblem, t
            @variable(subproblem, x, SDDP.State, initial_value = 0.0)
            @constraint(subproblem, emissions, 1x.out <= 1)

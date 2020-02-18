@@ -12,7 +12,7 @@ using Test
         return SDDP.PolicyGraph(
             graph,
             lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
         ) do subproblem, node
             @variable(
                 subproblem,

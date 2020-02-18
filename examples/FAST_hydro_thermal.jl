@@ -14,7 +14,7 @@ function fast_hydro_thermal()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, 0 <= x <= 8, SDDP.State, initial_value = 0.0)
         @variables(sp, begin
@@ -33,7 +33,7 @@ function fast_hydro_thermal()
         @stageobjective(sp, 5 * p)
     end
 
-    det = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+    det = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) == 10
 

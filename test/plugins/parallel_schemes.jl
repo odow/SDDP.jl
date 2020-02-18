@@ -83,7 +83,7 @@ end
         stages = 2,
         sense = :Min,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -96,7 +96,7 @@ end
         iteration_limit = 20,
         parallel_scheme = SDDP.Asynchronous(; use_master = false) do m
             for (key, node) in m.nodes
-                JuMP.set_optimizer(node.subproblem, with_optimizer(GLPK.Optimizer))
+                JuMP.set_optimizer(node.subproblem, GLPK.Optimizer)
             end
         end,
     )
@@ -108,7 +108,7 @@ end
         iteration_limit = 20,
         parallel_scheme = SDDP.Asynchronous(; use_master = true) do m
             for (key, node) in m.nodes
-                JuMP.set_optimizer(node.subproblem, with_optimizer(GLPK.Optimizer))
+                JuMP.set_optimizer(node.subproblem, GLPK.Optimizer)
             end
         end,
     )
@@ -122,7 +122,7 @@ end
         stages = 2,
         lower_bound = 0.0,
         sense = :Min,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         @stageobjective(sp, x[1].out + x[2].out)

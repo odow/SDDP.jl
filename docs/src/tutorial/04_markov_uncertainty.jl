@@ -65,7 +65,7 @@ model = SDDP.MarkovianPolicyGraph(
     ],
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = with_optimizer(GLPK.Optimizer)
+    optimizer = GLPK.Optimizer
 ) do subproblem, node
     ## Unpack the stage and Markov index.
     t, markov_state = node

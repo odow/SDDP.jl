@@ -38,7 +38,7 @@ function booking_management_model(num_days, num_rooms, num_requests, integrality
         stages = num_requests,
         upper_bound = max_revenue,
         sense = :Max,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         integrality_handler = integrality_handler,
     ) do sp, stage
 

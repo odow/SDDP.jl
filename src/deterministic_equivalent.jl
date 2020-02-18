@@ -225,7 +225,7 @@ end
 """
     deterministic_equivalent(
         pg::PolicyGraph{T},
-        optimizer::Union{JuMP.OptimizerFactory, Nothing} = nothing;
+        optimizer = nothing;
         time_limit::Union{Real, Nothing} = 60.0
     )
 
@@ -234,11 +234,11 @@ Form a JuMP model that represents the deterministic equivalent of the problem.
 ## Examples
 
     deterministic_equivalent(model)
-    deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+    deterministic_equivalent(model, GLPK.Optimizer)
 """
 function deterministic_equivalent(
     pg::PolicyGraph{T},
-    optimizer::Union{JuMP.OptimizerFactory,Nothing} = nothing;
+    optimizer = nothing;
     time_limit::Union{Real,Nothing} = 60.0,
 ) where {T}
     # Step 0: helper function for the time limit.

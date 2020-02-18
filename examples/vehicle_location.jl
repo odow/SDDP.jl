@@ -42,7 +42,7 @@ function vehicle_location_model(integrality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 10,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         integrality_handler = integrality_handler,
     ) do sp, t
         # Current location of each vehicle at each base.

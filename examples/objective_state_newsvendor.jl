@@ -36,7 +36,7 @@ function newsvendor_example(; cut_type)
         SDDP.LinearGraph(3),
         sense = :Max,
         upper_bound = 50.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, stage
         @variables(subproblem, begin
             x >= 0, (SDDP.State, initial_value = 2)

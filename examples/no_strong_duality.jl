@@ -8,7 +8,7 @@ using SDDP, GLPK, Test
 function no_strong_duality()
     model = SDDP.PolicyGraph(
         SDDP.Graph(:root, [:node], [(:root => :node, 1.0), (:node => :node, 0.5)]),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         lower_bound = 0.0,
     ) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 1.0)

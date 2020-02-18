@@ -79,7 +79,7 @@ function hydrovalleymodel(;
         lower_bound = lower,
         upper_bound = upper,
         transition_matrices = transition,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, node
         t, markov_state = node
 

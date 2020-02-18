@@ -14,7 +14,7 @@ function all_blacks()
         stages = T,
         sense = :Max,
         upper_bound = 100.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         integrality_handler = SDDP.SDDiP(),
     ) do sp, stage
 

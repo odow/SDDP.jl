@@ -16,7 +16,7 @@ using Test
             sense = :Min,
             lower_bound = 0,
             integrality_handler = integrality_handler,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
         ) do sp, stage
             @variable(sp, x[1:2], Bin, SDDP.State, initial_value = 0)
             @variable(sp, y)
@@ -64,7 +64,7 @@ using Test
             sense = :Min,
             lower_bound = 0,
             integrality_handler = integrality_handler,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
         ) do sp, stage
             @variable(sp, x[1:2], Bin, SDDP.State, initial_value = 1)
             @variable(sp, y)
@@ -204,25 +204,18 @@ end
 @testset "update_integrality_handler!" begin
     @testset "SDDiP" begin
         integrality_handler = SDDP.SDDiP()
-        SDDP.update_integrality_handler!(
-            integrality_handler,
-            with_optimizer(GLPK.Optimizer),
-            3,
-        )
+        SDDP.update_integrality_handler!(integrality_handler, GLPK.Optimizer, 3)
         @test length(integrality_handler.subgradients) ==
         length(integrality_handler.old_rhs) ==
         length(integrality_handler.best_mult) ==
         length(integrality_handler.slacks) ==
         3
-        @test integrality_handler.optimizer == with_optimizer(GLPK.Optimizer)
+        @test integrality_handler.optimizer == GLPK.Optimizer
     end
     @testset "ContinuousRelaxation" begin
         integrality_handler = SDDP.ContinuousRelaxation()
-        @test SDDP.update_integrality_handler!(
-            integrality_handler,
-            with_optimizer(GLPK.Optimizer),
-            3,
-        ) == integrality_handler
+        @test SDDP.update_integrality_handler!(integrality_handler, GLPK.Optimizer, 3) ==
+              integrality_handler
     end
 end
 

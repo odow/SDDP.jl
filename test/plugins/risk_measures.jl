@@ -266,7 +266,7 @@ end
 
 @testset "Wasserstein" begin
     function default_wasserstein(alpha)
-        return SDDP.Wasserstein(with_optimizer(GLPK.Optimizer); alpha = alpha) do x, y
+        return SDDP.Wasserstein(GLPK.Optimizer; alpha = alpha) do x, y
             return abs(x - y)
         end
     end

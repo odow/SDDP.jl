@@ -50,7 +50,7 @@ function solve_inventory_management_problem(model_name, risk_measure)
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, node
         @variables(subproblem, begin
                 0 <= inventory <= 2, (SDDP.State, initial_value = 0.0)

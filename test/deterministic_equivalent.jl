@@ -10,28 +10,22 @@ using Test
 @testset "cyclic checks" begin
     @testset "Acyclic linear" begin
         graph = SDDP.LinearGraph(2)
-        model = SDDP.PolicyGraph(
-            graph,
-            lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
-        ) do sp, t
-            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-            @stageobjective(sp, x.out)
-        end
+        model =
+            SDDP.PolicyGraph(graph, lower_bound = 0.0, optimizer = GLPK.Optimizer) do sp, t
+                @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+                @stageobjective(sp, x.out)
+            end
         @test SDDP.is_cyclic(model) == false
         @test typeof(SDDP.deterministic_equivalent(model)) == JuMP.Model
     end
     @testset "Cyclic linear" begin
         graph = SDDP.LinearGraph(2)
         SDDP.add_edge(graph, 2 => 1, 0.9)
-        model = SDDP.PolicyGraph(
-            graph,
-            lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
-        ) do sp, t
-            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-            @stageobjective(sp, x.out)
-        end
+        model =
+            SDDP.PolicyGraph(graph, lower_bound = 0.0, optimizer = GLPK.Optimizer) do sp, t
+                @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+                @stageobjective(sp, x.out)
+            end
         @test SDDP.is_cyclic(model) == true
         @test_throws(
             ErrorException(
@@ -43,14 +37,11 @@ using Test
     end
     @testset "Cyclic single node" begin
         graph = SDDP.Graph(:root, [:node], [(:root => :node, 1.0), (:node => :node, 0.9)])
-        model = SDDP.PolicyGraph(
-            graph,
-            lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
-        ) do sp, t
-            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-            @stageobjective(sp, x.out)
-        end
+        model =
+            SDDP.PolicyGraph(graph, lower_bound = 0.0, optimizer = GLPK.Optimizer) do sp, t
+                @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+                @stageobjective(sp, x.out)
+            end
         @test SDDP.is_cyclic(model) == true
         @test_throws(
             ErrorException(
@@ -64,7 +55,7 @@ using Test
         model = SDDP.MarkovianPolicyGraph(
             transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
             lower_bound = 0,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
         ) do sp, t
             @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
             @stageobjective(sp, x.out)
@@ -75,14 +66,11 @@ using Test
     @testset "Cyclic Markovian" begin
         graph = SDDP.MarkovianGraph([[0.5 0.5], [0.2 0.8; 0.8 0.2]])
         SDDP.add_edge(graph, (2, 1) => (1, 1), 0.9)
-        model = SDDP.PolicyGraph(
-            graph,
-            lower_bound = 0,
-            optimizer = with_optimizer(GLPK.Optimizer),
-        ) do sp, t
-            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-            @stageobjective(sp, x.out)
-        end
+        model =
+            SDDP.PolicyGraph(graph, lower_bound = 0, optimizer = GLPK.Optimizer) do sp, t
+                @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+                @stageobjective(sp, x.out)
+            end
         @test SDDP.is_cyclic(model) == true
         @test_throws(
             ErrorException(
@@ -98,7 +86,7 @@ end
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -114,7 +102,7 @@ end
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         SDDP.add_objective_state(
@@ -141,11 +129,7 @@ end
     graph = SDDP.MarkovianGraph([[0.5 0.5], [0.2 0.8; 0.8 0.2]])
     SDDP.add_ambiguity_set(graph, [(1, 1), (1, 2)])
     SDDP.add_ambiguity_set(graph, [(2, 1), (2, 2)])
-    model = SDDP.PolicyGraph(
-        graph,
-        lower_bound = 0,
-        optimizer = with_optimizer(GLPK.Optimizer),
-    ) do sp, t
+    model = SDDP.PolicyGraph(graph, lower_bound = 0, optimizer = GLPK.Optimizer) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
     end
@@ -160,12 +144,12 @@ end
         model = SDDP.LinearPolicyGraph(
             stages = 2,
             lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
         ) do sp, t
             @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
             @stageobjective(sp, 1.0)
         end
-        d = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+        d = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
         optimize!(d)
         @test objective_value(d) == 2.0
     end
@@ -174,13 +158,13 @@ end
         model = SDDP.LinearPolicyGraph(
             stages = 2,
             lower_bound = 0.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
         ) do sp, t
             @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
             @constraint(sp, x.out <= x.out)
             @stageobjective(sp, 1.0)
         end
-        d = SDDP.deterministic_equivalent(model, with_optimizer(GLPK.Optimizer))
+        d = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
         optimize!(d)
         @test objective_value(d) == 2.0
     end

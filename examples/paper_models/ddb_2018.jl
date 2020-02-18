@@ -22,9 +22,10 @@ function river_chain_example(;
     env = Gurobi.Env()
     model = SDDP.LinearPolicyGraph(
         stages = 12,
-        optimizer = with_optimizer(Gurobi.Optimizer, env, OutputFlag = 0),
+        optimizer = () -> Gurobi.Optimizer(env),
         lower_bound = lower_bound,
     ) do sp, t
+        set_optimizer_attribute(sp, "OutputFlag", 0)
         flow_knots = [50.0, 60.0, 70.0]
         power_knots = [55.0, 65.0, 70.0]
         b = [

@@ -24,7 +24,7 @@ function air_conditioning_model(integrality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         integrality_handler = integrality_handler,
     ) do sp, stage
         @variable(sp, 0 <= stored_production <= 100, Int, SDDP.State, initial_value = 0)

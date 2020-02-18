@@ -24,7 +24,7 @@ function stock_example()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(5),
         bellman_function = SDDP.BellmanFunction(lower_bound = -2),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, stage
 
         # @state(sp, 0 <= state <= 1, state0 == 0.5)

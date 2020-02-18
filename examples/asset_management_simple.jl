@@ -22,7 +22,7 @@ function asset_management_simple()
             [0.5 0.5; 0.5 0.5],
         ]),
         bellman_function = SDDP.BellmanFunction(lower_bound = -1_000.0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, index
         (stage, markov_state) = index
         rstock = [1.25, 1.06]

@@ -24,7 +24,7 @@ function test_multistock_example()
     model = SDDP.LinearPolicyGraph(
         stages = 5,
         lower_bound = -5.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do subproblem, stage
         @variable(subproblem, 0 <= stock[i = 1:3] <= 1, SDDP.State, initial_value = 0.5)
         @variables(subproblem, begin

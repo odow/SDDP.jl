@@ -25,7 +25,7 @@ function generation_expansion(integrality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 5,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         integrality_handler = integrality_handler,
     ) do sp, stage
 

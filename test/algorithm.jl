@@ -12,7 +12,7 @@ using Test
         SDDP.LinearGraph(2);
         sense = :Max,
         bellman_function = SDDP.BellmanFunction(upper_bound = 100.0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -51,7 +51,7 @@ end
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -86,7 +86,7 @@ end
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -120,7 +120,7 @@ end
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         @stageobjective(sp, x[1].out + x[2].out)
@@ -133,7 +133,7 @@ end
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         if t == 1
@@ -151,7 +151,7 @@ end
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @constraint(node, x.out <= -1)
@@ -174,7 +174,7 @@ end
 @testset "refine_at_similar_nodes" begin
     model = SDDP.MarkovianPolicyGraph(
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         lower_bound = 0.0,
     ) do sp, index
         stage, markov_state = index
@@ -190,7 +190,7 @@ end
 
     model = SDDP.MarkovianPolicyGraph(
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         lower_bound = 0.0,
     ) do sp, index
         stage, markov_state = index
@@ -207,7 +207,7 @@ end
 @testset "optimize_hook" begin
     model = SDDP.LinearPolicyGraph(
         stages = 2,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         lower_bound = 0.0,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0)
@@ -240,7 +240,7 @@ end
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)

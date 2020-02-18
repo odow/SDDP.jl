@@ -245,7 +245,7 @@ model = SDDP.LinearPolicyGraph(
             stages = 2,
             sense = :Max,
             upper_bound = 500_000.0,
-            optimizer = with_optimizer(GLPK.Optimizer),
+            optimizer = GLPK.Optimizer,
             direct_mode = false
         ) do subproblem, stage
     add_state_variables(subproblem)

@@ -44,7 +44,7 @@ end
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         sense = :Min,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
@@ -64,7 +64,7 @@ end
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(upper_bound = 6.0),
-        optimizer = with_optimizer(GLPK.Optimizer),
+        optimizer = GLPK.Optimizer,
         sense = :Max,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)

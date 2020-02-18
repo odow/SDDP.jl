@@ -172,7 +172,9 @@ abstract type AbstractIntegralityHandler end
 """
     update_integrality_handler!(
         integrality_handler::AbstractIntegralityHandler,
-        optimizer::JuMP.OptimizerFactory, num_states::Int)
+        optimizer::Any,
+        num_states::Int
+    )
 
 Helper function to set up `integrality_handler`, allocating any necessary
 storage, given `num_states` state variables.
@@ -180,18 +182,13 @@ storage, given `num_states` state variables.
 function update_integrality_handler! end
 
 # Fallback
-update_integrality_handler!(
+function update_integrality_handler!(
     integrality_handler::AbstractIntegralityHandler,
-    ::JuMP.OptimizerFactory,
+    ::Any,
     ::Int,
-) = integrality_handler
-
-# Do nothing if no optimizer is set e.g. in tests
-update_integrality_handler!(
-    integrality_handler::AbstractIntegralityHandler,
-    ::Nothing,
-    ::Int,
-) = integrality_handler
+)
+    return integrality_handler
+end
 
 """
     get_dual_variables(node::Node, integrality_handler::AbstractIntegralityHandler)
