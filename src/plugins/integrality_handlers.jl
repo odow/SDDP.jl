@@ -71,7 +71,7 @@ function get_dual_variables(node::Node, ::ContinuousRelaxation)
     # maximization problems.
     dual_values = Dict{Symbol,Float64}()
     if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-        write_subproblem_to_file(node, "subproblem", throw_error = true)
+        write_subproblem_to_file(node, "subproblem.mof.json", throw_error = true)
     end
     dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1.0 : -1.0
     for (name, state) in node.states
@@ -258,7 +258,7 @@ function get_dual_variables(node::Node, integrality_handler::SDDiP)
         kelley_obj = _kelley(node, dual_vars, integrality_handler)::Float64
         @assert isapprox(solver_obj, kelley_obj, atol = 1e-8, rtol = 1e-8)
     catch e
-        write_subproblem_to_file(node, "subproblem", throw_error = false)
+        write_subproblem_to_file(node, "subproblem.mof.json", throw_error = false)
         rethrow(e)
     end
     for (i, name) in enumerate(keys(node.states))
