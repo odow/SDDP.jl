@@ -103,6 +103,8 @@ struct Options{T}
     start_time::Float64
     log::Vector{Log}
     log_file_handle
+    log_frequency::Int
+
     # Internal function: users should never construct this themselves.
     function Options(
         model::PolicyGraph{T},
@@ -118,7 +120,8 @@ struct Options{T}
         start_time::Float64,
         log::Vector{Log},
         log_file_handle,
-    ) where {T,S}
+        log_frequency::Int,
+    ) where {T}
         return new{T}(
             initial_state,
             sampling_scheme,
@@ -135,6 +138,7 @@ struct Options{T}
             start_time,
             log,
             log_file_handle,
+            log_frequency,
         )
     end
 end
@@ -827,6 +831,9 @@ Train the policy for `model`. Keyword arguments:
  - `log_file::String`: filepath at which to write a log of the training progress.
     Defaults to `SDDP.log`.
 
+ - `log_frequency::Int`: control the frequency with which the logging is
+    outputted (iterations/log). Defaults to `1`.
+
  - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability
     report prior to solve. Defaults to `true`.
 
@@ -867,6 +874,7 @@ function train(
     time_limit::Union{Real,Nothing} = nothing,
     print_level::Int = 1,
     log_file::String = "SDDP.log",
+    log_frequency::Int = 1,
     run_numerical_stability_report::Bool = true,
     stopping_rules = AbstractStoppingRule[],
     risk_measure = SDDP.Expectation(),
@@ -955,6 +963,7 @@ function train(
         time(),
         log,
         log_file_handle,
+        log_frequency,
     )
 
     status = :not_solved
@@ -1046,7 +1055,7 @@ function _simulate(
             :noise_term => noise,
             :stage_objective => subproblem_results.stage_objective,
             :bellman_term =>
-                    subproblem_results.objective - subproblem_results.stage_objective,
+                subproblem_results.objective - subproblem_results.stage_objective,
             :objective_state => objective_state_vector,
             :belief => copy(current_belief),
         )

@@ -60,8 +60,7 @@ function generation_expansion(integrality_handler)
         )
         @stageobjective(
             sp,
-            (investment_cost + generation * use_cost) * rho^(stage - 1) +
-                penalty * unmet
+            (investment_cost + generation * use_cost) * rho^(stage - 1) + penalty * unmet
         )
     end
     SDDP.train(model, iteration_limit = 50, print_level = 0)

@@ -159,8 +159,7 @@ function copy_and_replace_variables(
             UnorderedPair{VariableRef}(
                 src_to_dest_variable[pair.a],
                 src_to_dest_variable[pair.b],
-            ) => coef
-            for (pair, coef) in src.terms
+            ) => coef for (pair, coef) in src.terms
         ],
     )
 end

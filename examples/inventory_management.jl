@@ -29,7 +29,7 @@ function infinite_lin_HD()
         @constraint(subproblem, held_units >= state.out)
         @constraint(
             subproblem,
-            state.out ==state.in + order_quantity - demand + lost_demand - disposed_units
+            state.out == state.in + order_quantity - demand + lost_demand - disposed_units
         )
         # Truncated normal on [0, 10] with mean 5 and sd 2.
         Pg = rand(Distributions.TruncatedNormal(5, 2, 0, 10), 50)
@@ -81,8 +81,7 @@ function infinite_lin_DH()
                 subproblem,
                 begin
                     state.out ==
-                        state.in + order_quantity.in - demand + lost_demand -
-                        disposed_units
+                    state.in + order_quantity.in - demand + lost_demand - disposed_units
                     backordered_units >= -state.out
                     held_units >= state.out
                 end

@@ -119,7 +119,7 @@ function hydrovalleymodel(;
                 # other flows
                 flow[i = 2:N],
                 reservoir[i].out ==
-                    reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
+                reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
                 outflow[i-1] +
                 spill[i-1]
 
@@ -173,7 +173,7 @@ function hydrovalleymodel(;
                 subproblem,
                 flipobj * (
                     prices[t, markov_state] * generation_quantity -
-                        sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
+                    sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
                 )
             )
         else
@@ -181,7 +181,7 @@ function hydrovalleymodel(;
                 subproblem,
                 flipobj * (
                     prices[t, 1] * generation_quantity -
-                        sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
+                    sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
                 )
             )
         end
