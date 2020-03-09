@@ -5,7 +5,7 @@
 
 function log_iteration(options)
     options.dashboard_callback(options.log[end], false)
-    if options.print_level > 0
+    if options.print_level > 0 && mod(length(options.log), options.log_frequency) == 0
         print_helper(print_iteration, options.log_file_handle, options.log[end])
     end
 end

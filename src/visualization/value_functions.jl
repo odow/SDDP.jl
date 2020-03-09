@@ -110,8 +110,7 @@ function ValueFunction(node::Node{T}) where {T}
                 lower_bound = lower_bound(μ),
                 upper_bound = upper_bound(μ),
                 base_name = "_objective_state_$(i)"
-            )
-            for (i, μ) in enumerate(node.objective_state.μ)
+            ) for (i, μ) in enumerate(node.objective_state.μ)
         ]...,)
     end
     belief_state = if node.belief_state === nothing
@@ -123,8 +122,7 @@ function ValueFunction(node::Node{T}) where {T}
                 lower_bound = lower_bound(μ),
                 upper_bound = upper_bound(μ),
                 base_name = "_belief_$(key)"
-            )
-            for (key, μ) in node.belief_state.μ
+            ) for (key, μ) in node.belief_state.μ
         )
     end
     global_theta = _add_to_value_function(
@@ -136,8 +134,7 @@ function ValueFunction(node::Node{T}) where {T}
         "V",
     )
     local_thetas = VariableRef[
-        _add_to_value_function(model, states, belief_state, objective_state, l, "v$(i)")
-        for (i, l) in enumerate(b.local_thetas)
+        _add_to_value_function(model, states, belief_state, objective_state, l, "v$(i)") for (i, l) in enumerate(b.local_thetas)
     ]
     for risk_set in b.risk_set_cuts
         expr = @expression(model, sum(p * v for (p, v) in zip(risk_set, local_thetas)))

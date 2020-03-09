@@ -35,8 +35,7 @@ function air_conditioning_model(integrality_handler)
         SDDP.parameterize(ω -> JuMP.fix(demand, ω), sp, DEMAND[stage])
         @constraint(
             sp,
-            stored_production.out ==
-                stored_production.in + production + overtime - demand
+            stored_production.out == stored_production.in + production + overtime - demand
         )
         @stageobjective(sp, 100 * production + 300 * overtime + 50 * stored_production.out)
     end

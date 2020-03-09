@@ -129,35 +129,35 @@ function infinite_powder(;
             begin
                 # ========== State constraints ==========
                 pasture_cover.out ==
-                    pasture_cover.in + 7 * grass_growth - harvest - feed_pasture
+                pasture_cover.in + 7 * grass_growth - harvest - feed_pasture
                 stored_supplement.out ==
-                    stored_supplement.in + data["harvesting_efficiency"] * harvest -
-                    feed_storage
+                stored_supplement.in + data["harvesting_efficiency"] * harvest -
+                feed_storage
                 # This is a <= do account for the maximum soil moisture; excess
                 # water is assumed to drain away.
                 soil_moisture.out <= soil_moisture.in - evapotranspiration + rainfall
 
                 # ========== Energy balance ==========
                 data["pasture_energy_density"] * (feed_pasture + feed_storage) +
-                    data["supplement_energy_density"] * supplement >=
-                    data["stocking_rate"] * (
+                data["supplement_energy_density"] * supplement >=
+                data["stocking_rate"] * (
                     data["energy_for_pregnancy"][stage] +
                     data["energy_for_maintenance"] +
                     data["energy_for_bcs_dry"][stage]
                 ) +
                 cows_milking.in * (
                     data["energy_for_bcs_milking"][stage] -
-                        data["energy_for_bcs_dry"][stage]
+                    data["energy_for_bcs_dry"][stage]
                 ) +
                 energy_for_milk_production
 
                 # ========== Milk production models ==========
                 # Upper bound on the energy that can be used for milk production.
                 energy_for_milk_production <=
-                    data["max_milk_energy"][stage] * cows_milking.in
+                data["max_milk_energy"][stage] * cows_milking.in
                 # Conversion between energy and physical milk
                 weekly_milk_production ==
-                    energy_for_milk_production / data["energy_content_of_milk"][stage]
+                energy_for_milk_production / data["energy_content_of_milk"][stage]
                 # Lower bound on milk production.
                 weekly_milk_production >= data["min_milk_production"] * cows_milking.in
 
@@ -169,12 +169,9 @@ function infinite_powder(;
                 grass_growth <= g(p′) + g′(p′) * (pasture_cover.in - p′)
 
                 # ========== Fat Evaluation Index Penalty ==========
-                fei_penalty >=
-                    cow_per_day * (0.00 + 0.25 * (supplement / cow_per_day - 3))
-                fei_penalty >=
-                    cow_per_day * (0.25 + 0.50 * (supplement / cow_per_day - 4))
-                fei_penalty >=
-                    cow_per_day * (0.75 + 1.00 * (supplement / cow_per_day - 5))
+                fei_penalty >= cow_per_day * (0.00 + 0.25 * (supplement / cow_per_day - 3))
+                fei_penalty >= cow_per_day * (0.25 + 0.50 * (supplement / cow_per_day - 4))
+                fei_penalty >= cow_per_day * (0.75 + 1.00 * (supplement / cow_per_day - 5))
             end
         )
 
@@ -207,9 +204,9 @@ function infinite_powder(;
         @stageobjective(
             subproblem,
             milk_revenue - data["supplement_price"] * supplement -
-                data["harvest_cost"] * harvest - fei_penalty +
-                # Artificial term to encourage max soil moisture.
-                1e-4 * soil_moisture.out
+            data["harvest_cost"] * harvest - fei_penalty +
+            # Artificial term to encourage max soil moisture.
+            1e-4 * soil_moisture.out
         )
     end
     return model

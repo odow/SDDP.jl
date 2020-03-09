@@ -36,6 +36,7 @@ using Test
             0.0,
             SDDP.Log[],
             IOBuffer(),
+            1,
         ),
     )
     simulated_value = 0.0
