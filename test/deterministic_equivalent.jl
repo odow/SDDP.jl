@@ -139,6 +139,21 @@ end
     )
 end
 
+@testset "existing policy" begin
+    model = SDDP.LinearPolicyGraph(stages=2, lower_bound = 0, optimizer = GLPK.Optimizer) do sp, t
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+        @stageobjective(sp, x.out)
+    end
+    SDDP.train(model; iteration_limit = 2, print_level = 0)
+    @test_throws(
+        ErrorException(
+            "Unable to formulate deterministic equivalent: Model has been used " *
+            "for training. Can only form deterministic equivalent on a fresh model."
+        ),
+        SDDP.deterministic_equivalent(model)
+    )
+end
+
 @testset "Edge cases" begin
     @testset "Constant objective" begin
         model = SDDP.LinearPolicyGraph(

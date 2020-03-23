@@ -96,6 +96,11 @@ function add_node_to_scenario_tree(
         throw_detequiv_error("Objective states detected!")
     elseif node.belief_state !== nothing
         throw_detequiv_error("Belief states detected!")
+    elseif length(node.bellman_function.global_theta.cut_oracle.cuts) > 0
+        throw_detequiv_error(
+            "Model has been used for training. Can only form deterministic " *
+            "equivalent on a fresh model."
+        )
     else
         check_time_limit()
     end
@@ -230,7 +235,7 @@ end
 
 Form a JuMP model that represents the deterministic equivalent of the problem.
 
-## Examples
+ ## Examples
 
     deterministic_equivalent(model)
     deterministic_equivalent(model, GLPK.Optimizer)
