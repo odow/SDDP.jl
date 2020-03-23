@@ -235,7 +235,7 @@ end
 
 Form a JuMP model that represents the deterministic equivalent of the problem.
 
- ## Examples
+## Examples
 
     deterministic_equivalent(model)
     deterministic_equivalent(model, GLPK.Optimizer)
