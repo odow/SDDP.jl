@@ -1,7 +1,7 @@
 name = "SDDP"
 uuid = "f4570300-c277-11e8-125c-4912f86ce65d"
 authors = ["Oscar Dowson <oscar.dowson@northwestern.edu"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -22,10 +22,10 @@ HTTP = "0.8.1"
 JSON = "0.21"
 JuliaFormatter = "0.3"
 JuMP = "0.21"
-RecipesBase = "0.7"
+RecipesBase = "1"
 Reexport = "0.2"
 TimerOutputs = "0.5"
-julia = "1.0"
+julia = "1"
 
 [extras]
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
