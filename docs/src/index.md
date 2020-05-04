@@ -41,8 +41,7 @@ with [Basic I: first steps](@ref).
 
 ## Citing `SDDP.jl`
 
-If you use `SDDP.jl`, we ask that you please cite the following
-[paper](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf):
+If you use `SDDP.jl`, we ask that you please cite the following:
 ```
 @article{dowson_sddp.jl,
 	title = {{SDDP}.jl: a {Julia} package for stochastic dual dynamic programming},
@@ -52,22 +51,24 @@ If you use `SDDP.jl`, we ask that you please cite the following
 	year = {2017}
 }
 ```
+Here is an earlier [preprint](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf).
 
 If you use the infinite horizon functionality, we ask that you please cite the
-following [paper](http://www.optimization-online.org/DB_HTML/2018/11/6914.html):
+following:
 ```
 @article{dowson_policy_graph,
 	title = {The policy graph decomposition of multistage stochastic
       optimization problems},
-	url = {http://www.optimization-online.org/DB_HTML/2018/11/6914.html},
-	journal = {Optimization Online},
+	url = {https://doi.org/10.1002/net.21932},
+	journal = {Networks},
 	author = {Dowson, O.},
-	year = {2018}
+	year = {2020}
 }
 ```
+Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2018/11/6914.html).
 
 If you use the partially observable functionality, we ask that you please cite the
-following [paper](http://www.optimization-online.org/DB_HTML/2019/03/7141.html):
+following:
 ```
 @article{dowson_pomsp,
 	title = {Partially observable multistage stochastic programming},
@@ -77,3 +78,4 @@ following [paper](http://www.optimization-online.org/DB_HTML/2019/03/7141.html):
 	year = {2019}
 }
 ```
+Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2019/03/7141.html).
