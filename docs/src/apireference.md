@@ -60,6 +60,14 @@ SDDP.Serial
 SDDP.Asynchronous
 ```
 
+### Forward passes
+
+```@docs
+SDDP.AbstractForwardPass
+SDDP.DefaultForwardPass
+SDDP.RevisitingForwardPass
+```
+
 ### Risk Measures
 
 ```@docs

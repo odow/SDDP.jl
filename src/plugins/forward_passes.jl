@@ -3,6 +3,11 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+"""
+    DefaultForwardPass()
+
+The default forward pass.
+"""
 struct DefaultForwardPass <: AbstractForwardPass end
 
 function forward_pass(
@@ -107,4 +112,53 @@ function forward_pass(
         belief_states = belief_states,
         cumulative_value = cumulative_value,
     )
+end
+
+mutable struct RevisitingForwardPass <: AbstractForwardPass
+    period::Int
+    sub_pass::AbstractForwardPass
+    archive::Vector{Any}
+    last_index::Int
+    counter::Int
+
+    """
+        RevisitingForwardPass(
+            period::Int = 500;
+            sub_pass::AbstractForwardPass = DefaultForwardPass()
+        )
+
+    A forward pass scheme that generate `period` new forward passes (using
+    `sub_pass`), then revisits all previously explored forward passes. This can
+    be useful to encourage convergence at a diversity of points in the
+    state-space.
+
+    Set `period = typemax(Int)` to disable.
+
+    For example, if `period = 2`, then the forward passes will be revisited as
+    follows: `1, 2, 1, 2, 3, 4, 1, 2, 3, 4, 5, 6, 1, 2, ...`.
+    """
+    function RevisitingForwardPass(
+        period::Int = 500;
+        sub_pass::AbstractForwardPass = DefaultForwardPass(),
+    )
+        @assert period > 0
+        return new(period, sub_pass, Any[], 0, 0)
+    end
+end
+
+function forward_pass(
+    model::PolicyGraph, options::Options, fp::RevisitingForwardPass
+)
+    fp.counter += 1
+    if fp.counter - fp.period > fp.last_index
+        fp.counter = 1
+        fp.last_index = length(fp.archive)
+    end
+    if fp.counter <= length(fp.archive)
+        return fp.archive[fp.counter]
+    else
+        pass = forward_pass(model, options, fp.sub_pass)
+        push!(fp.archive, pass)
+        return pass
+    end
 end
