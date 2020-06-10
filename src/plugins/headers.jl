@@ -254,3 +254,29 @@ function master_loop end
 Simulate the policy using the parallel scheme.
 """
 function _simulate end
+
+# ============================= forward pass ============================= #
+
+"""
+    AbstractForwardPass
+
+Abstract type for different forward passes.
+"""
+abstract type AbstractForwardPass end
+
+"""
+    forward_pass(model::PolicyGraph, options::Options, ::AbstractForwardPass)
+
+Return a forward pass as a named tuple with the following fields:
+
+    (
+        ;scenario_path,
+        sampled_states,
+        objective_states,
+        belief_states,
+        cumulative_value,
+    )
+
+See `DefaultForwardPass` for details.
+"""
+function forward_pass end

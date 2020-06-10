@@ -48,6 +48,7 @@ include("plugins/stopping_rules.jl")
 include("plugins/integrality_handlers.jl")
 include("plugins/parallel_schemes.jl")
 include("plugins/backward_sampling_schemes.jl")
+include("plugins/forward_passes.jl")
 
 # Visualization related code.
 include("visualization/publication_plot.jl")

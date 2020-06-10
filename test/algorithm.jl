@@ -37,7 +37,9 @@ using Test
             SDDP.Log[],
             IOBuffer(),
             1,
+            SDDP.DefaultForwardPass(),
         ),
+        SDDP.DefaultForwardPass(),
     )
     simulated_value = 0.0
     for ((node_index, noise), state) in
