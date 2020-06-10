@@ -120,30 +120,30 @@ mutable struct RevisitingForwardPass <: AbstractForwardPass
     archive::Vector{Any}
     last_index::Int
     counter::Int
+end
 
-    """
-        RevisitingForwardPass(
-            period::Int = 500;
-            sub_pass::AbstractForwardPass = DefaultForwardPass()
-        )
-
-    A forward pass scheme that generate `period` new forward passes (using
-    `sub_pass`), then revisits all previously explored forward passes. This can
-    be useful to encourage convergence at a diversity of points in the
-    state-space.
-
-    Set `period = typemax(Int)` to disable.
-
-    For example, if `period = 2`, then the forward passes will be revisited as
-    follows: `1, 2, 1, 2, 3, 4, 1, 2, 3, 4, 5, 6, 1, 2, ...`.
-    """
-    function RevisitingForwardPass(
+"""
+    RevisitingForwardPass(
         period::Int = 500;
-        sub_pass::AbstractForwardPass = DefaultForwardPass(),
+        sub_pass::AbstractForwardPass = DefaultForwardPass()
     )
-        @assert period > 0
-        return new(period, sub_pass, Any[], 0, 0)
-    end
+
+A forward pass scheme that generate `period` new forward passes (using
+`sub_pass`), then revisits all previously explored forward passes. This can
+be useful to encourage convergence at a diversity of points in the
+state-space.
+
+Set `period = typemax(Int)` to disable.
+
+For example, if `period = 2`, then the forward passes will be revisited as
+follows: `1, 2, 1, 2, 3, 4, 1, 2, 3, 4, 5, 6, 1, 2, ...`.
+"""
+function RevisitingForwardPass(
+    period::Int = 500;
+    sub_pass::AbstractForwardPass = DefaultForwardPass(),
+)
+    @assert period > 0
+    return RevisitingForwardPass(period, sub_pass, Any[], 0, 0)
 end
 
 function forward_pass(
