@@ -92,13 +92,12 @@ end
             @test length(fp.archive) == i
         elseif i == 3
             @test length(fp.archive) == 2
-            @test pass == fp.archive[1]
+            @test pass.cumulative_value == fp.archive[1].cumulative_value
         elseif i == 4
             @test length(fp.archive) == 2
-            @test pass == fp.archive[2]
+            @test pass.cumulative_value == fp.archive[1].cumulative_value
         elseif i == 5
             @test length(fp.archive) == 3
-            @test pass != fp.archive[1]
         end
     end
 end
