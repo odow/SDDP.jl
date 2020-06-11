@@ -7,47 +7,6 @@ using GLPK
 using SDDP
 using Test
 
-@testset "Forward Pass" begin
-    model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2);
-        sense = :Max,
-        bellman_function = SDDP.BellmanFunction(upper_bound = 100.0),
-        optimizer = GLPK.Optimizer,
-    ) do node, stage
-        @variable(node, x, SDDP.State, initial_value = 0.0)
-        @stageobjective(node, x.out)
-        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_upper_bound(x.out, ω)
-        end
-    end
-    forward_trajectory = SDDP.forward_pass(
-        model,
-        SDDP.Options(
-            model,
-            Dict(:x => 1.0),
-            SDDP.InSampleMonteCarlo(),
-            SDDP.CompleteSampler(),
-            SDDP.Expectation(),
-            0.0,
-            true,
-            SDDP.AbstractStoppingRule[],
-            (a, b) -> nothing,
-            0,
-            0.0,
-            SDDP.Log[],
-            IOBuffer(),
-            1,
-        ),
-    )
-    simulated_value = 0.0
-    for ((node_index, noise), state) in
-        zip(forward_trajectory.scenario_path, forward_trajectory.sampled_states)
-        @test state[:x] == noise
-        simulated_value += noise
-    end
-    @test simulated_value == forward_trajectory.cumulative_value
-end
-
 @testset "to nodal forms" begin
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
