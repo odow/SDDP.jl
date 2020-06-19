@@ -106,8 +106,8 @@ function slave_update(model::PolicyGraph, result::IterationResult)
                 cut.theta,
                 cut.pi,
                 cut.x,
-                nothing,
-                nothing;
+                cut.obj_y,
+                cut.belief_y;
                 cut_selection = true,
             )
         end
