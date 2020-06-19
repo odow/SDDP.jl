@@ -51,7 +51,13 @@ end
         false,
         :not_converged,
         Dict(
-            1 => Any[(theta = 1.0, pi = Dict(:x => 2.0), x = Dict(:x => 3.0))],
+            1 => Any[(
+                theta = 1.0,
+                pi = Dict(:x => 2.0),
+                x = Dict(:x => 3.0),
+                obj_y = nothing,
+                belief_y = nothing,
+            )],
             2 => Any[],
         ),
     )
@@ -71,7 +77,13 @@ end
         false,
         :not_converged,
         Dict(
-            1 => Any[(theta = 1.0, pi = Dict(:x => 2.0), x = Dict(:x => 3.0)), nothing],
+            1 => Any[(
+                theta = 1.0,
+                pi = Dict(:x => 2.0),
+                x = Dict(:x => 3.0),
+                obj_y = nothing,
+                belief_y = nothing,
+            ), nothing],
             2 => Any[],
         ),
     )
