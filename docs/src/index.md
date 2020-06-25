@@ -45,10 +45,10 @@ If you use `SDDP.jl`, we ask that you please cite the following:
 ```
 @article{dowson_sddp.jl,
 	title = {{SDDP}.jl: a {Julia} package for stochastic dual dynamic programming},
-	url = {http://www.optimization-online.org/DB_HTML/2017/12/6388.html},
-	journal = {Optimization Online},
+	journal = {INFORMS Journal on Computing},
 	author = {Dowson, O. and Kapelevich, L.},
-	year = {2017}
+	note = {in press},
+	year = {2020}
 }
 ```
 Here is an earlier [preprint](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf).
@@ -59,9 +59,12 @@ following:
 @article{dowson_policy_graph,
 	title = {The policy graph decomposition of multistage stochastic
       optimization problems},
-	url = {https://doi.org/10.1002/net.21932},
+	doi = {https://doi.org/10.1002/net.21932},
 	journal = {Networks},
 	author = {Dowson, O.},
+	volume = {76},
+	issue = {1},
+	pages = {3-23},
 	year = {2020}
 }
 ```
@@ -72,10 +75,13 @@ following:
 ```
 @article{dowson_pomsp,
 	title = {Partially observable multistage stochastic programming},
-	url = {http://www.optimization-online.org/DB_HTML/2019/03/7141.html},
-	journal = {Optimization Online},
-	author = {Dowson, O., Morton, D.P., and Pagnoncelli, B.},
-	year = {2019}
+	doi = {https://doi.org/10.1016/j.orl.2020.06.005},
+	journal = {Operations Research Letters},
+	author = {Dowson, O., Morton, D.P., and Pagnoncelli, B.K.},
+	volume = {48},
+	issue = {4},
+	pages = {505-512},
+	year = {2020}
 }
 ```
 Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2019/03/7141.html).
