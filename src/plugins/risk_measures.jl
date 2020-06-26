@@ -346,7 +346,7 @@ function non_uniform_dro(
     K = collect(1:m)
     # check if nomial probability is 0
     for i in K
-        if q[i] ≈ 0
+        if isapprox(q[i], 0.0, atol = 1e-10)
             p[i] = 0
             splice!(K, i)
         end
@@ -359,16 +359,13 @@ function non_uniform_dro(
     while length(K) > 1
         # step 2(a)
         z_bar = sum(z[i] for i in K) / length(K)
-        #println(z_bar)
         s² = sum(z[i]^2 - z_bar^2 for i in K) / length(K)
-        #println(s²)
         # step 2(b)
         if length(K) == m
             for i in K
                 p[i] = q[i] +
                 (z[i] - z_bar) / (sqrt(m) * sqrt(s²)) * measure.radius
             end
-            #println(p)
         else
             for i in not_in_K
                 p[i] = 0
@@ -377,22 +374,10 @@ function non_uniform_dro(
             sum_qj = sum(q[i] for i in not_in_K)
             sum_qj_squared = sum(q[i]^2 for i in not_in_K)
             len_k = length(K)
-            #println(sum_qj)
-            #println(sum_qj_squared)
-            #println(len_k)
-            #println("s", sqrt(s²))
-            #@show s², len_k
-
             n = sqrt(len_k * (measure.radius^2 - sum_qj_squared)-sum_qj^2)
-            #println("n", n)
             for i in K
                 p[i] = q[i] + 1 / len_k * (sum_qj + n * (z[i] - z_bar) / sqrt(s²))
-                #println(q[i])
-                #println(z[i])
-                #println(z_bar)
-                #println(p[i])
             end
-            #println(p)
         end
 
         # step 2(c)
@@ -403,7 +388,6 @@ function non_uniform_dro(
         # find i(K)
         # find the list of indexes for which p is less than 0
         negative_p = K[ p[K] .< 0]
-        #print("nege ", negative_p)
         computed_r = zeros(0)
         sum_qj = 0
         sum_qj_squared = 0
@@ -412,27 +396,22 @@ function non_uniform_dro(
             sum_qj_squared = sum(q[i]^2 for i in not_in_K)
         end
         len_k = length(K)
-        for i in negative_p
-            r² = (((-q[i] * len_k  - sum_qj)/((z[i] - z_bar)/sqrt(s²)))^2 + sum_qj_squared^2)/len_k + sum_qj_squared
-            append!(computed_r, r²)
-        end
-        #@show p
-        #print(computed_r)
+        computed_r = [
+            (((-q[i] * len_k  - sum_qj)/((z[i] - z_bar)/sqrt(s²)))^2 + sum_qj_squared^2)/len_k + sum_qj_squared
+            for i in negative_p
+        ]
         i_K = negative_p[argmin(computed_r)]
         append!(not_in_K, i_K)
-        filter!(e->e≠i_K,K)
-        #splice!(K, i_K)
-        #println("not_in_K", not_in_K)
-        #println("K", K)
+        filter!(e -> e != i_K,K)
     end
     # step 3
     for i in not_in_K
         p[i] = 0
     end
     p[K[1]] = 1
-    #copyto!(risk_adjusted_probability, value.(q))
     return 0.0
 end
+
 
 """
 Algorithm (2) of Philpott et al. Assumes that the nominal distribution is
