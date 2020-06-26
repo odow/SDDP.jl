@@ -262,7 +262,7 @@ end
             false,
         )
         @test risk_adjusted_probability ≈ [0.0, 0.0, 0.323223, 0.676777, 0.0] atol = 1e-6
-
+    end
     @testset "Min - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         SDDP.adjust_probability(
