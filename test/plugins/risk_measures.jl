@@ -189,7 +189,7 @@ end
     end
     @testset "Non-uniform distribution" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
-        @test_throws Exception SDDP.adjust_probability(
+        SDDP.adjust_probability(
             SDDP.ModifiedChiSquared(0.0),
             risk_adjusted_probability,
             [0.1, 0.2, 0.3, 0.2, 0.2],
@@ -197,7 +197,7 @@ end
             [-2.0, -1.0, -3.0, -4.0, -5.0],
             true,
         )
-        @test risk_adjusted_probability ≈ [0.2, 0.2, 0.2, 0.2, 0.2] atol = 1e-6
+        @test risk_adjusted_probability ≈ [0.1, 0.2, 0.3, 0.2, 0.2] atol = 1e-6
     end
     @testset "Min - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)

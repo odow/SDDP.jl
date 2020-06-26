@@ -366,7 +366,7 @@ function non_uniform_dro(
         if length(K) == m
             for i in K
                 p[i] = q[i] +
-                (z[i] - z_bar) / (sqrt(m) * sqrt(s²)) * measure.r
+                (z[i] - z_bar) / (sqrt(m) * sqrt(s²)) * measure.radius
             end
             #println(p)
         else
@@ -383,7 +383,7 @@ function non_uniform_dro(
             #println("s", sqrt(s²))
             #@show s², len_k
 
-            n = sqrt(len_k * (measure.r^2 - sum_qj_squared)-sum_qj^2)
+            n = sqrt(len_k * (measure.radius^2 - sum_qj_squared)-sum_qj^2)
             #println("n", n)
             for i in K
                 p[i] = q[i] + 1 / len_k * (sum_qj + n * (z[i] - z_bar) / sqrt(s²))
