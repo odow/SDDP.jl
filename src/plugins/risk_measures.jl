@@ -329,15 +329,109 @@ uniform.
 """
 function non_uniform_dro(
     measure::ModifiedChiSquared,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    objective_realizations::Vector{Float64},
+    p::Vector{Float64},
+    q::Vector{Float64},
+    z::Vector{Float64},
     is_minimization::Bool,
 )
-    error(
-        "Current implementation of ModifiedChiSquared assumes that the " *
-        "nominal distribution is uniform.",
-    )
+    m = length(z)
+    if Statistics.std(z) < 1e-6
+        p .= q
+        return 0.0
+    end
+    if !is_minimization
+        z = -z
+    end
+    # step 1
+    K = collect(1:m)
+    # check if nomial probability is 0
+    for i in K
+        if q[i] ≈ 0
+            p[i] = 0
+            splice!(K, i)
+        end
+    end
+    #update m
+    m = length(K)
+    # use this to store the index popped out of K
+    not_in_K = []
+    # step 2
+    while length(K) > 1
+        # step 2(a)
+        z_bar = sum(z[i] for i in K) / length(K)
+        #println(z_bar)
+        s² = sum(z[i]^2 - z_bar^2 for i in K) / length(K)
+        #println(s²)
+        # step 2(b)
+        if length(K) == m
+            for i in K
+                p[i] = q[i] +
+                (z[i] - z_bar) / (sqrt(m) * sqrt(s²)) * measure.r
+            end
+            #println(p)
+        else
+            for i in not_in_K
+                p[i] = 0
+            end
+
+            sum_qj = sum(q[i] for i in not_in_K)
+            sum_qj_squared = sum(q[i]^2 for i in not_in_K)
+            len_k = length(K)
+            #println(sum_qj)
+            #println(sum_qj_squared)
+            #println(len_k)
+            #println("s", sqrt(s²))
+            #@show s², len_k
+
+            n = sqrt(len_k * (measure.r^2 - sum_qj_squared)-sum_qj^2)
+            #println("n", n)
+            for i in K
+                p[i] = q[i] + 1 / len_k * (sum_qj + n * (z[i] - z_bar) / sqrt(s²))
+                #println(q[i])
+                #println(z[i])
+                #println(z_bar)
+                #println(p[i])
+            end
+            #println(p)
+        end
+
+        # step 2(c)
+        if all(pi -> pi >= 0.0, p)
+            return 0.0
+        end
+
+        # find i(K)
+        # find the list of indexes for which p is less than 0
+        negative_p = K[ p[K] .< 0]
+        #print("nege ", negative_p)
+        computed_r = zeros(0)
+        sum_qj = 0
+        sum_qj_squared = 0
+        if length(not_in_K) > 0
+            sum_qj = sum(q[i] for i in not_in_K)
+            sum_qj_squared = sum(q[i]^2 for i in not_in_K)
+        end
+        len_k = length(K)
+        for i in negative_p
+            r² = (((-q[i] * len_k  - sum_qj)/((z[i] - z_bar)/sqrt(s²)))^2 + sum_qj_squared^2)/len_k + sum_qj_squared
+            append!(computed_r, r²)
+        end
+        #@show p
+        #print(computed_r)
+        i_K = negative_p[argmin(computed_r)]
+        append!(not_in_K, i_K)
+        filter!(e->e≠i_K,K)
+        #splice!(K, i_K)
+        #println("not_in_K", not_in_K)
+        #println("K", K)
+    end
+    # step 3
+    for i in not_in_K
+        p[i] = 0
+    end
+    p[K[1]] = 1
+    #copyto!(risk_adjusted_probability, value.(q))
+    return 0.0
 end
 
 """
