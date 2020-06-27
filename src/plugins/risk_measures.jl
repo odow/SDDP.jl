@@ -354,17 +354,16 @@ function non_uniform_dro(
     #update m
     m = length(K)
     # use this to store the index popped out of K
-    not_in_K = []
+    not_in_K = Int[]
     # step 2
     while length(K) > 1
         # step 2(a)
         z_bar = sum(z[i] for i in K) / length(K)
-        s² = sum(z[i]^2 - z_bar^2 for i in K) / length(K)
+        s = sqrt(sum(z[i]^2 - z_bar^2 for i in K) / length(K))
         # step 2(b)
         if length(K) == m
             for i in K
-                p[i] = q[i] +
-                (z[i] - z_bar) / (sqrt(m) * sqrt(s²)) * measure.radius
+                p[i] = q[i] + (z[i] - z_bar) / (sqrt(m) * s) * measure.radius
             end
         else
             for i in not_in_K
@@ -376,7 +375,7 @@ function non_uniform_dro(
             len_k = length(K)
             n = sqrt(len_k * (measure.radius^2 - sum_qj_squared)-sum_qj^2)
             for i in K
-                p[i] = q[i] + 1 / len_k * (sum_qj + n * (z[i] - z_bar) / sqrt(s²))
+                p[i] = q[i] + 1 / len_k * (sum_qj + n * (z[i] - z_bar) / s)
             end
         end
 
@@ -397,7 +396,7 @@ function non_uniform_dro(
         end
         len_k = length(K)
         computed_r = [
-            (((-q[i] * len_k  - sum_qj)/((z[i] - z_bar)/sqrt(s²)))^2 + sum_qj_squared^2)/len_k + sum_qj_squared
+            (((-q[i] * len_k  - sum_qj)/((z[i] - z_bar))/s)^2 + sum_qj_squared^2)/len_k + sum_qj_squared
             for i in negative_p
         ]
         i_K = negative_p[argmin(computed_r)]
