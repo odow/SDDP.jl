@@ -329,16 +329,91 @@ uniform.
 """
 function non_uniform_dro(
     measure::ModifiedChiSquared,
-    risk_adjusted_probability::Vector{Float64},
-    original_probability::Vector{Float64},
-    objective_realizations::Vector{Float64},
+    p::Vector{Float64},
+    q::Vector{Float64},
+    z::Vector{Float64},
     is_minimization::Bool,
 )
-    error(
-        "Current implementation of ModifiedChiSquared assumes that the " *
-        "nominal distribution is uniform.",
-    )
+    m = length(z)
+    if Statistics.std(z) < 1e-6
+        p .= q
+        return 0.0
+    end
+    if !is_minimization
+        z = -z
+    end
+    # step 1
+    K = collect(1:m)
+    # check if nomial probability is 0
+    for i in K
+        if isapprox(q[i], 0.0, atol = 1e-10)
+            p[i] = 0
+            splice!(K, i)
+        end
+    end
+    #update m
+    m = length(K)
+    # use this to store the index popped out of K
+    not_in_K = Int[]
+    # step 2
+    while length(K) > 1
+        # step 2(a)
+        z_bar = sum(z[i] for i in K) / length(K)
+        s = sqrt(sum(z[i]^2 - z_bar^2 for i in K) / length(K))
+        if isapprox(s, 0.0, atol = 1e-10)
+            error("s is too small")
+	end
+        # step 2(b)
+        if length(K) == m
+            for i in K
+                p[i] = q[i] + (z[i] - z_bar) / (sqrt(m) * s) * measure.radius
+            end
+        else
+            for i in not_in_K
+                p[i] = 0
+            end
+
+            sum_qj = sum(q[i] for i in not_in_K)
+            sum_qj_squared = sum(q[i]^2 for i in not_in_K)
+            len_k = length(K)
+            n = sqrt(len_k * (measure.radius^2 - sum_qj_squared)-sum_qj^2)
+            for i in K
+                p[i] = q[i] + 1 / len_k * (sum_qj + n * (z[i] - z_bar) / s)
+            end
+        end
+
+        # step 2(c)
+        if all(pi -> pi >= 0.0, p)
+            return 0.0
+        end
+
+        # find i(K)
+        # find the list of indexes for which p is less than 0
+        negative_p = K[ p[K] .< 0]
+        computed_r = zeros(0)
+        sum_qj = 0
+        sum_qj_squared = 0
+        if length(not_in_K) > 0
+            sum_qj = sum(q[i] for i in not_in_K)
+            sum_qj_squared = sum(q[i]^2 for i in not_in_K)
+        end
+        len_k = length(K)
+        computed_r = [
+            (((-q[i] * len_k  - sum_qj)/((z[i] - z_bar))/s)^2 + sum_qj_squared^2)/len_k + sum_qj_squared
+            for i in negative_p
+        ]
+        i_K = negative_p[argmin(computed_r)]
+        append!(not_in_K, i_K)
+        filter!(e -> e != i_K,K)
+    end
+    # step 3
+    for i in not_in_K
+        p[i] = 0
+    end
+    p[K[1]] = 1
+    return 0.0
 end
+
 
 """
 Algorithm (2) of Philpott et al. Assumes that the nominal distribution is

@@ -187,16 +187,81 @@ end
         )
         @test risk_adjusted_probability ≈ [0.2, 0.2, 0.2, 0.2, 0.2] atol = 1e-6
     end
-    @testset "Non-uniform distribution" begin
+    @testset "Non-uniform Expectation" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
-        @test_throws Exception SDDP.adjust_probability(
-            SDDP.ModifiedChiSquared(0.1),
+        SDDP.adjust_probability(
+            SDDP.ModifiedChiSquared(0.0),
             risk_adjusted_probability,
             [0.1, 0.2, 0.3, 0.2, 0.2],
             [:a, :b, :c, :d, :e],
             [-2.0, -1.0, -3.0, -4.0, -5.0],
             true,
         )
+        @test risk_adjusted_probability ≈ [0.1, 0.2, 0.3, 0.2, 0.2] atol = 1e-6
+    end
+    @testset "Non-uniform Expectation Max" begin
+        risk_adjusted_probability = Vector{Float64}(undef, 5)
+        SDDP.adjust_probability(
+            SDDP.ModifiedChiSquared(0.0),
+            risk_adjusted_probability,
+            [0.1, 0.2, 0.3, 0.2, 0.2],
+            [:a, :b, :c, :d, :e],
+            [-2.0, -1.0, -3.0, -4.0, -5.0],
+            false,
+        )
+        @test risk_adjusted_probability ≈ [0.1, 0.2, 0.3, 0.2, 0.2] atol = 1e-6
+    end
+   
+    @testset "Non-uniform Worst Case" begin
+        risk_adjusted_probability = Vector{Float64}(undef, 5)
+        SDDP.adjust_probability(
+            SDDP.ModifiedChiSquared(6.0),
+            risk_adjusted_probability,
+            [0.1, 0.2, 0.3, 0.3, 0.1],
+            [:a, :b, :c, :d, :e],
+            [-2.0, -1.0, -3.0, -4.0, -5.0],
+            true,
+        )
+        @test risk_adjusted_probability ≈ [0.0, 1.0, 0.0, 0.0, 0.0] atol = 1e-6
+    end
+   
+    @testset "Non-uniform Worst Case Max" begin
+        risk_adjusted_probability = Vector{Float64}(undef, 5)
+        SDDP.adjust_probability(
+            SDDP.ModifiedChiSquared(6.0),
+            risk_adjusted_probability,
+            [0.1, 0.2, 0.3, 0.3, 0.1],
+            [:a, :b, :c, :d, :e],
+            [-2.0, -1.0, -3.0, -4.0, -5.0],
+            false,
+        )
+        @test risk_adjusted_probability ≈ [0.0, 0.0, 0.0, 0.0, 1.0] atol = 1e-6
+    end
+   
+    @testset "Non-uniform" begin
+        risk_adjusted_probability = Vector{Float64}(undef, 5)
+        SDDP.adjust_probability(
+            SDDP.ModifiedChiSquared(0.45),
+            risk_adjusted_probability,
+            [0.1, 0.2, 0.3, 0.3, 0.1],
+            [:a, :b, :c, :d, :e],
+            [-2.0, -1.0, -3.0, -4.0, -0.5],
+            true,
+        )
+        @test risk_adjusted_probability ≈ [0.115714, 0.372861, 0.158568, 0.001421,0.351435] atol = 1e-6
+    end
+
+    @testset "Non-uniform Max" begin
+        risk_adjusted_probability = Vector{Float64}(undef, 5)
+        SDDP.adjust_probability(
+            SDDP.ModifiedChiSquared(0.45),
+            risk_adjusted_probability,
+            [0.1, 0.2, 0.3, 0.3, 0.1],
+            [:a, :b, :c, :d, :e],
+            [-2.0, -1.0, -3.0, -4.0, -0.5],
+            false,
+        )
+        @test risk_adjusted_probability ≈ [0.0, 0.0, 0.323223, 0.676777, 0.0] atol = 1e-6
     end
     @testset "Min - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
