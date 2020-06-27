@@ -360,6 +360,9 @@ function non_uniform_dro(
         # step 2(a)
         z_bar = sum(z[i] for i in K) / length(K)
         s = sqrt(sum(z[i]^2 - z_bar^2 for i in K) / length(K))
+        if isapprox(s, 0.0, atol = 1e-10)
+            error("s is too small")
+	end
         # step 2(b)
         if length(K) == m
             for i in K
