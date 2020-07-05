@@ -280,6 +280,11 @@ function solve_subproblem(
         model.ext[:total_solves] = 1
     end
 
+    if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+        node.attempt_numerical_recovery(node)
+    end
+
+
     # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         write_subproblem_to_file(
