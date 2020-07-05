@@ -248,6 +248,27 @@ function parameterize(node::Node, noise)
     return
 end
 
+function attempt_numerical_recovery(node::Node)
+    @warn("Attempting to recover from numerical instability...")
+    if JuMP.mode(node.subproblem) == JuMP.DIRECT
+        @warn(
+            "Unable to recover in direct mode! Remove `direct = true` when " *
+            "creating the policy graph."
+        )
+    else
+        MOI.Utilities.reset_optimizer(node.subproblem)
+        optimize!(node.subproblem)
+    end
+    if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+        write_subproblem_to_file(
+            node,
+            "subproblem_$(node.index).mof.json",
+            throw_error = true,
+        )
+    end
+    return
+end
+
 # Internal function: solve the subproblem associated with node given the
 # incoming state variables state and realization of the stagewise-independent
 # noise term noise. If require_duals=true, also return the dual variables
@@ -280,13 +301,8 @@ function solve_subproblem(
         model.ext[:total_solves] = 1
     end
 
-    # Test for primal feasibility.
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-        write_subproblem_to_file(
-            node,
-            "subproblem_$(node.index).mof.json",
-            throw_error = true,
-        )
+        attempt_numerical_recovery(node)
     end
 
     state = get_outgoing_state(node)
