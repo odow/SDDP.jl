@@ -255,14 +255,10 @@ function attempt_numerical_recovery(node::Node)
             "Unable to recover in direct mode! Remove `direct = true` when " *
             "creating the policy graph."
         )
-        write_subproblem_to_file(
-            node,
-            "subproblem_$(node.index).mof.json",
-            throw_error = true,
-        )
+    else
+        MOI.Utilities.reset_optimizer(node.subproblem)
+        optimize!(node.subproblem)
     end
-    MOI.Utilities.reset_optimizer(node.subproblem)
-    optimize!(node.subproblem)
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         write_subproblem_to_file(
             node,
