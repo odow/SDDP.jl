@@ -374,7 +374,6 @@ mutable struct Node{T}
     # An over-loadable hook for the JuMP.optimize! function.
     pre_optimize_hook::Union{Nothing,Function}
     post_optimize_hook::Union{Nothing,Function}
-    attempt_numerical_recovery::Function
     # Approach for handling discrete variables.
     integrality_handler # TODO either leave untyped or define ::AbstractIntegralityHandler
     # The user's optimizer. We use this in asynchronous mode.
@@ -391,11 +390,6 @@ end
 
 function post_optimize_hook(f::Function, node::Node)
     node.post_optimize_hook = f
-    return
-end
-
-function attempt_numerical_recovery(f::Function, node::Node)
-    node.attempt_numerical_recovery = f
     return
 end
 
@@ -523,20 +517,6 @@ function MarkovianPolicyGraph(
     return PolicyGraph(builder, MarkovianGraph(transition_matrices); kwargs...)
 end
 
-function default_attempt_numerical_recovery(node::Node)
-    @warn("Attempting to recover from numerical instability...")
-    if JuMP.mode(node.subproblem) == JuMP.DIRECT
-        @warn(
-            "... Can't recover in direct mode! Remove `direct = true` when " *
-            "creating the policy graph."
-        )
-        return
-    end
-    MOI.Utilities.reset_optimizer(node.subproblem)
-    optimize!(node.subproblem)
-    return
-end
-
 """
     PolicyGraph(
         builder::Function,
@@ -637,8 +617,6 @@ function PolicyGraph(
             # The optimize hook defaults to nothing.
             nothing,
             nothing,
-            # Default numerical recovery
-            default_attempt_numerical_recovery,
             integrality_handler,
             direct_mode ? nothing : optimizer,
             # The extension dictionary.
