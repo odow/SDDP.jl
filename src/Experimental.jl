@@ -1,16 +1,23 @@
-module Experimental
+#  Copyright 2017-20, Oscar Dowson.
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using SDDP
+"""
+    Base.write(io::IO, model::PolicyGraph)
 
-import JSON
+WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
+SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
 
-function Base.write(io::IO, model::SDDP.PolicyGraph)
+Write `model` to `io` in the StochOptFormat file format.
+"""
+function Base.write(io::IO, model::PolicyGraph)
     edges = Dict{String, Any}[]
     _add_edges(edges, "$(model.root_node)", model.root_children)
     nodes = Dict{String, Any}()
     for (node_name, node) in model.nodes
         _add_edges(edges, "$(node_name)", node.children)
-        _add_node_to_dict(nodes, node, node_name)
+        _add_node_to_dict(nodes, node, "$(node_name)")
     end
     sof = Dict(
         "description" => "A problem exported from SDDP.jl",
@@ -24,30 +31,29 @@ function Base.write(io::IO, model::SDDP.PolicyGraph)
         ),
         "nodes" => nodes,
         "edges" => edges,
+        # TODO(odow): generate `test_scenarios`.
+        "test_scenarios" => Any[]
     )
     return Base.write(io, JSON.json(sof))
 end
 
-function write_to_file(model::SDDP.PolicyGraph, filename::String)
-    return open(io -> Base.write(io, model), filename, "w")
-end
-
-function _add_edges(edges, from::String, children)
+function _add_edges(
+    edges::Vector{Dict{String, Any}}, from::String, children::Vector{<:Noise}
+)
     for child in children
         push!(
             edges,
             Dict(
                 "from" => from,
                 "to" => "$(child.term)",
-                "probability" => "$(child.probability)",
+                "probability" => child.probability,
             )
         )
     end
 end
 
-function _add_node_to_dict(dest::Dict, node::SDDP.Node, node_name)
-    realizations = Dict{Any, Any}[]
-    random_variables = String[]
+function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
+    random_variables, realizations = String, Dict{String, Any}[]
     for noise in node.noise_terms
         support = Dict{String, Float64}()
         node.parameterize(noise.term)
@@ -62,21 +68,14 @@ function _add_node_to_dict(dest::Dict, node::SDDP.Node, node_name)
         )
         if length(realizations) == 1
             random_variables = collect(keys(support))
-        else
-            @assert length(setdiff(random_variables, keys(support))) == 0
         end
+        @assert length(setdiff(random_variables, keys(support))) == 0
     end
     for x in random_variables
         unfix(variable_by_name(node.subproblem, x))
     end
     set_objective_function(node.subproblem, node.stage_objective)
-    dest_model = MOI.FileFormats.Model(format = MOI.FileFormats.FORMAT_MOF)
-    MOI.copy_to(dest_model, backend(node.subproblem))
-    io = IOBuffer()
-    Base.write(io, dest_model)
-    seekstart(io)
-    subproblem = JSON.parse(io)
-    dest["$(node_name)"] = Dict(
+    dest[node_name] = Dict(
         "state_variables" => Dict(
             "$(state_name)" => Dict(
                 "in" => name(state.in), "out" => name(state.out)
@@ -84,10 +83,19 @@ function _add_node_to_dict(dest::Dict, node::SDDP.Node, node_name)
             for (state_name, state) in node.states
         ),
         "random_variables" => random_variables,
-        "subproblem" => subproblem,
-        "realizations" => realizations
+        "subproblem" => _subproblem_to_dict(node.subproblem),
+        "realizations" => realizations,
     )
     return
+end
+
+function _subproblem_to_dict(subproblem::Model)
+    dest_model = MOI.FileFormats.Model(format = MOI.FileFormats.FORMAT_MOF)
+    MOI.copy_to(dest_model, backend(subproblem))
+    io = IOBuffer()
+    Base.write(io, dest_model)
+    seekstart(io)
+    return JSON.parse(io; dicttype = Dict{String, Any})
 end
 
 function _load_mof_model(sp::JuMP.Model, data::Dict, node::String)
@@ -100,28 +108,34 @@ function _load_mof_model(sp::JuMP.Model, data::Dict, node::String)
     return
 end
 
-function read_from_file(filename::String)
-    data = JSON.parsefile(filename)
-    graph = SDDP.Graph(data["root"]["name"])
-    for node in keys(data["nodes"])
-        SDDP.add_node(graph, node)
+"""
+    Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
+
+WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
+SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
+
+Return a `PolicyGraph` object read from `io` in the StochOptFormat file
+format.
+"""
+function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
+    data = JSON.parse(io; dicttype = Dict{String, Any})
+    graph = Graph(data["root"]["name"])
+    for (node_name, _) in data["nodes"]
+        add_node(graph, node_name)
     end
     for edge in data["edges"]
-        SDDP.add_edge(
-            graph,
-            edge["from"] => edge["to"],
-            parse(Float64, edge["probability"])
-        )
+        add_edge(graph, edge["from"] => edge["to"], edge["probability"])
     end
-    model = SDDP.PolicyGraph(
-        graph,
-        sense = :Min,
-        lower_bound = -1e6,
-    ) do sp, node_name
-        _load_mof_model(sp, data, node_name)
-        node = SDDP.get_node(sp)
+    proportion_min = sum(
+        node["subproblem"]["objective"]["sense"] == "min"
+        for (_, node) in data["nodes"]
+    ) / length(data["nodes"])
+    model_sense = proportion_min >= 0.5 ? MOI.MIN_SENSE : MOI.MAX_SENSE
+    function subproblem_builder(sp::Model, node_name::String)
+        _load_mof_model(sp, data, "$(node_name)")
+        node = get_node(sp)
         for (s, state) in data["nodes"][node_name]["state_variables"]
-            node.states[Symbol(s)] = SDDP.State(
+            node.states[Symbol(s)] = State(
                 variable_by_name(node.subproblem, state["in"]),
                 variable_by_name(node.subproblem, state["out"]),
             )
@@ -131,12 +145,29 @@ function read_from_file(filename::String)
             push!(P, realization["probability"])
             push!(Ω, realization["support"])
         end
-        SDDP.parameterize(sp, Ω, P) do ω
+        parameterize(sp, Ω, P) do ω
             for (k, v) in ω
                 fix(variable_by_name(sp, k), v)
             end
         end
-        SDDP.set_stage_objective(sp, objective_function(sp))
+        if objective_sense(sp) == model_sense
+            set_stage_objective(sp, objective_function(sp))
+        else
+            @warn(
+                "Flipping the objective sense of node $(node_name) so that " *
+                "it matches the majority of the subproblems."
+            )
+            set_stage_objective(sp, -objective_function(sp))
+        end
+    end
+    model = if model_sense == MOI.MIN_SENSE
+        PolicyGraph(
+            subproblem_builder, graph; sense = :Min, lower_bound = -abs(bound)
+        )
+    else
+        PolicyGraph(
+            subproblem_builder, graph; sense = :Max, upper_bound = abs(bound)
+        )
     end
     for (k, v) in data["root"]["state_variables"]
         model.initial_root_state[Symbol(k)] = v["initial_value"]
@@ -144,4 +175,30 @@ function read_from_file(filename::String)
     return model
 end
 
+"""
+    write_to_file(model::PolicyGraph, filename::String)
+
+WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
+SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
+
+Write `model` to `filename` in the StochOptFormat file format.
+"""
+function write_to_file(model::PolicyGraph, filename::String)
+    return open(io -> Base.write(io, model), filename, "w")
+end
+
+"""
+    read_from_file(filename::String; kwargs...)::PolicyGraph{String}
+
+WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
+SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
+
+Return a `PolicyGraph` object read from `filename` in the StochOptFormat file
+format.
+
+See [`Base.read(::IO, ::Type{PolicyGraph})`](@ref) for information on the
+keyword arguments that can be provided.
+"""
+function read_from_file(filename::String; kwargs...)
+    return open(io -> Base.read(io, PolicyGraph; kwargs...), filename, "r")
 end

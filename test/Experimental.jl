@@ -3,18 +3,22 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using SDDP
 using GLPK
+using SDDP
+using Test
 
-function FAST_production_scheduling()
+function _create_model(minimization::Bool)
     DEMAND = [2, 10]
     H = 3
     N = 2
     C = [0.2, 0.7]
     S = 2 .+ [0.33, 0.54]
+    sense = minimization ? :Min : :Max
     model = SDDP.LinearPolicyGraph(
         stages = H,
+        sense = sense,
         lower_bound = -50.0,
+        upper_bound = 50.0,
     ) do sp, t
         @variable(sp, x[1:N] >= 0, SDDP.State, initial_value = 0.0)
         @variables(sp, begin
@@ -28,17 +32,31 @@ function FAST_production_scheduling()
         SDDP.parameterize(sp, t == 1 ? [0] : DEMAND) do ω
             JuMP.fix(d, ω)
         end
-        @stageobjective(sp, sum(C[i] * x[i].out for i = 1:N) - S's)
+        if minimization
+            @stageobjective(sp, sum(C[i] * x[i].out for i = 1:N) - S's)
+        else
+            @stageobjective(sp, -sum(C[i] * x[i].out for i = 1:N) + S's)
+        end
     end
     return model
 end
 
-@testset "Read and write to file" begin
-    model = FAST_production_scheduling()
-    SDDP.Experimental.write_to_file(model, "experimental.sof.json")
-    new_model = SDDP.Experimental.read_from_file("experimental.sof.json")
+@testset "Min: Read and write to file" begin
+    model = _create_model(true)
+    SDDP.write_to_file(model, "experimental.sof.json")
+    new_model = SDDP.read_from_file("experimental.sof.json")
     set_optimizer(new_model, GLPK.Optimizer)
     SDDP.train(new_model; iteration_limit = 50, print_level = 0)
     @test SDDP.calculate_bound(new_model) ≈ -23.96 atol = 1e-2
-    rm("experimental.sof.json")
 end
+
+@testset "Max: Read and write to file" begin
+    model = _create_model(false)
+    SDDP.write_to_file(model, "experimental.sof.json")
+    new_model = SDDP.read_from_file("experimental.sof.json")
+    set_optimizer(new_model, GLPK.Optimizer)
+    SDDP.train(new_model; iteration_limit = 50, print_level = 0)
+    @test SDDP.calculate_bound(new_model) ≈ 23.96 atol = 1e-2
+end
+
+rm("experimental.sof.json")
