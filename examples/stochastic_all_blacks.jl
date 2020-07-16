@@ -5,7 +5,7 @@
 
 using SDDP, GLPK, Test
 
-function stockastic_all_blacks()
+function stochastic_all_blacks()
     # Number of time periods
     T = 3
     # Number of seats
@@ -43,4 +43,4 @@ function stockastic_all_blacks()
     @test SDDP.calculate_bound(model) ≈ 8.0
 end
 
-stockastic_all_blacks()
+stochastic_all_blacks()
