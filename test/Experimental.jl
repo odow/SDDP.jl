@@ -3,7 +3,8 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using GLPK
+import GLPK
+import JSON
 import JSONSchema
 using SDDP
 using Test
@@ -109,3 +110,5 @@ const SCHEMA = JSONSchema.Schema(
     end
     rm("experimental.sof.json")
 end
+
+rm("sof.schema.json")
