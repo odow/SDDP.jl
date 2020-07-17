@@ -9,19 +9,34 @@ import JSONSchema
 using SDDP
 using Test
 
-function _create_model(minimization::Bool)
-    DEMAND = [2, 10]
-    H = 3
-    N = 2
-    C = [0.2, 0.7]
-    S = 2 .+ [0.33, 0.54]
-    sense = minimization ? :Min : :Max
-    model = SDDP.LinearPolicyGraph(
-        stages = H,
-        sense = sense,
+function _create_model(
+    minimization::Bool; belief::Bool = false, objective_state::Bool = false
+)
+    graph = SDDP.LinearGraph(3)
+    if belief
+        SDDP.add_ambiguity_set(graph, [1])
+        SDDP.add_ambiguity_set(graph, [2, 3])
+    end
+    model = SDDP.PolicyGraph(
+        graph,
+        sense = minimization ? :Min : :Max,
         lower_bound = -50.0,
         upper_bound = 50.0,
     ) do sp, t
+        N = 2
+        C = [0.2, 0.7]
+        S = 2 .+ [0.33, 0.54]
+        DEMAND = [2, 10]
+        if objective_state
+            SDDP.add_objective_state(
+                (y, w) -> y + ω,
+                sp,
+                initial_value = 0.0,
+                lower_bound = 0.0,
+                upper_bound = 1.0,
+                lipschitz = 1.0,
+            )
+        end
         @variable(sp, x[1:N] >= 0, SDDP.State, initial_value = 0.0)
         @variables(sp, begin
             s[i = 1:N] >= 0
@@ -52,7 +67,7 @@ const SCHEMA = JSONSchema.Schema(
     JSON.parsefile("sof.schema.json"; use_mmap = false)
 )
 
-@testset "Roundtrips" begin
+@testset "StochOptFormat" begin
     @testset "Min: Read and write to file" begin
         base_model = _create_model(true)
         set_optimizer(base_model, GLPK.Optimizer)
@@ -108,7 +123,34 @@ const SCHEMA = JSONSchema.Schema(
             atol = 1e-6
         )
     end
-    rm("experimental.sof.json")
+
+    @testset "Error: existing cuts" begin
+        model = _create_model(true)
+        set_optimizer(model, GLPK.Optimizer)
+        SDDP.train(model; iteration_limit = 1, print_level = 0)
+        err = ErrorException(
+            "StochOptFormat does not support writing after a call to " *
+            "`SDDP.train`."
+        )
+        @test_throws err Base.write(IOBuffer(), model)
+    end
+
+    @testset "Error: belief states" begin
+        model = _create_model(true; belief = true)
+        err = ErrorException("StochOptFormat does not support belief states.")
+        @test_throws err Base.write(IOBuffer(), model)
+    end
+
+    @testset "Error: objective states" begin
+        model = _create_model(true; objective_state = true)
+        err = ErrorException("StochOptFormat does not support objective states.")
+        @test_throws err Base.write(IOBuffer(), model)
+    end
 end
 
-rm("sof.schema.json")
+if isfile("experimental.sof.json")
+    rm("experimental.sof.json")
+end
+if isfile("sof.schema.json")
+    rm("sof.schema.json")
+end

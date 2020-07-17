@@ -3,6 +3,31 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+function _throw_if_belief_states(model::PolicyGraph)
+    if length(model.belief_partition) != 0
+        error("StochOptFormat does not support belief states.")
+    end
+end
+
+function _throw_if_objective_states(model::PolicyGraph)
+    for (_, node) in model.nodes
+        if node.objective_state !== nothing
+            error("StochOptFormat does not support objective states.")
+        end
+    end
+end
+
+function _throw_if_exisiting_cuts(model::PolicyGraph)
+    for (_, node) in model.nodes
+        if length(node.bellman_function.global_theta.cut_oracle.cuts) != 0
+            error(
+                "StochOptFormat does not support writing after a call to " *
+                "`SDDP.train`."
+            )
+        end
+    end
+end
+
 """
     Base.write(io::IO, model::PolicyGraph)
 
@@ -23,6 +48,9 @@ If your model uses something other than this, this function will silently write
 an incorrect formulation of the problem.
 """
 function Base.write(io::IO, model::PolicyGraph)
+    _throw_if_belief_states(model)
+    _throw_if_objective_states(model)
+    _throw_if_exisiting_cuts(model)
     edges = Dict{String, Any}[]
     _add_edges(edges, "$(model.root_node)", model.root_children)
     nodes = Dict{String, Any}()
