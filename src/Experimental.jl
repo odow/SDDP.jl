@@ -74,7 +74,9 @@ function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
     for x in random_variables
         unfix(variable_by_name(node.subproblem, x))
     end
-    set_objective_function(node.subproblem, node.stage_objective)
+    added_variables = _reformulate_objective_uncertainty(
+        node, realizations, random_variables
+    )
     dest[node_name] = Dict(
         "state_variables" => Dict(
             "$(state_name)" => Dict(
@@ -86,10 +88,93 @@ function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
         "subproblem" => _subproblem_to_dict(node.subproblem),
         "realizations" => realizations,
     )
+    if length(added_variables) > 0
+        # Undo the reformulation in user-space.
+        delete(node.subproblem, added_variables)
+        set_objective_function(node.subproblem, node.stage_objective)
+    end
     return
 end
 
-function _subproblem_to_dict(subproblem::Model)
+function _reformulate_objective_uncertainty(
+    node::Node, realizations, random_variables
+)
+    # TODO(odow): handle quadratic objectives.
+    # First loop:
+    #   - build different objectives
+    #   - detect ones that change
+    objectives = AffExpr[]
+    constant_changes, coefficient_changes = false, Set{VariableRef}()
+    for noise in node.noise_terms
+        node.parameterize(noise.term)
+        push!(objectives, convert(AffExpr, node.stage_objective))
+        if length(objectives) > 1
+            obj = objectives[end]
+            if obj.constant != objectives[1].constant
+                constant_changes = true
+            end
+            for k in _dict_diff_keys(objectives[1].terms, obj.terms)
+                push!(coefficient_changes, k)
+            end
+        end
+    end
+    added_variables = VariableRef[]
+    objective = copy(node.stage_objective)
+    # Reformulate a changing objective constant.
+    if constant_changes
+        constant_term = @variable(node.subproblem)
+        push!(added_variables, constant_term)
+        set_name(constant_term, "_SDDPjl_random_objective_constant_")
+        push!(random_variables, "_SDDPjl_random_objective_constant_")
+        for (r, o) in zip(realizations, objectives)
+            r["support"]["_SDDPjl_random_objective_constant_"] = o.constant
+        end
+        objective.constant = 0.0
+        objective.terms[constant_term] = 1.0
+    end
+    # Reformulate changing objective coefficients.
+    if length(coefficient_changes) > 0
+        objective = convert(QuadExpr, objective)
+        for x in coefficient_changes
+            coef_term = @variable(node.subproblem)
+            push!(added_variables, coef_term)
+            coef_name = "_SDDPjl_random_objective_$(name(x))_"
+            set_name(coef_term, coef_name)
+            push!(random_variables, coef_name)
+            for (r, o) in zip(realizations, objectives)
+                r["support"][coef_name] = get(o.terms, x, 0.0)
+            end
+            delete!.(Ref(objective.aff.terms), x)
+            add_to_expression!(objective, 1.0, coef_term, x)
+        end
+    end
+    # Set the objective function to be written out.
+    set_objective_function(node.subproblem, objective)
+    return added_variables
+end
+
+function _dict_diff_keys(
+    x::AbstractDict{K, V}, y::AbstractDict{K, V}
+) where {K, V}
+    diff = Set{K}()
+    for (k, v) in x
+        if haskey(y, k)
+            if v != y[k]
+                push!(diff, k)
+            end
+        else
+            push!(diff, k)
+        end
+    end
+    for k in keys(y)
+        if !haskey(x, k)
+            push!(diff, k)
+        end
+    end
+    return diff
+end
+
+function _subproblem_to_dict(subproblem::JuMP.Model)
     dest_model = MOI.FileFormats.Model(format = MOI.FileFormats.FORMAT_MOF)
     MOI.copy_to(dest_model, backend(subproblem))
     io = IOBuffer()
@@ -145,19 +230,29 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
             push!(P, realization["probability"])
             push!(Ω, realization["support"])
         end
-        parameterize(sp, Ω, P) do ω
-            for (k, v) in ω
-                fix(variable_by_name(sp, k), v)
-            end
-        end
-        if objective_sense(sp) == model_sense
-            set_stage_objective(sp, objective_function(sp))
-        else
+        if objective_sense(sp) != model_sense
             @warn(
                 "Flipping the objective sense of node $(node_name) so that " *
                 "it matches the majority of the subproblems."
             )
-            set_stage_objective(sp, -objective_function(sp))
+        end
+        obj_sgn = objective_sense(sp) == model_sense ? 1 : -1
+        objective_coefficients, objf = _convert_objective_function(
+            sp, String.(data["nodes"][node_name]["random_variables"])
+        )
+        parameterize(sp, Ω, P) do ω
+            for (k, v) in ω
+                x = get(objective_coefficients, k, nothing)
+                if x !== nothing
+                    if objf isa AffExpr
+                        objf.terms[x.var] = x.aff + v * x.coef
+                    else
+                        objf.aff.terms[x.var] = x.aff + v * x.coef
+                    end
+                end
+                fix(variable_by_name(sp, k), v)
+            end
+            @stageobjective(sp, obj_sgn * objf)
         end
     end
     model = if model_sense == MOI.MIN_SENSE
@@ -173,6 +268,41 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
         model.initial_root_state[Symbol(k)] = v["initial_value"]
     end
     return model
+end
+
+function _convert_objective_function(sp::Model, rvs::Vector{String})
+    return _convert_objective_function(sp, rvs, objective_function(sp))
+end
+
+function _convert_objective_function(sp::Model, ::Vector{String}, objf)
+    return Dict{String, Any}(), objf
+end
+
+function _convert_objective_function(
+    sp::Model, rvs::Vector{String}, objf::QuadExpr
+)
+    terms = Dict{String, Any}()
+    aff_obj = copy(objf.aff)
+    quad_terms = empty(copy(objf.terms))
+    for (k, v) in objf.terms
+        a, b = name(k.a), name(k.b)
+        if a in rvs && b in rvs
+            error(
+                "Please open an issue to support random * random in objective."
+            )
+        elseif a in rvs
+            terms[a] = (var = k.b, coef = v, aff = get(aff_obj.terms, a, 0.0))
+        elseif b in rvs
+            terms[a] = (var = k.a, coef = v, aff = get(aff_obj.terms, b, 0.0))
+        else
+            quad_terms[k] = v
+        end
+    end
+    if length(terms) == length(objf.terms)
+        return terms, aff_obj
+    else
+        return terms, QuadExpr(aff_obj, quad_terms)
+    end
 end
 
 """
