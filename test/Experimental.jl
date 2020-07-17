@@ -4,6 +4,7 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using GLPK
+import JSONSchema
 using SDDP
 using Test
 
@@ -43,6 +44,13 @@ function _create_model(minimization::Bool)
     return model
 end
 
+download(
+    "https://odow.github.io/StochOptFormat/sof.schema.json", "sof.schema.json"
+)
+const SCHEMA = JSONSchema.Schema(
+    JSON.parsefile("sof.schema.json"; use_mmap = false)
+)
+
 @testset "Roundtrips" begin
     @testset "Min: Read and write to file" begin
         base_model = _create_model(true)
@@ -51,6 +59,7 @@ end
 
         model = _create_model(true)
         SDDP.write_to_file(model, "experimental.sof.json")
+        @test isvalid(JSON.parsefile("experimental.sof.json"), SCHEMA)
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
@@ -78,6 +87,7 @@ end
 
         model = _create_model(false)
         SDDP.write_to_file(model, "experimental.sof.json")
+        @test isvalid(JSON.parsefile("experimental.sof.json"), SCHEMA)
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
