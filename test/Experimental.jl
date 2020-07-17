@@ -27,12 +27,13 @@ function _create_model(minimization::Bool)
         end)
         @constraints(sp, begin
             [i = 1:N], s[i] <= x[i].in
-            sum(s) <= d
+            c, sum(s) <= d + 1
         end)
         SDDP.parameterize(sp, t == 1 ? [1] : 1:length(DEMAND)) do ω
             JuMP.fix(d, DEMAND[ω])
             set_upper_bound(s[1], 0.1 * ω)
             set_lower_bound(x[1].out, ω)
+            set_normalized_rhs(c, ω)
             sgn = minimization ? 1.0 : -1.0
             @stageobjective(
                 sp, sgn * (sum(C[i] * x[i].out for i = 1:N) - S[ω] * s[ω] + ω)
