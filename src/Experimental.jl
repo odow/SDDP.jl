@@ -106,7 +106,7 @@ function _reformulate_uncertainty(
     constant_changes = false
     coefficient_changes = Set{VariableRef}()
 
-    # Loop 1: Collect terms that are changing
+    # Collect terms that are changing
     for noise in node.noise_terms
         node.parameterize(noise.term)
 
@@ -153,8 +153,74 @@ function _reformulate_uncertainty(
 
     added_variables = VariableRef[]
     added_constraints = ConstraintRef[]
-    objective = copy(node.stage_objective)
 
+    # Reformulate the objective function.
+    _reformulate_objective(
+        node, realizations,
+        random_variables,
+        added_variables,
+        objectives,
+        constant_changes,
+        coefficient_changes,
+    )
+
+    # Reformulate fixed variables.
+    for x in fx
+        _reformulate_fixed_bound(
+            node,
+            realizations,
+            random_variables,
+            added_variables,
+            added_constraints,
+            bounds,
+            x,
+        )
+    end
+
+    # Reformulate lower bounded variables.
+    for x in lb
+        _reformulate_lower_bound(
+            node,
+            realizations,
+            random_variables,
+            added_variables,
+            added_constraints,
+            bounds,
+            x,
+        )
+    end
+
+    # Reformulate upper bounded variables.
+    for x in ub
+        _reformulate_upper_bound(
+            node,
+            realizations,
+            random_variables,
+            added_variables,
+            added_constraints,
+            bounds,
+            x,
+        )
+    end
+
+    return () -> begin
+        delete(node.subproblem, added_variables)
+        delete.(Ref(node.subproblem), added_constraints)
+        set_objective_function(node.subproblem, node.stage_objective)
+        return
+    end
+end
+
+function _reformulate_objective(
+    node::Node,
+    realizations::Vector,
+    random_variables::Vector{String},
+    added_variables::Vector{VariableRef},
+    objectives::Vector,
+    constant_changes::Bool,
+    coefficient_changes::Set{VariableRef},
+)
+    objective = copy(node.stage_objective)
     # Reformulate a changing objective constant.
     if constant_changes
         new_name = "_SDDPjl_random_objective_constant_"
@@ -168,8 +234,9 @@ function _reformulate_uncertainty(
         objective.terms[y] = 1.0
     end
 
-    # Reformulate changing objective coefficients.
+    # No changes, so return current affine objective
     if length(coefficient_changes) > 0
+        # Reformulate changing objective coefficients.
         objective = convert(QuadExpr, objective)
         for x in coefficient_changes
             new_name = "_SDDPjl_random_objective_$(name(x))_"
@@ -183,52 +250,66 @@ function _reformulate_uncertainty(
             add_to_expression!(objective, 1.0, y, x)
         end
     end
-
-    # Reformulate fixed variables.
-    for x in fx
-        for (realization, bound) in zip(realizations, bounds)
-            realization["support"][name(x)] = bound[x].f
-        end
-        push!(random_variables, name(x))
-        unfix(x)
-    end
-
-    # Reformulate lower bounded variables.
-    for x in lb
-        new_name = "_SDDPjl_lower_bound_$(name(x))_"
-        y = _add_new_random_variable(
-            node, new_name, random_variables, added_variables
-        )
-        c = @constraint(node.subproblem, x >= y)
-        push!(added_constraints, c)
-        delete_lower_bound(x)
-        for (realization, bound) in zip(realizations, bounds)
-            realization["support"][new_name] = bound[x].l
-        end
-    end
-
-    # Reformulate upper bounded variables.
-    for x in ub
-        new_name = "_SDDPjl_upper_bound_$(name(x))_"
-        y = _add_new_random_variable(
-            node, new_name, random_variables, added_variables
-        )
-        c = @constraint(node.subproblem, x <= y)
-        push!(added_constraints, c)
-        delete_upper_bound(x)
-        for (realization, bound) in zip(realizations, bounds)
-            realization["support"][new_name] = bound[x].u
-        end
-    end
-
     # Set the objective function to be written out.
     set_objective_function(node.subproblem, objective)
+    return
+end
 
-    return () -> begin
-        delete(node.subproblem, added_variables)
-        delete.(Ref(node.subproblem), added_constraints)
-        set_objective_function(node.subproblem, node.stage_objective)
-        return
+function _reformulate_fixed_bound(
+    ::Node,
+    realizations::Vector,
+    random_variables::Vector{String},
+    ::Vector{VariableRef},
+    ::Vector,
+    bounds::Vector,
+    x::VariableRef,
+)
+    for (realization, bound) in zip(realizations, bounds)
+        realization["support"][name(x)] = bound[x].f
+    end
+    push!(random_variables, name(x))
+    unfix(x)
+end
+
+function _reformulate_lower_bound(
+    node::Node,
+    realizations::Vector,
+    random_variables::Vector{String},
+    added_variables::Vector{VariableRef},
+    added_constraints::Vector,
+    bounds::Vector,
+    x::VariableRef,
+)
+    new_name = "_SDDPjl_lower_bound_$(name(x))_"
+    y = _add_new_random_variable(
+        node, new_name, random_variables, added_variables
+    )
+    c = @constraint(node.subproblem, x >= y)
+    push!(added_constraints, c)
+    delete_lower_bound(x)
+    for (realization, bound) in zip(realizations, bounds)
+        realization["support"][new_name] = bound[x].l
+    end
+end
+
+function _reformulate_upper_bound(
+    node::Node,
+    realizations::Vector,
+    random_variables::Vector{String},
+    added_variables::Vector{VariableRef},
+    added_constraints::Vector,
+    bounds::Vector,
+    x::VariableRef,
+)
+    new_name = "_SDDPjl_upper_bound_$(name(x))_"
+    y = _add_new_random_variable(
+        node, new_name, random_variables, added_variables
+    )
+    c = @constraint(node.subproblem, x <= y)
+    push!(added_constraints, c)
+    delete_upper_bound(x)
+    for (realization, bound) in zip(realizations, bounds)
+        realization["support"][new_name] = bound[x].u
     end
 end
 
