@@ -343,7 +343,7 @@ function _reformulate_objective(
     changing_objective_constant::Bool,
     changing_objective_coefficient::Set{VariableRef},
 )
-    objective = copy(node.stage_objective)
+    objective = convert(QuadExpr, copy(node.stage_objective))
     # Reformulate a changing objective constant.
     if changing_objective_constant
         new_name = "_SDDPjl_random_objective_constant_"
@@ -353,14 +353,13 @@ function _reformulate_objective(
         for (r, o) in zip(realizations, objective_storage)
             r["support"][new_name] = o.constant
         end
-        objective.constant = 0.0
-        objective.terms[y] = 1.0
+        objective.aff.constant = 0.0
+        objective.aff.terms[y] = 1.0
     end
 
     # No changes, so return current affine objective
     if length(changing_objective_coefficient) > 0
         # Reformulate changing objective coefficients.
-        objective = convert(QuadExpr, objective)
         for x in changing_objective_coefficient
             new_name = "_SDDPjl_random_objective_$(name(x))_"
             y = _add_new_random_variable(
@@ -374,7 +373,11 @@ function _reformulate_objective(
         end
     end
     # Set the objective function to be written out.
-    set_objective_function(node.subproblem, objective)
+    if length(objective.terms) == 0
+        set_objective_function(node.subproblem, objective.aff)
+    else
+        set_objective_function(node.subproblem, objective)
+    end
     return
 end
 

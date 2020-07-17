@@ -10,7 +10,9 @@ using SDDP
 using Test
 
 function _create_model(
-    minimization::Bool; belief::Bool = false, objective_state::Bool = false
+    minimization::Bool;
+    belief::Bool = false,
+    objective_state::Bool = false,
 )
     graph = SDDP.LinearGraph(3)
     if belief
@@ -53,7 +55,12 @@ function _create_model(
             set_normalized_rhs(c, ω)
             sgn = minimization ? 1.0 : -1.0
             @stageobjective(
-                sp, sgn * (sum(C[i] * x[i].out for i = 1:N) - S[ω] * s[ω] + ω)
+                sp,
+                sgn * (
+                    sum(C[i] * x[i].out for i = 1:N) -
+                    S[ω] * s[ω] - s[ω] * S[ω] +
+                    ω
+                )
             )
         end
     end
