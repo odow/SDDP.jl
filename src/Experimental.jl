@@ -6,10 +6,21 @@
 """
     Base.write(io::IO, model::PolicyGraph)
 
+Write `model` to `io` in the StochOptFormat file format.
+
 WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
 SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
 
-Write `model` to `io` in the StochOptFormat file format.
+In addition to potential changes to the underlying format, only a subset of
+possible modifications are supported. These include:
+- `JuMP.fix`
+- `JuMP.set_lower_bound`
+- `JuMP.set_upper_bound`
+- `JuMP.set_normalized_rhs`
+- Changes to the constant or affine terms in a stage objective
+
+If your model uses something other than this, this function will silently write
+an incorrect formulation of the problem.
 """
 function Base.write(io::IO, model::PolicyGraph)
     edges = Dict{String, Any}[]
@@ -470,11 +481,19 @@ end
 """
     Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
 
+Return a `PolicyGraph` object read from `io` in the StochOptFormat file
+format.
+
 WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
 SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
 
-Return a `PolicyGraph` object read from `io` in the StochOptFormat file
-format.
+In addition to potential changes to the underlying format, only a subset of
+possible modifications are supported. These include:
+- Additive random variables in the constraints or in the objective
+- Multiplicative random variables in the objective
+
+If your model uses something other than this, this function may throw an error
+or silently build a non-convex model.
 """
 function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     data = JSON.parse(io; dicttype = Dict{String, Any})
@@ -584,29 +603,53 @@ function _convert_objective_function(
 end
 
 """
-    write_to_file(model::PolicyGraph, filename::String)
-
-WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
-SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
+    write_to_file(
+        model::PolicyGraph,
+        filename::String;
+        compression::MOI.FileFormats.AbstractCompressionScheme =
+            MOI.FileFormats.AutomaticCompression()
+    )
 
 Write `model` to `filename` in the StochOptFormat file format.
+
+WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
+[`Base.write(::IO, ::PolicyGraph)`](@ref).
 """
-function write_to_file(model::PolicyGraph, filename::String)
-    return open(io -> Base.write(io, model), filename, "w")
+function write_to_file(
+    model::PolicyGraph,
+    filename::String;
+    compression::MOI.FileFormats.AbstractCompressionScheme =
+        MOI.FileFormats.AutomaticCompression()
+)
+    return MOI.FileFormats.compressed_open(filename, "w", compression) do io
+        Base.write(io, model)
+    end
 end
 
 """
-    read_from_file(filename::String; kwargs...)::PolicyGraph{String}
-
-WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
-SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
+    read_from_file(
+        filename::String;
+        compression::MOI.FileFormats.AbstractCompressionScheme =
+            MOI.FileFormats.AutomaticCompression(),
+        kwargs...
+    )::PolicyGraph{String}
 
 Return a `PolicyGraph` object read from `filename` in the StochOptFormat file
 format.
 
 See [`Base.read(::IO, ::Type{PolicyGraph})`](@ref) for information on the
 keyword arguments that can be provided.
+
+WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
+[`Base.read(::IO, ::Type{PolicyGraph})`](@ref).
 """
-function read_from_file(filename::String; kwargs...)
-    return open(io -> Base.read(io, PolicyGraph; kwargs...), filename, "r")
+function read_from_file(
+    filename::String;
+    compression::MOI.FileFormats.AbstractCompressionScheme =
+        MOI.FileFormats.AutomaticCompression(),
+    kwargs...
+)::PolicyGraph{String}
+    return MOI.FileFormats.compressed_open(filename, "r", compression) do io
+        Base.read(io, PolicyGraph; kwargs...)
+    end
 end
