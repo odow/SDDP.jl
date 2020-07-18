@@ -146,7 +146,7 @@ function _reformulate_uncertainty(
     changing_objective_constant = false
     changing_objective_coefficient = Set{VariableRef}()
 
-    constraint_rhs_storage = Dict{ConstraintRef, Any}[]
+    constraint_rhs_storage = Dict{ConstraintRef, Float64}[]
     changing_constraint_rhs = Set{ConstraintRef}()
 
     # Collect terms that are changing
@@ -310,7 +310,7 @@ function _collect_changing_constraint_rhs(
     constraint_rhs_storage,
     changing_constraint_rhs,
 )
-    rhs = Dict{ConstraintRef, Any}()
+    rhs = Dict{ConstraintRef, Float64}()
     sets = (
         MOI.LessThan{Float64},
         MOI.GreaterThan{Float64},
@@ -322,7 +322,7 @@ function _collect_changing_constraint_rhs(
         end
         for ci in all_constraints(node.subproblem, F, S)
             obj = constraint_object(ci)
-            rhs[ci] = obj.set
+            rhs[ci] = MOI.constant(obj.set)
             if length(constraint_rhs_storage) >= 1
                 if constraint_rhs_storage[1][ci] != rhs[ci]
                     push!(changing_constraint_rhs, ci)
@@ -454,7 +454,7 @@ function _reformulate_constraint_rhs(
     set_normalized_coefficient(ci, y, -1.0)
     set_normalized_rhs(ci, 0.0)
     for (realization, rhs) in zip(realizations, constraint_rhs_storage)
-        realization["support"][new_name] = MOI.constant(rhs[ci])
+        realization["support"][new_name] = rhs[ci]
     end
     return
 end
@@ -614,14 +614,10 @@ function _convert_objective_function(
     quad_terms = empty(copy(objf.terms))
     for (k, v) in objf.terms
         a, b = name(k.a), name(k.b)
-        if a in rvs && b in rvs
-            error(
-                "Please open an issue to support random * random in objective."
-            )
-        elseif a in rvs
+        if a in rvs
             terms[a] = (var = k.b, coef = v, aff = get(aff_obj.terms, a, 0.0))
         elseif b in rvs
-            terms[a] = (var = k.a, coef = v, aff = get(aff_obj.terms, b, 0.0))
+            terms[b] = (var = k.a, coef = v, aff = get(aff_obj.terms, b, 0.0))
         else
             quad_terms[k] = v
         end
