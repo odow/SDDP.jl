@@ -20,6 +20,7 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 GLPK = "0.12"
 HTTP = "0.8.1"
 JSON = "0.21"
+JSONSchema = "0.3"
 JuMP = "0.21"
 JuliaFormatter = "0.3"
 RecipesBase = "1"
@@ -29,9 +30,10 @@ julia = "1"
 
 [extras]
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
+JSONSchema = "7d188eb4-7ad8-530c-ae41-71a32a6d4692"
 JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["GLPK", "JuliaFormatter", "Pkg", "Test"]
+test = ["GLPK", "JSONSchema", "JuliaFormatter", "Pkg", "Test"]

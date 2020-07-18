@@ -107,3 +107,12 @@ SDDP.plot
 SDDP.write_subproblem_to_file
 SDDP.deterministic_equivalent
 ```
+
+## File IO
+
+```@docs
+SDDP.write_to_file
+SDDP.read_from_file
+Base.write(::IO, ::SDDP.PolicyGraph)
+Base.read(::IO, ::Type{SDDP.PolicyGraph})
+```
