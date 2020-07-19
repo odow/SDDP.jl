@@ -81,12 +81,12 @@ const SCHEMA = JSONSchema.Schema(
         SDDP.train(base_model; iteration_limit = 50, print_level = 0)
 
         model = _create_model(true)
-        SDDP.write_to_file(model, "experimental.sof.json")
+        SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
         @test isvalid(JSON.parsefile("experimental.sof.json"), SCHEMA)
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
-        new_model = SDDP.read_from_file("experimental.sof.json")
+        new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
         set_optimizer(new_model, GLPK.Optimizer)
         SDDP.train(new_model; iteration_limit = 50, print_level = 0)
 
@@ -101,6 +101,11 @@ const SCHEMA = JSONSchema.Schema(
             SDDP.calculate_bound(new_model);
             atol = 1e-6
         )
+
+        scenarios = SDDP.evaluate(new_model, test_scenarios)
+        @test length(scenarios) == 10
+        @test scenarios[1][1][:noise_term] === nothing
+        @test scenarios[1][2][:noise_term] isa Dict{String, Any}
     end
 
     @testset "Max: Read and write to file" begin
@@ -109,12 +114,12 @@ const SCHEMA = JSONSchema.Schema(
         SDDP.train(base_model; iteration_limit = 50, print_level = 0)
 
         model = _create_model(false)
-        SDDP.write_to_file(model, "experimental.sof.json")
+        SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
         @test isvalid(JSON.parsefile("experimental.sof.json"), SCHEMA)
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
-        new_model = SDDP.read_from_file("experimental.sof.json")
+        new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
         set_optimizer(new_model, GLPK.Optimizer)
         SDDP.train(new_model; iteration_limit = 50, print_level = 0)
 

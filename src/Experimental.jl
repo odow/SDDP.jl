@@ -3,6 +3,33 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+"""
+    TestScenarios{T, S}(scenarios::Vector{Vector{Tuple{T, S}}})
+
+An [`AbstractSamplingScheme`](@ref) based on a vector of scenarios.
+
+Each scenario is a vector of `Tuple{T, S}` where the first element is the node
+to visit and the second element is the realization of the stagewise-independent
+noise term. Pass `nothing` if the node is deterministic.
+"""
+mutable struct TestScenarios{T, S} <: AbstractSamplingScheme
+    scenarios::Vector{Vector{Tuple{T, S}}}
+    last::Int
+    function TestScenarios(scenarios::Vector{Vector{Tuple{T, S}}}) where {T, S}
+        return new{T, S}(scenarios, 0)
+    end
+end
+
+function sample_scenario(
+    model::PolicyGraph{T}, sampling_scheme::TestScenarios{T, S}; kwargs...
+) where {T, S}
+    sampling_scheme.last += 1
+    if sampling_scheme.last > length(sampling_scheme.scenarios)
+        sampling_scheme.last = 1
+    end
+    return sampling_scheme.scenarios[sampling_scheme.last], false
+end
+
 function _throw_if_belief_states(model::PolicyGraph)
     if length(model.belief_partition) != 0
         error("StochOptFormat does not support belief states.")
@@ -28,10 +55,38 @@ function _throw_if_exisiting_cuts(model::PolicyGraph)
     end
 end
 
+function _test_scenarios(model::PolicyGraph, test_scenarios::Int, scenario_map)
+    return _test_scenarios(
+        model,
+        TestScenarios([
+            sample_scenario(model, InSampleMonteCarlo())[1]
+            for _ = 1:test_scenarios
+        ]),
+        scenario_map,
+    )
+end
+function _test_scenarios(
+    ::PolicyGraph, test_scenarios::TestScenarios, scenario_map
+)
+    return [
+        [("$(node)", scenario_map[node][noise]) for (node, noise) in scenario]
+        for scenario in test_scenarios.scenarios
+    ]
+end
+
 """
-    Base.write(io::IO, model::PolicyGraph)
+    Base.write(
+        io::IO,
+        model::PolicyGraph;
+        test_scenarios::Union{Int, TestScenarios} = 1_000,
+    )
 
 Write `model` to `io` in the StochOptFormat file format.
+
+Pass an `Int` to `test_scenarios` (default `1_000`) to specify the number of
+test scenarios to generate using the [`InSampleMonteCarlo`](@ref) sampling
+scheme. Alternatively, pass a [`TestScenarios`](@ref) object to manually specify
+the test scenarios to use.
 
 WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
 SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
@@ -46,17 +101,28 @@ possible modifications are supported. These include:
 
 If your model uses something other than this, this function will silently write
 an incorrect formulation of the problem.
+
+## Example
+
+    open("my_model.sof.json", "w") do io
+        write(io, model; test_scenarios = 10)
+    end
 """
-function Base.write(io::IO, model::PolicyGraph)
+function Base.write(
+    io::IO,
+    model::PolicyGraph{T};
+    test_scenarios::Union{Int, TestScenarios{T, S}} = 1_000,
+) where {T, S}
     _throw_if_belief_states(model)
     _throw_if_objective_states(model)
     _throw_if_exisiting_cuts(model)
     edges = Dict{String, Any}[]
     _add_edges(edges, "$(model.root_node)", model.root_children)
     nodes = Dict{String, Any}()
+    scenario_map = Dict{T, Any}()
     for (node_name, node) in model.nodes
         _add_edges(edges, "$(node_name)", node.children)
-        _add_node_to_dict(nodes, node, "$(node_name)")
+        scenario_map[node_name] = _add_node_to_dict(nodes, node, "$(node_name)")
     end
     sof = Dict(
         "description" => "A problem exported from SDDP.jl",
@@ -70,8 +136,7 @@ function Base.write(io::IO, model::PolicyGraph)
         ),
         "nodes" => nodes,
         "edges" => edges,
-        # TODO(odow): generate `test_scenarios`.
-        "test_scenarios" => Any[]
+        "test_scenarios" => _test_scenarios(model, test_scenarios, scenario_map)
     )
     return Base.write(io, JSON.json(sof))
 end
@@ -114,7 +179,12 @@ function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
         "realizations" => realizations,
     )
     undo_reformulation()
-    return
+    # Return a dictionary which maps the in-sample realizations to the
+    # transformed support for writing `test_scenarios` to file.
+    return Dict(
+        noise.term => realizations[i]["support"]
+        for (i, noise) in enumerate(node.noise_terms)
+    )
 end
 
 """
@@ -510,10 +580,16 @@ function _load_mof_model(sp::JuMP.Model, data::Dict, node::String)
 end
 
 """
-    Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
+    Base.read(
+        io::IO,
+        ::Type{PolicyGraph};
+        bound::Float64 = 1e6,
+    )::Tuple{PolicyGraph, TestScenarios}
 
-Return a `PolicyGraph` object read from `io` in the StochOptFormat file
-format.
+Return a tuple containing a [`PolicyGraph`](@ref) object and a
+[`TestScenarios`](@ref) read from `io` in the StochOptFormat file format.
+
+See also: [`evaluate`](@ref).
 
 WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
 SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
@@ -525,6 +601,12 @@ possible modifications are supported. These include:
 
 If your model uses something other than this, this function may throw an error
 or silently build a non-convex model.
+
+## Example
+
+    open("my_model.sof.json", "r") do io
+        model, test_scenarios = read(io, PolicyGraph)
+    end
 """
 function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     data = JSON.parse(io; dicttype = Dict{String, Any})
@@ -569,16 +651,18 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
             )
         )
         parameterize(sp, Ω, P) do ω
-            for (k, v) in ω
-                x = get(objective_coefficients, k, nothing)
-                if x !== nothing
-                    if objf isa AffExpr
-                        objf.terms[x.var] = x.aff + v * x.coef
-                    else
-                        objf.aff.terms[x.var] = x.aff + v * x.coef
+            if ω !== nothing
+                for (k, v) in ω
+                    x = get(objective_coefficients, k, nothing)
+                    if x !== nothing
+                        if objf isa AffExpr
+                            objf.terms[x.var] = x.aff + v * x.coef
+                        else
+                            objf.aff.terms[x.var] = x.aff + v * x.coef
+                        end
                     end
+                    fix(variable_by_name(sp, k), v)
                 end
-                fix(variable_by_name(sp, k), v)
             end
             @stageobjective(sp, obj_sgn * objf)
         end
@@ -595,7 +679,15 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     for (k, v) in data["root"]["state_variables"]
         model.initial_root_state[Symbol(k)] = v["initial_value"]
     end
-    return model
+    return model, _test_scenarios(data)
+end
+
+function _test_scenarios(data::Dict)
+    substitute_nothing(x) = isempty(x) ? nothing : x
+    return TestScenarios([
+        [(item[1], substitute_nothing(item[2])) for item in scenario]
+        for scenario in data["test_scenarios"]
+    ])
 end
 
 function _convert_objective_function(sp::Model, rvs::Vector{String})
@@ -634,22 +726,34 @@ end
         model::PolicyGraph,
         filename::String;
         compression::MOI.FileFormats.AbstractCompressionScheme =
-            MOI.FileFormats.AutomaticCompression()
+            MOI.FileFormats.AutomaticCompression(),
+        kwargs...
     )
 
 Write `model` to `filename` in the StochOptFormat file format.
 
+Pass an argument to `compression` to override the default of automatically
+detecting the file compression to use based on the extension of `filename`.
+
+See [`Base.write(::IO, ::PolicyGraph)`](@ref) for information on the
+keyword arguments that can be provided.
+
 WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
 [`Base.write(::IO, ::PolicyGraph)`](@ref).
+
+## Example
+
+    write_to_file(model, "my_model.sof.json"; test_scenarios = 10)
 """
 function write_to_file(
     model::PolicyGraph,
     filename::String;
     compression::MOI.FileFormats.AbstractCompressionScheme =
-        MOI.FileFormats.AutomaticCompression()
+        MOI.FileFormats.AutomaticCompression(),
+    kwargs...
 )
     return MOI.FileFormats.compressed_open(filename, "w", compression) do io
-        Base.write(io, model)
+        Base.write(io, model; kwargs...)
     end
 end
 
@@ -659,24 +763,56 @@ end
         compression::MOI.FileFormats.AbstractCompressionScheme =
             MOI.FileFormats.AutomaticCompression(),
         kwargs...
-    )::PolicyGraph{String}
+    )::Tuple{PolicyGraph, TestScenarios}
 
-Return a `PolicyGraph` object read from `filename` in the StochOptFormat file
-format.
+Return a tuple containing a [`PolicyGraph`](@ref) object and a
+[`TestScenarios`](@ref) read from `filename` in the StochOptFormat file format.
+
+Pass an argument to `compression` to override the default of automatically
+detecting the file compression to use based on the extension of `filename`.
 
 See [`Base.read(::IO, ::Type{PolicyGraph})`](@ref) for information on the
 keyword arguments that can be provided.
 
 WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
 [`Base.read(::IO, ::Type{PolicyGraph})`](@ref).
+
+## Example
+
+    model, test_scenarios = read_from_file("my_model.sof.json")
 """
 function read_from_file(
     filename::String;
     compression::MOI.FileFormats.AbstractCompressionScheme =
         MOI.FileFormats.AutomaticCompression(),
     kwargs...
-)::PolicyGraph{String}
+)
     return MOI.FileFormats.compressed_open(filename, "r", compression) do io
         Base.read(io, PolicyGraph; kwargs...)
     end
+end
+
+"""
+    evaluate(
+        model::PolicyGraph{T}, test_scenarios::TestScenarios{T, S}
+    ) where {T, S}
+
+Evaluate the performance of the policy contained in `model` after a call to
+[`train`](@ref) on the scenarios specified by `test_scenarios`.
+
+## Example
+
+    model, test_scenarios = read_from_file("my_model.sof.json")
+    train(model; iteration_limit = 100)
+    simulations = evaluate(model, test_scenarios)
+"""
+function evaluate(
+    model::PolicyGraph{T}, test_scenarios::TestScenarios{T, S}
+) where {T, S}
+    test_scenarios.last = 0
+    return simulate(
+        model,
+        length(test_scenarios.scenarios);
+        sampling_scheme = test_scenarios,
+    )
 end
