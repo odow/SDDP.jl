@@ -98,7 +98,7 @@ SDDP.SpaghettiPlot
 SDDP.add_spaghetti
 SDDP.publication_plot
 SDDP.ValueFunction
-SDDP.evaluate
+SDDP.evaluate(::SDDP.ValueFunction, ::Dict{Symbol,Float64})
 SDDP.plot
 ```
 ## Debugging the model
@@ -115,6 +115,6 @@ SDDP.write_to_file
 SDDP.read_from_file
 Base.write(::IO, ::SDDP.PolicyGraph)
 Base.read(::IO, ::Type{SDDP.PolicyGraph})
-SDDP.evaluate
+SDDP.evaluate(::SDDP.PolicyGraph{T}, ::SDDP.TestScenarios{T}) where {T}
 SDDP.TestScenarios
 ```
