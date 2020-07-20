@@ -3,6 +3,8 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import SHA
+
 """
     TestScenarios{T, S}(scenarios::Vector{Vector{Tuple{T, S}}})
 
@@ -15,8 +17,12 @@ noise term. Pass `nothing` if the node is deterministic.
 mutable struct TestScenarios{T, S} <: AbstractSamplingScheme
     scenarios::Vector{Vector{Tuple{T, S}}}
     last::Int
-    function TestScenarios(scenarios::Vector{Vector{Tuple{T, S}}}) where {T, S}
-        return new{T, S}(scenarios, 0)
+    SHA256::String
+
+    function TestScenarios(
+        scenarios::Vector{Vector{Tuple{T, S}}}; SHA256::String = ""
+    ) where {T, S}
+        return new{T, S}(scenarios, 0, SHA256)
     end
 end
 
@@ -679,15 +685,17 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     for (k, v) in data["root"]["state_variables"]
         model.initial_root_state[Symbol(k)] = v["initial_value"]
     end
-    return model, _test_scenarios(data)
+    seekstart(io)
+    SHA256 = bytes2hex(SHA.sha2_256(io))
+    return model, _test_scenarios(data, SHA256)
 end
 
-function _test_scenarios(data::Dict)
+function _test_scenarios(data::Dict, SHA256::String)
     substitute_nothing(x) = isempty(x) ? nothing : x
     return TestScenarios([
         [(item[1], substitute_nothing(item[2])) for item in scenario]
         for scenario in data["test_scenarios"]
-    ])
+    ]; SHA256 = SHA256)
 end
 
 function _convert_objective_function(sp::Model, rvs::Vector{String})
@@ -810,9 +818,29 @@ function evaluate(
     model::PolicyGraph{T}, test_scenarios::TestScenarios{T, S}
 ) where {T, S}
     test_scenarios.last = 0
-    return simulate(
+    simulations = simulate(
         model,
         length(test_scenarios.scenarios);
         sampling_scheme = test_scenarios,
+        custom_recorders = Dict{Symbol, Function}(
+            :primal => (sp) -> begin
+                Dict{String, Float64}(
+                    name(x) => value(x) for x in all_variables(sp)
+                    if !isempty(name(x))
+                )
+            end
+        )
+    )
+    return Dict(
+        "problem_sha256_checksum" => test_scenarios.SHA256,
+        "scenarios" => [
+            [
+                Dict{String, Any}(
+                    "objective" => s[:stage_objective],
+                    "primal" => s[:primal]
+                )
+                for s in sim
+            ] for sim in simulations
+        ]
     )
 end

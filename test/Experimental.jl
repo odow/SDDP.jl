@@ -103,9 +103,14 @@ const SCHEMA = JSONSchema.Schema(
         )
 
         scenarios = SDDP.evaluate(new_model, test_scenarios)
-        @test length(scenarios) == 10
-        @test scenarios[1][1][:noise_term] === nothing
-        @test scenarios[1][2][:noise_term] isa Dict{String, Any}
+        @test length(scenarios["problem_sha256_checksum"]) == 64
+        @test length(scenarios["scenarios"]) == 10
+        @test length(scenarios["scenarios"][1]) == 3
+        node_1_1 = scenarios["scenarios"][1][1]
+        @test isapprox(node_1_1["objective"], 9.6; atol = 1e-8)
+        @test node_1_1["primal"]["d"] == 2
+        @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
+        @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
     end
 
     @testset "Max: Read and write to file" begin
@@ -134,6 +139,16 @@ const SCHEMA = JSONSchema.Schema(
             SDDP.calculate_bound(new_model);
             atol = 1e-6
         )
+
+        scenarios = SDDP.evaluate(new_model, test_scenarios)
+        @test length(scenarios["problem_sha256_checksum"]) == 64
+        @test length(scenarios["scenarios"]) == 10
+        @test length(scenarios["scenarios"][1]) == 3
+        node_1_1 = scenarios["scenarios"][1][1]
+        @test isapprox(node_1_1["objective"], -9.6; atol = 1e-8)
+        @test node_1_1["primal"]["d"] == 2
+        @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
+        @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
     end
 
     @testset "Error: existing cuts" begin
