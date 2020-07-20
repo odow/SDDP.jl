@@ -4,15 +4,11 @@ CurrentModule = SDDP
 
 # SDDP.jl
 
-!!! warning
-    `SDDP.jl` under went a major re-write to be compatible with JuMP v0.19 and
-    Julia v1.0. The [Upgrade from the old SDDP.jl](@ref) guide has advice on
-    how to upgrade your existing `SDDP.jl` models.
-
-`SDDP.jl` is a package for solving large multistage convex stochastic
-programming problems using *stochastic dual dynamic programming*. In this
-manual, we're going to assume a reasonable amount of background knowledge about
-stochastic optimization, the SDDP algorithm, Julia, and JuMP.
+[`SDDP.jl`](https://github.com/odow/SDDP.jl) is a package for solving large
+multistage convex stochastic programming problems using *stochastic dual dynamic
+programming*. In this manual, we're going to assume a reasonable amount of
+background knowledge about stochastic optimization, the SDDP algorithm, Julia,
+and JuMP.
 
 !!! tip
     If you haven't used JuMP before, we recommend that you read the
@@ -27,17 +23,29 @@ You can install `SDDP.jl` as follows:
 julia> ] add https://github.com/odow/SDDP.jl.git
 ```
 
-### Want the old version?
-
-Still using Julia 0.6 and things broke when you went `Pkg.update()`? Run
-```julia
-julia> Pkg.checkout("SDDP", "release-v0")
-```
-
 ## Tutorials
 
 Once you've got `SDDP.jl` installed, you should read some tutorials, beginning
 with [Basic I: first steps](@ref).
+
+## How-to guides
+
+If you just want help on a specific topic, check out one of the how-to guides. A
+good one to get started on is [Debug a model](@ref).
+
+## Examples
+
+`SDDP.jl` also contains a number of examples. A good one to get started on is
+the [Hydro-thermal scheduling](@ref) problem. In particular, it shows how to
+solve an infinite horizon problem.
+
+There is also a whole folder of coded examples in the [examples directory](https://github.com/odow/tree/master/examples)
+of the [Github page](https://github.com/odow/SDDP.jl).
+
+## API Reference
+
+If you just want help on a specific function, see the [API Reference](@ref api_reference_list)
+page.
 
 ## Citing `SDDP.jl`
 

@@ -60,15 +60,16 @@ makedocs(
     doctest = FIX_DOCTESTS ? :fix : true,
     format = Documenter.HTML(
         assets = ASSETS,
-        # See https://github.com/JuliaDocs/Documenter.jl/issues/868
-        prettyurls = get(ENV, "CI", nothing) == "true"),
+        # See  https://github.com/JuliaDocs/Documenter.jl/issues/868
+        prettyurls = get(ENV, "CI", nothing) == "true"
+    ),
     strict = true,
     pages = [
         "Home" => "index.md",
-        "How-to guides" => GUIDE_PAGES,
         "Tutorials" => TUTORIAL_PAGES,
+        "How-to guides" => GUIDE_PAGES,
         "Examples" => EXAMPLES,
-        "Reference" => "apireference.md"
+        "API Reference" => "apireference.md"
     ],
     doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"]
 )
