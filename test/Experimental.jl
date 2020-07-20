@@ -151,6 +151,24 @@ const SCHEMA = JSONSchema.Schema(
         @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
     end
 
+    @testset "kwarg to Base.write" begin
+        model = _create_model(true)
+        SDDP.write_to_file(
+            model,
+            "experimental.sof.json";
+            test_scenarios = 0,
+            name = "Experimental",
+            description = "Experimental model",
+            author = "Oscar Dowson",
+            date = "1234-56-78",
+        )
+        data = JSON.parsefile("experimental.sof.json", use_mmap = false)
+        @test isvalid(data, SCHEMA)
+        @test data["description"] == "Experimental model"
+        @test data["author"] == "Oscar Dowson"
+        @test data["date"] == "1234-56-78"
+    end
+
     @testset "Error: existing cuts" begin
         model = _create_model(true)
         set_optimizer(model, GLPK.Optimizer)
