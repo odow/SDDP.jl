@@ -81,12 +81,12 @@ const SCHEMA = JSONSchema.Schema(
         SDDP.train(base_model; iteration_limit = 50, print_level = 0)
 
         model = _create_model(true)
-        SDDP.write_to_file(model, "experimental.sof.json")
+        SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
         @test isvalid(JSON.parsefile("experimental.sof.json"), SCHEMA)
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
-        new_model = SDDP.read_from_file("experimental.sof.json")
+        new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
         set_optimizer(new_model, GLPK.Optimizer)
         SDDP.train(new_model; iteration_limit = 50, print_level = 0)
 
@@ -101,6 +101,16 @@ const SCHEMA = JSONSchema.Schema(
             SDDP.calculate_bound(new_model);
             atol = 1e-6
         )
+
+        scenarios = SDDP.evaluate(new_model, test_scenarios)
+        @test length(scenarios["problem_sha256_checksum"]) == 64
+        @test length(scenarios["scenarios"]) == 10
+        @test length(scenarios["scenarios"][1]) == 3
+        node_1_1 = scenarios["scenarios"][1][1]
+        @test isapprox(node_1_1["objective"], 9.6; atol = 1e-8)
+        @test node_1_1["primal"]["d"] == 2
+        @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
+        @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
     end
 
     @testset "Max: Read and write to file" begin
@@ -109,12 +119,12 @@ const SCHEMA = JSONSchema.Schema(
         SDDP.train(base_model; iteration_limit = 50, print_level = 0)
 
         model = _create_model(false)
-        SDDP.write_to_file(model, "experimental.sof.json")
+        SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
         @test isvalid(JSON.parsefile("experimental.sof.json"), SCHEMA)
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
-        new_model = SDDP.read_from_file("experimental.sof.json")
+        new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
         set_optimizer(new_model, GLPK.Optimizer)
         SDDP.train(new_model; iteration_limit = 50, print_level = 0)
 
@@ -129,6 +139,16 @@ const SCHEMA = JSONSchema.Schema(
             SDDP.calculate_bound(new_model);
             atol = 1e-6
         )
+
+        scenarios = SDDP.evaluate(new_model, test_scenarios)
+        @test length(scenarios["problem_sha256_checksum"]) == 64
+        @test length(scenarios["scenarios"]) == 10
+        @test length(scenarios["scenarios"][1]) == 3
+        node_1_1 = scenarios["scenarios"][1][1]
+        @test isapprox(node_1_1["objective"], -9.6; atol = 1e-8)
+        @test node_1_1["primal"]["d"] == 2
+        @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
+        @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
     end
 
     @testset "Error: existing cuts" begin
