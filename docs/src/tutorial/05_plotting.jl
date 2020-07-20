@@ -99,7 +99,9 @@ end
 
 # Having built the plot, we now need to display it using [`SDDP.plot`](@ref).
 
-SDDP.plot(plt, "spaghetti_plot.html")
+# ```julia
+# SDDP.plot(plt, "spaghetti_plot.html")
+# ```
 
 # This should open a webpage that looks like [this
 # one](../assets/spaghetti_plot.html).

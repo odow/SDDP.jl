@@ -15,6 +15,14 @@
 #  - Subproblems turning infeasible or unbounded after many iterations
 #  - Solvers returning "Numerical Error" statuses
 
+# ### Attempting to recover from serious numerical issues...
+
+# `SDDP.jl` will try hard to avoid and overcome numerical issues. If it
+# encounters issues, you may see the warning `Attempting to recover from serious
+# numerical issues...`. If you see this warning multiple times, you should try
+# to follow the suggestions in this tutorial to improve the stability of your
+# model.
+
 # ### Problem scaling
 
 # In almost all cases, the cause of this is poor problem scaling. For our
@@ -32,7 +40,7 @@
 # have a capacity of 10^10 m³: `@variable(subproblem, 0 <= volume <= 10^10)`.
 # Moreover, the cost per cubic meter might be around \\\$0.05/m³. To calculate
 # the  value of water in our reservoir, we need to multiple a variable on the
-# order of 10^10, by one on the order of 10⁻²!. That is twelve orders of
+# order of 10^10, by one on the order of 10⁻²! That is twelve orders of
 # magnitude!
 
 # To improve the performance of the SDDP algorithm (and reduce the chance of
