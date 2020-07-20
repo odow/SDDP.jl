@@ -85,6 +85,7 @@ end
         io::IO,
         model::PolicyGraph;
         test_scenarios::Union{Int, TestScenarios} = 1_000,
+        kwargs...
     )
 
 Write `model` to `io` in the StochOptFormat file format.
@@ -93,6 +94,10 @@ Pass an `Int` to `test_scenarios` (default `1_000`) to specify the number of
 test scenarios to generate using the [`InSampleMonteCarlo`](@ref) sampling
 scheme. Alternatively, pass a [`TestScenarios`](@ref) object to manually specify
 the test scenarios to use.
+
+Any additional `kwargs` passed to `write` will be stored in the top-level of the
+resulting StochOptFormat file. Valid arguments include `name`, `author`, `date`,
+and `description`.
 
 WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
 SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
@@ -111,13 +116,22 @@ an incorrect formulation of the problem.
 ## Example
 
     open("my_model.sof.json", "w") do io
-        write(io, model; test_scenarios = 10)
+        write(
+            io,
+            model;
+            test_scenarios = 10,
+            name = "MyModel",
+            author = "@odow",
+            date = "2020-07-20",
+            description = "Example problem for the SDDP.jl documentation",
+        )
     end
 """
 function Base.write(
     io::IO,
     model::PolicyGraph{T};
     test_scenarios::Union{Int, TestScenarios{T, S}} = 1_000,
+    kwargs...
 ) where {T, S}
     _throw_if_belief_states(model)
     _throw_if_objective_states(model)
@@ -130,13 +144,12 @@ function Base.write(
         _add_edges(edges, "$(node_name)", node.children)
         scenario_map[node_name] = _add_node_to_dict(nodes, node, "$(node_name)")
     end
-    sof = Dict(
-        "description" => "A problem exported from SDDP.jl",
+    sof = Dict{String, Any}(
         "version" => Dict("major" => 0, "minor" => 1),
-        "root" => Dict(
+        "root" => Dict{String, Any}(
             "name" => "$(model.root_node)",
-            "state_variables" => Dict(
-                "$(k)" => Dict("initial_value" => v)
+            "state_variables" => Dict{String, Any}(
+                "$(k)" => Dict{String, Any}("initial_value" => v)
                 for (k, v) in model.initial_root_state
             )
         ),
@@ -144,6 +157,9 @@ function Base.write(
         "edges" => edges,
         "test_scenarios" => _test_scenarios(model, test_scenarios, scenario_map)
     )
+    for (k, v) in kwargs
+        sof["$(k)"] = v
+    end
     return Base.write(io, JSON.json(sof))
 end
 
