@@ -75,7 +75,12 @@ function _test_scenarios(
     ::PolicyGraph, test_scenarios::TestScenarios, scenario_map
 )
     return [
-        [("$(node)", scenario_map[node][noise]) for (node, noise) in scenario]
+        [
+            Dict(
+                "node" => "$(node)",
+                "support" => scenario_map[node][noise]
+            ) for (node, noise) in scenario
+        ]
         for scenario in test_scenarios.scenarios
     ]
 end
@@ -708,10 +713,14 @@ end
 
 function _test_scenarios(data::Dict, SHA256::String)
     substitute_nothing(x) = isempty(x) ? nothing : x
-    return TestScenarios([
-        [(item[1], substitute_nothing(item[2])) for item in scenario]
+    scenarios = [
+        [
+            (item["node"], substitute_nothing(item["support"]))
+            for item in scenario
+        ]
         for scenario in data["test_scenarios"]
-    ]; SHA256 = SHA256)
+    ]
+    return TestScenarios(scenarios; SHA256 = SHA256)
 end
 
 function _convert_objective_function(sp::Model, rvs::Vector{String})
