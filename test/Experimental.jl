@@ -199,3 +199,15 @@ end
 if isfile("sof.schema.json")
     rm("sof.schema.json")
 end
+
+@testset "slptestset" begin
+    model, test_scenarios = SDDP.read_from_file(
+        joinpath(dirname(@__DIR__), "examples/StochOptFormat/electric.sof.json")
+    )
+    set_optimizer(model, GLPK.Optimizer)
+    SDDP.train(model; iteration_limit = 20, print_level = 0)
+    @test isapprox(SDDP.calculate_bound(model), 381.8533; atol = 1e-3)
+    scenarios = SDDP.evaluate(model, test_scenarios)
+    @test length(scenarios["problem_sha256_checksum"]) == 64
+    @test length(scenarios["scenarios"]) == 3
+end
