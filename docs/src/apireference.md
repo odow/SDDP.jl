@@ -117,4 +117,5 @@ Base.write(::IO, ::SDDP.PolicyGraph)
 Base.read(::IO, ::Type{SDDP.PolicyGraph})
 SDDP.evaluate(::SDDP.PolicyGraph{T}, ::SDDP.TestScenarios{T}) where {T}
 SDDP.TestScenarios
+SDDP.TestScenario
 ```

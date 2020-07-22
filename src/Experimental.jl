@@ -4,9 +4,20 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import SHA
+"""
+    TestScenario{T, S}(probability::Float64, scenario::Vector{Tuple{T, S}})
+
+A single scenario for testing.
+
+See also: [`TestScenarios`](@ref).
+"""
+struct TestScenario{T, S}
+    probability::Float64
+    scenario::Vector{Tuple{T, S}}
+end
 
 """
-    TestScenarios{T, S}(scenarios::Vector{Vector{Tuple{T, S}}})
+    TestScenarios{T, S}(scenarios::Vector{TestScenario{T, S}})
 
 An [`AbstractSamplingScheme`](@ref) based on a vector of scenarios.
 
@@ -15,12 +26,12 @@ to visit and the second element is the realization of the stagewise-independent
 noise term. Pass `nothing` if the node is deterministic.
 """
 mutable struct TestScenarios{T, S} <: AbstractSamplingScheme
-    scenarios::Vector{Vector{Tuple{T, S}}}
+    scenarios::Vector{TestScenario{T, S}}
     last::Int
     SHA256::String
 
     function TestScenarios(
-        scenarios::Vector{Vector{Tuple{T, S}}}; SHA256::String = ""
+        scenarios::Vector{TestScenario{T, S}}; SHA256::String = ""
     ) where {T, S}
         return new{T, S}(scenarios, 0, SHA256)
     end
@@ -33,7 +44,7 @@ function sample_scenario(
     if sampling_scheme.last > length(sampling_scheme.scenarios)
         sampling_scheme.last = 1
     end
-    return sampling_scheme.scenarios[sampling_scheme.last], false
+    return sampling_scheme.scenarios[sampling_scheme.last].scenario, false
 end
 
 function _throw_if_belief_states(model::PolicyGraph)
@@ -65,7 +76,10 @@ function _test_scenarios(model::PolicyGraph, test_scenarios::Int, scenario_map)
     return _test_scenarios(
         model,
         TestScenarios([
-            sample_scenario(model, InSampleMonteCarlo())[1]
+            TestScenario(
+                1 / test_scenarios,
+                sample_scenario(model, InSampleMonteCarlo())[1]
+            )
             for _ = 1:test_scenarios
         ]),
         scenario_map,
@@ -75,12 +89,15 @@ function _test_scenarios(
     ::PolicyGraph, test_scenarios::TestScenarios, scenario_map
 )
     return [
-        [
-            Dict(
-                "node" => "$(node)",
-                "support" => scenario_map[node][noise]
-            ) for (node, noise) in scenario
-        ]
+        Dict(
+            "probability" => scenario.probability,
+            "scenario" => [
+                Dict(
+                    "node" => "$(node)",
+                    "support" => scenario_map[node][noise]
+                ) for (node, noise) in scenario.scenario
+            ]
+        )
         for scenario in test_scenarios.scenarios
     ]
 end
@@ -714,10 +731,13 @@ end
 function _test_scenarios(data::Dict, SHA256::String)
     substitute_nothing(x) = isempty(x) ? nothing : x
     scenarios = [
-        [
-            (item["node"], substitute_nothing(item["support"]))
-            for item in scenario
-        ]
+        TestScenario(
+            scenario["probability"],
+            [
+                (item["node"], substitute_nothing(item["support"]))
+                for item in scenario["scenario"]
+            ]
+        )
         for scenario in data["test_scenarios"]
     ]
     return TestScenarios(scenarios; SHA256 = SHA256)
