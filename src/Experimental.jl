@@ -4,6 +4,7 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import SHA
+
 """
     TestScenario{T, S}(probability::Float64, scenario::Vector{Tuple{T, S}})
 
