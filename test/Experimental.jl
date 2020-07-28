@@ -68,7 +68,8 @@ function _create_model(
 end
 
 download(
-    "https://odow.github.io/StochOptFormat/sof.schema.json", "sof.schema.json"
+    "https://odow.github.io/StochOptFormat/versions/sof-0.1.schema.json",
+    "sof.schema.json"
 )
 const SCHEMA = JSONSchema.Schema(
     JSON.parsefile("sof.schema.json"; use_mmap = false)
