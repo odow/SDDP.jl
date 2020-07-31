@@ -68,7 +68,7 @@ function _create_model(
 end
 
 download(
-    "https://odow.github.io/StochOptFormat/versions/sof-0.1.schema.json",
+    "https://odow.github.io/StochOptFormat/sof-latest.schema.json",
     "sof.schema.json"
 )
 const SCHEMA = JSONSchema.Schema(
@@ -82,12 +82,12 @@ const SCHEMA = JSONSchema.Schema(
         SDDP.train(base_model; iteration_limit = 50, print_level = 0)
 
         model = _create_model(true)
-        SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
+        SDDP.write_to_file(model, "experimental.sof.json"; validation_scenarios = 10)
         @test isvalid(JSON.parsefile("experimental.sof.json"), SCHEMA)
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
-        new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
+        new_model, validation_scenarios = SDDP.read_from_file("experimental.sof.json")
         set_optimizer(new_model, GLPK.Optimizer)
         SDDP.train(new_model; iteration_limit = 50, print_level = 0)
 
@@ -103,7 +103,7 @@ const SCHEMA = JSONSchema.Schema(
             atol = 1e-6
         )
 
-        scenarios = SDDP.evaluate(new_model, test_scenarios)
+        scenarios = SDDP.evaluate(new_model, validation_scenarios)
         @test length(scenarios["problem_sha256_checksum"]) == 64
         @test length(scenarios["scenarios"]) == 10
         @test length(scenarios["scenarios"][1]) == 3
@@ -120,12 +120,12 @@ const SCHEMA = JSONSchema.Schema(
         SDDP.train(base_model; iteration_limit = 50, print_level = 0)
 
         model = _create_model(false)
-        SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
+        SDDP.write_to_file(model, "experimental.sof.json"; validation_scenarios = 10)
         @test isvalid(JSON.parsefile("experimental.sof.json"), SCHEMA)
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
-        new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
+        new_model, validation_scenarios = SDDP.read_from_file("experimental.sof.json")
         set_optimizer(new_model, GLPK.Optimizer)
         SDDP.train(new_model; iteration_limit = 50, print_level = 0)
 
@@ -141,7 +141,7 @@ const SCHEMA = JSONSchema.Schema(
             atol = 1e-6
         )
 
-        scenarios = SDDP.evaluate(new_model, test_scenarios)
+        scenarios = SDDP.evaluate(new_model, validation_scenarios)
         @test length(scenarios["problem_sha256_checksum"]) == 64
         @test length(scenarios["scenarios"]) == 10
         @test length(scenarios["scenarios"][1]) == 3
@@ -157,7 +157,7 @@ const SCHEMA = JSONSchema.Schema(
         SDDP.write_to_file(
             model,
             "experimental.sof.json";
-            test_scenarios = 0,
+            validation_scenarios = 0,
             name = "Experimental",
             description = "Experimental model",
             author = "Oscar Dowson",
@@ -202,13 +202,13 @@ if isfile("sof.schema.json")
 end
 
 @testset "slptestset" begin
-    model, test_scenarios = SDDP.read_from_file(
+    model, validation_scenarios = SDDP.read_from_file(
         joinpath(dirname(@__DIR__), "examples/StochOptFormat/electric.sof.json")
     )
     set_optimizer(model, GLPK.Optimizer)
     SDDP.train(model; iteration_limit = 20, print_level = 0)
     @test isapprox(SDDP.calculate_bound(model), 381.8533; atol = 1e-3)
-    scenarios = SDDP.evaluate(model, test_scenarios)
+    scenarios = SDDP.evaluate(model, validation_scenarios)
     @test length(scenarios["problem_sha256_checksum"]) == 64
     @test length(scenarios["scenarios"]) == 3
 end

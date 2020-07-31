@@ -73,21 +73,21 @@ function _throw_if_exisiting_cuts(model::PolicyGraph)
     end
 end
 
-function _test_scenarios(model::PolicyGraph, test_scenarios::Int, scenario_map)
-    return _test_scenarios(
+function _validation_scenarios(model::PolicyGraph, validation_scenarios::Int, scenario_map)
+    return _validation_scenarios(
         model,
         TestScenarios([
             TestScenario(
-                1 / test_scenarios,
+                1 / validation_scenarios,
                 sample_scenario(model, InSampleMonteCarlo())[1]
             )
-            for _ = 1:test_scenarios
+            for _ = 1:validation_scenarios
         ]),
         scenario_map,
     )
 end
-function _test_scenarios(
-    ::PolicyGraph, test_scenarios::TestScenarios, scenario_map
+function _validation_scenarios(
+    ::PolicyGraph, validation_scenarios::TestScenarios, scenario_map
 )
     return [
         Dict(
@@ -99,7 +99,7 @@ function _test_scenarios(
                 ) for (node, noise) in scenario.scenario
             ]
         )
-        for scenario in test_scenarios.scenarios
+        for scenario in validation_scenarios.scenarios
     ]
 end
 
@@ -107,13 +107,13 @@ end
     Base.write(
         io::IO,
         model::PolicyGraph;
-        test_scenarios::Union{Int, TestScenarios} = 1_000,
+        validation_scenarios::Union{Int, TestScenarios} = 1_000,
         kwargs...
     )
 
 Write `model` to `io` in the StochOptFormat file format.
 
-Pass an `Int` to `test_scenarios` (default `1_000`) to specify the number of
+Pass an `Int` to `validation_scenarios` (default `1_000`) to specify the number of
 test scenarios to generate using the [`InSampleMonteCarlo`](@ref) sampling
 scheme. Alternatively, pass a [`TestScenarios`](@ref) object to manually specify
 the test scenarios to use.
@@ -142,7 +142,7 @@ an incorrect formulation of the problem.
         write(
             io,
             model;
-            test_scenarios = 10,
+            validation_scenarios = 10,
             name = "MyModel",
             author = "@odow",
             date = "2020-07-20",
@@ -153,32 +153,36 @@ an incorrect formulation of the problem.
 function Base.write(
     io::IO,
     model::PolicyGraph{T};
-    test_scenarios::Union{Int, TestScenarios{T, S}} = 1_000,
+    validation_scenarios::Union{Int, TestScenarios{T, S}} = 1_000,
     kwargs...
 ) where {T, S}
     _throw_if_belief_states(model)
     _throw_if_objective_states(model)
     _throw_if_exisiting_cuts(model)
-    edges = Dict{String, Any}[]
-    _add_edges(edges, "$(model.root_node)", model.root_children)
     nodes = Dict{String, Any}()
+    subproblems = Dict{String, Any}()
     scenario_map = Dict{T, Any}()
     for (node_name, node) in model.nodes
-        _add_edges(edges, "$(node_name)", node.children)
-        scenario_map[node_name] = _add_node_to_dict(nodes, node, "$(node_name)")
+        _add_node_to_dict(node, node_name, nodes, subproblems, scenario_map)
     end
     sof = Dict{String, Any}(
-        "version" => Dict("major" => 0, "minor" => 1),
+        "version" => Dict("major" => 0, "minor" => 2),
         "root" => Dict{String, Any}(
             "name" => "$(model.root_node)",
             "state_variables" => Dict{String, Any}(
                 "$(k)" => Dict{String, Any}("initial_value" => v)
                 for (k, v) in model.initial_root_state
+            ),
+            "successors" => Dict(
+                "$(child.term)" => child.probability
+                for child in model.root_children
             )
         ),
         "nodes" => nodes,
-        "edges" => edges,
-        "test_scenarios" => _test_scenarios(model, test_scenarios, scenario_map)
+        "subproblems" => subproblems,
+        "validation_scenarios" => _validation_scenarios(
+            model, validation_scenarios, scenario_map
+        )
     )
     for (k, v) in kwargs
         sof["$(k)"] = v
@@ -186,33 +190,33 @@ function Base.write(
     return Base.write(io, JSON.json(sof))
 end
 
-function _add_edges(
-    edges::Vector{Dict{String, Any}}, from::String, children::Vector{<:Noise}
+function _add_node_to_dict(
+    node::Node,
+    node_name,
+    nodes::Dict,
+    subproblems::Dict,
+    scenario_map::Dict,
 )
-    for child in children
-        push!(
-            edges,
-            Dict(
-                "from" => from,
-                "to" => "$(child.term)",
-                "probability" => child.probability,
-            )
-        )
-    end
-end
-
-function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
+    s_node_name = "$(node_name)"
     random_variables = String[]
     realizations = Dict{String, Any}[
         Dict{String, Any}(
             "probability" => noise.probability,
             "support" => Dict{String, Float64}()
-        ) for noise in node.noise_terms
+        )
+        for noise in node.noise_terms
     ]
     undo_reformulation = _reformulate_uncertainty(
         node, realizations, random_variables
     )
-    dest[node_name] = Dict(
+    nodes[s_node_name] = Dict(
+        "subproblem" => s_node_name,
+        "realizations" => realizations,
+        "successors" => Dict(
+            "$(child.term)" => child.probability for child in node.children
+        ),
+    )
+    subproblems[s_node_name] = Dict(
         "state_variables" => Dict(
             "$(state_name)" => Dict(
                 "in" => name(state.in), "out" => name(state.out)
@@ -221,15 +225,15 @@ function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
         ),
         "random_variables" => random_variables,
         "subproblem" => _subproblem_to_dict(node.subproblem),
-        "realizations" => realizations,
     )
     undo_reformulation()
-    # Return a dictionary which maps the in-sample realizations to the
-    # transformed support for writing `test_scenarios` to file.
-    return Dict(
+    # A dictionary which maps the in-sample realizations to the transformed
+    # support for writing `validation_scenarios` to file.
+    scenario_map[node_name] = Dict(
         noise.term => realizations[i]["support"]
         for (i, noise) in enumerate(node.noise_terms)
     )
+    return
 end
 
 """
@@ -614,10 +618,13 @@ function _subproblem_to_dict(subproblem::JuMP.Model)
     return JSON.parse(io; dicttype = Dict{String, Any})
 end
 
-function _load_mof_model(sp::JuMP.Model, data::Dict, node::String)
+function _load_mof_model(sp::JuMP.Model, data::Dict, subproblem_name::String)
     model = MOI.FileFormats.Model(format = MOI.FileFormats.FORMAT_MOF)
     io = IOBuffer()
-    Base.write(io, JSON.json(data["nodes"][node]["subproblem"]))
+    Base.write(
+        io,
+        JSON.json(data["subproblems"][subproblem_name]["subproblem"]),
+    )
     seekstart(io)
     MOI.read!(io, model)
     MOI.copy_to(sp, model)
@@ -650,27 +657,33 @@ or silently build a non-convex model.
 ## Example
 
     open("my_model.sof.json", "r") do io
-        model, test_scenarios = read(io, PolicyGraph)
+        model, validation_scenarios = read(io, PolicyGraph)
     end
 """
 function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     data = JSON.parse(io; dicttype = Dict{String, Any})
-    graph = Graph(data["root"]["name"])
-    for (node_name, _) in data["nodes"]
-        add_node(graph, node_name)
+    graph = Graph("__root__")
+    for from_node in keys(data["nodes"])
+        add_node(graph, from_node)
     end
-    for edge in data["edges"]
-        add_edge(graph, edge["from"] => edge["to"], edge["probability"])
+    for (to_node, probability) in data["root"]["successors"]
+        add_edge(graph, "__root__" => to_node, probability)
+    end
+    for (from_node, node) in data["nodes"]
+        for (to_node, probability) in node["successors"]
+            add_edge(graph, from_node => to_node, probability)
+        end
     end
     proportion_min = sum(
         node["subproblem"]["objective"]["sense"] == "min"
-        for (_, node) in data["nodes"]
-    ) / length(data["nodes"])
+        for (_, node) in data["subproblems"]
+    ) / length(data["subproblems"])
     model_sense = proportion_min >= 0.5 ? MOI.MIN_SENSE : MOI.MAX_SENSE
     function subproblem_builder(sp::Model, node_name::String)
-        _load_mof_model(sp, data, "$(node_name)")
+        subproblem_name = data["nodes"][node_name]["subproblem"]
+        _load_mof_model(sp, data, subproblem_name)
         node = get_node(sp)
-        for (s, state) in data["nodes"][node_name]["state_variables"]
+        for (s, state) in data["subproblems"][subproblem_name]["state_variables"]
             node.states[Symbol(s)] = State(
                 variable_by_name(node.subproblem, state["in"]),
                 variable_by_name(node.subproblem, state["out"]),
@@ -692,7 +705,7 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
             sp,
             convert(
                 Vector{String},
-                data["nodes"][node_name]["random_variables"]
+                data["subproblems"][subproblem_name]["random_variables"]
             )
         )
         parameterize(sp, Ω, P) do ω
@@ -726,10 +739,10 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     end
     seekstart(io)
     SHA256 = bytes2hex(SHA.sha2_256(io))
-    return model, _test_scenarios(data, SHA256)
+    return model, _validation_scenarios(data, SHA256)
 end
 
-function _test_scenarios(data::Dict, SHA256::String)
+function _validation_scenarios(data::Dict, SHA256::String)
     substitute_nothing(x) = isempty(x) ? nothing : x
     scenarios = [
         TestScenario(
@@ -739,7 +752,7 @@ function _test_scenarios(data::Dict, SHA256::String)
                 for item in scenario["scenario"]
             ]
         )
-        for scenario in data["test_scenarios"]
+        for scenario in data["validation_scenarios"]
     ]
     return TestScenarios(scenarios; SHA256 = SHA256)
 end
@@ -797,7 +810,7 @@ WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
 
 ## Example
 
-    write_to_file(model, "my_model.sof.json"; test_scenarios = 10)
+    write_to_file(model, "my_model.sof.json"; validation_scenarios = 10)
 """
 function write_to_file(
     model::PolicyGraph,
@@ -833,7 +846,7 @@ WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
 
 ## Example
 
-    model, test_scenarios = read_from_file("my_model.sof.json")
+    model, validation_scenarios = read_from_file("my_model.sof.json")
 """
 function read_from_file(
     filename::String;
@@ -848,26 +861,26 @@ end
 
 """
     evaluate(
-        model::PolicyGraph{T}, test_scenarios::TestScenarios{T, S}
+        model::PolicyGraph{T}, validation_scenarios::TestScenarios{T, S}
     ) where {T, S}
 
 Evaluate the performance of the policy contained in `model` after a call to
-[`train`](@ref) on the scenarios specified by `test_scenarios`.
+[`train`](@ref) on the scenarios specified by `validation_scenarios`.
 
 ## Example
 
-    model, test_scenarios = read_from_file("my_model.sof.json")
+    model, validation_scenarios = read_from_file("my_model.sof.json")
     train(model; iteration_limit = 100)
-    simulations = evaluate(model, test_scenarios)
+    simulations = evaluate(model, validation_scenarios)
 """
 function evaluate(
-    model::PolicyGraph{T}, test_scenarios::TestScenarios{T, S}
+    model::PolicyGraph{T}, validation_scenarios::TestScenarios{T, S}
 ) where {T, S}
-    test_scenarios.last = 0
+    validation_scenarios.last = 0
     simulations = simulate(
         model,
-        length(test_scenarios.scenarios);
-        sampling_scheme = test_scenarios,
+        length(validation_scenarios.scenarios);
+        sampling_scheme = validation_scenarios,
         custom_recorders = Dict{Symbol, Function}(
             :primal => (sp) -> begin
                 Dict{String, Float64}(
@@ -878,7 +891,7 @@ function evaluate(
         )
     )
     return Dict(
-        "problem_sha256_checksum" => test_scenarios.SHA256,
+        "problem_sha256_checksum" => validation_scenarios.SHA256,
         "scenarios" => [
             [
                 Dict{String, Any}(
