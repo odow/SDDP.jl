@@ -6,19 +6,21 @@
 import SHA
 
 """
-    TestScenario{T, S}(probability::Float64, scenario::Vector{Tuple{T, S}})
+    ValidationScenario{T, S}(
+        probability::Float64, scenario::Vector{Tuple{T, S}}
+    )
 
-A single scenario for testing.
+A single scenario for validation.
 
-See also: [`TestScenarios`](@ref).
+See also: [`ValidationScenarios`](@ref).
 """
-struct TestScenario{T, S}
+struct ValidationScenario{T, S}
     probability::Float64
     scenario::Vector{Tuple{T, S}}
 end
 
 """
-    TestScenarios{T, S}(scenarios::Vector{TestScenario{T, S}})
+    ValidationScenarios{T, S}(scenarios::Vector{ValidationScenario{T, S}})
 
 An [`AbstractSamplingScheme`](@ref) based on a vector of scenarios.
 
@@ -26,20 +28,20 @@ Each scenario is a vector of `Tuple{T, S}` where the first element is the node
 to visit and the second element is the realization of the stagewise-independent
 noise term. Pass `nothing` if the node is deterministic.
 """
-mutable struct TestScenarios{T, S} <: AbstractSamplingScheme
-    scenarios::Vector{TestScenario{T, S}}
+mutable struct ValidationScenarios{T, S} <: AbstractSamplingScheme
+    scenarios::Vector{ValidationScenario{T, S}}
     last::Int
     SHA256::String
 
-    function TestScenarios(
-        scenarios::Vector{TestScenario{T, S}}; SHA256::String = ""
+    function ValidationScenarios(
+        scenarios::Vector{ValidationScenario{T, S}}; SHA256::String = ""
     ) where {T, S}
         return new{T, S}(scenarios, 0, SHA256)
     end
 end
 
 function sample_scenario(
-    model::PolicyGraph{T}, sampling_scheme::TestScenarios{T, S}; kwargs...
+    model::PolicyGraph{T}, sampling_scheme::ValidationScenarios{T, S}; kwargs...
 ) where {T, S}
     sampling_scheme.last += 1
     if sampling_scheme.last > length(sampling_scheme.scenarios)
@@ -73,11 +75,13 @@ function _throw_if_exisiting_cuts(model::PolicyGraph)
     end
 end
 
-function _validation_scenarios(model::PolicyGraph, validation_scenarios::Int, scenario_map)
+function _validation_scenarios(
+    model::PolicyGraph, validation_scenarios::Int, scenario_map
+)
     return _validation_scenarios(
         model,
-        TestScenarios([
-            TestScenario(
+        ValidationScenarios([
+            ValidationScenario(
                 1 / validation_scenarios,
                 sample_scenario(model, InSampleMonteCarlo())[1]
             )
@@ -87,7 +91,7 @@ function _validation_scenarios(model::PolicyGraph, validation_scenarios::Int, sc
     )
 end
 function _validation_scenarios(
-    ::PolicyGraph, validation_scenarios::TestScenarios, scenario_map
+    ::PolicyGraph, validation_scenarios::ValidationScenarios, scenario_map
 )
     return [
         Dict(
@@ -107,16 +111,16 @@ end
     Base.write(
         io::IO,
         model::PolicyGraph;
-        validation_scenarios::Union{Int, TestScenarios} = 1_000,
+        validation_scenarios::Union{Int, ValidationScenarios} = 1_000,
         kwargs...
     )
 
 Write `model` to `io` in the StochOptFormat file format.
 
-Pass an `Int` to `validation_scenarios` (default `1_000`) to specify the number of
-test scenarios to generate using the [`InSampleMonteCarlo`](@ref) sampling
-scheme. Alternatively, pass a [`TestScenarios`](@ref) object to manually specify
-the test scenarios to use.
+Pass an `Int` to `validation_scenarios` (default `1_000`) to specify the number
+of validation scenarios to generate using the [`InSampleMonteCarlo`](@ref)
+sampling scheme. Alternatively, pass a [`ValidationScenarios`](@ref) object to
+manually specify the validation scenarios to use.
 
 Any additional `kwargs` passed to `write` will be stored in the top-level of the
 resulting StochOptFormat file. Valid arguments include `name`, `author`, `date`,
@@ -153,7 +157,7 @@ an incorrect formulation of the problem.
 function Base.write(
     io::IO,
     model::PolicyGraph{T};
-    validation_scenarios::Union{Int, TestScenarios{T, S}} = 1_000,
+    validation_scenarios::Union{Int, ValidationScenarios{T, S}} = 1_000,
     kwargs...
 ) where {T, S}
     _throw_if_belief_states(model)
@@ -241,8 +245,8 @@ end
         node::Node, realizations, random_variables
     )
 
-Convert any lower and upper variable_bound_storage than depend on the uncertainty into linear
-constraints with a random variable.
+Convert any lower and upper variable_bound_storage than depend on the
+uncertainty into linear constraints with a random variable.
 
 Fixed variables are recorded as random variables, but no transformation is done.
 
@@ -636,10 +640,10 @@ end
         io::IO,
         ::Type{PolicyGraph};
         bound::Float64 = 1e6,
-    )::Tuple{PolicyGraph, TestScenarios}
+    )::Tuple{PolicyGraph, ValidationScenarios}
 
 Return a tuple containing a [`PolicyGraph`](@ref) object and a
-[`TestScenarios`](@ref) read from `io` in the StochOptFormat file format.
+[`ValidationScenarios`](@ref) read from `io` in the StochOptFormat file format.
 
 See also: [`evaluate`](@ref).
 
@@ -745,7 +749,7 @@ end
 function _validation_scenarios(data::Dict, SHA256::String)
     substitute_nothing(x) = isempty(x) ? nothing : x
     scenarios = [
-        TestScenario(
+        ValidationScenario(
             scenario["probability"],
             [
                 (item["node"], substitute_nothing(item["support"]))
@@ -754,7 +758,7 @@ function _validation_scenarios(data::Dict, SHA256::String)
         )
         for scenario in data["validation_scenarios"]
     ]
-    return TestScenarios(scenarios; SHA256 = SHA256)
+    return ValidationScenarios(scenarios; SHA256 = SHA256)
 end
 
 function _convert_objective_function(sp::Model, rvs::Vector{String})
@@ -830,10 +834,11 @@ end
         compression::MOI.FileFormats.AbstractCompressionScheme =
             MOI.FileFormats.AutomaticCompression(),
         kwargs...
-    )::Tuple{PolicyGraph, TestScenarios}
+    )::Tuple{PolicyGraph, ValidationScenarios}
 
 Return a tuple containing a [`PolicyGraph`](@ref) object and a
-[`TestScenarios`](@ref) read from `filename` in the StochOptFormat file format.
+[`ValidationScenarios`](@ref) read from `filename` in the StochOptFormat file
+format.
 
 Pass an argument to `compression` to override the default of automatically
 detecting the file compression to use based on the extension of `filename`.
@@ -861,7 +866,7 @@ end
 
 """
     evaluate(
-        model::PolicyGraph{T}, validation_scenarios::TestScenarios{T, S}
+        model::PolicyGraph{T}, validation_scenarios::ValidationScenarios{T, S}
     ) where {T, S}
 
 Evaluate the performance of the policy contained in `model` after a call to
@@ -874,7 +879,7 @@ Evaluate the performance of the policy contained in `model` after a call to
     simulations = evaluate(model, validation_scenarios)
 """
 function evaluate(
-    model::PolicyGraph{T}, validation_scenarios::TestScenarios{T, S}
+    model::PolicyGraph{T}, validation_scenarios::ValidationScenarios{T, S}
 ) where {T, S}
     validation_scenarios.last = 0
     simulations = simulate(
@@ -896,7 +901,7 @@ function evaluate(
             [
                 Dict{String, Any}(
                     "objective" => s[:stage_objective],
-                    "primal" => s[:primal]
+                    "primal" => s[:primal],
                 )
                 for s in sim
             ] for sim in simulations
