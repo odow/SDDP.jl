@@ -549,6 +549,7 @@ end
 
 The entropic risk measure as described by Dowson, Morton, and Pagnoncelli
 (2020). Multistage stochastic programs with the entropic risk measure.
+http://www.optimization-online.org/DB_HTML/2020/08/7984.html
 """
 mutable struct Entropic <: AbstractRiskMeasure
     γ::Float64
