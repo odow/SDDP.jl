@@ -211,7 +211,7 @@ end
         )
         @test risk_adjusted_probability ≈ [0.1, 0.2, 0.3, 0.2, 0.2] atol = 1e-6
     end
-   
+
     @testset "Non-uniform Worst Case" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         SDDP.adjust_probability(
@@ -224,7 +224,7 @@ end
         )
         @test risk_adjusted_probability ≈ [0.0, 1.0, 0.0, 0.0, 0.0] atol = 1e-6
     end
-   
+
     @testset "Non-uniform Worst Case Max" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         SDDP.adjust_probability(
@@ -237,7 +237,7 @@ end
         )
         @test risk_adjusted_probability ≈ [0.0, 0.0, 0.0, 0.0, 1.0] atol = 1e-6
     end
-   
+
     @testset "Non-uniform" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         SDDP.adjust_probability(
@@ -408,5 +408,42 @@ end
             true,
         )
         @test risk_adjusted_probability ≈ [0.0, 1 / 6, 5 / 6, 0.0]
+    end
+end
+
+@testset "Entropic" begin
+    @test sprint(show, SDDP.Entropic(0.1)) == "Entropic risk measure with γ = 0.1"
+    @testset "Minimization" begin
+        # Test that increasing values of θ lead to larger values for F[X].
+        X = [1.0, 2.0, 3.0]
+        P = [0.5, 0.5, 0.0]
+        Q = [NaN, NaN, NaN]
+        last, last_q2 = -Inf, 0.0
+        for i = -4:4
+            θ = 10.0^i
+            α = SDDP.adjust_probability(SDDP.Entropic(θ), Q, P, [], X, true)
+            current = Q' * X + α
+            @test current >= last
+            @test Q[2] >= last_q2
+            last, last_q2 = current, Q[2]
+        end
+    end
+    @testset "Maximization" begin
+        # Test that increasing values of θ lead to smaller values for F[X].
+        X = [1.0, 2.0, 3.0]
+        P = [0.5, 0.5, 0.0]
+        Q = [NaN, NaN, NaN]
+        last, last_q1 = Inf, 0.0
+        for i = -4:4
+            θ = 10.0^i
+            α = SDDP.adjust_probability(SDDP.Entropic(θ), Q, P, [], X, false)
+            current = Q' * X + α
+            if Q[1] < 1 - 1e-6
+                # If Q[1] ≈ 1, this test can fail due to numerical error.
+                @test current <= last
+            end
+            @test Q[1] >= last_q1
+            last, last_q1 = current, Q[1]
+        end
     end
 end

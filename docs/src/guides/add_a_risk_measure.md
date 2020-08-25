@@ -304,3 +304,32 @@ round.(risk_adjusted_probability, digits = 1)
  0.8
  0.0
 ```
+
+### Entropic
+
+```@docs
+SDDP.Entropic
+```
+
+```jldoctest intermediate_risk
+risk_measure = SDDP.Entropic(0.1)
+
+SDDP.adjust_probability(
+    risk_measure,
+    risk_adjusted_probability,
+    nominal_probability,
+    noise_supports,
+    cost_realizations,
+    is_minimization
+)
+
+round.(risk_adjusted_probability, digits = 4)
+
+# output
+
+4-element Array{Float64,1}:
+ 0.11
+ 0.1991
+ 0.3648
+ 0.326
+```

@@ -541,3 +541,46 @@ function adjust_probability(
     copyto!(risk_adjusted_probability, JuMP.value.(p))
     return 0.0
 end
+
+# ================================= Entropic ============================== #
+
+"""
+    Entropic(γ::Float64)
+
+The entropic risk measure as described by Dowson, Morton, and Pagnoncelli
+(2020). Multistage stochastic programs with the entropic risk measure.
+http://www.optimization-online.org/DB_HTML/2020/08/7984.html
+"""
+mutable struct Entropic <: AbstractRiskMeasure
+    γ::Float64
+end
+
+function Base.show(io::IO, ent::Entropic)
+    return print(io, "Entropic risk measure with γ = $(ent.γ)")
+end
+
+function adjust_probability(
+    measure::Entropic,
+    Q::Vector{Float64},
+    p::Vector{Float64},
+    ::Vector,
+    X::Vector{Float64},
+    is_min::Bool,
+)
+    if measure.γ == 0.0  # Special case of entropic: if γ = 0, F[X] = E[X].
+        Q .= p
+        return 0.0
+    end
+    # Handle maximization problems by negating γ. Usually we would negate X, but
+    # with convex RM's, we also have to negate the α(q) term, so it's easier to
+    # just negate γ.
+    γ = (is_min ? 1.0 : -1.0) * measure.γ
+    # Use `BigFloat` to avoid overflow that occurs when calculating `exp(x)`.
+    y = p .* exp.(big.(γ .* X))
+    Q .= y / sum(y)
+    α = sum(
+        # To avoid numerical issues with the log, skip elements that are `≈ 0`.
+        qi * log(qi / pi) for (pi, qi) in zip(p, Q) if pi > 1e-14  && qi > 1e-14
+    )
+    return -α / γ
+end
