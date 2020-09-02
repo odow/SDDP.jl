@@ -55,7 +55,8 @@ If you use `SDDP.jl`, we ask that you please cite the following:
 	title = {{SDDP}.jl: a {Julia} package for stochastic dual dynamic programming},
 	journal = {INFORMS Journal on Computing},
 	author = {Dowson, O. and Kapelevich, L.},
-	note = {in press},
+	doi = {https://doi.org/10.1287/ijoc.2020.0987},
+	note = {Articles in Advance},
 	year = {2020}
 }
 ```
@@ -93,3 +94,15 @@ following:
 }
 ```
 Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2019/03/7141.html).
+
+If you use the entropic risk measure, we ask that you please cite the following:
+```
+@article{dowson_entropic,
+	title = {Multistage stochastic programs with the entropic risk measure},
+	journal = {Optimization Online},
+	author = {Dowson, O., Morton, D.P., and Pagnoncelli, B.K.},
+	url = {http://www.optimization-online.org/DB_HTML/2020/08/7984.html}
+	year = {2020}
+}
+```
+Here is a [preprint](http://www.optimization-online.org/DB_HTML/2020/08/7984.html).
