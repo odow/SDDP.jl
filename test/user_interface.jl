@@ -356,19 +356,19 @@ end
         end
     end
     @testset "no initial_value" begin
-        exception = ErrorException(
-            "In `@variable(node, x, SDDP.State)`: When creating a state " *
-            "variable, you must set the `initial_value` keyword to the value " *
-            "of the state variable at the root node.",
-        )
-        @test_throws exception SDDP.LinearPolicyGraph(
-            stages = 2,
-            upper_bound = 0.0,
-            sense = :Max,
-            direct_mode = false,
-        ) do node, stage
-            @variable(node, x, SDDP.State)
-            @stageobjective(node, x.out)
+        try
+            SDDP.LinearPolicyGraph(
+                stages = 2,
+                upper_bound = 0.0,
+                sense = :Max,
+                direct_mode = false,
+            ) do node, stage
+                @variable(node, x, SDDP.State)
+                @stageobjective(node, x.out)
+            end
+            error("This error should not be reached!")
+        catch err
+            @test occursin("When creating a state variable", err.msg)
         end
     end
 
