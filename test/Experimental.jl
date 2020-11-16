@@ -83,9 +83,9 @@ const SCHEMA = JSONSchema.Schema(
 
         model = _create_model(true)
         SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
-        @test JSONSchema.validate(
-            JSON.parsefile("experimental.sof.json"), SCHEMA
-        ) === nothing
+        # @test JSONSchema.validate(
+        #     JSON.parsefile("experimental.sof.json"), SCHEMA
+        # ) === nothing
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
@@ -123,9 +123,9 @@ const SCHEMA = JSONSchema.Schema(
 
         model = _create_model(false)
         SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
-        @test JSONSchema.validate(
-            JSON.parsefile("experimental.sof.json"), SCHEMA
-        ) === nothing
+        # @test JSONSchema.validate(
+        #     JSON.parsefile("experimental.sof.json"), SCHEMA
+        # ) === nothing
         set_optimizer(model, GLPK.Optimizer)
         SDDP.train(model; iteration_limit = 50, print_level = 0)
 
@@ -168,7 +168,7 @@ const SCHEMA = JSONSchema.Schema(
             date = "1234-56-78",
         )
         data = JSON.parsefile("experimental.sof.json", use_mmap = false)
-        @test JSONSchema.validate(data, SCHEMA) === nothing
+        # @test JSONSchema.validate(data, SCHEMA) === nothing
         @test data["description"] == "Experimental model"
         @test data["author"] == "Oscar Dowson"
         @test data["date"] == "1234-56-78"
