@@ -218,7 +218,7 @@ function test_hydro_valley_model()
     markov_stagewise_model =
         hydrovalleymodel(hasstagewiseinflows = true, hasmarkovprice = true)
     SDDP.train(markov_stagewise_model, iteration_limit = 10, print_level = 0)
-    @test SDDP.calculate_bound(markov_stagewise_model) ≈ 855.0 atol = 1e-3
+    @test SDDP.calculate_bound(markov_stagewise_model) ≈ 855.0 atol = 1.0
 
     # risk averse stagewise inflows and markov prices
     riskaverse_model = hydrovalleymodel()
@@ -228,7 +228,7 @@ function test_hydro_valley_model()
         iteration_limit = 10,
         print_level = 0,
     )
-    @test SDDP.calculate_bound(riskaverse_model) ≈ 828.157 atol = 1e-3
+    @test SDDP.calculate_bound(riskaverse_model) ≈ 828.157 atol = 1.0
 
     # stagewise inflows and markov prices
     worst_case_model = hydrovalleymodel(sense = :Min)
@@ -238,7 +238,7 @@ function test_hydro_valley_model()
         iteration_limit = 10,
         print_level = 0,
     )
-    @test SDDP.calculate_bound(worst_case_model) ≈ -780.867 atol = 1e-3
+    @test SDDP.calculate_bound(worst_case_model) ≈ -780.867 atol = 1.0
 
     # stagewise inflows and markov prices
     cutselection_model = hydrovalleymodel()
@@ -253,7 +253,7 @@ function test_hydro_valley_model()
     #         JuMP.GenericAffExpr{Float64,JuMP.VariableRef},
     #         MOI.LessThan{Float64}
     #     ) < 10
-    @test SDDP.calculate_bound(cutselection_model) ≈ 855.0 atol = 1e-3
+    @test SDDP.calculate_bound(cutselection_model) ≈ 855.0 atol = 1.0
 
     # Distributionally robust Optimization
     dro_model = hydrovalleymodel(hasmarkovprice = false)
@@ -263,7 +263,7 @@ function test_hydro_valley_model()
         iteration_limit = 10,
         print_level = 0,
     )
-    @test SDDP.calculate_bound(dro_model) ≈ 835.0 atol = 1e-3
+    @test SDDP.calculate_bound(dro_model) ≈ 835.0 atol = 1.0
 
     dro_model = hydrovalleymodel(hasmarkovprice = false)
     SDDP.train(
@@ -272,7 +272,7 @@ function test_hydro_valley_model()
         iteration_limit = 20,
         print_level = 0,
     )
-    @test SDDP.calculate_bound(dro_model) ≈ 836.695 atol = 1e-3
+    @test SDDP.calculate_bound(dro_model) ≈ 836.695 atol = 1.0
     # (Note) radius ≈ sqrt(2/3), will set all noise probabilities to zero except the worst case noise
     # (Why?):
     # The distance from the uniform distribution (the assumed "true" distribution)
