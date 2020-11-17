@@ -284,6 +284,13 @@ function _initialize_solver(node::Node; throw_error::Bool)
             error("Cannot use asynchronous solver with optimizers in direct mode.")
         end
     elseif MOI.Utilities.state(backend(node.subproblem)) == MOIU.NO_OPTIMIZER
+        if node.optimizer === nothing
+            error("""
+            You must supply an optimizer for the policy graph, either by passing
+            one to the `optimizer` keyword argument to `PolicyGraph`, or by
+            using `JuMP.set_optimizer(model, optimizer)`.
+            """)
+        end
         set_optimizer(node.subproblem, node.optimizer)
     end
     return

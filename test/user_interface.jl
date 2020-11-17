@@ -274,7 +274,7 @@ end
             SDDP.LinearGraph(2),
             sense = :Min,
             lower_bound = 0.0,
-            direct_mode = false,
+            optimizer = GLPK.Optimizer,
         ) do node, stage
             @variable(node, 0 <= x <= 1)
             @stageobjective(node, 2x)
@@ -297,7 +297,7 @@ end
             SDDP.LinearGraph(2),
             upper_bound = 0.0,
             sense = :Max,
-            direct_mode = false,
+            optimizer = GLPK.Optimizer,
         ) do node, stage
             @variable(node, 0 <= x <= 1)
             @stageobjective(node, 2x)
@@ -409,7 +409,7 @@ end
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0,
-        direct_mode = false,
+        optimizer = GLPK.Optimizer,
     ) do subproblem, t
         @variable(subproblem, x, SDDP.State, initial_value = 0)
         SDDP.parameterize(subproblem, [1, 2]) do ω
@@ -422,7 +422,7 @@ end
     @test_throws ErrorException("add_objective_state can only be called once.") SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0,
-        direct_mode = false,
+        optimizer = GLPK.Optimizer,
     ) do subproblem, t
         @variable(subproblem, x, SDDP.State, initial_value = 0)
         SDDP.add_objective_state(
