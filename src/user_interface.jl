@@ -459,7 +459,7 @@ function construct_subproblem(optimizer_factory, direct_mode::Bool)
     if direct_mode
         return JuMP.direct_model(optimizer_factory())
     else
-        return JuMP.Model(optimizer_factory)
+        return JuMP.Model() # optimizer_factory)
     end
 end
 
