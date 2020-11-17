@@ -28,10 +28,11 @@ using Test
     end
     SDDP.plot(plt, "test.html", open = false)
     @test sprint(show, plt) == "A spaghetti plot with 2 scenarios and 3 stages."
-    @test read("test.html", String) == read("control.html", String)
+    control = joinpath(@__DIR__, "control.html")
+    @test read("test.html", String) == read(control, String)
     SDDP.save(plt, "test.html", open = false)
     @test sprint(show, plt) == "A spaghetti plot with 2 scenarios and 3 stages."
-    @test read("test.html", String) == read("control.html", String)
+    @test read("test.html", String) == read(control, String)
     rm("test.html")
 end
 

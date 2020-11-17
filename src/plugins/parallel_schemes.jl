@@ -11,45 +11,6 @@ function log_iteration(options)
 end
 
 """
-    _initialize_solver(model; throw_error::Bool)
-
-After passing a model to a different process, we need to set the optimizer again.
-
-If `throw_error`, throw an error if the model is in direct mode.
-
-See also: [`_uninitialize_solver`](@ref).
-"""
-function _initialize_solver(model::PolicyGraph; throw_error::Bool)
-    for (_, node) in model.nodes
-        if node.optimizer !== nothing
-            set_optimizer(node.subproblem, node.optimizer)
-        elseif throw_error
-            error("Cannot use asynchronous solver with optimizers in direct mode.")
-        end
-    end
-end
-
-"""
-    _uninitialize_solver(model; throw_error::Bool)
-
-Before passing a model to a different process, we need to drop the inner solver
-in case it has some C pointers that we cannot serialize (e.g., GLPK).
-
-If `throw_error`, throw an error if the model is in direct mode.
-
-See also: [`_initialize_solver`](@ref).
-"""
-function _uninitialize_solver(model::PolicyGraph; throw_error::Bool)
-    for (_, node) in model.nodes
-        if node.optimizer !== nothing
-            MOI.Utilities.drop_optimizer(node.subproblem)
-        elseif throw_error
-            error("Cannot use asynchronous solver with optimizers in direct mode.")
-        end
-    end
-end
-
-"""
     Serial()
 
 Run SDDP in serial mode.

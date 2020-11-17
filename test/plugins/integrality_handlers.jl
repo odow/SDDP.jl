@@ -33,6 +33,7 @@ using Test
         if integrality_handler == SDDP.ContinuousRelaxation()
             SDDP.relax_integrality(model, integrality_handler)
         end
+        SDDP._initialize_solver(node; throw_error = false)
         optimize!(node.subproblem)
         dual_vars = SDDP.get_dual_variables(node, integrality_handler)
 
@@ -86,7 +87,8 @@ using Test
         if integrality_handler == SDDP.ContinuousRelaxation()
             SDDP.relax_integrality(model, integrality_handler)
         end
-        JuMP.optimize!(node.subproblem)
+        SDDP._initialize_solver(node; throw_error = false)
+        optimize!(node.subproblem)
         dual_vars = SDDP.get_dual_variables(node, integrality_handler)
 
         if integrality_handler == SDDP.ContinuousRelaxation()
