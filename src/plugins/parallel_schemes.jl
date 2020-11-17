@@ -19,7 +19,7 @@ If `throw_error`, throw an error if the model is in direct mode.
 
 See also: [`_uninitialize_solver`](@ref).
 """
-function _initialize_solver(model::Model; throw_error::Bool)
+function _initialize_solver(model::PolicyGraph; throw_error::Bool)
     for (_, node) in model.nodes
         if node.optimizer !== nothing
             set_optimizer(node.subproblem, node.optimizer)
@@ -39,7 +39,7 @@ If `throw_error`, throw an error if the model is in direct mode.
 
 See also: [`_initialize_solver`](@ref).
 """
-function _uninitialize_solver(model::Model; throw_error::Bool)
+function _uninitialize_solver(model::PolicyGraph; throw_error::Bool)
     for (_, node) in model.nodes
         if node.optimizer !== nothing
             MOI.Utilities.drop_optimizer(node.subproblem)
