@@ -234,10 +234,10 @@ end
 # addition to the things already discussed, we need a few extra pieces of
 # information.
 #
-# First, we maximizing, so we set `sense = :Max`. Second, we need to provide a
-# valid upper bound. (See [Choosing an initial bound](@ref) for more on this.)
-# We know from Birge and Louveaux that the optimal solution is \\\$108,390.
-# So, let's choose \\\$500,000 just to be safe.
+# First, we are maximizing, so we set `sense = :Max`. Second, we need to provide
+# a valid upper bound. (See [Choosing an initial bound](@ref) for more on this.)
+# We know from Birge and Louveaux that the optimal solution is \\\$108,390.  So,
+# let's choose \\\$500,000 just to be safe.
 
 # Here is the full model.
 

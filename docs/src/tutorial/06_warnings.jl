@@ -93,8 +93,8 @@ SDDP.numerical_stability_report(model)
 # (Which is very likely.)
 
 # The bound should not be as large as possible (since this will help with
-# convergence and the numerical issues discussed above), but if chosen to small,
-# it may cut of the feasible region and lead to a sub-optimal solution.
+# convergence and the numerical issues discussed above), but if chosen too
+# small, it may cut off the feasible region and lead to a sub-optimal solution.
 
 # Consider the following simple model, where we first set `lower_bound` to `0.0`.
 

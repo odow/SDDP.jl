@@ -20,7 +20,7 @@ and JuMP.
 You can install `SDDP.jl` as follows:
 
 ```julia
-julia> ] add https://github.com/odow/SDDP.jl.git
+julia> ] add SDDP
 ```
 
 ## Tutorials
