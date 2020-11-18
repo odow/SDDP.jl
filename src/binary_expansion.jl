@@ -4,7 +4,7 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 const _log2inv = inv(log(2))
-_bitsrequired(x::Int) = floor(Int, log(x) * _log2inv) + 1
+_bitsrequired(x::T) where {T <: Integer} = floor(T, log(x) * _log2inv) + 1
 
 """
     binexpand(x::Int, maximum::Int)
@@ -13,16 +13,19 @@ Returns a vector of binary coefficients for the binary expansion of `x`.
 Length of the result is determined by the number of bits required to represent
 `maximum` in binary.
 """
-function binexpand(x::Int, maximum::Int)
-    x < 0 && error(
-        "Cannot perform binary expansion on a negative number." *
-        "Initial values of state variables must be nonnegative.",
-    )
-    maximum <= 0 && error(
-        "Cannot perform binary expansion on zero-length " *
-        "vector. Upper bounds of state variables must be positive.",
-    )
-    y = zeros(Int, _bitsrequired(maximum))
+function binexpand(x::T, maximum::T) where {T <: Integer}
+    if x < 0
+        error(
+            "Cannot perform binary expansion on a negative number." *
+            "Initial values of state variables must be nonnegative.",
+        )
+    elseif maximum <= 0
+        error(
+            "Cannot perform binary expansion on zero-length " *
+            "vector. Upper bounds of state variables must be positive.",
+        )
+    end
+    y = zeros(T, _bitsrequired(maximum))
     @inbounds for i = length(y):-1:1
         k = 2^(i - 1)
         if x >= k

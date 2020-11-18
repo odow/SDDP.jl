@@ -269,6 +269,72 @@ function attempt_numerical_recovery(node::Node)
     return
 end
 
+"""
+    _initialize_solver(node::Node; throw_error::Bool)
+
+After passing a model to a different process, we need to set the optimizer again.
+
+If `throw_error`, throw an error if the model is in direct mode.
+
+See also: [`_uninitialize_solver`](@ref).
+"""
+function _initialize_solver(node::Node; throw_error::Bool)
+    if mode(node.subproblem) == DIRECT
+        if throw_error
+            error("Cannot use asynchronous solver with optimizers in direct mode.")
+        end
+    elseif MOI.Utilities.state(backend(node.subproblem)) == MOIU.NO_OPTIMIZER
+        if node.optimizer === nothing
+            error("""
+            You must supply an optimizer for the policy graph, either by passing
+            one to the `optimizer` keyword argument to `PolicyGraph`, or by
+            using `JuMP.set_optimizer(model, optimizer)`.
+            """)
+        end
+        set_optimizer(node.subproblem, node.optimizer)
+    end
+    return
+end
+
+"""
+    _initialize_solver(model::PolicyGraph; throw_error::Bool)
+
+After passing a model to a different process, we need to set the optimizer again.
+
+If `throw_error`, throw an error if the model is in direct mode.
+
+See also: [`_uninitialize_solver`](@ref).
+"""
+function _initialize_solver(model::PolicyGraph; throw_error::Bool)
+    for (_, node) in model.nodes
+        _initialize_solver(node; throw_error = throw_error)
+    end
+    return
+end
+
+"""
+    _uninitialize_solver(model; throw_error::Bool)
+
+Before passing a model to a different process, we need to drop the inner solver
+in case it has some C pointers that we cannot serialize (e.g., GLPK).
+
+If `throw_error`, throw an error if the model is in direct mode.
+
+See also: [`_initialize_solver`](@ref).
+"""
+function _uninitialize_solver(model::PolicyGraph; throw_error::Bool)
+    for (_, node) in model.nodes
+        if mode(node.subproblem) == DIRECT
+            if throw_error
+                error("Cannot use asynchronous solver with optimizers in direct mode.")
+            end
+        elseif MOI.Utilities.state(backend(node.subproblem)) != MOIU.NO_OPTIMIZER
+            MOI.Utilities.drop_optimizer(node.subproblem)
+        end
+    end
+    return
+end
+
 # Internal function: solve the subproblem associated with node given the
 # incoming state variables state and realization of the stagewise-independent
 # noise term noise. If require_duals=true, also return the dual variables
@@ -281,6 +347,7 @@ function solve_subproblem(
     scenario_path::Vector{Tuple{T,S}};
     require_duals::Bool,
 ) where {T,S}
+    _initialize_solver(node; throw_error = false)
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
     # set the objective.

@@ -20,6 +20,7 @@ Base.show(io::IO, ::Serial) = print(io, "serial mode")
 interrupt(::Serial) = nothing
 
 function master_loop(::Serial, model::PolicyGraph{T}, options::Options) where {T}
+    _initialize_solver(model; throw_error = false)
     while true
         result = iteration(model, options)
         log_iteration(options)
@@ -36,6 +37,7 @@ function _simulate(
     variables::Vector{Symbol};
     kwargs...,
 )
+    _initialize_solver(model; throw_error = false)
     return map(i -> _simulate(model, variables; kwargs...), 1:number_replications)
 end
 
@@ -70,15 +72,9 @@ function Asynchronous(
     slave_ids::Vector{Int} = Distributed.workers();
     use_master::Bool = true,
 )
-    function init_callback(model)
-        for (_, node) in model.nodes
-            if node.optimizer === nothing
-                error("Cannot use asynchronous solver with optimizers in direct mode.")
-            end
-            set_optimizer(node.subproblem, node.optimizer)
-        end
+    return Asynchronous(slave_ids, use_master) do model
+        _initialize_solver(model; throw_error = true)
     end
-    return Asynchronous(init_callback, slave_ids, use_master)
 end
 
 interrupt(a::Asynchronous) = Distributed.interrupt(a.slave_ids)
@@ -170,6 +166,7 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
     )
     results = Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
     futures = Distributed.Future[]
+    _uninitialize_solver(model; throw_error = true)
     for pid in async.slave_ids
         let model_pid = model, options_pid = options
             f = Distributed.remotecall(
@@ -184,7 +181,7 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
             push!(futures, f)
         end
     end
-
+    _initialize_solver(model; throw_error = true)
     while true
         # Starting workers has a high overhead. We have to copy the models across, and then
         # precompile all the methods on every process :(. While that's happening, let's
@@ -205,6 +202,9 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
                 wait.(futures)
                 return result.status
             end
+        end
+        while !isready(results)
+            sleep(1.0)
         end
         # We'll only reach here is isready(results) == true, so we won't hang waiting for a
         # new result on take!. After we receive a new result from a slave, there are a few
@@ -250,6 +250,7 @@ function _simulate(
     variables::Vector{Symbol};
     kwargs...,
 )
+    _uninitialize_solver(model; throw_error = true)
     wp = Distributed.CachingPool(async.slave_ids)
     let model = model, init = false, async = async, variables = variables, kwargs = kwargs
         return Distributed.pmap(wp, 1:number_replications) do _

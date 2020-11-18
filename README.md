@@ -10,8 +10,8 @@ at https://odow.github.io/SDDP.jl/latest/.
 
 If you need help, file a Github issue: https://github.com/odow/SDDP.jl/issues/new
 
-[build-img]: https://travis-ci.org/odow/SDDP.jl.svg?branch=master
-[build-url]: https://travis-ci.org/odow/SDDP.jl
+[build-img]: https://github.com/odow/SDDP.jl/workflows/CI/badge.svg?branch=master
+[build-url]: https://github.com/odow/SDDP.jl/actions?query=workflow%3ACI
 
 [codecov-img]: https://codecov.io/github/odow/SDDP.jl/coverage.svg?branch=master
 [codecov-url]: https://codecov.io/github/odow/SDDP.jl?branch=master

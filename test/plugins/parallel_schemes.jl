@@ -68,7 +68,7 @@ end
         MOI.GreaterThan{Float64},
     )
     @test length(cons) == 1
-    @test replace(sprint(print, cons[1]), "≥" => ">=") == "noname - 2 x_out >= -5.0"
+    @test replace(sprint(print, cons[1]), "≥" => ">=") == "-2 x_out + noname >= -5.0"
 
     result = SDDP.IterationResult(
         1,

@@ -172,9 +172,9 @@ SDDP.evaluate(V; volume = 1)
 # convex state variables.
 
 # You can also plot the value function using [`SDDP.plot`](@ref)
-
-SDDP.plot(V, volume = 0:200, filename = "value_function.html")
-
+# ```julia
+# SDDP.plot(V, volume = 0:200, filename = "value_function.html")
+# ```
 # This should open a webpage that looks like [this one](../assets/value_function.html).
 
 # ## Convergence dashboard

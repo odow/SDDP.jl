@@ -7,7 +7,7 @@ using SDDP: binexpand, bincontract
 using Test
 
 @testset "Binary Expansion" begin
-    int_len = floor(Int, log(typemax(Int)) / log(2))
+    int_len = round(Int, log(typemax(Int)) / log(2))
     @test_throws Exception binexpand(0)
     @test binexpand(1, 1) == [1]
     @test binexpand(2, 2) == [0, 1]

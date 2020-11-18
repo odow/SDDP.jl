@@ -15,15 +15,17 @@ end
 const EXCLUDED_EXAMPLES =
     ["inventory_management.jl", "msppy_hydro_thermal.jl", "tiger_problem.jl"]
 
-const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
+const EXAMPLES_DIR = joinpath(dirname(@__DIR__), "examples")
+const PLUGINS_DIR = joinpath(@__DIR__, "plugins")
+const VISUALIZATION_DIR = joinpath(@__DIR__, "visualization")
 
 @testset "SDDP.jl" begin
     @testset "Unit Tests" begin
-        @testset "plugins/$(file)" for file in read_dir("plugins", ["parallel_schemes.jl"])
-            include(joinpath("plugins", file))
+        @testset "plugins/$(file)" for file in read_dir(PLUGINS_DIR, ["parallel_schemes.jl"])
+            include(joinpath(PLUGINS_DIR, file))
         end
-        @testset "visualization/$(file)" for file in read_dir("visualization")
-            include(joinpath("visualization", file))
+        @testset "visualization/$(file)" for file in read_dir(VISUALIZATION_DIR)
+            include(joinpath(VISUALIZATION_DIR, file))
         end
         @testset "$(file)" for file in read_dir(".", ["runtests.jl"])
             include(file)
@@ -39,7 +41,7 @@ const EXAMPLES_DIR = joinpath(dirname(dirname(@__FILE__)), "examples")
 
     @testset "Parallel" begin
         procs = Distributed.addprocs(4)
-        include(joinpath("plugins", "parallel_schemes.jl"))
+        include(joinpath(@__DIR__, "plugins", "parallel_schemes.jl"))
         Distributed.rmprocs(procs)
     end
 end

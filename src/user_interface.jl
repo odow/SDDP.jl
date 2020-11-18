@@ -71,7 +71,7 @@ function _validate_graph(graph::Graph)
     for (node, children) in graph.nodes
         if length(children) > 0
             probability = sum(child[2] for child in children)
-            if !(0.0 <= probability <= 1.0)
+            if !(-1e-8 <= probability <= 1.0 + 1e-8)
                 error(
                     "Probability on edges leaving node $(node) sum to " *
                     "$(probability), but this must be in [0.0, 1.0]",
@@ -459,7 +459,7 @@ function construct_subproblem(optimizer_factory, direct_mode::Bool)
     if direct_mode
         return JuMP.direct_model(optimizer_factory())
     else
-        return JuMP.Model(optimizer_factory)
+        return JuMP.Model() # optimizer_factory)
     end
 end
 
