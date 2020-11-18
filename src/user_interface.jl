@@ -716,7 +716,7 @@ function get_node(subproblem::JuMP.Model)
     return subproblem.ext[:sddp_node]::Node
 end
 
-# Internal functino: helper to get the policy graph given a subproblem.
+# Internal function: helper to get the policy graph given a subproblem.
 function get_policy_graph(subproblem::JuMP.Model)
     return subproblem.ext[:sddp_policy_graph]::PolicyGraph
 end

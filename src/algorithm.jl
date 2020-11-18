@@ -12,7 +12,7 @@ const SDDP_TIMER = TimerOutputs.TimerOutput()
 # It will return a dictionary with a key for each node_index in the policy
 # graph, and a corresponding value of whatever the user provided.
 function to_nodal_form(model::PolicyGraph{T}, element) where {T}
-    # Note: we don't copy element here, so it element is mutable, you should use
+    # Note: we don't copy element here, so if element is mutable, you should use
     # to_nodal_form(model, x -> new_element()) instead. A good example is
     # Vector{T}; use to_nodal_form(model, i -> T[]).
     store = Dict{T,typeof(element)}()
