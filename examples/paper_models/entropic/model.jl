@@ -142,7 +142,7 @@ function build_model(; data::Dict)
                 data["deficit_obj"][i] * sum(df[i, :]) +
                 sum(data["thermal_obj"][i][k] * g[i, k] for k in K(i))
                 for i in I
-            )
+            ) / 1e6  # Rescale the objective to be in millions of BRL.
         )
         # ------------------------------s----------------------------------------
         # Constraints
