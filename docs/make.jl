@@ -61,7 +61,8 @@ makedocs(
     format = Documenter.HTML(
         assets = ASSETS,
         # See  https://github.com/JuliaDocs/Documenter.jl/issues/868
-        prettyurls = get(ENV, "CI", nothing) == "true"
+        prettyurls = get(ENV, "CI", nothing) == "true",
+        collapselevel = 1,
     ),
     strict = true,
     pages = [
