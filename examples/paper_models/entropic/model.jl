@@ -182,6 +182,7 @@ function train_model(model::SDDP.PolicyGraph; gamma::Float64)
         model;
         iteration_limit = 3_000,
         risk_measure = SDDP.Entropic(gamma),
+        log_file = "$(gamma).log",
     )
     simulations = SDDP.simulate(model, 2_000, [:v, :df, :g])
     open("solution_$(gamma).j", "w") do io
