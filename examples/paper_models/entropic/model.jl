@@ -109,30 +109,30 @@ function build_model(; data::Dict)
         # v: the stored energy in subsystem i.
         @variable(
             sp,
-            0 <= v[i in I] <= data["storedEnergy_ub"][i],
+            0 <= v[i in I] <= data["storedEnergy_ub"][i] / 1_000,
             SDDP.State,
-            initial_value = data["storedEnergy_initial"][i],
+            initial_value = data["storedEnergy_initial"][i] / 1_000,
         )
         # ----------------------------------------------------------------------
         # Control variables
         # s: spilled energy in subsystem i.
         @variable(sp, s[i in I] >= 0.0)
         # q: turbined energy from hydro generation in subsystem i.
-        @variable(sp, 0.0 <= q[i in I] <= data["hydro_ub"][i])
+        @variable(sp, 0.0 <= q[i in I] <= data["hydro_ub"][i] / 1_000)
         # g: thermal energy in subsystem i from plant k.
         @variable(
             sp,
             g[i in I, k in K(i)],
-            lower_bound = data["thermal_lb"][i][k],
-            upper_bound = data["thermal_ub"][i][k],
+            lower_bound = data["thermal_lb"][i][k] / 1_000,
+            upper_bound = data["thermal_ub"][i][k] / 1_000,
         )
         # ex: the energy exchanged from subsystem i to subsystem j.
-        @variable(sp, 0 <= ex[i in I_IM, j in I_IM] <= data["exchange_ub"][i][j])
+        @variable(sp, 0 <= ex[i in I_IM, j in I_IM] <= data["exchange_ub"][i][j] / 1_000)
         # df: deficit account for subsystem i in subsystem j.
         @variable(
             sp,
             df[i in I, j in I] >= 0,
-            upper_bound = data["demand"][month][i] * data["deficit_ub"][j],
+            upper_bound = data["demand"][month][i] * data["deficit_ub"][j] / 1_000,
         )
         # ----------------------------------------------------------------------
         # Stage-objective
@@ -142,7 +142,7 @@ function build_model(; data::Dict)
                 data["deficit_obj"][i] * sum(df[i, :]) +
                 sum(data["thermal_obj"][i][k] * g[i, k] for k in K(i))
                 for i in I
-            ) / 1e6  # Rescale the objective to be in millions of BRL.
+            )
         )
         # ------------------------------s----------------------------------------
         # Constraints
@@ -150,13 +150,13 @@ function build_model(; data::Dict)
         @constraint(
             sp,
             [i in I],
-            q[i] + sum(g[i, k] for k in K(i)) + sum(df[i, :]) + sum(ex[:, i]) - sum(ex[i, :]) == data["demand"][month][i]
+            q[i] + sum(g[i, k] for k in K(i)) + sum(df[i, :]) + sum(ex[:, i]) - sum(ex[i, :]) == data["demand"][month][i] / 1_000
         )
         # reservoir dynamics
         @constraint(
             sp,
             balance[i in I],
-            v[i].out == v[i].in + data["inflow_initial"][i] - s[i] - q[i]
+            v[i].out == v[i].in + data["inflow_initial"][i] / 1_000 - s[i] - q[i]
         )
         #
         @constraint(sp, sum(ex[:, IM]) == sum(ex[IM, :]))
@@ -169,7 +169,7 @@ function build_model(; data::Dict)
             Ω = data["scenarios"]
             SDDP.parameterize(sp, 1:length(Ω[1][r])) do ω
                 for i in 1:4
-                    set_normalized_rhs(balance[i], Ω[i][r][ω])
+                    set_normalized_rhs(balance[i], Ω[i][r][ω] / 1_000)
                 end
             end
         end
