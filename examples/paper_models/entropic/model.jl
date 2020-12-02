@@ -180,7 +180,7 @@ end
 function train_model(model::SDDP.PolicyGraph; gamma::Float64)
     SDDP.train(
         model;
-        iteration_limit = 3_000,
+        iteration_limit = 5_000,
         risk_measure = SDDP.Entropic(gamma),
         log_file = "$(gamma).log",
     )
@@ -211,9 +211,43 @@ function main(gamma::Float64)
     return
 end
 
+import Plots
+import Statistics
+
+function plot_results(quantiles::Vector{Float64} = [0.1, 0.5, 0.9])
+    filenames = filter(f -> endswith(f, ".csv"), readdir(@__DIR__))
+    per_stage = Dict{Float64, Matrix{Float64}}()
+    total = Dict{Float64, Vector{Float64}}()
+    for file in filenames
+        key = parse(Float64, match(r"\_([0-9]+\.[0-9]+)\.csv", file)[1])
+        matrix = DelimitedFiles.readdlm(file, ',')
+        per_stage[key] = mapreduce(
+            i -> Statistics.quantile(matrix[:, i], quantiles)',
+            vcat,
+            1:size(matrix, 2),
+        )
+        total[key] = Statistics.quantile(sum(matrix; dims = 2)[:], quantiles)
+    end
+    per_stage, total = plot_results()
+
+    x = sort(collect(keys(total)))
+    y = mapreduce(xi -> total[xi]', vcat, x)
+    Plots.plot(x, y, labels = false)
+    Plots.savefig("end-of-horizon.pdf")
+    Plots.plot(
+        Plots.plot(per_stage[0.01], color=["black" "blue" "red"], title = "0.01"),
+        Plots.plot(per_stage[0.1], color=["black" "blue" "red"], title = "0.10"),
+        Plots.plot(per_stage[1.0], color=["black" "blue" "red"], title = "1.00"),
+        Plots.plot(per_stage[10.0], color=["black" "blue" "red"], title = "10.0"),
+        legend = false
+    )
+    Plots.savefig("stage-costs.pdf")
+    return per_stage, total
+end
+
 function _print_help()
     println("""
-    usage: julia [-p N] [--project=.] model.jl [--gamma=<value>] [--help]
+    usage: julia [-p N] [--project=.] model.jl [--gamma=<value>] [--help] [--plot_results]
 
     Solve the hydro-thermal scheduling problem with the Entropic risk measure
     parameterized with γ = <value>.
@@ -227,12 +261,16 @@ function _print_help()
 
         julia model.jl --gamma=0.5
         julia -p 4 --project=. model.jl --gamma=0.5
+        julia -p 4 --project=. model.jl --gamma=5.0
+        julia --project=. model.jl --plot_results
     """)
 end
 
 if length(ARGS) == 1 && startswith(ARGS[1], "--gamma=")
     gamma = parse(Float64, replace(ARGS[1], "--gamma=" => ""))
     main(gamma)
+elseif length(ARGS) == 1 && ARGS[1] == "--plot"
+    plot_results()
 else
     _print_help()
 end
