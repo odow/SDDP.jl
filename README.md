@@ -2,11 +2,11 @@
 
 | **Documentation** | **Build Status** | **Coverage** |
 |:-----------------:|:--------------------:|:----------------:|
-| [![][docs-latest-img]][docs-latest-url] | [![Build Status][build-img]][build-url] | [![Codecov branch][codecov-img]][codecov-url]
+| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![Build Status][build-img]][build-url] | [![Codecov branch][codecov-img]][codecov-url]
 
 `SDDP.jl` is a package for solving large multistage convex stochastic programming
 problems using _stochastic dual dynamic programming_. You can find the documentation
-at https://odow.github.io/SDDP.jl/latest/.
+at https://odow.github.io/SDDP.jl/stable/.
 
 If you need help, file a Github issue: https://github.com/odow/SDDP.jl/issues/new
 
@@ -15,6 +15,9 @@ If you need help, file a Github issue: https://github.com/odow/SDDP.jl/issues/ne
 
 [codecov-img]: https://codecov.io/github/odow/SDDP.jl/coverage.svg?branch=master
 [codecov-url]: https://codecov.io/github/odow/SDDP.jl?branch=master
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://odow.github.io/SDDP.jl/stable/
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://odow.github.io/SDDP.jl/latest/
