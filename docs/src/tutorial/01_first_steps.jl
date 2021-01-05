@@ -409,7 +409,7 @@ model = SDDP.LinearPolicyGraph(
     optimizer = GLPK.Optimizer,
 )
 
-# ## What's this weird do syntax?
+# ### What's this weird do syntax?
 
 # !!! info
 #     Julia's `do` syntax is just a different way of passing an anonymous
