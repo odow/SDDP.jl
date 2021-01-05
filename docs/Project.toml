@@ -2,3 +2,4 @@
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+SDDP = "f4570300-c277-11e8-125c-4912f86ce65d"
