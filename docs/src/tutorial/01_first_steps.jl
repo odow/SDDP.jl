@@ -594,9 +594,9 @@ cost, price = SDDP.evaluate(V; volume = 10)
 # minimizing, the price has a negative sign: each additional unit of water leads
 # to a decrease in the the expected long-run cost.
 
-# For our example, the value of water at the end of the first stage is \$150,
+# For our example, the value of water at the end of the first stage is \\\$150,
 # because each additional unit of water can displace a unit of thermal
-# generation in the final stage when the price is \$150/MWh.
+# generation in the final stage when the price is \\\$150/MWh.
 
 # This concludes our first tutorial for `SDDP.jl`. In the next tutorial,
 # [Basic II: adding uncertainty](@ref), we will extend this problem by adding
