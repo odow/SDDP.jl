@@ -3,26 +3,177 @@
 # In this tutorial we walk through a simplified implementation of stochastic
 # dual dynamic programming to explain the key concepts.
 
-# ## Theory
+# !!! note
+#     If you haven't already, go read [Basic I: first steps](@ref), since it
+#     introduces much necessary background theory, and
+#     [Basic II: adding uncertainty](@ref), since it defines the same example we
+#     will solve in our implementation.
 
-# Still to write
+# This tutorial uses the following packages. For clarity, we call
+# `import PackageName` so that we must prefix `PackageName.` to all functions
+# and structs provided by that package. Everything not prefixed is either part
+# of base Julia, or we wrote it.
 
-# ## Implementation
-
-# For this implementation of SDDP, we're only going to use JuMP, GLPK, and
-# Statistics. For clarity, we call `import` so that we must prefix `JuMP.`,
-# `GLPK.` and `Statistics.` to all functions and structs provided by those
-# packages. Everything not prefixed is either part of base Julia, or we wrote
-# it.
-
+import ForwardDiff
 import GLPK
 import JuMP
 import Statistics
 
-# In addition, we're going to try and keep things as simple as possible. This is
-# very much a "vanilla" version of SDDP; it doesn't have (m)any fancy
-# computational tricks that you need to code a performant or stable version that
-# will work on realistic instances.
+# ## Theory
+
+# ### Preliminaries: Kelley's cutting plane algorithm
+
+# Kelley's cutting plane algorithm is an iterative method for minimizing convex
+# functions. Given a convex function $f(x)$, Kelley's constructs an
+# under-approximation of the function at the minimum by a set of first-order
+# Taylor series approximations (called **cuts**) constructed at a set of $K$
+# points $k = 1,\ldots,K$:
+# ```math
+# \begin{aligned}
+# f^K = \min\limits_{\theta, x} \;\; & \theta\\
+# & \theta \ge f(x_k) + \frac{df}{dx}\left(x_k\right) \cdot (x - x_k),\quad k=1,\ldots,K\\
+# & \theta \ge M,
+# \end{aligned}
+# ```
+# where $M$ is a sufficiently large negative number that is a lower bound for
+# $f$ over the domain of $x$.
+
+# As more cuts are added:
+# ```math
+# \lim_{K \rightarrow \infty} f^K = \min\limits_{x} f(x)
+# ```
+
+# #### Bounds
+
+# By convexity, $f^K \le f(x)$ for all $x$. Thus, if $x^*$ is a minimizer of
+# $f$, then at any point in time we can construct a lower bound for $f(x^*)$ by
+# solving $f^K$.
+
+# Moreover, since any feasible point is an upper bound, we can use the primal
+# solution $x^K$ returned by solving $f^K$ to evaluate $f(x_K)$ to generate an
+# upper bound.
+
+# Therefore, $f(x^*) \in [f^K, f(x_K)]$.
+
+# #### Implementation
+
+# Here is pseudo-code fo the algorithm:
+
+# 1. Take as input a function $f$ and a iteration limit $K_{max}$. Set $K = 0$,
+#    and initialize $f^K$
+# 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
+# 3. Add a cut $\theta \ge f(x_{K+1}) + \frac{df}{dx}\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
+# 4. Increment $K$
+# 5. If $K = K_{max}$ STOP, otherwise, go to step 2.
+
+# And here's a complete implementation:
+
+function kelleys_cutting_plane(
+    ## The function to be minimized.
+    f::Function,
+    ## The gradient of `f`. By default, we use automatic differentiation to
+    ## compute the gradient of f so the user doesn't have to!
+    dfdx::Function = x -> ForwardDiff.gradient(f, x);
+    ## The number of arguments to `f`.
+    input_dimension::Int,
+    ## A lower bound for the function `f` over its domain.
+    lower_bound::Float64,
+    ## The number of iterations to run Kelley's algorithm for before stopping.
+    iteration_limit::Int,
+)
+    ## Step (1):
+    K = 0
+    model = JuMP.Model(GLPK.Optimizer)
+    JuMP.@variable(model, θ >= lower_bound)
+    JuMP.@variable(model, x[1:input_dimension])
+    JuMP.@objective(model, Min, θ)
+    while true
+        ## Step (2)
+        JuMP.optimize!(model)
+        x_k = JuMP.value.(x)
+        ## Step (3):
+        c = JuMP.@constraint(model, θ >= f(x_k) + dfdx(x_k)' * (x .- x_k))
+        ## Step (4):
+        K = K + 1
+        ## Step (5):
+        if K == iteration_limit
+            break
+        end
+    end
+    θ_K, x_K = JuMP.value(θ), JuMP.value.(x)
+    println("Found solution:")
+    println("  x_K   = ", x_K)
+    println("  f(x*) ∈ [", θ_K, ", ", f(x_K), "]")
+    return
+end
+
+# Let's run our algorithm to see what happens:
+
+kelleys_cutting_plane(
+    input_dimension = 2,
+    lower_bound = 0.0,
+    iteration_limit = 20,
+) do x
+    return (x[1] - 1)^2 + (x[2] + 2)^2
+end
+
+# ### Approximating the cost-to-go term
+
+# In [Basic I: first steps](@ref), we discussed how you could formulate an
+# optimal policy to a multistage stochastic program using the dynamic
+# programming recursion:
+# ```math
+# \begin{aligned}
+# V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
+# & x^\prime = T_i(\bar{x}, u, \omega) \\
+# & u \in U_i(\bar{x}, \omega) \\
+# & \bar{x} = x
+# \end{aligned}
+# ```
+# where our decision rule, $\pi_i(x, \omega)$, solves this optimization problem
+# and returns a $u^*$ corresponding to an optimal solution. Moreover, we alluded
+# to the fact that the cost-to-go term (the nasty recursive expectation) makes
+# this problem intractable to solve.
+
+# However, if, excluding the cost-to-go term, $V_i(x, \omega)$ can be formulated
+# as a linear program (this also works for convex programs, but the math is more
+# involved), then we can make some progress.
+
+# First, notice that $x$ only appears as a right-hand side term of $V_i$.
+# Therefore, $V_i(x, \cdot)$ is convex with respect to $x$ for fixed $\omega$.
+# Moreover, the reduced cost of the decision variable $\bar{x}$ is a subgradient
+# of the function $V_i$ with respect to $x$! (This is one reason why we add the
+# $\bar{x}$ and the fishing constraint $\bar{x} = x$.)
+
+# Second, a convex combination of convex functions is also convex, so the
+# cost-to-go term is a convex function of $x^\prime$.
+
+# Stochastic dual dynamic programming converts this problem into a tractable
+# form by applying Kelley's cutting plane algorithm to the cost-to-go term:
+# ```math
+# \begin{aligned}
+# V_i^K(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \theta\\
+# & x^\prime = T_i(\bar{x}, u, \omega) \\
+# & u \in U_i(\bar{x}, \omega) \\
+# & \bar{x} = x \\
+# & \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{dV_j^k}{dx^\prime}\left(x^\prime_k, \varphi\right)^\top (x^\prime - x^\prime_k)\right],\quad k=1,\ldots,K \\
+# & \theta \ge M
+# \end{aligned}
+# ```
+
+# All we need now is a way of generating these cutting planes in an iterative
+# manner.
+
+# ### The forward pass
+
+# ### The backward pass
+
+# ## Implementation
+
+# For this implementation of SDDP, we're going to try and keep things as simple
+# as possible. This is very much a "vanilla" version of SDDP; it doesn't have
+# (m)any fancy computational tricks that you need to code a performant or stable
+# version that will work on realistic instances.
 
 # In the interests of brevity, we will also include minimal error checking.
 # Think about all the different ways you could break this code!
@@ -45,6 +196,12 @@ struct Uncertainty
     P::Vector{Float64}
 end
 
+# `parameterize` is a function, which takes a realization of the random variable
+# $\omega\in\Omega$ and updates the subproblem accordingly. The finite discrete
+# random variable is defined by the vectors `Ω` and `P`, so that the random
+# variable takes the value `Ω[i]` with probability `P[i]`. As such, `P` should
+# sum to 1. (We don't check this here, but we should; we do in SDDP.jl.)
+
 # It's also going to be useful to have a function that samples a realization of
 # the random variable defined by `Ω` and `P`:
 
@@ -59,6 +216,9 @@ function sample_uncertainty(uncertainty::Uncertainty)
     error("We should never get here because P should sum to 1.0.")
 end
 
+# You should be able to work out what is going on. `rand()` samples a uniform
+# random variable in `[0, 1)`.
+
 # Now we have two building blocks, we can declare the structure of each node.
 
 struct Node
@@ -67,6 +227,12 @@ struct Node
     uncertainty::Uncertainty
     cost_to_go::JuMP.VariableRef
 end
+
+# `subproblem` is going to be the JuMP model that we build at each node.
+# `states` is a dictionary that maps a symbolic name of a state variable to a
+# `State` object wrapping the incoming and outgoing state variables in
+# `subproblem`. `uncertainty` is an `Uncertainty` object described above, and
+# `cost_to_go` is a JuMP variable that approximates the cost-to-go term.
 
 # Finally, out simplified policy graph is just a vector of nodes.
 
@@ -85,10 +251,6 @@ end
 
 # Now we have some basic types, let's implment some functions so that the user
 # can create a model.
-
-# !!! tip
-#     If you haven't already, go read [Basic II: adding uncertainty](@ref),
-#     since what follows is basically the same model.
 
 # First, we need an exmaple of a function that the user will provide. Like
 # SDDP.jl, this takes an empty `subproblem`, and a node index, in this case

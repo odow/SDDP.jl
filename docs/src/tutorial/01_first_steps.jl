@@ -67,8 +67,9 @@
 #
 #    We denote control variables by the letter $u$.
 #
-# 3. **Random** variables are exogenous random variables that the agent observes
-#    at the start of a node, before the control variables are decided.
+# 3. **Random** variables are finite, discrete, exogenous random variables that
+#    the agent observes at the start of a node, before the control variables are
+#    decided.
 #
 #    Examples of random variables include rainfall inflow into a reservoir,
 #    probalistic perishing of inventory, and steering errors in a vehicle.
@@ -146,8 +147,8 @@
 # & \bar{x} = x
 # \end{aligned}
 # ```
-# Our decision rule, $\pi_i$, solves this optimization problem and returns a
-# $u^*$ corresponding to an optimal solution.
+# Our decision rule, $\pi_i(x, \omega)$, solves this optimization problem and
+# returns a $u^*$ corresponding to an optimal solution.
 #
 # !!! note
 #     We add $\bar{x}$ as a decision variable, along with the fishing constraint
