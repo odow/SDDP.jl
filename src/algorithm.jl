@@ -1167,3 +1167,60 @@ function simulate(
         skip_undefined_variables = skip_undefined_variables,
     )
 end
+
+"""
+    DecisionRule(model::PolicyGraph{T}; node::T)
+
+Create a decision rule for node `node` in `model`.
+"""
+struct DecisionRule{T}
+    model::PolicyGraph{T}
+    node::Node{T}
+    function DecisionRule(model::PolicyGraph{T}; node::T) where {T}
+        return new{T}(model, model[node])
+    end
+end
+
+function Base.show(io::IO, pi::DecisionRule)
+    print(io, "A decision rule for node $(pi.node.index)")
+    return
+end
+
+"""
+    evaluate(
+        rule::DecisionRule;
+        incoming_state::Dict{Symbol, Float64},
+        noise = nothing,
+        controls_to_record = Symbol[],
+    )
+
+Evalute the decision rule `rule` at the point described by the `incoming_state`
+and `noise`.
+
+If the node is deterministic, omit the `noise` argument.
+
+Pass a list of symbols to `controls_to_record` to save the optimal primal
+solution corresponding to the names registered in the model.
+"""
+function evaluate(
+    rule::DecisionRule{T};
+    incoming_state::Dict{Symbol, Float64},
+    noise = nothing,
+    controls_to_record = Symbol[],
+) where {T}
+    ret = solve_subproblem(
+        rule.model,
+        rule.node,
+        incoming_state,
+        noise,
+        Tuple{T, Any}[];
+        require_duals = false,
+    )
+    return (
+        stage_objective = ret.stage_objective,
+        outgoing_state = ret.state,
+        controls = Dict(
+            c => value.(rule.node.subproblem[c]) for c in controls_to_record
+        ),
+    )
+end

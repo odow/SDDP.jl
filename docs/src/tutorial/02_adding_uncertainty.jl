@@ -1,8 +1,12 @@
 # # Basic II: adding uncertainty
 
 # In the previous tutorial, [Basic I: first steps](@ref), we created a
-# deterministic  hydro-thermal scheduling model. In this tutorial, we extend the
+# deterministic hydro-thermal scheduling model. In this tutorial, we extend the
 # problem by adding uncertainty.
+
+# The key development is that we are going to implement a function called
+# [`SDDP.parameterize`](@ref), which modifies the subproblem based on a
+# realization of the uncertainty $\omega$.
 
 # Notably missing from our previous model were inflows. Inflows are the water
 # that flows into the reservoir through rainfall or rivers. These inflows are
@@ -72,8 +76,8 @@ model = SDDP.LinearPolicyGraph(
 end
 
 # Note how we use the JuMP function
-# [`JuMP.fix`](http://www.juliaopt.org/JuMP.jl/v0.19/variables/#JuMP.fix) to set
-# the value of the `inflow` variable to `ω`.
+# [`JuMP.fix`](http://jump.dev/JuMP.jl/v0.21/variables/#JuMP.fix) to set the
+# value of the `inflow` variable to `ω`.
 
 # !!! note
 #     [`SDDP.parameterize`](@ref) can only be called once in each subproblem

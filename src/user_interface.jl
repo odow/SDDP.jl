@@ -383,6 +383,13 @@ mutable struct Node{T}
     ext::Dict{Symbol,Any}
 end
 
+function Base.show(io::IO, node::Node)
+    println(io, "Node $(node.index)")
+    println(io, "  # State variables : ", length(node.states))
+    println(io, "  # Children        : ", length(node.children))
+    println(io, "  # Noise terms     : ", length(node.noise_terms))
+end
+
 function pre_optimize_hook(f::Function, node::Node)
     node.pre_optimize_hook = f
     return
@@ -445,8 +452,14 @@ mutable struct PolicyGraph{T}
 end
 
 function Base.show(io::IO, graph::PolicyGraph)
-    println(io, "A policy graph with $(length(graph.nodes)) nodes.")
-    println(io, " Node indices: ", join(sort_nodes(collect(keys(graph.nodes))), ", "))
+    N = length(graph.nodes)
+    println(io, "A policy graph with $(N) nodes.")
+    nodes = sort_nodes(collect(keys(graph.nodes)))
+    if N < 10
+        println(io, " Node indices: ", join(nodes, ", "))
+    else
+        println(io, " Node indices: ", nodes[1], ", ..., ", nodes[end])
+    end
 end
 
 # So we can query nodes in the graph as graph[node].

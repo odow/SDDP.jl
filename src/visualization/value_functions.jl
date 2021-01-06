@@ -90,6 +90,10 @@ function _add_to_value_function(
     return theta
 end
 
+function ValueFunction(model::PolicyGraph{T}; node::T) where {T}
+    return ValueFunction(model[node])
+end
+
 function ValueFunction(node::Node{T}) where {T}
     b = node.bellman_function
     sense = objective_sense(node.subproblem)

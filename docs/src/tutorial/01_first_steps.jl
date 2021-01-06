@@ -104,11 +104,11 @@
 # outgoing arcs.
 
 # ```math
-# \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i(x_R, \omega)]
+# \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]
 # ```
 # where
 # ```math
-# V_i(x, \omega) = C_i(x, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]
+# V_i^\pi(x, \omega) = C_i(x, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]
 # ```
 # where $u = \pi_i(x, \omega) \in U_i(x, \omega)$, and
 # $x^\prime = T_i(x, u, \omega)$.
@@ -128,21 +128,26 @@
 # of the policy graph until it reaches a node with not outgoing arcs. The cost
 # of a replicate is the sum of the costs incurred at each node that was visited.
 
-# ### Subproblems
+# ### Dynamic programming and subproblems
 
-# Communicating problems via their component parts is complicated. To simplify
-# things, we can represent each node $i$ by the following **subproblem**. This
-# subproblem is not an optimization problem we will actually solve; it is just a
-# convienient way of communicating the differernt parts of the problem.
-#
+# Now that we have formulated our problem, we need some ways of computing
+# optimal decision rules. One way is to just use a heuristic like "choose a
+# control randomally from the set of feasible controls." However, such a policy
+# is unlikely to be optimal.
+
+# One way of obtaining an optimal policy is to use Bellman's principle of
+# optimality, a.k.a Dynamic Programming, and define a recursive **subproblem**
+# as follows:
 # ```math
 # \begin{aligned}
-# \text{SP}_i(x, \omega) = \min\limits_{\bar{x}, u, x^\prime} \;\; & C_i(\bar{x}, u, \omega) \\
+# V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
 # & x^\prime = T_i(\bar{x}, u, \omega) \\
 # & u \in U_i(\bar{x}, \omega) \\
 # & \bar{x} = x
 # \end{aligned}
 # ```
+# Our decision rule, $\pi_i$, solves this optimization problem and returns a
+# $u^*$ corresponding to an optimal solution.
 #
 # !!! note
 #     We add $\bar{x}$ as a decision variable, along with the fishing constraint
@@ -150,6 +155,45 @@
 #     problem with $x \times u$ results in a bilinear program instead of a
 #     linear program, and it simplifies that internal algorithm that SDDP.jl
 #     uses to find an optimal policy.
+
+# These subproblems are very difficult to solve exactly, because they involve
+# recursive optimization problems with lots of nested expectations.
+
+# Therefore, instead of solving them exactly, SDDP.jl works by iteratively
+# approximating the expectation term of each subproblem, which is also called
+# the cost-to-go term. For now, you don't need to understand the details, other
+# than that there is a nasty cost-to-go term that we deal with
+# behind-the-scenes.
+
+# The subproblem view of a multistage stochastic program is also important,
+# because it provides a convienient way of communicating the different parts of
+# the broader problem, and it is how we will communicate the problem to SDDP.jl.
+# All we need to do is drop the cost-to-go term and fishing constraint, and
+# define a new subproblem `SP` as:
+# ```math
+# \begin{aligned}
+# \texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) \\
+# & x^\prime = T_i(\bar{x}, u, \omega) \\
+# & u \in U_i(\bar{x}, \omega) \\
+# \end{aligned}
+# ```
+# !!! note
+#     When we talk about formulating a **subproblem** with SDDP.jl, this is the
+#     formulation we mean.
+
+# We've retained the transition function and uncertainty set because they help
+# to motivate the different components of the subproblem. However, in general,
+# the subproblem can be more general. A better (less restrictive) representation
+# might be:
+# ```math
+# \begin{aligned}
+# \texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, x^\prime, u, \omega) \\
+# & (\bar{x}, x^\prime, u) \in \mathcal{X}_i(\omega)
+# \end{aligned}
+# ```
+# Note that the outgoing state variable can appear in the objective, and we can
+# add constraints involving the incoming and outgoing state variables. It
+# should be obvious how to map between the two representations.
 
 # ## Example: hydro-thermal scheduling
 
@@ -187,17 +231,21 @@
 # The goal of the agent is to minimize the expected cost of generation over the
 # three weeks.
 
+# ### Formulating the problem
+
 # Before going further, we need to load SDDP.jl:
 
 using SDDP
 
-# ### Formulating the problem
+# #### Graph structure
 
 # First, we need to identify the structre of the policy graph. From the problem
 # statement, we want to model the problem over three weeks in weekly stages.
 # Therefore, the policy graph is a linear graph with three stages:
 
 graph = SDDP.LinearGraph(3)
+
+# #### Building the subproblem
 
 # Next, we need to construct the associated subproblem for each node in `graph`.
 # To do so, we need to provide SDDP.jl a function which takes two arguments. The
@@ -284,7 +332,7 @@ end
 # For our problem, the state variable is the volume of water in the reservoir.
 # The volume of water decreases in response to water being used for hydro
 # generation and spillage. So the transition function is:
-# `volume.ou = volume.in - hydro_generation - hydro_spill`. (Note how we use
+# `volume.out = volume.in - hydro_generation - hydro_spill`. (Note how we use
 # `volume.in` and `volume.out` to refer to the incoming and outgoing state
 # variables.)
 
@@ -409,28 +457,6 @@ model = SDDP.LinearPolicyGraph(
     optimizer = GLPK.Optimizer,
 )
 
-# ### What's this weird do syntax?
-
-# !!! info
-#     Julia's `do` syntax is just a different way of passing an anonymous
-#     function `inner` to some function `outer` which takes `inner` as the first
-#     argument. For example, given:
-#     ```julia
-#     outer(inner::Function, x, y) = inner(x, y)
-#     ```
-#     then
-#     ```julia
-#     outer(1, 2) do x, y
-#         return x^2 + y^2
-#     end
-#     ```
-#     is equivalent to:
-#     ```julia
-#     outer((x, y) -> x^2 + y^2, 1, 2)
-#     ```
-#     For our purpose, `inner` is `subproblem_builder`, and `outer` is
-#     `SDDP.PolicyGraph`.
-
 # Third option is to use Julia's `do` syntax to avoid needing to define a
 # `subproblem_builder` function separately:
 
@@ -464,6 +490,26 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
+# !!! info
+#     Julia's `do` syntax is just a different way of passing an anonymous
+#     function `inner` to some function `outer` which takes `inner` as the first
+#     argument. For example, given:
+#     ```julia
+#     outer(inner::Function, x, y) = inner(x, y)
+#     ```
+#     then
+#     ```julia
+#     outer(1, 2) do x, y
+#         return x^2 + y^2
+#     end
+#     ```
+#     is equivalent to:
+#     ```julia
+#     outer((x, y) -> x^2 + y^2, 1, 2)
+#     ```
+#     For our purpose, `inner` is `subproblem_builder`, and `outer` is
+#     `SDDP.PolicyGraph`.
+
 # ## Training a policy
 
 # Now we have a model, which is a description of the policy graph, we need to
@@ -477,9 +523,24 @@ SDDP.train(model; iteration_limit = 3)
 #     For more information on the numerical stability report, read the
 #     [Numerical stability report](@ref) section.
 
+# ## Obtaining the decision rule
+
+# After training a policy, we can create a decision rule using
+# [`SDDP.DecisionRule`](@ref):
+
+rule = SDDP.DecisionRule(model; node = 1)
+
+# Then, to evalute the decision rule, we use [`SDDP.evaluate`](@ref):
+
+solution = SDDP.evaluate(
+    rule;
+    incoming_state = Dict(:volume => 150.0),
+    controls_to_record = [:hydro_generation, :thermal_generation],
+)
+
 # ## Simulating the policy
 
-# Once you have a trained policy, you can simulate it using
+# Once you have a trained policy, you can also simulate it using
 # [`SDDP.simulate`](@ref). The return value from `simulate` is a vector with one
 # element for each replication. Each element is itself a vector, with one
 # element for each stage. Each element, corresponding to a particular stage in a
@@ -514,6 +575,29 @@ thermal_generation = [stage[:thermal_generation] for stage in simulations[1]]
 # MWh of thermal and 50 MWh of hydro. In the third and final stage, use 0 MWh of
 # thermal and 150 MWh of  hydro.
 
-# This concludes our first very simple tutorial for `SDDP.jl`. In the next
-# tutorial, [Basic II: adding uncertainty](@ref), we will extend this problem by
-# adding uncertainty.
+# ## Extracting the water values
+
+# Finally, we can use [`SDDP.ValueFunction`](@ref) and [`SDDP.evaluate`](@ref)
+# to obtain and evaluate the value function at different points in the
+# state-space.
+
+# First, we construct a value function from the first subproblem:
+
+V = SDDP.ValueFunction(model; node = 1)
+
+# Then we can evaluate `V` at a point:
+
+cost, price = SDDP.evaluate(V; volume = 10)
+
+# This returns the cost-to-go (`cost`), and the gradient of the cost-to-go
+# function with resspect to each state variable. Note that since we are
+# minimizing, the price has a negative sign: each additional unit of water leads
+# to a decrease in the the expected long-run cost.
+
+# For our example, the value of water at the end of the first stage is \$150,
+# because each additional unit of water can displace a unit of thermal
+# generation in the final stage when the price is \$150/MWh.
+
+# This concludes our first tutorial for `SDDP.jl`. In the next tutorial,
+# [Basic II: adding uncertainty](@ref), we will extend this problem by adding
+# uncertainty.
