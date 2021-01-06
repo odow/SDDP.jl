@@ -162,18 +162,24 @@ end
 # ```
 
 # All we need now is a way of generating these cutting planes in an iterative
-# manner.
+# manner. Stochastic dual dynamic programming does this in two phases: a
+# **forward pass** and a **backward pass**.
 
 # ### The forward pass
+
+# The forward pass walks the policy graph from start to end, and solves each
+# approximated subproblem to generate a candidate outgoing state variable
+# $x_k^\prime$ at which to generate a cut.
 
 # ### The backward pass
 
 # ## Implementation
 
-# For this implementation of SDDP, we're going to try and keep things as simple
-# as possible. This is very much a "vanilla" version of SDDP; it doesn't have
-# (m)any fancy computational tricks that you need to code a performant or stable
-# version that will work on realistic instances.
+# For this implementation of SDDP, we're going to try and keep things as simple.
+# This is very much a "vanilla" version of SDDP; it doesn't have (m)any fancy
+# computational tricks that you need to code a performant or stable version that
+# will work on realistic instances. However, it will work on arbitrary policy
+# graphs, including those with cycles such as infinite horizon problems!
 
 # In the interests of brevity, we will also include minimal error checking.
 # Think about all the different ways you could break this code!
@@ -234,17 +240,64 @@ end
 # `subproblem`. `uncertainty` is an `Uncertainty` object described above, and
 # `cost_to_go` is a JuMP variable that approximates the cost-to-go term.
 
-# Finally, out simplified policy graph is just a vector of nodes.
-
-struct LinearPolicyGraph
+# Finally, we define a simplified policy graph as follows:
+struct PolicyGraph
     nodes::Vector{Node}
+    arcs::Vector{Dict{Int,Float64}}
 end
+
+# There is a vector of nodes, as well as a data structure for the arcs. `arcs`
+# is a vector of dictionaries, where `arcs[i][j]` gives the probabiltiy of
+# transitioning from node `i` to node `j`, if an arc exists.
+
+# To simplify things, we will assume that the root node transitions to node `1`
+# with probability 1, and there are no other incoming arcs to node 1. Notably,
+# we can still define cyclic graphs though!
 
 # We also define a nice `show` method so that we don't accidentally print a
 # large amount of information to the screen.
 
-function Base.show(io::IO, model::LinearPolicyGraph)
+function Base.show(io::IO, model::PolicyGraph)
     return print(io, "A policy graph with $(length(model.nodes)) nodes")
+end
+
+# It's also going to be useful to define a function that generates a random walk
+# through the nodes of the graph:
+
+function sample_graph(model::PolicyGraph)
+    trajectory, current_node = Int[], 1
+    finished = false
+    while !finished
+        push!(trajectory, current_node)
+        r = rand()
+        for (to, probability) in model.arcs[current_node]
+            r -= probability
+            if r < 0.0
+                current_node = to
+                break
+            end
+        end
+        if r >= 0
+            ## We looped through the outgoing arcs and still have probability
+            ## left over! This means it's time to stop walking.
+            finished = true
+        end
+    end
+    return trajectory
+end
+
+# As well as a function that computes a lower bound for the objective of the
+# policy graph:
+
+function lower_bound(model::PolicyGraph)
+    node = model.nodes[1]
+    bound = 0.0
+    for (p, ω) in zip(node.uncertainty.P, node.uncertainty.Ω)
+        node.uncertainty.parameterize(ω)
+        JuMP.optimize!(node.subproblem)
+        bound += p * JuMP.objective_value(node.subproblem)
+    end
+    return bound
 end
 
 # ### Interface functions
@@ -297,16 +350,16 @@ end
 # state variables, or needing to explicitly `return states, uncertainty`.
 
 # The next function we need to define is the analog of
-# [`SDDP.LinearPolicyGraph`](@ref). It should be pretty readable.
+# [`SDDP.PolicyGraph`](@ref). It should be pretty readable.
 
-function LinearPolicyGraph(
+function PolicyGraph(
     subproblem_builder::Function;
-    stages::Int,
+    graph::Vector{Dict{Int,Float64}},
     lower_bound::Float64,
     optimizer,
 )
     nodes = Node[]
-    for t = 1:stages
+    for t = 1:length(graph)
         ## Create a model.
         model = JuMP.Model(optimizer)
         ## Use the provided function to build out each subproblem. The user's
@@ -317,23 +370,23 @@ function LinearPolicyGraph(
         JuMP.@variable(model, cost_to_go >= lower_bound)
         obj = JuMP.objective_function(model)
         JuMP.@objective(model, Min, obj + cost_to_go)
-        ## In the final stage, the cost-to-go is 0.0.
-        if t == stages
+        ## If there are no outgoing arcs, the cost-to-go is 0.0.
+        if length(graph[t]) == 0
             JuMP.fix(cost_to_go, 0.0; force = true)
         end
         push!(nodes, Node(model, states, uncertainty, cost_to_go))
     end
-    return LinearPolicyGraph(nodes)
+    return PolicyGraph(nodes, graph)
 end
 
 # ### The forward pass
 
-# Now we're ready to code the forward pass. It takes a `::LinearPolicyGraph`,
+# Now we're ready to code the forward pass. It takes a `::PolicyGraph`,
 # and returns a tuple of two things: a vector of the outgoing state variables
 # visited, and a `Float64` of the cumulative stage costs that were incurred
 # along the forward pass.
 
-function forward_pass(model::LinearPolicyGraph, io::IO = stdout)
+function forward_pass(model::PolicyGraph, io::IO = stdout)
     println(io, "| Forward Pass")
     ## First, get the value of the state at the root node (e.g., x_R).
     incoming_state = Dict(
@@ -342,11 +395,12 @@ function forward_pass(model::LinearPolicyGraph, io::IO = stdout)
     ## `simulation_cost` is an accumlator that is going to sum the stage-costs
     ## incurred over the forward pass.
     simulation_cost = 0.0
-    ## We also need to record the outgoing state variables so we can pass them
-    ## to the backward pass.
-    outgoing_states = Dict{Symbol, Float64}[]
+    ## We also need to record the nodes visited and resultant outgoing state
+    ## variables so we can pass them to the backward pass.
+    trajectory = Tuple{Int,Dict{Symbol,Float64}}[]
     ## Now's the meat of the forward pass: loop through each of the nodes
-    for (t, node) in enumerate(model.nodes)
+    for t in sample_graph(model)
+        node = model.nodes[t]
         println(io, "| | Visiting node $(t)")
         ## Sample the uncertainty:
         ω = sample_uncertainty(node.uncertainty)
@@ -364,10 +418,8 @@ function forward_pass(model::LinearPolicyGraph, io::IO = stdout)
         if JuMP.termination_status(node.subproblem) != JuMP.MOI.OPTIMAL
             error("Something went terribly wrong!")
         end
-        ## Compute the outgoing state variables, and save them in
-        ## `outgoing_states`:
+        ## Compute the outgoing state variables:
         outgoing_state = Dict(k => JuMP.value(v.out) for (k, v) in node.states)
-        push!(outgoing_states, outgoing_state)
         println(io, "| |  x′ = ", outgoing_state)
         ## We also need to compute the stage cost to add to our
         ## `simulation_cost` accumulator:
@@ -375,89 +427,85 @@ function forward_pass(model::LinearPolicyGraph, io::IO = stdout)
         simulation_cost += stage_cost
         println(io, "| |  C(x, u, ω) = ", stage_cost)
         ## As a final step, set the outgoing state of stage t and the incoming
-        ## state of stage t + 1:
+        ## state of stage t + 1, and add the node to the trajectory.
         incoming_state = outgoing_state
+        push!(trajectory, (t, outgoing_state))
     end
-    return outgoing_states, simulation_cost
+    return trajectory, simulation_cost
 end
 
 # ### The backward pass
 
 # We're now ready to code the backward pass. This is going to take a
-# `::LinearPolicyGraph` object, and a vector of outgoing states from the forward
-# pass. It returns a `Float64` that is a valid lower bound for the objective of
-# the multistage stochastic program.
+# `::PolicyGraph` object, and a vector of (node, outgoing states) tuples from
+# the forward pass. It returns a `Float64` that is a valid lower bound for the
+# objective of the multistage stochastic program.
 
 function backward_pass(
-    model::LinearPolicyGraph,
-    outgoing_states::Vector{Dict{Symbol, Float64}},
+    model::PolicyGraph,
+    trajectory::Vector{Tuple{Int,Dict{Symbol,Float64}}},
+    io::IO = stdout,
 )
-    println("| Backward pass")
+    println(io, "| Backward pass")
     ## For the backward pass, we walk back up the nodes, from the final
     ## node to the second (we will solve the first node after this loop).
-    for t = length(outgoing_states):-1:2
-        println("| | Visiting node $(t)")
-        ## At each step in the backward pass, we are going to solve problems in
-        ## stage t, but add cuts to stage t - 1. Thus, we need:
-        node_t = model.nodes[t]
-        node_t1 = model.nodes[t - 1]
-        ## First, fix the incoming state variables of stage t to the value of
-        ## the outgoing state variables in stage t - 1.
-        for (k, v) in outgoing_states[t - 1]
-            JuMP.fix(node_t.states[k].in, v; force = true)
-        end
-        ## Then, create an empty affine expression that we will use to build
-        ## up the cut expression.
+    for i = reverse(1:length(trajectory)-1)
+        index, outgoing_states = trajectory[i]
+        node = model.nodes[index]
+        println(io, "| | Visiting node $(index)")
+        ## Create an empty affine expression that we will use to build up the
+        ## cut expression.
         cut_expression = JuMP.AffExpr(0.0)
-        ## Now for each possible realization of the uncertainty, solve the
-        ## stage t subproblem, and add `p * [y + λᵀ(x - x_k)]` to the cut
+        ## Now for each possible node and realization of the uncertainty, solve
+        ## the subproblem, and add `P_ij * p_ω * [y + λᵀ(x - x_k)]` to the cut
         ## expression. (See the Theory section above is this isn't obvious why.)
-        for (p, ω) in zip(node_t.uncertainty.P, node_t.uncertainty.Ω)
-            println("| | | Solving ω = ", ω)
-            node_t.uncertainty.parameterize(ω)
-            JuMP.optimize!(node_t.subproblem)
-            y = JuMP.objective_value(node_t.subproblem)
-            println("| | |  y = ", y)
-            λ = Dict(k => JuMP.reduced_cost(v.in) for (k, v) in node_t.states)
-            println("| | |  λ = ", λ)
-            cut_expression += p * JuMP.@expression(
-                node_t1.subproblem,
-                y + sum(
-                    λ[k] * (x.out - outgoing_states[t - 1][k])
-                    for (k, x) in node_t1.states
-                ),
-            )
+        for (j, P_ij) in model.arcs[index]
+            next_node = model.nodes[j]
+            for (k, v) in outgoing_states
+                JuMP.fix(next_node.states[k].in, v; force = true)
+            end
+            for (pω, ω) in zip(next_node.uncertainty.P, next_node.uncertainty.Ω)
+                println(io, "| | | Solving ω = ", ω)
+                next_node.uncertainty.parameterize(ω)
+                JuMP.optimize!(next_node.subproblem)
+                y = JuMP.objective_value(next_node.subproblem)
+                println(io, "| | |  y = ", y)
+                λ = Dict(k => JuMP.reduced_cost(v.in) for (k, v) in next_node.states)
+                println(io, "| | |  λ = ", λ)
+                cut_expression += P_ij * pω * JuMP.@expression(
+                    node.subproblem,
+                    y + sum(
+                        λ[k] * (x.out - outgoing_states[k])
+                        for (k, x) in node.states
+                    ),
+                )
+            end
         end
         ## And then refine the cost-to-go variable by adding a cut that is the
         ## expectation of the cuts computed in the step above.
         c = JuMP.@constraint(
-            node_t1.subproblem, node_t1.cost_to_go >= cut_expression
+            node.subproblem, node.cost_to_go >= cut_expression
         )
-        println("| | | Adding cut : ", c)
+        println(io, "| | | Adding cut : ", c)
     end
     ## Finally, compute a lower bound for the problem by evaluating the
     ## first-stage subproblem.
-    first_node = model.nodes[1]
-    lower_bound = 0.0
-    for (p, ω) in zip(first_node.uncertainty.P, first_node.uncertainty.Ω)
-        first_node.uncertainty.parameterize(ω)
-        JuMP.optimize!(first_node.subproblem)
-        lower_bound += p * JuMP.objective_value(first_node.subproblem)
-    end
-    return lower_bound
+    return lower_bound(model)
 end
 
 # Thirdly, we need a function to simulate the policy. This is going be very
 # simple. It doesn't have an bells and whistles like being able to record the
-# control variables.
+# control variables. The confidence interval is also incorrect if there are
+# cycles in the graph, because the distribution of simulation costs `z` is not
+# symmetric.
 
-function simulate(model::LinearPolicyGraph; replications::Int)
+function simulate(model::PolicyGraph, io::IO = stdout; replications::Int)
     ## Pipe the output to `devnull` so we don't print too much!
     simulations = [forward_pass(model, devnull) for _ = 1:replications]
     z = [s[2] for s in simulations]
     μ  = Statistics.mean(z)
     tσ = 1.96 * Statistics.std(z) / sqrt(replications)
-    println("Upper bound = $(μ) ± $(tσ)")
+    println(io, "Upper bound = $(μ) ± $(tσ)")
     return simulations
 end
 
@@ -466,30 +514,35 @@ end
 # confidence interval.
 
 function train(
-    model::LinearPolicyGraph;
+    model::PolicyGraph;
     iteration_limit::Int,
     replications::Int,
+    io::IO = stdout,
 )
     for i = 1:iteration_limit
-        println("Starting iteration $(i)")
-        outgoing_states, simulation = forward_pass(model)
-        lower_bound = backward_pass(model, outgoing_states)
-        println("| Finished iteration")
-        println("| | simulation = ", simulation)
-        println("| | lower_bound = ", lower_bound)
+        println(io, "Starting iteration $(i)")
+        outgoing_states, simulation = forward_pass(model, io)
+        lower_bound = backward_pass(model, outgoing_states, io)
+        println(io, "| Finished iteration")
+        println(io, "| | simulation = ", simulation)
+        println(io, "| | lower_bound = ", lower_bound)
     end
-    simulate(model; replications = replications)
+    simulate(model, io; replications = replications)
     return
 end
 
-# ### Example
+# ### Example: finite horizon
 
 # First, create the model using the `subproblem_builder` function we defined
 # earlier:
 
-model = LinearPolicyGraph(
+model = PolicyGraph(
     subproblem_builder;
-    stages = 3,
+    graph = [
+        Dict(2 => 1.0),
+        Dict(3 => 1.0),
+        Dict{Int,Float64}(),
+    ],
     lower_bound = 0.0,
     optimizer = GLPK.Optimizer,
 )
@@ -498,5 +551,29 @@ model = LinearPolicyGraph(
 
 train(model; iteration_limit = 3, replications = 100)
 
-# Success! We solved a multistage stochastic program using stochastic dual
-# dynamic programming.
+# Success! We trained a policy for a finite horizon multistage stochastic
+# program using stochastic dual dynamic programming.
+
+# ### Example: infinite horizon
+
+# First, create the model using the `subproblem_builder` function we defined
+# earlier:
+
+model = PolicyGraph(
+    subproblem_builder;
+    graph = [
+        Dict(2 => 1.0),
+        Dict(3 => 1.0),
+        Dict(2 => 0.5),
+    ],
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+)
+
+# Then, train a policy:
+
+train(model; iteration_limit = 3, replications = 100)
+
+# Success! We trained a policy for an infinite horizon multistage stochastic
+# program using stochastic dual dynamic programming. Note how some of the
+# forward passes are different lengths!
