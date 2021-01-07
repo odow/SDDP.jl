@@ -1,4 +1,4 @@
-# # Expert I: Pedagogical SDDP
+# # Expert I: pedagogical SDDP
 
 # In this tutorial we walk through a simplified implementation of stochastic
 # dual dynamic programming to explain the key concepts.
@@ -727,10 +727,6 @@ end
 
 # ## Implementation: the training loop
 
-# The `train` loop of SDDP just applies the forward and backward passes
-# iteratively, followed by a final simulation to compute the upper bound
-# confidence interval.
-
 # ### Lower bounds
 
 # Recall from Kelley's that we can obtain a lower bound for $f(x^*)$ be
@@ -774,11 +770,6 @@ lower_bound(model)
 # $\mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]$, where
 # $\pi$ is the policy defined by the current approximations $V^K_i$.
 
-# !!! note
-#     The width of the confidence interval is incorrect if there are cycles in
-#     the graph, because the distribution of simulation costs `z` is not
-#     symmetric. The mean is correct, however.
-
 function upper_bound(model::PolicyGraph; replications::Int)
     ## Pipe the output to `devnull` so we don't print too much!
     simulations = [forward_pass(model, devnull) for _ = 1:replications]
@@ -788,9 +779,16 @@ function upper_bound(model::PolicyGraph; replications::Int)
     return μ, tσ
 end
 
+# !!! note
+#     The width of the confidence interval is incorrect if there are cycles in
+#     the graph, because the distribution of simulation costs `z` is not
+#     symmetric. The mean is correct, however.
+
 # ### Training
 
-# Here's the actual training loop:
+# The `train` loop of SDDP just applies the forward and backward passes
+# iteratively, followed by a final simulation to compute the upper bound
+# confidence interval:
 
 function train(
     model::PolicyGraph;
@@ -800,10 +798,9 @@ function train(
 )
     for i = 1:iteration_limit
         println(io, "Starting iteration $(i)")
-        outgoing_states, simulation = forward_pass(model, io)
+        outgoing_states, _ = forward_pass(model, io)
         backward_pass(model, outgoing_states, io)
         println(io, "| Finished iteration")
-        println(io, "| | simulation = ", simulation)
         println(io, "| | lower_bound = ", lower_bound(model))
     end
     μ, tσ = upper_bound(model; replications = replications)
