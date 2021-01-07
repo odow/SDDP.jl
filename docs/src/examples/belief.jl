@@ -1,7 +1,9 @@
-#  Copyright 2017-20, Oscar Dowson
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
+
+# # Partially observable inventory management
 
 using SDDP, GLPK, Random, Statistics, Test
 
@@ -46,16 +48,20 @@ function inventory_management_problem()
             @stageobjective(subproblem, 2 * buy + inventory.out)
         end
     end
-
-    # Train the policy.
+    ## Train the policy.
     Random.seed!(123)
-    SDDP.train(model; iteration_limit = 100, print_level = 0, cut_type = SDDP.SINGLE_CUT)
+    SDDP.train(
+        model;
+        iteration_limit = 100,
+        cut_type = SDDP.SINGLE_CUT,
+        log_frequency = 10,
+    )
     results = SDDP.simulate(model, 500)
     objectives = [sum(s[:stage_objective] for s in simulation) for simulation in results]
     sample_mean = round(Statistics.mean(objectives); digits = 2)
     sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
     @test SDDP.calculate_bound(model) ≈ sample_mean atol = sample_ci
-    return model
+    return
 end
 
 inventory_management_problem()

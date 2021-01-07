@@ -1,7 +1,9 @@
-#  Copyright 2017-20, Oscar Dowson
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
+
+# # Complicated Hydro-thermal
 
 using SDDP, JSON, GLPK, Test
 
@@ -86,6 +88,6 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(model, iteration_limit = 50, print_level = 0)
+SDDP.train(model, iteration_limit = 50)
 
 @test SDDP.calculate_bound(model) ≈ 129_469 atol = 1

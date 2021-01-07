@@ -1,7 +1,9 @@
-#  Copyright 2017-20, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
+
+# # Infinite horizon hydro-thermal
 
 using SDDP, GLPK, Test, Statistics
 
@@ -42,7 +44,7 @@ function infinite_hydro_thermal(; cut_type)
     SDDP.train(
         model;
         time_limit = 2.0,
-        print_level = 0,
+        log_frequency = 100,
         sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
         cycle_discretization_delta = 0.1,
     )
@@ -54,6 +56,7 @@ function infinite_hydro_thermal(; cut_type)
     sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
     println("Confidence_interval = $(sample_mean) ± $(sample_ci)")
     @test sample_mean - sample_ci <= 119.167 <= sample_mean + sample_ci
+    return
 end
 
 infinite_hydro_thermal(cut_type = SDDP.SINGLE_CUT)

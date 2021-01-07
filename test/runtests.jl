@@ -15,7 +15,7 @@ end
 const EXCLUDED_EXAMPLES =
     ["inventory_management.jl", "msppy_hydro_thermal.jl", "tiger_problem.jl"]
 
-const EXAMPLES_DIR = joinpath(dirname(@__DIR__), "examples")
+const EXAMPLES_DIR = joinpath(dirname(@__DIR__), "docs", "src", "examples")
 const PLUGINS_DIR = joinpath(@__DIR__, "plugins")
 const VISUALIZATION_DIR = joinpath(@__DIR__, "visualization")
 

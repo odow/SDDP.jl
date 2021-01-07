@@ -1,9 +1,11 @@
-#  Copyright 2017-20, Oscar Dowson, Lea Kapelevich.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-using JuMP, SDDP, LinearAlgebra, GLPK, Test
+# # Generation expansion
+
+using SDDP, LinearAlgebra, GLPK, Test
 
 function generation_expansion(integrality_handler)
     build_cost = 1e4
@@ -18,9 +20,9 @@ function generation_expansion(integrality_handler)
             25 11 4 14 4 6 15 12
             6 7 5 3 8 4 17 13
         ]
-    # Cost of unmet demand
+    ## Cost of unmet demand
     penalty = 5e5
-    # Discounting rate
+    ## Discounting rate
     rho = 0.99
     model = SDDP.LinearPolicyGraph(
         stages = 5,
@@ -39,18 +41,17 @@ function generation_expansion(integrality_handler)
         @constraints(
             sp,
             begin
-                # Can't un-invest
+                ## Can't un-invest
                 investment[i in 1:num_units], invested[i].out >= invested[i].in
-                # Generation capacity
+                ## Generation capacity
                 sum(capacities[i] * invested[i].out for i = 1:num_units) >= generation
-                # Meet demand or pay a penalty
+                ## Meet demand or pay a penalty
                 unmet >= demand - sum(generation)
-                # For fewer iterations order the units to break symmetry, units are identical (tougher numerically)
-                # [j in 1:(num_units - 1)], invested[j].out <= invested[j + 1].out
+                ## For fewer iterations order the units to break symmetry, units are identical (tougher numerically)
+                ## [j in 1:(num_units - 1)], invested[j].out <= invested[j + 1].out
             end
         )
-
-        # Demand is uncertain
+        ## Demand is uncertain
         SDDP.parameterize(ω -> JuMP.fix(demand, ω), sp, demand_vals[stage, :])
 
         @expression(
@@ -63,13 +64,10 @@ function generation_expansion(integrality_handler)
             (investment_cost + generation * use_cost) * rho^(stage - 1) + penalty * unmet
         )
     end
-    SDDP.train(model, iteration_limit = 50, print_level = 0)
+    SDDP.train(model, iteration_limit = 50, log_frequency = 10)
     @test SDDP.calculate_bound(model) ≈ 2.078860e6 atol = 1e3
+    return
 end
 
-for integrality_handler in [
-# Solve a continuous relaxation only, tough for SDDiP
-# SDDP.SDDiP(),
-SDDP.ContinuousRelaxation()]
-    generation_expansion(integrality_handler)
-end
+## Solve a continuous relaxation only, tough for SDDiP.
+generation_expansion(SDDP.ContinuousRelaxation())

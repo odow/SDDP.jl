@@ -1,22 +1,11 @@
-#  Copyright 2017-20, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-#=
-    This example comes from github.com/JuliaOpt/StochDynamicProgramming.jl/tree/
-        f68b9da541c2f811ce24fc76f6065803a0715c2f/examples/multistock-example.jl
+# # The multistock problem
 
-    Vincent Leclere, Francois Pacaud and Henri Gerard
-
- Compare different ways of solving a stock problem :
- Min   E [\sum_{t=1}^TF c_t u_t]
- s.t.    s_{t+1} = s_t + u_t - xi_t, s_0 given
-         0 <= s_t <= 1
-         u_min <= u_t <= u_max
-         u_t choosen knowing xi_1 .. xi_t
-
-=#
+# This example comes from [StochDynamicProgramming.jl](https://github.com/JuliaOpt/StochDynamicProgramming.jl/tree/f68b9da541c2f811ce24fc76f6065803a0715c2f/examples/multistock-example.jl).
 
 using SDDP, GLPK, Test
 
@@ -44,15 +33,22 @@ function test_multistock_example()
         end
         @stageobjective(subproblem, (sin(3 * stage) - 1) * sum(control))
     end
-    SDDP.train(model, iteration_limit = 100, print_level = 0, cut_type = SDDP.SINGLE_CUT)
+    SDDP.train(
+        model,
+        iteration_limit = 100,
+        cut_type = SDDP.SINGLE_CUT,
+        log_frequency = 10,
+    )
     @test SDDP.calculate_bound(model) ≈ -4.349 atol = 0.01
 
     simulation_results = SDDP.simulate(model, 5000)
     @test length(simulation_results) == 5000
-    @test SDDP.Statistics.mean(
+    μ = SDDP.Statistics.mean(
         sum(data[:stage_objective] for data in simulation)
         for simulation in simulation_results
-    ) ≈ -4.349 atol = 0.02
+    )
+    @test μ ≈ -4.349 atol = 0.1
+    return
 end
 
 test_multistock_example()

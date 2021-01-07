@@ -11,9 +11,9 @@ end
 function print_banner(io)
     println(
         io,
-        "--------------------------------------------------------------------------------",
+        "------------------------------------------------------------------------------",
     )
-    println(io, "                      SDDP.jl (c) Oscar Dowson, 2017-20")
+    println(io, "                      SDDP.jl (c) Oscar Dowson, 2017-21")
     println(io)
 end
 

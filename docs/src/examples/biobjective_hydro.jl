@@ -1,7 +1,9 @@
-#  Copyright 2017-20, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
+
+# # Biobjective hydro
 
 using SDDP, GLPK, Statistics, Test
 
@@ -45,13 +47,13 @@ function biobjective_hydro()
         Ω = [(a = i, λ = j) for i = 0.0:5:50.0 for j in price_noise_terms]
         SDDP.parameterize(subproblem, Ω) do ω
             JuMP.fix(a, ω.a)
-            # This *has* to be called from inside `SDDP.parameterize`,
-            # otherwise it doesn't make sense.
+            ## This *has* to be called from inside `SDDP.parameterize`,
+            ## otherwise it doesn't make sense.
             λ = SDDP.objective_state(subproblem)
             @stageobjective(subproblem, λ * objective_1 + (1 - λ) * objective_2)
         end
     end
-    SDDP.train(model, iteration_limit = 50, print_level = 0)
+    SDDP.train(model, iteration_limit = 50, log_frequency = 10)
 
     results = SDDP.simulate(model, 500)
     objectives = [sum(s[:stage_objective] for s in simulation) for simulation in results]
@@ -59,6 +61,7 @@ function biobjective_hydro()
     sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
     println("Confidence_interval = $(sample_mean) ± $(sample_ci)")
     @test SDDP.calculate_bound(model) ≈ sample_mean atol = sample_ci
+    return
 end
 
 biobjective_hydro()
