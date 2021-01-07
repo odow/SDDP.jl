@@ -9,6 +9,15 @@
 #     [Basic II: adding uncertainty](@ref), since it defines the same example we
 #     will solve in our implementation.
 
+# For this implementation of SDDP, we're going to try and keep things as simple.
+# This is very much a "vanilla" version of SDDP; it doesn't have (m)any fancy
+# computational tricks that you need to code a performant or stable version that
+# will work on realistic instances. However, it will work on arbitrary policy
+# graphs, including those with cycles such as infinite horizon problems!
+
+# In the interests of brevity, we will also include minimal error checking.
+# Think about all the different ways you could break this code!
+
 # This tutorial uses the following packages. For clarity, we call
 # `import PackageName` so that we must prefix `PackageName.` to all functions
 # and structs provided by that package. Everything not prefixed is either part
@@ -19,9 +28,7 @@ import GLPK
 import JuMP
 import Statistics
 
-# ## Theory
-
-# ### Preliminaries: Kelley's cutting plane algorithm
+# ## Preliminaries: Kelley's cutting plane algorithm
 
 # Kelley's cutting plane algorithm is an iterative method for minimizing convex
 # functions. Given a convex function $f(x)$, Kelley's constructs an
@@ -30,8 +37,8 @@ import Statistics
 # points $k = 1,\ldots,K$:
 # ```math
 # \begin{aligned}
-# f^K = \min\limits_{\theta, x} \;\; & \theta\\
-# & \theta \ge f(x_k) + \frac{df}{dx}\left(x_k\right) \cdot (x - x_k),\quad k=1,\ldots,K\\
+# f^K = \min\limits_{\theta \in \mathbb{R}, x \in \mathbb{R}^N} \;\; & \theta\\
+# & \theta \ge f(x_k) + \frac{df}{dx}\left(x_k\right)^\top (x - x_k),\quad k=1,\ldots,K\\
 # & \theta \ge M,
 # \end{aligned}
 # ```
@@ -40,10 +47,10 @@ import Statistics
 
 # As more cuts are added:
 # ```math
-# \lim_{K \rightarrow \infty} f^K = \min\limits_{x} f(x)
+# \lim_{K \rightarrow \infty} f^K = \min\limits_{x \in \mathbb{R}^N} f(x)
 # ```
 
-# #### Bounds
+# ### Bounds
 
 # By convexity, $f^K \le f(x)$ for all $x$. Thus, if $x^*$ is a minimizer of
 # $f$, then at any point in time we can construct a lower bound for $f(x^*)$ by
@@ -53,18 +60,18 @@ import Statistics
 # solution $x^K$ returned by solving $f^K$ to evaluate $f(x_K)$ to generate an
 # upper bound.
 
-# Therefore, $f(x^*) \in [f^K, f(x_K)]$.
+# Therefore, $f^K \le f(x^*) \le f(x_K)$.
 
-# #### Implementation
+# ### Implementation
 
-# Here is pseudo-code fo the algorithm:
+# Here is pseudo-code fo the Kelley algorithm:
 
 # 1. Take as input a function $f$ and a iteration limit $K_{max}$. Set $K = 0$,
-#    and initialize $f^K$
+#    and initialize $f^K$.
 # 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
 # 3. Add a cut $\theta \ge f(x_{K+1}) + \frac{df}{dx}\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
 # 4. Increment $K$
-# 5. If $K = K_{max}$ STOP, otherwise, go to step 2.
+# 5. If $K = K_{max}$, STOP, otherwise, go to step 2.
 
 # And here's a complete implementation:
 
@@ -117,7 +124,7 @@ kelleys_cutting_plane(
     return (x[1] - 1)^2 + (x[2] + 2)^2
 end
 
-# ### Approximating the cost-to-go term
+# ## Preliminaries: Approximating the cost-to-go term
 
 # In [Basic I: first steps](@ref), we discussed how you could formulate an
 # optimal policy to a multistage stochastic program using the dynamic
@@ -162,27 +169,22 @@ end
 # ```
 
 # All we need now is a way of generating these cutting planes in an iterative
-# manner. Stochastic dual dynamic programming does this in two phases: a
-# **forward pass** and a **backward pass**.
+# manner. Before we get to that though, let's start writing some code.
 
-# ### The forward pass
+# ## Implementation: modeling
 
-# The forward pass walks the policy graph from start to end, and solves each
-# approximated subproblem to generate a candidate outgoing state variable
-# $x_k^\prime$ at which to generate a cut.
-
-# ### The backward pass
-
-# ## Implementation
-
-# For this implementation of SDDP, we're going to try and keep things as simple.
-# This is very much a "vanilla" version of SDDP; it doesn't have (m)any fancy
-# computational tricks that you need to code a performant or stable version that
-# will work on realistic instances. However, it will work on arbitrary policy
-# graphs, including those with cycles such as infinite horizon problems!
-
-# In the interests of brevity, we will also include minimal error checking.
-# Think about all the different ways you could break this code!
+# Let's make a start by defining the problem structure. Like SDDP.jl, we need a
+# few things:
+#
+# 1. A description of the structure of the policy graph: how many nodes there
+#    are, and the arcs linking the nodes together with their corresponding
+#    probabilities.
+# 2. A JuMP model for each node in the policy graph
+# 3. A way to identify the incoming and outgoing state variables of each node
+# 4. A description of the random variable, as well as a function that we can
+#    call that will modify the JuMP model to reflect the realization of the
+#    random variable.
+# 5. A decision variable to act as the approximated cost-to-go term.
 
 # ### Structs
 
@@ -208,37 +210,21 @@ end
 # variable takes the value `Ω[i]` with probability `P[i]`. As such, `P` should
 # sum to 1. (We don't check this here, but we should; we do in SDDP.jl.)
 
-# It's also going to be useful to have a function that samples a realization of
-# the random variable defined by `Ω` and `P`:
-
-function sample_uncertainty(uncertainty::Uncertainty)
-    r = rand()
-    for (p, ω) in zip(uncertainty.P, uncertainty.Ω)
-        if r <= p
-            return ω
-        end
-        r -= p
-    end
-    error("We should never get here because P should sum to 1.0.")
-end
-
-# You should be able to work out what is going on. `rand()` samples a uniform
-# random variable in `[0, 1)`.
-
 # Now we have two building blocks, we can declare the structure of each node.
 
 struct Node
     subproblem::JuMP.Model
-    states::Dict{Symbol, State}
+    states::Dict{Symbol,State}
     uncertainty::Uncertainty
     cost_to_go::JuMP.VariableRef
 end
 
-# `subproblem` is going to be the JuMP model that we build at each node.
-# `states` is a dictionary that maps a symbolic name of a state variable to a
-# `State` object wrapping the incoming and outgoing state variables in
-# `subproblem`. `uncertainty` is an `Uncertainty` object described above, and
-# `cost_to_go` is a JuMP variable that approximates the cost-to-go term.
+# * `subproblem` is going to be the JuMP model that we build at each node.
+# * `states` is a dictionary that maps a symbolic name of a state variable to a
+#   `State` object wrapping the incoming and outgoing state variables in
+#   `subproblem`.
+# * `uncertainty` is an `Uncertainty` object described above.
+# * `cost_to_go` is a JuMP variable that approximates the cost-to-go term.
 
 # Finally, we define a simplified policy graph as follows:
 struct PolicyGraph
@@ -255,57 +241,25 @@ end
 # we can still define cyclic graphs though!
 
 # We also define a nice `show` method so that we don't accidentally print a
-# large amount of information to the screen.
+# large amount of information to the screen when creating a model.
 
 function Base.show(io::IO, model::PolicyGraph)
-    return print(io, "A policy graph with $(length(model.nodes)) nodes")
-end
-
-# It's also going to be useful to define a function that generates a random walk
-# through the nodes of the graph:
-
-function sample_graph(model::PolicyGraph)
-    trajectory, current_node = Int[], 1
-    finished = false
-    while !finished
-        push!(trajectory, current_node)
-        r = rand()
-        for (to, probability) in model.arcs[current_node]
-            r -= probability
-            if r < 0.0
-                current_node = to
-                break
-            end
-        end
-        if r >= 0
-            ## We looped through the outgoing arcs and still have probability
-            ## left over! This means it's time to stop walking.
-            finished = true
+    println(io, "A policy graph with $(length(model.nodes)) nodes")
+    println(io, "Arcs:")
+    for (from, arcs) in enumerate(model.arcs)
+        for (to, probability) in arcs
+            println(io, "  $(from) => $(to) w.p. $(probability)")
         end
     end
-    return trajectory
+    return
 end
 
-# As well as a function that computes a lower bound for the objective of the
-# policy graph:
+# ### Functions
 
-function lower_bound(model::PolicyGraph)
-    node = model.nodes[1]
-    bound = 0.0
-    for (p, ω) in zip(node.uncertainty.P, node.uncertainty.Ω)
-        node.uncertainty.parameterize(ω)
-        JuMP.optimize!(node.subproblem)
-        bound += p * JuMP.objective_value(node.subproblem)
-    end
-    return bound
-end
-
-# ### Interface functions
-
-# Now we have some basic types, let's implment some functions so that the user
+# Now we have some basic types, let's implement some functions so that the user
 # can create a model.
 
-# First, we need an exmaple of a function that the user will provide. Like
+# First, we need an example of a function that the user will provide. Like
 # SDDP.jl, this takes an empty `subproblem`, and a node index, in this case
 # `t::Int`. You could change this function to change the model, or define a new
 # one later in the code.
@@ -379,12 +333,102 @@ function PolicyGraph(
     return PolicyGraph(nodes, graph)
 end
 
-# ### The forward pass
+# Then, we can create a model using the `subproblem_builder` function we defined
+# earlier:
 
-# Now we're ready to code the forward pass. It takes a `::PolicyGraph`,
-# and returns a tuple of two things: a vector of the outgoing state variables
-# visited, and a `Float64` of the cumulative stage costs that were incurred
-# along the forward pass.
+model = PolicyGraph(
+    subproblem_builder;
+    graph = [
+        Dict(2 => 1.0),
+        Dict(3 => 1.0),
+        Dict{Int,Float64}(),
+    ],
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+)
+
+# ## Implementation: solution algorithm
+
+# Before we get properly coding the solution algorithm, it's also going to be
+# useful to have a function that samples a realization of the random variable
+# defined by `Ω` and `P`:
+
+function sample_uncertainty(uncertainty::Uncertainty)
+    r = rand()
+    for (p, ω) in zip(uncertainty.P, uncertainty.Ω)
+        r -= p
+        if r < 0.0
+            return ω
+        end
+    end
+    error("We should never get here because P should sum to 1.0.")
+end
+
+# You should be able to work out what is going on. `rand()` samples a uniform
+# random variable in `[0, 1)`. For example:
+
+sample_uncertainty(model.nodes[1].uncertainty)
+
+# It's also going to be useful to define a function that generates a random walk
+# through the nodes of the graph:
+
+function sample_graph(model::PolicyGraph)
+    trajectory, current_node = Int[], 1
+    finished = false
+    while !finished
+        push!(trajectory, current_node)
+        r = rand()
+        for (to, probability) in model.arcs[current_node]
+            r -= probability
+            if r < 0.0
+                current_node = to
+                break
+            end
+        end
+        if r >= 0
+            ## We looped through the outgoing arcs and still have probability
+            ## left over! This means it's time to stop walking.
+            finished = true
+        end
+    end
+    return trajectory
+end
+
+# For example:
+
+sample_graph(model)
+
+# This is a little boring, because our graph is simple. However, more
+# complicated graphs will generate more interesting trajectories!
+
+# A third function that is going to be useful is a way to compute a lower bound
+# for the objective of the policy graph:
+
+function lower_bound(model::PolicyGraph)
+    node = model.nodes[1]
+    bound = 0.0
+    for (p, ω) in zip(node.uncertainty.P, node.uncertainty.Ω)
+        node.uncertainty.parameterize(ω)
+        JuMP.optimize!(node.subproblem)
+        bound += p * JuMP.objective_value(node.subproblem)
+    end
+    return bound
+end
+
+# Because we haven't trained a policy yet, the lower bound is going to be very
+# bad:
+
+lower_bound(model)
+
+# ## Implementation: the forward pass
+
+# The forward pass walks the policy graph from start to end, and solves each
+# approximated subproblem to generate a candidate outgoing state variable
+# $x_k^\prime$ at which to generate a cut.
+
+# It takes a `::PolicyGraph`, and returns a tuple of two things: a vector of the
+# outgoing state variables visited, and a `Float64` of the cumulative stage
+# costs that were incurred along the forward pass.
 
 function forward_pass(model::PolicyGraph, io::IO = stdout)
     println(io, "| Forward Pass")
@@ -434,7 +478,7 @@ function forward_pass(model::PolicyGraph, io::IO = stdout)
     return trajectory, simulation_cost
 end
 
-# ### The backward pass
+# ## Implementation: the backward pass
 
 # We're now ready to code the backward pass. This is going to take a
 # `::PolicyGraph` object, and a vector of (node, outgoing states) tuples from
@@ -493,7 +537,13 @@ function backward_pass(
     return lower_bound(model)
 end
 
-# Thirdly, we need a function to simulate the policy. This is going be very
+# ## Implementation: the training loop
+
+# The `train` loop of SDDP just applies the forward and backward passes
+# iteratively, followed by a final simulation to compute the upper bound
+# confidence interval.
+
+# First, we need a function to simulate the policy. This is going be very
 # simple. It doesn't have an bells and whistles like being able to record the
 # control variables. The confidence interval is also incorrect if there are
 # cycles in the graph, because the distribution of simulation costs `z` is not
@@ -509,9 +559,7 @@ function simulate(model::PolicyGraph, io::IO = stdout; replications::Int)
     return simulations
 end
 
-# Finally, the `train` loop of SDDP just applies the forward and backward passes
-# iteratively, followed by a final simulation to compute the upper bound
-# confidence interval.
+# Here's the actual training loop:
 
 function train(
     model::PolicyGraph;
@@ -531,30 +579,46 @@ function train(
     return
 end
 
-# ### Example: finite horizon
-
-# First, create the model using the `subproblem_builder` function we defined
-# earlier:
-
-model = PolicyGraph(
-    subproblem_builder;
-    graph = [
-        Dict(2 => 1.0),
-        Dict(3 => 1.0),
-        Dict{Int,Float64}(),
-    ],
-    lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
-)
-
-# Then, train a policy:
+# Using our `model` we defined earlier, we can go:
 
 train(model; iteration_limit = 3, replications = 100)
 
 # Success! We trained a policy for a finite horizon multistage stochastic
 # program using stochastic dual dynamic programming.
 
-# ### Example: infinite horizon
+# ## Implementation: decision rules
+
+# A final step is the ability to evaluate the decision rule associated with a
+# node without having to perform a full simulation.
+
+function decision_rule(
+    node::Node;
+    incoming_state::Dict{Symbol,Float64},
+    random_variable,
+)
+    node.uncertainty.parameterize(random_variable)
+    for (k, v) in incoming_state
+        JuMP.fix(node.states[k].in, v; force = true)
+    end
+    JuMP.optimize!(node.subproblem)
+    return Dict(
+        k => JuMP.value.(v)
+        for (k, v) in JuMP.object_dictionary(node.subproblem)
+    )
+end
+
+decision_rule(
+    model.nodes[1];
+    incoming_state = Dict(:volume => 150.0),
+    random_variable = 75,
+)
+
+# Note how the random variable can be **out-of-sample**, i.e., it doesn't have
+# to be in the vector $\Omega$ we created when defining the model! This is a
+# notable difference to other multistage stochastic solution methods like
+# progressive hedging or using the deterministic equivalent.
+
+# ## Example: infinite horizon
 
 # First, create the model using the `subproblem_builder` function we defined
 # earlier:
