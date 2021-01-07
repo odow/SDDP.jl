@@ -586,7 +586,7 @@ end
 # For example:
 
 for i = 1:3
-    println("Next node from $(i) = ", sample_next_node(model, i))
+    println("Next node from $(i) = $(sample_next_node(model, i))")
 end
 
 # This is a little boring, because our graph is simple. However, more
