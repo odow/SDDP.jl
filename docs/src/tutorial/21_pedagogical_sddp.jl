@@ -160,6 +160,42 @@ import Statistics
 # of the policy graph until it reaches a node with not outgoing arcs. The cost
 # of a replicate is the sum of the costs incurred at each node that was visited.
 
+# ### Assumptions
+
+# !!! warning
+#     This section is important!
+
+# The space of problems you can model with this framework is very large. Too
+# large, in fact, for us to form tractable solution algorithms for! Stochastic
+# dual dynamic programming requires the following assumptions in order to work:
+
+# **Assumption 1: finite nodes**
+#
+# There are a finite number of nodes in $\mathcal{N}$.
+#
+# **Assumption 2: finite random variables**
+#
+# The sample space $\Omega_i$ is finite and discrete for each node
+# $i\in\mathcal{N}$.
+#
+# **Assumption 3: convex problems**
+#
+# Given fixed $\omega$, $C_i(x, u, \omega)$ is a convex function,
+# $T_i(x, u, \omega)$ is linear, and  $U_i(x, u, \omega)$ is a non-empty,
+# bounded convex set with respect to $x$ and $u$
+#
+# **Assumption 4: no infinite loops**
+#
+# For all loops in the policy graph, the product of the arc transition
+# probabilities around the loop is strictly less than 1.
+
+# !!! note
+#     SDDP.jl relaxes assumption (3) to allow for integer state and control
+#     variables, but we won't go into the details here. Assumption (4)
+#     essentially means that we obtain a discounted-cost solution for
+#     infinite-horizon problems, instead of an average-cost solution; see
+#     [Dowson (2020)](https://doi.org/10.1002/net.21932) for details.
+
 # ### Dynamic programming and subproblems
 
 # Now that we have formulated our problem, we need some ways of computing
