@@ -9,14 +9,14 @@
 #     [Basic II: adding uncertainty](@ref), since it defines the same example we
 #     will solve in our implementation.
 
-# For this implementation of SDDP, we're going to try and keep things as simple.
+# For this implementation of SDDP, we're going to try and keep things simple.
 # This is very much a "vanilla" version of SDDP; it doesn't have (m)any fancy
 # computational tricks that you need to code a performant or stable version that
 # will work on realistic instances. However, it will work on arbitrary policy
 # graphs, including those with cycles such as infinite horizon problems!
 
 # In the interests of brevity, we will also include minimal error checking.
-# Think about all the different ways you could break this code!
+# Think about all the different ways you could break the code!
 
 # This tutorial uses the following packages. For clarity, we call
 # `import PackageName` so that we must prefix `PackageName.` to all functions
@@ -27,6 +27,199 @@ import ForwardDiff
 import GLPK
 import JuMP
 import Statistics
+
+# ## Preliminaries: background theory
+
+# !!! tip
+#     This section is copied verbatim from [Basic I: first steps](@ref). If it's
+#     familiar, skip to [Preliminaries: Kelley's cutting plane algorithm](@ref).
+
+# Multistage stochastic programming is complicated, and the literature has not
+# settled upon standard naming conventions, so we must begin with some
+# unavoidable theory and notation.
+
+# A multistage stochastic program can be modeled by a **policy graph**. A policy
+# graph is a graph with nodes and arcs. The simplest type of policy graph is a
+# linear graph. Here's a linear graph with three nodes:
+
+# ![Linear policy graph](../assets/deterministic_linear_policy_graph.png)
+
+# In addition to nodes 1, 2, and 3, there is also a root node (0), and three
+# arcs. Each arc has an origin node and a destination node, like `0 => 1`, and a
+# corresponding probability of transitioning from the origin to the destination.
+# For now, we can forget about the arc probabilities, because they are all 1.0.
+
+# We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
+# probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
+# exists, then $p_{ij} = 0$). We define the set of successors of node $i$ as
+# $i^+ = \{j \in N | P(i => j) > 0\}$.
+
+# Each square node in the graph corresponds to a place at which the agent makes
+# a decision, and we call moments in time at which the agent makes a decision
+# **stages**. By convention, we try to draw policy graphs from left-to-right,
+# with the stages as columns. (There can be more than one node in a stage! We
+# will see such examples in future tutorials when our graph has rows as well as
+# columns.)
+
+# A common feature of multistage stochastic optimization problems is that they
+# model an agent controlling a system over time. This system can be described by
+# three types of variables.
+
+# 1. **State** variables track a property of the system over time.
+
+#    Each node has an associated _incoming_ state variable (the value of the
+#    state at the start of the node), and an _outgoing_ state variable (the
+#    value of the state at the end of the node).
+#
+#    Examples of state variables include the volume of water in a reservoir, the
+#    number of units of inventory in a warehouse, or the spatial position of a
+#    moving vehicle.
+#
+#    Because state variables track the system over time, each node must have the
+#    same set of state variables.
+#
+#    We denote state variables by the letter $x$ for the incoming state variable
+#    and $x^\prime$ for the outgoing state variable.
+#
+# 2. **Control** variables are actions taken (implicitly or explicitly) by the
+#    agent within a node which modify the state variables.
+#
+#    Examples of control variables include releases of water from the reservoir,
+#    sales or purchasing decisions, and acceleration or braking of the vehicle.
+#
+#    Control variables are local to a node $i$, and they can differ between
+#    nodes. For example, some control variables may be available within certain
+#    nodes.
+#
+#    We denote control variables by the letter $u$.
+#
+# 3. **Random** variables are finite, discrete, exogenous random variables that
+#    the agent observes at the start of a node, before the control variables are
+#    decided.
+#
+#    Examples of random variables include rainfall inflow into a reservoir,
+#    probalistic perishing of inventory, and steering errors in a vehicle.
+#
+#    Random variables are local to a node $i$, and they can differ between
+#    nodes. For example, some nodes may have random variables, and some nodes
+#    may not.
+#
+#    We denote random variables by the Greek letter $\omega$ and the sample
+#    space from which they are drawn by $\Omega_i$. The probability of sampling
+#    $\omega$ is denoted $p_{\omega}$ for simplicity.
+
+# In a node $i$, the three variables are related by a **transition function**,
+# which maps the incoming state, the controls, and the random variables to the
+# outgoing state as follows: $x^\prime = T_i(x, u, \omega)$.
+
+# As a result of entering a node $i$ with the incoming state $x$, observing
+# random variable $\omega$, and choosing control $u$, the agent incurs a cost
+# $C_i(x, u, \omega)$. (If the agent is a maximizer, this can be a profit, or a
+# negative cost.) We call $C_i$ the **stage objective**.
+
+# To choose their control variables in node $i$, the agent uses a **decision**
+# **rule** $u = \pi_i(x, \omega)$, which is a function that maps the incoming
+# state variable and observation of the random variable to a control $u$. This
+# control must satisfy some feasibilty requirements $u \in U_i(x, \omega)$.
+
+# The set of decision rules, with one element for each node in the policy graph,
+# is called a **policy**.
+
+# The goal of the agent is to find a policy that minimizes the expected cost of
+# starting at the root node with some initial condition $x_R$, and proceeding
+# from node to node along the probabilistic arcs until they reach a node with no
+# outgoing arcs.
+
+# ```math
+# \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]
+# ```
+# where
+# ```math
+# V_i^\pi(x, \omega) = C_i(x, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]
+# ```
+# where $u = \pi_i(x, \omega) \in U_i(x, \omega)$, and
+# $x^\prime = T_i(x, u, \omega)$.
+
+# The expectations are a bit complicated, but they are equivalent to:
+# ```math
+# \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)] = \sum\limits_{j \in i^+} p_{ij} \left[\sum\limits_{\varphi \in \Omega_j} p_{\varphi}\left[V_j(x^\prime, \varphi)\right]\right]
+# ```
+
+# An optimal policy is the set of decision rules that the agent can use to make
+# these decisions and achieve the smallest expected cost.
+
+# Often, computing the cost of a policy is intractable due to the large number
+# of nodes or possible realizations of the random variables. Instead, we can
+# evaluate the policy using a Monte Carlo simulation. Each replicate of the
+# simulation starts at the root node and probabilistically walks along the arcs
+# of the policy graph until it reaches a node with not outgoing arcs. The cost
+# of a replicate is the sum of the costs incurred at each node that was visited.
+
+# ### Dynamic programming and subproblems
+
+# Now that we have formulated our problem, we need some ways of computing
+# optimal decision rules. One way is to just use a heuristic like "choose a
+# control randomly from the set of feasible controls." However, such a policy is
+# unlikely to be optimal.
+
+# One way of obtaining an optimal policy is to use Bellman's principle of
+# optimality, a.k.a Dynamic Programming, and define a recursive **subproblem**
+# as follows:
+# ```math
+# \begin{aligned}
+# V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
+# & x^\prime = T_i(\bar{x}, u, \omega) \\
+# & u \in U_i(\bar{x}, \omega) \\
+# & \bar{x} = x
+# \end{aligned}
+# ```
+# Our decision rule, $\pi_i(x, \omega)$, solves this optimization problem and
+# returns a $u^*$ corresponding to an optimal solution.
+#
+# !!! note
+#     We add $\bar{x}$ as a decision variable, along with the fishing constraint
+#     $\bar{x} = x$ for two reasons: it makes it obvious that formulating a
+#     problem with $x \times u$ results in a bilinear program instead of a
+#     linear program, and it simplifies that internal algorithm that SDDP.jl
+#     uses to find an optimal policy.
+
+# These subproblems are very difficult to solve exactly, because they involve
+# recursive optimization problems with lots of nested expectations.
+
+# Therefore, instead of solving them exactly, SDDP works by iteratively
+# approximating the expectation term of each subproblem, which is also called
+# the cost-to-go term. For now, you don't need to understand the details, we
+# will explain how shortly.
+
+# The subproblem view of a multistage stochastic program is also important,
+# because it provides a convienient way of communicating the different parts of
+# the broader problem, and it is how we will communicate the problem to SDDP.jl.
+# All we need to do is drop the cost-to-go term and fishing constraint, and
+# define a new subproblem `SP` as:
+# ```math
+# \begin{aligned}
+# \texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) \\
+# & x^\prime = T_i(\bar{x}, u, \omega) \\
+# & u \in U_i(\bar{x}, \omega) \\
+# \end{aligned}
+# ```
+# !!! note
+#     When we talk about formulating a **subproblem** with SDDP.jl, this is the
+#     formulation we mean.
+
+# We've retained the transition function and uncertainty set because they help
+# to motivate the different components of the subproblem. However, in general,
+# the subproblem can be more general. A better (less restrictive) representation
+# might be:
+# ```math
+# \begin{aligned}
+# \texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, x^\prime, u, \omega) \\
+# & (\bar{x}, x^\prime, u) \in \mathcal{X}_i(\omega)
+# \end{aligned}
+# ```
+# Note that the outgoing state variable can appear in the objective, and we can
+# add constraints involving the incoming and outgoing state variables. It
+# should be obvious how to map between the two representations.
 
 # ## Preliminaries: Kelley's cutting plane algorithm
 
@@ -67,11 +260,12 @@ import Statistics
 # Here is pseudo-code fo the Kelley algorithm:
 
 # 1. Take as input a function $f$ and a iteration limit $K_{max}$. Set $K = 0$,
-#    and initialize $f^K$.
+#    and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$
 # 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
-# 3. Add a cut $\theta \ge f(x_{K+1}) + \frac{df}{dx}\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
-# 4. Increment $K$
-# 5. If $K = K_{max}$, STOP, otherwise, go to step 2.
+# 3. Update $lb = f^K$ and $ub = \min\{ub, f(x_{K+1}\}$
+# 4. Add a cut $\theta \ge f(x_{K+1}) + \frac{df}{dx}\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
+# 5. Increment $K$
+# 6. If $K = K_{max}$, STOP, otherwise, go to step 2.
 
 # And here's a complete implementation:
 
@@ -94,23 +288,25 @@ function kelleys_cutting_plane(
     JuMP.@variable(model, θ >= lower_bound)
     JuMP.@variable(model, x[1:input_dimension])
     JuMP.@objective(model, Min, θ)
+    lower_bound, upper_bound = -Inf, Inf
     while true
         ## Step (2)
         JuMP.optimize!(model)
         x_k = JuMP.value.(x)
-        ## Step (3):
-        c = JuMP.@constraint(model, θ >= f(x_k) + dfdx(x_k)' * (x .- x_k))
+        ## Step (3)
+        lower_bound = JuMP.objective_value(model)
+        upper_bound = min(upper_bound, f(x_k))
+        println("K = $K : $(lower_bound) <= f(x*) <= $(upper_bound)")
         ## Step (4):
-        K = K + 1
+        c = JuMP.@constraint(model, θ >= f(x_k) + dfdx(x_k)' * (x .- x_k))
         ## Step (5):
+        K = K + 1
+        ## Step (6):
         if K == iteration_limit
             break
         end
     end
-    θ_K, x_K = JuMP.value(θ), JuMP.value.(x)
-    println("Found solution:")
-    println("  x_K   = ", x_K)
-    println("  f(x*) ∈ [", θ_K, ", ", f(x_K), "]")
+    println("Found solution: x_K = ", JuMP.value.(x))
     return
 end
 
@@ -124,9 +320,9 @@ kelleys_cutting_plane(
     return (x[1] - 1)^2 + (x[2] + 2)^2
 end
 
-# ## Preliminaries: Approximating the cost-to-go term
+# ## Preliminaries: approximating the cost-to-go term
 
-# In [Basic I: first steps](@ref), we discussed how you could formulate an
+# In the background theory section, we discussed how you could formulate an
 # optimal policy to a multistage stochastic program using the dynamic
 # programming recursion:
 # ```math
@@ -367,70 +563,52 @@ end
 # You should be able to work out what is going on. `rand()` samples a uniform
 # random variable in `[0, 1)`. For example:
 
-sample_uncertainty(model.nodes[1].uncertainty)
+for _ = 1:3
+    println("ω = ", sample_uncertainty(model.nodes[1].uncertainty))
+end
 
 # It's also going to be useful to define a function that generates a random walk
 # through the nodes of the graph:
 
-function sample_graph(model::PolicyGraph)
-    trajectory, current_node = Int[], 1
-    finished = false
-    while !finished
-        push!(trajectory, current_node)
-        r = rand()
-        for (to, probability) in model.arcs[current_node]
-            r -= probability
-            if r < 0.0
-                current_node = to
-                break
-            end
-        end
-        if r >= 0
-            ## We looped through the outgoing arcs and still have probability
-            ## left over! This means it's time to stop walking.
-            finished = true
+function sample_next_node(model::PolicyGraph, current::Int)
+    r = rand()
+    for (to, probability) in model.arcs[current]
+        r -= probability
+        if r < 0.0
+            return to
         end
     end
-    return trajectory
+    ## We looped through the outgoing arcs and still have probability left over!
+    ## This means we've hit a leaf node and it's time to stop walking.
+    return nothing
 end
 
 # For example:
 
-sample_graph(model)
+for i = 1:3
+    println("Next node from $(i) = ", sample_next_node(model, i))
+end
 
 # This is a little boring, because our graph is simple. However, more
 # complicated graphs will generate more interesting trajectories!
 
-# A third function that is going to be useful is a way to compute a lower bound
-# for the objective of the policy graph:
-
-function lower_bound(model::PolicyGraph)
-    node = model.nodes[1]
-    bound = 0.0
-    for (p, ω) in zip(node.uncertainty.P, node.uncertainty.Ω)
-        node.uncertainty.parameterize(ω)
-        JuMP.optimize!(node.subproblem)
-        bound += p * JuMP.objective_value(node.subproblem)
-    end
-    return bound
-end
-
-# Because we haven't trained a policy yet, the lower bound is going to be very
-# bad:
-
-lower_bound(model)
-
 # ## Implementation: the forward pass
 
-# The forward pass walks the policy graph from start to end, and solves each
-# approximated subproblem to generate a candidate outgoing state variable
-# $x_k^\prime$ at which to generate a cut.
+# Like Kelley's algorithm, we need a way of generating candidate solutions
+# $x_K$. However, unlike the Kelley's example, our functions need two inputs:
+# an incoming state variable and a realization of the random variable. We get
+# these from a simulation of the policy, which we call the **forward pass**.
 
-# It takes a `::PolicyGraph`, and returns a tuple of two things: a vector of the
-# outgoing state variables visited, and a `Float64` of the cumulative stage
-# costs that were incurred along the forward pass.
+# The forward pass walks the policy graph from start to end, transitioning
+# randomly along the arcs. At each node, it observes a realization of the random
+# variable and solves the approximated subproblem to generate a candidate
+# outgoing state variable $x_k^\prime$. The outgoing state variable is passed as
+# the incoming state variable to the next node in the trajectory.
 
-function forward_pass(model::PolicyGraph, io::IO = stdout)
+function forward_pass(
+    model::PolicyGraph,
+    io::IO = stdout,
+)::Tuple{Vector{Tuple{Int,Dict{Symbol,Float64}}},Float64}
     println(io, "| Forward Pass")
     ## First, get the value of the state at the root node (e.g., x_R).
     incoming_state = Dict(
@@ -443,16 +621,17 @@ function forward_pass(model::PolicyGraph, io::IO = stdout)
     ## variables so we can pass them to the backward pass.
     trajectory = Tuple{Int,Dict{Symbol,Float64}}[]
     ## Now's the meat of the forward pass: loop through each of the nodes
-    for t in sample_graph(model)
+    t = 1
+    while t !== nothing
         node = model.nodes[t]
         println(io, "| | Visiting node $(t)")
         ## Sample the uncertainty:
         ω = sample_uncertainty(node.uncertainty)
-        println(io, "| |  ω = ", ω)
+        println(io, "| | | ω = ", ω)
         ## Before parameterizing the subproblem using the user-provided
         ## function:
         node.uncertainty.parameterize(ω)
-        println(io, "| |  x = ", incoming_state)
+        println(io, "| | | x = ", incoming_state)
         ## Update the incoming state variable:
         for (k, v) in incoming_state
             JuMP.fix(node.states[k].in, v; force = true)
@@ -464,26 +643,33 @@ function forward_pass(model::PolicyGraph, io::IO = stdout)
         end
         ## Compute the outgoing state variables:
         outgoing_state = Dict(k => JuMP.value(v.out) for (k, v) in node.states)
-        println(io, "| |  x′ = ", outgoing_state)
+        println(io, "| | | x′ = ", outgoing_state)
         ## We also need to compute the stage cost to add to our
         ## `simulation_cost` accumulator:
         stage_cost = JuMP.objective_value(node.subproblem) - JuMP.value(node.cost_to_go)
         simulation_cost += stage_cost
-        println(io, "| |  C(x, u, ω) = ", stage_cost)
+        println(io, "| | | C(x, u, ω) = ", stage_cost)
         ## As a final step, set the outgoing state of stage t and the incoming
         ## state of stage t + 1, and add the node to the trajectory.
         incoming_state = outgoing_state
         push!(trajectory, (t, outgoing_state))
+        t = sample_next_node(model, t)
     end
     return trajectory, simulation_cost
 end
 
+# Let's take a look at one forward pass:
+
+trajectory, simulation_cost = forward_pass(model);
+
 # ## Implementation: the backward pass
 
-# We're now ready to code the backward pass. This is going to take a
-# `::PolicyGraph` object, and a vector of (node, outgoing states) tuples from
-# the forward pass. It returns a `Float64` that is a valid lower bound for the
-# objective of the multistage stochastic program.
+# From the forward pass, we obtained a vector of nodes visted and their
+# corresponding outgoing state variables. In the **backward pass**, we walk back
+# up this list, and at each node, we compute the cut:
+# ```math
+# \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{dV_j^k}{dx^\prime}\left(x^\prime_k, \varphi\right)^\top (x^\prime - x^\prime_k)\right],\quad k=1,\ldots,K
+# ```
 
 function backward_pass(
     model::PolicyGraph,
@@ -491,18 +677,22 @@ function backward_pass(
     io::IO = stdout,
 )
     println(io, "| Backward pass")
-    ## For the backward pass, we walk back up the nodes, from the final
-    ## node to the second (we will solve the first node after this loop).
-    for i = reverse(1:length(trajectory)-1)
+    ## For the backward pass, we walk back up the nodes.
+    for i = reverse(1:length(trajectory))
         index, outgoing_states = trajectory[i]
         node = model.nodes[index]
         println(io, "| | Visiting node $(index)")
+        if length(model.arcs[index]) == 0
+            ## If there are no children, the cost-to-go is 0.
+            println(io, "| | | Skipping node because the cost-to-go is 0")
+            continue
+        end
         ## Create an empty affine expression that we will use to build up the
-        ## cut expression.
+        ## right-hand side of the cut expression.
         cut_expression = JuMP.AffExpr(0.0)
         ## Now for each possible node and realization of the uncertainty, solve
-        ## the subproblem, and add `P_ij * p_ω * [y + λᵀ(x - x_k)]` to the cut
-        ## expression. (See the Theory section above is this isn't obvious why.)
+        ## the subproblem, and add `P_ij * p_ω * [V + dVdxᵀ(x - x_k)]` to the
+        ## cut expression.
         for (j, P_ij) in model.arcs[index]
             next_node = model.nodes[j]
             for (k, v) in outgoing_states
@@ -512,14 +702,14 @@ function backward_pass(
                 println(io, "| | | Solving ω = ", ω)
                 next_node.uncertainty.parameterize(ω)
                 JuMP.optimize!(next_node.subproblem)
-                y = JuMP.objective_value(next_node.subproblem)
-                println(io, "| | |  y = ", y)
-                λ = Dict(k => JuMP.reduced_cost(v.in) for (k, v) in next_node.states)
-                println(io, "| | |  λ = ", λ)
+                V = JuMP.objective_value(next_node.subproblem)
+                println(io, "| | | | V = ", V)
+                dVdx = Dict(k => JuMP.reduced_cost(v.in) for (k, v) in next_node.states)
+                println(io, "| | | | dVdx′ = ", dVdx)
                 cut_expression += P_ij * pω * JuMP.@expression(
                     node.subproblem,
-                    y + sum(
-                        λ[k] * (x.out - outgoing_states[k])
+                    V + sum(
+                        dVdx[k] * (x.out - outgoing_states[k])
                         for (k, x) in node.states
                     ),
                 )
@@ -532,9 +722,7 @@ function backward_pass(
         )
         println(io, "| | | Adding cut : ", c)
     end
-    ## Finally, compute a lower bound for the problem by evaluating the
-    ## first-stage subproblem.
-    return lower_bound(model)
+    return nothing
 end
 
 # ## Implementation: the training loop
@@ -543,21 +731,64 @@ end
 # iteratively, followed by a final simulation to compute the upper bound
 # confidence interval.
 
-# First, we need a function to simulate the policy. This is going be very
-# simple. It doesn't have an bells and whistles like being able to record the
-# control variables. The confidence interval is also incorrect if there are
-# cycles in the graph, because the distribution of simulation costs `z` is not
-# symmetric.
+# ### Lower bounds
 
-function simulate(model::PolicyGraph, io::IO = stdout; replications::Int)
+# Recall from Kelley's that we can obtain a lower bound for $f(x^*)$ be
+# evaluating $f^K$. The analagous lower bound for a multistage stochastic
+# program is:
+
+# ```math
+# \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^K(x_R, \omega)] \le \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]
+# ```
+
+# Here's how we compute the lower bound:
+
+function lower_bound(model::PolicyGraph)
+    node = model.nodes[1]
+    bound = 0.0
+    for (p, ω) in zip(node.uncertainty.P, node.uncertainty.Ω)
+        node.uncertainty.parameterize(ω)
+        JuMP.optimize!(node.subproblem)
+        bound += p * JuMP.objective_value(node.subproblem)
+    end
+    return bound
+end
+
+# !!! note
+#     The implementation is simplified because we assumed that there is only one
+#     arc from the root node, and that it pointed to the first node in the
+#    vector.
+
+# Because we haven't trained a policy yet, the lower bound is going to be very
+# bad:
+
+lower_bound(model)
+
+# ### Upper bounds
+
+# With Kelley's algorithm, we could easily construct an upper bound by
+# evaluating $f(x_K)$. However, it is almost always intractable to evaluate an
+# upper bound for multistage stochastic programs due to the large number of
+# nodes and the nested expectations. Instead, we can perform a Monte Carlo
+# simulation of the policy to build a statistical estimate for the value of
+# $\mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]$, where
+# $\pi$ is the policy defined by the current approximations $V^K_i$.
+
+# !!! note
+#     The width of the confidence interval is incorrect if there are cycles in
+#     the graph, because the distribution of simulation costs `z` is not
+#     symmetric. The mean is correct, however.
+
+function upper_bound(model::PolicyGraph; replications::Int)
     ## Pipe the output to `devnull` so we don't print too much!
     simulations = [forward_pass(model, devnull) for _ = 1:replications]
     z = [s[2] for s in simulations]
     μ  = Statistics.mean(z)
     tσ = 1.96 * Statistics.std(z) / sqrt(replications)
-    println(io, "Upper bound = $(μ) ± $(tσ)")
-    return simulations
+    return μ, tσ
 end
+
+# ### Training
 
 # Here's the actual training loop:
 
@@ -570,12 +801,13 @@ function train(
     for i = 1:iteration_limit
         println(io, "Starting iteration $(i)")
         outgoing_states, simulation = forward_pass(model, io)
-        lower_bound = backward_pass(model, outgoing_states, io)
+        backward_pass(model, outgoing_states, io)
         println(io, "| Finished iteration")
         println(io, "| | simulation = ", simulation)
-        println(io, "| | lower_bound = ", lower_bound)
+        println(io, "| | lower_bound = ", lower_bound(model))
     end
-    simulate(model, io; replications = replications)
+    μ, tσ = upper_bound(model; replications = replications)
+    println(io, "Upper bound = $(μ) ± $(tσ)")
     return
 end
 
@@ -589,7 +821,7 @@ train(model; iteration_limit = 3, replications = 100)
 # ## Implementation: decision rules
 
 # A final step is the ability to evaluate the decision rule associated with a
-# node without having to perform a full simulation.
+# node:
 
 function decision_rule(
     node::Node;
@@ -620,8 +852,13 @@ decision_rule(
 
 # ## Example: infinite horizon
 
-# First, create the model using the `subproblem_builder` function we defined
-# earlier:
+# As promised earlier, our implementation is actually pretty general. It can
+# solve any multistage stochastic (linear) program defined by a policy graph,
+# including infinite horizon problems!
+
+# Here's an example, where we have extended our earlier problem with an arc from
+# node 3 to node 2 with probability 0.5. You can interpret the 0.5 as a discount
+# factor.
 
 model = PolicyGraph(
     subproblem_builder;
@@ -641,3 +878,9 @@ train(model; iteration_limit = 3, replications = 100)
 # Success! We trained a policy for an infinite horizon multistage stochastic
 # program using stochastic dual dynamic programming. Note how some of the
 # forward passes are different lengths!
+
+decision_rule(
+    model.nodes[3];
+    incoming_state = Dict(:volume => 100.0),
+    random_variable = 10.0,
+)
