@@ -586,7 +586,9 @@ end
 # For example:
 
 for i = 1:3
-    println("Next node from $(i) = $(sample_next_node(model, i))")
+    ## We use `repr` to print the next node, because `sample_next_node` can
+    ## return `nothing`.
+    println("Next node from $(i) = ", repr(sample_next_node(model, i)))
 end
 
 # This is a little boring, because our graph is simple. However, more
