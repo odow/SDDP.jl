@@ -279,7 +279,7 @@ import Statistics
 # ```math
 # \begin{aligned}
 # f^K = \min\limits_{\theta \in \mathbb{R}, x \in \mathbb{R}^N} \;\; & \theta\\
-# & \theta \ge f(x_k) + \frac{df}{dx}\left(x_k\right)^\top (x - x_k),\quad k=1,\ldots,K\\
+# & \theta \ge f(x_k) + \frac{d}{dx}f(x_k)^\top (x - x_k),\quad k=1,\ldots,K\\
 # & \theta \ge M,
 # \end{aligned}
 # ```
@@ -311,7 +311,7 @@ import Statistics
 #    and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$
 # 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
 # 3. Update $lb = f^K$ and $ub = \min\{ub, f(x_{K+1}\}$
-# 4. Add a cut $\theta \ge f(x_{K+1}) + \frac{df}{dx}\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
+# 4. Add a cut $\theta \ge f(x_{K+1}) + \frac{d}{dx}f\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
 # 5. Increment $K$
 # 6. If $K = K_{max}$, STOP, otherwise, go to step 2.
 
@@ -346,7 +346,7 @@ function kelleys_cutting_plane(
         upper_bound = min(upper_bound, f(x_k))
         println("K = $K : $(lower_bound) <= f(x*) <= $(upper_bound)")
         ## Step (4):
-        c = JuMP.@constraint(model, θ >= f(x_k) + dfdx(x_k)' * (x .- x_k))
+        JuMP.@constraint(model, θ >= f(x_k) + dfdx(x_k)' * (x .- x_k))
         ## Step (5):
         K = K + 1
         ## Step (6):
@@ -369,8 +369,11 @@ kelleys_cutting_plane(
 end
 
 # !!! warning
-#     It's hard to choose a valid lower bound! For a SDDP.jl discussion of the
-#     implications, see [Choosing an initial bound](@ref).
+#     It's hard to choose a valid lower bound! If you choose one too loose, the
+#     algorithm can take a long time to converge. However, if you choose one so
+#     tight that $M > f(x^*)$, then you can obtain a suboptimal solution. For a
+#     deeper discussion of the implications for SDDP.jl, see
+#     [Choosing an initial bound](@ref).
 
 # ## Preliminaries: approximating the cost-to-go term
 
@@ -411,7 +414,7 @@ end
 # & x^\prime = T_i(\bar{x}, u, \omega) \\
 # & u \in U_i(\bar{x}, \omega) \\
 # & \bar{x} = x \\
-# & \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{dV_j^k}{dx^\prime}\left(x^\prime_k, \varphi\right)^\top (x^\prime - x^\prime_k)\right],\quad k=1,\ldots,K \\
+# & \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right],\quad k=1,\ldots,K \\
 # & \theta \ge M
 # \end{aligned}
 # ```
@@ -650,9 +653,11 @@ end
 
 # ## Implementation: the forward pass
 
-# Like Kelley's algorithm, we need a way of generating candidate solutions
-# $x_K$. However, unlike the Kelley's example, our functions need two inputs:
-# an incoming state variable and a realization of the random variable.
+# Recall that, after approximating the cost-to-go term, we need a way of
+# generating the cuts. As the first step, we need a way of generating candidate
+# solutions $x_K^\prime$. However, unlike the Kelley's example, our functions
+# need two inputs: an incoming state variable and a realization of the random
+# variable.
 
 # One way of getting these inputs is just to pick a random (feasible) value.
 # However, in doing so, we might pick incoming state variables that we will
@@ -667,10 +672,7 @@ end
 # outgoing state variable $x_k^\prime$. The outgoing state variable is passed as
 # the incoming state variable to the next node in the trajectory.
 
-function forward_pass(
-    model::PolicyGraph,
-    io::IO = stdout,
-)
+function forward_pass(model::PolicyGraph, io::IO = stdout)
     println(io, "| Forward Pass")
     ## First, get the value of the state at the root node (e.g., x_R).
     incoming_state = Dict(
@@ -732,11 +734,11 @@ trajectory, simulation_cost = forward_pass(model);
 # approximation for each node at the candidate solution for the outgoing state
 # variable. That is, we need to add a new cut:
 # ```math
-# \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{dV_j^k}{dx^\prime}\left(x^\prime_k, \varphi\right)^\top (x^\prime - x^\prime_k)\right]
+# \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right]
 # ```
 # or alternatively:
 # ```math
-# \theta \ge \sum\limits_{j \in i^+} p_{ij} \left[\sum\limits_{\varphi \in \Omega_j} p_{\varphi}\left[V_j^k(x^\prime_k, \varphi) + \frac{dV_j^k}{dx^\prime}\left(x^\prime_k, \varphi\right)^\top (x^\prime - x^\prime_k)\right]\right]
+# \theta \ge \sum\limits_{j \in i^+} p_{ij} \left[\sum\limits_{\varphi \in \Omega_j} p_{\varphi}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right]\right]
 # ```
 
 # It doesn't matter what order we visit the nodes to generate these cuts for.
@@ -816,7 +818,7 @@ end
 # ### Lower bounds
 
 # Recall from Kelley's that we can obtain a lower bound for $f(x^*)$ be
-# evaluating $f^K$. The analagous lower bound for a multistage stochastic
+# evaluating $f^K$. The analogous lower bound for a multistage stochastic
 # program is:
 
 # ```math
@@ -839,7 +841,7 @@ end
 # !!! note
 #     The implementation is simplified because we assumed that there is only one
 #     arc from the root node, and that it pointed to the first node in the
-#    vector.
+#     vector.
 
 # Because we haven't trained a policy yet, the lower bound is going to be very
 # bad:
@@ -930,10 +932,11 @@ evaluate_policy(
     random_variable = 75,
 )
 
-# Note how the random variable can be **out-of-sample**, i.e., it doesn't have
-# to be in the vector $\Omega$ we created when defining the model! This is a
-# notable difference to other multistage stochastic solution methods like
-# progressive hedging or using the deterministic equivalent.
+# !!! note
+#     The random variable can be **out-of-sample**, i.e., it doesn't have to be
+#     in the vector $\Omega$ we created when defining the model! This is a
+#     notable difference to other multistage stochastic solution methods like
+#     progressive hedging or using the deterministic equivalent.
 
 # ## Example: infinite horizon
 
