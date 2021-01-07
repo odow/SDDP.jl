@@ -33,6 +33,8 @@ import Statistics
 # settled upon standard naming conventions, so we must begin with some
 # unavoidable theory and notation.
 
+# ### Policy graphs
+
 # A multistage stochastic program can be modeled by a **policy graph**. A policy
 # graph is a graph with nodes and arcs. The simplest type of policy graph is a
 # linear graph. Here's a linear graph with three nodes:
@@ -43,13 +45,12 @@ import Statistics
 # arcs. Each arc has an origin node and a destination node, like `0 => 1`, and a
 # corresponding probability of transitioning from the origin to the destination.
 # For now, we can forget about the arc probabilities, because they are all 1.0.
-# The squiggly lines coming into each node represent random variables; we'll
-# talk about them below.
+# The squiggly lines denote random variables that we will discuss shortly.
 
 # We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
 # probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
-# exists, then $p_{ij} = 0$). We define the set of successors of node $i$ as
-# $i^+ = \{j \in N | P(i => j) > 0\}$.
+# exists, then $p_{ij} = 0$.) We define the set of successors of node $i$ as
+# $i^+ = \{j \in \mathcal{N} | p_{ij}) > 0\}$.
 
 # Each square node in the graph corresponds to a place at which the agent makes
 # a decision, and we call moments in time at which the agent makes a decision
@@ -61,10 +62,13 @@ import Statistics
 
 # The columns represent time, and the rows represent different states of the
 # world. In this case, the rows represent different prices that milk can be sold
-# for at the end of each year. You can think of the nodes as forming a Markov
-# chain, therefore, we call problems with a structure like this **Markovian**
-# **policy graphs**. Moreover, note that policy graphs can have cycles! This
-# allows them to model infinite horizon problems.
+# for at the end of each year. The squiggly lines denote a multivariate random
+# variable that models the weekly amount of rainfall that occurs. You can think
+# of the nodes as forming a Markov chain, therefore, we call problems with a
+# structure like this **Markovian policy graphs**. Moreover, note that policy
+# graphs can have cycles! This allows them to model infinite horizon problems.
+
+# ### Problem notation
 
 # A common feature of multistage stochastic optimization problems is that they
 # model an agent controlling a system over time. This system can be described by
@@ -112,6 +116,9 @@ import Statistics
 #    We denote random variables by the Greek letter $\omega$ and the sample
 #    space from which they are drawn by $\Omega_i$. The probability of sampling
 #    $\omega$ is denoted $p_{\omega}$ for simplicity.
+#
+#    Importantly, the random variable associated node $i$ is independent of all
+#    the random variable in all other nodes.
 
 # In a node $i$, the three variables are related by a **transition function**,
 # which maps the incoming state, the controls, and the random variables to the
@@ -200,12 +207,12 @@ import Statistics
 
 # Now that we have formulated our problem, we need some ways of computing
 # optimal decision rules. One way is to just use a heuristic like "choose a
-# control randomly from the set of feasible controls." However, such a policy is
-# unlikely to be optimal.
+# control randomally from the set of feasible controls." However, such a policy
+# is unlikely to be optimal.
 
-# One way of obtaining an optimal policy is to use Bellman's principle of
-# optimality, a.k.a Dynamic Programming, and define a recursive **subproblem**
-# as follows:
+# One way of obtaining an optimal policy is to use [Bellman's principle of
+# optimality](https://en.wikipedia.org/wiki/Bellman_equation#Bellman's_principle_of_optimality),
+# a.k.a Dynamic Programming, and define a recursive **subproblem** as follows:
 # ```math
 # \begin{aligned}
 # V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
@@ -230,7 +237,7 @@ import Statistics
 # Therefore, instead of solving them exactly, SDDP works by iteratively
 # approximating the expectation term of each subproblem, which is also called
 # the cost-to-go term. For now, you don't need to understand the details, we
-# will explain how shortly.
+# will explain how in [Preliminaries: approximating the cost-to-go term](@ref).
 
 # The subproblem view of a multistage stochastic program is also important,
 # because it provides a convienient way of communicating the different parts of
