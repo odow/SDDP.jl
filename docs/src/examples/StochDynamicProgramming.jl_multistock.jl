@@ -47,8 +47,7 @@ function test_multistock_example()
         sum(data[:stage_objective] for data in simulation)
         for simulation in simulation_results
     )
-    @show μ
-    @test μ ≈ -4.349 atol = 0.02
+    @test μ ≈ -4.349 atol = 0.1
     return
 end
 

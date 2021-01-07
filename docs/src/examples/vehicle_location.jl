@@ -13,8 +13,8 @@
 
 # Example location:
 #
-#    H       B       B       B       B       B
-#    0 ---- 20 ---- 40 ---- 60 ---- 80 ---- 100
+#     H       B       B       B       B       B
+#     0 ---- 20 ---- 40 ---- 60 ---- 80 ---- 100
 
 # Each stage, a call comes in from somewhere on the number line. The agent must
 # decide which ambulance to dispatch. They pay the cost of twice the driving
@@ -104,4 +104,5 @@ function vehicle_location_model(integrality_handler)
 end
 
 # Solve a continuous relaxation only, tough for SDDiP
+
 vehicle_location_model(SDDP.ContinuousRelaxation())

@@ -1,5 +1,6 @@
 import Documenter
 import Literate
+import Random
 
 "Call julia docs/make.jl --fix to rebuild the doctests."
 const FIX_DOCTESTS = any(isequal("--fix"), ARGS)
@@ -25,9 +26,9 @@ if FIX_DOCTESTS
     end
 end
 
-
 for dir in [EXAMPLES_DIR, TUTORIAL_DIR]
     for file in sorted_files(dir, ".jl")
+        Random.seed!(12345)
         Literate.markdown(
             joinpath(dir, file),
             dir;
