@@ -322,8 +322,12 @@ kelleys_cutting_plane(
     lower_bound = 0.0,
     iteration_limit = 20,
 ) do x
-    return (x[1] - 1)^2 + (x[2] + 2)^2
+    return (x[1] - 1)^2 + (x[2] + 2)^2 + 1.0
 end
+
+# !!! warning
+#     It's hard to choose a valid lower bound! For a SDDP.jl discussion of the
+#     implications, see [Choosing an initial bound](@ref).
 
 # ## Preliminaries: approximating the cost-to-go term
 
@@ -550,7 +554,7 @@ model = PolicyGraph(
     optimizer = GLPK.Optimizer,
 )
 
-# ## Implementation: solution algorithm
+# ## Implementation: helpful samplers
 
 # Before we get properly coding the solution algorithm, it's also going to be
 # useful to have a function that samples a realization of the random variable
@@ -605,8 +609,14 @@ end
 
 # Like Kelley's algorithm, we need a way of generating candidate solutions
 # $x_K$. However, unlike the Kelley's example, our functions need two inputs:
-# an incoming state variable and a realization of the random variable. We get
-# these from a simulation of the policy, which we call the **forward pass**.
+# an incoming state variable and a realization of the random variable.
+
+# One way of getting these inputs is just to pick a random (feasible) value.
+# However, in doing so, we might pick incoming state variables that we will
+# never see in practice, or we might infrequently pick incoming state variables
+# that we will often see in practice. Therefore, a better way of generating the
+# inputs is to use a simulation of the policy, which we call the **forward**
+# **pass**.
 
 # The forward pass walks the policy graph from start to end, transitioning
 # randomly along the arcs. At each node, it observes a realization of the random
@@ -675,11 +685,30 @@ trajectory, simulation_cost = forward_pass(model);
 # ## Implementation: the backward pass
 
 # From the forward pass, we obtained a vector of nodes visted and their
-# corresponding outgoing state variables. In the **backward pass**, we walk back
-# up this list, and at each node, we compute the cut:
+# corresponding outgoing state variables. Now we need to refine the
+# approximation for each node at the candidate solution for the outgoing state
+# variable. That is, we need to add a new cut:
 # ```math
-# \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{dV_j^k}{dx^\prime}\left(x^\prime_k, \varphi\right)^\top (x^\prime - x^\prime_k)\right],\quad k=1,\ldots,K
+# \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{dV_j^k}{dx^\prime}\left(x^\prime_k, \varphi\right)^\top (x^\prime - x^\prime_k)\right]
 # ```
+# or alternatively:
+# ```math
+# \theta \ge \sum\limits_{j \in i^+} p_{ij} \left[\sum\limits_{\varphi \in \Omega_j} p_{\varphi}\left[V_j^k(x^\prime_k, \varphi) + \frac{dV_j^k}{dx^\prime}\left(x^\prime_k, \varphi\right)^\top (x^\prime - x^\prime_k)\right]\right]
+# ```
+
+# It doesn't matter what order we visit the nodes to generate these cuts for.
+# For example, we could compute them all in parallel, using the current
+# approximations of $V^K_i$.
+
+# However, we can be smarter than that.
+
+# If we traverse the list of nodes visited in the forward pass in reverse, then
+# we come to refine the $i$th node in the trajectory, we will already have
+# improved the approximation of the $i+1$th node in the trajectory as well!
+# Therefore, our refinement of the $i$th node will be better than if we improved
+# node $i$ first, and then refined node $i+1$.
+
+# Because we walk the nodes in reverse, we call this the **backward pass**.
 
 function backward_pass(
     model::PolicyGraph,
@@ -700,23 +729,28 @@ function backward_pass(
         ## Create an empty affine expression that we will use to build up the
         ## right-hand side of the cut expression.
         cut_expression = JuMP.AffExpr(0.0)
-        ## Now for each possible node and realization of the uncertainty, solve
-        ## the subproblem, and add `P_ij * p_ω * [V + dVdxᵀ(x - x_k)]` to the
-        ## cut expression.
+        ## For each node j ∈ i⁺
         for (j, P_ij) in model.arcs[index]
             next_node = model.nodes[j]
+            ## Set the incoming state variables of node j to the outgoing state
+            ## variables of node i
             for (k, v) in outgoing_states
                 JuMP.fix(next_node.states[k].in, v; force = true)
             end
-            for (pω, ω) in zip(next_node.uncertainty.P, next_node.uncertainty.Ω)
-                println(io, "| | | Solving ω = ", ω)
-                next_node.uncertainty.parameterize(ω)
+            ## Then for each realization of φ ∈ Ωⱼ
+            for (pφ, φ) in zip(next_node.uncertainty.P, next_node.uncertainty.Ω)
+                ## Setup and solve for the realization of φ
+                println(io, "| | | Solving φ = ", φ)
+                next_node.uncertainty.parameterize(φ)
                 JuMP.optimize!(next_node.subproblem)
+                ## Then prepare the cut `P_ij * pφ * [V + dVdxᵀ(x - x_k)]``
                 V = JuMP.objective_value(next_node.subproblem)
                 println(io, "| | | | V = ", V)
-                dVdx = Dict(k => JuMP.reduced_cost(v.in) for (k, v) in next_node.states)
+                dVdx = Dict(
+                    k => JuMP.reduced_cost(v.in) for (k, v) in next_node.states
+                )
                 println(io, "| | | | dVdx′ = ", dVdx)
-                cut_expression += P_ij * pω * JuMP.@expression(
+                cut_expression += P_ij * pφ * JuMP.@expression(
                     node.subproblem,
                     V + sum(
                         dVdx[k] * (x.out - outgoing_states[k])
@@ -825,29 +859,31 @@ train(model; iteration_limit = 3, replications = 100)
 # Success! We trained a policy for a finite horizon multistage stochastic
 # program using stochastic dual dynamic programming.
 
-# ## Implementation: decision rules
+# ## Implementation: evaluating the policy
 
-# A final step is the ability to evaluate the decision rule associated with a
-# node:
+# A final step is the ability to evaluate the policy at a given point.
 
-function decision_rule(
-    node::Node;
+function evaluate_policy(
+    model::PolicyGraph;
+    node::Int,
     incoming_state::Dict{Symbol,Float64},
     random_variable,
 )
-    node.uncertainty.parameterize(random_variable)
+    the_node = model.nodes[node]
+    the_node.uncertainty.parameterize(random_variable)
     for (k, v) in incoming_state
-        JuMP.fix(node.states[k].in, v; force = true)
+        JuMP.fix(the_node.states[k].in, v; force = true)
     end
-    JuMP.optimize!(node.subproblem)
+    JuMP.optimize!(the_node.subproblem)
     return Dict(
         k => JuMP.value.(v)
-        for (k, v) in JuMP.object_dictionary(node.subproblem)
+        for (k, v) in JuMP.object_dictionary(the_node.subproblem)
     )
 end
 
-decision_rule(
-    model.nodes[1];
+evaluate_policy(
+    model;
+    node = 1,
     incoming_state = Dict(:volume => 150.0),
     random_variable = 75,
 )
@@ -886,8 +922,9 @@ train(model; iteration_limit = 3, replications = 100)
 # program using stochastic dual dynamic programming. Note how some of the
 # forward passes are different lengths!
 
-decision_rule(
-    model.nodes[3];
+evaluate_policy(
+    model;
+    node = 3,
     incoming_state = Dict(:volume => 100.0),
     random_variable = 10.0,
 )
