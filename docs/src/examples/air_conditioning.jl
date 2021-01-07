@@ -1,23 +1,23 @@
-#  Copyright 2017-20, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-#=
-    The air conditioning example from Anthony Papavasiliou
-    https://perso.uclouvain.be/anthony.papavasiliou/public_html/SDDP.pdf
+# # The air conditioning problem
 
-    Consider the following problem
-        Produce air conditioners for 3 months
-        200 units/month at 100 $/unit
-        Overtime costs 300 $/unit
-        Known demand of 100 units for period 1
-        Equally likely demand, 100 or 300 units, for periods 2, 3
-        Storage cost is 50 $/unit
-        All demand must be met
+# Taken from [Anthony Papavasiliou's notes on SDDP](https://perso.uclouvain.be/anthony.papavasiliou/public_html/SDDP.pdf)
 
-    Optimal bound $62,500
-=#
+# Consider the following problem
+# * Produce air conditioners for 3 months
+# * 200 units/month at 100 \\\$/unit
+# * Overtime costs 300 \\\$/unit
+# * Known demand of 100 units for period 1
+# * Equally likely demand, 100 or 300 units, for periods 2, 3
+# * Storage cost is 50 \\\$/unit
+# * All demand must be met
+
+# The known optimal solution is \\\$62,500
+
 using SDDP, GLPK, Test
 
 function air_conditioning_model(integrality_handler)
@@ -39,8 +39,9 @@ function air_conditioning_model(integrality_handler)
         )
         @stageobjective(sp, 100 * production + 300 * overtime + 50 * stored_production.out)
     end
-    SDDP.train(model, iteration_limit = 20, print_level = 0)
+    SDDP.train(model, iteration_limit = 20, log_frequency = 10)
     @test SDDP.calculate_bound(model) ≈ 62_500.0
+    return
 end
 
 for integrality_handler in [SDDP.SDDiP(), SDDP.ContinuousRelaxation()]

@@ -41,9 +41,6 @@ good one to get started on is [Debug a model](@ref).
 the [Hydro-thermal scheduling](@ref) problem. In particular, it shows how to
 solve an infinite horizon problem.
 
-There is also a whole folder of coded examples in the [examples directory](https://github.com/odow/SDDP.jl/tree/master/examples)
-of the [Github page](https://github.com/odow/SDDP.jl).
-
 ## API Reference
 
 If you just want help on a specific function, see the [API Reference](@ref api_reference_list)

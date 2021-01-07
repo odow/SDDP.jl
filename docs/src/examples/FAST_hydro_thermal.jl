@@ -1,12 +1,11 @@
-#  Copyright 2017-20, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-#=
-    An implementation of the Hydro-thermal example from FAST
-    https://github.com/leopoldcambier/FAST/tree/daea3d80a5ebb2c52f78670e34db56d53ca2e778/examples/hydro%20thermal
-=#
+# # FAST hydro-thermal
+
+# An implementation of the Hydro-thermal example from [FAST](https://github.com/leopoldcambier/FAST/tree/daea3d80a5ebb2c52f78670e34db56d53ca2e778/examples/hydro%20thermal)
 
 using SDDP, GLPK, Test
 
@@ -37,8 +36,9 @@ function fast_hydro_thermal()
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) == 10
 
-    SDDP.train(model, iteration_limit = 10, print_level = 0)
+    SDDP.train(model, iteration_limit = 10, log_frequency = 5)
     @test SDDP.calculate_bound(model) == 10
+    return
 end
 
 fast_hydro_thermal()

@@ -1,25 +1,24 @@
-#  Copyright 2017-20, Oscar Dowson
-#  This Source Code Form is subject to the terms of the Mozilla Public License,
-#  v. 2.0. If a copy of the MPL was not distributed with this file, You can
-#  obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-#=
-    Example: newsvendor.
+# # The newsvendor problem
 
-    This example is based on the classical newsvendor problem, but features
-    an AR(1) spot-price.
 
-    V(x[t-1], ω[t]) =         max p[t] × u[t]
-                       subject to x[t] = x[t-1] - u[t] + ω[t]
-                                  u[t] ∈ [0, 1]
-                                  x[t] ≥ 0
-                                  p[t] = p[t-1] + ϕ[t]
+# This example is based on the classical newsvendor problem, but features an
+# AR(1) spot-price.
 
-    x[0] = 2.0
-    p[0] = 1.5
-    ω[t] ~ {0, 0.05, 0.10, ..., 0.45, 0.5} with uniform probability.
-    ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.
-=#
+#    V(x[t-1], ω[t]) =         max p[t] × u[t]
+#                       subject to x[t] = x[t-1] - u[t] + ω[t]
+#                                  u[t] ∈ [0, 1]
+#                                  x[t] ≥ 0
+#                                  p[t] = p[t-1] + ϕ[t]
+
+#    x[0] = 2.0
+#    p[0] = 1.5
+#    ω[t] ~ {0, 0.05, 0.10, ..., 0.45, 0.5} with uniform probability.
+#    ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.
 
 using SDDP, GLPK, Statistics, Test
 
@@ -66,7 +65,7 @@ function newsvendor_example(; cut_type)
     SDDP.train(
         model,
         iteration_limit = 100,
-        print_level = 0,
+        log_frequency = 10,
         time_limit = 20.0,
         cut_type = cut_type,
     )
@@ -74,6 +73,7 @@ function newsvendor_example(; cut_type)
     results = SDDP.simulate(model, 500)
     objectives = [sum(s[:stage_objective] for s in simulation) for simulation in results]
     @test round(Statistics.mean(objectives); digits = 2) ≈ 4.04 atol = 0.1
+    return
 end
 
 newsvendor_example(cut_type = SDDP.SINGLE_CUT)

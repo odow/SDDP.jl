@@ -1,12 +1,11 @@
-#  Copyright 2017-20, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-#=
-    An implementation of the Production Management example from FAST
-    https://github.com/leopoldcambier/FAST/blob/daea3d80a5ebb2c52f78670e34db56d53ca2e778/examples/production management multiple stages/
-=#
+# # FAST production management
+
+# An implementation of the Production Management example from [FAST](https://github.com/leopoldcambier/FAST/blob/daea3d80a5ebb2c52f78670e34db56d53ca2e778/examples/production management multiple stages/)
 
 using SDDP, GLPK, Test
 
@@ -35,7 +34,7 @@ function fast_production_management(; cut_type)
         end
         @stageobjective(sp, sum(C[i] * x[i].out for i = 1:N) - S's)
     end
-    SDDP.train(model, iteration_limit = 10, print_level = 2)
+    SDDP.train(model, iteration_limit = 10, print_level = 2, log_frequency = 5)
     @test SDDP.calculate_bound(model) ≈ -23.96 atol = 1e-2
 end
 

@@ -1,12 +1,11 @@
-#  Copyright 2017-20, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-#==
-    This example comes from
-        https://github.com/blegat/StochasticDualDynamicProgramming.jl/blob/fe5ef82db6befd7c8f11c023a639098ecb85737d/test/prob5.2_3stages.jl
-==#
+# # Prob 5.2, 3 stages
+
+# This example comes from [StochasticDualDynamicProgramming.jl](https://github.com/blegat/StochasticDualDynamicProgramming.jl/blob/fe5ef82db6befd7c8f11c023a639098ecb85737d/test/prob5.2_3stages.jl).
 
 using SDDP, GLPK, Test
 
@@ -52,8 +51,9 @@ function test_prob52_3stages()
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) ≈ 406712.49 atol = 0.1
 
-    SDDP.train(model, iteration_limit = 30, print_level = 0)
+    SDDP.train(model, iteration_limit = 30, log_frequency = 10)
     @test SDDP.calculate_bound(model) ≈ 406712.49 atol = 0.1
+    return
 end
 
 test_prob52_3stages()

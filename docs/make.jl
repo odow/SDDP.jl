@@ -25,9 +25,15 @@ if FIX_DOCTESTS
     end
 end
 
+
 for dir in [EXAMPLES_DIR, TUTORIAL_DIR]
     for file in sorted_files(dir, ".jl")
-        Literate.markdown(joinpath(dir, file), dir; documenter = true)
+        Literate.markdown(
+            joinpath(dir, file),
+            dir;
+            documenter = true,
+            execute = true,
+        )
     end
 end
 

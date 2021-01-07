@@ -1,3 +1,8 @@
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
+
 # # The farmer's problem
 #
 # _This problem is taken from Section 1.1 of the book Birge, J. R., & Louveaux,

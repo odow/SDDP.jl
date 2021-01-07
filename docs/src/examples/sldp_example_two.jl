@@ -1,12 +1,13 @@
-#  Copyright 2017-20, Oscar Dowson
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
+
+# # SLDP: Example 2
 
 # This example is derived from Section 4.3 of the paper:
-#   Ahmed, S., Cabral, F. G., & da Costa, B. F. P. (2019). Stochastic Lipschitz
-#   Dynamic Programming. Optimization Online.
-#   URL: http://www.optimization-online.org/DB_FILE/2019/05/7193.pdf
+# Ahmed, S., Cabral, F. G., & da Costa, B. F. P. (2019). Stochastic Lipschitz
+# Dynamic Programming. Optimization Online. [PDF](http://www.optimization-online.org/DB_FILE/2019/05/7193.pdf)
 
 using SDDP, GLPK, Test
 
@@ -35,7 +36,7 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
             end
         end
     end
-    SDDP.train(model, iteration_limit = 100, print_level = 0)
+    SDDP.train(model, iteration_limit = 100, log_frequency = 10)
     bound = SDDP.calculate_bound(model)
 
     if N == 2
@@ -45,6 +46,7 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
     elseif N == 6
         @test bound <= -61.22
     end
+    return
 end
 
 sldp_example_two(N = 2)

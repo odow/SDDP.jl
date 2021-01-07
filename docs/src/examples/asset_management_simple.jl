@@ -1,15 +1,14 @@
-#  Copyright 2017-20, Oscar Dowson.
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-#=
-The Asset Management problem taken from
+# # The Asset Management Problem
 
-    J. R. Birge,  F. Louveaux,  Introduction to Stochastic Programming,
-    Springer Series in Operations Research and Financial Engineering,
-    Springer New York, New York, NY, 2011
-=#
+# Taken from the book
+# J.R. Birge, F. Louveaux, Introduction to Stochastic Programming,
+# Springer Series in Operations Research and Financial Engineering,
+# Springer New York, New York, NY, 2011
 
 using SDDP, GLPK, Test
 
@@ -49,9 +48,10 @@ function asset_management_simple()
             @stageobjective(subproblem, -over + 4 * short)
         end
     end
-    SDDP.train(model, iteration_limit = 25, print_level = 0)
+    SDDP.train(model, iteration_limit = 25, log_frequency = 5)
     @test SDDP.termination_status(model) == :iteration_limit
     @test SDDP.calculate_bound(model) ≈ 1.514 atol = 1e-4
+    return
 end
 
 asset_management_simple()

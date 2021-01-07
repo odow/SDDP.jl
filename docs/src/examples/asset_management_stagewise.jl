@@ -1,15 +1,14 @@
-#  Copyright 2017-20, Oscar Dowson
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#  Copyright 2017-20, Oscar Dowson.                                     #src
+#  This Source Code Form is subject to the terms of the Mozilla Public  #src
+#  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
+#  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-#==
-Modified version of the Asset Management problem taken from
+# # The Modified Asset Management Problem
 
-    J. R. Birge,  F. Louveaux,  Introduction to Stochastic Programming,
-    Springer Series in Operations Research and Financial Engineering,
-    Springer New York, New York, NY, 2011
-==#
+# A modified version of the Asset Management Problem Taken from the book
+# J.R. Birge, F. Louveaux, Introduction to Stochastic Programming,
+# Springer Series in Operations Research and Financial Engineering,
+# Springer New York, New York, NY, 2011
 
 using SDDP, GLPK, Test
 
@@ -27,7 +26,10 @@ function asset_management_stagewise(; cut_type)
             [0.5 0.5; 0.5 0.5],
             [0.5 0.5; 0.5 0.5],
         ],
-        bellman_function = SDDP.BellmanFunction(upper_bound = 1000.0, cut_type = cut_type),
+        bellman_function = SDDP.BellmanFunction(
+            upper_bound = 1000.0,
+            cut_type = cut_type,
+        ),
         optimizer = GLPK.Optimizer,
     ) do subproblem, node
         t, i = node
@@ -53,7 +55,7 @@ function asset_management_stagewise(; cut_type)
     SDDP.train(
         model;
         iteration_limit = 100,
-        print_level = 0,
+        log_frequency = 10,
         risk_measure = (node) -> begin
             if node[1] != 3
                 SDDP.Expectation()
@@ -63,7 +65,9 @@ function asset_management_stagewise(; cut_type)
         end,
     )
     @test SDDP.calculate_bound(model) ≈ 1.278 atol = 1e-3
+    return
 end
 
 asset_management_stagewise(cut_type = SDDP.SINGLE_CUT)
+
 asset_management_stagewise(cut_type = SDDP.MULTI_CUT)
