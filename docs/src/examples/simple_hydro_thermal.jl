@@ -49,9 +49,8 @@ SDDP.add_edge(graph, 3 => 1, 0.95)
 # Much of the macro code (i.e., lines starting with `@`) in the first part of the following
 # should be familiar to users of JuMP.
 
-# Inside the `do-end` block (if this isn't familiar, see
-# [What's this weird `do` syntax?](@ref)), `sp` is a standard JuMP model, and `t` is an
-# index for the state variable that will be called with `t = 1, 2, 3`.
+# Inside the `do-end` block, `sp` is a standard JuMP model, and `t` is an index
+# for the state variable that will be called with `t = 1, 2, 3`.
 
 # The state variable `x`, constructed by passing the `SDDP.State` tag to `@variable` is
 # actually a Julia struct with two fields: `x.in` and `x.out` corresponding to the incoming

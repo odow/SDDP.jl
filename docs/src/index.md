@@ -28,6 +28,8 @@ julia> ] add SDDP
 Once you've got `SDDP.jl` installed, you should read some tutorials, beginning
 with [Basic I: first steps](@ref).
 
+If you want a basic understanding of the algorithm behind SDDP.jl, start with
+[Expert I: pedagogical SDDP](@ref).
 ## How-to guides
 
 If you just want help on a specific topic, check out one of the how-to guides. A

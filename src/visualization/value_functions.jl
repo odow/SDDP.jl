@@ -37,6 +37,7 @@ struct ValueFunction{
     O<:Union{Nothing,NTuple{N,JuMP.VariableRef} where {N}},
     B<:Union{Nothing,Dict{T,JuMP.VariableRef} where {T}},
 }
+    index::Any
     model::JuMP.Model
     theta::JuMP.VariableRef
     states::Dict{Symbol,JuMP.VariableRef}
@@ -44,7 +45,10 @@ struct ValueFunction{
     belief_state::B
 end
 
-Base.show(io::IO, v::ValueFunction) = "An SDDP value function"
+function Base.show(io::IO, v::ValueFunction)
+    print(io, "A value function for node $(v.index)")
+    return
+end
 
 JuMP.set_optimizer(v::ValueFunction, optimizer) = set_optimizer(v.model, optimizer)
 
@@ -88,6 +92,10 @@ function _add_to_value_function(
         end
     end
     return theta
+end
+
+function ValueFunction(model::PolicyGraph{T}; node::T) where {T}
+    return ValueFunction(model[node])
 end
 
 function ValueFunction(node::Node{T}) where {T}
@@ -144,7 +152,9 @@ function ValueFunction(node::Node{T}) where {T}
             @constraint(model, global_theta <= expr)
         end
     end
-    return ValueFunction(model, global_theta, states, objective_state, belief_state)
+    return ValueFunction(
+        node.index, model, global_theta, states, objective_state, belief_state
+    )
 end
 
 """

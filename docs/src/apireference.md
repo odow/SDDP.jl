@@ -91,6 +91,13 @@ SDDP.calculate_bound
 SDDP.Historical
 ```
 
+## Decision rules
+
+```@docs
+SDDP.DecisionRule
+SDDP.evaluate
+```
+
 ## Visualizing the policy
 
 ```@docs
