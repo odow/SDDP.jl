@@ -608,7 +608,7 @@ end
 function forward_pass(
     model::PolicyGraph,
     io::IO = stdout,
-)::Tuple{Vector{Tuple{Int,Dict{Symbol,Float64}}},Float64}
+)
     println(io, "| Forward Pass")
     ## First, get the value of the state at the root node (e.g., x_R).
     incoming_state = Dict(
@@ -620,7 +620,7 @@ function forward_pass(
     ## We also need to record the nodes visited and resultant outgoing state
     ## variables so we can pass them to the backward pass.
     trajectory = Tuple{Int,Dict{Symbol,Float64}}[]
-    ## Now's the meat of the forward pass: loop through each of the nodes
+    ## Now's the meat of the forward pass: beginning at the first node:
     t = 1
     while t !== nothing
         node = model.nodes[t]
@@ -628,8 +628,7 @@ function forward_pass(
         ## Sample the uncertainty:
         ω = sample_uncertainty(node.uncertainty)
         println(io, "| | | ω = ", ω)
-        ## Before parameterizing the subproblem using the user-provided
-        ## function:
+        ## Parameterizing the subproblem using the user-provided function:
         node.uncertainty.parameterize(ω)
         println(io, "| | | x = ", incoming_state)
         ## Update the incoming state variable:
@@ -649,10 +648,12 @@ function forward_pass(
         stage_cost = JuMP.objective_value(node.subproblem) - JuMP.value(node.cost_to_go)
         simulation_cost += stage_cost
         println(io, "| | | C(x, u, ω) = ", stage_cost)
-        ## As a final step, set the outgoing state of stage t and the incoming
-        ## state of stage t + 1, and add the node to the trajectory.
+        ## As a penultimate step, set the outgoing state of stage t and the
+        ## incoming state of stage t + 1, and add the node to the trajectory.
         incoming_state = outgoing_state
         push!(trajectory, (t, outgoing_state))
+        ## Finally, sample a new node to step to. If `t === nothing`, the
+        ## `while` loop will break.
         t = sample_next_node(model, t)
     end
     return trajectory, simulation_cost
