@@ -31,9 +31,17 @@
 # Each square node in the graph corresponds to a place at which the agent makes
 # a decision, and we call moments in time at which the agent makes a decision
 # **stages**. By convention, we try to draw policy graphs from left-to-right,
-# with the stages as columns. (There can be more than one node in a stage! We
-# will see such examples in future tutorials when our graph has rows as well as
-# columns.)
+# with the stages as columns. There can be more than one node in a stage! Here's
+# an example, taken from the paper [Dowson (2020)](https://doi.org/10.1002/net.21932):
+
+# ![Markovian policy graph](../assets/powder_policy_graph.png)
+
+# The columns represent time, and the rows represent different states of the
+# world. In this case, the rows represent different prices that milk can be sold
+# for at the end of each year. You can think of the nodes as forming a Markov
+# chain, therefore, we call problems with a structure like this **Markovian**
+# **policy graphs**. Moreover, note that policy graphs can have cycles! This
+# allows them to model infinite horizon problems.
 
 # A common feature of multistage stochastic optimization problems is that they
 # model an agent controlling a system over time. This system can be described by

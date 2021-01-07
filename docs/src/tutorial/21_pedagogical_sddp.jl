@@ -3,20 +3,15 @@
 # In this tutorial we walk through a simplified implementation of stochastic
 # dual dynamic programming to explain the key concepts.
 
-# !!! note
-#     If you haven't already, go read [Basic I: first steps](@ref), since it
-#     introduces much necessary background theory, and
-#     [Basic II: adding uncertainty](@ref), since it defines the same example we
-#     will solve in our implementation.
-
 # For this implementation of SDDP, we're going to try and keep things simple.
 # This is very much a "vanilla" version of SDDP; it doesn't have (m)any fancy
 # computational tricks that you need to code a performant or stable version that
 # will work on realistic instances. However, it will work on arbitrary policy
 # graphs, including those with cycles such as infinite horizon problems!
 
-# In the interests of brevity, we will also include minimal error checking.
-# Think about all the different ways you could break the code!
+# !!! warning
+#     In the interests of brevity, there is minimal error checking. Think about
+#     all the different ways you could break the code!
 
 # This tutorial uses the following packages. For clarity, we call
 # `import PackageName` so that we must prefix `PackageName.` to all functions
@@ -42,12 +37,14 @@ import Statistics
 # graph is a graph with nodes and arcs. The simplest type of policy graph is a
 # linear graph. Here's a linear graph with three nodes:
 
-# ![Linear policy graph](../assets/deterministic_linear_policy_graph.png)
+# ![Linear policy graph](../assets/stochastic_linear_policy_graph.png)
 
 # In addition to nodes 1, 2, and 3, there is also a root node (0), and three
 # arcs. Each arc has an origin node and a destination node, like `0 => 1`, and a
 # corresponding probability of transitioning from the origin to the destination.
 # For now, we can forget about the arc probabilities, because they are all 1.0.
+# The squiggly lines coming into each node represent random variables; we'll
+# talk about them below.
 
 # We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
 # probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
@@ -57,9 +54,17 @@ import Statistics
 # Each square node in the graph corresponds to a place at which the agent makes
 # a decision, and we call moments in time at which the agent makes a decision
 # **stages**. By convention, we try to draw policy graphs from left-to-right,
-# with the stages as columns. (There can be more than one node in a stage! We
-# will see such examples in future tutorials when our graph has rows as well as
-# columns.)
+# with the stages as columns. There can be more than one node in a stage! Here's
+# an example, taken from the paper [Dowson (2020)](https://doi.org/10.1002/net.21932):
+
+# ![Markovian policy graph](../assets/powder_policy_graph.png)
+
+# The columns represent time, and the rows represent different states of the
+# world. In this case, the rows represent different prices that milk can be sold
+# for at the end of each year. You can think of the nodes as forming a Markov
+# chain, therefore, we call problems with a structure like this **Markovian**
+# **policy graphs**. Moreover, note that policy graphs can have cycles! This
+# allows them to model infinite horizon problems.
 
 # A common feature of multistage stochastic optimization problems is that they
 # model an agent controlling a system over time. This system can be described by
@@ -460,6 +465,14 @@ end
 # `t::Int`. You could change this function to change the model, or define a new
 # one later in the code.
 
+# We're going to copy the example from [Basic II: adding uncertainty](@ref),
+# with some minor adjustments for the fact we don't have many of the bells and
+# whistles of SDDP.jl. You can probably see how some of the SDDP.jl
+# functionality like [`@stageobjective`](@ref) and [`SDDP.parameterize`](@ref)
+# help smooth some of the usability issues like needing to construct both the
+# incoming and outgoing state variables, or needing to explicitly declare
+# `return states, uncertainty`.
+
 function subproblem_builder(subproblem::JuMP.Model, t::Int)
     ## Define the state variables. Note how we fix the incoming state to the
     ## initial state variable regardless of `t`! This isn't strictly necessary;
@@ -492,12 +505,6 @@ function subproblem_builder(subproblem::JuMP.Model, t::Int)
     end
     return states, uncertainty
 end
-
-# If you've read [Basic II: adding uncertainty](@ref), this example should be
-# familiar. You can probably see how some of the SDDP.jl functionality like
-# [`@stageobjective`](@ref) and [`SDDP.parameterize`](@ref) help smooth some of
-# the usability issues like needing to construct both the incoming and outgoing
-# state variables, or needing to explicitly `return states, uncertainty`.
 
 # The next function we need to define is the analog of
 # [`SDDP.PolicyGraph`](@ref). It should be pretty readable.
