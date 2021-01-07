@@ -750,26 +750,25 @@ function backward_pass(
                     k => JuMP.reduced_cost(v.in) for (k, v) in next_node.states
                 )
                 println(io, "| | | | dVdx′ = ", dVdx)
-                cut_expression += P_ij * pφ * JuMP.@expression(
+                cut_expression += JuMP.@expression(
                     node.subproblem,
-                    V + sum(
-                        dVdx[k] * (x.out - outgoing_states[k])
-                        for (k, x) in node.states
+                    P_ij * pφ * (
+                        V + sum(
+                            dVdx[k] * (x.out - outgoing_states[k])
+                            for (k, x) in node.states
+                        )
                     ),
                 )
             end
         end
-        ## And then refine the cost-to-go variable by adding a cut that is the
-        ## expectation of the cuts computed in the step above.
-        c = JuMP.@constraint(
-            node.subproblem, node.cost_to_go >= cut_expression
-        )
+        ## And then refine the cost-to-go variable by adding the cut:
+        c = JuMP.@constraint(node.subproblem, node.cost_to_go >= cut_expression)
         println(io, "| | | Adding cut : ", c)
     end
     return nothing
 end
 
-# ## Implementation: the training loop
+# ## Implementation: bounds
 
 # ### Lower bounds
 
@@ -828,7 +827,7 @@ end
 #     the graph, because the distribution of simulation costs `z` is not
 #     symmetric. The mean is correct, however.
 
-# ### Training
+# ## Implementation: the training loop
 
 # The `train` loop of SDDP just applies the forward and backward passes
 # iteratively, followed by a final simulation to compute the upper bound
