@@ -54,8 +54,9 @@ import Statistics
 # In addition to nodes 1, 2, and 3, there is also a root node (0), and three
 # arcs. Each arc has an origin node and a destination node, like `0 => 1`, and a
 # corresponding probability of transitioning from the origin to the destination.
-# For now, we can forget about the arc probabilities, because they are all 1.0.
-# The squiggly lines denote random variables that we will discuss shortly.
+# Unless specified, we assume that the arc probabilities are uniform over the
+# number of outgoing arcs. Thus, in this picture the arc probabilities are all
+# 1.0. The squiggly lines denote random variables that we will discuss shortly.
 
 # We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
 # probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
@@ -228,7 +229,7 @@ import Statistics
 # control randomally from the set of feasible controls." However, such a policy
 # is unlikely to be optimal.
 
-# One way of obtaining an optimal policy is to use [Bellman's principle of
+# A better way of obtaining an optimal policy is to use [Bellman's principle of
 # optimality](https://en.wikipedia.org/wiki/Bellman_equation#Bellman's_principle_of_optimality),
 # a.k.a Dynamic Programming, and define a recursive **subproblem** as follows:
 # ```math
@@ -246,8 +247,8 @@ import Statistics
 #     We add $\bar{x}$ as a decision variable, along with the fishing constraint
 #     $\bar{x} = x$ for two reasons: it makes it obvious that formulating a
 #     problem with $x \times u$ results in a bilinear program instead of a
-#     linear program, and it simplifies that internal algorithm that SDDP.jl
-#     uses to find an optimal policy.
+#     linear program (see Assumption 3), and it simplifies the implementation of
+#     the SDDP algorithm.
 
 # These subproblems are very difficult to solve exactly, because they involve
 # recursive optimization problems with lots of nested expectations.
@@ -413,19 +414,19 @@ end
 
 # However, if, excluding the cost-to-go term, $V_i(x, \omega)$ can be formulated
 # as a linear program (this also works for convex programs, but the math is more
-# involved), then we can make some progress.
+# involved), then we can make some progress by noticing that $x$ only appears as
+# a right-hand side term of $V_i$.
 
-# First, notice that $x$ only appears as a right-hand side term of $V_i$.
 # Therefore, $V_i(x, \cdot)$ is convex with respect to $x$ for fixed $\omega$.
-# Moreover, the reduced cost of the decision variable $\bar{x}$ is a subgradient
-# of the function $V_i$ with respect to $x$! (This is one reason why we add the
-# $\bar{x}$ and the fishing constraint $\bar{x} = x$.)
-
-# Second, a convex combination of convex functions is also convex, so the
-# cost-to-go term is a convex function of $x^\prime$.
+# Moreover, if we implement the constraint $\bar{x} = x$ by setting the lower-
+# and upper bounds of $\bar{x}$ to $x$, then the reduced cost of the decision
+# variable $\bar{x}$ is a subgradient of the function $V_i$ with respect to $x$!
+# (This is the algorithmic simplification that leads us to add $\bar{x}$ and the
+# fishing constraint $\bar{x} = x$.)
 
 # Stochastic dual dynamic programming converts this problem into a tractable
-# form by applying Kelley's cutting plane algorithm to the cost-to-go term:
+# form by applying Kelley's cutting plane algorithm to the $V_j$ functions in
+# the cost-to-go term:
 # ```math
 # \begin{aligned}
 # V_i^K(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \theta\\
@@ -673,13 +674,13 @@ end
 
 # Recall that, after approximating the cost-to-go term, we need a way of
 # generating the cuts. As the first step, we need a way of generating candidate
-# solutions $x_K^\prime$. However, unlike the Kelley's example, our functions
-# need two inputs: an incoming state variable and a realization of the random
-# variable.
+# solutions $x_k^\prime$. However, unlike the Kelley's example, our functions
+# $V_j^k(x^\prime, \varphi)$ need two inputs: an outgoing state variable and a
+# realization of the random variable.
 
 # One way of getting these inputs is just to pick a random (feasible) value.
-# However, in doing so, we might pick incoming state variables that we will
-# never see in practice, or we might infrequently pick incoming state variables
+# However, in doing so, we might pick outgoing state variables that we will
+# never see in practice, or we might infrequently pick outgoing state variables
 # that we will often see in practice. Therefore, a better way of generating the
 # inputs is to use a simulation of the policy, which we call the **forward**
 # **pass**.
@@ -767,11 +768,18 @@ trajectory, simulation_cost = forward_pass(model);
 
 # If we traverse the list of nodes visited in the forward pass in reverse, then
 # we come to refine the $i$th node in the trajectory, we will already have
-# improved the approximation of the $i+1$th node in the trajectory as well!
+# improved the approximation of the $(i+1)$th node in the trajectory as well!
 # Therefore, our refinement of the $i$th node will be better than if we improved
-# node $i$ first, and then refined node $i+1$.
+# node $i$ first, and then refined node $(i+1)$.
 
 # Because we walk the nodes in reverse, we call this the **backward pass**.
+
+# !!! info
+#     If you're into deep learning, you could view this as the equivalent of
+#     back-propagation: the forward pass pushes primal information through the
+#     graph (outgoing state variables), and the backward pass pulls dual
+#     information (cuts) back through the graph to improve our decisions on the
+#     next forward pass.
 
 function backward_pass(
     model::PolicyGraph,

@@ -23,8 +23,9 @@
 # In addition to nodes 1, 2, and 3, there is also a root node (0), and three
 # arcs. Each arc has an origin node and a destination node, like `0 => 1`, and a
 # corresponding probability of transitioning from the origin to the destination.
-# For now, we can forget about the arc probabilities, because they are all 1.0.
-# The squiggly lines denote random variables that we will discuss shortly.
+# Unless specified, we assume that the arc probabilities are uniform over the
+# number of outgoing arcs. Thus, in this picture the arc probabilities are all
+# 1.0. The squiggly lines denote random variables that we will discuss shortly.
 
 # We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
 # probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
@@ -194,7 +195,7 @@
 # control randomally from the set of feasible controls." However, such a policy
 # is unlikely to be optimal.
 
-# One way of obtaining an optimal policy is to use [Bellman's principle of
+# A better way of obtaining an optimal policy is to use [Bellman's principle of
 # optimality](https://en.wikipedia.org/wiki/Bellman_equation#Bellman's_principle_of_optimality),
 # a.k.a Dynamic Programming, and define a recursive **subproblem** as follows:
 # ```math
@@ -212,8 +213,8 @@
 #     We add $\bar{x}$ as a decision variable, along with the fishing constraint
 #     $\bar{x} = x$ for two reasons: it makes it obvious that formulating a
 #     problem with $x \times u$ results in a bilinear program instead of a
-#     linear program, and it simplifies that internal algorithm that SDDP.jl
-#     uses to find an optimal policy.
+#     linear program (see Assumption 3), and it simplifies the implementation of
+#     the SDDP algorithm.
 
 # These subproblems are very difficult to solve exactly, because they involve
 # recursive optimization problems with lots of nested expectations.
