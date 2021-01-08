@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # The vehicle location problem
+# # Vehicle location
 
 # This problem is a version of the Ambulance dispatch problem. A hospital is
 # located at 0 on the number line that stretches from 0 to 100. Ambulance bases

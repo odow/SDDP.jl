@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # The air conditioning problem
+# # Air conditioning
 
 # Taken from [Anthony Papavasiliou's notes on SDDP](https://perso.uclouvain.be/anthony.papavasiliou/public_html/SDDP.pdf)
 

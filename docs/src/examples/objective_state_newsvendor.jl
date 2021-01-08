@@ -3,23 +3,24 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # The newsvendor problem
-
+# # Newsvendor
 
 # This example is based on the classical newsvendor problem, but features an
 # AR(1) spot-price.
-
+# ```
 #    V(x[t-1], ω[t]) =         max p[t] × u[t]
 #                       subject to x[t] = x[t-1] - u[t] + ω[t]
 #                                  u[t] ∈ [0, 1]
 #                                  x[t] ≥ 0
 #                                  p[t] = p[t-1] + ϕ[t]
-
-#    x[0] = 2.0
-#    p[0] = 1.5
-#    ω[t] ~ {0, 0.05, 0.10, ..., 0.45, 0.5} with uniform probability.
-#    ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.
-
+# ```
+# The initial conditions are
+# ```
+# x[0] = 2.0
+# p[0] = 1.5
+# ω[t] ~ {0, 0.05, 0.10, ..., 0.45, 0.5} with uniform probability.
+# ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.
+# ```
 using SDDP, GLPK, Statistics, Test
 
 function joint_distribution(; kwargs...)

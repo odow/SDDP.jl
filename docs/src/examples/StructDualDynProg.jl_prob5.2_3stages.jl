@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # Prob 5.2, 3 stages
+# # StructDualDynProg: Problem 5.2, 3 stages
 
 # This example comes from [StochasticDualDynamicProgramming.jl](https://github.com/blegat/StochasticDualDynamicProgramming.jl/blob/fe5ef82db6befd7c8f11c023a639098ecb85737d/test/prob5.2_3stages.jl).
 

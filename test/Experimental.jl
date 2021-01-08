@@ -207,7 +207,7 @@ end
 
 @testset "slptestset" begin
     model, test_scenarios = SDDP.read_from_file(
-        joinpath(dirname(@__DIR__), "examples/StochOptFormat/electric.sof.json")
+        joinpath(@__DIR__, "electric.sof.json")
     )
     set_optimizer(model, GLPK.Optimizer)
     SDDP.train(model; iteration_limit = 20, print_level = 0)
