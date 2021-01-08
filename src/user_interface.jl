@@ -801,19 +801,10 @@ Set the stage-objective of `subproblem` to `expr`.
     @stageobjective(subproblem, 2x + y)
 """
 macro stageobjective(subproblem, expr)
-    code = quote
-        set_stage_objective(
-            $(esc(subproblem)),
-            $(Expr(
-                :macrocall,
-                Symbol("@expression"),
-                :LineNumber,
-                esc(subproblem),
-                esc(expr),
-            )),
-        )
+    code = MutableArithmetics.rewrite_and_return(expr)
+    return quote
+        SDDP.set_stage_objective($(esc(subproblem)), $code)
     end
-    return code
 end
 
 
