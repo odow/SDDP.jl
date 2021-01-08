@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # The Modified Asset Management Problem
+# # Asset management with modifications
 
 # A modified version of the Asset Management Problem Taken from the book
 # J.R. Birge, F. Louveaux, Introduction to Stochastic Programming,

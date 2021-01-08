@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # The booking management problem
+# # Booking management
 
 # This example concerns the acceptance of booking requests for rooms in a
 # hotel in the leadup to a large event.

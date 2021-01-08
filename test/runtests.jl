@@ -12,9 +12,6 @@ function read_dir(dir, exclude = String[])
     return filter(s -> !(s in exclude) && endswith(s, ".jl"), readdir(dir))
 end
 
-const EXCLUDED_EXAMPLES =
-    ["inventory_management.jl", "msppy_hydro_thermal.jl", "tiger_problem.jl"]
-
 const EXAMPLES_DIR = joinpath(dirname(@__DIR__), "docs", "src", "examples")
 const PLUGINS_DIR = joinpath(@__DIR__, "plugins")
 const VISUALIZATION_DIR = joinpath(@__DIR__, "visualization")
@@ -33,7 +30,7 @@ const VISUALIZATION_DIR = joinpath(@__DIR__, "visualization")
     end
 
     @testset "Examples" begin
-        @testset "$example" for example in read_dir(EXAMPLES_DIR, EXCLUDED_EXAMPLES)
+        @testset "$example" for example in read_dir(EXAMPLES_DIR)
             Random.seed!(12345)
             include(joinpath(EXAMPLES_DIR, example))
         end

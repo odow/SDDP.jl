@@ -29,7 +29,7 @@
 # We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
 # probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
 # exists, then $p_{ij} = 0$.) We define the set of successors of node $i$ as
-# $i^+ = \{j \in \mathcal{N} | p_{ij}) > 0\}$.
+# $i^+ = \{j \in \mathcal{N} | p_{ij} > 0\}$.
 
 # Each square node in the graph corresponds to a place at which the agent makes
 # a decision, and we call moments in time at which the agent makes a decision
@@ -46,6 +46,14 @@
 # of the nodes as forming a Markov chain, therefore, we call problems with a
 # structure like this **Markovian policy graphs**. Moreover, note that policy
 # graphs can have cycles! This allows them to model infinite horizon problems.
+
+# !!! note
+#     The sum of probabilities on the outgoing arcs of node $i$ can be less than
+#     1, i.e., $\sum\limits_{j\in i^+} p_{ij} \le 1$. What does this mean?
+#     One interpretation is that the probability is a [discount factor](https://en.wikipedia.org/wiki/Discounting).
+#     Another interpretation is that there is an implicit "zero" node that we
+#     have not modeled, with $p_{i0} = 1 - \sum\limits_{j\in i^+} p_{ij}$.
+#     This zero node has $C_0(x, u, \omega) = 0$, and $0^+ = \varnothing$.
 
 # ### Problem notation
 
@@ -489,12 +497,11 @@ model = SDDP.PolicyGraph(
 # Hopefully the `sense` keyword is obvious. However, the other two are not so
 # clear.
 
-# `lower_bound`: you _must_ supply a valid bound on the objective. For our
-# problem, we know that we cannot incur a negative cost so \\\$0 is a valid lower
-# bound.
-
-# `optimizer`: This is borrowed directly from JuMP's `Model` constructor:
-# (`Model(GLPK.Optimizer)`)
+# * `lower_bound`: you _must_ supply a valid bound on the objective. For our
+#   problem, we know that we cannot incur a negative cost so \\\$0 is a valid
+#   lower bound.
+# * `optimizer`: This is borrowed directly from JuMP's `Model` constructor:
+#   `Model(GLPK.Optimizer)`
 
 # Because linear policy graphs are the most commonly used structure, we can use
 # `SDDP.LinearPolicyGraph(; stages)` instead of passing `SDDP.LinearGraph(3)` to
@@ -508,8 +515,8 @@ model = SDDP.LinearPolicyGraph(
     optimizer = GLPK.Optimizer,
 )
 
-# Third option is to use Julia's `do` syntax to avoid needing to define a
-# `subproblem_builder` function separately:
+# There is also the option is to use Julia's `do` syntax to avoid needing to
+# define a `subproblem_builder` function separately:
 
 model = SDDP.LinearPolicyGraph(
     stages = 3,
