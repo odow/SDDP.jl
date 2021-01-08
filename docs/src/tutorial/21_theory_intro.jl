@@ -10,18 +10,14 @@
 #     [open an issue](https://github.com/odow/SDDP.jl/issues/new) so it can be
 #     improved!
 
-# In this tutorial we walk through a simplified implementation of stochastic
-# dual dynamic programming to explain the key concepts.
+# This tutorial will teach you how the stochastic dual dynamic programming
+# algorithm works by implementing a simplified version of the algorithm.
 
-# For this implementation of SDDP, we're going to try and keep things simple.
-# This is very much a "vanilla" version of SDDP; it doesn't have (m)any fancy
-# computational tricks that you need to code a performant or stable version that
-# will work on realistic instances. However, it will work on arbitrary policy
-# graphs, including those with cycles such as infinite horizon problems!
-
-# !!! warning
-#     In the interests of brevity, there is minimal error checking. Think about
-#     all the different ways you could break the code!
+# Our implementation is very much a "vanilla" version of SDDP; it doesn't have
+# (m)any fancy computational tricks (e.g., the ones included in SDDP.jl) that
+# you need to code a performant or stable version that will work on realistic
+# instances. However, our simplified implementation will work on arbitrary
+# policy graphs, including those with cycles such as infinite horizon problems!
 
 # This tutorial uses the following packages. For clarity, we call
 # `import PackageName` so that we must prefix `PackageName.` to all functions
@@ -136,8 +132,8 @@ import Statistics
 #    space from which they are drawn by $\Omega_i$. The probability of sampling
 #    $\omega$ is denoted $p_{\omega}$ for simplicity.
 #
-#    Importantly, the random variable associated node $i$ is independent of all
-#    the random variable in all other nodes.
+#    Importantly, the random variable associated with node $i$ is independent of
+#    the random variables in all other nodes.
 
 # In a node $i$, the three variables are related by a **transition function**,
 # which maps the incoming state, the controls, and the random variables to the
@@ -159,7 +155,7 @@ import Statistics
 # The goal of the agent is to find a policy that minimizes the expected cost of
 # starting at the root node with some initial condition $x_R$, and proceeding
 # from node to node along the probabilistic arcs until they reach a node with no
-# outgoing arcs.
+# outgoing arcs (or it reaches an implicit "zero" node).
 
 # ```math
 # \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]
@@ -179,13 +175,6 @@ import Statistics
 # An optimal policy is the set of decision rules that the agent can use to make
 # these decisions and achieve the smallest expected cost.
 
-# Often, computing the cost of a policy is intractable due to the large number
-# of nodes or possible realizations of the random variables. Instead, we can
-# evaluate the policy using a Monte Carlo simulation. Each replicate of the
-# simulation starts at the root node and probabilistically walks along the arcs
-# of the policy graph until it reaches a node with not outgoing arcs. The cost
-# of a replicate is the sum of the costs incurred at each node that was visited.
-
 # ### Assumptions
 
 # !!! warning
@@ -197,7 +186,7 @@ import Statistics
 
 # **Assumption 1: finite nodes**
 #
-# There are a finite number of nodes in $\mathcal{N}$.
+# There is a finite number of nodes in $\mathcal{N}$.
 #
 # **Assumption 2: finite random variables**
 #
@@ -320,18 +309,18 @@ import Statistics
 # solution $x^K$ returned by solving $f^K$ to evaluate $f(x_K)$ to generate an
 # upper bound.
 
-# Therefore, $f^K \le f(x^*) \le f(x_K)$.
+# Therefore, $f^K \le f(x^*) \le \min_{k=1,\ldots,K} f(x_k)$.
 
 # ### Implementation
 
 # Here is pseudo-code fo the Kelley algorithm:
 
 # 1. Take as input a function $f$ and a iteration limit $K_{max}$. Set $K = 0$,
-#    and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$
+#    and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$.
 # 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
-# 3. Update $lb = f^K$ and $ub = \min\{ub, f(x_{K+1}\}$
+# 3. Update $lb = f^K$ and $ub = \min\{ub, f(x_{K+1})\}$.
 # 4. Add a cut $\theta \ge f(x_{K+1}) + \frac{d}{dx}f\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
-# 5. Increment $K$
+# 5. Increment $K$.
 # 6. If $K = K_{max}$, STOP, otherwise, go to step 2.
 
 # And here's a complete implementation:
@@ -357,10 +346,10 @@ function kelleys_cutting_plane(
     JuMP.@objective(model, Min, θ)
     lower_bound, upper_bound = -Inf, Inf
     while true
-        ## Step (2)
+        ## Step (2):
         JuMP.optimize!(model)
         x_k = JuMP.value.(x)
-        ## Step (3)
+        ## Step (3):
         lower_bound = JuMP.objective_value(model)
         upper_bound = min(upper_bound, f(x_k))
         println("K = $K : $(lower_bound) <= f(x*) <= $(upper_bound)")
@@ -412,10 +401,11 @@ end
 # to the fact that the cost-to-go term (the nasty recursive expectation) makes
 # this problem intractable to solve.
 
-# However, if, excluding the cost-to-go term, $V_i(x, \omega)$ can be formulated
-# as a linear program (this also works for convex programs, but the math is more
-# involved), then we can make some progress by noticing that $x$ only appears as
-# a right-hand side term of $V_i$.
+# However, if, excluding the cost-to-go term (i.e., the `SP` formulation),
+# $V_i(x, \omega)$ can be formulated as a linear program (this also works for
+# convex programs, but the math is more involved), then we can make some
+# progress by noticing that $x$ only appears as a right-hand side term of the
+# fishing constraint $\bar{x} = x$.
 
 # Therefore, $V_i(x, \cdot)$ is convex with respect to $x$ for fixed $\omega$.
 # Moreover, if we implement the constraint $\bar{x} = x$ by setting the lower-
@@ -449,12 +439,16 @@ end
 # 1. A description of the structure of the policy graph: how many nodes there
 #    are, and the arcs linking the nodes together with their corresponding
 #    probabilities.
-# 2. A JuMP model for each node in the policy graph
-# 3. A way to identify the incoming and outgoing state variables of each node
+# 2. A JuMP model for each node in the policy graph.
+# 3. A way to identify the incoming and outgoing state variables of each node.
 # 4. A description of the random variable, as well as a function that we can
 #    call that will modify the JuMP model to reflect the realization of the
 #    random variable.
 # 5. A decision variable to act as the approximated cost-to-go term.
+
+# !!! warning
+#     In the interests of brevity, there is minimal error checking. Think about
+#     all the different ways you could break the code!
 
 # ### Structs
 
@@ -474,7 +468,7 @@ struct Uncertainty
     P::Vector{Float64}
 end
 
-# `parameterize` is a function, which takes a realization of the random variable
+# `parameterize` is a function which takes a realization of the random variable
 # $\omega\in\Omega$ and updates the subproblem accordingly. The finite discrete
 # random variable is defined by the vectors `Ω` and `P`, so that the random
 # variable takes the value `Ω[i]` with probability `P[i]`. As such, `P` should
@@ -623,7 +617,7 @@ model = PolicyGraph(
 
 # Before we get properly coding the solution algorithm, it's also going to be
 # useful to have a function that samples a realization of the random variable
-# defined by `Ω` and `P`:
+# defined by `Ω` and `P`.
 
 function sample_uncertainty(uncertainty::Uncertainty)
     r = rand()
@@ -636,10 +630,12 @@ function sample_uncertainty(uncertainty::Uncertainty)
     error("We should never get here because P should sum to 1.0.")
 end
 
-# You should be able to work out what is going on. `rand()` samples a uniform
-# random variable in `[0, 1)`. For example:
+# !!! note
+#     `rand()` samples a uniform random variable in `[0, 1)`.
 
-for _ = 1:3
+# For example:
+
+for i = 1:3
     println("ω = ", sample_uncertainty(model.nodes[1].uncertainty))
 end
 
@@ -886,7 +882,7 @@ lower_bound(model)
 
 function upper_bound(model::PolicyGraph; replications::Int)
     ## Pipe the output to `devnull` so we don't print too much!
-    simulations = [forward_pass(model, devnull) for _ = 1:replications]
+    simulations = [forward_pass(model, devnull) for i = 1:replications]
     z = [s[2] for s in simulations]
     μ  = Statistics.mean(z)
     tσ = 1.96 * Statistics.std(z) / sqrt(replications)
