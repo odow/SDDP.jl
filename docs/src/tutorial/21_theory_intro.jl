@@ -1,4 +1,14 @@
-# # Expert I: pedagogical SDDP
+# # Theory I: an intro to SDDP
+
+# !!! note
+#     This tutorial is aimed at advanced undergraduates or early-stage graduate
+#     students. You don't need prior exposure to stochastic programming!
+#     (Indeed, it may be better if you don't, because our approach is
+#     non-standard in the literature.)
+#
+#     This tutorial is also a living document. If parts are unclear, please
+#     [open an issue](https://github.com/odow/SDDP.jl/issues/new) so it can be
+#     improved!
 
 # In this tutorial we walk through a simplified implementation of stochastic
 # dual dynamic programming to explain the key concepts.

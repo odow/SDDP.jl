@@ -489,12 +489,11 @@ model = SDDP.PolicyGraph(
 # Hopefully the `sense` keyword is obvious. However, the other two are not so
 # clear.
 
-# `lower_bound`: you _must_ supply a valid bound on the objective. For our
-# problem, we know that we cannot incur a negative cost so \\\$0 is a valid lower
-# bound.
-
-# `optimizer`: This is borrowed directly from JuMP's `Model` constructor:
-# (`Model(GLPK.Optimizer)`)
+# * `lower_bound`: you _must_ supply a valid bound on the objective. For our
+#   problem, we know that we cannot incur a negative cost so \\\$0 is a valid
+#   lower bound.
+# * `optimizer`: This is borrowed directly from JuMP's `Model` constructor:
+#   `Model(GLPK.Optimizer)`
 
 # Because linear policy graphs are the most commonly used structure, we can use
 # `SDDP.LinearPolicyGraph(; stages)` instead of passing `SDDP.LinearGraph(3)` to
@@ -508,8 +507,8 @@ model = SDDP.LinearPolicyGraph(
     optimizer = GLPK.Optimizer,
 )
 
-# Third option is to use Julia's `do` syntax to avoid needing to define a
-# `subproblem_builder` function separately:
+# There is also the option is to use Julia's `do` syntax to avoid needing to
+# define a `subproblem_builder` function separately:
 
 model = SDDP.LinearPolicyGraph(
     stages = 3,
