@@ -768,11 +768,18 @@ trajectory, simulation_cost = forward_pass(model);
 
 # If we traverse the list of nodes visited in the forward pass in reverse, then
 # we come to refine the $i$th node in the trajectory, we will already have
-# improved the approximation of the $i+1$th node in the trajectory as well!
+# improved the approximation of the $(i+1)$th node in the trajectory as well!
 # Therefore, our refinement of the $i$th node will be better than if we improved
-# node $i$ first, and then refined node $i+1$.
+# node $i$ first, and then refined node $(i+1)$.
 
 # Because we walk the nodes in reverse, we call this the **backward pass**.
+
+# !!! info
+#     If you're into deep learning, you could view this as the equivalent of
+#     back-propagation: the forward pass pushes primal information through the
+#     graph (outgoing state variables), and the backward pass pulls dual
+#     information (cuts) back through the graph to improve our decisions on the
+#     next forward pass.
 
 function backward_pass(
     model::PolicyGraph,
