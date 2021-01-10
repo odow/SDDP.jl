@@ -10,18 +10,14 @@
 #     [open an issue](https://github.com/odow/SDDP.jl/issues/new) so it can be
 #     improved!
 
-# In this tutorial we walk through a simplified implementation of stochastic
-# dual dynamic programming to explain the key concepts.
+# This tutorial will teach you how the stochastic dual dynamic programming
+# algorithm works by implementing a simplified version of the algorithm.
 
-# For this implementation of SDDP, we're going to try and keep things simple.
-# This is very much a "vanilla" version of SDDP; it doesn't have (m)any fancy
-# computational tricks that you need to code a performant or stable version that
-# will work on realistic instances. However, it will work on arbitrary policy
-# graphs, including those with cycles such as infinite horizon problems!
-
-# !!! warning
-#     In the interests of brevity, there is minimal error checking. Think about
-#     all the different ways you could break the code!
+# Our implementation is very much a "vanilla" version of SDDP; it doesn't have
+# (m)any fancy computational tricks (e.g., the ones included in SDDP.jl) that
+# you need to code a performant or stable version that will work on realistic
+# instances. However, our simplified implementation will work on arbitrary
+# policy graphs, including those with cycles such as infinite horizon problems!
 
 # This tutorial uses the following packages. For clarity, we call
 # `import PackageName` so that we must prefix `PackageName.` to all functions
@@ -32,6 +28,11 @@ import ForwardDiff
 import GLPK
 import JuMP
 import Statistics
+
+# !!! tip
+#     You can follow along by installing the above packages, and copy-pasting
+#     the code we will write into a Julia REPL. Alternatively, you can download
+#     the Julia `.jl` file which created this tutorial [from Github](https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/21_theory_intro.jl).
 
 # ## Preliminaries: background theory
 
@@ -51,12 +52,13 @@ import Statistics
 
 # ![Linear policy graph](../assets/stochastic_linear_policy_graph.png)
 
-# In addition to nodes 1, 2, and 3, there is also a root node (0), and three
-# arcs. Each arc has an origin node and a destination node, like `0 => 1`, and a
-# corresponding probability of transitioning from the origin to the destination.
-# Unless specified, we assume that the arc probabilities are uniform over the
-# number of outgoing arcs. Thus, in this picture the arc probabilities are all
-# 1.0. The squiggly lines denote random variables that we will discuss shortly.
+# In addition to nodes 1, 2, and 3, there is also a root node (the circle), and
+# three arcs. Each arc has an origin node and a destination node, like `1 => 2`,
+# and a corresponding probability of transitioning from the origin to the
+# destination. Unless specified, we assume that the arc probabilities are
+# uniform over the number of outgoing arcs. Thus, in this picture the arc
+# probabilities are all 1.0. The squiggly lines denote random variables that we
+# will discuss shortly.
 
 # We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
 # probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
@@ -136,8 +138,8 @@ import Statistics
 #    space from which they are drawn by $\Omega_i$. The probability of sampling
 #    $\omega$ is denoted $p_{\omega}$ for simplicity.
 #
-#    Importantly, the random variable associated node $i$ is independent of all
-#    the random variable in all other nodes.
+#    Importantly, the random variable associated with node $i$ is independent of
+#    the random variables in all other nodes.
 
 # In a node $i$, the three variables are related by a **transition function**,
 # which maps the incoming state, the controls, and the random variables to the
@@ -159,32 +161,25 @@ import Statistics
 # The goal of the agent is to find a policy that minimizes the expected cost of
 # starting at the root node with some initial condition $x_R$, and proceeding
 # from node to node along the probabilistic arcs until they reach a node with no
-# outgoing arcs.
+# outgoing arcs (or it reaches an implicit "zero" node).
 
 # ```math
-# \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]
+# \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)],
 # ```
 # where
 # ```math
-# V_i^\pi(x, \omega) = C_i(x, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]
+# V_i^\pi(x, \omega) = C_i(x, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)],
 # ```
 # where $u = \pi_i(x, \omega) \in U_i(x, \omega)$, and
 # $x^\prime = T_i(x, u, \omega)$.
 
 # The expectations are a bit complicated, but they are equivalent to:
 # ```math
-# \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)] = \sum\limits_{j \in i^+} p_{ij} \left[\sum\limits_{\varphi \in \Omega_j} p_{\varphi}\left[V_j(x^\prime, \varphi)\right]\right]
+# \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)] = \sum\limits_{j \in i^+} p_{ij} \sum\limits_{\varphi \in \Omega_j} p_{\varphi}V_j(x^\prime, \varphi).
 # ```
 
 # An optimal policy is the set of decision rules that the agent can use to make
-# these decisions and achieve the smallest expected cost.
-
-# Often, computing the cost of a policy is intractable due to the large number
-# of nodes or possible realizations of the random variables. Instead, we can
-# evaluate the policy using a Monte Carlo simulation. Each replicate of the
-# simulation starts at the root node and probabilistically walks along the arcs
-# of the policy graph until it reaches a node with not outgoing arcs. The cost
-# of a replicate is the sum of the costs incurred at each node that was visited.
+# decisions and achieve the smallest expected cost.
 
 # ### Assumptions
 
@@ -197,7 +192,7 @@ import Statistics
 
 # **Assumption 1: finite nodes**
 #
-# There are a finite number of nodes in $\mathcal{N}$.
+# There is a finite number of nodes in $\mathcal{N}$.
 #
 # **Assumption 2: finite random variables**
 #
@@ -208,7 +203,7 @@ import Statistics
 #
 # Given fixed $\omega$, $C_i(x, u, \omega)$ is a convex function,
 # $T_i(x, u, \omega)$ is linear, and  $U_i(x, u, \omega)$ is a non-empty,
-# bounded convex set with respect to $x$ and $u$
+# bounded convex set with respect to $x$ and $u$.
 #
 # **Assumption 4: no infinite loops**
 #
@@ -237,7 +232,7 @@ import Statistics
 # V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
 # & x^\prime = T_i(\bar{x}, u, \omega) \\
 # & u \in U_i(\bar{x}, \omega) \\
-# & \bar{x} = x
+# & \bar{x} = x.
 # \end{aligned}
 # ```
 # Our decision rule, $\pi_i(x, \omega)$, solves this optimization problem and
@@ -267,7 +262,7 @@ import Statistics
 # \begin{aligned}
 # \texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) \\
 # & x^\prime = T_i(\bar{x}, u, \omega) \\
-# & u \in U_i(\bar{x}, \omega) \\
+# & u \in U_i(\bar{x}, \omega).
 # \end{aligned}
 # ```
 # !!! note
@@ -281,7 +276,7 @@ import Statistics
 # ```math
 # \begin{aligned}
 # \texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, x^\prime, u, \omega) \\
-# & (\bar{x}, x^\prime, u) \in \mathcal{X}_i(\omega)
+# & (\bar{x}, x^\prime, u) \in \mathcal{X}_i(\omega).
 # \end{aligned}
 # ```
 # Note that the outgoing state variable can appear in the objective, and we can
@@ -293,8 +288,8 @@ import Statistics
 # Kelley's cutting plane algorithm is an iterative method for minimizing convex
 # functions. Given a convex function $f(x)$, Kelley's constructs an
 # under-approximation of the function at the minimum by a set of first-order
-# Taylor series approximations (called **cuts**) constructed at a set of $K$
-# points $k = 1,\ldots,K$:
+# Taylor series approximations (called **cuts**) constructed at a set of points
+# $k = 1,\ldots,K$:
 # ```math
 # \begin{aligned}
 # f^K = \min\limits_{\theta \in \mathbb{R}, x \in \mathbb{R}^N} \;\; & \theta\\
@@ -305,10 +300,12 @@ import Statistics
 # where $M$ is a sufficiently large negative number that is a lower bound for
 # $f$ over the domain of $x$.
 
-# As more cuts are added:
+# Kelley's cutting plane algorithm is a structured way of choosing points $x_k$
+# to visit, so that as more cuts are added:
 # ```math
 # \lim_{K \rightarrow \infty} f^K = \min\limits_{x \in \mathbb{R}^N} f(x)
 # ```
+# However, before we introduce the algorithm, we need to introduce some bounds.
 
 # ### Bounds
 
@@ -316,22 +313,21 @@ import Statistics
 # $f$, then at any point in time we can construct a lower bound for $f(x^*)$ by
 # solving $f^K$.
 
-# Moreover, since any feasible point is an upper bound, we can use the primal
-# solution $x^K$ returned by solving $f^K$ to evaluate $f(x_K)$ to generate an
-# upper bound.
+# Moreover, we can use the primal solutions $x_k^*$ returned by solving $f^k$ to
+# evaluate $f(x_k^*)$ to generate an upper bound.
 
-# Therefore, $f^K \le f(x^*) \le f(x_K)$.
+# Therefore, $f^K \le f(x^*) \le \min\limits_{k=1,\ldots,K} f(x_k^*)$.
 
 # ### Implementation
 
 # Here is pseudo-code fo the Kelley algorithm:
 
-# 1. Take as input a function $f$ and a iteration limit $K_{max}$. Set $K = 0$,
-#    and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$
+# 1. Take as input a convex function $f(x)$ and a iteration limit $K_{max}$.
+#    Set $K = 0$, and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$.
 # 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
-# 3. Update $lb = f^K$ and $ub = \min\{ub, f(x_{K+1}\}$
+# 3. Update $lb = f^K$ and $ub = \min\{ub, f(x_{K+1})\}$.
 # 4. Add a cut $\theta \ge f(x_{K+1}) + \frac{d}{dx}f\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
-# 5. Increment $K$
+# 5. Increment $K$.
 # 6. If $K = K_{max}$, STOP, otherwise, go to step 2.
 
 # And here's a complete implementation:
@@ -357,10 +353,10 @@ function kelleys_cutting_plane(
     JuMP.@objective(model, Min, θ)
     lower_bound, upper_bound = -Inf, Inf
     while true
-        ## Step (2)
+        ## Step (2):
         JuMP.optimize!(model)
         x_k = JuMP.value.(x)
-        ## Step (3)
+        ## Step (3):
         lower_bound = JuMP.objective_value(model)
         upper_bound = min(upper_bound, f(x_k))
         println("K = $K : $(lower_bound) <= f(x*) <= $(upper_bound)")
@@ -404,7 +400,7 @@ end
 # V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
 # & x^\prime = T_i(\bar{x}, u, \omega) \\
 # & u \in U_i(\bar{x}, \omega) \\
-# & \bar{x} = x
+# & \bar{x} = x,
 # \end{aligned}
 # ```
 # where our decision rule, $\pi_i(x, \omega)$, solves this optimization problem
@@ -412,10 +408,11 @@ end
 # to the fact that the cost-to-go term (the nasty recursive expectation) makes
 # this problem intractable to solve.
 
-# However, if, excluding the cost-to-go term, $V_i(x, \omega)$ can be formulated
-# as a linear program (this also works for convex programs, but the math is more
-# involved), then we can make some progress by noticing that $x$ only appears as
-# a right-hand side term of $V_i$.
+# However, if, excluding the cost-to-go term (i.e., the `SP` formulation),
+# $V_i(x, \omega)$ can be formulated as a linear program (this also works for
+# convex programs, but the math is more involved), then we can make some
+# progress by noticing that $x$ only appears as a right-hand side term of the
+# fishing constraint $\bar{x} = x$.
 
 # Therefore, $V_i(x, \cdot)$ is convex with respect to $x$ for fixed $\omega$.
 # Moreover, if we implement the constraint $\bar{x} = x$ by setting the lower-
@@ -434,7 +431,7 @@ end
 # & u \in U_i(\bar{x}, \omega) \\
 # & \bar{x} = x \\
 # & \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right],\quad k=1,\ldots,K \\
-# & \theta \ge M
+# & \theta \ge M.
 # \end{aligned}
 # ```
 
@@ -449,24 +446,28 @@ end
 # 1. A description of the structure of the policy graph: how many nodes there
 #    are, and the arcs linking the nodes together with their corresponding
 #    probabilities.
-# 2. A JuMP model for each node in the policy graph
-# 3. A way to identify the incoming and outgoing state variables of each node
+# 2. A JuMP model for each node in the policy graph.
+# 3. A way to identify the incoming and outgoing state variables of each node.
 # 4. A description of the random variable, as well as a function that we can
 #    call that will modify the JuMP model to reflect the realization of the
 #    random variable.
 # 5. A decision variable to act as the approximated cost-to-go term.
 
+# !!! warning
+#     In the interests of brevity, there is minimal error checking. Think about
+#     all the different ways you could break the code!
+
 # ### Structs
 
 # The first struct we are going to use is a `State` struct that will wrap an
-# incoming and outgoing state variable.
+# incoming and outgoing state variable:
 
 struct State
     in::JuMP.VariableRef
     out::JuMP.VariableRef
 end
 
-# Next, we need a struct to wrap all of the uncertainty within a node.
+# Next, we need a struct to wrap all of the uncertainty within a node:
 
 struct Uncertainty
     parameterize::Function
@@ -474,13 +475,13 @@ struct Uncertainty
     P::Vector{Float64}
 end
 
-# `parameterize` is a function, which takes a realization of the random variable
+# `parameterize` is a function which takes a realization of the random variable
 # $\omega\in\Omega$ and updates the subproblem accordingly. The finite discrete
 # random variable is defined by the vectors `Ω` and `P`, so that the random
 # variable takes the value `Ω[i]` with probability `P[i]`. As such, `P` should
 # sum to 1. (We don't check this here, but we should; we do in SDDP.jl.)
 
-# Now we have two building blocks, we can declare the structure of each node.
+# Now we have two building blocks, we can declare the structure of each node:
 
 struct Node
     subproblem::JuMP.Model
@@ -511,7 +512,7 @@ end
 # we can still define cyclic graphs though!
 
 # We also define a nice `show` method so that we don't accidentally print a
-# large amount of information to the screen when creating a model.
+# large amount of information to the screen when creating a model:
 
 function Base.show(io::IO, model::PolicyGraph)
     println(io, "A policy graph with $(length(model.nodes)) nodes")
@@ -623,7 +624,7 @@ model = PolicyGraph(
 
 # Before we get properly coding the solution algorithm, it's also going to be
 # useful to have a function that samples a realization of the random variable
-# defined by `Ω` and `P`:
+# defined by `Ω` and `P`.
 
 function sample_uncertainty(uncertainty::Uncertainty)
     r = rand()
@@ -636,10 +637,12 @@ function sample_uncertainty(uncertainty::Uncertainty)
     error("We should never get here because P should sum to 1.0.")
 end
 
-# You should be able to work out what is going on. `rand()` samples a uniform
-# random variable in `[0, 1)`. For example:
+# !!! note
+#     `rand()` samples a uniform random variable in `[0, 1)`.
 
-for _ = 1:3
+# For example:
+
+for i = 1:3
     println("ω = ", sample_uncertainty(model.nodes[1].uncertainty))
 end
 
@@ -647,16 +650,21 @@ end
 # through the nodes of the graph:
 
 function sample_next_node(model::PolicyGraph, current::Int)
-    r = rand()
-    for (to, probability) in model.arcs[current]
-        r -= probability
-        if r < 0.0
-            return to
+    if length(model.arcs[current]) == 0
+        ## No outgoing arcs!
+        return nothing
+    else
+        r = rand()
+        for (to, probability) in model.arcs[current]
+            r -= probability
+            if r < 0.0
+                return to
+            end
         end
+        ## We looped through the outgoing arcs and still have probability left
+        ## over! This means we've hit an implicit "zero" node.
+        return nothing
     end
-    ## We looped through the outgoing arcs and still have probability left over!
-    ## This means we've hit a leaf node and it's time to stop walking.
-    return nothing
 end
 
 # For example:
@@ -757,7 +765,7 @@ trajectory, simulation_cost = forward_pass(model);
 # ```
 # or alternatively:
 # ```math
-# \theta \ge \sum\limits_{j \in i^+} p_{ij} \left[\sum\limits_{\varphi \in \Omega_j} p_{\varphi}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right]\right]
+# \theta \ge \sum\limits_{j \in i^+} \sum\limits_{\varphi \in \Omega_j} p_{ij} p_{\varphi}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right]
 # ```
 
 # It doesn't matter what order we visit the nodes to generate these cuts for.
@@ -886,7 +894,7 @@ lower_bound(model)
 
 function upper_bound(model::PolicyGraph; replications::Int)
     ## Pipe the output to `devnull` so we don't print too much!
-    simulations = [forward_pass(model, devnull) for _ = 1:replications]
+    simulations = [forward_pass(model, devnull) for i = 1:replications]
     z = [s[2] for s in simulations]
     μ  = Statistics.mean(z)
     tσ = 1.96 * Statistics.std(z) / sqrt(replications)
