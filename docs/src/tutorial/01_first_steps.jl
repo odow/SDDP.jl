@@ -105,6 +105,9 @@
 #    We denote random variables by the Greek letter $\omega$ and the sample
 #    space from which they are drawn by $\Omega_i$. The probability of sampling
 #    $\omega$ is denoted $p_{\omega}$ for simplicity.
+#
+#    Importantly, the random variable associated with node $i$ is independent of
+#    the random variables in all other nodes.
 
 # In a node $i$, the three variables are related by a **transition function**,
 # which maps the incoming state, the controls, and the random variables to the
@@ -126,32 +129,25 @@
 # The goal of the agent is to find a policy that minimizes the expected cost of
 # starting at the root node with some initial condition $x_R$, and proceeding
 # from node to node along the probabilistic arcs until they reach a node with no
-# outgoing arcs.
+# outgoing arcs (or it reaches an implicit "zero" node).
 
 # ```math
-# \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]
+# \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)],
 # ```
 # where
 # ```math
-# V_i^\pi(x, \omega) = C_i(x, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]
+# V_i^\pi(x, \omega) = C_i(x, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)],
 # ```
 # where $u = \pi_i(x, \omega) \in U_i(x, \omega)$, and
 # $x^\prime = T_i(x, u, \omega)$.
 
 # The expectations are a bit complicated, but they are equivalent to:
 # ```math
-# \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)] = \sum\limits_{j \in i^+} p_{ij} \left[\sum\limits_{\varphi \in \Omega_j} p_{\varphi}\left[V_j(x^\prime, \varphi)\right]\right]
+# \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)] = \sum\limits_{j \in i^+} p_{ij} \sum\limits_{\varphi \in \Omega_j} p_{\varphi}V_j(x^\prime, \varphi).
 # ```
 
 # An optimal policy is the set of decision rules that the agent can use to make
-# these decisions and achieve the smallest expected cost.
-
-# Often, computing the cost of a policy is intractable due to the large number
-# of nodes or possible realizations of the random variables. Instead, we can
-# evaluate the policy using a Monte Carlo simulation. Each replicate of the
-# simulation starts at the root node and probabilistically walks along the arcs
-# of the policy graph until it reaches a node with not outgoing arcs. The cost
-# of a replicate is the sum of the costs incurred at each node that was visited.
+# decisions and achieve the smallest expected cost.
 
 # ### Assumptions
 
@@ -164,7 +160,7 @@
 
 # **Assumption 1: finite nodes**
 #
-# There are a finite number of nodes in $\mathcal{N}$.
+# There is a finite number of nodes in $\mathcal{N}$.
 #
 # **Assumption 2: finite random variables**
 #
@@ -175,7 +171,7 @@
 #
 # Given fixed $\omega$, $C_i(x, u, \omega)$ is a convex function,
 # $T_i(x, u, \omega)$ is linear, and  $U_i(x, u, \omega)$ is a non-empty,
-# bounded convex set with respect to $x$ and $u$
+# bounded convex set with respect to $x$ and $u$.
 #
 # **Assumption 4: no infinite loops**
 #
@@ -204,7 +200,7 @@
 # V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
 # & x^\prime = T_i(\bar{x}, u, \omega) \\
 # & u \in U_i(\bar{x}, \omega) \\
-# & \bar{x} = x
+# & \bar{x} = x.
 # \end{aligned}
 # ```
 # Our decision rule, $\pi_i(x, \omega)$, solves this optimization problem and
@@ -235,7 +231,7 @@
 # \begin{aligned}
 # \texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) \\
 # & x^\prime = T_i(\bar{x}, u, \omega) \\
-# & u \in U_i(\bar{x}, \omega) \\
+# & u \in U_i(\bar{x}, \omega).
 # \end{aligned}
 # ```
 # !!! note
@@ -249,7 +245,7 @@
 # ```math
 # \begin{aligned}
 # \texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, x^\prime, u, \omega) \\
-# & (\bar{x}, x^\prime, u) \in \mathcal{X}_i(\omega)
+# & (\bar{x}, x^\prime, u) \in \mathcal{X}_i(\omega).
 # \end{aligned}
 # ```
 # Note that the outgoing state variable can appear in the objective, and we can
