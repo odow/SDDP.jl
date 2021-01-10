@@ -20,12 +20,13 @@
 
 # ![Linear policy graph](../assets/stochastic_linear_policy_graph.png)
 
-# In addition to nodes 1, 2, and 3, there is also a root node (0), and three
-# arcs. Each arc has an origin node and a destination node, like `0 => 1`, and a
-# corresponding probability of transitioning from the origin to the destination.
-# Unless specified, we assume that the arc probabilities are uniform over the
-# number of outgoing arcs. Thus, in this picture the arc probabilities are all
-# 1.0. The squiggly lines denote random variables that we will discuss shortly.
+# In addition to nodes 1, 2, and 3, there is also a root node (the circle), and
+# three arcs. Each arc has an origin node and a destination node, like `1 => 2`,
+# and a corresponding probability of transitioning from the origin to the
+# destination. Unless specified, we assume that the arc probabilities are
+# uniform over the number of outgoing arcs. Thus, in this picture the arc
+# probabilities are all 1.0. The squiggly lines denote random variables that we
+# will discuss shortly.
 
 # We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
 # probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc

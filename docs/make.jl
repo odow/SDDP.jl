@@ -29,12 +29,16 @@ end
 for dir in [EXAMPLES_DIR, TUTORIAL_DIR]
     for file in sorted_files(dir, ".jl")
         Random.seed!(12345)
+        jl_filename = joinpath(dir, file)
         Literate.markdown(
-            joinpath(dir, file),
+            jl_filename,
             dir;
             documenter = true,
             execute = true,
         )
+        md_filename = jl_filename[1:(end - 3)] * ".md"
+        md = read(md_filename, String)
+        write(md_filename, replace(md, "nothing #hide" => ""))
     end
 end
 
