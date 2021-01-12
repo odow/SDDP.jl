@@ -1,9 +1,21 @@
 # # Theory II: risk aversion
 
 # In [Theory I: an intro to SDDP](@ref), we implemented a basic version of the
-# SDDP algorithm.
+# SDDP algorithm. This tutorial extends that implementation to add
+# **risk-aversion**.
 
-# This tutorial extends that implementation to add **risk-aversion**.
+# **Packages**
+#
+# This tutorial uses the following packages. For clarity, we call
+# `import PackageName` so that we must prefix `PackageName.` to all functions
+# and structs provided by that package. Everything not prefixed is either part
+# of base Julia, or we wrote it.
+
+import ForwardDiff
+import GLPK
+import Ipopt
+import JuMP
+import Statistics
 
 # ## Risk aversion: what and why?
 
@@ -51,7 +63,9 @@
 # **Axiom 3: convexity**
 #
 # Given two random variables $Z_1$ and $Z_2$, then for all $a \in [0, 1]$,
-# $\mathbb{F}[a Z_1 + (1 - a) Z_2] \le a \mathbb{F}[Z_1] + (1-a)\mathbb{F}[Z_2]$.
+# ```math
+# \mathbb{F}[a Z_1 + (1 - a) Z_2] \le a \mathbb{F}[Z_1] + (1-a)\mathbb{F}[Z_2].
+# ```
 
 # Now we know what a risk measure is, let's see how we can use them to form
 # risk-averse decision rules.
@@ -79,7 +93,40 @@
 # If we can replace the expectation operator $\mathbb{E}$ with another (more
 # risk-averse) risk measure $\mathbb{F}$, then our decision rule will attempt to
 # choose a control decision now that minimizes the risk of the future costs, as
-# opposed to the expectation of the future costs.
+# opposed to the expectation of the future costs. This makes our decisions more
+# risk-averse, because we care more about the worst outcomes than we do about
+# the average.
+
+# If we apply Kelley's algorithm to the risk-averse cost-to-go term
+# $\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$, we
+# obtain the approximated problem:
+
+# ```math
+# \begin{aligned}
+# V_i^K(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \theta\\
+# & x^\prime = T_i(\bar{x}, u, \omega) \\
+# & u \in U_i(\bar{x}, \omega) \\
+# & \bar{x} = x \\
+# & \theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k)\quad k=1,\ldots,K.
+# \end{aligned}
+# ```
+
+# !!! warning
+#     Note how we need to expliclty compute the risk-averse gradient! When
+#     constructing cuts with the expectation operator in [Theory I: an intro to SDDP](@ref),
+#     we implicitly used the law of total expectation to combine the two
+#     expectations; we can't do that for a general risk measure.
+
+# !!! tip
+#     If it's not obvious why we can use Kelley's here, try to use the axioms of
+#     a convex risk measure to show that
+#     $f(x^\prime) = \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$
+#     is a convex function.
+
+# Our challenge is now to find a way to compute the risk-averse cost-to-go
+# function $\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]$,
+# and a way to compute the gradient of the risk-averse cost-to-go function with
+# respect to $x^\prime$.
 
 # ## Primal risk measures
 
@@ -118,6 +165,9 @@ function primal_risk end
 # The expectation, $\mathbb{E}$, also called the mean or the average, is the
 # most widely used convex risk measure. The expectation of a random variable is
 # just the sum of $Z$ weighted by the probability:
+# ```math
+# \mathbb{F}[Z] = \mathbb{E}_p[Z].
+# ```
 
 struct Expectation <: AbstractRiskMeasure end
 
@@ -134,6 +184,9 @@ primal_risk(Expectation(), Z, p)
 # The worst-case risk measure, also called the maximum, is another widely used
 # convex risk measure. This risk measure doesn't care about the probability
 # vector `p`, only the cost vector `Z`:
+# ```math
+# \mathbb{F}[Z] = \max[Z].
+# ```
 
 struct WorstCase <: AbstractRiskMeasure end
 
@@ -151,7 +204,7 @@ primal_risk(WorstCase(), Z, p)
 # measure. The entropic risk measure is parameterized by a value $\gamma > 0$,
 # and computes the risk of a random variable as:
 # ```math
-# \mathbb{F}_\gamma[Z] = \frac{1}{\gamma}\log\left(\mathbb{E}[e^{\gamma Z}]\right).
+# \mathbb{F}_\gamma[Z] = \frac{1}{\gamma}\log\left(\mathbb{E}_p[e^{\gamma Z}]\right).
 # ```
 
 struct Entropic <: AbstractRiskMeasure
@@ -185,18 +238,9 @@ end
 #     acts like the expectation risk measure, and as $\gamma \rightarrow \infty$,
 #     the entropic acts like the worst-case risk measure.
 
-# Computing risk measures this way work for fixed data, but it's not so apparent
-# how we can implement this into a linear program, because our cut
-# calculation requires:
-# ```math
-# \theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k).
-# ```
-
-# !!! warning
-#     Note how we need to expliclty compute the risk-averse gradient! When
-#     constucting the cuts with the expectation operator, we implicitly used the
-#     law of total expectation to combine the two expectations; we can't do that
-#     for a general risk measure.
+# Computing risk measures this way works well for computing the primal value.
+# However, there isn't an obvious way to compute the gradient of the risk-averse
+# cost-to-go function, which we need for our cut calculation.
 
 # There is a nice solution to this problem, and that is to use the dual
 # representation of a risk measure, instead of the primal.
@@ -207,8 +251,12 @@ end
 # ```math
 # \mathbb{F}[Z] = \sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[Z] - \alpha(p, q),
 # ```
-# where $\mathcal{M}(p)$ is a convex set, and $\alpha$ is a function that maps
-# the probability vectors $p$ and $q$ to a real number.
+# where $\alpha$ is a concave function that maps the probability vectors $p$ and
+# $q$ to a real number, and $\mathcal{M}(p) \subseteq \mathcal{P}$ is a convex
+# subset of the probability simplex:
+# ```math
+# \mathcal{P} = \{p \ge 0;|\;\sum\limits_{\omega\in\Omega}p_\omega = 1\}.
+# ```
 
 # The dual of a convex risk measure can be interpreted as taking the expectation
 # of the random variable $Z$ with respect to the worst probability vector $q$
@@ -240,8 +288,8 @@ end
 
 # ### Expectation
 
-# For expectation, $\mathcal{M}(p) = \{p\}$, and $\alpha(\cdot, \cdot) = 0$.
-# Therefore:
+# For the expectation risk measure, $\mathcal{M}(p) = \{p\}$, and
+# $\alpha(\cdot, \cdot) = 0$. Therefore:
 
 function dual_risk_inner(::Expectation, ::Vector{Float64}, p::Vector{Float64})
     return p, 0.0
@@ -249,13 +297,12 @@ end
 
 # We can check we get the same result as the primal version:
 
-F = Expectation()
-dual_risk(F, Z, p) == primal_risk(F, Z, p)
+dual_risk(Expectation(), Z, p) == primal_risk(Expectation(), Z, p)
 
 # ### Worst-case
 
-# For worst-case, $\mathcal{M}(p) = \{q > 0\;|\;\sum\limits_{\omega\in\Omega}q_\omega = 1\}$,
-# and $\alpha(\cdot, \cdot) = 0$. Therefore, the dual representation just puts
+# For the worst-case risk measure, $\mathcal{M}(p) = \mathcal{P}$, and
+# $\alpha(\cdot, \cdot) = 0$. Therefore, the dual representation just puts
 # all of the probability weight on the maximum outcome:
 
 function dual_risk_inner(::WorstCase, Z::Vector{Float64}, ::Vector{Float64})
@@ -267,21 +314,59 @@ end
 
 # We can check we get the same result as the primal version:
 
-F = WorstCase()
-dual_risk(F, Z, p) == primal_risk(F, Z, p)
+dual_risk(WorstCase(), Z, p) == primal_risk(WorstCase(), Z, p)
 
 # ### Entropic
 
-# Computing the $q^*$ associated with the entropic risk measure is a little
-# more complicated. However, [Dowson, Morton, and Pagnoncelli (2020)]() show
-# that:
+# For the entropic risk measure, $\mathcal{M}(p) = \mathcal{P}$, and:
+# ```math
+# \alpha(p, q) = \frac{1}{\gamma}\sum\limits_{\omega\in\Omega} q_\omega \log\left(\frac{q_\omega}{p_\omega}\right).
+# ```
+
+# One way to solve the dual problem is to explicitly solve a nonlinear
+# optimization problem:
+
+function dual_risk_inner(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
+    N = length(p)
+    model = JuMP.Model(Ipopt.Optimizer)
+    JuMP.set_silent(model)
+    ## For this problem, the solve is more accurate if we turn off problem
+    ## scaling.
+    JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "none")
+    JuMP.@variable(model, 0 <= q[1:N] <= 1)
+    JuMP.@constraint(model, sum(q) == 1)
+    JuMP.@NLexpression(
+        model,
+        α,
+        1 / F.γ * sum(q[i] * log(q[i] / p[i]) for i = 1:N),
+    )
+    JuMP.@NLobjective(model, Max, sum(q[i] * Z[i] for i = 1:N) - α)
+    JuMP.optimize!(model)
+    return JuMP.value.(q), JuMP.value(α)
+end
+
+# We can check we get the same result as the primal version:
+
+for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+    primal = primal_risk(Entropic(γ), Z, p)
+    dual = dual_risk(Entropic(γ), Z, p)
+    success = primal ≈ dual ? "✓" : "×"
+    println("$(success) γ = $(γ), primal = $(primal), dual = $(dual)")
+end
+
+# !!! tip
+#     This method of solving the dual problem "on-the-side" is used by SDDP.jl
+#     for a number of risk measures, including a distributionally robust risk
+#     measure with the Wasserstein distance. Check out all the risk measures
+#     that SDDP supports in [Add a risk measure](@ref).
+
+# However, [Dowson, Morton, and Pagnoncelli (2020)](http://www.optimization-online.org/DB_HTML/2020/08/7984.html)
+# show that there is a closed form solution for $q$:
 # ```math
 # q_\omega^* = \frac{p_\omega e^{\gamma z_\omega}}{\sum\limits_{\varphi \in \Omega} p_\varphi e^{\gamma z_\varphi}}.
 # ```
-# In addition:
-# ```math
-# \alpha(p, q) = \sum\limits_{\omega\in\Omega} q_\omega \log\left(\frac{q_\omega}{p_\omega}\right).
-# ```
+# This is faster because we don't need to use Ipopt, and it avoids some of the
+# numerical issues associated with solving a nonlinear program.
 
 function dual_risk_inner(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
     q, α = zeros(length(p)), big(0.0)
@@ -301,7 +386,7 @@ end
 
 # We can check we get the same result as the primal version:
 
-for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1_000.0]
+for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
     primal = primal_risk(Entropic(γ), Z, p)
     dual = dual_risk(Entropic(γ), Z, p)
     success = primal ≈ dual ? "✓" : "×"
@@ -335,11 +420,11 @@ end
 #
 #     Then, $\sum_{\omega\in\Omega}q^*_{\omega} \lambda(\tilde{x},\omega)$ is a
 #     subgradient of $\mathbb{F}[V(x,\omega)]$ at $\tilde{x}$, where
-#     $q^* \in \argmax_{q \in \mathcal{M}(p)}\left\{{\mathbb{E}}_q[V(\tilde{x},\omega)] - \alpha(p, q)\right\}$.
+#     ```math
+#     q^* \in \argmax_{q \in \mathcal{M}(p)}\left\{{\mathbb{E}}_q[V(\tilde{x},\omega)] - \alpha(p, q)\right\}.
+#     ```
 
 # This theorem can be a little hard to unpack, so let's see an example:
-
-import ForwardDiff
 
 function risk_averse_subgradient(
     V::Function,
@@ -351,10 +436,16 @@ function risk_averse_subgradient(
     p::Vector{Float64},
     x̃::Vector{Float64},
 )
+    ## Evaluate the function at x=x̃ for all ω ∈ Ω.
     V_ω = [V(x̃, ω) for ω in Ω]
+    ## Solve the dual problem to obtain an optimal q^*.
     q, α = dual_risk_inner(F, V_ω, p)
+    ## Compute the risk-averse gradient by taking the expectation of the
+    ## gradients w.r.t. q^*.
     dVdx = sum(q[i] * λ(x̃, ω) for (i, ω) in enumerate(Ω))
-    return q' * V_ω - α, dVdx
+    ## Evaluate the risk-averse function.
+    Vx = sum(q[i] * V_ω[i] for i = 1:length(Ω)) - α
+    return Vx, dVdx
 end
 
 # As our example, we use
@@ -373,16 +464,16 @@ p = [0.3, 0.4, 0.3]
 
 x̃ = [3.0]
 
-# If $\mathbb{F}$ is the expectation operator, then
+# If $\mathbb{F}$ is the expectation risk-measure, then:
 # ```math
-# \mathbb{E}[V(x, \omega)] =  2 x^2
+# \mathbb{F}[V(x, \omega)] =  2 x^2
 # ```
 # and so the function evaluation $x=3$ is $18$ and the subgradient is $12$.
 # Let's check we get it right:
 
 risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)
 
-# If $\mathbb{F}$ is the worst-case, then
+# If $\mathbb{F}$ is the worst-case risk measure, then:
 # ```math
 # \mathbb{F}[V(x, \omega)] = 3 x^2
 # ```
@@ -391,23 +482,26 @@ risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)
 
 risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
 
-# If $\mathbb{F}$ is the entropic, the math is a little more difficult,
-# so you'll have to trust that the math is correct:
+# If $\mathbb{F}$ is the entropic risk measure, the math is a little more
+# difficult, so you'll have to trust that the math is correct:
 
 for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1_000.0]
     ∇V = risk_averse_subgradient(V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃)
     println("γ = $(γ), dF[V(x, ω)]/dx  = $(∇V)")
 end
 
-# For a sanity check, as $\gamma \rightarrow 0$, we get the subgradient of the
-# expectation operator, and as $\gamma \rightarrow \infty$, we get the
-# subgradient of the worse-case risk measure. You can verify the values
-# analytically using the primal definition of the entropic risk measure.
+# For a sanity check, as $\gamma \rightarrow 0$, we tend toward the solution of
+# the expectation risk-measure (18, 12), and as $\gamma \rightarrow \infty$, we
+# tend toward the solution get the worse-case risk measure (27, 18).
+
+# !!! info
+#     If you're still not satisfied, try verifying the values analytically using
+#     the primal definition of the entropic risk measure.
 
 # # Risk-averse decision rules: Part II
 
-# Using the dual representation of a convex risk measure, we can re-write the
-# cut:
+# Why is the risk-averse gradient theorem helpful? Using the dual representation
+# of a convex risk measure, we can re-write the cut:
 # ```math
 # \theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k),\quad k=1,\ldots,K
 # ```
@@ -430,20 +524,20 @@ end
 # ```
 # where $q_k = \mathrm{arg}\sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[V_j^k(x_k^\prime, \varphi)] - \alpha(p, q)$
 
+# Thus, to implement risk-averse SDDP, all we need to do is modify the backward
+# pass to include this calculation of $q_k$, form the cut using $q_k$ instead of
+# p$, and subtract the penalty term $\alpha(p, q_k)$.
+
 # ## Implementation
 
 # Now we're ready to implement our risk-averse version of SDDP.
 
-# As a prerequisite, we need most of the code from [Theory I: an introduction to SDDP](@ref).
+# As a prerequisite, we need most of the code from [Theory I: an intro to SDDP](@ref).
 
 # ```@raw html
-# <details>
-# <summary>Click to view code from the tutorial "Theory I: an introduction to SDDP".</summary>
+# <p><details>
+# <summary>Click to view code from the tutorial "Theory I: an intro to SDDP".</summary>
 # ```
-
-import GLPK
-import JuMP
-import Statistics
 
 struct State
     in::JuMP.VariableRef
@@ -592,7 +686,7 @@ function evaluate_policy(
 end
 
 # ```@raw html
-# </details>
+# </details></p>
 # ```
 
 # We only need to change two functions; `backward_pass` and `train`.
@@ -676,13 +770,19 @@ function train(
     model::PolicyGraph;
     iteration_limit::Int,
     replications::Int,
+    ## =========================================================================
+    ## New! Add a risk_measure argument
     risk_measure::AbstractRiskMeasure,
+    ## =========================================================================
     io::IO = stdout,
 )
     for i = 1:iteration_limit
         println(io, "Starting iteration $(i)")
         outgoing_states, _ = forward_pass(model, io)
+        ## =====================================================================
+        ## New! Pass the risk measure to the backward pass.
         backward_pass(model, outgoing_states, io; risk_measure = risk_measure)
+        ## =====================================================================
         println(io, "| Finished iteration")
         println(io, "| | lower_bound = ", lower_bound(model))
     end
@@ -691,9 +791,30 @@ function train(
     return
 end
 
+# ### Risk-averse bounds
+
+# !!! warning
+#     This section is important.
+
+# When we had a risk-neutral policy (i.e., we only used the expectation risk
+# measure), we discussed how we could form valid lower and upper bounds.
+
+# The upper bound is still valid as a Monte Carlo simulation of the expected
+# cost of the policy. (Although this upper bound doesn't capture the change in
+# the policy we wanted to achieve, namely that the impact of the worst outcomes
+# were reduced.)
+
+# If we use a different risk measure, the lower bound is no longer valid!
+
+# We can still calculate a "lower bound" as the objective of the first-stage
+# approximated subproblem, and this will converge to a finite value. However,
+# we can't meaningfully interpret it as a bound with respect to the optimal
+# policy. Therefore, it's best to just ignore the lower bound when training a
+# risk-averse policy.
+
 # ## Example: risk-averse hydro-thermal scheduling
 
-# Create the model:
+# Now it's time for an example. We create the same problem as [Theory I: an intro to SDDP](@ref):
 
 model = PolicyGraph(
     graph = [
@@ -742,3 +863,9 @@ evaluate_policy(
     incoming_state = Dict(:volume => 150.0),
     random_variable = 75,
 )
+
+# !!! info
+#     For this trivial example, the risk-averse policy isn't very different from
+#     the policy obtained using the expectation risk-measure. If you try it on
+#     some bigger/more interesting problems, you should see the expected cost
+#     increase, and the upper tail of the policy decrease.
