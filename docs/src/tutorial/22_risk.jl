@@ -97,8 +97,20 @@ import Statistics
 # risk-averse, because we care more about the worst outcomes than we do about
 # the average.
 
-# If we apply Kelley's algorithm to the risk-averse cost-to-go term
-# $\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$, we
+# Therefore, we can form a risk-averse decision rule using the formulation:
+
+# ```math
+# \begin{aligned}
+# V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
+# & x^\prime = T_i(\bar{x}, u, \omega) \\
+# & u \in U_i(\bar{x}, \omega) \\
+# & \bar{x} = x.
+# \end{aligned}
+# ```
+
+# To convert this problem into a tractable equivalent, we apply Kelley's
+# algorithm to the risk-averse cost-to-go term
+# $\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$, to
 # obtain the approximated problem:
 
 # ```math
@@ -117,7 +129,7 @@ import Statistics
 #     we implicitly used the law of total expectation to combine the two
 #     expectations; we can't do that for a general risk measure.
 
-# !!! tip
+# !!! tip "Homework challenge"
 #     If it's not obvious why we can use Kelley's here, try to use the axioms of
 #     a convex risk measure to show that
 #     $f(x^\prime) = \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$
@@ -353,14 +365,18 @@ for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
     println("$(success) γ = $(γ), primal = $(primal), dual = $(dual)")
 end
 
-# !!! tip
+# !!! info
 #     This method of solving the dual problem "on-the-side" is used by SDDP.jl
 #     for a number of risk measures, including a distributionally robust risk
 #     measure with the Wasserstein distance. Check out all the risk measures
-#     that SDDP supports in [Add a risk measure](@ref).
+#     that SDDP.jl supports in [Add a risk measure](@ref).
 
-# However, [Dowson, Morton, and Pagnoncelli (2020)](http://www.optimization-online.org/DB_HTML/2020/08/7984.html)
-# show that there is a closed form solution for $q$:
+# The "on-the-side" method is very general, and let's us incorporate any convex
+# risk measure into SDDP. However, this comes at an increased computational cost
+# and potential numerical issues (e.g., not converging to the exact solution).
+
+# However, for the entropic risk measure, [Dowson, Morton, and Pagnoncelli (2020)](http://www.optimization-online.org/DB_HTML/2020/08/7984.html)
+# derive the following closed form solution for $q^*$:
 # ```math
 # q_\omega^* = \frac{p_\omega e^{\gamma z_\omega}}{\sum\limits_{\varphi \in \Omega} p_\varphi e^{\gamma z_\varphi}}.
 # ```
@@ -398,11 +414,11 @@ end
 # use the primal risk measure in the cut calculation because we needed some way
 # of computing the risk-averse gradient:
 # ```math
-# \theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k),
+# \theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k).
 # ```
 
 # The reason we use the dual representation is because of the following theorem,
-# which explains how to compute the risk-averse gradient:
+# which explains how to compute the risk-averse gradient.
 
 # !!! info "The risk-averse gradient theorem"
 #     Let $\omega \in \Omega$ index a random vector with finite support and with
@@ -447,37 +463,37 @@ function risk_averse_subgradient(
     return Vx, dVdx
 end
 
-# As our example, we use
+# As our example function, we use:
 
 V(x, ω) = ω * x[1]^2
 
-# with
+# with:
 
 Ω = [1.0, 2.0, 3.0]
 
-#  and
+#  and:
 
 p = [0.3, 0.4, 0.3]
 
-# at the point
+# at the point:
 
 x̃ = [3.0]
 
 # If $\mathbb{F}$ is the expectation risk-measure, then:
 # ```math
-# \mathbb{F}[V(x, \omega)] =  2 x^2
+# \mathbb{F}[V(x, \omega)] =  2 x^2.
 # ```
-# and so the function evaluation $x=3$ is $18$ and the subgradient is $12$.
-# Let's check we get it right:
+# The function evaluation $x=3$ is $18$ and the subgradient is $12$. Let's check
+# we get it right:
 
 risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)
 
 # If $\mathbb{F}$ is the worst-case risk measure, then:
 # ```math
-# \mathbb{F}[V(x, \omega)] = 3 x^2
+# \mathbb{F}[V(x, \omega)] = 3 x^2.
 # ```
-# and so the function evaluation at $x=3$ is $27$, and the subgradient
-# is $18$. Let's check we get it right:
+# The function evaluation at $x=3$ is $27$, and the subgradient is $18$. Let's
+# check we get it right:
 
 risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
 
@@ -491,11 +507,11 @@ end
 
 # For a sanity check, as $\gamma \rightarrow 0$, we tend toward the solution of
 # the expectation risk-measure (18, 12), and as $\gamma \rightarrow \infty$, we
-# tend toward the solution get the worse-case risk measure (27, 18).
+# tend toward the solution of the worse-case risk measure (27, 18).
 
-# !!! info
-#     If you're still not satisfied, try verifying the values analytically using
-#     the primal definition of the entropic risk measure.
+# !!! tip "Homework challenge"
+#     Ty verifying the values of the subgradients analytically using the primal
+#     definition of the entropic risk measure.
 
 # # Risk-averse decision rules: Part II
 
@@ -508,7 +524,7 @@ end
 # ```math
 # \theta \ge \mathbb{E}_{q_k}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right] - \alpha(p, q_k),\quad k=1,\ldots,K,
 # ```
-# where $q_k = \mathrm{arg}\sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[V_j^k(x_k^\prime, \varphi)] - \alpha(p, q)$
+# where $q_k = \mathrm{arg}\sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[V_j^k(x_k^\prime, \varphi)] - \alpha(p, q)$.
 
 # Therefore, we can formulate a risk-averse decision rule as:
 # ```math
@@ -521,7 +537,7 @@ end
 # & \theta \ge M.
 # \end{aligned}
 # ```
-# where $q_k = \mathrm{arg}\sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[V_j^k(x_k^\prime, \varphi)] - \alpha(p, q)$
+# where $q_k = \mathrm{arg}\sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[V_j^k(x_k^\prime, \varphi)] - \alpha(p, q)$.
 
 # Thus, to implement risk-averse SDDP, all we need to do is modify the backward
 # pass to include this calculation of $q_k$, form the cut using $q_k$ instead of
