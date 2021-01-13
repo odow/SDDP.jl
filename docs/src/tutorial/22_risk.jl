@@ -165,12 +165,16 @@ abstract type AbstractRiskMeasure end
 # and function to overload:
 
 """
-    primal_risk(F::AbstractRiskMeasure, Z::Vector{Float64}, p::Vector{Float64})
+    primal_risk(F::AbstractRiskMeasure, Z::Vector{<:Real}, p::Vector{Float64})
 
 Use `F` to compute the risk of the random variable defined by a vector of costs
 `Z` and non-zero probabilities `p`.
 """
 function primal_risk end
+
+# !!! note
+#     We want `Vector{<:Real}` instead of `Vector{Float64}` because we're going
+#     to automatically differentiate this function in the next section.
 
 # ### Expectation
 
@@ -183,7 +187,7 @@ function primal_risk end
 
 struct Expectation <: AbstractRiskMeasure end
 
-function primal_risk(::Expectation, Z::Vector{Float64}, p::Vector{Float64})
+function primal_risk(::Expectation, Z::Vector{<:Real}, p::Vector{Float64})
     return sum(p[i] * Z[i] for i = 1:length(p))
 end
 
@@ -202,7 +206,7 @@ primal_risk(Expectation(), Z, p)
 
 struct WorstCase <: AbstractRiskMeasure end
 
-function primal_risk(::WorstCase, Z::Vector{Float64}, ::Vector{Float64})
+function primal_risk(::WorstCase, Z::Vector{<:Real}, ::Vector{Float64})
     return maximum(Z)
 end
 
@@ -229,14 +233,17 @@ struct Entropic <: AbstractRiskMeasure
     end
 end
 
-function primal_risk(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
-    FZ = 1 / F.γ * log(sum(p[i] * exp(F.γ * big(Z[i])) for i = 1:length(p)))
-    return Float64(FZ)
+function primal_risk(F::Entropic, Z::Vector{<:Real}, p::Vector{Float64})
+    return 1 / F.γ * log(sum(p[i] * exp(F.γ * Z[i]) for i = 1:length(p)))
 end
 
 # !!! warning
-#     We use `big(Z[i])` because `exp(x)` overflows when $x > 709$. We
-#     explicitly cast back to `Float64` for the `return` value.
+#     `exp(x)` overflows when $x > 709$. Therefore, if we are passed a vector of
+#     `Float64`, use arbitrary precision arithmetic with `big.(Z)`.
+
+function primal_risk(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
+    return Float64(primal_risk(F, big.(Z), p))
+end
 
 # Let's try it out for different values of $\gamma$:
 
@@ -441,7 +448,7 @@ end
 
 # This theorem can be a little hard to unpack, so let's see an example:
 
-function risk_averse_subgradient(
+function dual_risk_averse_subgradient(
     V::Function,
     ## Use automatic differentiation to compute the gradient of V w.r.t. x,
     ## given a fixed ω.
@@ -458,9 +465,21 @@ function risk_averse_subgradient(
     ## Compute the risk-averse gradient by taking the expectation of the
     ## gradients w.r.t. q^*.
     dVdx = sum(q[i] * λ(x̃, ω) for (i, ω) in enumerate(Ω))
-    ## Evaluate the risk-averse function.
-    Vx = sum(q[i] * V_ω[i] for i = 1:length(Ω)) - α
-    return Vx, dVdx
+    return dVdx
+end
+
+# We can compare the gradient obtained with the dual form against the automatic
+# differentiation of the `primal_risk` function.
+
+function primal_risk_averse_subgradient(
+    V::Function;
+    F::AbstractRiskMeasure,
+    Ω::Vector,
+    p::Vector{Float64},
+    x̃::Vector{Float64},
+)
+    inner(x) = primal_risk(F, [V(x, ω) for ω in Ω], p)
+    return ForwardDiff.gradient(inner, x̃)
 end
 
 # As our example function, we use:
@@ -484,34 +503,53 @@ x̃ = [3.0]
 # \mathbb{F}[V(x, \omega)] =  2 x^2.
 # ```
 # The function evaluation $x=3$ is $18$ and the subgradient is $12$. Let's check
-# we get it right:
+# we get it right with the dual form:
 
-risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)
+dual_risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)
+
+# and the primal form:
+
+primal_risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)
 
 # If $\mathbb{F}$ is the worst-case risk measure, then:
 # ```math
 # \mathbb{F}[V(x, \omega)] = 3 x^2.
 # ```
 # The function evaluation at $x=3$ is $27$, and the subgradient is $18$. Let's
-# check we get it right:
+# check we get it right with the dual form:
 
-risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
+dual_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
+
+# and the primal form;
+
+primal_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
 
 # If $\mathbb{F}$ is the entropic risk measure, the math is a little more
-# difficult, so you'll have to trust that the math is correct:
+# difficult to derive analytically. However, we can check against our primal
+# version:
 
-for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1_000.0]
-    ∇V = risk_averse_subgradient(V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃)
-    println("γ = $(γ), dF[V(x, ω)]/dx  = $(∇V)")
+for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+    _, dual = dual_risk_averse_subgradient(
+        V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃
+    )
+    _, primal = primal_risk_averse_subgradient(
+        V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃
+    )
+    success = primal ≈ dual ? "✓" : "×"
+    println("$(success) γ = $(γ), primal = $(primal), dual = $(dual)")
 end
 
-# For a sanity check, as $\gamma \rightarrow 0$, we tend toward the solution of
-# the expectation risk-measure (18, 12), and as $\gamma \rightarrow \infty$, we
-# tend toward the solution of the worse-case risk measure (27, 18).
+# Uh oh! What happened with the last line? It looks our `primal_risk_averse_subgradient`
+# encountered an error and returned a gradient of `NaN`. This is because of the
+# overflow issue with `exp(x)`. However, we can be confident that our dual
+# method of computing the risk-averse gradient is both correct and more
+# numerically robust than the primal version.
 
-# !!! tip "Homework challenge"
-#     Ty verifying the values of the subgradients analytically using the primal
-#     definition of the entropic risk measure.
+# !!! info
+#     As another sanity check, notice how as $\gamma \rightarrow 0$, we tend
+#     toward the solution of the expectation risk-measure `[12]`, and as
+#     $\gamma \rightarrow \infty$, we tend toward the solution of the worse-case
+#     risk measure `[18]`.
 
 # # Risk-averse decision rules: Part II
 
