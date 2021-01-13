@@ -20,7 +20,6 @@ using SDDP
 
 import DelimitedFiles
 import Gurobi
-import JSON
 import Serialization
 
 function generate_data()
@@ -80,7 +79,7 @@ function generate_data()
     return data
 end
 
-function build_model(; data::Dict)
+function build_model(data::Dict)
     # --------------------------------------------------------------------------
     # Load the data
     N_THERMAL = length.(data["thermal_obj"])
@@ -97,8 +96,10 @@ function build_model(; data::Dict)
     I_IM = union(I, IM)
     # --------------------------------------------------------------------------
     env = Gurobi.Env()
-    model = SDDP.LinearPolicyGraph(
-        stages = 120,
+    graph = SDDP.LinearGraph(12)
+    SDDP.add_edge(graph, 12 => 1, 0.95)
+    model = SDDP.PolicyGraph(
+        graph,
         lower_bound = 0.0,
         optimizer = () -> Gurobi.Optimizer(env),
     ) do sp, t
@@ -139,8 +140,8 @@ function build_model(; data::Dict)
         @stageobjective(
             sp,
             sum(
-                data["deficit_obj"][i] * sum(df[i, :]) +
-                sum(data["thermal_obj"][i][k] * g[i, k] for k in K(i))
+                data["deficit_obj"][i] / 1_000 * sum(df[i, :]) +
+                sum(data["thermal_obj"][i][k] / 1_000 * g[i, k] for k in K(i))
                 for i in I
             )
         )
@@ -177,17 +178,30 @@ function build_model(; data::Dict)
     return model
 end
 
-function train_model(model::SDDP.PolicyGraph; gamma::Float64)
-    SDDP.train(
-        model;
-        iteration_limit = 5_000,
-        risk_measure = SDDP.Entropic(gamma),
-        log_file = "$(gamma).log",
-    )
-    simulations = SDDP.simulate(model, 2_000, [:v, :df, :g])
-    open("solution_$(gamma).j", "w") do io
-        Serialization.serialize(io, simulations)
+function train_model(model::SDDP.PolicyGraph, gamma::Float64)
+    try
+        SDDP.train(
+            model;
+            iteration_limit = 5_000,
+            risk_measure = SDDP.Entropic(gamma),
+            log_file = "$(gamma).log",
+        )
+    catch ex
+        @info "Ignorring error"
+        println("$(ex)")
     end
+    simulations = SDDP.simulate(
+        model,
+        2_000,
+        [:v, :df, :g];
+        sampling_scheme = SDDP.InSampleMonteCarlo(
+            max_depth = 60,
+            terminate_on_dummy_leaf = false,
+        )
+    )
+    # open("solution_$(gamma).j", "w") do io
+    #     Serialization.serialize(io, simulations)
+    # end
     stage_objectives = collect(transpose(reshape(
         [
             simulations[i][t][:stage_objective]
@@ -203,18 +217,13 @@ function train_model(model::SDDP.PolicyGraph; gamma::Float64)
     return simulations
 end
 
-function main(gamma::Float64)
-    train_model(
-        build_model(data = generate_data());
-        gamma = gamma,
-    )
-    return
+function train_gamma(gamma::Float64)
+    data = generate_data()
+    model = build_model(data)
+    return train_model(model, gamma)
 end
 
-import Plots
-import Statistics
-
-function plot_results(quantiles::Vector{Float64} = [0.1, 0.5, 0.9])
+function plot_results(quantiles::Vector{Float64} = [0.01, 0.1, 0.5, 0.9, 0.99])
     filenames = filter(f -> endswith(f, ".csv"), readdir(@__DIR__))
     per_stage = Dict{Float64, Matrix{Float64}}()
     total = Dict{Float64, Vector{Float64}}()
@@ -228,17 +237,17 @@ function plot_results(quantiles::Vector{Float64} = [0.1, 0.5, 0.9])
         )
         total[key] = Statistics.quantile(sum(matrix; dims = 2)[:], quantiles)
     end
-    per_stage, total = plot_results()
 
     x = sort(collect(keys(total)))
     y = mapreduce(xi -> total[xi]', vcat, x)
-    Plots.plot(x, y, labels = false)
+    Plots.plot(x, y, labels = false, xscale=:log10)
     Plots.savefig("end-of-horizon.pdf")
     Plots.plot(
+        Plots.plot(per_stage[0.0001], color=["black" "blue" "red"], title = "0.0001"),
         Plots.plot(per_stage[0.01], color=["black" "blue" "red"], title = "0.01"),
         Plots.plot(per_stage[0.1], color=["black" "blue" "red"], title = "0.10"),
         Plots.plot(per_stage[1.0], color=["black" "blue" "red"], title = "1.00"),
-        Plots.plot(per_stage[10.0], color=["black" "blue" "red"], title = "10.0"),
+        # Plots.plot(per_stage[10.0], color=["black" "blue" "red"], title = "10.0"),
         legend = false
     )
     Plots.savefig("stage-costs.pdf")
@@ -247,7 +256,7 @@ end
 
 function _print_help()
     println("""
-    usage: julia [-p N] [--project=.] model.jl [--gamma=<value>] [--help] [--plot_results]
+    usage: julia [-p N] [--project=.] model.jl [--gamma=<value>] [--help] [--plot]
 
     Solve the hydro-thermal scheduling problem with the Entropic risk measure
     parameterized with γ = <value>.
@@ -262,15 +271,31 @@ function _print_help()
         julia model.jl --gamma=0.5
         julia -p 4 --project=. model.jl --gamma=0.5
         julia -p 4 --project=. model.jl --gamma=5.0
-        julia --project=. model.jl --plot_results
+        julia --project=. model.jl --plot
     """)
 end
 
-if length(ARGS) == 1 && startswith(ARGS[1], "--gamma=")
-    gamma = parse(Float64, replace(ARGS[1], "--gamma=" => ""))
-    main(gamma)
-elseif length(ARGS) == 1 && ARGS[1] == "--plot"
-    plot_results()
-else
-    _print_help()
+function main(args)
+    if length(args) == 0
+        _print_help()
+    elseif findfirst(isequal("--help"), args) !== nothing
+        _print_help()
+    elseif findfirst(isequal("-h"), args) !== nothing
+        _print_help()
+    else
+        i = findfirst(arg -> startswith(arg, "--gamma="), args)
+        if i !== nothing
+            gamma = parse(Float64, replace(args[i], "--gamma=" => ""))
+            train_gamma(gamma)
+        end
+        if findfirst(isequal("--plot"), args) !== nothing
+            plot_results()
+        end
+    end
 end
+
+# ============================================================================ #
+#                              Script entry point!                             #
+# ============================================================================ #
+
+main(ARGS)
