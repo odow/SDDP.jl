@@ -133,9 +133,9 @@ import Statistics
 # Now we know what a risk measure is, and how we will use it, let's implement
 # some code to see how we can compute the risk of some random variables.
 
-# For reasons that will become apparent shortly, we will implement the primal
-# version of each risk measure. (We will discuss the dual version in the next
-# section.)
+# !!! note
+#     We're going to start by implementing the **primal** version of each risk
+#     measure. We implement the **dual** version in the next section.
 
 # First, we need some data:
 
@@ -166,7 +166,7 @@ function primal_risk end
 # most widely used convex risk measure. The expectation of a random variable is
 # just the sum of $Z$ weighted by the probability:
 # ```math
-# \mathbb{F}[Z] = \mathbb{E}_p[Z].
+# \mathbb{F}[Z] = \mathbb{E}_p[Z] = \sum\limits_{\omega\in\Omega} p_\omega z_\omega.
 # ```
 
 struct Expectation <: AbstractRiskMeasure end
@@ -185,7 +185,7 @@ primal_risk(Expectation(), Z, p)
 # convex risk measure. This risk measure doesn't care about the probability
 # vector `p`, only the cost vector `Z`:
 # ```math
-# \mathbb{F}[Z] = \max[Z].
+# \mathbb{F}[Z] = \max[Z] = \max\limits_{\omega\in\Omega} z_\omega.
 # ```
 
 struct WorstCase <: AbstractRiskMeasure end
@@ -204,7 +204,7 @@ primal_risk(WorstCase(), Z, p)
 # measure. The entropic risk measure is parameterized by a value $\gamma > 0$,
 # and computes the risk of a random variable as:
 # ```math
-# \mathbb{F}_\gamma[Z] = \frac{1}{\gamma}\log\left(\mathbb{E}_p[e^{\gamma Z}]\right).
+# \mathbb{F}_\gamma[Z] = \frac{1}{\gamma}\log\left(\mathbb{E}_p[e^{\gamma Z}]\right) = \frac{1}{\gamma}\log\left(\sum\limits_{\omega\in\Omega}p_\omega e^{\gamma z_\omega}\right).
 # ```
 
 struct Entropic <: AbstractRiskMeasure
@@ -223,14 +223,13 @@ function primal_risk(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
 end
 
 # !!! warning
-#     We use `big(Z[i])` in the `exp` call because `exp(x)` overflows when
-#     $x > 709$. We explicitly cast back to `Float64` for the `return` value.
+#     We use `big(Z[i])` because `exp(x)` overflows when $x > 709$. We
+#     explicitly cast back to `Float64` for the `return` value.
 
 # Let's try it out for different values of $\gamma$:
 
 for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1_000.0]
-    FZ = primal_risk(Entropic(γ), Z, p)
-    println("γ = $(γ), F[Z] = $(FZ)")
+    println("γ = $(γ), F[Z] = ", primal_risk(Entropic(γ), Z, p))
 end
 
 # !!! info
@@ -255,7 +254,7 @@ end
 # $q$ to a real number, and $\mathcal{M}(p) \subseteq \mathcal{P}$ is a convex
 # subset of the probability simplex:
 # ```math
-# \mathcal{P} = \{p \ge 0;|\;\sum\limits_{\omega\in\Omega}p_\omega = 1\}.
+# \mathcal{P} = \{p \ge 0\;|\;\sum\limits_{\omega\in\Omega}p_\omega = 1\}.
 # ```
 
 # The dual of a convex risk measure can be interpreted as taking the expectation
@@ -393,7 +392,7 @@ for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
     println("$(success) γ = $(γ), primal = $(primal), dual = $(dual)")
 end
 
-# ### Risk-averse gradients
+# ## Risk-averse gradients
 
 # We ended the section on primal risk measures by explaining how we couldn't
 # use the primal risk measure in the cut calculation because we needed some way
@@ -405,7 +404,7 @@ end
 # The reason we use the dual representation is because of the following theorem,
 # which explains how to compute the risk-averse gradient:
 
-# !!! info "Theorem"
+# !!! info "The risk-averse gradient theorem"
 #     Let $\omega \in \Omega$ index a random vector with finite support and with
 #     nominal probability mass function, $p \in \mathcal{P}$, which satisfies
 #     $p > 0$.
@@ -526,7 +525,7 @@ end
 
 # Thus, to implement risk-averse SDDP, all we need to do is modify the backward
 # pass to include this calculation of $q_k$, form the cut using $q_k$ instead of
-# p$, and subtract the penalty term $\alpha(p, q_k)$.
+# $p$, and subtract the penalty term $\alpha(p, q_k)$.
 
 # ## Implementation
 
@@ -689,9 +688,8 @@ end
 # </details></p>
 # ```
 
-# We only need to change two functions; `backward_pass` and `train`.
-
-# And here's the backward pass
+# First, we need to modify the backward pass to compute the cuts using the
+# risk-averse gradient theorem:
 
 function backward_pass(
     model::PolicyGraph,
@@ -724,8 +722,9 @@ function backward_pass(
                     k => JuMP.reduced_cost(v.in) for (k, v) in next_node.states
                 )
                 ## =============================================================
-                ## New! Instead of building a single cut expression, append the
-                ## expression to cut_expressions:
+                ## New! Construct and append the expression
+                ## `V_j^K(x_k, φ) + dVdx_j^K(x'_k, φ)ᵀ(x - x_k)` to the list of
+                ## cut expressions.
                 push!(
                     cut_expressions,
                     JuMP.@expression(
@@ -736,9 +735,9 @@ function backward_pass(
                         ),
                     )
                 )
-                ## the objective value to Z:
+                ## Add the objective value to Z:
                 push!(V_ω, V)
-                ## and the probability to p:
+                ## Add the probability to p:
                 push!(p, P_ij * pφ)
                 ## =============================================================
             end
@@ -753,9 +752,8 @@ function backward_pass(
         ## Then add the cut:
         c = JuMP.@constraint(
             node.subproblem,
-            node.cost_to_go >= sum(
-                q[i] * cut_expressions[i] for i = 1:length(q)
-            ) - α
+            node.cost_to_go >=
+                sum(q[i] * cut_expressions[i] for i = 1:length(q)) - α
         )
         ## =====================================================================
         println(io, "| | | Adding cut : ", c)
@@ -804,7 +802,8 @@ end
 # the policy we wanted to achieve, namely that the impact of the worst outcomes
 # were reduced.)
 
-# If we use a different risk measure, the lower bound is no longer valid!
+# However, if we use a different risk measure, the lower bound is no longer
+# valid!
 
 # We can still calculate a "lower bound" as the objective of the first-stage
 # approximated subproblem, and this will converge to a finite value. However,
@@ -814,7 +813,8 @@ end
 
 # ## Example: risk-averse hydro-thermal scheduling
 
-# Now it's time for an example. We create the same problem as [Theory I: an intro to SDDP](@ref):
+# Now it's time for an example. We create the same problem as
+# [Theory I: an intro to SDDP](@ref):
 
 model = PolicyGraph(
     graph = [
