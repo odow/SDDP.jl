@@ -132,8 +132,8 @@ import Statistics
 # !!! tip "Homework challenge"
 #     If it's not obvious why we can use Kelley's here, try to use the axioms of
 #     a convex risk measure to show that
-#     $f(x^\prime) = \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$
-#     is a convex function.
+#     $f_i(x^\prime) = \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$
+#     is a convex function w.r.t. $x^\prime$ if $V_j$ is also a convex function.
 
 # Our challenge is now to find a way to compute the risk-averse cost-to-go
 # function $\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]$,
@@ -529,10 +529,10 @@ primal_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
 # version:
 
 for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
-    _, dual = dual_risk_averse_subgradient(
+    dual = dual_risk_averse_subgradient(
         V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃
     )
-    _, primal = primal_risk_averse_subgradient(
+    primal = primal_risk_averse_subgradient(
         V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃
     )
     success = primal ≈ dual ? "✓" : "×"
