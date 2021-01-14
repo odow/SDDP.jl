@@ -19,6 +19,8 @@
 # instances. However, our simplified implementation will work on arbitrary
 # policy graphs, including those with cycles such as infinite horizon problems!
 
+# **Packages**
+#
 # This tutorial uses the following packages. For clarity, we call
 # `import PackageName` so that we must prefix `PackageName.` to all functions
 # and structs provided by that package. Everything not prefixed is either part
