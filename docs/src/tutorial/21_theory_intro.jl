@@ -320,6 +320,10 @@ import Statistics
 
 # Therefore, $f^K \le f(x^*) \le \min\limits_{k=1,\ldots,K} f(x_k^*)$.
 
+# When the lower bound is sufficiently close to the upper bound, we can
+# terminate the algorithm and declare that we have found an solution that is
+# close to optimal.
+
 # ### Implementation
 
 # Here is pseudo-code fo the Kelley algorithm:
@@ -330,7 +334,7 @@ import Statistics
 # 3. Update $lb = f^K$ and $ub = \min\{ub, f(x_{K+1})\}$.
 # 4. Add a cut $\theta \ge f(x_{K+1}) + \frac{d}{dx}f\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
 # 5. Increment $K$.
-# 6. If $K = K_{max}$, STOP, otherwise, go to step 2.
+# 6. If $K = K_{max}$ or $|ub - lb| < \epsilon$, STOP, otherwise, go to step 2.
 
 # And here's a complete implementation:
 
@@ -346,6 +350,8 @@ function kelleys_cutting_plane(
     lower_bound::Float64,
     ## The number of iterations to run Kelley's algorithm for before stopping.
     iteration_limit::Int,
+    ## The absolute tolerance ϵ to use for convergence.
+    tolerance::Float64 = 1e-6,
 )
     ## Step (1):
     K = 0
@@ -367,7 +373,7 @@ function kelleys_cutting_plane(
         ## Step (5):
         K = K + 1
         ## Step (6):
-        if K == iteration_limit
+        if K == iteration_limit || abs(upper_bound - lower_bound) < tolerance
             break
         end
     end
@@ -908,6 +914,23 @@ end
 #     the graph, because the distribution of simulation costs `z` is not
 #     symmetric. The mean is correct, however.
 
+# ### Termination criteria
+
+# In Kelley's algorithm, the upper bound was deterministic. Therefore, we could
+# terminate the algorithm when the lower bound was sufficiently close to the
+# upper bound. However, our upper bound for SDDP is not deterministic; it is a
+# confidence interval!
+
+# Some people suggest terminating SDDP when the lower bound is contained within
+# the confidence interval. However, this is a poor choice because it is too easy
+# to generate a false positive. For example, if we use a small number of
+# replications then the width of the confidence will be large, and we are more
+# likely to terminate!
+
+# In a future tutorial (not yet written...) we will discuss termination criteria
+# in more depth. For now, pick a large number of iterations and train for as
+# long as possible.
+
 # ## Implementation: the training loop
 
 # The `train` loop of SDDP just applies the forward and backward passes
@@ -938,6 +961,11 @@ train(model; iteration_limit = 3, replications = 100)
 
 # Success! We trained a policy for a finite horizon multistage stochastic
 # program using stochastic dual dynamic programming.
+
+# !!! tip
+#     For a rule of thumb, pick a large number of iterations to train the
+#     policy for (e.g.,
+#     $10 \times |\mathcal{N}| \times \max\limits_{i\in\mathcal{N}} |\Omega_i|$)
 
 # ## Implementation: evaluating the policy
 

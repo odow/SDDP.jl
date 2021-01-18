@@ -378,9 +378,10 @@ end
 #     measure with the Wasserstein distance. Check out all the risk measures
 #     that SDDP.jl supports in [Add a risk measure](@ref).
 
-# The "on-the-side" method is very general, and let's us incorporate any convex
-# risk measure into SDDP. However, this comes at an increased computational cost
-# and potential numerical issues (e.g., not converging to the exact solution).
+# The "on-the-side" method is very general, and it lets us incorporate any
+# convex risk measure into SDDP. However, this comes at an increased
+# computational cost and potential numerical issues (e.g., not converging to the
+# exact solution).
 
 # However, for the entropic risk measure, [Dowson, Morton, and Pagnoncelli (2020)](http://www.optimization-online.org/DB_HTML/2020/08/7984.html)
 # derive the following closed form solution for $q^*$:
@@ -520,7 +521,7 @@ primal_risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)
 
 dual_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
 
-# and the primal form;
+# and the primal form:
 
 primal_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
 
