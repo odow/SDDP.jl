@@ -373,7 +373,11 @@ function kelleys_cutting_plane(
         ## Step (5):
         K = K + 1
         ## Step (6):
-        if K == iteration_limit || abs(upper_bound - lower_bound) < tolerance
+        if K == iteration_limit
+            println("-- Termination status: iteration limit --")
+            break
+        elseif abs(upper_bound - lower_bound) < tolerance
+            println("-- Termination status: converged --")
             break
         end
     end
@@ -931,6 +935,11 @@ end
 # in more depth. For now, pick a large number of iterations and train for as
 # long as possible.
 
+# !!! tip
+#     For a rule of thumb, pick a large number of iterations to train the
+#     policy for (e.g.,
+#     $10 \times |\mathcal{N}| \times \max\limits_{i\in\mathcal{N}} |\Omega_i|$)
+
 # ## Implementation: the training loop
 
 # The `train` loop of SDDP just applies the forward and backward passes
@@ -950,6 +959,7 @@ function train(
         println(io, "| Finished iteration")
         println(io, "| | lower_bound = ", lower_bound(model))
     end
+    println(io, "Termination status: iteration limit")
     μ, tσ = upper_bound(model; replications = replications)
     println(io, "Upper bound = $(μ) ± $(tσ)")
     return
@@ -961,11 +971,6 @@ train(model; iteration_limit = 3, replications = 100)
 
 # Success! We trained a policy for a finite horizon multistage stochastic
 # program using stochastic dual dynamic programming.
-
-# !!! tip
-#     For a rule of thumb, pick a large number of iterations to train the
-#     policy for (e.g.,
-#     $10 \times |\mathcal{N}| \times \max\limits_{i\in\mathcal{N}} |\Omega_i|$)
 
 # ## Implementation: evaluating the policy
 

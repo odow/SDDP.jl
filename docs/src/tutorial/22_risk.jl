@@ -124,7 +124,8 @@ import Statistics
 # ```
 
 # !!! warning
-#     Note how we need to expliclty compute the risk-averse gradient! When
+#     Note how we need to expliclty compute a risk-averse subgradient! (We
+#     need a subgradient because the function might not be differentiable.) When
 #     constructing cuts with the expectation operator in [Theory I: an intro to SDDP](@ref),
 #     we implicitly used the law of total expectation to combine the two
 #     expectations; we can't do that for a general risk measure.
@@ -132,13 +133,13 @@ import Statistics
 # !!! tip "Homework challenge"
 #     If it's not obvious why we can use Kelley's here, try to use the axioms of
 #     a convex risk measure to show that
-#     $f_i(x^\prime) = \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$
+#     $\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$
 #     is a convex function w.r.t. $x^\prime$ if $V_j$ is also a convex function.
 
 # Our challenge is now to find a way to compute the risk-averse cost-to-go
 # function $\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]$,
-# and a way to compute the gradient of the risk-averse cost-to-go function with
-# respect to $x^\prime$.
+# and a way to compute a subgradient of the risk-averse cost-to-go function
+# with respect to $x^\prime$.
 
 # ## Primal risk measures
 
@@ -223,6 +224,10 @@ primal_risk(WorstCase(), Z, p)
 # \mathbb{F}_\gamma[Z] = \frac{1}{\gamma}\log\left(\mathbb{E}_p[e^{\gamma Z}]\right) = \frac{1}{\gamma}\log\left(\sum\limits_{\omega\in\Omega}p_\omega e^{\gamma z_\omega}\right).
 # ```
 
+# !!! tip "Homework challenge"
+#     Prove that the entropic risk measure satisfies the three axioms of a
+#     convex risk measure.
+
 struct Entropic <: AbstractRiskMeasure
     γ::Float64
     function Entropic(γ)
@@ -257,8 +262,8 @@ end
 #     the entropic acts like the worst-case risk measure.
 
 # Computing risk measures this way works well for computing the primal value.
-# However, there isn't an obvious way to compute the gradient of the risk-averse
-# cost-to-go function, which we need for our cut calculation.
+# However, there isn't an obvious way to compute a subgradient of the
+# risk-averse cost-to-go function, which we need for our cut calculation.
 
 # There is a nice solution to this problem, and that is to use the dual
 # representation of a risk measure, instead of the primal.
@@ -416,19 +421,19 @@ for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
     println("$(success) γ = $(γ), primal = $(primal), dual = $(dual)")
 end
 
-# ## Risk-averse gradients
+# ## Risk-averse subgradients
 
 # We ended the section on primal risk measures by explaining how we couldn't
 # use the primal risk measure in the cut calculation because we needed some way
-# of computing the risk-averse gradient:
+# of computing a risk-averse subgradient:
 # ```math
 # \theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k).
 # ```
 
 # The reason we use the dual representation is because of the following theorem,
-# which explains how to compute the risk-averse gradient.
+# which explains how to compute a risk-averse gradient.
 
-# !!! info "The risk-averse gradient theorem"
+# !!! info "The risk-averse subgradient theorem"
 #     Let $\omega \in \Omega$ index a random vector with finite support and with
 #     nominal probability mass function, $p \in \mathcal{P}$, which satisfies
 #     $p > 0$.
@@ -463,14 +468,14 @@ function dual_risk_averse_subgradient(
     V_ω = [V(x̃, ω) for ω in Ω]
     ## Solve the dual problem to obtain an optimal q^*.
     q, α = dual_risk_inner(F, V_ω, p)
-    ## Compute the risk-averse gradient by taking the expectation of the
-    ## gradients w.r.t. q^*.
+    ## Compute the risk-averse subgradient by taking the expectation of the
+    ## subgradients w.r.t. q^*.
     dVdx = sum(q[i] * λ(x̃, ω) for (i, ω) in enumerate(Ω))
     return dVdx
 end
 
-# We can compare the gradient obtained with the dual form against the automatic
-# differentiation of the `primal_risk` function.
+# We can compare the subgradient obtained with the dual form against the
+# automatic differentiation of the `primal_risk` function.
 
 function primal_risk_averse_subgradient(
     V::Function;
@@ -541,9 +546,9 @@ for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
 end
 
 # Uh oh! What happened with the last line? It looks our `primal_risk_averse_subgradient`
-# encountered an error and returned a gradient of `NaN`. This is because of the
-# overflow issue with `exp(x)`. However, we can be confident that our dual
-# method of computing the risk-averse gradient is both correct and more
+# encountered an error and returned a subgradient of `NaN`. This is because of
+# th # overflow issue with `exp(x)`. However, we can be confident that our dual
+# method of computing the risk-averse subgradient is both correct and more
 # numerically robust than the primal version.
 
 # !!! info
@@ -554,8 +559,8 @@ end
 
 # # Risk-averse decision rules: Part II
 
-# Why is the risk-averse gradient theorem helpful? Using the dual representation
-# of a convex risk measure, we can re-write the cut:
+# Why is the risk-averse subgradient theorem helpful? Using the dual
+# representation of a convex risk measure, we can re-write the cut:
 # ```math
 # \theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k),\quad k=1,\ldots,K
 # ```
@@ -744,7 +749,7 @@ end
 # ```
 
 # First, we need to modify the backward pass to compute the cuts using the
-# risk-averse gradient theorem:
+# risk-averse subgradient theorem:
 
 function backward_pass(
     model::PolicyGraph,
