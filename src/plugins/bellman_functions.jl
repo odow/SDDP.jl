@@ -52,6 +52,35 @@ mutable struct ConvexApproximation
     end
 end
 
+_magnitude(x) = x ≈ 0 ? 0 : log10(abs(x))
+function _dynamic_range_warning(intercept, coefficients)
+    lo = hi = _magnitude(intercept)
+    lo_v = hi_v = intercept
+    for v in values(coefficients)
+        i = _magnitude(v)
+        if v < lo_v
+            lo, lo_v = i, v
+        elseif v > hi_v
+            hi, hi_v = i, v
+        end
+    end
+    if hi - lo > 10
+        @warn("""Found a cut with a mix of small and large coefficients.
+            The order of magnitude difference is $(hi - lo).
+            The smallest cofficient is $(lo_v).
+            The largest coefficient is $(hi_v).
+
+        You can ignore this warning, but it may be an indication of numerical issues.
+
+        Consider rescaling your model by using different units, e.g, kilometers instead
+        of meters. You should also consider reducing the accuracy of your input data (if
+        you haven't already). For example, it probably doesn't make sense to measure the
+        inflow into a reservoir to 10 decimal places.""",
+            maxlog = 1,
+        )
+    end
+end
+
 # Add the cut `V.θ ≥ θᵏ + ⟨πᵏ, x′ - xᵏ⟩`.
 function _add_cut(
     V::ConvexApproximation,
@@ -65,6 +94,7 @@ function _add_cut(
     for (key, x) in xᵏ
         θᵏ -= πᵏ[key] * xᵏ[key]
     end
+    _dynamic_range_warning(θᵏ, πᵏ)
     cut = Cut(θᵏ, πᵏ, obj_y, belief_y, 1, nothing)
     add_cut_constraint_to_model(V, cut)
     if cut_selection
