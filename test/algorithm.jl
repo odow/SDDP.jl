@@ -103,11 +103,11 @@ end
         model,
         1,
         [:x];
-        incoming_state = Dict("x[1]" => 3.0, "x[2]" => 4.0),
+        incoming_state = Dict("x[1]" => 3.0, "x[2]" => 3.0),
     )
-    @test simulations[1][1][:x] == [SDDP.State(3.0, 3.0), SDDP.State(4.0, 4.0)]
+    @test simulations[1][1][:x] == [SDDP.State(3.0, 3.0), SDDP.State(3.0, 3.0)]
     simulations = SDDP.simulate(model, 1, [:x])
-    @test simulations[1][1][:x] == [SDDP.State(1.0, 1.0), SDDP.State(4.0, 4.0)]
+    @test simulations[1][1][:x] == [SDDP.State(2.0, 2.0), SDDP.State(4.0, 4.0)]
 end
 
 @testset "simulate missing" begin
