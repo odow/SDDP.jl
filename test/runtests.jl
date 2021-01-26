@@ -19,18 +19,22 @@ const VISUALIZATION_DIR = joinpath(@__DIR__, "visualization")
 @testset "SDDP.jl" begin
     @testset "Unit Tests" begin
         @testset "plugins/$(file)" for file in read_dir(PLUGINS_DIR, ["parallel_schemes.jl"])
+            @info file
             include(joinpath(PLUGINS_DIR, file))
         end
         @testset "visualization/$(file)" for file in read_dir(VISUALIZATION_DIR)
+            @info file
             include(joinpath(VISUALIZATION_DIR, file))
         end
         @testset "$(file)" for file in read_dir(".", ["runtests.jl"])
+            @info file
             include(file)
         end
     end
 
     @testset "Examples" begin
         @testset "$example" for example in read_dir(EXAMPLES_DIR)
+            @info example
             Random.seed!(12345)
             include(joinpath(EXAMPLES_DIR, example))
         end
