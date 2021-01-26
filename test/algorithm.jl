@@ -89,6 +89,27 @@ end
     @test simulations[1][1][:x] == [SDDP.State(2.0, 1.0), SDDP.State(4.0, 2.0)]
 end
 
+@testset "simulate_incoming_state" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
+        @constraint(sp, [i=1:2], x[i].out == x[i].in)
+        @stageobjective(sp, x[1].out + x[2].out)
+    end
+    simulations = SDDP.simulate(
+        model,
+        1,
+        [:x];
+        incoming_state = Dict("x[1]" => 3.0, "x[2]" => 4.0),
+    )
+    @test simulations[1][1][:x] == [SDDP.State(3.0, 3.0), SDDP.State(4.0, 4.0)]
+    simulations = SDDP.simulate(model, 1, [:x])
+    @test simulations[1][1][:x] == [SDDP.State(1.0, 1.0), SDDP.State(4.0, 4.0)]
+end
+
 @testset "simulate missing" begin
     model = SDDP.LinearPolicyGraph(
         stages = 2,
