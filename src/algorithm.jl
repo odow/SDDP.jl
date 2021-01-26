@@ -993,14 +993,13 @@ function _simulate(
     custom_recorders::Dict{Symbol,Function},
     require_duals::Bool,
     skip_undefined_variables::Bool,
+    incoming_state::Dict{Symbol,Float64},
 ) where {T}
     # Sample a scenario path.
     scenario_path, terminated_due_to_cycle = sample_scenario(model, sampling_scheme)
 
     # Storage for the simulation results.
     simulation = Dict{Symbol,Any}[]
-    # The incoming state values.
-    incoming_state = copy(model.initial_root_state)
     current_belief = initialize_belief(model)
     # A cumulator for the stage-objectives.
     cumulative_value = 0.0
@@ -1082,6 +1081,10 @@ function _simulate(
     return simulation
 end
 
+function _initial_state(model::PolicyGraph)
+    return Dict(String(k) => v for (k, v) in model.initial_root_state)
+end
+
 """
     simulate(
         model::PolicyGraph,
@@ -1092,11 +1095,16 @@ end
         custom_recorders = Dict{Symbol, Function}(),
         require_duals::Bool = true,
         skip_undefined_variables::Bool = false,
-        parallel_scheme::AbstractParallelScheme = Serial()
+        parallel_scheme::AbstractParallelScheme = Serial(),
+        incoming_state::Dict{String,Float64} = _intial_state(model),
      )::Vector{Vector{Dict{Symbol, Any}}}
 
 Perform a simulation of the policy model with `number_replications` replications
 using the sampling scheme `sampling_scheme`.
+
+Use `incoming_state` to pass an initial value of the state variable, if it
+differs from that at the root node. Each key should be the string name of the
+state variable.
 
 Returns a vector with one element for each replication. Each element is a vector
 with one-element for each node in the scenario that was sampled. Each element in
@@ -1143,8 +1151,8 @@ If you attempt to simulate the value of a variable that is only defined in some
 of the stage problems, an error will be thrown. To over-ride this (and return a
 `NaN` instead), pass `skip_undefined_variables = true`.
 
-Use `parallel_scheme::[AbstractParallelScheme](@ref)` to specify a scheme for simulating in
-parallel. Defaults to [`Serial`](@ref).
+Use `parallel_scheme::[AbstractParallelScheme](@ref)` to specify a scheme for
+simulating in parallel. Defaults to [`Serial`](@ref).
 """
 function simulate(
     model::PolicyGraph,
@@ -1155,6 +1163,7 @@ function simulate(
     require_duals::Bool = true,
     skip_undefined_variables::Bool = false,
     parallel_scheme::AbstractParallelScheme = Serial(),
+    incoming_state::Dict{String,Float64} = _initial_state(model),
 )
     return _simulate(
         model,
@@ -1165,6 +1174,7 @@ function simulate(
         custom_recorders = custom_recorders,
         require_duals = require_duals,
         skip_undefined_variables = skip_undefined_variables,
+        incoming_state = Dict(Symbol(k) => v for (k, v) in incoming_state),
     )
 end
 
