@@ -55,15 +55,15 @@ RecipesBase.@recipe function f(
     size --> (500, 300)
     data_matrix = publication_data(dataset, sort(quantile), stage_function)
     for i = 1:floor(Int, size(data_matrix, 1) / 2)
+        μ = 0.5 * (data_matrix[i, :] + data_matrix[end-i+1, :])
+        r = data_matrix[end-i+1, :] - μ
         RecipesBase.@series begin
             x := 1:size(data_matrix, 2)
-            μ = 0.5 * (data_matrix[i, :] + data_matrix[end-i+1, :])
-            r = data_matrix[end-i+1, :] - μ
             ribbon := r
             y := μ
             fillalpha --> 0.2
             seriesalpha --> 0.0
-            c --> "#00467F"
+            seriescolor --> "#00467F"
             label := ""
             ()
         end
@@ -73,7 +73,7 @@ RecipesBase.@recipe function f(
         RecipesBase.@series begin
             x := 1:size(data_matrix, 2)
             y := data_matrix[qi, :]
-            c --> "#00467F"
+            seriescolor --> "#00467F"
             label := ""
             ()
         end
