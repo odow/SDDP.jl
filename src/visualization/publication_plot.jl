@@ -62,7 +62,7 @@ RecipesBase.@recipe function f(
             ribbon := r
             y := μ
             fillalpha --> 0.2
-            alpha --> 0.0
+            seriesalpha --> 0.0
             c --> "#00467F"
             label := ""
             ()
