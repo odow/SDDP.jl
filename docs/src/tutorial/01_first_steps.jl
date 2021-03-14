@@ -492,9 +492,7 @@ model = SDDP.PolicyGraph(
     optimizer = GLPK.Optimizer,
 )
 
-# Hopefully the `sense` keyword is obvious. However, the other two are not so
-# clear.
-
+# * `sense`: the optimization sense. Must be `:Min` or `:Max`.
 # * `lower_bound`: you _must_ supply a valid bound on the objective. For our
 #   problem, we know that we cannot incur a negative cost so \\\$0 is a valid
 #   lower bound.
