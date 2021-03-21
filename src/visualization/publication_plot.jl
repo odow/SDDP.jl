@@ -6,7 +6,7 @@
 # Internal function: convert dataset (from SDDP.simulate) into a matrix where
 # the rows are quantiles, and the columns are stages.
 function publication_data(
-    dataset::Vector{Vector{<:AbstractDict}},
+    dataset::Vector{<:Vector{<:AbstractDict}},
     quantiles::Vector{Float64},
     stage_function::Function,
 )
@@ -37,7 +37,7 @@ See `Plots.jl` for the list of keyword arguments.
 """
 function publication_plot(
     data_function::Function,
-    simulations::Vector{Vector{<:AbstractDict}};
+    simulations::Vector{<:Vector{<:AbstractDict}};
     kwargs...,
 )
     # An annoying over-load so that we can provide a consistent interface
