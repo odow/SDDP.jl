@@ -57,7 +57,7 @@ function _unique_paths(model::PolicyGraph{T}) where {T}
         end
     end
     total_scenarios = 0.0
-    incoming_scenarios = Dict{T,Int}(t => 0.0 for t in keys(model.nodes))
+    incoming_scenarios = Dict{T,Float64}(t => 0.0 for t in keys(model.nodes))
     for node in reverse!(ordered)
         N = length(model[node].noise_terms)
         if length(parents[node]) == 0  # Must come from the root node.
