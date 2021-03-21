@@ -24,11 +24,13 @@ const PLOT_DATA = Dict{String,Any}(
 Initialize a new `SpaghettiPlot` with `stages` stages and `scenarios` number of
 replications.
 """
-struct SpaghettiPlot
-    simulations::Vector{Vector{Dict{Symbol,Any}}}
+struct SpaghettiPlot{D}
+    simulations::Vector{Vector{D}}
     data::Vector{Dict{String,Any}}
-    function SpaghettiPlot(simulations)
-        return new(simulations, Dict{String,Any}[])
+    function SpaghettiPlot(
+        simulations::Vector{Vector{D}},
+    ) where {D<:AbstractDict}
+        return new{D}(simulations, Dict{String,Any}[])
     end
 end
 
