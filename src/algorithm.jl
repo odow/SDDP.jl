@@ -879,6 +879,12 @@ function train(
 
     if print_level > 0
         print_helper(print_banner, log_file_handle)
+        print_helper(
+            print_problem_statistics,
+            log_file_handle,
+            model,
+            parallel_scheme,
+        )
     end
 
     if run_numerical_stability_report
@@ -888,7 +894,6 @@ function train(
     end
 
     if print_level > 0
-        print_helper(io -> println(io, "Solver: ", parallel_scheme, "\n"), log_file_handle)
         print_helper(print_iteration_header, log_file_handle)
     end
     # Convert the vector to an AbstractStoppingRule. Otherwise if the user gives

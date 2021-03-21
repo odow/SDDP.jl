@@ -17,6 +17,15 @@ function print_banner(io)
     println(io)
 end
 
+function print_problem_statistics(io::IO, model::PolicyGraph, parallel_scheme)
+    println(io, "Problem")
+    println(io, "  Nodes           : ", length(model.nodes))
+    println(io, "  State variables : ", length(model.initial_root_state))
+    println(io, "  Solver          : ", parallel_scheme)
+    println(io)
+    return
+end
+
 function print_iteration_header(io)
     println(
         io,
