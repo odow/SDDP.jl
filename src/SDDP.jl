@@ -36,6 +36,7 @@ include("binary_expansion.jl")
 include("JuMP.jl")
 
 # Printing utilities.
+include("cyclic.jl")
 include("print.jl")
 
 # The core SDDP code.
