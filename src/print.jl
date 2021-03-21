@@ -17,10 +17,69 @@ function print_banner(io)
     println(io)
 end
 
+function _unique_paths(model::PolicyGraph{T}) where {T}
+    if is_cyclic(model)
+        return Inf
+    end
+    parents = Dict{T,Set{T}}(t => Set{T}() for t in keys(model.nodes))
+    children = Dict{T,Set{T}}(t => Set{T}() for t in keys(model.nodes))
+    for (t, node) in model.nodes
+        for child in node.children
+            if child.probability > 0
+                push!(parents[child.term], t)
+                push!(children[t], child.term)
+            end
+        end
+    end
+    ordered = T[]
+    in_order = Dict{T,Bool}(t => false for t in keys(model.nodes))
+    stack = Tuple{T,Bool}[]
+    for root_child in model.root_children
+        if iszero(root_child.probability) || in_order[root_child.term]
+            continue
+        end
+        push!(stack, (root_child.term, true))
+        while !isempty(stack)
+            node, needs_checking = pop!(stack)
+            if !needs_checking
+                push!(ordered, node)
+                in_order[node] = true
+                continue
+            elseif in_order[node]
+                continue
+            end
+            push!(stack, (node, false))
+            for child in children[node]
+                if !in_order[child]
+                    push!(stack, (child, true))
+                end
+            end
+        end
+    end
+    total_scenarios = 0.0
+    incoming_scenarios = Dict{T,Int}(t => 0.0 for t in keys(model.nodes))
+    for node in reverse!(ordered)
+        N = length(model[node].noise_terms)
+        if length(parents[node]) == 0  # Must come from the root node.
+            incoming_scenarios[node] = N
+        else
+            incoming_scenarios[node] = N * sum(
+                incoming_scenarios[p] for p in parents[node]
+            )
+        end
+        if length(children[node]) == 0  # It's a leaf!
+            total_scenarios += incoming_scenarios[node]
+        end
+    end
+    return total_scenarios
+end
+
 function print_problem_statistics(io::IO, model::PolicyGraph, parallel_scheme)
     println(io, "Problem")
     println(io, "  Nodes           : ", length(model.nodes))
     println(io, "  State variables : ", length(model.initial_root_state))
+    paths = Printf.@sprintf("%1.5e", _unique_paths(model))
+    println(io, "  Scenarios       : ", paths)
     println(io, "  Solver          : ", parallel_scheme)
     println(io)
     return
