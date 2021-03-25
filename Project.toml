@@ -27,7 +27,7 @@ JuMP = "0.21"
 JuliaFormatter = "0.3"
 MutableArithmetics = "0.2"
 RecipesBase = "1"
-Reexport = "0.2"
+Reexport = "0.2, 1"
 TimerOutputs = "0.5"
 julia = "1"
 
