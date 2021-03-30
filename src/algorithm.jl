@@ -62,7 +62,7 @@ function get_same_children(model::PolicyGraph{T}) where {T}
     same_children = Dict{T,Vector{T}}(key => T[] for key in keys(model.nodes))
     for set in values(tmp)
         for v in set
-            same_children[v] = collect(setdiff(set, v))
+            same_children[v] = collect(setdiff(set, Ref(v)))
         end
     end
     return same_children
