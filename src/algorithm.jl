@@ -47,29 +47,22 @@ end
 # value is a list of other nodes that contain the same children. This is useful
 # because on the backward pass we can add cuts to nodes with the same children
 # without having to re-solve the children.
-#
-# TODO(odow): this is inefficient as it is O(n²) in the number of nodes, but
-# it's just a one-off hit so let's optimize later.
 function get_same_children(model::PolicyGraph{T}) where {T}
-    same_children = Dict{T,Vector{T}}()
-    # For each node in the model
-    for (node_index_1, node_1) in model.nodes
-        same_children[node_index_1] = T[]
-        # Get the set of child nodes.
-        children_1 = Set(child.term for child in node_1.children)
-        # Skip this one if there are no children.
-        length(children_1) == 0 && continue
-        # For each node in the model:
-        for (node_index_2, node_2) in model.nodes
-            node_index_1 == node_index_2 && continue
-            # Get the set of child nodes.
-            children_2 = Set(child.term for child in node_2.children)
-            # Skip this one if there are no children.
-            length(children_2) == 0 && continue
-            # Record if node_1 has a superset of node_2's children.
-            if children_2 ⊆ children_1
-                push!(same_children[node_index_1], node_index_2)
-            end
+    tmp = Dict{Set{T},Set{T}}()
+    for (key, node) in model.nodes
+        children = Set(child.term for child in node.children)
+        if length(children) == 0
+            continue
+        elseif haskey(tmp, children)
+            push!(tmp[children], key)
+        else
+            tmp[children] = Set{T}([key])
+        end
+    end
+    same_children = Dict{T,Vector{T}}(key => T[] for key in keys(model.nodes))
+    for set in values(tmp)
+        for v in set
+            same_children[v] = collect(setdiff(set, Ref(v)))
         end
     end
     return same_children
