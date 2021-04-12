@@ -42,7 +42,7 @@ function publication_plot(
 )
     # An annoying over-load so that we can provide a consistent interface
     # instead of the Plots.jl generated `publicationplot`.
-    return SDDP.publicationplot(simulations, data_function, kwargs...)
+    return SDDP.publicationplot(simulations, data_function; kwargs...)
 end
 
 RecipesBase.@userplot PublicationPlot
