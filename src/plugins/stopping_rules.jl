@@ -108,7 +108,14 @@ end
 
 Teriminate the algorithm once the deterministic bound (lower if minimizing,
 upper if maximizing) fails to improve by more than `tolerance` in absolute terms
-for more than `num_previous_iterations` consecutve iterations.
+for more than `num_previous_iterations` consecutve iterations, provided it has
+improved relative to the bound after the first iteration.
+
+Checking for an improvement relative to the first iteration avoids early
+termination in a situation where the bound fails to improve for the first `N`
+iterations. This frequently happens in models with a large number of stages,
+where it takes time for the cuts to propogate backward enough to modify the
+bound of the root node.
 """
 struct BoundStalling <: AbstractStoppingRule
     num_previous_iterations::Int
@@ -118,16 +125,56 @@ end
 stopping_rule_status(::BoundStalling) = :bound_stalling
 
 function convergence_test(
-    graph::PolicyGraph{T},
+    ::PolicyGraph{T},
     log::Vector{Log},
     rule::BoundStalling,
 ) where {T}
     if length(log) < rule.num_previous_iterations + 1
         return false
+    elseif isapprox(log[1].bound, log[end].bound; atol = rule.tolerance)
+        return false
     end
-    for iteration = 1:rule.num_previous_iterations
-        idx = length(log) - iteration
-        if abs(log[idx].bound - log[idx+1].bound) > rule.tolerance
+    for i in 1:rule.num_previous_iterations
+        if abs(log[end-i].bound - log[end-i+1].bound) > rule.tolerance
+            return false
+        end
+    end
+    return true
+end
+
+"""
+    StoppingChain(rules::AbstractStoppingRule...)
+
+Terminate once all of the `rules` are statified.
+
+This stopping rule short-circuits, so subsequent rules are only tested if the
+previous pass.
+
+## Example
+
+A stopping rule that runs 100 iterations, then checks for the bound stalling:
+```julia
+StoppingChain(IterationLimit(100), BoundStalling(5, 0.1))
+```
+"""
+struct StoppingChain <: AbstractStoppingRule
+    rules::Vector{AbstractStoppingRule}
+    function StoppingChain(rules::AbstractStoppingRule...)
+        return new(collect(rules))
+    end
+end
+
+function stopping_rule_status(rule::StoppingChain)
+    return Symbol(join(stopping_rule_status.(rule.rules), " ∧ "))
+end
+
+function convergence_test(
+    graph::PolicyGraph,
+    log::Vector{Log},
+    chain::StoppingChain,
+)
+    for rule in chain.rules
+        if !convergence_test(graph, log, rule)
             return false
         end
     end

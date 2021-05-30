@@ -39,4 +39,5 @@ SDDP.IterationLimit
 SDDP.TimeLimit
 SDDP.Statistical
 SDDP.BoundStalling
+SDDP.StoppingChain
 ```
