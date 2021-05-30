@@ -39,7 +39,7 @@ struct StateInfo
     in::JuMP.VariableInfo
     out::JuMP.VariableInfo
     initial_value::Float64
-    kwargs
+    kwargs::Any
 end
 
 function JuMP.build_variable(
@@ -75,10 +75,22 @@ function JuMP.build_variable(
     )
 end
 
-function JuMP.add_variable(subproblem::JuMP.Model, state_info::StateInfo, name::String)
+function JuMP.add_variable(
+    subproblem::JuMP.Model,
+    state_info::StateInfo,
+    name::String,
+)
     state = State(
-        JuMP.add_variable(subproblem, JuMP.ScalarVariable(state_info.in), name * "_in"),
-        JuMP.add_variable(subproblem, JuMP.ScalarVariable(state_info.out), name * "_out"),
+        JuMP.add_variable(
+            subproblem,
+            JuMP.ScalarVariable(state_info.in),
+            name * "_in",
+        ),
+        JuMP.add_variable(
+            subproblem,
+            JuMP.ScalarVariable(state_info.out),
+            name * "_out",
+        ),
     )
     integrality_handler = get_integrality_handler(subproblem)
     setup_state(subproblem, state, state_info, name, integrality_handler)

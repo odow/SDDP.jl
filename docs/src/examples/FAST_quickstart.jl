@@ -22,7 +22,7 @@ function fast_quickstart()
             @variable(sp, s >= 0)
             @constraint(sp, s <= x.in)
             SDDP.parameterize(sp, [2, 3]) do ω
-                JuMP.set_upper_bound(s, ω)
+                return JuMP.set_upper_bound(s, ω)
             end
             @stageobjective(sp, -2s)
         end

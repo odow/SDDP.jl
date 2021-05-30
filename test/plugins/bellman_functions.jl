@@ -30,7 +30,8 @@ using Test
             @constraints(
                 subproblem,
                 begin
-                    reservoir.out == reservoir.in - hydro_generation - spill + inflow
+                    reservoir.out ==
+                    reservoir.in - hydro_generation - spill + inflow
                     hydro_generation + thermal_generation == demand
                 end
             )
@@ -44,7 +45,7 @@ using Test
                 ],
             ) do ω
                 JuMP.fix(inflow, ω.inflow)
-                JuMP.fix(demand, ω.demand)
+                return JuMP.fix(demand, ω.demand)
             end
         end
     end
@@ -90,12 +91,20 @@ using Test
         )
         model = create_model(graph)
         @test SDDP.calculate_bound(model) ≈ 9.17 atol = 0.1
-        SDDP.train(model; iteration_limit = 50, print_level = 0, cut_type = SDDP.MULTI_CUT)
+        SDDP.train(
+            model;
+            iteration_limit = 50,
+            print_level = 0,
+            cut_type = SDDP.MULTI_CUT,
+        )
         @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
         SDDP.write_cuts_to_file(model, "model.cuts.json")
         model_2 = create_model(graph)
         @test SDDP.calculate_bound(model_2) ≈ 9.17 atol = 0.1
-        @test_throws Exception SDDP.read_cuts_from_file(model_2, "model.cuts.json")
+        @test_throws Exception SDDP.read_cuts_from_file(
+            model_2,
+            "model.cuts.json",
+        )
         SDDP.read_cuts_from_file(
             model_2,
             "model.cuts.json",

@@ -16,7 +16,7 @@ using Test
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_lower_bound(x.out, ω)
+            return JuMP.set_lower_bound(x.out, ω)
         end
     end
     SDDP.train(
@@ -37,7 +37,8 @@ using Test
         model;
         iteration_limit = 1,
         print_level = 0,
-        risk_measure = (idx) -> idx == 1 ? SDDP.Expectation() : SDDP.WorstCase(),
+        risk_measure = (idx) ->
+            idx == 1 ? SDDP.Expectation() : SDDP.WorstCase(),
     )
     @test SDDP.termination_status(model) == :iteration_limit
 end
@@ -51,7 +52,7 @@ end
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_lower_bound(x.out, ω)
+            return JuMP.set_lower_bound(x.out, ω)
         end
     end
     SDDP.train(model; iteration_limit = 4, print_level = 0)
@@ -96,7 +97,7 @@ end
         optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
-        @constraint(sp, [i=1:2], x[i].out == x[i].in)
+        @constraint(sp, [i = 1:2], x[i].out == x[i].in)
         @stageobjective(sp, x[1].out + x[2].out)
     end
     simulations = SDDP.simulate(
@@ -138,14 +139,16 @@ end
         @constraint(node, x.out <= -1)
         @stageobjective(node, x.out)
     end
-    ex = ErrorException("""
-    Unable to retrieve solution from 1.
-      Termination status: INFEASIBLE
-      Primal status:      NO_SOLUTION
-      Dual status:        INFEASIBILITY_CERTIFICATE.
-    A MathOptFormat file was written to `subproblem_1.mof.json`.
-    See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1
-    for more information.""")
+    ex = ErrorException(
+        """
+Unable to retrieve solution from 1.
+  Termination status: INFEASIBLE
+  Primal status:      NO_SOLUTION
+  Dual status:        INFEASIBILITY_CERTIFICATE.
+A MathOptFormat file was written to `subproblem_1.mof.json`.
+See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1
+for more information.""",
+    )
 
     @test_throws ex SDDP.train(model; iteration_limit = 1, print_level = 0)
     @test isfile("subproblem_1.mof.json")
@@ -163,14 +166,16 @@ end
         @constraint(node, x.out <= -1)
         @stageobjective(node, x.out)
     end
-    ex = ErrorException("""
-    Unable to retrieve solution from 1.
-      Termination status: INFEASIBLE
-      Primal status:      NO_SOLUTION
-      Dual status:        INFEASIBILITY_CERTIFICATE.
-    A MathOptFormat file was written to `subproblem_1.mof.json`.
-    See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1
-    for more information.""")
+    ex = ErrorException(
+        """
+Unable to retrieve solution from 1.
+  Termination status: INFEASIBLE
+  Primal status:      NO_SOLUTION
+  Dual status:        INFEASIBILITY_CERTIFICATE.
+A MathOptFormat file was written to `subproblem_1.mof.json`.
+See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1
+for more information.""",
+    )
 
     @test_throws ex SDDP.train(model; iteration_limit = 1, print_level = 0)
     @test isfile("subproblem_1.mof.json")
@@ -188,7 +193,12 @@ end
         @constraint(sp, x.out >= stage)
         @stageobjective(sp, (stage + markov_state) * x.out)
     end
-    SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = false, print_level = 0)
+    SDDP.train(
+        model,
+        iteration_limit = 1,
+        refine_at_similar_nodes = false,
+        print_level = 0,
+    )
     @test SDDP.calculate_bound(model) ≈ 5.7 || SDDP.calculate_bound(model) ≈ 6.3
     mi1 = length(model[(1, 1)].bellman_function.global_theta.cut_oracle.cuts)
     mi2 = length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts)
@@ -204,10 +214,17 @@ end
         @constraint(sp, x.out >= stage)
         @stageobjective(sp, (stage + markov_state) * x.out)
     end
-    SDDP.train(model, iteration_limit = 1, refine_at_similar_nodes = true, print_level = 0)
+    SDDP.train(
+        model,
+        iteration_limit = 1,
+        refine_at_similar_nodes = true,
+        print_level = 0,
+    )
     @test SDDP.calculate_bound(model) ≈ 9.5
-    @test length(model[(1, 1)].bellman_function.global_theta.cut_oracle.cuts) == 1
-    @test length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts) == 1
+    @test length(model[(1, 1)].bellman_function.global_theta.cut_oracle.cuts) ==
+          1
+    @test length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts) ==
+          1
 end
 
 @testset "optimize_hook" begin
@@ -222,7 +239,9 @@ end
     pre_optimize_called = 0
     post_optimize_called = 0
     node = model[1]
-    SDDP.pre_optimize_hook(node) do model, node, state, noise, scenario_path, require_duals
+    SDDP.pre_optimize_hook(
+        node,
+    ) do model, node, state, noise, scenario_path, require_duals
         pre_optimize_called = 1
         return pre_optimize_called
     end
@@ -251,7 +270,7 @@ end
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, [stage], [1.0]) do ω
-            JuMP.set_lower_bound(x.out, ω)
+            return JuMP.set_lower_bound(x.out, ω)
         end
     end
     @test_throws ErrorException SDDP.write_log_to_csv(model, "sddp.csv")
@@ -263,6 +282,7 @@ end
     1, 3.0, 3.0, 2.993860960006714
     2, 3.0, 3.0, 2.994189739227295
     """
-    @test replace(log, r"[0-9\.]+\n" => "") == replace(saved_log, r"[0-9\.]+\n" => "")
+    @test replace(log, r"[0-9\.]+\n" => "") ==
+          replace(saved_log, r"[0-9\.]+\n" => "")
     rm("sddp.csv")
 end

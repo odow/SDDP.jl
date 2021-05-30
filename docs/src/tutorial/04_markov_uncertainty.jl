@@ -37,11 +37,7 @@
 # stage's transition matrix. For our example, the vector of Markov transition
 # matrices is given by:
 
-T = Array{Float64, 2}[
-    [ 1.0 ]',
-    [ 0.75 0.25 ],
-    [ 0.75 0.25 ; 0.25 0.75 ]
-]
+T = Array{Float64,2}[[1.0]', [0.75 0.25], [0.75 0.25; 0.25 0.75]]
 
 # !!! note
 #     Make sure to add the `'` after the first transition matrix so Julia can
@@ -54,18 +50,18 @@ using SDDP, GLPK
 Ω = [
     (inflow = 0.0, fuel_multiplier = 1.5),
     (inflow = 50.0, fuel_multiplier = 1.0),
-    (inflow = 100.0, fuel_multiplier = 0.75)
+    (inflow = 100.0, fuel_multiplier = 0.75),
 ]
 
 model = SDDP.MarkovianPolicyGraph(
-    transition_matrices = Array{Float64, 2}[
-        [ 1.0 ]',
-        [ 0.75 0.25 ],
-        [ 0.75 0.25 ; 0.25 0.75 ]
+    transition_matrices = Array{Float64,2}[
+        [1.0]',
+        [0.75 0.25],
+        [0.75 0.25; 0.25 0.75],
     ],
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer
+    optimizer = GLPK.Optimizer,
 ) do subproblem, node
     ## Unpack the stage and Markov index.
     t, markov_state = node
@@ -74,26 +70,30 @@ model = SDDP.MarkovianPolicyGraph(
     ## Define the control variables.
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
         inflow
     end)
     ## Define the constraints
-    @constraints(subproblem, begin
-        volume.out == volume.in + inflow - hydro_generation - hydro_spill
-        thermal_generation + hydro_generation == 150.0
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in + inflow - hydro_generation - hydro_spill
+            thermal_generation + hydro_generation == 150.0
+        end
+    )
     ## Note how we can use `markov_state` to dispatch an `if` statement.
     probability = if markov_state == 1  # wet climate state
-        [1/6, 1/3, 1/2]
+        [1 / 6, 1 / 3, 1 / 2]
     else  # dry climate state
-        [1/2, 1/3, 1/6]
+        [1 / 2, 1 / 3, 1 / 6]
     end
 
     fuel_cost = [50.0, 100.0, 150.0]
     SDDP.parameterize(subproblem, Ω, probability) do ω
         JuMP.fix(inflow, ω.inflow)
-        @stageobjective(subproblem,
+        @stageobjective(
+            subproblem,
             ω.fuel_multiplier * fuel_cost[t] * thermal_generation
         )
     end
@@ -123,8 +123,8 @@ simulations = SDDP.simulate(
     sampling_scheme = SDDP.Historical([
         ((1, 1), Ω[1]),
         ((2, 2), Ω[3]),
-        ((3, 1), Ω[2])
-    ])
+        ((3, 1), Ω[2]),
+    ]),
 )
 
 [stage[:node_index] for stage in simulations[1]]

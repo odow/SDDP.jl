@@ -35,14 +35,17 @@ end
 end
 
 @testset "slave_update" begin
-    model =
-        SDDP.LinearPolicyGraph(stages = 2, sense = :Min, lower_bound = 0.0) do node, stage
-            @variable(node, x, SDDP.State, initial_value = 0.0)
-            @stageobjective(node, x.out)
-            SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-                JuMP.set_upper_bound(x.out, ω)
-            end
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        sense = :Min,
+        lower_bound = 0.0,
+    ) do node, stage
+        @variable(node, x, SDDP.State, initial_value = 0.0)
+        @stageobjective(node, x.out)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            return JuMP.set_upper_bound(x.out, ω)
         end
+    end
 
     result = SDDP.IterationResult(
         1,
@@ -68,7 +71,8 @@ end
         MOI.GreaterThan{Float64},
     )
     @test length(cons) == 1
-    @test replace(sprint(print, cons[1]), "≥" => ">=") == "-2 x_out + noname >= -5.0"
+    @test replace(sprint(print, cons[1]), "≥" => ">=") ==
+          "-2 x_out + noname >= -5.0"
 
     result = SDDP.IterationResult(
         1,
@@ -77,13 +81,16 @@ end
         false,
         :not_converged,
         Dict(
-            1 => Any[(
-                theta = 1.0,
-                pi = Dict(:x => 2.0),
-                x = Dict(:x => 3.0),
-                obj_y = nothing,
-                belief_y = nothing,
-            ), nothing],
+            1 => Any[
+                (
+                    theta = 1.0,
+                    pi = Dict(:x => 2.0),
+                    x = Dict(:x => 3.0),
+                    obj_y = nothing,
+                    belief_y = nothing,
+                ),
+                nothing,
+            ],
             2 => Any[],
         ),
     )
@@ -100,7 +107,7 @@ end
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_lower_bound(x.out, ω)
+            return JuMP.set_lower_bound(x.out, ω)
         end
     end
     SDDP.train(
@@ -142,7 +149,9 @@ end
     simulations = SDDP.simulate(
         model,
         20;
-        custom_recorders = Dict{Symbol,Function}(:myid => (args...) -> Distributed.myid()),
+        custom_recorders = Dict{Symbol,Function}(
+            :myid => (args...) -> Distributed.myid(),
+        ),
         parallel_scheme = SDDP.Asynchronous(use_master = false),
     )
     @test all([s[1][:myid] != 1 for s in simulations])

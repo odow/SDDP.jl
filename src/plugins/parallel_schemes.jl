@@ -5,7 +5,8 @@
 
 function log_iteration(options)
     options.dashboard_callback(options.log[end], false)
-    if options.print_level > 0 && mod(length(options.log), options.log_frequency) == 0
+    if options.print_level > 0 &&
+       mod(length(options.log), options.log_frequency) == 0
         print_helper(print_iteration, options.log_file_handle, options.log[end])
     end
 end
@@ -19,7 +20,11 @@ struct Serial <: AbstractParallelScheme end
 Base.show(io::IO, ::Serial) = print(io, "serial mode")
 interrupt(::Serial) = nothing
 
-function master_loop(::Serial, model::PolicyGraph{T}, options::Options) where {T}
+function master_loop(
+    ::Serial,
+    model::PolicyGraph{T},
+    options::Options,
+) where {T}
     _initialize_solver(model; throw_error = false)
     while true
         result = iteration(model, options)
@@ -38,7 +43,10 @@ function _simulate(
     kwargs...,
 )
     _initialize_solver(model; throw_error = false)
-    return map(i -> _simulate(model, variables; kwargs...), 1:number_replications)
+    return map(
+        i -> _simulate(model, variables; kwargs...),
+        1:number_replications,
+    )
 end
 
 struct Asynchronous <: AbstractParallelScheme
@@ -73,14 +81,14 @@ function Asynchronous(
     use_master::Bool = true,
 )
     return Asynchronous(slave_ids, use_master) do model
-        _initialize_solver(model; throw_error = true)
+        return _initialize_solver(model; throw_error = true)
     end
 end
 
 interrupt(a::Asynchronous) = Distributed.interrupt(a.slave_ids)
 
 function Base.show(io::IO, a::Asynchronous)
-    print(io, "Asynchronous mode with $(length(a.slave_ids)) workers.")
+    return print(io, "Asynchronous mode with $(length(a.slave_ids)) workers.")
 end
 
 """
@@ -154,15 +162,20 @@ trap_error(::InvalidStateException) = nothing
 trap_error(ex::CapturedException) = trap_error(ex.ex)
 trap_error(ex::Distributed.RemoteException) = trap_error(ex.captured)
 
-function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Options) where {T}
+function master_loop(
+    async::Asynchronous,
+    model::PolicyGraph{T},
+    options::Options,
+) where {T}
     # Initialize the remote channels. There are two types:
     # 1) updates: master -> slaves[i]: a unique channel for each slave, which
     #       is used to distribute results found by other slaves.
     # 2) results: slaves -> master: a channel which slaves collectively push to
     #       to feed the master new results.
     updates = Dict(
-        pid => Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
-        for pid in async.slave_ids
+        pid => Distributed.RemoteChannel(
+            () -> Channel{IterationResult{T}}(Inf),
+        ) for pid in async.slave_ids
     )
     results = Distributed.RemoteChannel(() -> Channel{IterationResult{T}}(Inf))
     futures = Distributed.Future[]
@@ -234,7 +247,8 @@ function master_loop(async::Asynchronous, model::PolicyGraph{T}, options::Option
             ),
         )
         log_iteration(options)
-        has_converged, status = convergence_test(model, options.log, options.stopping_rules)
+        has_converged, status =
+            convergence_test(model, options.log, options.stopping_rules)
         if has_converged
             close(results)
             wait.(futures)
@@ -252,13 +266,18 @@ function _simulate(
 )
     _uninitialize_solver(model; throw_error = true)
     wp = Distributed.CachingPool(async.slave_ids)
-    let model = model, init = false, async = async, variables = variables, kwargs = kwargs
+    let model = model,
+        init = false,
+        async = async,
+        variables = variables,
+        kwargs = kwargs
+
         return Distributed.pmap(wp, 1:number_replications) do _
             if !init
                 async.init_callback(model)
                 init = true
             end
-            _simulate(model, variables; kwargs...)
+            return _simulate(model, variables; kwargs...)
         end
     end
 end

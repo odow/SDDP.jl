@@ -59,7 +59,8 @@ function vehicle_location_model(integrality_handler)
         @expression(
             sp,
             base_balance[b in bases, v in vehicles],
-            location[b, v].in - dispatch[b, v] - sum(shift[b, :, v]) + sum(shift[:, b, v])
+            location[b, v].in - dispatch[b, v] - sum(shift[b, :, v]) +
+            sum(shift[:, b, v])
         )
         @constraints(
             sp,
@@ -67,11 +68,14 @@ function vehicle_location_model(integrality_handler)
                 ## Only one vehicle dispatched to call.
                 sum(dispatch) == 1
                 ## Can only dispatch vehicle from base if vehicle is at that base.
-                [b in bases, v in vehicles], dispatch[b, v] <= location[b, v].in
+                [b in bases, v in vehicles],
+                dispatch[b, v] <= location[b, v].in
                 ## Can only shift vehicle if vehicle is at that src base.
-                [b in bases, v in vehicles], sum(shift[b, :, v]) <= location[b, v].in
+                [b in bases, v in vehicles],
+                sum(shift[b, :, v]) <= location[b, v].in
                 ## Can only shift vehicle if vehicle is not being dispatched.
-                [b in bases, v in vehicles], sum(shift[b, :, v]) + dispatch[b, v] <= 1
+                [b in bases, v in vehicles],
+                sum(shift[b, :, v]) + dispatch[b, v] <= 1
                 ## Can't shift to same base.
                 [b in bases, v in vehicles], shift[b, b, v] == 0
                 ## Update states for non-home/non-hospital bases.
@@ -90,8 +94,10 @@ function vehicle_location_model(integrality_handler)
                     ## Distance to travel from base to emergency and then to hospital.
                     dispatch[b, v] * dispatch_cost(b, request) +
                     ## Distance travelled by vehicles relocating bases.
-                    sum(shift_cost(b, dest) * shift[b, dest, v] for dest in bases)
-                    for b in bases, v in vehicles
+                    sum(
+                        shift_cost(b, dest) * shift[b, dest, v] for
+                        dest in bases
+                    ) for b in bases, v in vehicles
                 )
             )
         end

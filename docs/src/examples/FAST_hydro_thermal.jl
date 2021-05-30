@@ -27,7 +27,7 @@ function fast_hydro_thermal()
         end)
         RAINFALL = (t == 1 ? [6] : [2, 10])
         SDDP.parameterize(sp, RAINFALL) do ω
-            JuMP.fix(ξ, ω)
+            return JuMP.fix(ξ, ω)
         end
         @stageobjective(sp, 5 * p)
     end

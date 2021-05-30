@@ -16,7 +16,11 @@ function stochastic_all_blacks()
     R = [3 3 6; 3 3 6]
     ## Number of noises
     s = 3
-    offers = [[[1, 1], [0, 0], [1, 1]], [[1, 0], [0, 0], [0, 0]], [[0, 1], [1, 0], [1, 1]]]
+    offers = [
+        [[1, 1], [0, 0], [1, 1]],
+        [[1, 0], [0, 0], [0, 0]],
+        [[0, 1], [1, 0], [1, 1]],
+    ]
 
     model = SDDP.LinearPolicyGraph(
         stages = T,
@@ -32,10 +36,14 @@ function stochastic_all_blacks()
         @variable(sp, accept_offer[1:N], Bin)
         @variable(sp, offers_made[1:N])
         ## Balance on seats
-        @constraint(sp, balance[i in 1:N], x[i].in - x[i].out == accept_offer[i])
-        @stageobjective(sp, sum(R[i, stage] * accept_offer[i] for i = 1:N))
+        @constraint(
+            sp,
+            balance[i in 1:N],
+            x[i].in - x[i].out == accept_offer[i]
+        )
+        @stageobjective(sp, sum(R[i, stage] * accept_offer[i] for i in 1:N))
         SDDP.parameterize(sp, offers[stage]) do o
-            JuMP.fix.(offers_made, o)
+            return JuMP.fix.(offers_made, o)
         end
         @constraint(sp, accept_offer .<= offers_made)
     end

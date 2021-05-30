@@ -84,19 +84,22 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer
+    optimizer = GLPK.Optimizer,
 ) do subproblem, t
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
         inflow
     end)
-    @constraints(subproblem, begin
-        volume.out == volume.in + inflow - hydro_generation - hydro_spill
-        demand_constraint, thermal_generation + hydro_generation == 150.0
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in + inflow - hydro_generation - hydro_spill
+            demand_constraint, thermal_generation + hydro_generation == 150.0
+        end
+    )
 
     ## Add an objective state. ω will be the same value that is called in
     ## `SDDP.parameterize`.
@@ -106,7 +109,7 @@ model = SDDP.LinearPolicyGraph(
         initial_value = 50.0,
         lipschitz = 10_000.0,
         lower_bound = 50.0,
-        upper_bound = 150.0
+        upper_bound = 150.0,
     ) do fuel_cost, ω
         return ω.fuel * fuel_cost
     end
@@ -114,21 +117,21 @@ model = SDDP.LinearPolicyGraph(
     ## Create the cartesian product of a multi-dimensional random variable.
 
     Ω = [
-        (fuel = f, inflow = w)
-        for f in [0.75, 0.9, 1.1, 1.25] for w in [0.0, 50.0, 100.0]
+        (fuel = f, inflow = w) for f in [0.75, 0.9, 1.1, 1.25] for
+        w in [0.0, 50.0, 100.0]
     ]
 
     SDDP.parameterize(subproblem, Ω) do ω
         ## Query the current fuel cost.
         fuel_cost = SDDP.objective_state(subproblem)
         @stageobjective(subproblem, fuel_cost * thermal_generation)
-        JuMP.fix(inflow, ω.inflow)
+        return JuMP.fix(inflow, ω.inflow)
     end
 end
 
 # After creating our model, we can train and simulate as usual.
 
-SDDP.train(model, iteration_limit = 10, run_numerical_stability_report=false)
+SDDP.train(model, iteration_limit = 10, run_numerical_stability_report = false)
 
 simulations = SDDP.simulate(model, 1)
 
@@ -160,44 +163,47 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer
+    optimizer = GLPK.Optimizer,
 ) do subproblem, t
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
         inflow
     end)
-    @constraints(subproblem, begin
-        volume.out == volume.in + inflow - hydro_generation - hydro_spill
-        demand_constraint, thermal_generation + hydro_generation == 150.0
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in + inflow - hydro_generation - hydro_spill
+            demand_constraint, thermal_generation + hydro_generation == 150.0
+        end
+    )
 
     SDDP.add_objective_state(
         subproblem,
         initial_value = (50.0, 50.0),
         lipschitz = (10_000.0, 10_000.0),
         lower_bound = (50.0, 50.0),
-        upper_bound = (150.0, 150.0)
+        upper_bound = (150.0, 150.0),
     ) do fuel_cost, ω
         fuel_cost′ = fuel_cost[1] + 0.5 * (fuel_cost[1] - fuel_cost[2]) + ω.fuel
         return (fuel_cost′, fuel_cost[1])
     end
 
     Ω = [
-        (fuel = f, inflow = w)
-        for f in [-10.0, -5.0, 5.0, 10.0] for w in [0.0, 50.0, 100.0]
+        (fuel = f, inflow = w) for f in [-10.0, -5.0, 5.0, 10.0] for
+        w in [0.0, 50.0, 100.0]
     ]
 
     SDDP.parameterize(subproblem, Ω) do ω
         (fuel_cost, fuel_cost_old) = SDDP.objective_state(subproblem)
         @stageobjective(subproblem, fuel_cost * thermal_generation)
-        JuMP.fix(inflow, ω.inflow)
+        return JuMP.fix(inflow, ω.inflow)
     end
 end
 
-SDDP.train(model, iteration_limit = 10, run_numerical_stability_report=false)
+SDDP.train(model, iteration_limit = 10, run_numerical_stability_report = false)
 
 simulations = SDDP.simulate(model, 1)
 

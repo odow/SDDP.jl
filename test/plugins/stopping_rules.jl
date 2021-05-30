@@ -19,7 +19,11 @@ using Test
     rule = SDDP.TimeLimit(0.5)
     @test SDDP.stopping_rule_status(rule) == :time_limit
     @test SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1)], rule)
-    @test !SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)], rule)
+    @test !SDDP.convergence_test(
+        graph,
+        [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)],
+        rule,
+    )
 end
 
 @testset "IterationLimit" begin
@@ -37,7 +41,11 @@ end
         [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1), SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1)],
         rule,
     )
-    @test !SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)], rule)
+    @test !SDDP.convergence_test(
+        graph,
+        [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)],
+        rule,
+    )
 end
 
 @testset "Statistical" begin
@@ -49,7 +57,7 @@ end
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_lower_bound(x.out, ω)
+            return JuMP.set_lower_bound(x.out, ω)
         end
         @stageobjective(node, x.out)
     end
@@ -58,8 +66,16 @@ end
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)
     @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1)], rule)
-    @test !SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1)], rule)
-    @test SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)], rule)
+    @test !SDDP.convergence_test(
+        model,
+        [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1)],
+        rule,
+    )
+    @test SDDP.convergence_test(
+        model,
+        [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)],
+        rule,
+    )
 
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
@@ -69,7 +85,7 @@ end
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_upper_bound(x.out, ω)
+            return JuMP.set_upper_bound(x.out, ω)
         end
         @stageobjective(node, x.out)
     end
@@ -79,7 +95,11 @@ end
     Random.seed!(123)
     @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1)], rule)
     @test SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1)], rule)
-    @test !SDDP.convergence_test(model, [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)], rule)
+    @test !SDDP.convergence_test(
+        model,
+        [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)],
+        rule,
+    )
 end
 
 @testset "BoundStalling" begin
@@ -137,12 +157,9 @@ end
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0)
     end
-    rule = SDDP.StoppingChain(
-        SDDP.IterationLimit(2),
-        SDDP.TimeLimit(60.0),
-    )
+    rule = SDDP.StoppingChain(SDDP.IterationLimit(2), SDDP.TimeLimit(60.0))
     @test SDDP.stopping_rule_status(rule) ==
-        Symbol("iteration_limit ∧ time_limit")
+          Symbol("iteration_limit ∧ time_limit")
     # Not enough iterations to terminate.
     @test !SDDP.convergence_test(
         graph,
@@ -152,10 +169,7 @@ end
     # How there is. But not enough time.
     @test !SDDP.convergence_test(
         graph,
-        [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 0.0, 0.0, 59.0, 1, 1),
-        ],
+        [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1), SDDP.Log(2, 0.0, 0.0, 59.0, 1, 1)],
         rule,
     )
     # Both satisfied.

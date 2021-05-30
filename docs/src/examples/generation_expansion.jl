@@ -30,8 +30,13 @@ function generation_expansion(integrality_handler)
         optimizer = GLPK.Optimizer,
         integrality_handler = integrality_handler,
     ) do sp, stage
-
-        @variable(sp, 0 <= invested[1:num_units] <= 1, SDDP.State, Int, initial_value = 0)
+        @variable(
+            sp,
+            0 <= invested[1:num_units] <= 1,
+            SDDP.State,
+            Int,
+            initial_value = 0
+        )
         @variables(sp, begin
             generation >= 0
             unmet >= 0
@@ -44,7 +49,8 @@ function generation_expansion(integrality_handler)
                 ## Can't un-invest
                 investment[i in 1:num_units], invested[i].out >= invested[i].in
                 ## Generation capacity
-                sum(capacities[i] * invested[i].out for i = 1:num_units) >= generation
+                sum(capacities[i] * invested[i].out for i in 1:num_units) >=
+                generation
                 ## Meet demand or pay a penalty
                 unmet >= demand - sum(generation)
                 ## For fewer iterations order the units to break symmetry, units are identical (tougher numerically)
@@ -57,11 +63,13 @@ function generation_expansion(integrality_handler)
         @expression(
             sp,
             investment_cost,
-            build_cost * sum(invested[i].out - invested[i].in for i = 1:num_units)
+            build_cost *
+            sum(invested[i].out - invested[i].in for i in 1:num_units)
         )
         @stageobjective(
             sp,
-            (investment_cost + generation * use_cost) * rho^(stage - 1) + penalty * unmet
+            (investment_cost + generation * use_cost) * rho^(stage - 1) +
+            penalty * unmet
         )
     end
     SDDP.train(model, iteration_limit = 50, log_frequency = 10)

@@ -16,7 +16,6 @@ sorted_files(dir, ext) = sort(filter(f -> endswith(f, ext), readdir(dir)))
 # into the examples.
 include(joinpath(EXAMPLES_DIR, "the_farmers_problem.jl"))
 
-
 if FIX_DOCTESTS
     # doctest=:fix only works with `\n` line endings. Replace any `\r\n` ones.
     for file in sorted_files(TUTORIAL_DIR, ".md")
@@ -30,13 +29,8 @@ for dir in [EXAMPLES_DIR, TUTORIAL_DIR]
     for file in sorted_files(dir, ".jl")
         Random.seed!(12345)
         jl_filename = joinpath(dir, file)
-        Literate.markdown(
-            jl_filename,
-            dir;
-            documenter = true,
-            execute = true,
-        )
-        md_filename = jl_filename[1:(end - 3)] * ".md"
+        Literate.markdown(jl_filename, dir; documenter = true, execute = true)
+        md_filename = jl_filename[1:(end-3)] * ".md"
         md = read(md_filename, String)
         write(md_filename, replace(md, "nothing #hide" => ""))
     end
@@ -44,7 +38,7 @@ end
 
 Documenter.makedocs(
     sitename = "SDDP.jl",
-    authors  = "Oscar Dowson",
+    authors = "Oscar Dowson",
     format = Documenter.HTML(
         # See  https://github.com/JuliaDocs/Documenter.jl/issues/868
         prettyurls = get(ENV, "CI", nothing) == "true",
@@ -58,9 +52,8 @@ Documenter.makedocs(
         "Tutorials" => Any[
             "tutorial/$(file)" for file in sorted_files(TUTORIAL_DIR, ".md")
         ],
-        "How-to guides" => Any[
-            "guides/$(file)" for file in sorted_files(GUIDES_DIR, ".md")
-        ],
+        "How-to guides" =>
+            Any["guides/$(file)" for file in sorted_files(GUIDES_DIR, ".md")],
         "Examples" => Any[
             "examples/$(file)" for file in sorted_files(EXAMPLES_DIR, ".md")
         ],
@@ -69,7 +62,4 @@ Documenter.makedocs(
     doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"],
 )
 
-Documenter.deploydocs(
-    repo = "github.com/odow/SDDP.jl.git",
-    push_preview = true,
-)
+Documenter.deploydocs(repo = "github.com/odow/SDDP.jl.git", push_preview = true)

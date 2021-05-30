@@ -11,7 +11,9 @@ The default forward pass.
 struct DefaultForwardPass <: AbstractForwardPass end
 
 function forward_pass(
-    model::PolicyGraph{T}, options::Options, ::DefaultForwardPass
+    model::PolicyGraph{T},
+    options::Options,
+    ::DefaultForwardPass,
 ) where {T}
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
@@ -29,14 +31,18 @@ function forward_pass(
     # A cumulator for the stage-objectives.
     cumulative_value = 0.0
     # Objective state interpolation.
-    objective_state_vector, N = initialize_objective_state(model[scenario_path[1][1]])
+    objective_state_vector, N =
+        initialize_objective_state(model[scenario_path[1][1]])
     objective_states = NTuple{N,Float64}[]
     # Iterate down the scenario.
     for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
         # Objective state interpolation.
-        objective_state_vector =
-            update_objective_state(node.objective_state, objective_state_vector, noise)
+        objective_state_vector = update_objective_state(
+            node.objective_state,
+            objective_state_vector,
+            noise,
+        )
         if objective_state_vector !== nothing
             push!(objective_states, objective_state_vector)
         end
@@ -44,8 +50,12 @@ function forward_pass(
         if node.belief_state !== nothing
             belief = node.belief_state::BeliefState{T}
             partition_index = belief.partition_index
-            current_belief =
-                belief.updater(belief.belief, current_belief, partition_index, noise)
+            current_belief = belief.updater(
+                belief.belief,
+                current_belief,
+                partition_index,
+                noise,
+            )
             push!(belief_states, (partition_index, copy(current_belief)))
         end
         # ===== Begin: starting state for infinite horizon =====
@@ -65,7 +75,8 @@ function forward_pass(
             #   starting states keeps changing, but from a computational
             #   perspective, we don't want to keep a list of discretized points
             #   in the state-space δ distance apart...
-            incoming_state_value = splice!(starting_states, rand(1:length(starting_states)))
+            incoming_state_value =
+                splice!(starting_states, rand(1:length(starting_states)))
         end
         # ===== End: starting state for infinite horizon =====
         # Solve the subproblem, note that `require_duals = false`.
@@ -147,7 +158,9 @@ function RevisitingForwardPass(
 end
 
 function forward_pass(
-    model::PolicyGraph, options::Options, fp::RevisitingForwardPass
+    model::PolicyGraph,
+    options::Options,
+    fp::RevisitingForwardPass,
 )
     fp.counter += 1
     if fp.counter - fp.period > fp.last_index

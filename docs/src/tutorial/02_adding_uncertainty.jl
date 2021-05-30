@@ -49,29 +49,36 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer
+    optimizer = GLPK.Optimizer,
 ) do subproblem, t
     ## Define the state variable.
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     ## Define the control variables.
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
         inflow
     end)
     ## Define the constraints
-    @constraints(subproblem, begin
-        volume.out == volume.in + inflow - hydro_generation - hydro_spill
-        demand_constraint, thermal_generation + hydro_generation == 150.0
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in + inflow - hydro_generation - hydro_spill
+            demand_constraint, thermal_generation + hydro_generation == 150.0
+        end
+    )
     ## Define the objective for each stage `t`. Note that we can use `t` as an
     ## index for t = 1, 2, 3.
     fuel_cost = [50.0, 100.0, 150.0]
     @stageobjective(subproblem, fuel_cost[t] * thermal_generation)
     ## Parameterize the subproblem.
-    SDDP.parameterize(subproblem, [0.0, 50.0, 100.0], [1/3, 1/3, 1/3]) do ω
-        JuMP.fix(inflow, ω)
+    SDDP.parameterize(
+        subproblem,
+        [0.0, 50.0, 100.0],
+        [1 / 3, 1 / 3, 1 / 3],
+    ) do ω
+        return JuMP.fix(inflow, ω)
     end
 end
 
@@ -101,9 +108,8 @@ using Statistics
 
 simulations = SDDP.simulate(model, 500)
 
-objective_values = [
-    sum(stage[:stage_objective] for stage in sim) for sim in simulations
-]
+objective_values =
+    [sum(stage[:stage_objective] for stage in sim) for sim in simulations]
 
 μ = round(mean(objective_values), digits = 2)
 
@@ -123,9 +129,9 @@ println("Lower bound: ", round(SDDP.calculate_bound(model), digits = 2))
 simulations = SDDP.simulate(
     model,
     1,
-    custom_recorders = Dict{Symbol, Function}(
-        :price => (sp) -> JuMP.dual(sp[:demand_constraint])
-    )
+    custom_recorders = Dict{Symbol,Function}(
+        :price => (sp) -> JuMP.dual(sp[:demand_constraint]),
+    ),
 )
 
 prices = [stage[:price] for stage in simulations[1]]

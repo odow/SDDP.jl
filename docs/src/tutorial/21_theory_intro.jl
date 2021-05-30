@@ -565,15 +565,18 @@ function subproblem_builder(subproblem::JuMP.Model, t::Int)
     ## Define the control variables.
     JuMP.@variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
         inflow
     end)
     ## Define the constraints
-    JuMP.@constraints(subproblem, begin
-        volume_out == volume_in + inflow - hydro_generation - hydro_spill
-        demand_constraint, thermal_generation + hydro_generation == 150.0
-    end)
+    JuMP.@constraints(
+        subproblem,
+        begin
+            volume_out == volume_in + inflow - hydro_generation - hydro_spill
+            demand_constraint, thermal_generation + hydro_generation == 150.0
+        end
+    )
     ## Define the objective for each stage `t`. Note that we can use `t` as an
     ## index for t = 1, 2, 3.
     fuel_cost = [50.0, 100.0, 150.0]
@@ -583,7 +586,7 @@ function subproblem_builder(subproblem::JuMP.Model, t::Int)
     ## constraints, and not the objective function! (Not that it changes the
     ## algorithm, we just have to add more information to keep track of things.)
     uncertainty = Uncertainty([0.0, 50.0, 100.0], [1 / 3, 1 / 3, 1 / 3]) do ω
-        JuMP.fix(inflow, ω)
+        return JuMP.fix(inflow, ω)
     end
     return states, uncertainty
 end
@@ -598,7 +601,7 @@ function PolicyGraph(
     optimizer,
 )
     nodes = Node[]
-    for t = 1:length(graph)
+    for t in 1:length(graph)
         ## Create a model.
         model = JuMP.Model(optimizer)
         ## Use the provided function to build out each subproblem. The user's
@@ -623,11 +626,7 @@ end
 
 model = PolicyGraph(
     subproblem_builder;
-    graph = [
-        Dict(2 => 1.0),
-        Dict(3 => 1.0),
-        Dict{Int,Float64}(),
-    ],
+    graph = [Dict(2 => 1.0), Dict(3 => 1.0), Dict{Int,Float64}()],
     lower_bound = 0.0,
     optimizer = GLPK.Optimizer,
 )
@@ -646,7 +645,7 @@ function sample_uncertainty(uncertainty::Uncertainty)
             return ω
         end
     end
-    error("We should never get here because P should sum to 1.0.")
+    return error("We should never get here because P should sum to 1.0.")
 end
 
 # !!! note
@@ -654,7 +653,7 @@ end
 
 # For example:
 
-for i = 1:3
+for i in 1:3
     println("ω = ", sample_uncertainty(model.nodes[1].uncertainty))
 end
 
@@ -681,7 +680,7 @@ end
 
 # For example:
 
-for i = 1:3
+for i in 1:3
     ## We use `repr` to print the next node, because `sample_next_node` can
     ## return `nothing`.
     println("Next node from $(i) = ", repr(sample_next_node(model, i)))
@@ -714,9 +713,8 @@ end
 function forward_pass(model::PolicyGraph, io::IO = stdout)
     println(io, "| Forward Pass")
     ## First, get the value of the state at the root node (e.g., x_R).
-    incoming_state = Dict(
-        k => JuMP.fix_value(v.in) for (k, v) in model.nodes[1].states
-    )
+    incoming_state =
+        Dict(k => JuMP.fix_value(v.in) for (k, v) in model.nodes[1].states)
     ## `simulation_cost` is an accumlator that is going to sum the stage-costs
     ## incurred over the forward pass.
     simulation_cost = 0.0
@@ -748,7 +746,8 @@ function forward_pass(model::PolicyGraph, io::IO = stdout)
         println(io, "| | | x′ = ", outgoing_state)
         ## We also need to compute the stage cost to add to our
         ## `simulation_cost` accumulator:
-        stage_cost = JuMP.objective_value(node.subproblem) - JuMP.value(node.cost_to_go)
+        stage_cost =
+            JuMP.objective_value(node.subproblem) - JuMP.value(node.cost_to_go)
         simulation_cost += stage_cost
         println(io, "| | | C(x, u, ω) = ", stage_cost)
         ## As a penultimate step, set the outgoing state of stage t and the
@@ -808,7 +807,7 @@ function backward_pass(
 )
     println(io, "| Backward pass")
     ## For the backward pass, we walk back up the nodes.
-    for i = reverse(1:length(trajectory))
+    for i in reverse(1:length(trajectory))
         index, outgoing_states = trajectory[i]
         node = model.nodes[index]
         println(io, "| | Visiting node $(index)")
@@ -843,10 +842,12 @@ function backward_pass(
                 println(io, "| | | | dVdx′ = ", dVdx)
                 cut_expression += JuMP.@expression(
                     node.subproblem,
-                    P_ij * pφ * (
+                    P_ij *
+                    pφ *
+                    (
                         V + sum(
-                            dVdx[k] * (x.out - outgoing_states[k])
-                            for (k, x) in node.states
+                            dVdx[k] * (x.out - outgoing_states[k]) for
+                            (k, x) in node.states
                         )
                     ),
                 )
@@ -906,9 +907,9 @@ lower_bound(model)
 
 function upper_bound(model::PolicyGraph; replications::Int)
     ## Pipe the output to `devnull` so we don't print too much!
-    simulations = [forward_pass(model, devnull) for i = 1:replications]
+    simulations = [forward_pass(model, devnull) for i in 1:replications]
     z = [s[2] for s in simulations]
-    μ  = Statistics.mean(z)
+    μ = Statistics.mean(z)
     tσ = 1.96 * Statistics.std(z) / sqrt(replications)
     return μ, tσ
 end
@@ -952,7 +953,7 @@ function train(
     replications::Int,
     io::IO = stdout,
 )
-    for i = 1:iteration_limit
+    for i in 1:iteration_limit
         println(io, "Starting iteration $(i)")
         outgoing_states, _ = forward_pass(model, io)
         backward_pass(model, outgoing_states, io)
@@ -989,8 +990,8 @@ function evaluate_policy(
     end
     JuMP.optimize!(the_node.subproblem)
     return Dict(
-        k => JuMP.value.(v)
-        for (k, v) in JuMP.object_dictionary(the_node.subproblem)
+        k => JuMP.value.(v) for
+        (k, v) in JuMP.object_dictionary(the_node.subproblem)
     )
 end
 
@@ -1019,11 +1020,7 @@ evaluate_policy(
 
 model = PolicyGraph(
     subproblem_builder;
-    graph = [
-        Dict(2 => 1.0),
-        Dict(3 => 1.0),
-        Dict(2 => 0.5),
-    ],
+    graph = [Dict(2 => 1.0), Dict(3 => 1.0), Dict(2 => 0.5)],
     lower_bound = 0.0,
     optimizer = GLPK.Optimizer,
 )

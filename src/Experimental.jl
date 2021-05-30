@@ -12,9 +12,9 @@ A single scenario for testing.
 
 See also: [`TestScenarios`](@ref).
 """
-struct TestScenario{T, S}
+struct TestScenario{T,S}
     probability::Float64
-    scenario::Vector{Tuple{T, S}}
+    scenario::Vector{Tuple{T,S}}
 end
 
 """
@@ -26,21 +26,24 @@ Each scenario is a vector of `Tuple{T, S}` where the first element is the node
 to visit and the second element is the realization of the stagewise-independent
 noise term. Pass `nothing` if the node is deterministic.
 """
-mutable struct TestScenarios{T, S} <: AbstractSamplingScheme
-    scenarios::Vector{TestScenario{T, S}}
+mutable struct TestScenarios{T,S} <: AbstractSamplingScheme
+    scenarios::Vector{TestScenario{T,S}}
     last::Int
     SHA256::String
 
     function TestScenarios(
-        scenarios::Vector{TestScenario{T, S}}; SHA256::String = ""
-    ) where {T, S}
-        return new{T, S}(scenarios, 0, SHA256)
+        scenarios::Vector{TestScenario{T,S}};
+        SHA256::String = "",
+    ) where {T,S}
+        return new{T,S}(scenarios, 0, SHA256)
     end
 end
 
 function sample_scenario(
-    model::PolicyGraph{T}, sampling_scheme::TestScenarios{T, S}; kwargs...
-) where {T, S}
+    model::PolicyGraph{T},
+    sampling_scheme::TestScenarios{T,S};
+    kwargs...,
+) where {T,S}
     sampling_scheme.last += 1
     if sampling_scheme.last > length(sampling_scheme.scenarios)
         sampling_scheme.last = 1
@@ -67,7 +70,7 @@ function _throw_if_exisiting_cuts(model::PolicyGraph)
         if length(node.bellman_function.global_theta.cut_oracle.cuts) != 0
             error(
                 "StochOptFormat does not support writing after a call to " *
-                "`SDDP.train`."
+                "`SDDP.train`.",
             )
         end
     end
@@ -79,15 +82,16 @@ function _test_scenarios(model::PolicyGraph, test_scenarios::Int, scenario_map)
         TestScenarios([
             TestScenario(
                 1 / test_scenarios,
-                sample_scenario(model, InSampleMonteCarlo())[1]
-            )
-            for _ = 1:test_scenarios
+                sample_scenario(model, InSampleMonteCarlo())[1],
+            ) for _ in 1:test_scenarios
         ]),
         scenario_map,
     )
 end
 function _test_scenarios(
-    ::PolicyGraph, test_scenarios::TestScenarios, scenario_map
+    ::PolicyGraph,
+    test_scenarios::TestScenarios,
+    scenario_map,
 )
     return [
         Dict(
@@ -95,11 +99,10 @@ function _test_scenarios(
             "scenario" => [
                 Dict(
                     "node" => "$(node)",
-                    "support" => scenario_map[node][noise]
+                    "support" => scenario_map[node][noise],
                 ) for (node, noise) in scenario.scenario
-            ]
-        )
-        for scenario in test_scenarios.scenarios
+            ],
+        ) for scenario in test_scenarios.scenarios
     ]
 end
 
@@ -153,32 +156,33 @@ an incorrect formulation of the problem.
 function Base.write(
     io::IO,
     model::PolicyGraph{T};
-    test_scenarios::Union{Int, TestScenarios{T, S}} = 1_000,
-    kwargs...
-) where {T, S}
+    test_scenarios::Union{Int,TestScenarios{T,S}} = 1_000,
+    kwargs...,
+) where {T,S}
     _throw_if_belief_states(model)
     _throw_if_objective_states(model)
     _throw_if_exisiting_cuts(model)
-    edges = Dict{String, Any}[]
+    edges = Dict{String,Any}[]
     _add_edges(edges, "$(model.root_node)", model.root_children)
-    nodes = Dict{String, Any}()
-    scenario_map = Dict{T, Any}()
+    nodes = Dict{String,Any}()
+    scenario_map = Dict{T,Any}()
     for (node_name, node) in model.nodes
         _add_edges(edges, "$(node_name)", node.children)
         scenario_map[node_name] = _add_node_to_dict(nodes, node, "$(node_name)")
     end
-    sof = Dict{String, Any}(
+    sof = Dict{String,Any}(
         "version" => Dict("major" => 0, "minor" => 1),
-        "root" => Dict{String, Any}(
+        "root" => Dict{String,Any}(
             "name" => "$(model.root_node)",
-            "state_variables" => Dict{String, Any}(
-                "$(k)" => Dict{String, Any}("initial_value" => v)
-                for (k, v) in model.initial_root_state
-            )
+            "state_variables" => Dict{String,Any}(
+                "$(k)" => Dict{String,Any}("initial_value" => v) for
+                (k, v) in model.initial_root_state
+            ),
         ),
         "nodes" => nodes,
         "edges" => edges,
-        "test_scenarios" => _test_scenarios(model, test_scenarios, scenario_map)
+        "test_scenarios" =>
+            _test_scenarios(model, test_scenarios, scenario_map),
     )
     for (k, v) in kwargs
         sof["$(k)"] = v
@@ -187,7 +191,9 @@ function Base.write(
 end
 
 function _add_edges(
-    edges::Vector{Dict{String, Any}}, from::String, children::Vector{<:Noise}
+    edges::Vector{Dict{String,Any}},
+    from::String,
+    children::Vector{<:Noise},
 )
     for child in children
         push!(
@@ -196,27 +202,25 @@ function _add_edges(
                 "from" => from,
                 "to" => "$(child.term)",
                 "probability" => child.probability,
-            )
+            ),
         )
     end
 end
 
 function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
     random_variables = String[]
-    realizations = Dict{String, Any}[
-        Dict{String, Any}(
+    realizations = Dict{String,Any}[
+        Dict{String,Any}(
             "probability" => noise.probability,
-            "support" => Dict{String, Float64}()
+            "support" => Dict{String,Float64}(),
         ) for noise in node.noise_terms
     ]
-    undo_reformulation = _reformulate_uncertainty(
-        node, realizations, random_variables
-    )
+    undo_reformulation =
+        _reformulate_uncertainty(node, realizations, random_variables)
     dest[node_name] = Dict(
         "state_variables" => Dict(
-            "$(state_name)" => Dict(
-                "in" => name(state.in), "out" => name(state.out)
-            )
+            "$(state_name)" =>
+                Dict("in" => name(state.in), "out" => name(state.out))
             for (state_name, state) in node.states
         ),
         "random_variables" => random_variables,
@@ -227,8 +231,8 @@ function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
     # Return a dictionary which maps the in-sample realizations to the
     # transformed support for writing `test_scenarios` to file.
     return Dict(
-        noise.term => realizations[i]["support"]
-        for (i, noise) in enumerate(node.noise_terms)
+        noise.term => realizations[i]["support"] for
+        (i, noise) in enumerate(node.noise_terms)
     )
 end
 
@@ -249,10 +253,12 @@ coefficients with random decision variables.
 Return a function that undoes the reformulation when called with no arguments.
 """
 function _reformulate_uncertainty(
-    node::Node, realizations::Vector, random_variables::Vector{String}
+    node::Node,
+    realizations::Vector,
+    random_variables::Vector{String},
 )
     # Storage for things that are changing.
-    variable_bound_storage = Dict{VariableRef, Any}[]
+    variable_bound_storage = Dict{VariableRef,Any}[]
     changing_variable_lower_bound = Set{VariableRef}()
     changing_variable_upper_bound = Set{VariableRef}()
     changing_variable_fixed_bound = Set{VariableRef}()
@@ -261,7 +267,7 @@ function _reformulate_uncertainty(
     changing_objective_constant = false
     changing_objective_coefficient = Set{VariableRef}()
 
-    constraint_rhs_storage = Dict{ConstraintRef, Float64}[]
+    constraint_rhs_storage = Dict{ConstraintRef,Float64}[]
     changing_constraint_rhs = Set{ConstraintRef}()
 
     # Collect terms that are changing
@@ -298,7 +304,8 @@ function _reformulate_uncertainty(
 
     # Reformulate the objective function.
     _reformulate_objective(
-        node, realizations,
+        node,
+        realizations,
         random_variables,
         added_variables,
         objective_storage,
@@ -372,7 +379,7 @@ function _collect_changing_variable_bounds(
     changing_variable_upper_bound,
     changing_variable_fixed_bound,
 )
-    bound = Dict{VariableRef, Any}()
+    bound = Dict{VariableRef,Any}()
     for x in all_variables(node.subproblem)
         l, u, f = -Inf, Inf, 0.0
         if has_lower_bound(x)
@@ -425,12 +432,9 @@ function _collect_changing_constraint_rhs(
     constraint_rhs_storage,
     changing_constraint_rhs,
 )
-    rhs = Dict{ConstraintRef, Float64}()
-    sets = (
-        MOI.LessThan{Float64},
-        MOI.GreaterThan{Float64},
-        MOI.EqualTo{Float64}
-    )
+    rhs = Dict{ConstraintRef,Float64}()
+    sets =
+        (MOI.LessThan{Float64}, MOI.GreaterThan{Float64}, MOI.EqualTo{Float64})
     for (F, S) in list_of_constraint_types(node.subproblem)
         if F == VariableRef || !(S in sets)
             continue
@@ -463,7 +467,10 @@ function _reformulate_objective(
     if changing_objective_constant
         new_name = "_SDDPjl_random_objective_constant_"
         y = _add_new_random_variable(
-            node, new_name, random_variables, added_variables
+            node,
+            new_name,
+            random_variables,
+            added_variables,
         )
         for (r, o) in zip(realizations, objective_storage)
             r["support"][new_name] = o.constant
@@ -478,7 +485,10 @@ function _reformulate_objective(
         for x in changing_objective_coefficient
             new_name = "_SDDPjl_random_objective_$(name(x))_"
             y = _add_new_random_variable(
-                node, new_name, random_variables, added_variables
+                node,
+                new_name,
+                random_variables,
+                added_variables,
             )
             for (r, o) in zip(realizations, objective_storage)
                 r["support"][new_name] = get(o.terms, x, 0.0)
@@ -509,7 +519,7 @@ function _reformulate_fixed_bound(
         realization["support"][name(x)] = bound[x].f
     end
     push!(random_variables, name(x))
-    unfix(x)
+    return unfix(x)
 end
 
 function _reformulate_lower_bound(
@@ -523,7 +533,10 @@ function _reformulate_lower_bound(
 )
     new_name = "_SDDPjl_lower_bound_$(name(x))_"
     y = _add_new_random_variable(
-        node, new_name, random_variables, added_variables
+        node,
+        new_name,
+        random_variables,
+        added_variables,
     )
     c = @constraint(node.subproblem, x >= y)
     push!(added_constraints, c)
@@ -544,7 +557,10 @@ function _reformulate_upper_bound(
 )
     new_name = "_SDDPjl_upper_bound_$(name(x))_"
     y = _add_new_random_variable(
-        node, new_name, random_variables, added_variables
+        node,
+        new_name,
+        random_variables,
+        added_variables,
     )
     c = @constraint(node.subproblem, x <= y)
     push!(added_constraints, c)
@@ -564,7 +580,10 @@ function _reformulate_constraint_rhs(
 )
     new_name = "_SDDPjl_rhs_$(name(ci))_"
     y = _add_new_random_variable(
-        node, new_name, random_variables, added_variables
+        node,
+        new_name,
+        random_variables,
+        added_variables,
     )
     set_normalized_coefficient(ci, y, -1.0)
     set_normalized_rhs(ci, 0.0)
@@ -575,7 +594,10 @@ function _reformulate_constraint_rhs(
 end
 
 function _add_new_random_variable(
-    node, new_name, random_variables, added_variables
+    node,
+    new_name,
+    random_variables,
+    added_variables,
 )
     y = @variable(node.subproblem, base_name = new_name)
     push!(added_variables, y)
@@ -583,10 +605,7 @@ function _add_new_random_variable(
     return y
 end
 
-
-function _dict_diff_keys(
-    x::AbstractDict{K, V}, y::AbstractDict{K, V}
-) where {K, V}
+function _dict_diff_keys(x::AbstractDict{K,V}, y::AbstractDict{K,V}) where {K,V}
     diff = Set{K}()
     for (k, v) in x
         if haskey(y, k)
@@ -611,7 +630,7 @@ function _subproblem_to_dict(subproblem::JuMP.Model)
     io = IOBuffer()
     Base.write(io, dest_model)
     seekstart(io)
-    return JSON.parse(io; dicttype = Dict{String, Any})
+    return JSON.parse(io; dicttype = Dict{String,Any})
 end
 
 function _load_mof_model(sp::JuMP.Model, data::Dict, node::String)
@@ -654,7 +673,7 @@ or silently build a non-convex model.
     end
 """
 function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
-    data = JSON.parse(io; dicttype = Dict{String, Any})
+    data = JSON.parse(io; dicttype = Dict{String,Any})
     graph = Graph(data["root"]["name"])
     for (node_name, _) in data["nodes"]
         add_node(graph, node_name)
@@ -662,10 +681,11 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     for edge in data["edges"]
         add_edge(graph, edge["from"] => edge["to"], edge["probability"])
     end
-    proportion_min = sum(
-        node["subproblem"]["objective"]["sense"] == "min"
-        for (_, node) in data["nodes"]
-    ) / length(data["nodes"])
+    proportion_min =
+        sum(
+            node["subproblem"]["objective"]["sense"] == "min" for
+            (_, node) in data["nodes"]
+        ) / length(data["nodes"])
     model_sense = proportion_min >= 0.5 ? MOI.MIN_SENSE : MOI.MAX_SENSE
     function subproblem_builder(sp::Model, node_name::String)
         _load_mof_model(sp, data, "$(node_name)")
@@ -692,8 +712,8 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
             sp,
             convert(
                 Vector{String},
-                data["nodes"][node_name]["random_variables"]
-            )
+                data["nodes"][node_name]["random_variables"],
+            ),
         )
         parameterize(sp, Ω, P) do ω
             if ω !== nothing
@@ -714,11 +734,17 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     end
     model = if model_sense == MOI.MIN_SENSE
         PolicyGraph(
-            subproblem_builder, graph; sense = :Min, lower_bound = -abs(bound)
+            subproblem_builder,
+            graph;
+            sense = :Min,
+            lower_bound = -abs(bound),
         )
     else
         PolicyGraph(
-            subproblem_builder, graph; sense = :Max, upper_bound = abs(bound)
+            subproblem_builder,
+            graph;
+            sense = :Max,
+            upper_bound = abs(bound),
         )
     end
     for (k, v) in data["root"]["state_variables"]
@@ -735,11 +761,10 @@ function _test_scenarios(data::Dict, SHA256::String)
         TestScenario(
             scenario["probability"],
             [
-                (item["node"], substitute_nothing(item["support"]))
-                for item in scenario["scenario"]
-            ]
-        )
-        for scenario in data["test_scenarios"]
+                (item["node"], substitute_nothing(item["support"])) for
+                item in scenario["scenario"]
+            ],
+        ) for scenario in data["test_scenarios"]
     ]
     return TestScenarios(scenarios; SHA256 = SHA256)
 end
@@ -749,13 +774,15 @@ function _convert_objective_function(sp::Model, rvs::Vector{String})
 end
 
 function _convert_objective_function(sp::Model, ::Vector{String}, objf)
-    return Dict{String, Any}(), objf
+    return Dict{String,Any}(), objf
 end
 
 function _convert_objective_function(
-    sp::Model, rvs::Vector{String}, objf::QuadExpr
+    sp::Model,
+    rvs::Vector{String},
+    objf::QuadExpr,
 )
-    terms = Dict{String, Any}()
+    terms = Dict{String,Any}()
     aff_obj = copy(objf.aff)
     quad_terms = empty(copy(objf.terms))
     for (k, v) in objf.terms
@@ -802,12 +829,11 @@ WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
 function write_to_file(
     model::PolicyGraph,
     filename::String;
-    compression::MOI.FileFormats.AbstractCompressionScheme =
-        MOI.FileFormats.AutomaticCompression(),
-    kwargs...
+    compression::MOI.FileFormats.AbstractCompressionScheme = MOI.FileFormats.AutomaticCompression(),
+    kwargs...,
 )
     return MOI.FileFormats.compressed_open(filename, "w", compression) do io
-        Base.write(io, model; kwargs...)
+        return Base.write(io, model; kwargs...)
     end
 end
 
@@ -837,12 +863,11 @@ WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
 """
 function read_from_file(
     filename::String;
-    compression::MOI.FileFormats.AbstractCompressionScheme =
-        MOI.FileFormats.AutomaticCompression(),
-    kwargs...
+    compression::MOI.FileFormats.AbstractCompressionScheme = MOI.FileFormats.AutomaticCompression(),
+    kwargs...,
 )
     return MOI.FileFormats.compressed_open(filename, "r", compression) do io
-        Base.read(io, PolicyGraph; kwargs...)
+        return Base.read(io, PolicyGraph; kwargs...)
     end
 end
 
@@ -861,32 +886,33 @@ Evaluate the performance of the policy contained in `model` after a call to
     simulations = evaluate(model, test_scenarios)
 """
 function evaluate(
-    model::PolicyGraph{T}, test_scenarios::TestScenarios{T, S}
-) where {T, S}
+    model::PolicyGraph{T},
+    test_scenarios::TestScenarios{T,S},
+) where {T,S}
     test_scenarios.last = 0
     simulations = simulate(
         model,
         length(test_scenarios.scenarios);
         sampling_scheme = test_scenarios,
-        custom_recorders = Dict{Symbol, Function}(
-            :primal => (sp) -> begin
-                Dict{String, Float64}(
-                    name(x) => value(x) for x in all_variables(sp)
-                    if !isempty(name(x))
-                )
-            end
-        )
+        custom_recorders = Dict{Symbol,Function}(
+            :primal =>
+                (sp) -> begin
+                    Dict{String,Float64}(
+                        name(x) => value(x) for
+                        x in all_variables(sp) if !isempty(name(x))
+                    )
+                end,
+        ),
     )
     return Dict(
         "problem_sha256_checksum" => test_scenarios.SHA256,
         "scenarios" => [
             [
-                Dict{String, Any}(
+                Dict{String,Any}(
                     "objective" => s[:stage_objective],
-                    "primal" => s[:primal]
-                )
-                for s in sim
+                    "primal" => s[:primal],
+                ) for s in sim
             ] for sim in simulations
-        ]
+        ],
     )
 end

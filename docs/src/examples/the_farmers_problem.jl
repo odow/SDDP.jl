@@ -51,74 +51,42 @@ CROPS = [:wheat, :corn, :sugar_beet]
 
 # Each of the crops has a different planting cost (\\\$/acre).
 
-PLANTING_COST = Dict(
-    :wheat      => 150.0,
-    :corn       => 230.0,
-    :sugar_beet => 260.0
-)
+PLANTING_COST = Dict(:wheat => 150.0, :corn => 230.0, :sugar_beet => 260.0)
 
 # The farmer requires a minimum quantity of wheat and corn, but not of sugar
 # beet (tonnes).
 
-MIN_QUANTITIES = Dict(
-    :wheat      => 200.0,
-    :corn       => 240.0,
-    :sugar_beet =>   0.0
-)
+MIN_QUANTITIES = Dict(:wheat => 200.0, :corn => 240.0, :sugar_beet => 0.0)
 
 # In Europe, there is a quota system for producing crops. The farmer owns the
 # following quota for each crop (tonnes):
 
-QUOTA_MAX = Dict(
-    :wheat      =>     Inf,
-    :corn       =>     Inf,
-    :sugar_beet => 6_000.0
-)
+QUOTA_MAX = Dict(:wheat => Inf, :corn => Inf, :sugar_beet => 6_000.0)
 
 # The farmer can sell crops produced under the quota for the following amounts
 # (\\\$/tonne):
 
-SELL_IN_QUOTA = Dict(
-    :wheat      => 170.0,
-    :corn       => 150.0,
-    :sugar_beet =>  36.0
-)
+SELL_IN_QUOTA = Dict(:wheat => 170.0, :corn => 150.0, :sugar_beet => 36.0)
 
 # If they sell more than their alloted quota, the farmer earns the following on
 # each tonne of crop above the quota (\\\$/tonne):
 
-SELL_NO_QUOTA = Dict(
-    :wheat      =>  0.0,
-    :corn       =>  0.0,
-    :sugar_beet => 10.0
-)
+SELL_NO_QUOTA = Dict(:wheat => 0.0, :corn => 0.0, :sugar_beet => 10.0)
 
 # The purchase prices for wheat and corn are 40% more than their sales price.
 # However, the description does not address the purchase price of sugar beet.
 # Therefore, we use a large value of \\\$1,000/tonne.
 
-BUY_PRICE = Dict(
-    :wheat      =>   238.0,
-    :corn       =>   210.0,
-    :sugar_beet => 1_000.0
-)
+BUY_PRICE = Dict(:wheat => 238.0, :corn => 210.0, :sugar_beet => 1_000.0)
 
 # On average, each crop has the following yield in tonnes/acre:
 
-MEAN_YIELD = Dict(
-    :wheat      =>  2.5,
-    :corn       =>  3.0,
-    :sugar_beet => 20.0
-)
+MEAN_YIELD = Dict(:wheat => 2.5, :corn => 3.0, :sugar_beet => 20.0)
 
 # However, the yield is random. In good years, the yield is +20% above average,
 # and in bad years, the yield is -20% below average.
 
-YIELD_MULTIPLIER = Dict(
-    :good => 1.2,
-    :fair => 1.0,
-    :bad  => 0.8
-)
+YIELD_MULTIPLIER = Dict(:good => 1.2, :fair => 1.0, :bad => 0.8)
 
 # ## Mathematical formulation
 
@@ -145,7 +113,7 @@ using SDDP, GLPK
 # the state variables are the areas of land devoted to growing each crop.
 
 function add_state_variables(subproblem)
-    @variable(subproblem, area[c = CROPS] >= 0, SDDP.State, initial_value=0)
+    @variable(subproblem, area[c = CROPS] >= 0, SDDP.State, initial_value = 0)
 end
 
 # ### First stage problem
@@ -154,10 +122,14 @@ end
 # cost
 
 function create_first_stage_problem(subproblem)
-    @constraint(subproblem,
-        sum(subproblem[:area][c].out for c in CROPS) <= MAX_AREA)
-    @stageobjective(subproblem,
-        -sum(PLANTING_COST[c] * subproblem[:area][c].out for c in CROPS))
+    @constraint(
+        subproblem,
+        sum(subproblem[:area][c].out for c in CROPS) <= MAX_AREA
+    )
+    @stageobjective(
+        subproblem,
+        -sum(PLANTING_COST[c] * subproblem[:area][c].out for c in CROPS)
+    )
 end
 
 # ### Second stage problem
@@ -179,10 +151,10 @@ end
 
 function second_stage_variables(subproblem)
     @variables(subproblem, begin
-        0 <= yield[c=CROPS]                          # tonnes/acre
-        0 <= buy[c=CROPS]                            # tonnes
-        0 <= sell_in_quota[c=CROPS] <= QUOTA_MAX[c]  # tonnes
-        0 <= sell_no_quota[c=CROPS]                  # tonnes
+        0 <= yield[c = CROPS]                          # tonnes/acre
+        0 <= buy[c = CROPS]                            # tonnes
+        0 <= sell_in_quota[c = CROPS] <= QUOTA_MAX[c]  # tonnes
+        0 <= sell_no_quota[c = CROPS]                  # tonnes
     end)
 end
 
@@ -192,10 +164,13 @@ end
 # `MIN_QUANTITIES[c]` of each crop is produced.
 
 function second_stage_constraint_min_quantity(subproblem)
-    @constraint(subproblem, [c=CROPS],
+    @constraint(
+        subproblem,
+        [c = CROPS],
         subproblem[:yield][c] + subproblem[:buy][c] -
         subproblem[:sell_in_quota][c] - subproblem[:sell_no_quota][c] >=
-        MIN_QUANTITIES[c])
+        MIN_QUANTITIES[c]
+    )
 end
 
 # #### Objective
@@ -205,12 +180,13 @@ end
 # quantity constraint.
 
 function second_stage_objective(subproblem)
-    @stageobjective(subproblem,
+    @stageobjective(
+        subproblem,
         sum(
             SELL_IN_QUOTA[c] * subproblem[:sell_in_quota][c] +
             SELL_NO_QUOTA[c] * subproblem[:sell_no_quota][c] -
-            BUY_PRICE[c] * subproblem[:buy][c]
-        for c in CROPS)
+            BUY_PRICE[c] * subproblem[:buy][c] for c in CROPS
+        )
     )
 end
 
@@ -220,14 +196,17 @@ end
 # using `JuMP.set_normalized_coefficient`.
 
 function second_stage_uncertainty(subproblem)
-    @constraint(subproblem, uncertainty[c=CROPS],
-        1.0 * subproblem[:area][c].in == subproblem[:yield][c])
+    @constraint(
+        subproblem,
+        uncertainty[c = CROPS],
+        1.0 * subproblem[:area][c].in == subproblem[:yield][c]
+    )
     SDDP.parameterize(subproblem, [:good, :fair, :bad]) do ω
         for c in CROPS
             JuMP.set_normalized_coefficient(
                 uncertainty[c],
                 subproblem[:area][c].in,
-                MEAN_YIELD[c] * YIELD_MULTIPLIER[ω]
+                MEAN_YIELD[c] * YIELD_MULTIPLIER[ω],
             )
         end
     end
@@ -247,12 +226,12 @@ end
 # Here is the full model.
 
 model = SDDP.LinearPolicyGraph(
-            stages = 2,
-            sense = :Max,
-            upper_bound = 500_000.0,
-            optimizer = GLPK.Optimizer,
-            direct_mode = false
-        ) do subproblem, stage
+    stages = 2,
+    sense = :Max,
+    upper_bound = 500_000.0,
+    optimizer = GLPK.Optimizer,
+    direct_mode = false,
+) do subproblem, stage
     add_state_variables(subproblem)
     if stage == 1
         create_first_stage_problem(subproblem)

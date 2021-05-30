@@ -114,7 +114,7 @@ function add_node(graph::Graph{T}, node::T) where {T}
     return
 end
 function add_node(graph::Graph{T}, node) where {T}
-    error("Unable to add node $(node). Nodes must be of type $(T).")
+    return error("Unable to add node $(node). Nodes must be of type $(T).")
 end
 
 """
@@ -127,7 +127,11 @@ Add an edge to the graph `graph`.
     add_edge(graph, 1 => 2, 0.9)
     add_edge(graph, :root => :A, 1.0)
 """
-function add_edge(graph::Graph{T}, edge::Pair{T,T}, probability::Float64) where {T}
+function add_edge(
+    graph::Graph{T},
+    edge::Pair{T,T},
+    probability::Float64,
+) where {T}
     (parent, child) = edge
     if !(parent == graph.root_node || haskey(graph.nodes, parent))
         error("Node $(parent) does not exist.")
@@ -219,7 +223,7 @@ end
 """
 function LinearGraph(stages::Int)
     edges = Tuple{Pair{Int,Int},Float64}[]
-    for t = 1:stages
+    for t in 1:stages
         push!(edges, (t - 1 => t, 1.0))
     end
     return Graph(0, collect(1:stages), edges)
@@ -253,24 +257,27 @@ function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
             error("Entries in the transition matrix must be non-negative.")
         end
         if !all(0.0 - 1e-8 .<= sum(transition; dims = 2) .<= 1.0 + 1e-8)
-            error("Rows in the transition matrix must sum to between 0.0 and 1.0.")
+            error(
+                "Rows in the transition matrix must sum to between 0.0 and 1.0.",
+            )
         end
         if stage > 1
             if size(transition_matrices[stage-1], 2) != size(transition, 1)
                 error("Transition matrix for stage $(stage) is the wrong size.")
             end
         end
-        for markov_state = 1:size(transition, 2)
+        for markov_state in 1:size(transition, 2)
             push!(nodes, (stage, markov_state))
         end
-        for markov_state = 1:size(transition, 2)
-            for last_markov_state = 1:size(transition, 1)
+        for markov_state in 1:size(transition, 2)
+            for last_markov_state in 1:size(transition, 1)
                 probability = transition[last_markov_state, markov_state]
                 if 0.0 < probability <= 1.0
                     push!(
                         edges,
                         (
-                            (stage - 1, last_markov_state) => (stage, markov_state),
+                            (stage - 1, last_markov_state) =>
+                                (stage, markov_state),
                             probability,
                         ),
                     )
@@ -305,10 +312,18 @@ function MarkovianGraph(;
 )
     @assert size(transition_matrix, 1) == size(transition_matrix, 2)
     @assert length(root_node_transition) == size(transition_matrix, 1)
-    return MarkovianGraph(vcat(
-        [Base.reshape(root_node_transition, 1, length(root_node_transition))],
-        [transition_matrix for stage = 1:(stages-1)],
-    ))
+    return MarkovianGraph(
+        vcat(
+            [
+                Base.reshape(
+                    root_node_transition,
+                    1,
+                    length(root_node_transition),
+                ),
+            ],
+            [transition_matrix for stage in 1:(stages-1)],
+        ),
+    )
 end
 
 """
@@ -363,10 +378,10 @@ mutable struct Node{T}
     # A list of the state variables in the model.
     states::Dict{Symbol,State{JuMP.VariableRef}}
     # Stage objective
-    stage_objective  # TODO(odow): make this a concrete type?
+    stage_objective::Any  # TODO(odow): make this a concrete type?
     stage_objective_set::Bool
     # Bellman function
-    bellman_function  # TODO(odow): make this a concrete type?
+    bellman_function::Any  # TODO(odow): make this a concrete type?
     # For dynamic interpolation of objective states.
     objective_state::Union{Nothing,ObjectiveState}
     # For dynamic interpolation of belief states.
@@ -375,9 +390,9 @@ mutable struct Node{T}
     pre_optimize_hook::Union{Nothing,Function}
     post_optimize_hook::Union{Nothing,Function}
     # Approach for handling discrete variables.
-    integrality_handler # TODO either leave untyped or define ::AbstractIntegralityHandler
+    integrality_handler::Any # TODO either leave untyped or define ::AbstractIntegralityHandler
     # The user's optimizer. We use this in asynchronous mode.
-    optimizer
+    optimizer::Any
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol,Any}
@@ -387,7 +402,7 @@ function Base.show(io::IO, node::Node)
     println(io, "Node $(node.index)")
     println(io, "  # State variables : ", length(node.states))
     println(io, "  # Children        : ", length(node.children))
-    println(io, "  # Noise terms     : ", length(node.noise_terms))
+    return println(io, "  # Noise terms     : ", length(node.noise_terms))
 end
 
 function pre_optimize_hook(f::Function, node::Node)
@@ -435,7 +450,9 @@ mutable struct PolicyGraph{T}
 
     function PolicyGraph(sense::Symbol, root_node::T) where {T}
         if sense != :Min && sense != :Max
-            error("The optimization sense must be `:Min` or `:Max`. It is $(sense).")
+            error(
+                "The optimization sense must be `:Min` or `:Max`. It is $(sense).",
+            )
         end
         optimization_sense = sense == :Min ? MOI.MIN_SENSE : MOI.MAX_SENSE
         return new{T}(
@@ -600,8 +617,10 @@ function PolicyGraph(
                 " using the `upper_bound = value` keyword argument.",
             )
         else
-            bellman_function =
-                BellmanFunction(lower_bound = lower_bound, upper_bound = upper_bound)
+            bellman_function = BellmanFunction(
+                lower_bound = lower_bound,
+                upper_bound = upper_bound,
+            )
         end
     end
     # Initialize nodes.
@@ -644,7 +663,11 @@ function PolicyGraph(
         if length(node.noise_terms) == 0
             push!(node.noise_terms, Noise(nothing, 1.0))
         end
-        update_integrality_handler!(integrality_handler, optimizer, length(node.states))
+        update_integrality_handler!(
+            integrality_handler,
+            optimizer,
+            length(node.states),
+        )
     end
     # Loop back through and add the arcs/children.
     for (node_index, children) in graph.nodes
@@ -681,10 +704,14 @@ function PolicyGraph(
 end
 
 # Internal function: set up ::BeliefState for each node.
-function initialize_belief_states(policy_graph::PolicyGraph{T}, graph::Graph{T}) where {T}
+function initialize_belief_states(
+    policy_graph::PolicyGraph{T},
+    graph::Graph{T},
+) where {T}
     # Pre-compute the function `belief_updater`. See `construct_belief_update`
     # for details.
-    belief_updater = construct_belief_update(policy_graph, Set.(graph.belief_partition))
+    belief_updater =
+        construct_belief_update(policy_graph, Set.(graph.belief_partition))
     # Initialize a belief dictionary (containing one element for each node in
     # the graph).
     belief = Dict{T,Float64}(keys(graph.nodes) .=> 0.0)
@@ -701,8 +728,13 @@ function initialize_belief_states(policy_graph::PolicyGraph{T}, graph::Graph{T})
             # <b, μ> + θ ≥ α + <β, x>
             # We need one variable for each non-zero belief state.
             μ = Dict{T,JuMP.VariableRef}()
-            for (node_name, L) in zip(partition, graph.belief_lipschitz[partition_index])
-                μ[node_name] = @variable(node.subproblem, lower_bound = -L, upper_bound = L)
+            for (node_name, L) in
+                zip(partition, graph.belief_lipschitz[partition_index])
+                μ[node_name] = @variable(
+                    node.subproblem,
+                    lower_bound = -L,
+                    upper_bound = L
+                )
             end
             add_initial_bounds(node, μ)
             # Attach the belief state as an extension.
@@ -811,7 +843,7 @@ end
 function set_stage_objective(::JuMP.Model, f)
     return error(
         "Unable to set the stage-objective of type $(typeof(f)). It must be " *
-        "a scalar function."
+        "a scalar function.",
     )
 end
 
@@ -830,7 +862,6 @@ macro stageobjective(subproblem, expr)
         SDDP.set_stage_objective($(esc(subproblem)), $code)
     end
 end
-
 
 """
     add_objective_state(update::Function, subproblem::JuMP.Model; kwargs...)
@@ -1034,8 +1065,8 @@ function construct_belief_update(
         # Now update each belief.
         for (node_i, belief) in incoming_belief
             PX = sum(
-                belief * get(Φ, (node_j, node_i), 0.0)
-                for (node_j, belief) in incoming_belief
+                belief * get(Φ, (node_j, node_i), 0.0) for
+                (node_j, belief) in incoming_belief
             )
             PY_X = 0.0
             if node_i in partition[observed_partition]

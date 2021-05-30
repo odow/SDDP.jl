@@ -50,7 +50,9 @@ function Base.show(io::IO, v::ValueFunction)
     return
 end
 
-JuMP.set_optimizer(v::ValueFunction, optimizer) = set_optimizer(v.model, optimizer)
+function JuMP.set_optimizer(v::ValueFunction, optimizer)
+    return set_optimizer(v.model, optimizer)
+end
 
 function _add_to_value_function(
     model::JuMP.Model,
@@ -69,20 +71,23 @@ function _add_to_value_function(
     for cut in convex_approximation.cut_oracle.cuts
         cut_expr = @expression(
             model,
-            cut.intercept + sum(coef * states[key] for (key, coef) in cut.coefficients)
+            cut.intercept +
+            sum(coef * states[key] for (key, coef) in cut.coefficients)
         )
         if objective_state !== nothing
             @assert cut.obj_y !== nothing
             cut_expr = @expression(
                 model,
-                cut_expr - sum(y * μ for (y, μ) in zip(cut.obj_y, objective_state))
+                cut_expr -
+                sum(y * μ for (y, μ) in zip(cut.obj_y, objective_state))
             )
         end
         if belief_state !== nothing
             @assert cut.belief_y !== nothing
             cut_expr = @expression(
                 model,
-                cut_expr - sum(cut.belief_y[key] * μ for (key, μ) in belief_state)
+                cut_expr -
+                sum(cut.belief_y[key] * μ for (key, μ) in belief_state)
             )
         end
         if objective_sense(model) == MOI.MIN_SENSE
@@ -107,19 +112,22 @@ function ValueFunction(node::Node{T}) where {T}
     end
     set_objective_sense(model, sense)
     states = Dict{Symbol,VariableRef}(
-        key => @variable(model, base_name = "$(key)") for (key, x) in node.states
+        key => @variable(model, base_name = "$(key)") for
+        (key, x) in node.states
     )
     objective_state = if node.objective_state === nothing
         nothing
     else
-        tuple(VariableRef[
-            @variable(
-                model,
-                lower_bound = lower_bound(μ),
-                upper_bound = upper_bound(μ),
-                base_name = "_objective_state_$(i)"
-            ) for (i, μ) in enumerate(node.objective_state.μ)
-        ]...,)
+        tuple(
+            VariableRef[
+                @variable(
+                    model,
+                    lower_bound = lower_bound(μ),
+                    upper_bound = upper_bound(μ),
+                    base_name = "_objective_state_$(i)"
+                ) for (i, μ) in enumerate(node.objective_state.μ)
+            ]...,
+        )
     end
     belief_state = if node.belief_state === nothing
         nothing
@@ -142,10 +150,20 @@ function ValueFunction(node::Node{T}) where {T}
         "V",
     )
     local_thetas = VariableRef[
-        _add_to_value_function(model, states, belief_state, objective_state, l, "v$(i)") for (i, l) in enumerate(b.local_thetas)
+        _add_to_value_function(
+            model,
+            states,
+            belief_state,
+            objective_state,
+            l,
+            "v$(i)",
+        ) for (i, l) in enumerate(b.local_thetas)
     ]
     for risk_set in b.risk_set_cuts
-        expr = @expression(model, sum(p * v for (p, v) in zip(risk_set, local_thetas)))
+        expr = @expression(
+            model,
+            sum(p * v for (p, v) in zip(risk_set, local_thetas))
+        )
         if sense == MOI.MIN_SENSE
             @constraint(model, global_theta >= expr)
         else
@@ -153,7 +171,12 @@ function ValueFunction(node::Node{T}) where {T}
         end
     end
     return ValueFunction(
-        node.index, model, global_theta, states, objective_state, belief_state
+        node.index,
+        model,
+        global_theta,
+        states,
+        objective_state,
+        belief_state,
     )
 end
 
@@ -272,7 +295,7 @@ end
 function get_axis(x::Vector{NTuple{N,T}}) where {N,T}
     @assert length(x) >= 2
     changing_index = nothing
-    for i = 1:N
+    for i in 1:N
         if x[1][i] == x[2][i]
             continue
         elseif changing_index !== nothing
@@ -280,7 +303,8 @@ function get_axis(x::Vector{NTuple{N,T}}) where {N,T}
         end
         changing_index = i
     end
-    return changing_index === nothing ? nothing : [xi[changing_index] for xi in x]
+    return changing_index === nothing ? nothing :
+           [xi[changing_index] for xi in x]
 end
 
 get_axis(x::Vector{Nothing}) = nothing
@@ -318,7 +342,10 @@ end
 function plot(
     V::ValueFunction{Y,B},
     X::Array{Point{Y,B}};
-    filename::String = joinpath(tempdir(), string(Random.randstring(), ".html")),
+    filename::String = joinpath(
+        tempdir(),
+        string(Random.randstring(), ".html"),
+    ),
     open::Bool = true,
 ) where {Y,B}
     x, y, z = get_data(V, X)
@@ -333,10 +360,12 @@ function plot(
     return
 end
 
-
 function plot(
     V::ValueFunction{Nothing,Nothing};
-    filename::String = joinpath(tempdir(), string(Random.randstring(), ".html")),
+    filename::String = joinpath(
+        tempdir(),
+        string(Random.randstring(), ".html"),
+    ),
     open::Bool = true,
     kwargs...,
 )
@@ -362,8 +391,8 @@ function plot(
         k1, k2 = variables
         N1, N2 = length(kwargs[k1]), length(kwargs[k2])
         points = Array{Point{Nothing,Nothing},2}(undef, N1, N2)
-        for i = 1:N1
-            for j = 1:N2
+        for i in 1:N1
+            for j in 1:N2
                 d2 = copy(d)
                 d2[k1] = kwargs[k1][i]
                 d2[k2] = kwargs[k2][j]
@@ -372,7 +401,7 @@ function plot(
         end
         return plot(V, points; filename = filename, open = open)
     end
-    error(
+    return error(
         "Can only plot 1- or 2-dimensional value functions. You provided " *
         "$(length(variables)).",
     )

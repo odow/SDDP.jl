@@ -95,7 +95,7 @@ struct Options{T}
     print_level::Int
     start_time::Float64
     log::Vector{Log}
-    log_file_handle
+    log_file_handle::Any
     log_frequency::Int
     forward_pass::AbstractForwardPass
 
@@ -213,7 +213,11 @@ stage_objective_value(stage_objective) = JuMP.value(stage_objective)
 
 Write the subproblem contained in `node` to the file `filename`.
 """
-function write_subproblem_to_file(node::Node, filename::String; throw_error::Bool = false)
+function write_subproblem_to_file(
+    node::Node,
+    filename::String;
+    throw_error::Bool = false,
+)
     model = MOI.FileFormats.Model(filename = filename)
     MOI.copy_to(model, JuMP.backend(node.subproblem))
     MOI.write_to_file(model, filename)
@@ -274,15 +278,19 @@ See also: [`_uninitialize_solver`](@ref).
 function _initialize_solver(node::Node; throw_error::Bool)
     if mode(node.subproblem) == DIRECT
         if throw_error
-            error("Cannot use asynchronous solver with optimizers in direct mode.")
+            error(
+                "Cannot use asynchronous solver with optimizers in direct mode.",
+            )
         end
     elseif MOI.Utilities.state(backend(node.subproblem)) == MOIU.NO_OPTIMIZER
         if node.optimizer === nothing
-            error("""
-            You must supply an optimizer for the policy graph, either by passing
-            one to the `optimizer` keyword argument to `PolicyGraph`, or by
-            using `JuMP.set_optimizer(model, optimizer)`.
-            """)
+            error(
+                """
+          You must supply an optimizer for the policy graph, either by passing
+          one to the `optimizer` keyword argument to `PolicyGraph`, or by
+          using `JuMP.set_optimizer(model, optimizer)`.
+          """,
+            )
         end
         set_optimizer(node.subproblem, node.optimizer)
     end
@@ -319,9 +327,12 @@ function _uninitialize_solver(model::PolicyGraph; throw_error::Bool)
     for (_, node) in model.nodes
         if mode(node.subproblem) == DIRECT
             if throw_error
-                error("Cannot use asynchronous solver with optimizers in direct mode.")
+                error(
+                    "Cannot use asynchronous solver with optimizers in direct mode.",
+                )
             end
-        elseif MOI.Utilities.state(backend(node.subproblem)) != MOIU.NO_OPTIMIZER
+        elseif MOI.Utilities.state(backend(node.subproblem)) !=
+               MOIU.NO_OPTIMIZER
             MOI.Utilities.drop_optimizer(node.subproblem)
         end
     end
@@ -348,7 +359,14 @@ function solve_subproblem(
     parameterize(node, noise)
 
     pre_optimize_ret = if node.pre_optimize_hook !== nothing
-        node.pre_optimize_hook(model, node, state, noise, scenario_path, require_duals)
+        node.pre_optimize_hook(
+            model,
+            node,
+            state,
+            noise,
+            scenario_path,
+            require_duals,
+        )
     else
         nothing
     end
@@ -461,7 +479,7 @@ function backward_pass(
 ) where {T,NoiseType,N}
     # TODO(odow): improve storage type.
     cuts = Dict{T,Vector{Any}}(index => Any[] for index in keys(model.nodes))
-    for index = length(scenario_path):-1:1
+    for index in length(scenario_path):-1:1
         outgoing_state = sampled_states[index]
         objective_state = get(objective_states, index, nothing)
         partition_index, belief_state = get(belief_states, index, (0, nothing))
@@ -601,7 +619,8 @@ function solve_all_children(
             continue
         end
         child_node = model[child.term]
-        for noise in sample_backward_noise_terms(backward_sampling_scheme, child_node)
+        for noise in
+            sample_backward_noise_terms(backward_sampling_scheme, child_node)
             if length(scenario_path) == length_scenario_path
                 push!(scenario_path, (child.term, noise.term))
             else
@@ -649,7 +668,8 @@ function solve_all_children(
                 push!(items.probability, child.probability * noise.probability)
                 push!(items.objectives, subproblem_results.objective)
                 push!(items.belief, belief)
-                items.cached_solutions[(child.term, noise.term)] = length(items.duals)
+                items.cached_solutions[(child.term, noise.term)] =
+                    length(items.duals)
             end
         end
     end
@@ -698,7 +718,12 @@ function calculate_bound(
             if node.belief_state !== nothing
                 belief = node.belief_state::BeliefState{T}
                 partition_index = belief.partition_index
-                belief.updater(belief.belief, current_belief, partition_index, noise.term)
+                belief.updater(
+                    belief.belief,
+                    current_belief,
+                    partition_index,
+                    noise.term,
+                )
             end
             subproblem_results = solve_subproblem(
                 model,
@@ -724,8 +749,9 @@ function calculate_bound(
         model.objective_sense == MOI.MIN_SENSE,
     )
     # Finally, calculate the risk-adjusted value.
-    return sum(obj * prob for (obj, prob) in zip(objectives, risk_adjusted_probability)) +
-           offset
+    return sum(
+        obj * prob for (obj, prob) in zip(objectives, risk_adjusted_probability)
+    ) + offset
 end
 
 struct IterationResult{T}
@@ -765,7 +791,8 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             model.ext[:total_solves],
         ),
     )
-    has_converged, status = convergence_test(model, options.log, options.stopping_rules)
+    has_converged, status =
+        convergence_test(model, options.log, options.stopping_rules)
     return IterationResult(
         Distributed.myid(),
         bound,
@@ -881,8 +908,13 @@ function train(
     end
 
     if run_numerical_stability_report
-        report =
-            sprint(io -> numerical_stability_report(io, model, print = print_level > 0))
+        report = sprint(
+            io -> numerical_stability_report(
+                io,
+                model,
+                print = print_level > 0,
+            ),
+        )
         print_helper(print, log_file_handle, report)
     end
 
@@ -994,7 +1026,8 @@ function _simulate(
     incoming_state::Dict{Symbol,Float64},
 ) where {T}
     # Sample a scenario path.
-    scenario_path, terminated_due_to_cycle = sample_scenario(model, sampling_scheme)
+    scenario_path, terminated_due_to_cycle =
+        sample_scenario(model, sampling_scheme)
 
     # Storage for the simulation results.
     simulation = Dict{Symbol,Any}[]
@@ -1003,21 +1036,29 @@ function _simulate(
     cumulative_value = 0.0
 
     # Objective state interpolation.
-    objective_state_vector, N = initialize_objective_state(model[scenario_path[1][1]])
+    objective_state_vector, N =
+        initialize_objective_state(model[scenario_path[1][1]])
     objective_states = NTuple{N,Float64}[]
     for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
         # Objective state interpolation.
-        objective_state_vector =
-            update_objective_state(node.objective_state, objective_state_vector, noise)
+        objective_state_vector = update_objective_state(
+            node.objective_state,
+            objective_state_vector,
+            noise,
+        )
         if objective_state_vector !== nothing
             push!(objective_states, objective_state_vector)
         end
         if node.belief_state !== nothing
             belief = node.belief_state::BeliefState{T}
             partition_index = belief.partition_index
-            current_belief =
-                belief.updater(belief.belief, current_belief, partition_index, noise)
+            current_belief = belief.updater(
+                belief.belief,
+                current_belief,
+                partition_index,
+                noise,
+            )
         else
             current_belief = Dict(node_index => 1.0)
         end
@@ -1038,7 +1079,8 @@ function _simulate(
             :noise_term => noise,
             :stage_objective => subproblem_results.stage_objective,
             :bellman_term =>
-                subproblem_results.objective - subproblem_results.stage_objective,
+                subproblem_results.objective -
+                subproblem_results.stage_objective,
             :objective_state => objective_state_vector,
             :belief => copy(current_belief),
         )
@@ -1212,7 +1254,7 @@ solution corresponding to the names registered in the model.
 """
 function evaluate(
     rule::DecisionRule{T};
-    incoming_state::Dict{Symbol, Float64},
+    incoming_state::Dict{Symbol,Float64},
     noise = nothing,
     controls_to_record = Symbol[],
 ) where {T}
@@ -1221,7 +1263,7 @@ function evaluate(
         rule.node,
         incoming_state,
         noise,
-        Tuple{T, Any}[];
+        Tuple{T,Any}[];
         require_duals = false,
     )
     return (

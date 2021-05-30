@@ -189,7 +189,7 @@ function primal_risk end
 struct Expectation <: AbstractRiskMeasure end
 
 function primal_risk(::Expectation, Z::Vector{<:Real}, p::Vector{Float64})
-    return sum(p[i] * Z[i] for i = 1:length(p))
+    return sum(p[i] * Z[i] for i in 1:length(p))
 end
 
 # Let's try it out:
@@ -239,7 +239,7 @@ struct Entropic <: AbstractRiskMeasure
 end
 
 function primal_risk(F::Entropic, Z::Vector{<:Real}, p::Vector{Float64})
-    return 1 / F.γ * log(sum(p[i] * exp(F.γ * Z[i]) for i = 1:length(p)))
+    return 1 / F.γ * log(sum(p[i] * exp(F.γ * Z[i]) for i in 1:length(p)))
 end
 
 # !!! warning
@@ -306,7 +306,7 @@ function dual_risk(
     p::Vector{Float64},
 )
     q, α = dual_risk_inner(F, Z, p)
-    return sum(q[i] * Z[i] for i = 1:length(q)) - α
+    return sum(q[i] * Z[i] for i in 1:length(q)) - α
 end
 
 # ### Expectation
@@ -361,9 +361,9 @@ function dual_risk_inner(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
     JuMP.@NLexpression(
         model,
         α,
-        1 / F.γ * sum(q[i] * log(q[i] / p[i]) for i = 1:N),
+        1 / F.γ * sum(q[i] * log(q[i] / p[i]) for i in 1:N),
     )
-    JuMP.@NLobjective(model, Max, sum(q[i] * Z[i] for i = 1:N) - α)
+    JuMP.@NLobjective(model, Max, sum(q[i] * Z[i] for i in 1:N) - α)
     JuMP.optimize!(model)
     return JuMP.value.(q), JuMP.value(α)
 end
@@ -400,7 +400,7 @@ function dual_risk_inner(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
     q, α = zeros(length(p)), big(0.0)
     peγz = p .* exp.(F.γ .* big.(Z))
     sum_peγz = sum(peγz)
-    for i = 1:length(q)
+    for i in 1:length(q)
         big_q = peγz[i] / sum_peγz
         α += big_q * log(big_q / p[i])
         q[i] = Float64(big_q)
@@ -535,11 +535,14 @@ primal_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
 # version:
 
 for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
-    dual = dual_risk_averse_subgradient(
-        V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃
-    )
+    dual =
+        dual_risk_averse_subgradient(V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃)
     primal = primal_risk_averse_subgradient(
-        V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃
+        V;
+        F = Entropic(γ),
+        Ω = Ω,
+        p = p,
+        x̃ = x̃,
     )
     success = primal ≈ dual ? "✓" : "×"
     println("$(success) γ = $(γ), primal = $(primal), dual = $(dual)")
@@ -639,7 +642,7 @@ function PolicyGraph(
     optimizer,
 )
     nodes = Node[]
-    for t = 1:length(graph)
+    for t in 1:length(graph)
         model = JuMP.Model(optimizer)
         states, uncertainty = subproblem_builder(model, t)
         JuMP.@variable(model, cost_to_go >= lower_bound)
@@ -661,7 +664,7 @@ function sample_uncertainty(uncertainty::Uncertainty)
             return ω
         end
     end
-    error("We should never get here because P should sum to 1.0.")
+    return error("We should never get here because P should sum to 1.0.")
 end
 
 function sample_next_node(model::PolicyGraph, current::Int)
@@ -680,9 +683,8 @@ function sample_next_node(model::PolicyGraph, current::Int)
 end
 
 function forward_pass(model::PolicyGraph, io::IO = stdout)
-    incoming_state = Dict(
-        k => JuMP.fix_value(v.in) for (k, v) in model.nodes[1].states
-    )
+    incoming_state =
+        Dict(k => JuMP.fix_value(v.in) for (k, v) in model.nodes[1].states)
     simulation_cost = 0.0
     trajectory = Tuple{Int,Dict{Symbol,Float64}}[]
     t = 1
@@ -698,7 +700,8 @@ function forward_pass(model::PolicyGraph, io::IO = stdout)
             error("Something went terribly wrong!")
         end
         outgoing_state = Dict(k => JuMP.value(v.out) for (k, v) in node.states)
-        stage_cost = JuMP.objective_value(node.subproblem) - JuMP.value(node.cost_to_go)
+        stage_cost =
+            JuMP.objective_value(node.subproblem) - JuMP.value(node.cost_to_go)
         simulation_cost += stage_cost
         incoming_state = outgoing_state
         push!(trajectory, (t, outgoing_state))
@@ -708,9 +711,9 @@ function forward_pass(model::PolicyGraph, io::IO = stdout)
 end
 
 function upper_bound(model::PolicyGraph; replications::Int)
-    simulations = [forward_pass(model, devnull) for i = 1:replications]
+    simulations = [forward_pass(model, devnull) for i in 1:replications]
     z = [s[2] for s in simulations]
-    μ  = Statistics.mean(z)
+    μ = Statistics.mean(z)
     tσ = 1.96 * Statistics.std(z) / sqrt(replications)
     return μ, tσ
 end
@@ -739,8 +742,8 @@ function evaluate_policy(
     end
     JuMP.optimize!(the_node.subproblem)
     return Dict(
-        k => JuMP.value.(v)
-        for (k, v) in JuMP.object_dictionary(the_node.subproblem)
+        k => JuMP.value.(v) for
+        (k, v) in JuMP.object_dictionary(the_node.subproblem)
     )
 end
 
@@ -758,7 +761,7 @@ function backward_pass(
     risk_measure::AbstractRiskMeasure,
 )
     println(io, "| Backward pass")
-    for i = reverse(1:length(trajectory))
+    for i in reverse(1:length(trajectory))
         index, outgoing_states = trajectory[i]
         node = model.nodes[index]
         println(io, "| | Visiting node $(index)")
@@ -790,8 +793,8 @@ function backward_pass(
                     JuMP.@expression(
                         node.subproblem,
                         V + sum(
-                            dVdx[k] * (x.out - outgoing_states[k])
-                            for (k, x) in node.states
+                            dVdx[k] * (x.out - outgoing_states[k]) for
+                            (k, x) in node.states
                         ),
                     )
                 )
@@ -813,7 +816,7 @@ function backward_pass(
         c = JuMP.@constraint(
             node.subproblem,
             node.cost_to_go >=
-                sum(q[i] * cut_expressions[i] for i = 1:length(q)) - α
+            sum(q[i] * cut_expressions[i] for i in 1:length(q)) - α
         )
         ## =====================================================================
         println(io, "| | | Adding cut : ", c)
@@ -834,7 +837,7 @@ function train(
     ## =========================================================================
     io::IO = stdout,
 )
-    for i = 1:iteration_limit
+    for i in 1:iteration_limit
         println(io, "Starting iteration $(i)")
         outgoing_states, _ = forward_pass(model, io)
         ## =====================================================================
@@ -877,11 +880,7 @@ end
 # [Theory I: an intro to SDDP](@ref):
 
 model = PolicyGraph(
-    graph = [
-        Dict(2 => 1.0),
-        Dict(3 => 1.0),
-        Dict{Int,Float64}(),
-    ],
+    graph = [Dict(2 => 1.0), Dict(3 => 1.0), Dict{Int,Float64}()],
     lower_bound = 0.0,
     optimizer = GLPK.Optimizer,
 ) do subproblem, t
@@ -890,19 +889,23 @@ model = PolicyGraph(
     states = Dict(:volume => State(volume_in, volume_out))
     JuMP.@variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
         inflow
     end)
-    JuMP.@constraints(subproblem, begin
-        volume_out == volume_in + inflow - hydro_generation - hydro_spill
-        demand_constraint, thermal_generation + hydro_generation == 150.0
-    end)
+    JuMP.@constraints(
+        subproblem,
+        begin
+            volume_out == volume_in + inflow - hydro_generation - hydro_spill
+            demand_constraint, thermal_generation + hydro_generation == 150.0
+        end
+    )
     fuel_cost = [50.0, 100.0, 150.0]
     JuMP.@objective(subproblem, Min, fuel_cost[t] * thermal_generation)
-    uncertainty = Uncertainty([0.0, 50.0, 100.0], [1 / 3, 1 / 3, 1 / 3]) do ω
-        JuMP.fix(inflow, ω)
-    end
+    uncertainty =
+        Uncertainty([0.0, 50.0, 100.0], [1 / 3, 1 / 3, 1 / 3]) do ω
+            return JuMP.fix(inflow, ω)
+        end
     return states, uncertainty
 end
 
