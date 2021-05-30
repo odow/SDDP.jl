@@ -141,3 +141,42 @@ function convergence_test(
     end
     return true
 end
+
+"""
+    StoppingChain(rules::AbstractStoppingRule...)
+
+Terminate once all of the `rules` are statified.
+
+This stopping rule short-circuits, so subsequent rules are only tested if the
+previous pass.
+
+## Example
+
+A stopping rule that runs 100 iterations, then checks for the bound stalling:
+```julia
+StoppingChain(IterationLimit(100), BoundStalling(5, 0.1))
+```
+"""
+struct StoppingChain <: AbstractStoppingRule
+    rules::Vector{AbstractStoppingRule}
+    function StoppingChain(rules::AbstractStoppingRule...)
+        return new(collect(rules))
+    end
+end
+
+function stopping_rule_status(rule::StoppingChain)
+    return Symbol(join(stopping_rule_status.(rule.rules), " ∧ "))
+end
+
+function convergence_test(
+    graph::PolicyGraph,
+    log::Vector{Log},
+    chain::StoppingChain,
+)
+    for rule in chain.rules
+        if !convergence_test(graph, log, rule)
+            return false
+        end
+    end
+    return true
+end
