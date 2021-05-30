@@ -37,7 +37,7 @@ function test_prob52_3stages()
         @stageobjective(sp, ic'v + C' * y * T + 1e5 * penalty)
         if t != 1 # no uncertainty in first stage
             SDDP.parameterize(sp, 1:size(D2, 2), p2) do ω
-                for j = 1:m
+                for j in 1:m
                     JuMP.fix(ξ[j], D2[j, ω])
                 end
             end

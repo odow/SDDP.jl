@@ -59,9 +59,11 @@
 using SDDP
 
 model = SDDP.LinearPolicyGraph(
-    stages = 2, lower_bound = -1e10, direct_mode = false
+    stages = 2,
+    lower_bound = -1e10,
+    direct_mode = false,
 ) do subproblem, t
-    @variable(subproblem, x >= -1e7, SDDP.State, initial_value=1e-5)
+    @variable(subproblem, x >= -1e7, SDDP.State, initial_value = 1e-5)
     @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 1e-8)
     @stageobjective(subproblem, 1e9 * x.out)
 end
@@ -104,7 +106,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer
+    optimizer = GLPK.Optimizer,
 ) do subproblem, t
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 2)
     @variable(subproblem, u >= 0)
@@ -124,7 +126,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 10.0,
-    optimizer = GLPK.Optimizer
+    optimizer = GLPK.Optimizer,
 ) do subproblem, t
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 2)
     @variable(subproblem, u >= 0)

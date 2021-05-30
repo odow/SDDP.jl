@@ -28,11 +28,17 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
             @variable(sp, 0 <= y[1:4] <= 1, Bin)
             @variable(sp, ω[1:2])
             @stageobjective(sp, -16 * y[1] - 19 * y[2] - 23 * y[3] - 28 * y[4])
-            @constraint(sp, 2 * y[1] + 3 * y[2] + 4 * y[3] + 5 * y[4] <= ω[1] - x[1].in)
-            @constraint(sp, 6 * y[1] + 1 * y[2] + 3 * y[3] + 2 * y[4] <= ω[2] - x[2].in)
+            @constraint(
+                sp,
+                2 * y[1] + 3 * y[2] + 4 * y[3] + 5 * y[4] <= ω[1] - x[1].in
+            )
+            @constraint(
+                sp,
+                6 * y[1] + 1 * y[2] + 3 * y[3] + 2 * y[4] <= ω[2] - x[2].in
+            )
             steps = range(5, stop = 15, length = N)
             SDDP.parameterize(sp, [[i, j] for i in steps for j in steps]) do φ
-                JuMP.fix.(ω, φ)
+                return JuMP.fix.(ω, φ)
             end
         end
     end

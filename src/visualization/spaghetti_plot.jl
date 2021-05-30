@@ -35,7 +35,7 @@ struct SpaghettiPlot{D}
 end
 
 function Base.show(io::IO, plt::SpaghettiPlot)
-    print(
+    return print(
         io,
         "A spaghetti plot with ",
         length(plt.simulations),
@@ -113,7 +113,12 @@ function add_spaghetti(
     return
 end
 
-function fill_template(dest::String, args...; template::String, launch::Bool = false)
+function fill_template(
+    dest::String,
+    args...;
+    template::String,
+    launch::Bool = false,
+)
     s = read(template, String)
     for arg in args
         s = replace(s, arg)
@@ -134,7 +139,10 @@ be opened to display the resulting HTML file.
 """
 function plot(
     plt::SpaghettiPlot,
-    filename::String = joinpath(tempdir(), string(Random.randstring(), ".html"));
+    filename::String = joinpath(
+        tempdir(),
+        string(Random.randstring(), ".html"),
+    );
     open::Bool = true,
 )
     fill_template(

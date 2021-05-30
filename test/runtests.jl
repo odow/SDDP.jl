@@ -18,7 +18,10 @@ const VISUALIZATION_DIR = joinpath(@__DIR__, "visualization")
 
 @testset "SDDP.jl" begin
     @testset "Unit Tests" begin
-        @testset "plugins/$(file)" for file in read_dir(PLUGINS_DIR, ["parallel_schemes.jl"])
+        @testset "plugins/$(file)" for file in read_dir(
+            PLUGINS_DIR,
+            ["parallel_schemes.jl"],
+        )
             @info file
             include(joinpath(PLUGINS_DIR, file))
         end

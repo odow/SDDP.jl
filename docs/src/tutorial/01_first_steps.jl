@@ -364,8 +364,8 @@ function subproblem_builder(subproblem::Model, node::Int)
     ## Control variables
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
     end)
     return subproblem
 end
@@ -404,14 +404,17 @@ function subproblem_builder(subproblem::Model, node::Int)
     ## Control variables
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
     end)
     ## Transition function and constraints
-    @constraints(subproblem, begin
-        volume.out == volume.in - hydro_generation - hydro_spill
-        hydro_generation + thermal_generation == 150
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in - hydro_generation - hydro_spill
+            hydro_generation + thermal_generation == 150
+        end
+    )
     return subproblem
 end
 
@@ -430,14 +433,17 @@ function subproblem_builder(subproblem::Model, node::Int)
     ## Control variables
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
     end)
     ## Transition function and constraints
-    @constraints(subproblem, begin
-        volume.out == volume.in - hydro_generation - hydro_spill
-        hydro_generation + thermal_generation == 150
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in - hydro_generation - hydro_spill
+            hydro_generation + thermal_generation == 150
+        end
+    )
     ## Stage-objective
     if node == 1
         @stageobjective(subproblem, 50 * thermal_generation)
@@ -459,14 +465,17 @@ function subproblem_builder(subproblem::Model, node::Int)
     ## Control variables
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
     end)
     ## Transition function and constraints
-    @constraints(subproblem, begin
-        volume.out == volume.in - hydro_generation - hydro_spill
-        hydro_generation + thermal_generation == 150
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in - hydro_generation - hydro_spill
+            hydro_generation + thermal_generation == 150
+        end
+    )
     ## Stage-objective
     fuel_cost = [50, 100, 150]
     @stageobjective(subproblem, fuel_cost[node] * thermal_generation)
@@ -525,14 +534,17 @@ model = SDDP.LinearPolicyGraph(
     ## Control variables
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
     end)
     ## Transition function and constraints
-    @constraints(subproblem, begin
-        volume.out == volume.in - hydro_generation - hydro_spill
-        hydro_generation + thermal_generation == 150
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in - hydro_generation - hydro_spill
+            hydro_generation + thermal_generation == 150
+        end
+    )
     ## Stage-objective
     if node == 1
         @stageobjective(subproblem, 50 * thermal_generation)
@@ -607,7 +619,7 @@ simulations = SDDP.simulate(
     ## The number of replications.
     1,
     ## A list of names to record the values of.
-    [:volume, :thermal_generation, :hydro_generation, :hydro_spill]
+    [:volume, :thermal_generation, :hydro_generation, :hydro_spill],
 )
 
 replication = 1

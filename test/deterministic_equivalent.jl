@@ -10,22 +10,28 @@ using Test
 @testset "cyclic checks" begin
     @testset "Acyclic linear" begin
         graph = SDDP.LinearGraph(2)
-        model =
-            SDDP.PolicyGraph(graph, lower_bound = 0.0, optimizer = GLPK.Optimizer) do sp, t
-                @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-                @stageobjective(sp, x.out)
-            end
+        model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0.0,
+            optimizer = GLPK.Optimizer,
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
         @test SDDP.is_cyclic(model) == false
         @test typeof(SDDP.deterministic_equivalent(model)) == JuMP.Model
     end
     @testset "Cyclic linear" begin
         graph = SDDP.LinearGraph(2)
         SDDP.add_edge(graph, 2 => 1, 0.9)
-        model =
-            SDDP.PolicyGraph(graph, lower_bound = 0.0, optimizer = GLPK.Optimizer) do sp, t
-                @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-                @stageobjective(sp, x.out)
-            end
+        model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0.0,
+            optimizer = GLPK.Optimizer,
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
         @test SDDP.is_cyclic(model) == true
         @test_throws(
             ErrorException(
@@ -36,12 +42,19 @@ using Test
         )
     end
     @testset "Cyclic single node" begin
-        graph = SDDP.Graph(:root, [:node], [(:root => :node, 1.0), (:node => :node, 0.9)])
-        model =
-            SDDP.PolicyGraph(graph, lower_bound = 0.0, optimizer = GLPK.Optimizer) do sp, t
-                @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-                @stageobjective(sp, x.out)
-            end
+        graph = SDDP.Graph(
+            :root,
+            [:node],
+            [(:root => :node, 1.0), (:node => :node, 0.9)],
+        )
+        model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0.0,
+            optimizer = GLPK.Optimizer,
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
         @test SDDP.is_cyclic(model) == true
         @test_throws(
             ErrorException(
@@ -66,11 +79,14 @@ using Test
     @testset "Cyclic Markovian" begin
         graph = SDDP.MarkovianGraph([[0.5 0.5], [0.2 0.8; 0.8 0.2]])
         SDDP.add_edge(graph, (2, 1) => (1, 1), 0.9)
-        model =
-            SDDP.PolicyGraph(graph, lower_bound = 0, optimizer = GLPK.Optimizer) do sp, t
-                @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
-                @stageobjective(sp, x.out)
-            end
+        model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0,
+            optimizer = GLPK.Optimizer,
+        ) do sp, t
+            @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+            @stageobjective(sp, x.out)
+        end
         @test SDDP.is_cyclic(model) == true
         @test_throws(
             ErrorException(
@@ -92,7 +108,9 @@ end
         @stageobjective(sp, x.out)
     end
     @test_throws(
-        ErrorException("Unable to formulate deterministic equivalent: Time limit exceeded!"),
+        ErrorException(
+            "Unable to formulate deterministic equivalent: Time limit exceeded!",
+        ),
         # We use a negative time limit to force error.
         SDDP.deterministic_equivalent(model; time_limit = -10.0)
     )
@@ -120,7 +138,9 @@ end
         end
     end
     @test_throws(
-        ErrorException("Unable to formulate deterministic equivalent: Objective states detected!"),
+        ErrorException(
+            "Unable to formulate deterministic equivalent: Objective states detected!",
+        ),
         SDDP.deterministic_equivalent(model)
     )
 end
@@ -129,18 +149,28 @@ end
     graph = SDDP.MarkovianGraph([[0.5 0.5], [0.2 0.8; 0.8 0.2]])
     SDDP.add_ambiguity_set(graph, [(1, 1), (1, 2)])
     SDDP.add_ambiguity_set(graph, [(2, 1), (2, 2)])
-    model = SDDP.PolicyGraph(graph, lower_bound = 0, optimizer = GLPK.Optimizer) do sp, t
+    model = SDDP.PolicyGraph(
+        graph,
+        lower_bound = 0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
     end
     @test_throws(
-        ErrorException("Unable to formulate deterministic equivalent: Belief states detected!"),
+        ErrorException(
+            "Unable to formulate deterministic equivalent: Belief states detected!",
+        ),
         SDDP.deterministic_equivalent(model)
     )
 end
 
 @testset "existing policy" begin
-    model = SDDP.LinearPolicyGraph(stages=2, lower_bound = 0, optimizer = GLPK.Optimizer) do sp, t
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
     end
@@ -148,7 +178,7 @@ end
     @test_throws(
         ErrorException(
             "Unable to formulate deterministic equivalent: Model has been used " *
-            "for training. Can only form deterministic equivalent on a fresh model."
+            "for training. Can only form deterministic equivalent on a fresh model.",
         ),
         SDDP.deterministic_equivalent(model)
     )
@@ -217,6 +247,7 @@ end
             @stageobjective(sp, x.out)
         end
         d = SDDP.deterministic_equivalent(model)
-        @test (Vector{VariableRef}, MOI.SOS1{Float64}) in list_of_constraint_types(d)
+        @test (Vector{VariableRef}, MOI.SOS1{Float64}) in
+              list_of_constraint_types(d)
     end
 end

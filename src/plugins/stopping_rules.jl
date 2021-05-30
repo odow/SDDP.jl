@@ -16,7 +16,11 @@ end
 
 stopping_rule_status(::IterationLimit) = :iteration_limit
 
-function convergence_test(graph::PolicyGraph, log::Vector{Log}, rule::IterationLimit)
+function convergence_test(
+    graph::PolicyGraph,
+    log::Vector{Log},
+    rule::IterationLimit,
+)
     return log[end].iteration >= rule.limit
 end
 
@@ -70,15 +74,21 @@ end
 
 stopping_rule_status(::Statistical) = :statistical
 
-function convergence_test(graph::PolicyGraph, log::Vector{Log}, rule::Statistical)
+function convergence_test(
+    graph::PolicyGraph,
+    log::Vector{Log},
+    rule::Statistical,
+)
     if length(log) % rule.iteration_period != 0
         # Only run this convergence test every rule.iteration_period iterations.
         return false
     end
     results = simulate(graph, rule.num_replications)
-    objectives = map(simulation -> sum(s[:stage_objective] for s in simulation), results)
+    objectives =
+        map(simulation -> sum(s[:stage_objective] for s in simulation), results)
     sample_mean = Statistics.mean(objectives)
-    sample_ci = rule.z_score * Statistics.std(objectives) / sqrt(rule.num_replications)
+    sample_ci =
+        rule.z_score * Statistics.std(objectives) / sqrt(rule.num_replications)
     if rule.verbose
         println(
             "Simulated policy value: [",
@@ -96,9 +106,10 @@ function convergence_test(graph::PolicyGraph, log::Vector{Log}, rule::Statistica
         return current_bound <= sample_mean + sample_ci
     else
         #If sense is none of the above for some awkward reason, return to previous criteria
-        return sample_mean - sample_ci <= current_bound <= sample_mean + sample_ci
+        return sample_mean - sample_ci <=
+               current_bound <=
+               sample_mean + sample_ci
     end
-
 end
 
 # ======================= Bound-stalling Stopping Rule ======================= #

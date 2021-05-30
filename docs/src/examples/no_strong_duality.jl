@@ -12,7 +12,11 @@ using SDDP, GLPK, Test
 
 function no_strong_duality()
     model = SDDP.PolicyGraph(
-        SDDP.Graph(:root, [:node], [(:root => :node, 1.0), (:node => :node, 0.5)]),
+        SDDP.Graph(
+            :root,
+            [:node],
+            [(:root => :node, 1.0), (:node => :node, 0.5)],
+        ),
         optimizer = GLPK.Optimizer,
         lower_bound = 0.0,
     ) do sp, t

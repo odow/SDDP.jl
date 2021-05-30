@@ -17,7 +17,10 @@ function fast_production_management(; cut_type)
     S = 2 .+ [0.33, 0.54]
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(H),
-        bellman_function = SDDP.BellmanFunction(lower_bound = -50.0, cut_type = cut_type),
+        bellman_function = SDDP.BellmanFunction(
+            lower_bound = -50.0,
+            cut_type = cut_type,
+        ),
         optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x[1:N] >= 0, SDDP.State, initial_value = 0.0)
@@ -30,9 +33,9 @@ function fast_production_management(; cut_type)
             sum(s) <= d
         end)
         SDDP.parameterize(sp, t == 1 ? [0] : DEMAND) do ω
-            JuMP.fix(d, ω)
+            return JuMP.fix(d, ω)
         end
-        @stageobjective(sp, sum(C[i] * x[i].out for i = 1:N) - S's)
+        @stageobjective(sp, sum(C[i] * x[i].out for i in 1:N) - S's)
     end
     SDDP.train(model, iteration_limit = 10, print_level = 2, log_frequency = 5)
     @test SDDP.calculate_bound(model) ≈ -23.96 atol = 1e-2

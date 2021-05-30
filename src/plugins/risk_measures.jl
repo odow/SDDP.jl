@@ -78,7 +78,11 @@ struct AVaR <: AbstractRiskMeasure
     β::Float64
     function AVaR(β::Float64)
         if !(0 <= β <= 1)
-            throw(ArgumentError("Risk-quantile β must be in [0, 1]. Currently it is $(β)."))
+            throw(
+                ArgumentError(
+                    "Risk-quantile β must be in [0, 1]. Currently it is $(β).",
+                ),
+            )
         end
         return new(β)
     end
@@ -115,7 +119,9 @@ function adjust_probability(
     quantile_collected = 0.0
     for i in sortperm(objective_realizations, rev = is_minimization)
         quantile_collected >= measure.β && break
-        avar_prob = min(original_probability[i], measure.β - quantile_collected) / measure.β
+        avar_prob =
+            min(original_probability[i], measure.β - quantile_collected) /
+            measure.β
         risk_adjusted_probability[i] = avar_prob
         quantile_collected += avar_prob * measure.β
     end
@@ -281,7 +287,7 @@ struct ModifiedChiSquared <: AbstractRiskMeasure
 end
 
 function Base.show(io::IO, measure::ModifiedChiSquared)
-    print(io, "ModifiedChiSquared with radius=$(measure.radius)")
+    return print(io, "ModifiedChiSquared with radius=$(measure.radius)")
 end
 
 function adjust_probability(
@@ -292,7 +298,8 @@ function adjust_probability(
     objective_realizations::Vector{Float64},
     is_minimization::Bool,
 )
-    if Statistics.std(objective_realizations, corrected = false) < measure.minimum_std
+    if Statistics.std(objective_realizations, corrected = false) <
+       measure.minimum_std
         return adjust_probability(
             Expectation(),
             risk_adjusted_probability,
@@ -362,7 +369,7 @@ function non_uniform_dro(
         s = sqrt(sum(z[i]^2 - z_bar^2 for i in K) / length(K))
         if isapprox(s, 0.0, atol = 1e-10)
             error("s is too small")
-	end
+        end
         # step 2(b)
         if length(K) == m
             for i in K
@@ -376,7 +383,7 @@ function non_uniform_dro(
             sum_qj = sum(q[i] for i in not_in_K)
             sum_qj_squared = sum(q[i]^2 for i in not_in_K)
             len_k = length(K)
-            n = sqrt(len_k * (measure.radius^2 - sum_qj_squared)-sum_qj^2)
+            n = sqrt(len_k * (measure.radius^2 - sum_qj_squared) - sum_qj^2)
             for i in K
                 p[i] = q[i] + 1 / len_k * (sum_qj + n * (z[i] - z_bar) / s)
             end
@@ -389,7 +396,7 @@ function non_uniform_dro(
 
         # find i(K)
         # find the list of indexes for which p is less than 0
-        negative_p = K[ p[K] .< 0]
+        negative_p = K[p[K].<0]
         computed_r = zeros(0)
         sum_qj = 0
         sum_qj_squared = 0
@@ -399,12 +406,14 @@ function non_uniform_dro(
         end
         len_k = length(K)
         computed_r = [
-            (((-q[i] * len_k  - sum_qj)/((z[i] - z_bar))/s)^2 + sum_qj_squared^2)/len_k + sum_qj_squared
-            for i in negative_p
+            (
+                ((-q[i] * len_k - sum_qj) / ((z[i] - z_bar)) / s)^2 +
+                sum_qj_squared^2
+            ) / len_k + sum_qj_squared for i in negative_p
         ]
         i_K = negative_p[argmin(computed_r)]
         append!(not_in_K, i_K)
-        filter!(e -> e != i_K,K)
+        filter!(e -> e != i_K, K)
     end
     # step 3
     for i in not_in_K
@@ -413,7 +422,6 @@ function non_uniform_dro(
     p[K[1]] = 1
     return 0.0
 end
-
 
 """
 Algorithm (2) of Philpott et al. Assumes that the nominal distribution is
@@ -435,10 +443,10 @@ function uniform_dro(
     # Compute the new probabilities according to Algorithm (2) of the Philpott
     # et al. paper.
     # Step (1):
-    @inbounds for k = 0:m-2
+    @inbounds for k in 0:m-2
         # Step (1a):
-        z_bar = sum(z[i] for i = (k+1):m) / (m - k)
-        s² = sum(z[i]^2 - z_bar^2 for i = (k+1):m) / (m - k)
+        z_bar = sum(z[i] for i in (k+1):m) / (m - k)
+        s² = sum(z[i]^2 - z_bar^2 for i in (k+1):m) / (m - k)
         # Due to numerical error, s² may sometimes be a little bit negative.
         if s² < -1e-8
             error("Something unexpected happened with s² term: `$(s²) < 0.0`.")
@@ -455,7 +463,7 @@ function uniform_dro(
             p[k] = 0.0
         end
         if is_minimization
-            @inbounds for i = (k+1):m
+            @inbounds for i in (k+1):m
                 p[i] = term_1 + term_2 * (z[i] - z_bar)
             end
         else
@@ -465,7 +473,7 @@ function uniform_dro(
             # -ve of what it should be. `s` is fine since it is a difference of
             # squares. Thus, all we have to do is negate both z[i] and z_bar
             # here.
-            @inbounds for i = (k+1):m
+            @inbounds for i in (k+1):m
                 p[i] = term_1 + term_2 * (z_bar - z[i])
             end
         end
@@ -498,7 +506,11 @@ struct Wasserstein{T,F} <: AbstractRiskMeasure
         if alpha < 0.0
             error("alpha cannot be $(alpha) as it must be in the range [0, ∞).")
         end
-        return new{typeof(solver_factory),typeof(norm)}(alpha, solver_factory, norm)
+        return new{typeof(solver_factory),typeof(norm)}(
+            alpha,
+            solver_factory,
+            norm,
+        )
     end
 end
 Base.show(io::IO, measure::Wasserstein) = print(io, "SDDP.Wasserstein")
@@ -516,21 +528,22 @@ function adjust_probability(
     set_silent(wasserstein)
     @variable(wasserstein, z[1:N, 1:N] >= 0)
     @variable(wasserstein, p[1:N] >= 0)
-    for i = 1:N
+    for i in 1:N
         @constraint(wasserstein, sum(z[:, i]) == original_probability[i])
         @constraint(wasserstein, sum(z[i, :]) == p[i])
     end
     @constraint(
         wasserstein,
         sum(
-            measure.norm(noise_support[i], noise_support[j]) * z[i, j] for i = 1:N, j = 1:N
+            measure.norm(noise_support[i], noise_support[j]) * z[i, j] for
+            i in 1:N, j in 1:N
         ) <= measure.alpha
     )
     objective_sense = is_minimization ? MOI.MAX_SENSE : MOI.MIN_SENSE
     @objective(
         wasserstein,
         objective_sense,
-        sum(objective_realizations[i] * p[i] for i = 1:N)
+        sum(objective_realizations[i] * p[i] for i in 1:N)
     )
     JuMP.optimize!(wasserstein)
     if JuMP.primal_status(wasserstein) != MOI.FEASIBLE_POINT
@@ -581,7 +594,7 @@ function adjust_probability(
     Q .= y / sum(y)
     α = sum(
         # To avoid numerical issues with the log, skip elements that are `≈ 0`.
-        qi * log(qi / pi) for (pi, qi) in zip(p, Q) if pi > 1e-14  && qi > 1e-14
+        qi * log(qi / pi) for (pi, qi) in zip(p, Q) if pi > 1e-14 && qi > 1e-14
     )
     return -α / γ
 end

@@ -3,19 +3,24 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-function launch_websocket(server_to_client::Channel{Log}, client_to_server::Channel{Bool})
+function launch_websocket(
+    server_to_client::Channel{Log},
+    client_to_server::Channel{Bool},
+)
     @async HTTP.WebSockets.listen("127.0.0.1", UInt16(8001)) do ws
         while !eof(ws)
             if isopen(server_to_client) && isopen(client_to_server)
                 new_log = take!(server_to_client)
                 write(
                     ws,
-                    JSON.json(Dict(
-                        "iteration" => new_log.iteration,
-                        "bound" => new_log.bound,
-                        "simulation" => new_log.simulation_value,
-                        "time" => new_log.time,
-                    )),
+                    JSON.json(
+                        Dict(
+                            "iteration" => new_log.iteration,
+                            "bound" => new_log.bound,
+                            "simulation" => new_log.simulation_value,
+                            "time" => new_log.time,
+                        ),
+                    ),
                 )
                 # Now, wait for Plotly to return a signal that it has updated
                 # the plot.

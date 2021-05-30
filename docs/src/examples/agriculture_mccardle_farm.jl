@@ -96,10 +96,11 @@ function test_mccardle_farm_model()
                     ## In each stage we need to meet demand.
                     sum(eat) >= D[stage-1]
                     ## We can buy and sell other cuttings.
-                    bales[stage-1].out == cut_ex[stage-1] + acres.in * b[stage-1, weather]
+                    bales[stage-1].out ==
+                    cut_ex[stage-1] + acres.in * b[stage-1, weather]
                     [c = 1:3; c != stage - 1], bales[c].out == cut_ex[c]
                     ## There is some maximum storage.
-                    sum(bales[i].out for i = 1:3) <= w
+                    sum(bales[i].out for i in 1:3) <= w
                     ## We can only sell what is in storage.
                     [c = 1:3], sell[c] <= bales[c].in
                     ## Maximum sales quantity.
@@ -124,7 +125,8 @@ function test_mccardle_farm_model()
                     ## feed cost
                     S[cutting, stage-1] * eat[cutting] -
                     ## sell reward
-                    q[cutting][stage-1, weather] * sell[cutting] for cutting = 1:3
+                    q[cutting][stage-1, weather] * sell[cutting] for
+                    cutting in 1:3
                 )
             )
         end

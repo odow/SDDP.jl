@@ -40,7 +40,10 @@ function asset_management_stagewise(; cut_type)
             @stageobjective(subproblem, 0)
         elseif t == 2 || t == 3
             @variable(subproblem, phi)
-            @constraint(subproblem, ws[i] * xs.in + wb[i] * xb.in + phi == xs.out + xb.out)
+            @constraint(
+                subproblem,
+                ws[i] * xs.in + wb[i] * xb.in + phi == xs.out + xb.out
+            )
             SDDP.parameterize(subproblem, [1, 2], [0.6, 0.4]) do ω
                 JuMP.fix(phi, Phi[ω])
                 @stageobjective(subproblem, Psi[ω] * xs.out)

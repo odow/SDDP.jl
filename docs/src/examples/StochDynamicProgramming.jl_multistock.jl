@@ -15,7 +15,12 @@ function test_multistock_example()
         lower_bound = -5.0,
         optimizer = GLPK.Optimizer,
     ) do subproblem, stage
-        @variable(subproblem, 0 <= stock[i = 1:3] <= 1, SDDP.State, initial_value = 0.5)
+        @variable(
+            subproblem,
+            0 <= stock[i = 1:3] <= 1,
+            SDDP.State,
+            initial_value = 0.5
+        )
         @variables(subproblem, begin
             0 <= control[i = 1:3] <= 0.5
             ξ[i = 1:3]  # Dummy for RHS noise.
@@ -27,9 +32,11 @@ function test_multistock_example()
                 [i = 1:3], stock[i].out == stock[i].in + control[i] - ξ[i]
             end
         )
-        Ξ = collect(Base.product((0.0, 0.15, 0.3), (0.0, 0.15, 0.3), (0.0, 0.15, 0.3)))[:]
+        Ξ = collect(
+            Base.product((0.0, 0.15, 0.3), (0.0, 0.15, 0.3), (0.0, 0.15, 0.3)),
+        )[:]
         SDDP.parameterize(subproblem, Ξ) do ω
-            JuMP.fix.(ξ, ω)
+            return JuMP.fix.(ξ, ω)
         end
         @stageobjective(subproblem, (sin(3 * stage) - 1) * sum(control))
     end
@@ -44,8 +51,8 @@ function test_multistock_example()
     simulation_results = SDDP.simulate(model, 5000)
     @test length(simulation_results) == 5000
     μ = SDDP.Statistics.mean(
-        sum(data[:stage_objective] for data in simulation)
-        for simulation in simulation_results
+        sum(data[:stage_objective] for data in simulation) for
+        simulation in simulation_results
     )
     @test μ ≈ -4.349 atol = 0.1
     return

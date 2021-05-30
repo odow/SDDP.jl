@@ -20,7 +20,7 @@ function stock_example()
         @variable(sp, ξ)
         @constraint(sp, state.out == state.in - control + ξ)
         SDDP.parameterize(sp, 0.0:1/30:0.3) do ω
-            JuMP.fix(ξ, ω)
+            return JuMP.fix(ξ, ω)
         end
         @stageobjective(sp, (sin(3 * stage) - 1) * control)
     end
@@ -29,8 +29,8 @@ function stock_example()
     simulation_results = SDDP.simulate(model, 1_000)
     @test length(simulation_results) == 1_000
     μ = SDDP.Statistics.mean(
-        sum(data[:stage_objective] for data in simulation)
-        for simulation in simulation_results
+        sum(data[:stage_objective] for data in simulation) for
+        simulation in simulation_results
     )
     @test μ ≈ -1.471 atol = 0.05
     return

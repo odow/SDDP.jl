@@ -23,8 +23,15 @@ function all_blacks()
         ## Action: accept offer, or don't accept offer
         @variable(sp, accept_offer, Bin)
         ## Balance on seats
-        @constraint(sp, [i in 1:N], x[i].out == x[i].in - offer[i, stage] * accept_offer)
-        @stageobjective(sp, sum(R[i, stage] * offer[i, stage] * accept_offer for i = 1:N))
+        @constraint(
+            sp,
+            [i in 1:N],
+            x[i].out == x[i].in - offer[i, stage] * accept_offer
+        )
+        @stageobjective(
+            sp,
+            sum(R[i, stage] * offer[i, stage] * accept_offer for i in 1:N)
+        )
     end
     SDDP.train(model, iteration_limit = 10, log_frequency = 5)
     @test SDDP.calculate_bound(model) ≈ 9.0

@@ -15,7 +15,7 @@ using Test
         ) do node, stage
             @variable(node, 0 <= x <= 1)
             SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-                JuMP.set_upper_bound(x, ω)
+                return JuMP.set_upper_bound(x, ω)
             end
         end
         @test_throws ErrorException SDDP.InSampleMonteCarlo(
@@ -36,16 +36,22 @@ using Test
     @testset "Cyclic" begin
         graph = SDDP.LinearGraph(2)
         SDDP.add_edge(graph, 2 => 1, 0.9)
-        model =
-            SDDP.PolicyGraph(graph, lower_bound = 0.0, direct_mode = false) do node, stage
-                @variable(node, 0 <= x <= 1)
-                SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-                    JuMP.set_upper_bound(x, ω)
-                end
+        model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0.0,
+            direct_mode = false,
+        ) do node, stage
+            @variable(node, 0 <= x <= 1)
+            SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+                return JuMP.set_upper_bound(x, ω)
             end
+        end
         scenario, terminated_due_to_cycle = SDDP.sample_scenario(
             model,
-            SDDP.InSampleMonteCarlo(terminate_on_dummy_leaf = false, max_depth = 4),
+            SDDP.InSampleMonteCarlo(
+                terminate_on_dummy_leaf = false,
+                max_depth = 4,
+            ),
         )
         @test length(scenario) == 4
         @test !terminated_due_to_cycle  # Terminated due to max depth.
@@ -66,7 +72,7 @@ end
         ) do node, stage
             @variable(node, 0 <= x <= 1)
             SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-                JuMP.set_upper_bound(x, ω)
+                return JuMP.set_upper_bound(x, ω)
             end
         end
         @test_throws ErrorException SDDP.OutOfSampleMonteCarlo(
@@ -76,7 +82,10 @@ end
             terminate_on_dummy_leaf = false,
             terminate_on_cycle = false,
         )
-        sampler = SDDP.OutOfSampleMonteCarlo(model, use_insample_transition = true) do stage
+        sampler = SDDP.OutOfSampleMonteCarlo(
+            model,
+            use_insample_transition = true,
+        ) do stage
             return [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
         end
         scenario, terminated_due_to_cycle = SDDP.sample_scenario(model, sampler)
@@ -86,15 +95,17 @@ end
             @test stage == node
             @test noise in stage * [2, 4]
         end
-        sampler =
-            SDDP.OutOfSampleMonteCarlo(model, use_insample_transition = false) do stage
-                if stage == 0
-                    return [SDDP.Noise(2, 1.0)]
-                else
-                    return SDDP.Noise{Int}[],
-                    [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
-                end
+        sampler = SDDP.OutOfSampleMonteCarlo(
+            model,
+            use_insample_transition = false,
+        ) do stage
+            if stage == 0
+                return [SDDP.Noise(2, 1.0)]
+            else
+                return SDDP.Noise{Int}[],
+                [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
             end
+        end
         scenario, terminated_due_to_cycle = SDDP.sample_scenario(model, sampler)
         @test length(scenario) == 1
         @test !terminated_due_to_cycle
@@ -106,13 +117,16 @@ end
     @testset "Cyclic" begin
         graph = SDDP.LinearGraph(2)
         SDDP.add_edge(graph, 2 => 1, 0.9)
-        model =
-            SDDP.PolicyGraph(graph, lower_bound = 0.0, direct_mode = false) do node, stage
-                @variable(node, 0 <= x <= 1)
-                SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-                    JuMP.set_upper_bound(x, ω)
-                end
+        model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0.0,
+            direct_mode = false,
+        ) do node, stage
+            @variable(node, 0 <= x <= 1)
+            SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+                return JuMP.set_upper_bound(x, ω)
             end
+        end
         sampler = SDDP.OutOfSampleMonteCarlo(
             model,
             use_insample_transition = true,
@@ -142,11 +156,13 @@ end
         ) do node, stage
             @variable(node, 0 <= x <= 1)
             SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-                JuMP.set_upper_bound(x, ω)
+                return JuMP.set_upper_bound(x, ω)
             end
         end
-        scenario, terminated_due_to_cycle =
-            SDDP.sample_scenario(model, SDDP.Historical([(1, 0.1), (2, 0.2), (1, 0.3)]))
+        scenario, terminated_due_to_cycle = SDDP.sample_scenario(
+            model,
+            SDDP.Historical([(1, 0.1), (2, 0.2), (1, 0.3)]),
+        )
         @test length(scenario) == 3
         @test !terminated_due_to_cycle
         @test scenario == [(1, 0.1), (2, 0.2), (1, 0.3)]
@@ -159,12 +175,12 @@ end
         ) do node, stage
             @variable(node, 0 <= x <= 1)
             SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-                JuMP.set_upper_bound(x, ω)
+                return JuMP.set_upper_bound(x, ω)
             end
         end
         scenario_A = [(1, 0.1), (2, 0.2), (1, 0.3)]
         scenario_B = [(1, 0.4), (2, 0.5)]
-        for i = 1:10
+        for i in 1:10
             scenario, terminated_due_to_cycle = SDDP.sample_scenario(
                 model,
                 SDDP.Historical([scenario_A, scenario_B], [0.2, 0.8]),

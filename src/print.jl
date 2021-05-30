@@ -5,7 +5,7 @@
 
 function print_helper(f, io, args...)
     f(stdout, args...)
-    f(io, args...)
+    return f(io, args...)
 end
 
 function print_banner(io)
@@ -14,7 +14,7 @@ function print_banner(io)
         "------------------------------------------------------------------------------",
     )
     println(io, "                      SDDP.jl (c) Oscar Dowson, 2017-21")
-    println(io)
+    return println(io)
 end
 
 function _unique_paths(model::PolicyGraph{T}) where {T}
@@ -63,9 +63,8 @@ function _unique_paths(model::PolicyGraph{T}) where {T}
         if length(parents[node]) == 0  # Must come from the root node.
             incoming_scenarios[node] = N
         else
-            incoming_scenarios[node] = N * sum(
-                incoming_scenarios[p] for p in parents[node]
-            )
+            incoming_scenarios[node] =
+                N * sum(incoming_scenarios[p] for p in parents[node])
         end
         if length(children[node]) == 0  # It's a leaf!
             total_scenarios += incoming_scenarios[node]
@@ -86,7 +85,7 @@ function print_problem_statistics(io::IO, model::PolicyGraph, parallel_scheme)
 end
 
 function print_iteration_header(io)
-    println(
+    return println(
         io,
         " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves",
     )
@@ -102,12 +101,15 @@ function print_iteration(io, log::Log)
     print(io, "  ", print_value(log.time))
     print(io, "  ", print_value(log.pid))
     print(io, "  ", print_value(log.total_solves))
-    println(io)
+    return println(io)
 end
 
 function print_footer(io, training_results)
-    println(io, "\nTerminating training with status: $(training_results.status)")
     println(
+        io,
+        "\nTerminating training with status: $(training_results.status)",
+    )
+    return println(
         io,
         "------------------------------------------------------------------------------",
     )
@@ -122,7 +124,9 @@ struct CoefficientRanges
     objective::Vector{Float64}
     bounds::Vector{Float64}
     rhs::Vector{Float64}
-    CoefficientRanges() = new([Inf, -Inf], [Inf, -Inf], [Inf, -Inf], [Inf, -Inf])
+    function CoefficientRanges()
+        return new([Inf, -Inf], [Inf, -Inf], [Inf, -Inf], [Inf, -Inf])
+    end
 end
 
 function _merge(x::Vector{Float64}, y::Vector{Float64})
@@ -211,20 +215,20 @@ function _update_range(range::Vector{Float64}, func::JuMP.GenericAffExpr)
 end
 
 function _update_range(range::Vector{Float64}, func::MOI.LessThan)
-    _update_range(range, func.upper)
+    return _update_range(range, func.upper)
 end
 
 function _update_range(range::Vector{Float64}, func::MOI.GreaterThan)
-    _update_range(range, func.lower)
+    return _update_range(range, func.lower)
 end
 
 function _update_range(range::Vector{Float64}, func::MOI.EqualTo)
-    _update_range(range, func.value)
+    return _update_range(range, func.value)
 end
 
 function _update_range(range::Vector{Float64}, func::MOI.Interval)
     _update_range(range, func.upper)
-    _update_range(range, func.lower)
+    return _update_range(range, func.lower)
 end
 
 # Default fallback for unsupported constraints.
@@ -299,7 +303,13 @@ function numerical_stability_report(
     print::Bool = true,
     warn::Bool = true,
 )
-    numerical_stability_report(stdout, model, by_node = by_node, print = print, warn = warn)
+    return numerical_stability_report(
+        stdout,
+        model,
+        by_node = by_node,
+        print = print,
+        warn = warn,
+    )
 end
 
 ###
@@ -315,7 +325,9 @@ Assumes that the model has been trained via [`SDDP.train`](@ref).
 """
 function write_log_to_csv(model::PolicyGraph, filename::String)
     if model.most_recent_training_results === nothing
-        error("Unable to write the log to file because the model has not been trained.")
+        error(
+            "Unable to write the log to file because the model has not been trained.",
+        )
     end
     open(filename, "w") do io
         println(io, "iteration, simulation, bound, time")

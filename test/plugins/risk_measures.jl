@@ -143,7 +143,8 @@ end
             [1.0, 2.0, 3.0, 4.0],
             true,
         )
-        @test risk_adjusted_probability ≈ 0.25 * nominal_probability + 0.75 * [0, 0, 0, 1.0]
+        @test risk_adjusted_probability ≈
+              0.25 * nominal_probability + 0.75 * [0, 0, 0, 1.0]
     end
     @testset "Max - (0.5, 0.0)" begin
         nominal_probability = [0.1, 0.2, 0.3, 0.4]
@@ -156,7 +157,8 @@ end
             [1.0, 2.0, 3.0, 4.0],
             false,
         )
-        @test risk_adjusted_probability ≈ 0.5 * nominal_probability + 0.5 * [1.0, 0, 0, 0]
+        @test risk_adjusted_probability ≈
+              0.5 * nominal_probability + 0.5 * [1.0, 0, 0, 0]
     end
     @testset "Max - (0.5, 0.0) 2" begin
         nominal_probability = [0.0, 0.2, 0.4, 0.4]
@@ -169,12 +171,14 @@ end
             [1.0, 2.0, 3.0, 4.0],
             false,
         )
-        @test risk_adjusted_probability ≈ 0.5 * nominal_probability + 0.5 * [0.0, 1.0, 0, 0]
+        @test risk_adjusted_probability ≈
+              0.5 * nominal_probability + 0.5 * [0.0, 1.0, 0, 0]
     end
 end
 
 @testset "ModifiedChiSquared" begin
-    @test sprint(show, SDDP.ModifiedChiSquared(0.1)) == "ModifiedChiSquared with radius=0.1"
+    @test sprint(show, SDDP.ModifiedChiSquared(0.1)) ==
+          "ModifiedChiSquared with radius=0.1"
     @testset "Min - R=0.0" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
         SDDP.adjust_probability(
@@ -248,7 +252,8 @@ end
             [-2.0, -1.0, -3.0, -4.0, -0.5],
             true,
         )
-        @test risk_adjusted_probability ≈ [0.115714, 0.372861, 0.158568, 0.001421,0.351435] atol = 1e-6
+        @test risk_adjusted_probability ≈
+              [0.115714, 0.372861, 0.158568, 0.001421, 0.351435] atol = 1e-6
     end
 
     @testset "Non-uniform Max" begin
@@ -261,7 +266,8 @@ end
             [-2.0, -1.0, -3.0, -4.0, -0.5],
             false,
         )
-        @test risk_adjusted_probability ≈ [0.0, 0.0, 0.323223, 0.676777, 0.0] atol = 1e-6
+        @test risk_adjusted_probability ≈ [0.0, 0.0, 0.323223, 0.676777, 0.0] atol =
+            1e-6
     end
     @testset "Min - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
@@ -273,8 +279,8 @@ end
             [-2.0, -1.0, -3.0, -4.0, -5.0],
             true,
         )
-        @test risk_adjusted_probability ≈ [0.279057, 0.358114, 0.2, 0.120943, 0.0418861] atol =
-            1e-6
+        @test risk_adjusted_probability ≈
+              [0.279057, 0.358114, 0.2, 0.120943, 0.0418861] atol = 1e-6
     end
     @testset "Max - R=0.25" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
@@ -286,8 +292,8 @@ end
             [2.0, 1.0, 3.0, 4.0, 5.0],
             false,
         )
-        @test risk_adjusted_probability ≈ [0.279057, 0.358114, 0.2, 0.120943, 0.0418861] atol =
-            1e-6
+        @test risk_adjusted_probability ≈
+              [0.279057, 0.358114, 0.2, 0.120943, 0.0418861] atol = 1e-6
     end
     @testset "Min - R=0.4" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
@@ -299,8 +305,8 @@ end
             [-2.0, -1.0, -3.0, -4.0, -5.0],
             true,
         )
-        @test risk_adjusted_probability ≈ [0.324162, 0.472486, 0.175838, 0.027514, 0.0] atol =
-            1e-6
+        @test risk_adjusted_probability ≈
+              [0.324162, 0.472486, 0.175838, 0.027514, 0.0] atol = 1e-6
     end
     @testset "Max - R=0.4" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
@@ -312,8 +318,8 @@ end
             [2.0, 1.0, 3.0, 4.0, 5.0],
             false,
         )
-        @test risk_adjusted_probability ≈ [0.324162, 0.472486, 0.175838, 0.027514, 0.0] atol =
-            1e-6
+        @test risk_adjusted_probability ≈
+              [0.324162, 0.472486, 0.175838, 0.027514, 0.0] atol = 1e-6
     end
     @testset "Min - R=√0.8" begin
         risk_adjusted_probability = Vector{Float64}(undef, 5)
@@ -412,14 +418,15 @@ end
 end
 
 @testset "Entropic" begin
-    @test sprint(show, SDDP.Entropic(0.1)) == "Entropic risk measure with γ = 0.1"
+    @test sprint(show, SDDP.Entropic(0.1)) ==
+          "Entropic risk measure with γ = 0.1"
     @testset "Minimization" begin
         # Test that increasing values of θ lead to larger values for F[X].
         X = [1.0, 2.0, 3.0]
         P = [0.5, 0.5, 0.0]
         Q = [NaN, NaN, NaN]
         last, last_q2 = -Inf, 0.0
-        for i = -4:4
+        for i in -4:4
             θ = 10.0^i
             α = SDDP.adjust_probability(SDDP.Entropic(θ), Q, P, [], X, true)
             current = Q' * X + α
@@ -434,7 +441,7 @@ end
         P = [0.5, 0.5, 0.0]
         Q = [NaN, NaN, NaN]
         last, last_q1 = Inf, 0.0
-        for i = -4:4
+        for i in -4:4
             θ = 10.0^i
             α = SDDP.adjust_probability(SDDP.Entropic(θ), Q, P, [], X, false)
             current = Q' * X + α

@@ -72,7 +72,8 @@ function newsvendor_example(; cut_type)
     )
     @test SDDP.calculate_bound(model) ≈ 4.04 atol = 0.05
     results = SDDP.simulate(model, 500)
-    objectives = [sum(s[:stage_objective] for s in simulation) for simulation in results]
+    objectives =
+        [sum(s[:stage_objective] for s in simulation) for simulation in results]
     @test round(Statistics.mean(objectives); digits = 2) ≈ 4.04 atol = 0.1
     return
 end

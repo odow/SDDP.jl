@@ -32,18 +32,21 @@ function inventory_management_problem()
         lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
     ) do subproblem, node
-        @variables(subproblem, begin
+        @variables(
+            subproblem,
+            begin
                 0 <= inventory <= 2, (SDDP.State, initial_value = 0.0)
                 buy >= 0
                 demand
-            end)
+            end
+        )
         @constraint(subproblem, demand == inventory.in - inventory.out + buy)
         if node == :Ad || node == :Bd || node == :D
             JuMP.fix(demand, 0)
             @stageobjective(subproblem, buy)
         else
             SDDP.parameterize(subproblem, demand_values, demand_prob[node]) do ω
-                JuMP.fix(demand, ω)
+                return JuMP.fix(demand, ω)
             end
             @stageobjective(subproblem, 2 * buy + inventory.out)
         end
@@ -57,7 +60,8 @@ function inventory_management_problem()
         log_frequency = 10,
     )
     results = SDDP.simulate(model, 500)
-    objectives = [sum(s[:stage_objective] for s in simulation) for simulation in results]
+    objectives =
+        [sum(s[:stage_objective] for s in simulation) for simulation in results]
     sample_mean = round(Statistics.mean(objectives); digits = 2)
     sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
     @test SDDP.calculate_bound(model) ≈ sample_mean atol = sample_ci

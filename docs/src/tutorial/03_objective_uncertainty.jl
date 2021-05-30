@@ -32,32 +32,36 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer
+    optimizer = GLPK.Optimizer,
 ) do subproblem, t
     ## Define the state variable.
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     ## Define the control variables.
     @variables(subproblem, begin
         thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
         inflow
     end)
     ## Define the constraints
-    @constraints(subproblem, begin
-        volume.out == volume.in + inflow - hydro_generation - hydro_spill
-        thermal_generation + hydro_generation == 150.0
-    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in + inflow - hydro_generation - hydro_spill
+            thermal_generation + hydro_generation == 150.0
+        end
+    )
     fuel_cost = [50.0, 100.0, 150.0]
     ## Parameterize the subproblem.
     Ω = [
         (inflow = 0.0, fuel_multiplier = 1.5),
         (inflow = 50.0, fuel_multiplier = 1.0),
-        (inflow = 100.0, fuel_multiplier = 0.75)
+        (inflow = 100.0, fuel_multiplier = 0.75),
     ]
-    SDDP.parameterize(subproblem, Ω, [1/3, 1/3, 1/3]) do ω
+    SDDP.parameterize(subproblem, Ω, [1 / 3, 1 / 3, 1 / 3]) do ω
         JuMP.fix(inflow, ω.inflow)
-        @stageobjective(subproblem,
+        @stageobjective(
+            subproblem,
             ω.fuel_multiplier * fuel_cost[t] * thermal_generation
         )
     end
@@ -71,9 +75,8 @@ SDDP.train(model; iteration_limit = 10)
 
 simulations = SDDP.simulate(model, 500)
 
-objective_values = [
-    sum(stage[:stage_objective] for stage in sim) for sim in simulations
-]
+objective_values =
+    [sum(stage[:stage_objective] for stage in sim) for sim in simulations]
 
 using Statistics
 

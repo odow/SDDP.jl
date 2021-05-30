@@ -14,12 +14,14 @@ using SDDP, GLPK, Test
 
 function asset_management_simple()
     model = SDDP.PolicyGraph(
-        SDDP.MarkovianGraph(Array{Float64,2}[
-            [1.0]',
-            [0.5 0.5],
-            [0.5 0.5; 0.5 0.5],
-            [0.5 0.5; 0.5 0.5],
-        ]),
+        SDDP.MarkovianGraph(
+            Array{Float64,2}[
+                [1.0]',
+                [0.5 0.5],
+                [0.5 0.5; 0.5 0.5],
+                [0.5 0.5; 0.5 0.5],
+            ],
+        ),
         bellman_function = SDDP.BellmanFunction(lower_bound = -1_000.0),
         optimizer = GLPK.Optimizer,
     ) do subproblem, index
@@ -34,8 +36,8 @@ function asset_management_simple()
         elseif 1 < stage < 4
             @constraint(
                 subproblem,
-                rstock[markov_state] * stocks.in + rbonds[markov_state] * bonds.in ==
-                stocks.out + bonds.out
+                rstock[markov_state] * stocks.in +
+                rbonds[markov_state] * bonds.in == stocks.out + bonds.out
             )
             @stageobjective(subproblem, 0)
         else
@@ -43,7 +45,8 @@ function asset_management_simple()
             @variable(subproblem, short >= 0)
             @constraint(
                 subproblem,
-                rstock[markov_state] * stocks.in + rbonds[markov_state] * bonds.in - over + short == 80
+                rstock[markov_state] * stocks.in +
+                rbonds[markov_state] * bonds.in - over + short == 80
             )
             @stageobjective(subproblem, -over + 4 * short)
         end

@@ -234,7 +234,9 @@ function sample_noise(noise_terms::Vector{<:Noise})
             return noise.term
         end
     end
-    error("Internal SDDP error: unable to sample noise from $(noise_terms)")
+    return error(
+        "Internal SDDP error: unable to sample noise from $(noise_terms)",
+    )
 end
 
 function sample_scenario(
@@ -280,7 +282,9 @@ function sample_scenario(
         node_index = sample_noise(children)::T
     end
     # Throw an error because we should never end up here.
-    error("Internal SDDP error: something went wrong sampling a scenario.")
+    return error(
+        "Internal SDDP error: something went wrong sampling a scenario.",
+    )
 end
 
 # ========================= Historical Sampling Scheme ======================= #
@@ -310,7 +314,10 @@ uniform probability.
 """
 function Historical(
     scenarios::Vector{Vector{Tuple{T,S}}},
-    probability::Vector{Float64} = fill(1.0 / length(scenarios), length(scenarios)),
+    probability::Vector{Float64} = fill(
+        1.0 / length(scenarios),
+        length(scenarios),
+    ),
 ) where {T,S}
     if sum(probability) != 1.0
         error(

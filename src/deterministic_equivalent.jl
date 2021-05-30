@@ -4,7 +4,7 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 function throw_detequiv_error(msg::String)
-    error("Unable to formulate deterministic equivalent: ", msg)
+    return error("Unable to formulate deterministic equivalent: ", msg)
 end
 
 struct ScenarioTreeNode{T}
@@ -33,7 +33,7 @@ function add_node_to_scenario_tree(
     elseif length(node.bellman_function.global_theta.cut_oracle.cuts) > 0
         throw_detequiv_error(
             "Model has been used for training. Can only form deterministic " *
-            "equivalent on a fresh model."
+            "equivalent on a fresh model.",
         )
     else
         check_time_limit()
@@ -67,7 +67,12 @@ function copy_and_replace_variables(
     return copy_and_replace_variables.(src, Ref(map))
 end
 
-copy_and_replace_variables(src::Real, ::Dict{JuMP.VariableRef,JuMP.VariableRef}) = src
+function copy_and_replace_variables(
+    src::Real,
+    ::Dict{JuMP.VariableRef,JuMP.VariableRef},
+)
+    return src
+end
 
 function copy_and_replace_variables(
     src::JuMP.VariableRef,
@@ -103,8 +108,13 @@ function copy_and_replace_variables(
     )
 end
 
-function copy_and_replace_variables(src::Any, ::Dict{JuMP.VariableRef,JuMP.VariableRef})
-    throw_detequiv_error("`copy_and_replace_variables` is not implemented for functions like `$(src)`.")
+function copy_and_replace_variables(
+    src::Any,
+    ::Dict{JuMP.VariableRef,JuMP.VariableRef},
+)
+    return throw_detequiv_error(
+        "`copy_and_replace_variables` is not implemented for functions like `$(src)`.",
+    )
 end
 
 function add_scenario_to_ef(
@@ -133,11 +143,16 @@ function add_scenario_to_ef(
     end
     # Add objective:
     current = JuMP.objective_function(model)
-    subproblem_objective = copy_and_replace_variables(node.stage_objective, var_src_to_dest)
-    JuMP.set_objective_function(model, current + child.probability * subproblem_objective)
+    subproblem_objective =
+        copy_and_replace_variables(node.stage_objective, var_src_to_dest)
+    JuMP.set_objective_function(
+        model,
+        current + child.probability * subproblem_objective,
+    )
     # Add state variables to child.states:
     for (key, state) in node.states
-        child.states[key] = State(var_src_to_dest[state.in], var_src_to_dest[state.out])
+        child.states[key] =
+            State(var_src_to_dest[state.in], var_src_to_dest[state.out])
     end
     # Recurse down the tree.
     for child_2 in child.children

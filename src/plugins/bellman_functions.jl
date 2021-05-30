@@ -65,17 +65,18 @@ function _dynamic_range_warning(intercept, coefficients)
         end
     end
     if hi - lo > 10
-        @warn("""Found a cut with a mix of small and large coefficients.
-            The order of magnitude difference is $(hi - lo).
-            The smallest cofficient is $(lo_v).
-            The largest coefficient is $(hi_v).
+        @warn(
+            """Found a cut with a mix of small and large coefficients.
+          The order of magnitude difference is $(hi - lo).
+          The smallest cofficient is $(lo_v).
+          The largest coefficient is $(hi_v).
 
-        You can ignore this warning, but it may be an indication of numerical issues.
+      You can ignore this warning, but it may be an indication of numerical issues.
 
-        Consider rescaling your model by using different units, e.g, kilometers instead
-        of meters. You should also consider reducing the accuracy of your input data (if
-        you haven't already). For example, it probably doesn't make sense to measure the
-        inflow into a reservoir to 10 decimal places.""",
+      Consider rescaling your model by using different units, e.g, kilometers instead
+      of meters. You should also consider reducing the accuracy of your input data (if
+      you haven't already). For example, it probably doesn't make sense to measure the
+      inflow into a reservoir to 10 decimal places.""",
             maxlog = 1,
         )
     end
@@ -213,8 +214,8 @@ end
 # Internal struct: this struct is just a cache for arguments until we can build
 # an actual instance of the type T at a later point.
 struct InstanceFactory{T}
-    args
-    kwargs
+    args::Any
+    kwargs::Any
     InstanceFactory{T}(args...; kwargs...) where {T} = new{T}(args, kwargs)
 end
 
@@ -254,9 +255,12 @@ function initialize_bellman_function(
     model::PolicyGraph{T},
     node::Node{T},
 ) where {T}
-    lower_bound, upper_bound, deletion_minimum, cut_type = -Inf, Inf, 0, SINGLE_CUT
+    lower_bound, upper_bound, deletion_minimum, cut_type =
+        -Inf, Inf, 0, SINGLE_CUT
     if length(factory.args) > 0
-        error("Positional arguments $(factory.args) ignored in BellmanFunction.")
+        error(
+            "Positional arguments $(factory.args) ignored in BellmanFunction.",
+        )
     end
     for (kw, value) in factory.kwargs
         if kw == :lower_bound
@@ -268,7 +272,9 @@ function initialize_bellman_function(
         elseif kw == :cut_type
             cut_type = value
         else
-            error("Keyword $(kw) not recognised as argument to BellmanFunction.")
+            error(
+                "Keyword $(kw) not recognised as argument to BellmanFunction.",
+            )
         end
     end
     if lower_bound == -Inf && upper_bound == Inf
@@ -300,7 +306,7 @@ function _add_objective_state_constraint(
     y::NTuple{N,Float64},
     μ::NTuple{N,JuMP.VariableRef},
 ) where {N}
-    is_finite = [-Inf < y[i] < Inf for i = 1:N]
+    is_finite = [-Inf < y[i] < Inf for i in 1:N]
     model = JuMP.owner_model(theta)
     lower_bound = JuMP.has_lower_bound(theta) ? JuMP.lower_bound(theta) : -Inf
     upper_bound = JuMP.has_upper_bound(theta) ? JuMP.upper_bound(theta) : Inf
@@ -308,7 +314,8 @@ function _add_objective_state_constraint(
         @constraint(model, [i = 1:N], μ[i] == 0.0)
         return
     end
-    expr = @expression(model, sum(y[i] * μ[i] for i = 1:N if is_finite[i]) + theta)
+    expr =
+        @expression(model, sum(y[i] * μ[i] for i = 1:N if is_finite[i]) + theta)
     if lower_bound > -Inf
         @constraint(model, expr >= lower_bound)
     end
@@ -328,12 +335,21 @@ _add_initial_bounds(obj_state::Nothing, theta) = nothing
 function _add_initial_bounds(obj_state::ObjectiveState, theta)
     model = JuMP.owner_model(theta)
     if length(obj_state.μ) < 5
-        for y in Base.product(zip(obj_state.lower_bound, obj_state.upper_bound)...)
+        for y in
+            Base.product(zip(obj_state.lower_bound, obj_state.upper_bound)...)
             _add_objective_state_constraint(theta, y, obj_state.μ)
         end
     else
-        _add_objective_state_constraint(theta, obj_state.lower_bound, obj_state.μ)
-        _add_objective_state_constraint(theta, obj_state.upper_bound, obj_state.μ)
+        _add_objective_state_constraint(
+            theta,
+            obj_state.lower_bound,
+            obj_state.μ,
+        )
+        _add_objective_state_constraint(
+            theta,
+            obj_state.upper_bound,
+            obj_state.μ,
+        )
     end
 end
 
@@ -350,9 +366,9 @@ function refine_bellman_function(
 ) where {T}
     # Sanity checks.
     @assert length(dual_variables) ==
-    length(noise_supports) ==
-    length(nominal_probability) ==
-    length(objective_realizations)
+            length(noise_supports) ==
+            length(nominal_probability) ==
+            length(objective_realizations)
     # Preliminaries that are common to all cut types.
     risk_adjusted_probability = similar(nominal_probability)
     offset = adjust_probability(
@@ -401,7 +417,7 @@ function _add_average_cut(
     # risk-adjusted probability distribution.
     πᵏ = Dict(key => 0.0 for key in keys(outgoing_state))
     θᵏ = offset
-    for i = 1:length(objective_realizations)
+    for i in 1:length(objective_realizations)
         p = risk_adjusted_probability[i]
         θᵏ += p * objective_realizations[i]
         for (key, dual) in dual_variables[i]
@@ -410,10 +426,25 @@ function _add_average_cut(
     end
     # Now add the average-cut to the subproblem. We include the objective-state
     # component μᵀy and the belief state (if it exists).
-    obj_y = node.objective_state === nothing ? nothing : node.objective_state.state
-    belief_y = node.belief_state === nothing ? nothing : node.belief_state.belief
-    _add_cut(node.bellman_function.global_theta, θᵏ, πᵏ, outgoing_state, obj_y, belief_y)
-    return (theta = θᵏ, pi = πᵏ, x = outgoing_state, obj_y = obj_y, belief_y = belief_y)
+    obj_y =
+        node.objective_state === nothing ? nothing : node.objective_state.state
+    belief_y =
+        node.belief_state === nothing ? nothing : node.belief_state.belief
+    _add_cut(
+        node.bellman_function.global_theta,
+        θᵏ,
+        πᵏ,
+        outgoing_state,
+        obj_y,
+        belief_y,
+    )
+    return (
+        theta = θᵏ,
+        pi = πᵏ,
+        x = outgoing_state,
+        obj_y = obj_y,
+        belief_y = belief_y,
+    )
 end
 
 function _add_multi_cut(
@@ -429,13 +460,14 @@ function _add_multi_cut(
     bellman_function = node.bellman_function
     μᵀy = get_objective_state_component(node)
     JuMP.add_to_expression!(μᵀy, get_belief_state_component(node))
-    for i = 1:length(dual_variables)
+    for i in 1:length(dual_variables)
         _add_cut(
             bellman_function.local_thetas[i],
             objective_realizations[i],
             dual_variables[i],
             outgoing_state,
-            node.objective_state === nothing ? nothing : node.objective_state.state,
+            node.objective_state === nothing ? nothing :
+            node.objective_state.state,
             node.belief_state === nothing ? nothing : node.belief_state.belief,
         )
     end
@@ -443,8 +475,8 @@ function _add_multi_cut(
     cut_expr = @expression(
         model,
         sum(
-            risk_adjusted_probability[i] * bellman_function.local_thetas[i].theta
-            for i = 1:N
+            risk_adjusted_probability[i] *
+            bellman_function.local_thetas[i].theta for i in 1:N
         ) - (1 - sum(risk_adjusted_probability)) * μᵀy + offset
     )
     # TODO(odow): should we use `cut_expr` instead?
@@ -463,7 +495,11 @@ end
 # If we are adding a multi-cut for the first time, then the local θ variables
 # won't have been added.
 # TODO(odow): a way to set different bounds for each variable in the multi-cut.
-function _add_locals_if_necessary(node::Node, bellman_function::BellmanFunction, N::Int)
+function _add_locals_if_necessary(
+    node::Node,
+    bellman_function::BellmanFunction,
+    N::Int,
+)
     num_local_thetas = length(bellman_function.local_thetas)
     if num_local_thetas == N
         # Do nothing. Already initialized.
@@ -472,10 +508,16 @@ function _add_locals_if_necessary(node::Node, bellman_function::BellmanFunction,
         model = JuMP.owner_model(global_theta.theta)
         local_thetas = @variable(model, [1:N])
         if JuMP.has_lower_bound(global_theta.theta)
-            JuMP.set_lower_bound.(local_thetas, JuMP.lower_bound(global_theta.theta))
+            JuMP.set_lower_bound.(
+                local_thetas,
+                JuMP.lower_bound(global_theta.theta),
+            )
         end
         if JuMP.has_upper_bound(global_theta.theta)
-            JuMP.set_upper_bound.(local_thetas, JuMP.upper_bound(global_theta.theta))
+            JuMP.set_upper_bound.(
+                local_thetas,
+                JuMP.upper_bound(global_theta.theta),
+            )
         end
         for local_theta in local_thetas
             push!(
@@ -483,14 +525,18 @@ function _add_locals_if_necessary(node::Node, bellman_function::BellmanFunction,
                 ConvexApproximation(
                     local_theta,
                     global_theta.states,
-                    node.objective_state === nothing ? nothing : node.objective_state.μ,
-                    node.belief_state === nothing ? nothing : node.belief_state.μ,
+                    node.objective_state === nothing ? nothing :
+                    node.objective_state.μ,
+                    node.belief_state === nothing ? nothing :
+                    node.belief_state.μ,
                     global_theta.cut_oracle.deletion_minimum,
                 ),
             )
         end
     else
-        error("Expected $(N) local θ variables but there were $(num_local_thetas).")
+        error(
+            "Expected $(N) local θ variables but there were $(num_local_thetas).",
+        )
     end
     return
 end
@@ -544,7 +590,7 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
         push!(cuts, node_cuts)
     end
     open(filename, "w") do io
-        write(io, JSON.json(cuts))
+        return write(io, JSON.json(cuts))
     end
     return
 end
@@ -560,7 +606,7 @@ function _node_name_parser(::Type{NTuple{N,Int}}, name::String) where {N}
 end
 
 function _node_name_parser(T, name)
-    error(
+    return error(
         "Unable to read name $(name). Provide a custom parser to " *
         "`read_cuts_from_file` using the `node_name_parser` keyword.",
     )
@@ -599,8 +645,9 @@ function read_cuts_from_file(
         bf = node.bellman_function
         # Loop through and add the single-cuts.
         for json_cut in node_cuts["single_cuts"]
-            coefficients =
-                Dict{Symbol,Float64}(Symbol(k) => v for (k, v) in json_cut["coefficients"])
+            coefficients = Dict{Symbol,Float64}(
+                Symbol(k) => v for (k, v) in json_cut["coefficients"]
+            )
             _add_cut(
                 bf.global_theta,
                 json_cut["intercept"],
@@ -617,11 +664,16 @@ function read_cuts_from_file(
         # There is one additional complication: if these cuts are being read
         # into a new model, the local theta variables may not exist yet.
         if length(node_cuts["risk_set_cuts"]) > 0
-            _add_locals_if_necessary(node, bf, length(first(node_cuts["risk_set_cuts"])))
+            _add_locals_if_necessary(
+                node,
+                bf,
+                length(first(node_cuts["risk_set_cuts"])),
+            )
         end
         for json_cut in node_cuts["multi_cuts"]
-            coefficients =
-                Dict{Symbol,Float64}(Symbol(k) => v for (k, v) in json_cut["coefficients"])
+            coefficients = Dict{Symbol,Float64}(
+                Symbol(k) => v for (k, v) in json_cut["coefficients"]
+            )
             _add_cut(
                 bf.local_thetas[json_cut["realization"]],
                 json_cut["intercept"],
@@ -637,8 +689,9 @@ function read_cuts_from_file(
         for json_cut in node_cuts["risk_set_cuts"]
             expr = @expression(
                 node.subproblem,
-                bf.global_theta.theta -
-                sum(p * V.theta for (p, V) in zip(json_cut, bf.local_thetas))
+                bf.global_theta.theta - sum(
+                    p * V.theta for (p, V) in zip(json_cut, bf.local_thetas)
+                )
             )
             if JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE
                 @constraint(node.subproblem, expr >= 0)

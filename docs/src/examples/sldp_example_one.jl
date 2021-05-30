@@ -37,7 +37,7 @@ function sldp_example_one()
             0.24645863921577763,
             0.5204224537256875,
         ]
-        SDDP.parameterize(φ -> JuMP.fix(ω, φ), sp, [points; -points])
+        return SDDP.parameterize(φ -> JuMP.fix(ω, φ), sp, [points; -points])
     end
     SDDP.train(model, iteration_limit = 100, log_frequency = 10)
     @test SDDP.calculate_bound(model) <= 1.1675

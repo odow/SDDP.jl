@@ -57,9 +57,8 @@ function _create_model(
             @stageobjective(
                 sp,
                 sgn * (
-                    sum(C[i] * x[i].out for i = 1:N) -
-                    S[ω] * s[ω] - s[ω] * S[ω] +
-                    ω
+                    sum(C[i] * x[i].out for i in 1:N) - S[ω] * s[ω] -
+                    s[ω] * S[ω] + ω
                 )
             )
         end
@@ -69,11 +68,10 @@ end
 
 download(
     "https://odow.github.io/StochOptFormat/versions/sof-0.1.schema.json",
-    "sof.schema.json"
+    "sof.schema.json",
 )
-const SCHEMA = JSONSchema.Schema(
-    JSON.parsefile("sof.schema.json"; use_mmap = false)
-)
+const SCHEMA =
+    JSONSchema.Schema(JSON.parsefile("sof.schema.json"; use_mmap = false))
 
 @testset "StochOptFormat" begin
     @testset "Min: Read and write to file" begin
@@ -96,13 +94,13 @@ const SCHEMA = JSONSchema.Schema(
         @test isapprox(
             SDDP.calculate_bound(base_model),
             SDDP.calculate_bound(model);
-            atol = 1e-6
+            atol = 1e-6,
         )
 
         @test isapprox(
             SDDP.calculate_bound(base_model),
             SDDP.calculate_bound(new_model);
-            atol = 1e-6
+            atol = 1e-6,
         )
 
         scenarios = SDDP.evaluate(new_model, test_scenarios)
@@ -136,13 +134,13 @@ const SCHEMA = JSONSchema.Schema(
         @test isapprox(
             SDDP.calculate_bound(base_model),
             SDDP.calculate_bound(model);
-            atol = 1e-6
+            atol = 1e-6,
         )
 
         @test isapprox(
             SDDP.calculate_bound(base_model),
             SDDP.calculate_bound(new_model);
-            atol = 1e-6
+            atol = 1e-6,
         )
 
         scenarios = SDDP.evaluate(new_model, test_scenarios)
@@ -180,7 +178,7 @@ const SCHEMA = JSONSchema.Schema(
         SDDP.train(model; iteration_limit = 1, print_level = 0)
         err = ErrorException(
             "StochOptFormat does not support writing after a call to " *
-            "`SDDP.train`."
+            "`SDDP.train`.",
         )
         @test_throws err Base.write(IOBuffer(), model)
     end
@@ -193,7 +191,8 @@ const SCHEMA = JSONSchema.Schema(
 
     @testset "Error: objective states" begin
         model = _create_model(true; objective_state = true)
-        err = ErrorException("StochOptFormat does not support objective states.")
+        err =
+            ErrorException("StochOptFormat does not support objective states.")
         @test_throws err Base.write(IOBuffer(), model)
     end
 end
@@ -206,9 +205,8 @@ if isfile("sof.schema.json")
 end
 
 @testset "slptestset" begin
-    model, test_scenarios = SDDP.read_from_file(
-        joinpath(@__DIR__, "electric.sof.json")
-    )
+    model, test_scenarios =
+        SDDP.read_from_file(joinpath(@__DIR__, "electric.sof.json"))
     set_optimizer(model, GLPK.Optimizer)
     SDDP.train(model; iteration_limit = 20, print_level = 0)
     @test isapprox(SDDP.calculate_bound(model), 381.8533; atol = 1e-3)

@@ -11,7 +11,7 @@ using Test
     @testset "LinearGraph" begin
         graph = SDDP.LinearGraph(5)
         @test graph.root_node == 0
-        for stage = 0:4
+        for stage in 0:4
             @test haskey(graph.nodes, stage)
             @test graph.nodes[stage] == [(stage + 1, 1.0)]
         end
@@ -21,15 +21,15 @@ using Test
         graph = SDDP.LinearGraph(3)
         @test sprint(show, graph) ==
               "Root\n" *
-        " 0\n" *
-        "Nodes\n" *
-        " 1\n" *
-        " 2\n" *
-        " 3\n" *
-        "Arcs\n" *
-        " 0 => 1 w.p. 1.0\n" *
-        " 1 => 2 w.p. 1.0\n" *
-        " 2 => 3 w.p. 1.0\n"
+              " 0\n" *
+              "Nodes\n" *
+              " 1\n" *
+              " 2\n" *
+              " 3\n" *
+              "Arcs\n" *
+              " 0 => 1 w.p. 1.0\n" *
+              " 1 => 2 w.p. 1.0\n" *
+              " 2 => 3 w.p. 1.0\n"
         @test length(graph.belief_partition) == 0
     end
 
@@ -42,7 +42,10 @@ using Test
             # Proability sums to greater than 1.
             @test_throws Exception SDDP.MarkovianGraph([[0.8 0.8]])
             # Mis-matched dimensions.
-            @test_throws Exception SDDP.MarkovianGraph([[0.1 0.2 0.7], [0.5 0.5; 0.5 0.5]])
+            @test_throws Exception SDDP.MarkovianGraph([
+                [0.1 0.2 0.7],
+                [0.5 0.5; 0.5 0.5],
+            ])
         end
         @testset "keyword vs list" begin
             graph_1 = SDDP.MarkovianGraph(
@@ -104,11 +107,9 @@ using Test
                 "You must provide on Lipschitz contsant for every element in " *
                 "the ambiguity set.",
             ) SDDP.add_ambiguity_set(graph, [:x], Float64[])
-            @test_throws ErrorException("Cannot provide negative Lipschitz constant: [-1.0]") SDDP.add_ambiguity_set(
-                graph,
-                [:x],
-                -1.0,
-            )
+            @test_throws ErrorException(
+                "Cannot provide negative Lipschitz constant: [-1.0]",
+            ) SDDP.add_ambiguity_set(graph, [:x], -1.0)
             SDDP.add_ambiguity_set(graph, [:x])
             SDDP.add_ambiguity_set(graph, [:y])
             @test graph.belief_partition == [[:x], [:y]]
@@ -140,11 +141,12 @@ using Test
                 "\n",
             )
 
-
-
-            graph = SDDP.Graph(:root, [:x, :y], [(:root => :x, 0.5), (:root => :y, 0.5)])
+            graph = SDDP.Graph(
+                :root,
+                [:x, :y],
+                [(:root => :x, 0.5), (:root => :y, 0.5)],
+            )
             @test length(graph.belief_partition) == 0
-
         end
     end
 end
@@ -156,6 +158,7 @@ end
             lower_bound = 0.0,
             direct_mode = false,
         ) do node, stage
+            return
         end
 
         @test_throws Exception SDDP.PolicyGraph(
@@ -163,6 +166,7 @@ end
             lower_bound = 0.0,
             direct_mode = true,
         ) do node, stage
+            return
         end
         nodes = Set{Int}()
         model = SDDP.PolicyGraph(
@@ -170,10 +174,11 @@ end
             lower_bound = 0.0,
             optimizer = GLPK.Optimizer,
         ) do node, stage
-            push!(nodes, stage)
+            return push!(nodes, stage)
         end
         @test nodes == Set([1, 2])
-        @test sprint(show, model) == "A policy graph with 2 nodes.\n Node indices: 1, 2\n"
+        @test sprint(show, model) ==
+              "A policy graph with 2 nodes.\n Node indices: 1, 2\n"
     end
 
     @testset "MarkovianGraph" begin
@@ -185,12 +190,24 @@ end
             [0.5 0.5; 0.3 0.4],
         ])
         nodes = Set{Tuple{Int,Int}}()
-        model =
-            SDDP.PolicyGraph(graph, lower_bound = 0.0, direct_mode = false) do node, stage
-                push!(nodes, stage)
-            end
-        @test nodes ==
-              Set([(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (4, 2), (5, 1), (5, 2)])
+        model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0.0,
+            direct_mode = false,
+        ) do node, stage
+            return push!(nodes, stage)
+        end
+        @test nodes == Set([
+            (1, 1),
+            (2, 1),
+            (2, 2),
+            (3, 1),
+            (3, 2),
+            (4, 1),
+            (4, 2),
+            (5, 1),
+            (5, 2),
+        ])
     end
 
     @testset "MarkovianPolicyGraph" begin
@@ -206,10 +223,19 @@ end
             lower_bound = 0.0,
             direct_mode = false,
         ) do node, stage
-            push!(nodes, stage)
+            return push!(nodes, stage)
         end
-        @test nodes ==
-              Set([(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (4, 2), (5, 1), (5, 2)])
+        @test nodes == Set([
+            (1, 1),
+            (2, 1),
+            (2, 2),
+            (3, 1),
+            (3, 2),
+            (4, 1),
+            (4, 2),
+            (5, 1),
+            (5, 2),
+        ])
     end
 
     @testset "General" begin
@@ -224,10 +250,13 @@ end
             ],
         )
         nodes = Set{Symbol}()
-        model =
-            SDDP.PolicyGraph(graph, lower_bound = 0.0, direct_mode = false) do node, stage
-                push!(nodes, stage)
-            end
+        model = SDDP.PolicyGraph(
+            graph,
+            lower_bound = 0.0,
+            direct_mode = false,
+        ) do node, stage
+            return push!(nodes, stage)
+        end
         @test nodes == Set([:stage_1, :stage_2, :stage_3])
     end
 end
@@ -240,7 +269,7 @@ end
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0)
     end
-    for stage = 1:2
+    for stage in 1:2
         node = model[stage]
         @test haskey(node.states, :x)
         @test length(keys(node.states)) == 1
@@ -256,7 +285,7 @@ end
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, [1, 2, 3], [0.4, 0.5, 0.1]) do ω
-            JuMP.set_upper_bound(x, ω)
+            return JuMP.set_upper_bound(x, ω)
         end
     end
     node = model[2]
@@ -289,6 +318,7 @@ end
             upper_bound = 0.0,
             direct_mode = false,
         ) do node, stage
+            return
         end
     end
 
@@ -312,34 +342,45 @@ end
             lower_bound = 0.0,
             direct_mode = false,
         ) do node, stage
+            return
         end
     end
 end
 
 @testset "Errors" begin
     @testset "<=0 stages" begin
-        exception =
-            ErrorException("You must create a LinearPolicyGraph with `stages >= 1`.")
-        @test_throws exception SDDP.LinearPolicyGraph(stages = 0) do sp, t
-        end
+        @test_throws(
+            ErrorException(
+                "You must create a LinearPolicyGraph with `stages >= 1`.",
+            ),
+            SDDP.LinearPolicyGraph(stages = 0) do sp, t
+                @variable(sp, x, SDDP.State, initial_value = 0)
+            end,
+        )
     end
     @testset "missing bounds" begin
-        exception = ErrorException(
-            "You must specify a finite lower bound on the objective value" *
-            " using the `lower_bound = value` keyword argument.",
+        @test_throws(
+            ErrorException(
+                "You must specify a finite lower bound on the objective value" *
+                " using the `lower_bound = value` keyword argument.",
+            ),
+            SDDP.LinearPolicyGraph(stages = 1, sense = :Min) do sp, t
+                @variable(sp, x, SDDP.State, initial_value = 0)
+            end,
         )
-        @test_throws exception SDDP.LinearPolicyGraph(stages = 1, sense = :Min) do sp, t
-        end
-
-        exception = ErrorException(
-            "You must specify a finite upper bound on the objective value" *
-            " using the `upper_bound = value` keyword argument.",
+        @test_throws(
+            ErrorException(
+                "You must specify a finite upper bound on the objective value" *
+                " using the `upper_bound = value` keyword argument.",
+            ),
+            SDDP.LinearPolicyGraph(stages = 1, sense = :Max) do sp, t
+                @variable(sp, x, SDDP.State, initial_value = 0)
+            end,
         )
-        @test_throws exception SDDP.LinearPolicyGraph(stages = 1, sense = :Max) do sp, t
-        end
     end
     @testset "parameterize!" begin
-        exception = ErrorException("Duplicate calls to SDDP.parameterize detected.")
+        exception =
+            ErrorException("Duplicate calls to SDDP.parameterize detected.")
         @test_throws exception SDDP.LinearPolicyGraph(
             stages = 2,
             upper_bound = 0.0,
@@ -399,11 +440,11 @@ end
     end
     report = sprint(SDDP.numerical_stability_report, model)
     @test occursin("WARNING", report)
-    report_2 = sprint(io -> SDDP.numerical_stability_report(io, model, by_node = true))
+    report_2 =
+        sprint(io -> SDDP.numerical_stability_report(io, model, by_node = true))
     @test occursin("Numerical stability report for node: 1", report_2)
     @test occursin("Numerical stability report for node: 2", report_2)
 end
-
 
 @testset "objective_state" begin
     model = SDDP.LinearPolicyGraph(
@@ -417,7 +458,10 @@ end
             @stageobjective(subproblem, price * x.out)
         end
     end
-    @test_throws ErrorException("No objective state defined.") SDDP.simulate(model, 1)
+    @test_throws ErrorException("No objective state defined.") SDDP.simulate(
+        model,
+        1,
+    )
 
     @test_throws ErrorException("add_objective_state can only be called once.") SDDP.LinearPolicyGraph(
         stages = 2,
@@ -453,13 +497,16 @@ end
 @testset "Belief Updater" begin
     graph = SDDP.LinearGraph(2)
     SDDP.add_edge(graph, 2 => 1, 0.9)
-    model =
-        SDDP.PolicyGraph(graph, lower_bound = 0.0, direct_mode = false) do subproblem, node
-            beliefs = [[0.2, 0.8], [0.7, 0.3]]
-            SDDP.parameterize(subproblem, [:A, :B], beliefs[node]) do ω
-                return nothing
-            end
+    model = SDDP.PolicyGraph(
+        graph,
+        lower_bound = 0.0,
+        direct_mode = false,
+    ) do subproblem, node
+        beliefs = [[0.2, 0.8], [0.7, 0.3]]
+        SDDP.parameterize(subproblem, [:A, :B], beliefs[node]) do ω
+            return nothing
         end
+    end
     belief_updater = SDDP.construct_belief_update(model, [Set([1]), Set([2])])
     belief = Dict(1 => 1.0, 2 => 0.0)
     belief′ = copy(belief)
@@ -468,7 +515,6 @@ end
     belief = Dict(1 => 0.0, 2 => 1.0)
     @test belief_updater(belief′, belief, 1, :B) == Dict(1 => 1.0, 2 => 0.0)
     @test belief′ == Dict(1 => 1.0, 2 => 0.0)
-
 
     belief_updater = SDDP.construct_belief_update(model, [Set([1, 2])])
 
@@ -489,7 +535,10 @@ end
         return true
     end
     belief = Dict(1 => 0.6, 2 => 0.4)
-    @test is_approx(belief_updater(belief′, belief, 1, :A), Dict(1 => 6 / 41, 2 => 35 / 41))
+    @test is_approx(
+        belief_updater(belief′, belief, 1, :A),
+        Dict(1 => 6 / 41, 2 => 35 / 41),
+    )
 end
 
 @testset "Ensure root printed first" begin
@@ -505,8 +554,13 @@ end
 end
 
 @testset "Tuple{Int,Float64} nodes sorted" begin
-    @test SDDP.sort_nodes([(1, 1.0), (2, 0.1), (1, 0.5)]) == [(1, 0.5), (1, 1.0), (2, 0.1)]
-    g = SDDP.Graph((0, 0.0), [(1, 1.0), (2, 0.1), (1, 0.5)], [((0, 0.0) => (2, 0.1), 1.0)])
+    @test SDDP.sort_nodes([(1, 1.0), (2, 0.1), (1, 0.5)]) ==
+          [(1, 0.5), (1, 1.0), (2, 0.1)]
+    g = SDDP.Graph(
+        (0, 0.0),
+        [(1, 1.0), (2, 0.1), (1, 0.5)],
+        [((0, 0.0) => (2, 0.1), 1.0)],
+    )
     @test sprint(show, g) == """
     Root
      (0, 0.0)
@@ -538,7 +592,7 @@ end
     @test_throws(
         ErrorException(
             "Unable to set the stage-objective of type $(Vector{SDDP.State{JuMP.VariableRef}}). " *
-            "It must be a scalar function."
+            "It must be a scalar function.",
         ),
         SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
             @variable(sp, x, SDDP.State, initial_value = 0)
@@ -548,7 +602,7 @@ end
     @test_throws(
         ErrorException(
             "Unable to set the stage-objective of type $(SDDP.State{JuMP.VariableRef}). " *
-            "It must be a scalar function."
+            "It must be a scalar function.",
         ),
         SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
             @variable(sp, x, SDDP.State, initial_value = 0)
@@ -559,7 +613,9 @@ end
 
 @testset "initial feasibility" begin
     @test_throws(
-        ErrorException("Initial point $(prevfloat(0.0)) violates lower bound on state x"),
+        ErrorException(
+            "Initial point $(prevfloat(0.0)) violates lower bound on state x",
+        ),
         SDDP.LinearPolicyGraph(
             stages = 2,
             lower_bound = 0.0,
@@ -569,7 +625,9 @@ end
         end,
     )
     @test_throws(
-        ErrorException("Initial point $(nextfloat(0.0)) violates upper bound on state x"),
+        ErrorException(
+            "Initial point $(nextfloat(0.0)) violates upper bound on state x",
+        ),
         SDDP.LinearPolicyGraph(
             stages = 2,
             lower_bound = 0.0,

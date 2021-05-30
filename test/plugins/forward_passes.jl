@@ -7,7 +7,6 @@ import GLPK
 using SDDP
 using Test
 
-
 @testset "Forward Pass" begin
     model = SDDP.LinearPolicyGraph(
         stages = 2,
@@ -18,7 +17,7 @@ using Test
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_upper_bound(x.out, ω)
+            return JuMP.set_upper_bound(x.out, ω)
         end
     end
     forward_trajectory = SDDP.forward_pass(
@@ -61,12 +60,12 @@ end
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            JuMP.set_upper_bound(x.out, ω)
+            return JuMP.set_upper_bound(x.out, ω)
         end
     end
     fp = SDDP.RevisitingForwardPass(2; sub_pass = SDDP.DefaultForwardPass())
     @test length(fp.archive) == 0
-    for i = 1:5
+    for i in 1:5
         pass = SDDP.forward_pass(
             model,
             SDDP.Options(
