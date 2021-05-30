@@ -790,7 +790,7 @@ Set the stage-objective of `subproblem` to `stage_objective`.
 """
 function set_stage_objective(
     subproblem::JuMP.Model,
-    stage_objective::JuMP.AbstractJuMPScalar,
+    stage_objective::Union{Real,JuMP.AbstractJuMPScalar},
 )
     node = get_node(subproblem)
     node.stage_objective = stage_objective
