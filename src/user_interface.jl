@@ -777,7 +777,10 @@ function parameterize(
 end
 
 """
-    set_stage_objective(subproblem::JuMP.Model, stage_objective)
+    set_stage_objective(
+        subproblem::JuMP.Model,
+        stage_objective::JuMP.AbstractJuMPScalar,
+    )
 
 Set the stage-objective of `subproblem` to `stage_objective`.
 
@@ -785,11 +788,21 @@ Set the stage-objective of `subproblem` to `stage_objective`.
 
     SDDP.set_stage_objective(subproblem, 2x + 1)
 """
-function set_stage_objective(subproblem::JuMP.Model, stage_objective)
+function set_stage_objective(
+    subproblem::JuMP.Model,
+    stage_objective::Union{Real,JuMP.AbstractJuMPScalar},
+)
     node = get_node(subproblem)
     node.stage_objective = stage_objective
     node.stage_objective_set = false
     return
+end
+
+function set_stage_objective(::JuMP.Model, f)
+    return error(
+        "Unable to set the stage-objective of type $(typeof(f)). It must be " *
+        "a scalar function."
+    )
 end
 
 """
