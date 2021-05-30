@@ -652,6 +652,11 @@ cost, price = SDDP.evaluate(V; volume = 10)
 # because each additional unit of water can displace a unit of thermal
 # generation in the final stage when the price is \\\$150/MWh.
 
+# There is also a method of [`SDDP.evaluate`](@ref) that takes a dictionary as
+# an argument for cases where the keyword argument doesn't work.
+
+cost, price = SDDP.evaluate(V, Dict("volume" => 10))
+
 # This concludes our first tutorial for `SDDP.jl`. In the next tutorial,
 # [Basic II: adding uncertainty](@ref), we will extend this problem by adding
 # uncertainty.
