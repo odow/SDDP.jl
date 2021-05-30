@@ -160,7 +160,7 @@ end
 """
     evaluate(
         V::ValueFunction,
-        point::Dict{Symbol, Float64},
+        point::Dict{Union{Symbol,String},<:Real}
         objective_state = nothing,
         belief_state = nothing
     )
@@ -169,6 +169,24 @@ Evaluate the value function `V` at `point` in the state-space.
 
 Returns a tuple containing the height of the function, and the subgradient
 w.r.t. the convex state-variables.
+
+## Example
+
+```julia
+evaluate(V, Dict(:volume => 1.0))
+```
+
+If the state variable is constructed like
+`@variable(sp, volume[1:4] >= 0, SDDP.State, initial_value = 0.0)`, use `[i]` to
+index the state variable:
+```julia
+evaluate(V, Dict(Symbol("volume[1]") => 1.0))
+```
+
+You can also use strings or symbols for the keys.
+```julia
+evaluate(V, Dict("volume[1]" => 1))
+```
 """
 function evaluate(
     V::ValueFunction,
@@ -203,12 +221,22 @@ function evaluate(
     return obj, duals
 end
 
+# Define a fallback method to allow users to write things like `Dict("x" => 1)`.
+function evaluate(V::ValueFunction, point; kwargs...)
+    return evaluate(
+        V,
+        Dict(Symbol(k) => convert(Float64, v)::Float64 for (k, v) in point);
+        kwargs...,
+    )
+end
+
 """
     evalute(V::ValueFunction{Nothing, Nothing}; kwargs...)
 
-Evalute the value function `V` at the point in the state-space specified by `kwargs`.
+Evalute the value function `V` at the point in the state-space specified by
+`kwargs`.
 
-### Example
+## Example
 
     evaluate(V; volume = 1)
 """
