@@ -29,6 +29,7 @@ function fast_quickstart()
     end
 
     det = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
+    set_silent(det)
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) == -2
 

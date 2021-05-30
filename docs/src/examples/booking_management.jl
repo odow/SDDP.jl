@@ -43,7 +43,6 @@ function booking_management_model(
         optimizer = GLPK.Optimizer,
         integrality_handler = integrality_handler,
     ) do sp, stage
-
         @variable(
             sp,
             0 <= vacancy[room = 1:num_rooms, day = 1:num_days] <= 1,
