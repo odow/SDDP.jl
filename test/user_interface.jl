@@ -533,3 +533,26 @@ end
      b => c w.p. 1.0
     """
 end
+
+@testset "@stageobjective sanitization" begin
+    @test_throws(
+        ErrorException(
+            "Unable to set the stage-objective of type $(Vector{SDDP.State{JuMP.VariableRef}}). " *
+            "It must be a scalar function."
+        ),
+        SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
+            @variable(sp, x, SDDP.State, initial_value = 0)
+            @stageobjective(sp, [x, x])
+        end,
+    )
+    @test_throws(
+        ErrorException(
+            "Unable to set the stage-objective of type $(SDDP.State{JuMP.VariableRef}). " *
+            "It must be a scalar function."
+        ),
+        SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
+            @variable(sp, x, SDDP.State, initial_value = 0)
+            @stageobjective(sp, x)
+        end,
+    )
+end
