@@ -108,6 +108,7 @@ function booking_management(integrality_handler)
     end
 end
 
-for integrality_handler in [SDDP.SDDiP(), SDDP.ContinuousRelaxation()]
-    booking_management(integrality_handler)
-end
+booking_management(SDDP.ContinuousRelaxation())
+
+# New version of GLPK stalls
+# booking_management(SDDP.SDDiP())
