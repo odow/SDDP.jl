@@ -556,3 +556,26 @@ end
         end,
     )
 end
+
+@testset "initial feasibility" begin
+    @test_throws(
+        ErrorException("Initial point $(prevfloat(0.0)) violates lower bound on state x"),
+        SDDP.LinearPolicyGraph(
+            stages = 2,
+            lower_bound = 0.0,
+            direct_mode = false,
+        ) do node, stage
+            @variable(node, x >= 0, SDDP.State, initial_value = prevfloat(0.0))
+        end,
+    )
+    @test_throws(
+        ErrorException("Initial point $(nextfloat(0.0)) violates upper bound on state x"),
+        SDDP.LinearPolicyGraph(
+            stages = 2,
+            lower_bound = 0.0,
+            direct_mode = false,
+        ) do node, stage
+            @variable(node, x <= 0, SDDP.State, initial_value = nextfloat(0.0))
+        end,
+    )
+end

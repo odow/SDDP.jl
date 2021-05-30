@@ -662,6 +662,16 @@ function PolicyGraph(
     # Add root nodes
     for (child, probability) in graph.nodes[graph.root_node]
         push!(policy_graph.root_children, Noise(child, probability))
+        # We check the feasibility of the initial point here. It is a really
+        # tricky feasibility bug to diagnose otherwise. See #387 for details.
+        for (k, v) in policy_graph.initial_root_state
+            x_out = policy_graph[child].states[k].out
+            if JuMP.has_lower_bound(x_out) && JuMP.lower_bound(x_out) > v
+                error("Initial point $(v) violates lower bound on state $k")
+            elseif JuMP.has_upper_bound(x_out) && JuMP.upper_bound(x_out) < v
+                error("Initial point $(v) violates upper bound on state $k")
+            end
+        end
     end
     # Initialize belief states.
     if length(graph.belief_partition) > 0
