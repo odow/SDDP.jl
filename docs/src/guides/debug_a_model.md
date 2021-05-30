@@ -115,6 +115,9 @@ Model mode: AUTOMATIC
 CachingOptimizer state: EMPTY_OPTIMIZER
 Solver name: GLPK
 
+julia> set_silent(det_equiv)
+true
+
 julia> optimize!(det_equiv)
 
 julia> objective_value(det_equiv)
