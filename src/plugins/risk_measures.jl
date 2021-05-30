@@ -513,6 +513,7 @@ function adjust_probability(
 )
     N = length(objective_realizations)
     wasserstein = JuMP.Model(measure.solver_factory)
+    set_silent(wasserstein)
     @variable(wasserstein, z[1:N, 1:N] >= 0)
     @variable(wasserstein, p[1:N] >= 0)
     for i = 1:N
