@@ -129,7 +129,7 @@ end
     )
 end
 
-@testset "BoundStalling" begin
+@testset "StoppingChain" begin
     graph = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         lower_bound = 0.0,
@@ -146,35 +146,25 @@ end
     # Not enough iterations to terminate.
     @test !SDDP.convergence_test(
         graph,
-        [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1),
-            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1),
-        ],
+        [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1)],
         rule,
     )
-    # How there is. But only just...
-    @test SDDP.convergence_test(
-        graph,
-        [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1),
-            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(5, 2.9, 0.0, 1.0, 1, 1),
-        ],
-        rule,
-    )
-    # This also meets the test, but we don't terminate because it hasn't
-    # differed from the initial bound.
+    # How there is. But not enough time.
     @test !SDDP.convergence_test(
         graph,
         [
             SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(3, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(4, 0.0, 0.0, 1.0, 1, 1),
+            SDDP.Log(2, 0.0, 0.0, 59.0, 1, 1),
+        ],
+        rule,
+    )
+    # Both satisfied.
+    @test SDDP.convergence_test(
+        graph,
+        [
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
+            SDDP.Log(2, 0.0, 0.0, 59.0, 1, 1),
+            SDDP.Log(3, 0.0, 0.0, 60.1, 1, 1),
         ],
         rule,
     )
