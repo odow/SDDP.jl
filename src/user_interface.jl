@@ -638,6 +638,7 @@ function PolicyGraph(
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
         JuMP.set_objective_sense(subproblem, policy_graph.objective_sense)
+        set_silent(subproblem)
         builder(subproblem, node_index)
         # Add a dummy noise here so that all nodes have at least one noise term.
         if length(node.noise_terms) == 0

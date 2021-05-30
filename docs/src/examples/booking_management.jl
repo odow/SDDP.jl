@@ -43,7 +43,6 @@ function booking_management_model(
         optimizer = GLPK.Optimizer,
         integrality_handler = integrality_handler,
     ) do sp, stage
-
         @variable(
             sp,
             0 <= vacancy[room = 1:num_rooms, day = 1:num_days] <= 1,
@@ -109,6 +108,7 @@ function booking_management(integrality_handler)
     end
 end
 
-for integrality_handler in [SDDP.SDDiP(), SDDP.ContinuousRelaxation()]
-    booking_management(integrality_handler)
-end
+booking_management(SDDP.ContinuousRelaxation())
+
+# New version of GLPK stalls
+# booking_management(SDDP.SDDiP())
