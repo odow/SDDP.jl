@@ -175,3 +175,64 @@ function forward_pass(
         return pass
     end
 end
+
+mutable struct RiskAdjustedForwardPass{F,T} <: AbstractForwardPass
+    forward_pass::F
+    risk_measure::T
+    resampling_probability::Float64
+    objectives::Vector{Float64}
+    nominal_probability::Vector{Float64}
+    adjusted_probability::Vector{Float64}
+    archive::Vector{Any}
+
+    function RiskAdjustedForwardPass(
+        ;
+        forward_pass::AbstractForwardPass,
+        risk_measure::AbstractRiskMeasure,
+        resampling_probability::Float64,
+    )
+        if !(0 < resampling_probability < 1)
+            throw(ArgumentError("Resampling probability must be in `(0, 1)`"))
+        end
+        return new{typeof(forward_pass),typeof(risk_measure)}(
+            forward_pass,
+            risk_measure,
+            resampling_probability,
+            Float64[],
+            Float64[],
+            Float64[],
+            Any[],
+        )
+    end
+end
+
+function forward_pass(
+    model::PolicyGraph,
+    options::Options,
+    fp::RiskAdjustedForwardPass,
+)
+    if length(fp.archive) > 0 && rand() < fp.resampling_probability
+        r = rand()
+        for i in 1:length(fp.adjusted_probability)
+            r -= fp.adjusted_probability[i]
+            if r < 1e-8
+                return fp.archive[i]
+            end
+        end
+    end
+    pass = forward_pass(model, options, fp.forward_pass)
+    push!(fp.objectives, pass.cumulative_value)
+    push!(fp.nominal_probability, 0.0)
+    fill!(fp.nominal_probability, 1 / length(fp.nominal_probability))
+    push!(fp.adjusted_probability, 0.0)
+    push!(fp.archive, pass)
+    adjust_probability(
+        fp.risk_measure,
+        fp.adjusted_probability,
+        fp.nominal_probability,
+        fp.objectives,
+        fp.objectives,
+        model.objective_sense == MOI.MIN_SENSE,
+    )
+    return pass
+end

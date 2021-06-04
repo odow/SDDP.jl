@@ -100,3 +100,48 @@ end
         end
     end
 end
+
+@testset "RiskAdjustedForwardPass" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        sense = :Max,
+        upper_bound = 100.0,
+        optimizer = GLPK.Optimizer,
+    ) do node, stage
+        @variable(node, x, SDDP.State, initial_value = 0.0)
+        @stageobjective(node, x.out)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            return JuMP.set_upper_bound(x.out, ω)
+        end
+    end
+    @test_throws ArgumentError SDDP.train(
+        model;
+        iteration_limit = 5,
+        forward_pass_resampling_probability = 0.0,
+    )
+    @test_throws ArgumentError SDDP.train(
+        model;
+        iteration_limit = 5,
+        forward_pass_resampling_probability = 1.0,
+    )
+
+    forward_pass = SDDP.RiskAdjustedForwardPass(
+        forward_pass = SDDP.DefaultForwardPass(),
+        risk_measure = SDDP.WorstCase(),
+        resampling_probability = 0.9,
+    )
+    SDDP.train(
+        model;
+        print_level = 0,
+        iteration_limit = 10,
+        forward_pass = forward_pass,
+    )
+    @test length(forward_pass.archive) < 10
+    SDDP.train(
+        model;
+        iteration_limit = 10,
+        print_level = 0,
+        forward_pass_resampling_probability = 0.9,
+    )
+    @test SDDP.termination_status(model) == :iteration_limit
+end
