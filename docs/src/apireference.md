@@ -66,6 +66,7 @@ SDDP.Asynchronous
 SDDP.AbstractForwardPass
 SDDP.DefaultForwardPass
 SDDP.RevisitingForwardPass
+SDDP.RiskAdjustedForwardPass
 ```
 
 ### Risk Measures

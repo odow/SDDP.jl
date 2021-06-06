@@ -175,3 +175,102 @@ function forward_pass(
         return pass
     end
 end
+
+mutable struct RiskAdjustedForwardPass{F,T} <: AbstractForwardPass
+    forward_pass::F
+    risk_measure::T
+    resampling_probability::Float64
+    rejection_count::Int
+    objectives::Vector{Float64}
+    nominal_probability::Vector{Float64}
+    adjusted_probability::Vector{Float64}
+    archive::Vector{Any}
+    resample_count::Vector{Int}
+end
+
+"""
+    RiskAdjustedForwardPass(;
+        forward_pass::AbstractForwardPass,
+        risk_measure::AbstractRiskMeasure,
+        resampling_probability::Float64,
+        rejection_count::Int = 5,
+    )
+
+A forward pass that resamples a previous forward pass with
+`resampling_probability` probability, and otherwise samples a new forward pass
+using `forward_pass`.
+
+The forward pass to revisit is chosen based on the risk-adjusted (using
+`risk_measure`) probability of the cumulative stage objectives.
+
+Note that this objective corresponds to the _first_ time we visited the
+trajectory. Subsequent visits may have improved things, but we don't have the
+mechanisms in-place to update it. Therefore, remove the forward pass from
+resampling consideration after `rejection_count` revisits.
+"""
+function RiskAdjustedForwardPass(;
+    forward_pass::AbstractForwardPass,
+    risk_measure::AbstractRiskMeasure,
+    resampling_probability::Float64,
+    rejection_count::Int = 5,
+)
+    if !(0 < resampling_probability < 1)
+        throw(ArgumentError("Resampling probability must be in `(0, 1)`"))
+    end
+    return RiskAdjustedForwardPass{typeof(forward_pass),typeof(risk_measure)}(
+        forward_pass,
+        risk_measure,
+        resampling_probability,
+        rejection_count,
+        Float64[],
+        Float64[],
+        Float64[],
+        Any[],
+        Int[],
+    )
+end
+
+function forward_pass(
+    model::PolicyGraph,
+    options::Options,
+    fp::RiskAdjustedForwardPass,
+)
+    if length(fp.archive) > 0 && rand() < fp.resampling_probability
+        r = rand()
+        for i in 1:length(fp.adjusted_probability)
+            r -= fp.adjusted_probability[i]
+            if r > 1e-8
+                continue
+            end
+            pass = fp.archive[i]
+            if fp.resample_count[i] >= fp.rejection_count
+                # We've explored this pass too many times. Kick it out of the
+                # archive.
+                splice!(fp.objectives, i)
+                splice!(fp.nominal_probability, i)
+                splice!(fp.adjusted_probability, i)
+                splice!(fp.archive, i)
+                splice!(fp.resample_count, i)
+            else
+                fp.resample_count[i] += 1
+            end
+            return pass
+        end
+    end
+    pass = forward_pass(model, options, fp.forward_pass)
+    push!(fp.objectives, pass.cumulative_value)
+    push!(fp.nominal_probability, 0.0)
+    fill!(fp.nominal_probability, 1 / length(fp.nominal_probability))
+    push!(fp.adjusted_probability, 0.0)
+    push!(fp.archive, pass)
+    push!(fp.resample_count, 1)
+    adjust_probability(
+        fp.risk_measure,
+        fp.adjusted_probability,
+        fp.nominal_probability,
+        fp.objectives,
+        fp.objectives,
+        model.objective_sense == MOI.MIN_SENSE,
+    )
+    return pass
+end

@@ -864,7 +864,12 @@ Train the policy for `model`. Keyword arguments:
  - `parallel_scheme::AbstractParallelScheme`: specify a scheme for solving in parallel.
     Defaults to `Serial()`.
 
- - `forwad_pass::AbstractForwardPass`: specify a scheme to use for the forward passes.
+ - `forward_pass::AbstractForwardPass`: specify a scheme to use for the forward
+   passes.
+
+ - `forward_pass_resampling_probability::Union{Nothing,Float64}`: set to a value
+   in `(0, 1)` to enable [`RiskAdjustedForwardPass`](@ref). Defaults to
+   `nothing` (disabled).
 
 There is also a special option for infinite horizon problems
 
@@ -891,7 +896,15 @@ function train(
     dashboard::Bool = false,
     parallel_scheme::AbstractParallelScheme = Serial(),
     forward_pass::AbstractForwardPass = DefaultForwardPass(),
+    forward_pass_resampling_probability::Union{Nothing,Float64} = nothing,
 )
+    if forward_pass_resampling_probability !== nothing
+        forward_pass = RiskAdjustedForwardPass(
+            forward_pass = forward_pass,
+            risk_measure = risk_measure,
+            resampling_probability = forward_pass_resampling_probability,
+        )
+    end
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
     log_file_handle = open(log_file, "a")
