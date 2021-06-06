@@ -133,7 +133,7 @@ end
     SDDP.train(
         model;
         print_level = 0,
-        iteration_limit = 10,
+        iteration_limit = 20,
         forward_pass = forward_pass,
     )
     @test length(forward_pass.archive) < 10
