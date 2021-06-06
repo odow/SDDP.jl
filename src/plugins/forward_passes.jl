@@ -263,7 +263,7 @@ function forward_pass(
     fill!(fp.nominal_probability, 1 / length(fp.nominal_probability))
     push!(fp.adjusted_probability, 0.0)
     push!(fp.archive, pass)
-    push!(fp.resampling_count, 1)
+    push!(fp.resample_count, 1)
     adjust_probability(
         fp.risk_measure,
         fp.adjusted_probability,
