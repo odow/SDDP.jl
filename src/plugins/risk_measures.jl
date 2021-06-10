@@ -150,7 +150,9 @@ together as follows:
 struct ConvexCombination{T<:Tuple} <: AbstractRiskMeasure
     measures::T
 end
+
 ConvexCombination(args::Tuple...) = ConvexCombination(args)
+
 function Base.show(io::IO, measure::ConvexCombination)
     print(io, "A convex combination of ")
     is_first = true
@@ -160,6 +162,7 @@ function Base.show(io::IO, measure::ConvexCombination)
         is_first = false
     end
 end
+
 import Base: +, *
 
 function Base.:+(a::ConvexCombination, b::ConvexCombination)
@@ -203,7 +206,7 @@ end
 A risk measure that is a convex combination of Expectation and Average Value @
 Risk (also called Conditional Value @ Risk).
 
-        λ * E[x] + (1 - λ) * AV@R(1-β)[x]
+        λ * E[x] + (1 - λ) * AV@R(β)[x]
 
 ### Keyword Arguments
 
@@ -235,33 +238,6 @@ end
 
 # ================================= Modified-Χ² ============================== #
 
-#=
-This code was contributed by Lea Kapelevich.
-
-In a Distributionally Robust Optimization (DRO) approach, we modify the
-probabilities we associate with all future scenarios so that the resulting
-probability distribution is the "worst case" probability distribution, in some
-sense.
-
-In each backward pass we will compute a worst case probability distribution
-vector ̃p. We compute ̃p so that:
-
-̄p ∈ argmax{̃pᵀ̃z}
-    ||̃p - ̃a||₂ ≤ r
-    ∑̃p = 1
-    ̃p ≥ 0
-
-where
-
- 1. ̃z is a vector of future costs. We assume that our aim is to minimize
-    future cost pᵀ̃z. If we maximize reward, we would have ̃p ∈ argmin{̃pᵀ̃z}.
-2. ̄a is the uniform distribution
-3. r is a user specified radius - the larger the radius, the more conservative
-   the policy.
-
-Note: the largest radius that will work with S scenarios is sqrt((S-1)/S).
-=#
-
 """
     ModifiedChiSquared(radius::Float64; minimum_std=1e-5)
 
@@ -269,8 +245,39 @@ The distributionally robust SDDP risk measure of
 Philpott, A., de Matos, V., Kapelevich, L. Distributionally robust SDDP.
 Computational Management Science (2018) 165:431-454.
 
+## Explanation
+
+In a Distributionally Robust Optimization (DRO) approach, we modify the
+probabilities we associate with all future scenarios so that the resulting
+probability distribution is the "worst case" probability distribution, in some
+sense.
+
+In each backward pass we will compute a worst case probability distribution
+vector p. We compute p so that:
+
+```
+p ∈ argmax p'z
+      s.t. [r; p - a] in SecondOrderCone()
+           sum(p) == 1
+           p >= 0
+```
+
+where
+
+1. z is a vector of future costs. We assume that our aim is to minimize
+    future cost p'z. If we maximize reward, we would have p ∈ argmin{p'z}.
+2. a is the uniform distribution
+3. r is a user specified radius - the larger the radius, the more conservative
+   the policy.
+
+## Notes 
+
+The largest radius that will work with S scenarios is sqrt((S-1)/S).
+
 If the uncorrected standard deviation of the objecive realizations is less than
 `minimum_std`, then the risk-measure will default to `Expectation()`.
+
+This code was contributed by Lea Kapelevich.
 """
 struct ModifiedChiSquared <: AbstractRiskMeasure
     radius::Float64
@@ -311,7 +318,7 @@ function adjust_probability(
     end
     m = length(objective_realizations)
     if all(x -> x ≈ 1 / m, original_probability)
-        uniform_dro(
+        _uniform_dro(
             measure,
             risk_adjusted_probability,
             original_probability,
@@ -319,7 +326,7 @@ function adjust_probability(
             is_minimization,
         )
     else
-        non_uniform_dro(
+        _non_uniform_dro(
             measure,
             risk_adjusted_probability,
             original_probability,
@@ -334,7 +341,7 @@ end
 Algorithm (1) of Philpott et al. Assumes that the nominal distribution is _not_
 uniform.
 """
-function non_uniform_dro(
+function _non_uniform_dro(
     measure::ModifiedChiSquared,
     p::Vector{Float64},
     q::Vector{Float64},
@@ -427,7 +434,7 @@ end
 Algorithm (2) of Philpott et al. Assumes that the nominal distribution is
 uniform.
 """
-function uniform_dro(
+function _uniform_dro(
     measure::ModifiedChiSquared,
     risk_adjusted_probability::Vector{Float64},
     original_probability::Vector{Float64},
@@ -564,6 +571,8 @@ end
 The entropic risk measure as described by Dowson, Morton, and Pagnoncelli
 (2020). Multistage stochastic programs with the entropic risk measure.
 http://www.optimization-online.org/DB_HTML/2020/08/7984.html
+
+As γ increases, the measure becomes more risk-averse.
 """
 mutable struct Entropic <: AbstractRiskMeasure
     γ::Float64
