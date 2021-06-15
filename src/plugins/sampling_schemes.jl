@@ -289,62 +289,89 @@ end
 
 # ========================= Historical Sampling Scheme ======================= #
 
-struct Historical{T,S} <: AbstractSamplingScheme
+mutable struct Historical{T,S} <: AbstractSamplingScheme
     scenarios::Vector{Noise{Vector{Tuple{T,S}}}}
+    sequential::Bool
+    counter::Int
+end
+
+function Base.show(io::IO, h::Historical)
+    print(
+        io,
+        "A Historical sampler with $(length(h.scenarios)) scenarios sampled ",
+        h.sequential ? "sequentially." : "probabilistically.",
+    )
+    return
 end
 
 """
-    Historical(scenarios::Vector{Vector{Tuple{T, S}}},
-               probability::Vector{Float64})
+    Historical(
+        scenarios::Vector{Vector{Tuple{T,S}}},
+        probability::Vector{Float64},
+    ) where {T,S}
 
 A sampling scheme that samples a scenario from the vector of scenarios
-`scenarios` according to `probability`. If probability omitted, defaults to
-uniform probability.
+`scenarios` according to `probability`.
 
 ### Example
 
-    Historical(
-        [
-            [(1, 0.5), (2, 1.0), (3, 0.5)],
-            [(1, 0.5), (2, 0.0), (3, 1.0)],
-            [(1, 1.0), (2, 0.0), (3, 0.0)]
-        ],
-        [0.2, 0.5, 0.3]
-    )
+```julia
+Historical(
+    [
+        [(1, 0.5), (2, 1.0), (3, 0.5)],
+        [(1, 0.5), (2, 0.0), (3, 1.0)],
+        [(1, 1.0), (2, 0.0), (3, 0.0)]
+    ],
+    [0.2, 0.5, 0.3],
+)
+```
 """
 function Historical(
     scenarios::Vector{Vector{Tuple{T,S}}},
-    probability::Vector{Float64} = fill(
-        1.0 / length(scenarios),
-        length(scenarios),
-    ),
+    probability::Vector{Float64},
 ) where {T,S}
-    if sum(probability) != 1.0
+    if !(sum(probability) ≈ 1.0)
         error(
             "Probability of historical scenarios must sum to 1. Currently: " *
             "$(sum(probability)).",
         )
     end
-    output = Noise{Vector{Tuple{T,S}}}[]
-    for (scenario, prob) in zip(scenarios, probability)
-        push!(output, Noise(scenario, prob))
-    end
-    return Historical(output)
+    output = [Noise(s, p) for (s, p) in zip(scenarios, probability)]
+    return Historical(output, false, 0)
 end
 
 """
-    Historical(scenario::Vector{Tuple{T, S}})
+    Historical(scenarios::Vector{Vector{Tuple{T,S}}}) where {T,S}
 
-A deterministic sampling scheme that always samples `scenario` with probability
-`1`.
+A deterministic sampling scheme that iterates through the vector of provided
+`scenarios`.
 
-### Example
+## Example
 
-    Historical([(1, 0.5), (2, 1.5), (3, 0.75)])
+```julia
+Historical([
+    [(1, 0.5), (2, 1.0), (3, 0.5)],
+    [(1, 0.5), (2, 0.0), (3, 1.0)],
+    [(1, 1.0), (2, 0.0), (3, 0.0)],
+])
+```
 """
-function Historical(scenario::Vector{Tuple{T,S}}) where {T,S}
-    return Historical([scenario], [1.0])
+function Historical(scenarios::Vector{Vector{Tuple{T,S}}}) where {T,S}
+    return Historical(Noise.(scenarios, NaN), true, 0)
 end
+
+"""
+    Historical(scenario::Vector{Tuple{T,S}}) where {T,S}
+
+A deterministic sampling scheme that always samples `scenario`.
+
+## Example
+
+```julia
+Historical([(1, 0.5), (2, 1.5), (3, 0.75)])
+```
+"""
+Historical(scenario::Vector{Tuple{T,S}}) where {T,S} = Historical([scenario])
 
 function sample_scenario(
     graph::PolicyGraph{T},
@@ -353,5 +380,12 @@ function sample_scenario(
     # us the full scenario.
     kwargs...,
 ) where {T,NoiseTerm}
+    if sampling_scheme.sequential
+        sampling_scheme.counter += 1
+        if sampling_scheme.counter > length(sampling_scheme.scenarios)
+            sampling_scheme.counter = 1
+        end
+        return sampling_scheme.scearios[sampling_scheme.counter], false
+    end
     return sample_noise(sampling_scheme.scenarios), false
 end
