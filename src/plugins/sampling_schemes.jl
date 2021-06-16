@@ -385,7 +385,7 @@ function sample_scenario(
         if sampling_scheme.counter > length(sampling_scheme.scenarios)
             sampling_scheme.counter = 1
         end
-        return sampling_scheme.scearios[sampling_scheme.counter], false
+        return sampling_scheme.scenarios[sampling_scheme.counter], false
     end
     return sample_noise(sampling_scheme.scenarios), false
 end
