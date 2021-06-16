@@ -37,7 +37,7 @@ speed-ups.
   algorithm (e.g., [`Method=1` in Gurobi](https://www.gurobi.com/documentation/8.1/refman/method.html)
   ) is usually a performance win.
 
-### Single-cut vs. multi-cut
+## Single-cut vs. multi-cut
 
 There are two competing ways that cuts can be created in SDDP: _single_-cut and
 _multi_-cut. By default, `SDDP.jl` uses the _single-cut_ version of SDDP.
@@ -56,7 +56,7 @@ SDDP.train(model; cut_type = SDDP.SINGLE_CUT)
 SDDP.train(model; cut_type = SDDP.MULTI_CUT)
 ```
 
-### Parallelism
+## Parallelism
 
 SDDP.jl can take advantage of the parallel nature of modern computers to solve problems
 across multiple cores.
@@ -117,7 +117,7 @@ the log you will see that the initial iterations take place on the master thread
     _worse_ than the policy obtained from serial mode. However, the asynchronous solver can
     take significantly less time to compute the same number of iterations.
 
-#### Data movement
+### Data movement
 
 By defualt, data defined on the master process is not made available to the workers.
 Therefore, a model like the following:
@@ -132,7 +132,7 @@ will result in an `UndefVarError` error like `UndefVarError: data not defined`.
 
 There are three solutions for this problem.
 
-##### Option 1: declare data inside the build function
+#### Option 1: declare data inside the build function
 
 ```julia
 model = SDDP.LinearPolicyGraph(stages = 2) do sp, t
@@ -142,7 +142,7 @@ model = SDDP.LinearPolicyGraph(stages = 2) do sp, t
 end
 ```
 
-##### Option 2: use `@everywhere`
+#### Option 2: use `@everywhere`
 
 ```julia
 @everywhere begin
@@ -154,7 +154,7 @@ model = SDDP.LinearPolicyGraph(stages = 2) do sp, t
 end
 ```
 
-##### Option 3: build the model in a function
+#### Option 3: build the model in a function
 
 ```julia
 function build_model()
@@ -168,7 +168,10 @@ end
 model = build_model()
 ```
 
-#### Initialization hooks
+### Initialization hooks
+
+!!! warning
+    This is important if you use Gurobi!
 
 [`SDDP.Asynchronous`](@ref) accepts a pre-processing hook that is run on each worker process
 _before_ the model is solved. The most useful situation is for solvers than need an
