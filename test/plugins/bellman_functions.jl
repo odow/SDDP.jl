@@ -136,7 +136,11 @@ end
     end
     SDDP.train(model; iteration_limit = 10)
     for (t, node) in model.nodes
-        @test num_constraints(node.subproblem, AffExpr, MOI.GreaterThan{Float64}) < 10
+        @test num_constraints(
+            node.subproblem,
+            AffExpr,
+            MOI.GreaterThan{Float64},
+        ) < 10
     end
     SDDP.add_all_cuts(model)
     for (t, node) in model.nodes
@@ -166,7 +170,11 @@ end
     end
     SDDP.train(model; iteration_limit = 10, cut_type = SDDP.MULTI_CUT)
     for (t, node) in model.nodes
-        @test num_constraints(node.subproblem, AffExpr, MOI.GreaterThan{Float64}) < 31
+        @test num_constraints(
+            node.subproblem,
+            AffExpr,
+            MOI.GreaterThan{Float64},
+        ) < 31
     end
     SDDP.add_all_cuts(model)
     for (t, node) in model.nodes
