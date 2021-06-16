@@ -89,6 +89,7 @@ SDDP.SDDiP
 ```@docs
 SDDP.simulate
 SDDP.calculate_bound
+SDDP.add_all_cuts
 SDDP.Historical
 ```
 

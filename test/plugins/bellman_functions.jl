@@ -114,3 +114,63 @@ using Test
         rm("model.cuts.json")
     end
 end
+
+@testset "add_all_cuts-SINGLE_CUT" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, 5 <= x <= 15, SDDP.State, initial_value = 10)
+        @variable(sp, g >= 0)
+        @variable(sp, h >= 0)
+        @variable(sp, u >= 0)
+        @constraint(sp, inflow, x.out == x.in - h - u)
+        @constraint(sp, demand, h + g == 0)
+        @stageobjective(sp, 10 * u + g)
+        SDDP.parameterize(sp, [(0, 7.5), (5, 5.0), (10, 2.5)]) do ω
+            set_normalized_rhs(inflow, ω[1])
+            set_normalized_rhs(demand, ω[2])
+            return
+        end
+    end
+    SDDP.train(model; iteration_limit = 10)
+    for (t, node) in model.nodes
+        @test num_constraints(node.subproblem, AffExpr, MOI.GreaterThan{Float64}) < 10
+    end
+    SDDP.add_all_cuts(model)
+    for (t, node) in model.nodes
+        n = num_constraints(node.subproblem, AffExpr, MOI.GreaterThan{Float64})
+        @test t == 3 || n == 10
+    end
+end
+
+@testset "add_all_cuts-MULTI_CUT" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, 5 <= x <= 15, SDDP.State, initial_value = 10)
+        @variable(sp, g >= 0)
+        @variable(sp, h >= 0)
+        @variable(sp, u >= 0)
+        @constraint(sp, inflow, x.out == x.in - h - u)
+        @constraint(sp, demand, h + g == 0)
+        @stageobjective(sp, 10 * u + g)
+        SDDP.parameterize(sp, [(0, 7.5), (5, 5.0), (10, 2.5)]) do ω
+            set_normalized_rhs(inflow, ω[1])
+            set_normalized_rhs(demand, ω[2])
+            return
+        end
+    end
+    SDDP.train(model; iteration_limit = 10, cut_type = SDDP.MULTI_CUT)
+    for (t, node) in model.nodes
+        @test num_constraints(node.subproblem, AffExpr, MOI.GreaterThan{Float64}) < 31
+    end
+    SDDP.add_all_cuts(model)
+    for (t, node) in model.nodes
+        n = num_constraints(node.subproblem, AffExpr, MOI.GreaterThan{Float64})
+        @test t == 3 || n == 31
+    end
+end

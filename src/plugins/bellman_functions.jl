@@ -140,7 +140,7 @@ end
 
 # Internal function: check if the candidate point dominates the incumbent.
 function _dominates(candidate, incumbent, minimization::Bool)
-    return minimization ? candidate > incumbent : candidate < incumbent
+    return minimization ? candidate >= incumbent : candidate <= incumbent
 end
 
 # Internal function: update the Level-One datastructures inside `bellman_function`.
@@ -697,6 +697,41 @@ function read_cuts_from_file(
                 @constraint(node.subproblem, expr >= 0)
             else
                 @constraint(node.subproblem, expr <= 0)
+            end
+        end
+    end
+    return
+end
+
+"""
+    add_all_cuts(model::PolicyGraph)
+
+Add all cuts that may have been deleted back into the model.
+
+## Explanation
+
+During the solve, SDDP.jl may decide to remove cuts for a variety of reasons.
+
+These can include cuts that define the optimal value function, particularly
+around the extremes of the state-space (e.g., reservoirs empty).
+
+This function ensures that all cuts discovered are added back into the model.
+
+You should call this after [`train`](@ref) and before [`simulate`](@ref).
+"""
+function add_all_cuts(model::PolicyGraph)
+    for node in values(model.nodes)
+        global_theta = node.bellman_function.global_theta
+        for cut in global_theta.cut_oracle.cuts
+            if cut.constraint_ref === nothing
+                add_cut_constraint_to_model(global_theta, cut)
+            end
+        end
+        for approximation in node.bellman_function.local_thetas
+            for cut in approximation.cut_oracle.cuts
+                if cut.constraint_ref === nothing
+                    add_cut_constraint_to_model(approximation, cut)
+                end
             end
         end
     end
