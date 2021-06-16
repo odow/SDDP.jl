@@ -185,9 +185,9 @@ SDDP.train(
     model,
     parallel_scheme = SDDP.Asynchronous() do m
         env = Gurobi.Env()
-        optimizer = with_optimizer(Gurobi.Optimizer, env, OutputFlag = 0)
         for node in values(m.nodes)
-            set_optimizer(node.subproblem, optimizer)
+            set_optimizer(node.subproblem, () -> Gurobi.Optimizer(env))
+            set_silent(node.subproblem)
         end
     end
 )
