@@ -871,6 +871,9 @@ Train the policy for `model`. Keyword arguments:
    in `(0, 1)` to enable [`RiskAdjustedForwardPass`](@ref). Defaults to
    `nothing` (disabled).
 
+ - `add_to_existing_cuts::Bool`: set to `true` to allow training a model that
+   was previously trained. Defaults to `false`.
+
 There is also a special option for infinite horizon problems
 
  - `cycle_discretization_delta`: the maximum distance between states allowed on
@@ -897,7 +900,25 @@ function train(
     parallel_scheme::AbstractParallelScheme = Serial(),
     forward_pass::AbstractForwardPass = DefaultForwardPass(),
     forward_pass_resampling_probability::Union{Nothing,Float64} = nothing,
+    add_to_existing_cuts::Bool = false,
 )
+    if !add_to_existing_cuts && model.most_recent_training_results !== nothing
+        @warn("""
+        Re-training a model with existing cuts!
+
+        Are you sure you want to do this? The output from this training may be
+        misleading because the policy is already partially trained.
+
+        If you meant to train a new policy with different settings, you must
+        build a new model.
+
+        If you meant to refine a previously trained policy, turn off this
+        warning by passing `add_to_existing_cuts = true` as a keyword argument
+        to `SDDP.train`.
+
+        In a future release, this warning may turn into an error.
+        """)
+    end
     if forward_pass_resampling_probability !== nothing
         forward_pass = RiskAdjustedForwardPass(
             forward_pass = forward_pass,
