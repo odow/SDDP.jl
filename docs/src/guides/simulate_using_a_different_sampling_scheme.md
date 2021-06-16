@@ -192,11 +192,9 @@ the `:node_index` key of the simulation results.
 ```jldoctest sampling_schemes
 simulations = SDDP.simulate(
     model,
-    sampling_scheme = SDDP.Historical([
-        ((1, 1), Ω[1]),
-        ((2, 2), Ω[3]),
-        ((3, 1), Ω[2])
-    ])
+    sampling_scheme = SDDP.Historical(
+        [((1, 1), Ω[1]), ((2, 2), Ω[3]), ((3, 1), Ω[2])],
+    ),
 )
 
 [stage[:node_index] for stage in simulations[1]]
@@ -207,4 +205,28 @@ simulations = SDDP.simulate(
  (1, 1)
  (2, 2)
  (3, 1)
+```
+
+You can also pass a vector of scenarios, which are sampled sequentially:
+```jldoctest
+julia> SDDP.Historical([
+           [(1, 1.0), (2, 2.0), (3, 3.0)],
+           [(1, 1.1), (2, 2.1), (3, 3.1)],
+           [(1, 1.2), (2, 2.2), (3, 3.2)]
+       ])
+A Historical sampler with 3 scenarios sampled sequentially.
+```
+
+Or a vector of scenarios and a corresponding vector of probabilities so that the
+historical scenarios are sampled probabilistically:
+```jldoctest
+julia> SDDP.Historical(
+           [
+               [(1, 1.0), (2, 2.0), (3, 3.0)],
+               [(1, 1.1), (2, 2.1), (3, 3.1)],
+               [(1, 1.2), (2, 2.2), (3, 3.2)]
+           ],
+           [0.2, 0.5, 0.3],
+       )
+A Historical sampler with 3 scenarios sampled probabilistically.
 ```
