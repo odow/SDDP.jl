@@ -104,7 +104,7 @@ function vehicle_location_model(integrality_handler)
     end
     SDDP.train(
         model;
-        iteration_limit = 50, 
+        iteration_limit = 50,
         log_frequency = 10,
         cut_deletion_minimum = 100,
     )
