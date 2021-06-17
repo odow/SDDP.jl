@@ -195,3 +195,31 @@ end
         end
     end
 end
+
+@testset "PSR" begin
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
+        direct_mode = false,
+    ) do node, stage
+        @variable(node, 0 <= x <= 1)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            return JuMP.set_upper_bound(x, ω)
+        end
+    end
+    scheme = SDDP.PSRSamplingScheme(2)
+    scenario_1, term_1 = SDDP.sample_scenario(model, scheme)
+    @test length(scenario_1) == 2
+    @test !term_1
+    @test length(scheme.scenarios) == 1
+    scenario_2, term_2 = SDDP.sample_scenario(model, scheme)
+    @test length(scenario_2) == 2
+    @test !term_2
+    @test length(scheme.scenarios) == 2
+    scenario_3, _ = SDDP.sample_scenario(model, scheme)
+    @test scenario_1 == scenario_3
+    @test length(scheme.scenarios) == 2
+    scenario_4, _ = SDDP.sample_scenario(model, scheme)
+    @test scenario_2 == scenario_4
+    @test length(scheme.scenarios) == 2
+end

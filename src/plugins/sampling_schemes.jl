@@ -389,3 +389,42 @@ function sample_scenario(
     end
     return sample_noise(sampling_scheme.scenarios), false
 end
+
+"""
+    PSRSamplingScheme(N::Int; sampling_scheme = InSampleMonteCarlo())
+
+A sampling scheme with `N` scenarios, similar to how PSR does it.
+"""
+mutable struct PSRSamplingScheme{A} <: AbstractSamplingScheme
+    N::Int
+    sampling_scheme::A
+    scenarios::Vector{Any}
+    counter::Int
+
+    function PSRSamplingScheme(
+        N::Int;
+        sampling_scheme::AbstractSamplingScheme = InSampleMonteCarlo(),
+    )
+        return new{typeof(sampling_scheme)}(N, sampling_scheme, Any[], 0)
+    end
+end
+
+function Base.show(io::IO, h::PSRSamplingScheme)
+    print(io, "A sampler with $(length(h.scenarios)) scenarios like PSR does.")
+    return
+end
+
+function sample_scenario(
+    graph::PolicyGraph{T},
+    s::PSRSamplingScheme{A};
+    kwargs...,
+) where {T,A}
+    s.counter += 1
+    if s.counter > s.N
+        s.counter = 1
+    end
+    if s.counter > length(s.scenarios)
+        push!(s.scenarios, sample_scenario(graph, s.sampling_scheme; kwargs...))
+    end
+    return s.scenarios[s.counter]
+end
