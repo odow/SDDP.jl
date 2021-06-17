@@ -390,17 +390,17 @@ function sample_scenario(
     return sample_noise(sampling_scheme.scenarios), false
 end
 
+"""
+    PSRSamplingScheme(N::Int; sampling_scheme = InSampleMonteCarlo())
+
+A sampling scheme with `N` scenarios, similar to how PSR does it.
+"""
 mutable struct PSRSamplingScheme{A} <: AbstractSamplingScheme
     N::Int
     sampling_scheme::A
     scenarios::Vector{Any}
     counter::Int
 
-    """
-        PSRSamplingScheme(N::Int; sampling_scheme = InSampleMonteCarlo())
-
-    A sampling scheme with `N` scenarios, similar to how PSR does it.
-    """
     function PSRSamplingScheme(
         N::Int;
         sampling_scheme::AbstractSamplingScheme = InSampleMonteCarlo(),
@@ -424,10 +424,7 @@ function sample_scenario(
         s.counter = 1
     end
     if s.counter > length(s.scenarios)
-        push!(
-            s.scenarios,
-            sample_scenario(graph, s.sampling_scheme; kwargs...),
-        )
+        push!(s.scenarios, sample_scenario(graph, s.sampling_scheme; kwargs...))
     end
-    return s.scenarios[s.counter]::Tuple{Vector{Tuple{T,<:Any}},Bool}
+    return s.scenarios[s.counter]
 end
