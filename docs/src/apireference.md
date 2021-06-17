@@ -50,6 +50,8 @@ SDDP.AbstractSamplingScheme
 SDDP.sample_scenario
 SDDP.InSampleMonteCarlo
 SDDP.OutOfSampleMonteCarlo
+SDDP.Historical
+SDDP.PSRSamplingScheme
 ```
 
 ### Parallel schemes
@@ -90,7 +92,6 @@ SDDP.SDDiP
 SDDP.simulate
 SDDP.calculate_bound
 SDDP.add_all_cuts
-SDDP.Historical
 ```
 
 ## Decision rules
