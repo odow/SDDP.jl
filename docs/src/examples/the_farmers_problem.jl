@@ -256,4 +256,4 @@ SDDP.train(model; iteration_limit = 20)
 # Birge and Louveaux report that the optimal objective value is \\\$108,390.
 # Check that we got the correct solution using [`SDDP.calculate_bound`](@ref):
 
-@assert SDDP.calculate_bound(model) == 108_390.0
+@assert isapprox(SDDP.calculate_bound(model), 108_390.0, atol = 0.1)

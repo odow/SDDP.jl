@@ -102,7 +102,12 @@ function vehicle_location_model(integrality_handler)
             )
         end
     end
-    SDDP.train(model, iteration_limit = 50, log_frequency = 10)
+    SDDP.train(
+        model;
+        iteration_limit = 50,
+        log_frequency = 10,
+        cut_deletion_minimum = 100,
+    )
     if integrality_handler == SDDP.ContinuousRelaxation()
         @test isapprox(SDDP.calculate_bound(model), 1700, atol = 5)
     end
