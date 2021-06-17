@@ -201,7 +201,7 @@ simulations = SDDP.simulate(
 
 # output
 
-3-element Array{Tuple{Int64,Int64},1}:
+3-element Vector{Tuple{Int64, Int64}}:
  (1, 1)
  (2, 2)
  (3, 1)

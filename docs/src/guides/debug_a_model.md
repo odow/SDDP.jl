@@ -107,7 +107,7 @@ julia> det_equiv = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
 A JuMP Model
 Feasibility problem with:
 Variables: 24
-`GenericAffExpr{Float64,VariableRef}`-in-`MathOptInterface.EqualTo{Float64}`: 10 constraints
+`AffExpr`-in-`MathOptInterface.EqualTo{Float64}`: 10 constraints
 `VariableRef`-in-`MathOptInterface.EqualTo{Float64}`: 8 constraints
 `VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 6 constraints
 `VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 4 constraints

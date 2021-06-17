@@ -68,7 +68,7 @@ The random variable is supported on the values 1, 2, 3, and 4:
 
 ```jldoctest intermediate_risk
 julia> noise_supports = [1, 2, 3, 4]
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  1
  2
  3
@@ -79,7 +79,7 @@ The associated probability of each outcome is as follows:
 
 ```jldoctest intermediate_risk
 julia> nominal_probability = [0.1, 0.2, 0.3, 0.4]
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.1
  0.2
  0.3
@@ -89,7 +89,7 @@ julia> nominal_probability = [0.1, 0.2, 0.3, 0.4]
 With each outcome ω, the agent observes a cost `Z(ω)`:
 ```jldoctest intermediate_risk
 julia> cost_realizations = [5.0, 4.0, 6.0, 2.0]
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  5.0
  4.0
  6.0
@@ -107,7 +107,7 @@ probabilities:
 
 ```jldoctest intermediate_risk
 julia> risk_adjusted_probability = zeros(4)
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.0
  0.0
  0.0
@@ -134,7 +134,7 @@ risk_adjusted_probability
 
 # output
 
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.1
  0.2
  0.3
@@ -163,7 +163,7 @@ risk_adjusted_probability
 
 # output
 
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.0
  0.0
  1.0
@@ -190,7 +190,7 @@ round.(risk_adjusted_probability, digits = 1)
 
 # output
 
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.2
  0.2
  0.6
@@ -222,7 +222,7 @@ risk_adjusted_probability
 
 # output
 
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.05
  0.1
  0.65
@@ -266,7 +266,7 @@ round.(risk_adjusted_probability, digits = 4)
 
 # output
 
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.3333
  0.0447
  0.622
@@ -298,7 +298,7 @@ round.(risk_adjusted_probability, digits = 1)
 
 # output
 
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.1
  0.1
  0.8
@@ -327,7 +327,7 @@ round.(risk_adjusted_probability, digits = 4)
 
 # output
 
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  0.11
  0.1991
  0.3648
