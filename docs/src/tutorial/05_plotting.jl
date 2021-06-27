@@ -86,8 +86,7 @@ SDDP.add_spaghetti(plt; title = "Reservoir volume") do data
     return data[:volume].out
 end
 
-# You don't have just return values from the simulation, you can compute things
-# too.
+# In addition to returning values from the simulation, you can compute things:
 
 SDDP.add_spaghetti(plt; title = "Fuel cost", ymin = 0, ymax = 250) do data
     if data[:thermal_generation] > 0
