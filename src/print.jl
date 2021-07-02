@@ -73,7 +73,7 @@ function _unique_paths(model::PolicyGraph{T}) where {T}
     return total_scenarios
 end
 
-function _merge_tuple(x::Tuple{Int,Int}, y::Int)
+function _merge_tuple(x, y)
     if x == (-1, -1)
         return (y, y)
     elseif y < x[1]
@@ -154,15 +154,43 @@ function print_footer(io, training_results::TrainingResults)
     println(io, "  Status         : ", training_results.status)
     println(
         io,
-        "  Total time [s] : ",
+        "  Total time (s) :",
         print_value(training_results.log[end].time),
     )
     println(io, "  Total solves   : ", training_results.log[end].total_solves)
     println(
         io,
+        "  Best bound     : ",
+        print_value(training_results.log[end].bound),
+    )
+    μ, σ = confidence_interval(
+        map(l -> l.simulation_value, training_results.log),
+    )
+    println(
+        io,
+        "  Simulation CI  : ",
+        print_value(μ),
+        " ±",
+        print_value(σ),
+    )
+    println(
+        io,
         "------------------------------------------------------------------------------",
     )
     return
+end
+
+"""
+    confidence_interval(x::Vector{Float64}, z_score::Float64 = 1.96)
+
+Return a confidence interval of `x` corresponding to the `z_score`.
+
+`z_score` defaults to `1.96` for a 95% confidence interval.
+"""
+function confidence_interval(x::Vector{Float64}, z_score::Float64 = 1.96)
+    μ = Statistics.mean(x)
+    σ = z_score * Statistics.std(x) / sqrt(length(x))
+    return μ, σ
 end
 
 ###
