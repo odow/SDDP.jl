@@ -53,17 +53,17 @@ Documenter.makedocs(
     pages = [
         "Home" => "index.md",
         "Tutorials" => Any[
-            "Basic" => Any[
-                "tutorial/basic/$(file)"
-                for file in sorted_files(TUTORIAL_DIR, "basic", ".md")
+            "Basic"=>Any[
+                "tutorial/basic/$(file)" for
+                file in sorted_files(TUTORIAL_DIR, "basic", ".md")
             ],
-            "Advanced" => Any[
-                "tutorial/advanced/$(file)"
-                for file in sorted_files(TUTORIAL_DIR, "advanced", ".md")
+            "Advanced"=>Any[
+                "tutorial/advanced/$(file)" for
+                 file in sorted_files(TUTORIAL_DIR, "advanced", ".md")
             ],
-            "Theory" => Any[
-                "tutorial/theory/$(file)"
-                for file in sorted_files(TUTORIAL_DIR, "theory", ".md")
+            "Theory"=>Any[
+                "tutorial/theory/$(file)" for
+                file in sorted_files(TUTORIAL_DIR, "theory", ".md")
             ],
         ],
         "How-to guides" =>
