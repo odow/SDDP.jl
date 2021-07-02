@@ -90,7 +90,7 @@ function print_problem_statistics(
     println(io, "Options")
     println(io, "  Solver          : ", parallel_scheme)
     println(io, "  Risk measure    : ", risk_measure)
-    println(io, "  Sampling scheme : ", sampling_scheme)
+    println(io, "  Sampling scheme : ", typeof(sampling_scheme))
     println(io)
     return
 end
