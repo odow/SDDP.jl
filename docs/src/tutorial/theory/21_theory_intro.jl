@@ -1,4 +1,4 @@
-# # Theory I: an intro to SDDP
+# # Introductory theory
 
 # !!! note
 #     This tutorial is aimed at advanced undergraduates or early-stage graduate
@@ -39,7 +39,7 @@ import Statistics
 # ## Preliminaries: background theory
 
 # !!! tip
-#     This section is copied verbatim from [Basic I: first steps](@ref). If it's
+#     This section is copied verbatim from [An introduction to SDDP.jl](@ref). If it's
 #     familiar, skip to [Preliminaries: Kelley's cutting plane algorithm](@ref).
 
 # Multistage stochastic programming is complicated, and the literature has not

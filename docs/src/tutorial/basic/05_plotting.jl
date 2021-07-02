@@ -1,4 +1,4 @@
-# # Basic V: plotting
+# # Plotting tools
 
 # In our previous tutorials, we formulated, solved, and simulated multistage
 # stochastic optimization problems. However, we haven't really investigated what
@@ -10,7 +10,7 @@
 
 # The next two plot types help visualize the policy. Thus, we first need to
 # create a policy and simulate some trajectories. So, let's take the model from
-# [Basic IV: Markov uncertainty](@ref), train it for 20 iterations, and then
+# [Markovian policy graphs](@ref), train it for 20 iterations, and then
 # simulate 100 Monte Carlo realizations of the policy.
 
 using SDDP, GLPK

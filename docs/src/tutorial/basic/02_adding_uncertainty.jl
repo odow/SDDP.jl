@@ -1,6 +1,6 @@
 # # Basic II: adding uncertainty
 
-# In the previous tutorial, [Basic I: first steps](@ref), we created a
+# In the previous tutorial, [An introduction to SDDP.jl](@ref), we created a
 # deterministic hydro-thermal scheduling model. In this tutorial, we extend the
 # problem by adding uncertainty.
 
@@ -92,7 +92,7 @@ end
 
 # ## Training and simulating the policy
 
-# As in [Basic I: first steps](@ref), we train the policy:
+# As in [An introduction to SDDP.jl](@ref), we train the policy:
 
 SDDP.train(model; iteration_limit = 10)
 

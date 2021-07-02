@@ -1,4 +1,4 @@
-# # Basic I: first steps
+# # An introduction to SDDP.jl
 
 # SDDP.jl is a solver for multistage stochastic optimization problems. By
 # **multistage**, we mean problems in which the agent makes a sequence of

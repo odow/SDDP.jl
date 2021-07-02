@@ -1,4 +1,4 @@
-# # Advanced II: belief states
+# # Belief states
 
 # `SDDP.jl` includes an implementation of the algorithm described in Dowson, O.,
 # Morton, D.P., & Pagnoncelli, B. (2019). Partially observable multistage

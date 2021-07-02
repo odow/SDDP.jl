@@ -1,4 +1,4 @@
-# # Advanced I: objective states
+# # Objective states
 
 # There are many applications in which we want to model a price process that
 # follows some auto-regressive process. Common examples include stock prices on
@@ -11,7 +11,7 @@
 
 # To overcome this problem, the approach in the literature has been to
 # discretize the price process in order to model it using a Markovian policy
-# graph like those discussed in [Basic IV: Markov uncertainty](@ref).
+# graph like those discussed in [Markovian policy graphs](@ref).
 
 # However, recent work offers a way to include stagewise-dependent objective
 # uncertainty into the objective function of SDDP subproblems. Readers are

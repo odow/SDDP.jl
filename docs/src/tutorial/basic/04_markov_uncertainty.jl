@@ -1,7 +1,7 @@
-# # Basic IV: Markov uncertainty
+# # Markovian policy graphs
 
-# In our three tutorials ([Basic I: first steps](@ref), [Basic II: adding
-# uncertainty](@ref), and [Basic III: objective uncertainty](@ref)), we
+# In our three tutorials ([An introduction to SDDP.jl](@ref), [Basic II: adding
+# uncertainty](@ref), and [Uncertainty in the objective function](@ref)), we
 # formulated a simple hydrothermal scheduling problem with stagewise-independent
 # noise in the right-hand side of the constraints and in the objective function.
 # Now, in this tutorial, we introduce some *stagewise-dependent* uncertainty

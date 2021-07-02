@@ -10,6 +10,7 @@ const TUTORIAL_DIR = joinpath(@__DIR__, "src", "tutorial")
 const GUIDES_DIR = joinpath(@__DIR__, "src", "guides")
 
 sorted_files(dir, ext) = sort(filter(f -> endswith(f, ext), readdir(dir)))
+sorted_files(dir, subdir, ext) = sorted_files(joinpath(dir, subdir), ext)
 
 # Run the farmer's problem first to precompile a bunch of SDDP.jl functions.
 # This is a little sneaky, but it avoids leaking long (6 sec) compilation times
@@ -18,10 +19,12 @@ include(joinpath(EXAMPLES_DIR, "the_farmers_problem.jl"))
 
 if FIX_DOCTESTS
     # doctest=:fix only works with `\n` line endings. Replace any `\r\n` ones.
-    for file in sorted_files(TUTORIAL_DIR, ".md")
-        filename = joinpath(TUTORIAL_DIR, file)
-        code = read(filename, String)
-        write(filename, replace(code, "\r\n" => "\n"))
+    for dir in ["basic", "advanced", "theory"]
+        for file in sorted_files(TUTORIAL_DIR, dir, ".md")
+            filename = joinpath(TUTORIAL_DIR, dir, file)
+            code = read(filename, String)
+            write(filename, replace(code, "\r\n" => "\n"))
+        end
     end
 end
 
@@ -50,7 +53,18 @@ Documenter.makedocs(
     pages = [
         "Home" => "index.md",
         "Tutorials" => Any[
-            "tutorial/$(file)" for file in sorted_files(TUTORIAL_DIR, ".md")
+            "Basic" => Any[
+                "tutorial/basic/$(file)"
+                for file in sorted_files(TUTORIAL_DIR, "basic", ".md")
+            ],
+            "Advanced" => Any[
+                "tutorial/advanced/$(file)"
+                for file in sorted_files(TUTORIAL_DIR, "advanced", ".md")
+            ],
+            "Theory" => Any[
+                "tutorial/theory/$(file)"
+                for file in sorted_files(TUTORIAL_DIR, "theory", ".md")
+            ],
         ],
         "How-to guides" =>
             Any["guides/$(file)" for file in sorted_files(GUIDES_DIR, ".md")],
