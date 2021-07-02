@@ -118,9 +118,9 @@ end
 function print_footer(io, training_results::TrainingResults)
     println(io)
     println(io, "Terminating training")
-    println(io, "  Status       : ", training_results.status)
-    println(io, "  Total time   : ", training_results.log[end].time)
-    println(io, "  Total solves : ", training_results.log[end].total_solves)
+    println(io, "  Status         : ", training_results.status)
+    println(io, "  Total time [s] : ", print_value(training_results.log[end].time))
+    println(io, "  Total solves   : ", training_results.log[end].total_solves)
     println(
         io,
         "------------------------------------------------------------------------------",
