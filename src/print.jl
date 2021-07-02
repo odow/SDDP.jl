@@ -73,13 +73,24 @@ function _unique_paths(model::PolicyGraph{T}) where {T}
     return total_scenarios
 end
 
-function print_problem_statistics(io::IO, model::PolicyGraph, parallel_scheme)
+function print_problem_statistics(
+    io::IO,
+    model::PolicyGraph,
+    existing_cuts::Bool,
+    parallel_scheme,
+    risk_measure,
+    sampling_scheme,
+)
     println(io, "Problem")
     println(io, "  Nodes           : ", length(model.nodes))
     println(io, "  State variables : ", length(model.initial_root_state))
     paths = Printf.@sprintf("%1.5e", _unique_paths(model))
     println(io, "  Scenarios       : ", paths)
+    println(io, "  Existing cuts   : ", existing_cuts)
+    println(io, "Options")
     println(io, "  Solver          : ", parallel_scheme)
+    println(io, "  Risk measure    : ", risk_measure)
+    println(io, "  Sampling scheme : ", sampling_scheme)
     println(io)
     return
 end
@@ -104,15 +115,17 @@ function print_iteration(io, log::Log)
     return println(io)
 end
 
-function print_footer(io, training_results)
+function print_footer(io, training_results::TrainingResults)
+    println(io)
+    println(io, "Terminating training")
+    println(io, "  Status       : ", training_results.status)
+    println(io, "  Total time   : ", training_results.log[end].time)
+    println(io, "  Total solves : ", training_results.log[end].total_solves)
     println(
-        io,
-        "\nTerminating training with status: $(training_results.status)",
-    )
-    return println(
         io,
         "------------------------------------------------------------------------------",
     )
+    return
 end
 
 ###

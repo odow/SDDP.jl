@@ -937,7 +937,10 @@ function train(
             print_problem_statistics,
             log_file_handle,
             model,
+            model.most_recent_training_results !== nothing,
             parallel_scheme,
+            risk_measure,
+            sampling_scheme,
         )
     end
 
