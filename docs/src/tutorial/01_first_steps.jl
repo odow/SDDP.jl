@@ -96,7 +96,7 @@
 #    decided.
 #
 #    Examples of random variables include rainfall inflow into a reservoir,
-#    probalistic perishing of inventory, and steering errors in a vehicle.
+#    probabilistic perishing of inventory, and steering errors in a vehicle.
 #
 #    Random variables are local to a node $i$, and they can differ between
 #    nodes. For example, some nodes may have random variables, and some nodes
