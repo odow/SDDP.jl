@@ -96,7 +96,7 @@
 #    decided.
 #
 #    Examples of random variables include rainfall inflow into a reservoir,
-#    probalistic perishing of inventory, and steering errors in a vehicle.
+#    probabilistic perishing of inventory, and steering errors in a vehicle.
 #
 #    Random variables are local to a node $i$, and they can differ between
 #    nodes. For example, some nodes may have random variables, and some nodes
@@ -641,7 +641,7 @@ thermal_generation = [stage[:thermal_generation] for stage in simulations[1]]
 # MWh of thermal and 50 MWh of hydro. In the third and final stage, use 0 MWh of
 # thermal and 150 MWh of  hydro.
 
-# ## Extracting the water values
+# ## Extracting the marginal water values
 
 # Finally, we can use [`SDDP.ValueFunction`](@ref) and [`SDDP.evaluate`](@ref)
 # to obtain and evaluate the value function at different points in the
@@ -653,21 +653,16 @@ V = SDDP.ValueFunction(model; node = 1)
 
 # Then we can evaluate `V` at a point:
 
-cost, price = SDDP.evaluate(V; volume = 10)
+cost, price = SDDP.evaluate(V, Dict("volume" => 10))
 
 # This returns the cost-to-go (`cost`), and the gradient of the cost-to-go
-# function with resspect to each state variable. Note that since we are
+# function with respect to each state variable. Note that since we are
 # minimizing, the price has a negative sign: each additional unit of water leads
 # to a decrease in the the expected long-run cost.
 
-# For our example, the value of water at the end of the first stage is \\\$150,
-# because each additional unit of water can displace a unit of thermal
-# generation in the final stage when the price is \\\$150/MWh.
-
-# There is also a method of [`SDDP.evaluate`](@ref) that takes a dictionary as
-# an argument for cases where the keyword argument doesn't work.
-
-cost, price = SDDP.evaluate(V, Dict("volume" => 10))
+# For our example, the marginal value of water at the end of the first stage is
+# \\\$150/unit, because each additional unit of water can displace a unit of
+# thermal generation in the final stage when the price is \\\$150/MWh.
 
 # This concludes our first tutorial for `SDDP.jl`. In the next tutorial,
 # [Basic II: adding uncertainty](@ref), we will extend this problem by adding
