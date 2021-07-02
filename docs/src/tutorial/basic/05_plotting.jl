@@ -195,6 +195,6 @@ SDDP.evaluate(V; volume = 1)
 #     The dashboard is experimental. There are known bugs associated with it,
 #     e.g., [SDDP.jl#226](https://github.com/odow/SDDP.jl/issues/226).
 
-# This concludes our fifth tutorial for `SDDP.jl`. In our next tutorial, [Basic
-# VI: words of warning](@ref) we discuss some of the issues that you should be
+# This concludes our fifth tutorial for `SDDP.jl`. In our next tutorial,
+# [Words of warning](@ref) we discuss some of the issues that you should be
 # aware of when creating your own models.

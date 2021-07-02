@@ -24,7 +24,7 @@ The complete re-write has resulted in a painful upgrading process as users must
 simultaneously upgrade from Julia 0.6 to Julia 1.0, from JuMP 0.18 to JuMP
 0.19, and from the old syntax of `SDDP.jl` to the new. In this section, we
 outline some of the larger changes. For more information, we recommend reading
-the updated tutorials, beginning with [Basic I: first steps](@ref)
+the updated tutorials, beginning with [An introduction to SDDP.jl](@ref)
 
 #### `SDDPModel`
 
@@ -181,10 +181,10 @@ complete list of the new options as most things have changed.
 
 #### Plotting
 
-Much of the syntax for plotting has changed. See [Basic V: plotting](@ref) for
+Much of the syntax for plotting has changed. See [Plotting tools](@ref) for
 the new syntax.
 
 #### Price interpolation
 
 The syntax for models with stagewise-dependent objective processes has
-completely changed. See [Advanced I: objective states](@ref) for details.
+completely changed. See [Objective states](@ref) for details.

@@ -129,5 +129,5 @@ simulations = SDDP.simulate(
 
 [stage[:node_index] for stage in simulations[1]]
 
-# This concludes our fourth tutorial for `SDDP.jl`. In the next tutorial, [Basic
-# V: plotting](@ref) we discuss the plotting utilities included in `SDDP.jl`.
+# This concludes our fourth tutorial for `SDDP.jl`. In the next tutorial,
+# [Plotting tools](@ref) we discuss the plotting utilities included in `SDDP.jl`.

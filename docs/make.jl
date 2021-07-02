@@ -59,7 +59,7 @@ Documenter.makedocs(
             ],
             "Advanced"=>Any[
                 "tutorial/advanced/$(file)" for
-                 file in sorted_files(TUTORIAL_DIR, "advanced", ".md")
+                file in sorted_files(TUTORIAL_DIR, "advanced", ".md")
             ],
             "Theory"=>Any[
                 "tutorial/theory/$(file)" for

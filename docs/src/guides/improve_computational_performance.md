@@ -6,7 +6,7 @@ how the computational performance can be improved.
 ## Numerical stability (again)
 
 We've already discussed this in the [Numerical stability](@ref) section of
-[Basic VI: words of warning](@ref). But, it's so important that we're going to
+[Words of warning](@ref). But, it's so important that we're going to
 say it again: improving the problem scaling is one of the best ways to improve
 the numerical performance of your models.
 
