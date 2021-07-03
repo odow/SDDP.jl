@@ -61,12 +61,15 @@ Documenter.makedocs(
     pages = [
         "Home" => "index.md",
         "Tutorials" => Any[
-            "Basic" =>
-                list_of_sorted_files("tutorial/basic", TUTORIAL_BASIC_DIR),
-            "Advanced" =>
-                list_of_sorted_files("tutorial/advanced", TUTORIAL_ADVANCED_DIR),
-            "Theory" =>
-                list_of_sorted_files("tutorial/theory", TUTORIAL_THEORY_DIR),
+            "Basic" =>list_of_sorted_files("tutorial/basic", TUTORIAL_BASIC_DIR),
+            "Advanced" =>list_of_sorted_files(
+                "tutorial/advanced",
+                TUTORIAL_ADVANCED_DIR,
+            ),
+            "Theory" =>list_of_sorted_files(
+                "tutorial/theory",
+                TUTORIAL_THEORY_DIR,
+            ),
         ],
         "How-to guides" => list_of_sorted_files("guides", GUIDES_DIR),
         "Examples" => list_of_sorted_files("examples", EXAMPLES_DIR),
