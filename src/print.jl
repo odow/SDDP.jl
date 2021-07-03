@@ -163,7 +163,7 @@ function print_footer(io, training_results::TrainingResults)
         "  Best bound     : ",
         print_value(training_results.log[end].bound),
     )
-    μ, σ = 
+    μ, σ =
         confidence_interval(map(l -> l.simulation_value, training_results.log))
     println(io, "  Simulation CI  : ", print_value(μ), " ±", print_value(σ))
     println(
