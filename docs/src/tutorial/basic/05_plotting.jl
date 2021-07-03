@@ -1,4 +1,4 @@
-# # Basic V: plotting
+# # Plotting tools
 
 # In our previous tutorials, we formulated, solved, and simulated multistage
 # stochastic optimization problems. However, we haven't really investigated what
@@ -10,7 +10,7 @@
 
 # The next two plot types help visualize the policy. Thus, we first need to
 # create a policy and simulate some trajectories. So, let's take the model from
-# [Basic IV: Markov uncertainty](@ref), train it for 20 iterations, and then
+# [Markovian policy graphs](@ref), train it for 20 iterations, and then
 # simulate 100 Monte Carlo realizations of the policy.
 
 using SDDP, GLPK
@@ -108,7 +108,7 @@ end
 # ```
 
 # This should open a webpage that looks like [this
-# one](../assets/spaghetti_plot.html).
+# one](../../assets/spaghetti_plot.html).
 
 # Using the mouse, you can highlight individual trajectories by hovering over
 # them. This makes it possible to visualize a single trajectory across multiple
@@ -154,7 +154,7 @@ end
 
 # This should open a plot window with a plot that looks like:
 #
-# ![publication plot](../assets/publication_plot.png)
+# ![publication plot](../../assets/publication_plot.png)
 
 # You can save this plot as a PDF using the `Plots.jl` function `savefig`:
 # ```julia
@@ -179,7 +179,7 @@ SDDP.evaluate(V; volume = 1)
 # ```julia
 # SDDP.plot(V, volume = 0:200, filename = "value_function.html")
 # ```
-# This should open a webpage that looks like [this one](../assets/value_function.html).
+# This should open a webpage that looks like [this one](../../assets/value_function.html).
 
 # ## Convergence dashboard
 
@@ -195,6 +195,6 @@ SDDP.evaluate(V; volume = 1)
 #     The dashboard is experimental. There are known bugs associated with it,
 #     e.g., [SDDP.jl#226](https://github.com/odow/SDDP.jl/issues/226).
 
-# This concludes our fifth tutorial for `SDDP.jl`. In our next tutorial, [Basic
-# VI: words of warning](@ref) we discuss some of the issues that you should be
+# This concludes our fifth tutorial for `SDDP.jl`. In our next tutorial,
+# [Words of warning](@ref) we discuss some of the issues that you should be
 # aware of when creating your own models.

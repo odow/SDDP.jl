@@ -14,7 +14,7 @@ we term the _true process_. Therefore, `SDDP.jl` makes it easy to simulate the
 policy using different probability distrutions.
 
 To demonsrate the different ways of simulating the policy, we're going to use
-the model from the tutorial [Basic IV: Markov uncertainty](@ref).
+the model from the tutorial [Markovian policy graphs](@ref).
 
 ```jldoctest sampling_schemes
 using SDDP, GLPK

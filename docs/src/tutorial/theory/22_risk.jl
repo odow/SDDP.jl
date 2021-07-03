@@ -1,6 +1,6 @@
-# # Theory II: risk aversion
+# # Risk aversion
 
-# In [Theory I: an intro to SDDP](@ref), we implemented a basic version of the
+# In [Introductory theory](@ref), we implemented a basic version of the
 # SDDP algorithm. This tutorial extends that implementation to add
 # **risk-aversion**.
 
@@ -77,7 +77,7 @@ import Statistics
 # want a policy that is also risk-averse. The question then becomes, how do we
 # create risk-averse decision rules and policies?
 
-# Recall from [Theory I: an intro to SDDP](@ref) that we can form an optimal
+# Recall from [Introductory theory](@ref) that we can form an optimal
 # decision rule using the recursive formulation:
 # ```math
 # \begin{aligned}
@@ -126,7 +126,7 @@ import Statistics
 # !!! warning
 #     Note how we need to expliclty compute a risk-averse subgradient! (We
 #     need a subgradient because the function might not be differentiable.) When
-#     constructing cuts with the expectation operator in [Theory I: an intro to SDDP](@ref),
+#     constructing cuts with the expectation operator in [Introductory theory](@ref),
 #     we implicitly used the law of total expectation to combine the two
 #     expectations; we can't do that for a general risk measure.
 
@@ -594,11 +594,11 @@ end
 
 # Now we're ready to implement our risk-averse version of SDDP.
 
-# As a prerequisite, we need most of the code from [Theory I: an intro to SDDP](@ref).
+# As a prerequisite, we need most of the code from [Introductory theory](@ref).
 
 # ```@raw html
 # <p><details>
-# <summary>Click to view code from the tutorial "Theory I: an intro to SDDP".</summary>
+# <summary>Click to view code from the tutorial "Introductory theory".</summary>
 # ```
 
 struct State
@@ -877,7 +877,7 @@ end
 # ## Example: risk-averse hydro-thermal scheduling
 
 # Now it's time for an example. We create the same problem as
-# [Theory I: an intro to SDDP](@ref):
+# [Introductory theory](@ref):
 
 model = PolicyGraph(
     graph = [Dict(2 => 1.0), Dict(3 => 1.0), Dict{Int,Float64}()],

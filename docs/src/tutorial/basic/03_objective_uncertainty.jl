@@ -1,4 +1,4 @@
-# # Basic III: objective uncertainty
+# # Uncertainty in the objective function
 
 # In the previous tutorial, [Basic II: adding uncertainty](@ref), we created a
 # stochastic hydro-thermal scheduling model. In this tutorial, we extend the
@@ -86,6 +86,6 @@ ci = round(1.96 * std(objective_values) / sqrt(500), digits = 2)
 println("Confidence interval: ", μ, " ± ", ci)
 println("Lower bound: ", round(SDDP.calculate_bound(model), digits = 2))
 
-# This concludes our third tutorial for `SDDP.jl`. In the next tutorial, [Basic
-# IV: Markov uncertainty](@ref), we add stagewise-dependence to the inflows
+# This concludes our third tutorial for `SDDP.jl`. In the next tutorial,
+# [Markovian policy graphs](@ref), we add stagewise-dependence to the inflows
 # using a Markov chain.

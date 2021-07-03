@@ -1,4 +1,4 @@
-# # Basic VI: words of warning
+# # Words of warning
 
 # SDDP is a powerful solution technique for multistage stochastic programming.
 # However, there are a number of subtle things to be aware of before creating

@@ -1,6 +1,6 @@
 # # Basic II: adding uncertainty
 
-# In the previous tutorial, [Basic I: first steps](@ref), we created a
+# In the previous tutorial, [An introduction to SDDP.jl](@ref), we created a
 # deterministic hydro-thermal scheduling model. In this tutorial, we extend the
 # problem by adding uncertainty.
 
@@ -29,7 +29,7 @@
 # To represent this, we can draw the following picture. The wavy lines denote
 # the uncertainty arriving into the start of each stage (node).
 #
-# ![Linear policy graph](../assets/stochastic_linear_policy_graph.png)
+# ![Linear policy graph](../../assets/stochastic_linear_policy_graph.png)
 
 # In addition to adding this uncertainty to the model, we also need to modify
 # the dynamics to include `inflow`:
@@ -92,7 +92,7 @@ end
 
 # ## Training and simulating the policy
 
-# As in [Basic I: first steps](@ref), we train the policy:
+# As in [An introduction to SDDP.jl](@ref), we train the policy:
 
 SDDP.train(model; iteration_limit = 10)
 
@@ -136,5 +136,6 @@ simulations = SDDP.simulate(
 
 prices = [stage[:price] for stage in simulations[1]]
 
-# This concludes our second tutorial for `SDDP.jl`. In the next tutorial, [Basic
-# III: objective uncertainty](@ref), we extend the uncertainty to the fuel cost.
+# This concludes our second tutorial for `SDDP.jl`. In the next tutorial,
+# [Uncertainty in the objective function](@ref), we extend the uncertainty to
+# the fuel cost.

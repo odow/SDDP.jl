@@ -1,7 +1,7 @@
-# # Basic IV: Markov uncertainty
+# # Markovian policy graphs
 
-# In our three tutorials ([Basic I: first steps](@ref), [Basic II: adding
-# uncertainty](@ref), and [Basic III: objective uncertainty](@ref)), we
+# In our three tutorials ([An introduction to SDDP.jl](@ref), [Basic II: adding
+# uncertainty](@ref), and [Uncertainty in the objective function](@ref)), we
 # formulated a simple hydrothermal scheduling problem with stagewise-independent
 # noise in the right-hand side of the constraints and in the objective function.
 # Now, in this tutorial, we introduce some *stagewise-dependent* uncertainty
@@ -21,7 +21,7 @@
 
 # Here is a picture of the model we're going to implement.
 #
-# ![Markovian policy graph](../assets/stochastic_markovian_policy_graph.png)
+# ![Markovian policy graph](../../assets/stochastic_markovian_policy_graph.png)
 
 # There are five nodes in our graph. Each node is named by a tuple `(t, i)`,
 # where `t` is the stage for `t=1,2,3`, and `i` is the Markov state for `i=1,2`.
@@ -129,5 +129,5 @@ simulations = SDDP.simulate(
 
 [stage[:node_index] for stage in simulations[1]]
 
-# This concludes our fourth tutorial for `SDDP.jl`. In the next tutorial, [Basic
-# V: plotting](@ref) we discuss the plotting utilities included in `SDDP.jl`.
+# This concludes our fourth tutorial for `SDDP.jl`. In the next tutorial,
+# [Plotting tools](@ref) we discuss the plotting utilities included in `SDDP.jl`.
