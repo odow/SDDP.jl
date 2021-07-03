@@ -1,9 +1,9 @@
 # # Markovian policy graphs
 
-# In our three tutorials ([An introduction to SDDP.jl](@ref), [Basic II: adding
-# uncertainty](@ref), and [Uncertainty in the objective function](@ref)), we
-# formulated a simple hydrothermal scheduling problem with stagewise-independent
-# noise in the right-hand side of the constraints and in the objective function.
+# In our previous tutorials ([An introduction to SDDP.jl](@ref) and
+# [Uncertainty in the objective function](@ref)), we formulated a simple
+# hydrothermal scheduling problem with stagewise-independent random variables in
+# the right-hand side of the constraints and in the objective function.
 # Now, in this tutorial, we introduce some *stagewise-dependent* uncertainty
 # using a Markov chain.
 

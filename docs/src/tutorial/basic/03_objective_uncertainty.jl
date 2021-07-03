@@ -1,6 +1,6 @@
 # # Uncertainty in the objective function
 
-# In the previous tutorial, [Basic II: adding uncertainty](@ref), we created a
+# In the previous tutorial, [An introduction to SDDP.jl](@ref), we created a
 # stochastic hydro-thermal scheduling model. In this tutorial, we extend the
 # problem by adding uncertainty to the fuel costs.
 

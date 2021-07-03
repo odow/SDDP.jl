@@ -547,7 +547,7 @@ end
 # `t::Int`. You could change this function to change the model, or define a new
 # one later in the code.
 
-# We're going to copy the example from [Basic II: adding uncertainty](@ref),
+# We're going to copy the example from [An introduction to SDDP.jl](@ref),
 # with some minor adjustments for the fact we don't have many of the bells and
 # whistles of SDDP.jl. You can probably see how some of the SDDP.jl
 # functionality like [`@stageobjective`](@ref) and [`SDDP.parameterize`](@ref)
