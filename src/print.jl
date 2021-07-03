@@ -73,13 +73,57 @@ function _unique_paths(model::PolicyGraph{T}) where {T}
     return total_scenarios
 end
 
-function print_problem_statistics(io::IO, model::PolicyGraph, parallel_scheme)
+function _merge_tuple(x, y)
+    if x == (-1, -1)
+        return (y, y)
+    elseif y < x[1]
+        return (y, x[2])
+    elseif y > x[2]
+        return (x[1], y)
+    else
+        return x
+    end
+end
+
+_constraint_key(F, S) = replace("$(F) in $(S)", "MathOptInterface" => "MOI")
+
+function print_problem_statistics(
+    io::IO,
+    model::PolicyGraph,
+    existing_cuts::Bool,
+    parallel_scheme,
+    risk_measure,
+    sampling_scheme,
+)
+    constraint_types = Dict{String,Tuple{Int,Int}}()
+    variables = (-1, -1)
+    for (_, node) in model.nodes
+        variables = _merge_tuple(variables, JuMP.num_variables(node.subproblem))
+        for (F, S) in JuMP.list_of_constraint_types(node.subproblem)
+            key = _constraint_key(F, S)
+            num_con = get(constraint_types, key, (-1, -1))
+            constraint_types[key] = _merge_tuple(
+                num_con,
+                JuMP.num_constraints(node.subproblem, F, S),
+            )
+        end
+    end
+    pad = maximum(length(k) for k in keys(constraint_types))
     println(io, "Problem")
     println(io, "  Nodes           : ", length(model.nodes))
     println(io, "  State variables : ", length(model.initial_root_state))
     paths = Printf.@sprintf("%1.5e", _unique_paths(model))
     println(io, "  Scenarios       : ", paths)
+    println(io, "  Existing cuts   : ", existing_cuts)
+    println(io, rpad("  Subproblem structure", pad + 4), " : (min, max)")
+    println(io, "    ", rpad("Variables", pad), " : ", variables)
+    for (k, v) in constraint_types
+        println(io, "    ", rpad(k, pad), " : ", v)
+    end
+    println(io, "Options")
     println(io, "  Solver          : ", parallel_scheme)
+    println(io, "  Risk measure    : ", risk_measure)
+    println(io, "  Sampling scheme : ", typeof(sampling_scheme))
     println(io)
     return
 end
@@ -104,15 +148,42 @@ function print_iteration(io, log::Log)
     return println(io)
 end
 
-function print_footer(io, training_results)
+function print_footer(io, training_results::TrainingResults)
+    println(io)
+    println(io, "Terminating training")
+    println(io, "  Status         : ", training_results.status)
     println(
         io,
-        "\nTerminating training with status: $(training_results.status)",
+        "  Total time (s) :",
+        print_value(training_results.log[end].time),
     )
-    return println(
+    println(io, "  Total solves   : ", training_results.log[end].total_solves)
+    println(
+        io,
+        "  Best bound     : ",
+        print_value(training_results.log[end].bound),
+    )
+    μ, σ =
+        confidence_interval(map(l -> l.simulation_value, training_results.log))
+    println(io, "  Simulation CI  : ", print_value(μ), " ±", print_value(σ))
+    println(
         io,
         "------------------------------------------------------------------------------",
     )
+    return
+end
+
+"""
+    confidence_interval(x::Vector{Float64}, z_score::Float64 = 1.96)
+
+Return a confidence interval of `x` corresponding to the `z_score`.
+
+`z_score` defaults to `1.96` for a 95% confidence interval.
+"""
+function confidence_interval(x::Vector{Float64}, z_score::Float64 = 1.96)
+    μ = Statistics.mean(x)
+    σ = z_score * Statistics.std(x) / sqrt(length(x))
+    return μ, σ
 end
 
 ###
