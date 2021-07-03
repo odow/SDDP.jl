@@ -29,7 +29,7 @@
 # To represent this, we can draw the following picture. The wavy lines denote
 # the uncertainty arriving into the start of each stage (node).
 #
-# ![Linear policy graph](../assets/stochastic_linear_policy_graph.png)
+# ![Linear policy graph](../../assets/stochastic_linear_policy_graph.png)
 
 # In addition to adding this uncertainty to the model, we also need to modify
 # the dynamics to include `inflow`:

@@ -21,7 +21,7 @@
 
 # Here is a picture of the model we're going to implement.
 #
-# ![Markovian policy graph](../assets/stochastic_markovian_policy_graph.png)
+# ![Markovian policy graph](../../assets/stochastic_markovian_policy_graph.png)
 
 # There are five nodes in our graph. Each node is named by a tuple `(t, i)`,
 # where `t` is the stage for `t=1,2,3`, and `i` is the Markov state for `i=1,2`.

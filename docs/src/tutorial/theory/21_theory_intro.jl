@@ -52,7 +52,7 @@ import Statistics
 # graph is a graph with nodes and arcs. The simplest type of policy graph is a
 # linear graph. Here's a linear graph with three nodes:
 
-# ![Linear policy graph](../assets/stochastic_linear_policy_graph.png)
+# ![Linear policy graph](../../assets/stochastic_linear_policy_graph.png)
 
 # In addition to nodes 1, 2, and 3, there is also a root node (the circle), and
 # three arcs. Each arc has an origin node and a destination node, like `1 => 2`,
@@ -73,7 +73,7 @@ import Statistics
 # with the stages as columns. There can be more than one node in a stage! Here's
 # an example, taken from the paper [Dowson (2020)](https://doi.org/10.1002/net.21932):
 
-# ![Markovian policy graph](../assets/powder_policy_graph.png)
+# ![Markovian policy graph](../../assets/powder_policy_graph.png)
 
 # The columns represent time, and the rows represent different states of the
 # world. In this case, the rows represent different prices that milk can be sold

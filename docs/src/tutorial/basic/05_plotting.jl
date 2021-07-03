@@ -108,7 +108,7 @@ end
 # ```
 
 # This should open a webpage that looks like [this
-# one](../assets/spaghetti_plot.html).
+# one](../../assets/spaghetti_plot.html).
 
 # Using the mouse, you can highlight individual trajectories by hovering over
 # them. This makes it possible to visualize a single trajectory across multiple
@@ -154,7 +154,7 @@ end
 
 # This should open a plot window with a plot that looks like:
 #
-# ![publication plot](../assets/publication_plot.png)
+# ![publication plot](../../assets/publication_plot.png)
 
 # You can save this plot as a PDF using the `Plots.jl` function `savefig`:
 # ```julia
@@ -179,7 +179,7 @@ SDDP.evaluate(V; volume = 1)
 # ```julia
 # SDDP.plot(V, volume = 0:200, filename = "value_function.html")
 # ```
-# This should open a webpage that looks like [this one](../assets/value_function.html).
+# This should open a webpage that looks like [this one](../../assets/value_function.html).
 
 # ## Convergence dashboard
 
