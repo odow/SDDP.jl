@@ -136,5 +136,6 @@ simulations = SDDP.simulate(
 
 prices = [stage[:price] for stage in simulations[1]]
 
-# This concludes our second tutorial for `SDDP.jl`. In the next tutorial, [Basic
-# III: objective uncertainty](@ref), we extend the uncertainty to the fuel cost.
+# This concludes our second tutorial for `SDDP.jl`. In the next tutorial,
+# [Uncertainty in the objective function](@ref), we extend the uncertainty to
+# the fuel cost.

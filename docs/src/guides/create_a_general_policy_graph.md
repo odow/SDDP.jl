@@ -64,7 +64,7 @@ Look! We just made a cyclic graph! SDDP.jl can solve infinite horizon problems.
 The probability on the arc that completes a cycle should be interpreted as a
 discount factor.
 
-### Markovian policy graphs
+### [Markovian policy graphs](@id guide_markovian_policy_graph)
 
 Markovian policy graphs can be created using the [`SDDP.MarkovianGraph`](@ref)
 function.
