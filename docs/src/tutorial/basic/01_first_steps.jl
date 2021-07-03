@@ -1,10 +1,21 @@
 # # An introduction to SDDP.jl
 
 # SDDP.jl is a solver for multistage stochastic optimization problems. By
-# **multistage**, we mean problems in which the agent makes a sequence of
-# decisions over time. By **stochastic**, we mean that our agent is making
+# **multistage**, we mean problems in which an agent makes a sequence of
+# decisions over time. By **stochastic**, we mean that the agent is making
 # decisions in the presence of uncertainty that is gradually revealed over the
 # multiple stages.
+
+# !!! tip
+#     Multistage stochastic programming has a lot in common with fields like
+#     stochastic optimal control, approximate dynamic programming, Markov
+#     decision processes, and reinforcement learning. If it helps, you can think
+#     of SDDP as Q-learning in which we approximate the value function using
+#     linear programming duality.
+
+# This tutorial is in two parts. First, it is an introduction to the background
+# notation and theory we need, and second, it solves a simple multistage
+# stochastic programming problem.
 
 # ## Background theory
 
@@ -14,10 +25,11 @@
 
 # ### What is a node?
 
-# Although multistage stochastic programming is concerned with an agent making
-# a sequence of decisions over time, we're going to start by describing an
-# instant in time at which the agent makes a decision. Only after this will we
-# extend our problem to multiple stages.
+# A common feature of multistage stochastic optimization problems is that they
+# model an agent controlling a system over time. To simplify things initially,
+# we're going to start by describing what happens at an instant in time at which
+# the agent makes a decision. Only after this will we extend our problem to
+# multiple stages and the notion of time.
 
 # A **node** is an instant in time at which the agent makes a decision.
 
@@ -26,6 +38,8 @@
 #     with "stage" in this section. However, for reasons that will become clear
 #     shortly, there can be more than one "node" per instant in time, which is
 #     why we prefer the term "node" over "stage."
+
+# #### States, controls, and random variables
 
 # The system that we are modeling can be described by three types of variables.
 
@@ -75,6 +89,8 @@
 #    Importantly, the random variable associated with node $i$ is independent of
 #    the random variables in all other nodes.
 
+# #### Dynamics
+
 # In a node $i$, the three variables are related by a **transition function**,
 # which maps the incoming state, the controls, and the random variables to the
 # outgoing state as follows: $x^\prime = T_i(x, u, \omega)$.
@@ -114,6 +130,10 @@
 # uniform over the number of outgoing arcs. Thus, in this picture the arc
 # probabilities are all 1.0.
 
+# State variables flow long the arcs of the graph. Thus, the outgoing state
+# variable $x^\prime$ from node 1 becomes the incoming state variable $x$ to
+# node 2, and so on.
+
 # We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
 # probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
 # exists, then $p_{ij} = 0$.) We define the set of successors of node $i$ as
@@ -123,17 +143,27 @@
 # decision, and we call moments in time at which the agent makes a decision
 # **stages**. By convention, we try to draw policy graphs from left-to-right,
 # with the stages as columns. There can be more than one node in a stage! Here's
-# an example, taken from the paper [Dowson (2020)](https://doi.org/10.1002/net.21932):
+# an example of a structure we call **Markovian policy graphs**:
 
-# ![Markovian policy graph](../../assets/powder_policy_graph.png)
+# ![Markovian policy graph](../../assets/enso_markovian.png)
+
+# Here each column represents a moment in time, the squiggly lines represent
+# stochastic rainfall, and the rows represent the world in two discrete states:
+# El Niño and La Niña. In the El Niño states, the distribution of the rainfall
+# random variable is different to the distribution of the rainfall random
+# variable in the La Niña states, and there is some switching probability
+# between the two states that can be modelled by a Markov chain.
+
+# Moreover, policy graphs can have cycles! This allows them to model infinite
+# horizon problems. Here's another example, taken from the paper
+# [Dowson (2020)](https://doi.org/10.1002/net.21932):
+
+# ![POWDer policy graph](../../assets/powder_policy_graph.png)
 
 # The columns represent time, and the rows represent different states of the
 # world. In this case, the rows represent different prices that milk can be sold
 # for at the end of each year. The squiggly lines denote a multivariate random
-# variable that models the weekly amount of rainfall that occurs. You can think
-# of the nodes as forming a Markov chain, therefore, we call problems with a
-# structure like this **Markovian policy graphs**. Moreover, note that policy
-# graphs can have cycles! This allows them to model infinite horizon problems.
+# variable that models the weekly amount of rainfall that occurs.
 
 # !!! note
 #     The sum of probabilities on the outgoing arcs of node $i$ can be less than
@@ -694,9 +724,54 @@ end
 
 SDDP.train(model; iteration_limit = 10)
 
-# !!! tip
-#     For more information on the numerical stability report, read the
-#     [Numerical stability report](@ref) section.
+# There's a lot going on in this print out! Let's break it down.
+
+# The first section ("Problem") gives some problem statistics. In this example
+# there are 3 nodes, 1 state variable, and 27 scenarios ($3^3$). We haven't
+# solved this problem before so there are no existing cuts.
+
+# The "Subproblem structure" section also needs explaining. This looks at all of
+# the nodes in the policy graph and reports the minimum and maximum number of
+# variables and each constraint type in the corresponding subproblem. In this
+# case each subproblem has 7 variables and various numbers of different
+# constraint types. Note that the exact numbers may not correspond to the
+# formulation as you wrote it, because SDDP.jl adds some extra variables for the
+# cost-to-go function.
+
+# The "Options" section lists some options we are using to solve the problem.
+# For more information on the numerical stability report, read the
+# [Numerical stability report](@ref) section.
+
+# Then comes the iteration log, which is the main part of the print out. It has
+# the following columns:
+#  - `Iteration`: the SDDP iteration
+#  - `Simulation`: the cost of the single forward pass simulation for that
+#    iteration. This value is stochastic and is not guaranteed to improve over
+#    time. However, it's useful to check that the units are reasonable, and that
+#    it is not deterministic if you intended for the problem to be stochastic,
+#    etc.
+#  - `Bound`: this is a lower bound (upper if maximizing) for the value of the
+#    optimal policy. This should be monotonically improving (increasing if
+#    minimizing, decreasing if maximizing).
+#  - `Time (s)`: the total number of seconds spent solving so far
+#  - `Proc. ID`: the ID of the processor used to solve that iteration. This
+#    should be 1 unless you are using parallel computation.
+#  - `# Solves`: the total number of subproblem solves to date. This can be very
+#    large!
+
+# The printout finishes with some summary statistics:
+#  - `Status`: why did the solver stop?
+#  - `Total time (s)`, `Best bound`, and `Total solves` are the values from the
+#    last iteration of the solve.
+#  - `Simulation CI`: a confidence interval that estimates the quality of the
+#    policy from the `Simulation` column.
+
+# !!! warning
+#     The `Simulation CI` result can be misleading if you run a small number of
+#     iterations, or if the initial simulations are very bad. On a more
+#     technical note, it is an _in-sample simulation_, which may not reflect the
+#     true performance of the policy. You should conduct a separate simulation
+#     (see below) to obtain a more reliable estimate.
 
 # ## Obtaining the decision rule
 
