@@ -31,7 +31,7 @@
 # the agent makes a decision. Only after this will we extend our problem to
 # multiple stages and the notion of time.
 
-# A **node** is an instant in time at which the agent makes a decision.
+# A **node** is a place at which the agent makes a decision.
 
 # !!! tip
 #     For readers with a stochastic programming background, "node" is synonymous
