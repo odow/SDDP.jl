@@ -17,13 +17,7 @@
 # notation and theory we need, and second, it solves a simple multistage
 # stochastic programming problem.
 
-# ## Background theory
-
-# Multistage stochastic programming is complicated, and the literature has not
-# settled upon standard naming conventions, so we must begin with some
-# unavoidable theory and notation.
-
-# ### What is a node?
+# ## What is a node?
 
 # A common feature of multistage stochastic optimization problems is that they
 # model an agent controlling a system over time. To simplify things initially,
@@ -39,7 +33,7 @@
 #     shortly, there can be more than one "node" per instant in time, which is
 #     why we prefer the term "node" over "stage."
 
-# #### States, controls, and random variables
+# ### States, controls, and random variables
 
 # The system that we are modeling can be described by three types of variables.
 
@@ -89,7 +83,7 @@
 #    Importantly, the random variable associated with node $i$ is independent of
 #    the random variables in all other nodes.
 
-# #### Dynamics
+# ### Dynamics
 
 # In a node $i$, the three variables are related by a **transition function**,
 # which maps the incoming state, the controls, and the random variables to the
@@ -109,7 +103,7 @@
 
 # ![Hazard-decision node](../../assets/hazard_decision.png)
 
-# ### Policy graphs
+# ## Policy graphs
 
 # Now that we have a node, we need to connect multiple nodes together to form a
 # multistage stochastic program. We call the graph created by connecting nodes
@@ -173,7 +167,7 @@
 #     have not modeled, with $p_{i0} = 1 - \sum\limits_{j\in i^+} p_{ij}$.
 #     This zero node has $C_0(x, u, \omega) = 0$, and $0^+ = \varnothing$.
 
-# ### More notation
+# ## More notation
 
 # Recall that each node $i$ has a **decision rule** $u = \pi_i(x, \omega)$,
 # which is a function that maps the incoming state variable and observation of
@@ -205,7 +199,7 @@
 # An optimal policy is the set of decision rules that the agent can use to make
 # decisions and achieve the smallest expected cost.
 
-# ### Assumptions
+# ## Assumptions
 
 # !!! warning
 #     This section is important!
@@ -246,7 +240,7 @@
 #     infinite-horizon problems, instead of an average-cost solution; see
 #     [Dowson (2020)](https://doi.org/10.1002/net.21932) for details.
 
-# ### Dynamic programming and subproblems
+# ## Dynamic programming and subproblems
 
 # Now that we have formulated our problem, we need some ways of computing
 # optimal decision rules. One way is to just use a heuristic like "choose a
@@ -394,9 +388,10 @@ function subproblem_builder(subproblem::Model, node::Int)
     return subproblem
 end
 
-# !!! note
-#     We don't need to add the fishing constraint $\bar{x} = x$; SDDP.jl does
-#     this automatically.
+# !!! warning
+#     If you use a different type of graph, `node` may be a type different to
+#     `Int`. For example, in [`SDDP.MarkovianGraph`](@ref), `node` is a
+#     `Tuple{Int,Int}`.
 
 # #### State variables
 
@@ -421,6 +416,10 @@ end
 # not single JuMP variable. Instead, `volume` is a struct with two fields, `.in`
 # and `.out`, corresponding to the incoming and outgoing state variables
 # respectively.
+
+# !!! note
+#     We don't need to add the fishing constraint $\bar{x} = x$; SDDP.jl does
+#     this automatically.
 
 # #### Control variables
 
@@ -457,7 +456,7 @@ end
 # #### Random variables
 
 # The next step is to identify any random variables. In our example, we had
-#  - `inflow`: the quantity of water that clows into the reservoir each week
+#  - `inflow`: the quantity of water that flows into the reservoir each week
 #    [MWh/week]
 
 # To add an uncertain variable to the model, we create a new JuMP variable
@@ -488,9 +487,10 @@ end
 # [`JuMP.fix`](http://jump.dev/JuMP.jl/v0.21/variables/#JuMP.fix) to set the
 # value of the `inflow` variable to `ω`.
 
-# !!! note
+# !!! warning
 #     [`SDDP.parameterize`](@ref) can only be called once in each subproblem
-#     definition!
+#     definition! If your random variable is multi-variate, read
+#     [Add multi-dimensional noise terms](@ref).
 
 # #### Transition function and contraints
 
@@ -621,7 +621,11 @@ end
 
 using GLPK
 
-# Then, we can create a full model using `SDDP.PolicyGraph`, passing our
+# !!! warning
+#     In larger problems, you should use a more robust commercial LP solver like
+#     Gurobi. Read [Words of warning](@ref) for more details.
+
+# Then, we can create a full model using [`SDDP.PolicyGraph`](@ref), passing our
 # `subproblem_builder` function as the first argument, and our `graph` as the
 # second:
 
@@ -641,8 +645,8 @@ model = SDDP.PolicyGraph(
 #   `Model(GLPK.Optimizer)`
 
 # Because linear policy graphs are the most commonly used structure, we can use
-# `SDDP.LinearPolicyGraph(; stages)` instead of passing `SDDP.LinearGraph(3)` to
-# `SDDP.PolicyGraph`.
+# [`SDDP.LinearPolicyGraph`](@ref) instead of passing `SDDP.LinearGraph(3)` to
+# [`SDDP.PolicyGraph`](@ref).
 
 model = SDDP.LinearPolicyGraph(
     subproblem_builder;
@@ -713,7 +717,7 @@ end
 #     outer((x, y) -> x^2 + y^2, 1, 2)
 #     ```
 #     For our purpose, `inner` is `subproblem_builder`, and `outer` is
-#     `SDDP.PolicyGraph`.
+#     [`SDDP.PolicyGraph`](@ref).
 
 # ## Training a policy
 
@@ -724,7 +728,7 @@ end
 
 SDDP.train(model; iteration_limit = 10)
 
-# There's a lot going on in this print out! Let's break it down.
+# There's a lot going on in this printout! Let's break it down.
 
 # The first section ("Problem") gives some problem statistics. In this example
 # there are 3 nodes, 1 state variable, and 27 scenarios ($3^3$). We haven't
@@ -742,7 +746,7 @@ SDDP.train(model; iteration_limit = 10)
 # For more information on the numerical stability report, read the
 # [Numerical stability report](@ref) section.
 
-# Then comes the iteration log, which is the main part of the print out. It has
+# Then comes the iteration log, which is the main part of the printout. It has
 # the following columns:
 #  - `Iteration`: the SDDP iteration
 #  - `Simulation`: the cost of the single forward pass simulation for that
@@ -770,8 +774,8 @@ SDDP.train(model; iteration_limit = 10)
 #     The `Simulation CI` result can be misleading if you run a small number of
 #     iterations, or if the initial simulations are very bad. On a more
 #     technical note, it is an _in-sample simulation_, which may not reflect the
-#     true performance of the policy. You should conduct a separate simulation
-#     (see below) to obtain a more reliable estimate.
+#     true performance of the policy. See [Obtaining bounds](@ref) for more
+#     details.
 
 # ## Obtaining the decision rule
 
@@ -780,7 +784,7 @@ SDDP.train(model; iteration_limit = 10)
 
 rule = SDDP.DecisionRule(model; node = 1)
 
-# Then, to evalute the decision rule, we use [`SDDP.evaluate`](@ref):
+# Then, to evaluate the decision rule, we use [`SDDP.evaluate`](@ref):
 
 solution = SDDP.evaluate(
     rule;
@@ -825,6 +829,8 @@ thermal_generation = map(simulations[1]) do node
     return node[:thermal_generation]
 end
 
+# ## Obtaining bounds
+
 # Because the optimal policy is stochastic, one common approach to quantify the
 # quality of the policy is to construct a confidence interval for the expected
 # cost by summing the stage objectives along each simulation.
@@ -844,6 +850,8 @@ println("Lower bound: ", SDDP.calculate_bound(model))
 # !!! tip
 #     The upper- and lower-bounds are reversed if maximizing, i.e., [`SDDP.calculate_bound`](@ref).
 #     returns an upper bound.
+
+# ## Custom recorders
 
 # In addition to simulating the primal values of variables, we can also pass
 # custom recorder functions. Each of these functions takes one argument, the
@@ -872,6 +880,10 @@ end
 # Finally, we can use [`SDDP.ValueFunction`](@ref) and [`SDDP.evaluate`](@ref)
 # to obtain and evaluate the value function at different points in the
 # state-space.
+
+# !!! note
+#     By "value function" we mean $\mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$,
+#     note the function $V_i(x, \omega)$.
 
 # First, we construct a value function from the first subproblem:
 
