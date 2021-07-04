@@ -1,67 +1,41 @@
 # # An introduction to SDDP.jl
 
 # SDDP.jl is a solver for multistage stochastic optimization problems. By
-# **multistage**, we mean problems in which the agent makes a sequence of
-# decisions over time. By **stochastic**, we mean that our agent is making
+# **multistage**, we mean problems in which an agent makes a sequence of
+# decisions over time. By **stochastic**, we mean that the agent is making
 # decisions in the presence of uncertainty that is gradually revealed over the
 # multiple stages.
 
-# ## Background theory
+# !!! tip
+#     Multistage stochastic programming has a lot in common with fields like
+#     stochastic optimal control, approximate dynamic programming, Markov
+#     decision processes, and reinforcement learning. If it helps, you can think
+#     of SDDP as Q-learning in which we approximate the value function using
+#     linear programming duality.
 
-# Multistage stochastic programming is complicated, and the literature has not
-# settled upon standard naming conventions, so we must begin with some
-# unavoidable theory and notation.
+# This tutorial is in two parts. First, it is an introduction to the background
+# notation and theory we need, and second, it solves a simple multistage
+# stochastic programming problem.
 
-# ### Policy graphs
-
-# A multistage stochastic program can be modeled by a **policy graph**. A policy
-# graph is a graph with nodes and arcs. The simplest type of policy graph is a
-# linear graph. Here's a linear graph with three nodes:
-
-# ![Linear policy graph](../../assets/stochastic_linear_policy_graph.png)
-
-# In addition to nodes 1, 2, and 3, there is also a root node (the circle), and
-# three arcs. Each arc has an origin node and a destination node, like `1 => 2`,
-# and a corresponding probability of transitioning from the origin to the
-# destination. Unless specified, we assume that the arc probabilities are
-# uniform over the number of outgoing arcs. Thus, in this picture the arc
-# probabilities are all 1.0. The squiggly lines denote random variables that we
-# will discuss shortly.
-
-# We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
-# probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
-# exists, then $p_{ij} = 0$.) We define the set of successors of node $i$ as
-# $i^+ = \{j \in \mathcal{N} | p_{ij} > 0\}$.
-
-# Each square node in the graph corresponds to a place at which the agent makes
-# a decision, and we call moments in time at which the agent makes a decision
-# **stages**. By convention, we try to draw policy graphs from left-to-right,
-# with the stages as columns. There can be more than one node in a stage! Here's
-# an example, taken from the paper [Dowson (2020)](https://doi.org/10.1002/net.21932):
-
-# ![Markovian policy graph](../../assets/powder_policy_graph.png)
-
-# The columns represent time, and the rows represent different states of the
-# world. In this case, the rows represent different prices that milk can be sold
-# for at the end of each year. The squiggly lines denote a multivariate random
-# variable that models the weekly amount of rainfall that occurs. You can think
-# of the nodes as forming a Markov chain, therefore, we call problems with a
-# structure like this **Markovian policy graphs**. Moreover, note that policy
-# graphs can have cycles! This allows them to model infinite horizon problems.
-
-# !!! note
-#     The sum of probabilities on the outgoing arcs of node $i$ can be less than
-#     1, i.e., $\sum\limits_{j\in i^+} p_{ij} \le 1$. What does this mean?
-#     One interpretation is that the probability is a [discount factor](https://en.wikipedia.org/wiki/Discounting).
-#     Another interpretation is that there is an implicit "zero" node that we
-#     have not modeled, with $p_{i0} = 1 - \sum\limits_{j\in i^+} p_{ij}$.
-#     This zero node has $C_0(x, u, \omega) = 0$, and $0^+ = \varnothing$.
-
-# ### Problem notation
+# ## What is a node?
 
 # A common feature of multistage stochastic optimization problems is that they
-# model an agent controlling a system over time. This system can be described by
-# three types of variables.
+# model an agent controlling a system over time. To simplify things initially,
+# we're going to start by describing what happens at an instant in time at which
+# the agent makes a decision. Only after this will we extend our problem to
+# multiple stages and the notion of time.
+
+# A **node** is a place at which the agent makes a decision.
+
+# !!! tip
+#     For readers with a stochastic programming background, "node" is synonymous
+#     with "stage" in this section. However, for reasons that will become clear
+#     shortly, there can be more than one "node" per instant in time, which is
+#     why we prefer the term "node" over "stage."
+
+# ### States, controls, and random variables
+
+# The system that we are modeling can be described by three types of variables.
 
 # 1. **State** variables track a property of the system over time.
 
@@ -109,6 +83,8 @@
 #    Importantly, the random variable associated with node $i$ is independent of
 #    the random variables in all other nodes.
 
+# ### Dynamics
+
 # In a node $i$, the three variables are related by a **transition function**,
 # which maps the incoming state, the controls, and the random variables to the
 # outgoing state as follows: $x^\prime = T_i(x, u, \omega)$.
@@ -122,6 +98,80 @@
 # **rule** $u = \pi_i(x, \omega)$, which is a function that maps the incoming
 # state variable and observation of the random variable to a control $u$. This
 # control must satisfy some feasibilty requirements $u \in U_i(x, \omega)$.
+
+# Here is a schematic which we can use to visualize a single node:
+
+# ![Hazard-decision node](../../assets/hazard_decision.png)
+
+# ## Policy graphs
+
+# Now that we have a node, we need to connect multiple nodes together to form a
+# multistage stochastic program. We call the graph created by connecting nodes
+# together a **policy graph**.
+
+# The simplest type of policy graph is a **linear policy graph**. Here's a
+# linear policy graph with three nodes:
+
+# ![Linear policy graph](../../assets/stochastic_linear_policy_graph.png)
+
+# Here we have dropped the notations inside each node and replaced them by a
+# label (1, 2, and 3) to represent nodes `i=1`, `i=2`, and `i=3`.
+
+# In addition to nodes 1, 2, and 3, there is also a root node (the circle), and
+# three arcs. Each arc has an origin node and a destination node, like `1 => 2`,
+# and a corresponding probability of transitioning from the origin to the
+# destination. Unless specified, we assume that the arc probabilities are
+# uniform over the number of outgoing arcs. Thus, in this picture the arc
+# probabilities are all 1.0.
+
+# State variables flow long the arcs of the graph. Thus, the outgoing state
+# variable $x^\prime$ from node 1 becomes the incoming state variable $x$ to
+# node 2, and so on.
+
+# We denote the set of nodes by $\mathcal{N}$, the root node by $R$, and the
+# probability of transitioning from node $i$ to node $j$ by $p_{ij}$. (If no arc
+# exists, then $p_{ij} = 0$.) We define the set of successors of node $i$ as
+# $i^+ = \{j \in \mathcal{N} | p_{ij} > 0\}$.
+
+# Each node in the graph corresponds to a place at which the agent makes a
+# decision, and we call moments in time at which the agent makes a decision
+# **stages**. By convention, we try to draw policy graphs from left-to-right,
+# with the stages as columns. There can be more than one node in a stage! Here's
+# an example of a structure we call **Markovian policy graphs**:
+
+# ![Markovian policy graph](../../assets/enso_markovian.png)
+
+# Here each column represents a moment in time, the squiggly lines represent
+# stochastic rainfall, and the rows represent the world in two discrete states:
+# El Niño and La Niña. In the El Niño states, the distribution of the rainfall
+# random variable is different to the distribution of the rainfall random
+# variable in the La Niña states, and there is some switching probability
+# between the two states that can be modelled by a Markov chain.
+
+# Moreover, policy graphs can have cycles! This allows them to model infinite
+# horizon problems. Here's another example, taken from the paper
+# [Dowson (2020)](https://doi.org/10.1002/net.21932):
+
+# ![POWDer policy graph](../../assets/powder_policy_graph.png)
+
+# The columns represent time, and the rows represent different states of the
+# world. In this case, the rows represent different prices that milk can be sold
+# for at the end of each year. The squiggly lines denote a multivariate random
+# variable that models the weekly amount of rainfall that occurs.
+
+# !!! note
+#     The sum of probabilities on the outgoing arcs of node $i$ can be less than
+#     1, i.e., $\sum\limits_{j\in i^+} p_{ij} \le 1$. What does this mean?
+#     One interpretation is that the probability is a [discount factor](https://en.wikipedia.org/wiki/Discounting).
+#     Another interpretation is that there is an implicit "zero" node that we
+#     have not modeled, with $p_{i0} = 1 - \sum\limits_{j\in i^+} p_{ij}$.
+#     This zero node has $C_0(x, u, \omega) = 0$, and $0^+ = \varnothing$.
+
+# ## More notation
+
+# Recall that each node $i$ has a **decision rule** $u = \pi_i(x, \omega)$,
+# which is a function that maps the incoming state variable and observation of
+# the random variable to a control $u$.
 
 # The set of decision rules, with one element for each node in the policy graph,
 # is called a **policy**.
@@ -149,7 +199,7 @@
 # An optimal policy is the set of decision rules that the agent can use to make
 # decisions and achieve the smallest expected cost.
 
-# ### Assumptions
+# ## Assumptions
 
 # !!! warning
 #     This section is important!
@@ -177,6 +227,11 @@
 #
 # For all loops in the policy graph, the product of the arc transition
 # probabilities around the loop is strictly less than 1.
+#
+# **Assumption 5: relatively complete recourse**
+#
+# This is a technical but important assumption. See [Issue #436](https://github.com/odow/SDDP.jl/issues/436)
+# for more details.
 
 # !!! note
 #     SDDP.jl relaxes assumption (3) to allow for integer state and control
@@ -185,7 +240,7 @@
 #     infinite-horizon problems, instead of an average-cost solution; see
 #     [Dowson (2020)](https://doi.org/10.1002/net.21932) for details.
 
-# ### Dynamic programming and subproblems
+# ## Dynamic programming and subproblems
 
 # Now that we have formulated our problem, we need some ways of computing
 # optimal decision rules. One way is to just use a heuristic like "choose a
@@ -257,8 +312,7 @@
 # Hydrothermal scheduling is the most common application of stochastic dual
 # dynamic programming. To illustrate some of the basic functionality of
 # `SDDP.jl`, we implement a very simple model of the hydrothermal scheduling
-# problem. To make things even simpler to start with, we're not going to include
-# any uncertainty; that will come in the next tutorial.
+# problem.
 
 # ### Problem statement
 
@@ -284,7 +338,25 @@
 # the hydroelectric turbine, the hydro generator can also spill water down a
 # spillway (bypassing the turbine) in order to prevent the water from
 # over-topping the dam. We assume that there is no cost of spillage.
+
+# In addtion to water leaving the reservoir, water that flows into the reservoir
+# through rainfall or rivers are referred to as inflows. These inflows are
+# uncertain, and are the cause of the main trade-off in hydro-thermal
+# scheduling: the desire to use water now to generate cheap electricity, against
+# the risk that future inflows will be low, leading to blackouts or expensive
+# thermal generation.
+
+# For our simple model, we assume that the inflows can be modelled by a discrete
+# distribution with the three outcomes given in the following table:
 #
+# | ω    |   0 |  50 | 100 |
+# | ---- | --- | --- | --- |
+# | P(ω) | 1/3 | 1/3 | 1/3 |
+
+# The value of the noise (the random variable) is observed by the agent at the
+# start of each stage. This makes the problem a _wait-and-see_ or
+# _hazard-decision_ formulation.
+
 # The goal of the agent is to minimize the expected cost of generation over the
 # three weeks.
 
@@ -316,9 +388,10 @@ function subproblem_builder(subproblem::Model, node::Int)
     return subproblem
 end
 
-# !!! note
-#     We don't need to add the fishing constraint $\bar{x} = x$; SDDP.jl does
-#     this automatically.
+# !!! warning
+#     If you use a different type of graph, `node` may be a type different to
+#     `Int`. For example, in [`SDDP.MarkovianGraph`](@ref), `node` is a
+#     `Tuple{Int,Int}`.
 
 # #### State variables
 
@@ -343,6 +416,10 @@ end
 # not single JuMP variable. Instead, `volume` is a struct with two fields, `.in`
 # and `.out`, corresponding to the incoming and outgoing state variables
 # respectively.
+
+# !!! note
+#     We don't need to add the fishing constraint $\bar{x} = x$; SDDP.jl does
+#     this automatically.
 
 # #### Control variables
 
@@ -378,8 +455,42 @@ end
 
 # #### Random variables
 
-# The next step is to identify any random variables. In this simple example,
-# there are none, so we can skip it.
+# The next step is to identify any random variables. In our example, we had
+#  - `inflow`: the quantity of water that flows into the reservoir each week
+#    [MWh/week]
+
+# To add an uncertain variable to the model, we create a new JuMP variable
+# `inflow`, and then call the function [`SDDP.parameterize`](@ref). The
+# [`SDDP.parameterize`](@ref) function takes three arguments: the subproblem, a
+# vector of realizations, and a corresponding vector of probabilities.
+
+function subproblem_builder(subproblem::Model, node::Int)
+    ## State variables
+    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
+    ## Control variables
+    @variables(subproblem, begin
+        thermal_generation >= 0
+        hydro_generation >= 0
+        hydro_spill >= 0
+    end)
+    ## Random variables
+    @variable(subproblem, inflow)
+    Ω = [0.0, 50.0, 100.0]
+    P = [1 / 3, 1 / 3, 1 / 3]
+    SDDP.parameterize(subproblem, Ω, P) do ω
+        return JuMP.fix(inflow, ω)
+    end
+    return subproblem
+end
+
+# Note how we use the JuMP function
+# [`JuMP.fix`](http://jump.dev/JuMP.jl/v0.21/variables/#JuMP.fix) to set the
+# value of the `inflow` variable to `ω`.
+
+# !!! warning
+#     [`SDDP.parameterize`](@ref) can only be called once in each subproblem
+#     definition! If your random variable is multi-variate, read
+#     [Add multi-dimensional noise terms](@ref).
 
 # #### Transition function and contraints
 
@@ -389,9 +500,9 @@ end
 # For our problem, the state variable is the volume of water in the reservoir.
 # The volume of water decreases in response to water being used for hydro
 # generation and spillage. So the transition function is:
-# `volume.out = volume.in - hydro_generation - hydro_spill`. (Note how we use
-# `volume.in` and `volume.out` to refer to the incoming and outgoing state
-# variables.)
+# `volume.out = volume.in - hydro_generation - hydro_spill + inflow`. (Note how
+# we use `volume.in` and `volume.out` to refer to the incoming and outgoing
+# state variables.)
 
 # There is also a constraint that the total generation must sum to 150 MWh.
 
@@ -407,12 +518,19 @@ function subproblem_builder(subproblem::Model, node::Int)
         hydro_generation >= 0
         hydro_spill >= 0
     end)
+    ## Random variables
+    @variable(subproblem, inflow)
+    Ω = [0.0, 50.0, 100.0]
+    P = [1 / 3, 1 / 3, 1 / 3]
+    SDDP.parameterize(subproblem, Ω, P) do ω
+        return JuMP.fix(inflow, ω)
+    end
     ## Transition function and constraints
     @constraints(
         subproblem,
         begin
-            volume.out == volume.in - hydro_generation - hydro_spill
-            hydro_generation + thermal_generation == 150
+            volume.out == volume.in - hydro_generation - hydro_spill + inflow
+            demand_constraint, hydro_generation + thermal_generation == 150
         end
     )
     return subproblem
@@ -436,12 +554,19 @@ function subproblem_builder(subproblem::Model, node::Int)
         hydro_generation >= 0
         hydro_spill >= 0
     end)
+    ## Random variables
+    @variable(subproblem, inflow)
+    Ω = [0.0, 50.0, 100.0]
+    P = [1 / 3, 1 / 3, 1 / 3]
+    SDDP.parameterize(subproblem, Ω, P) do ω
+        return JuMP.fix(inflow, ω)
+    end
     ## Transition function and constraints
     @constraints(
         subproblem,
         begin
-            volume.out == volume.in - hydro_generation - hydro_spill
-            hydro_generation + thermal_generation == 150
+            volume.out == volume.in - hydro_generation - hydro_spill + inflow
+            demand_constraint, hydro_generation + thermal_generation == 150
         end
     )
     ## Stage-objective
@@ -468,12 +593,19 @@ function subproblem_builder(subproblem::Model, node::Int)
         hydro_generation >= 0
         hydro_spill >= 0
     end)
+    ## Random variables
+    @variable(subproblem, inflow)
+    Ω = [0.0, 50.0, 100.0]
+    P = [1 / 3, 1 / 3, 1 / 3]
+    SDDP.parameterize(subproblem, Ω, P) do ω
+        return JuMP.fix(inflow, ω)
+    end
     ## Transition function and constraints
     @constraints(
         subproblem,
         begin
-            volume.out == volume.in - hydro_generation - hydro_spill
-            hydro_generation + thermal_generation == 150
+            volume.out == volume.in - hydro_generation - hydro_spill + inflow
+            demand_constraint, hydro_generation + thermal_generation == 150
         end
     )
     ## Stage-objective
@@ -489,7 +621,11 @@ end
 
 using GLPK
 
-# Then, we can create a full model using `SDDP.PolicyGraph`, passing our
+# !!! warning
+#     In larger problems, you should use a more robust commercial LP solver like
+#     Gurobi. Read [Words of warning](@ref) for more details.
+
+# Then, we can create a full model using [`SDDP.PolicyGraph`](@ref), passing our
 # `subproblem_builder` function as the first argument, and our `graph` as the
 # second:
 
@@ -509,8 +645,8 @@ model = SDDP.PolicyGraph(
 #   `Model(GLPK.Optimizer)`
 
 # Because linear policy graphs are the most commonly used structure, we can use
-# `SDDP.LinearPolicyGraph(; stages)` instead of passing `SDDP.LinearGraph(3)` to
-# `SDDP.PolicyGraph`.
+# [`SDDP.LinearPolicyGraph`](@ref) instead of passing `SDDP.LinearGraph(3)` to
+# [`SDDP.PolicyGraph`](@ref).
 
 model = SDDP.LinearPolicyGraph(
     subproblem_builder;
@@ -537,12 +673,19 @@ model = SDDP.LinearPolicyGraph(
         hydro_generation >= 0
         hydro_spill >= 0
     end)
+    ## Random variables
+    @variable(subproblem, inflow)
+    Ω = [0.0, 50.0, 100.0]
+    P = [1 / 3, 1 / 3, 1 / 3]
+    SDDP.parameterize(subproblem, Ω, P) do ω
+        return JuMP.fix(inflow, ω)
+    end
     ## Transition function and constraints
     @constraints(
         subproblem,
         begin
-            volume.out == volume.in - hydro_generation - hydro_spill
-            hydro_generation + thermal_generation == 150
+            volume.out == volume.in - hydro_generation - hydro_spill + inflow
+            demand_constraint, hydro_generation + thermal_generation == 150
         end
     )
     ## Stage-objective
@@ -574,7 +717,7 @@ end
 #     outer((x, y) -> x^2 + y^2, 1, 2)
 #     ```
 #     For our purpose, `inner` is `subproblem_builder`, and `outer` is
-#     `SDDP.PolicyGraph`.
+#     [`SDDP.PolicyGraph`](@ref).
 
 # ## Training a policy
 
@@ -583,11 +726,56 @@ end
 # It accepts a number of keyword arguments. `iteration_limit` terminates the
 # training after the provided number of iterations.
 
-SDDP.train(model; iteration_limit = 3)
+SDDP.train(model; iteration_limit = 10)
 
-# !!! tip
-#     For more information on the numerical stability report, read the
-#     [Numerical stability report](@ref) section.
+# There's a lot going on in this printout! Let's break it down.
+
+# The first section ("Problem") gives some problem statistics. In this example
+# there are 3 nodes, 1 state variable, and 27 scenarios ($3^3$). We haven't
+# solved this problem before so there are no existing cuts.
+
+# The "Subproblem structure" section also needs explaining. This looks at all of
+# the nodes in the policy graph and reports the minimum and maximum number of
+# variables and each constraint type in the corresponding subproblem. In this
+# case each subproblem has 7 variables and various numbers of different
+# constraint types. Note that the exact numbers may not correspond to the
+# formulation as you wrote it, because SDDP.jl adds some extra variables for the
+# cost-to-go function.
+
+# The "Options" section lists some options we are using to solve the problem.
+# For more information on the numerical stability report, read the
+# [Numerical stability report](@ref) section.
+
+# Then comes the iteration log, which is the main part of the printout. It has
+# the following columns:
+#  - `Iteration`: the SDDP iteration
+#  - `Simulation`: the cost of the single forward pass simulation for that
+#    iteration. This value is stochastic and is not guaranteed to improve over
+#    time. However, it's useful to check that the units are reasonable, and that
+#    it is not deterministic if you intended for the problem to be stochastic,
+#    etc.
+#  - `Bound`: this is a lower bound (upper if maximizing) for the value of the
+#    optimal policy. This should be monotonically improving (increasing if
+#    minimizing, decreasing if maximizing).
+#  - `Time (s)`: the total number of seconds spent solving so far
+#  - `Proc. ID`: the ID of the processor used to solve that iteration. This
+#    should be 1 unless you are using parallel computation.
+#  - `# Solves`: the total number of subproblem solves to date. This can be very
+#    large!
+
+# The printout finishes with some summary statistics:
+#  - `Status`: why did the solver stop?
+#  - `Total time (s)`, `Best bound`, and `Total solves` are the values from the
+#    last iteration of the solve.
+#  - `Simulation CI`: a confidence interval that estimates the quality of the
+#    policy from the `Simulation` column.
+
+# !!! warning
+#     The `Simulation CI` result can be misleading if you run a small number of
+#     iterations, or if the initial simulations are very bad. On a more
+#     technical note, it is an _in-sample simulation_, which may not reflect the
+#     true performance of the policy. See [Obtaining bounds](@ref) for more
+#     details.
 
 # ## Obtaining the decision rule
 
@@ -596,11 +784,12 @@ SDDP.train(model; iteration_limit = 3)
 
 rule = SDDP.DecisionRule(model; node = 1)
 
-# Then, to evalute the decision rule, we use [`SDDP.evaluate`](@ref):
+# Then, to evaluate the decision rule, we use [`SDDP.evaluate`](@ref):
 
 solution = SDDP.evaluate(
     rule;
     incoming_state = Dict(:volume => 150.0),
+    noise = 50.0,
     controls_to_record = [:hydro_generation, :thermal_generation],
 )
 
@@ -617,7 +806,7 @@ simulations = SDDP.simulate(
     ## The trained model to simulate.
     model,
     ## The number of replications.
-    1,
+    100,
     ## A list of names to record the values of.
     [:volume, :thermal_generation, :hydro_generation, :hydro_spill],
 )
@@ -630,22 +819,71 @@ simulations[replication][stage]
 
 #  One element of iterest is `:volume`.
 
-outgoing_volume = [stage[:volume].out for stage in simulations[1]]
+outgoing_volume = map(simulations[1]) do node
+    return node[:volume].out
+end
 
 #  Another is `:thermal_generation`.
 
-thermal_generation = [stage[:thermal_generation] for stage in simulations[1]]
+thermal_generation = map(simulations[1]) do node
+    return node[:thermal_generation]
+end
 
-# From this, we can see the optimal policy: in the first stage, use 150 MWh of
-# thermal generation and 0 MWh of hydro generation. In the second stage, use 100
-# MWh of thermal and 50 MWh of hydro. In the third and final stage, use 0 MWh of
-# thermal and 150 MWh of  hydro.
+# ## Obtaining bounds
+
+# Because the optimal policy is stochastic, one common approach to quantify the
+# quality of the policy is to construct a confidence interval for the expected
+# cost by summing the stage objectives along each simulation.
+
+objectives = map(simulations) do simulation
+    return sum(stage[:stage_objective] for stage in simulation)
+end
+
+μ, ci = SDDP.confidence_interval(objectives)
+println("Confidence interval: ", μ, " ± ", ci)
+
+# This confidence interval is an estimate for an upper bound of the policy's
+# quality. We can calculate the lower bound using [`SDDP.calculate_bound`](@ref).
+
+println("Lower bound: ", SDDP.calculate_bound(model))
+
+# !!! tip
+#     The upper- and lower-bounds are reversed if maximizing, i.e., [`SDDP.calculate_bound`](@ref).
+#     returns an upper bound.
+
+# ## Custom recorders
+
+# In addition to simulating the primal values of variables, we can also pass
+# custom recorder functions. Each of these functions takes one argument, the
+# JuMP subproblem corresponding to each node. This function gets called after we
+# have solved each node as we traverse the policy graph in the simulation.
+
+# For example, the dual of the demand constraint (which we named
+# `demand_constraint`) corresponds to the price we should charge for
+# electricity, since it represents the cost of each additional unit of demand.
+# To calculate this, we can go:
+
+simulations = SDDP.simulate(
+    model,
+    1,  ## Perform a single simulation
+    custom_recorders = Dict{Symbol,Function}(
+        :price => (sp::JuMP.Model) -> JuMP.dual(sp[:demand_constraint]),
+    ),
+)
+
+prices = map(simulations[1]) do node
+    return node[:price]
+end
 
 # ## Extracting the marginal water values
 
 # Finally, we can use [`SDDP.ValueFunction`](@ref) and [`SDDP.evaluate`](@ref)
 # to obtain and evaluate the value function at different points in the
 # state-space.
+
+# !!! note
+#     By "value function" we mean $\mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$,
+#     note the function $V_i(x, \omega)$.
 
 # First, we construct a value function from the first subproblem:
 
@@ -660,10 +898,6 @@ cost, price = SDDP.evaluate(V, Dict("volume" => 10))
 # minimizing, the price has a negative sign: each additional unit of water leads
 # to a decrease in the the expected long-run cost.
 
-# For our example, the marginal value of water at the end of the first stage is
-# \\\$150/unit, because each additional unit of water can displace a unit of
-# thermal generation in the final stage when the price is \\\$150/MWh.
-
 # This concludes our first tutorial for `SDDP.jl`. In the next tutorial,
-# [Basic II: adding uncertainty](@ref), we will extend this problem by adding
-# uncertainty.
+# [Uncertainty in the objective function](@ref), we extend the uncertainty to
+# the fuel cost.
