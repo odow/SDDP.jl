@@ -7,11 +7,12 @@ authors:
 - family-names: "Kapelevich"
   given-names: "Lea"
 title: "SDDP.jl: a Julia package for stochastic dual dynamic programming"
+version: 0.3.17
+date-released: 2020-08-31
+url: "https://github.com/odow/SDDP.jl"
 journal: "INFORMS Journal on Computing"
 volume: 33
 issue: 1
 start: 27
 end: 33
 doi: 10.1287/ijoc.2020.0987
-date-released: 2020-08-31
-url: "https://github.com/odow/SDDP.jl"
