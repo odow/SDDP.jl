@@ -5,39 +5,24 @@
 
 # ========================= General methods ================================== #
 
-"""
-    enforce_integrality(
-        binaries::Vector{Tuple{JuMP.VariableRef, Float64, Float64}},
-        integers::Vector{VariableRef})
-
-Set all variables in `binaries` to `SingleVariable-in-ZeroOne()`, and all
-variables in `integers` to `SingleVariable-in-Integer()`.
-
-See also [`relax_integrality`](@ref).
-"""
-function enforce_integrality(
-    binaries::Vector{Tuple{JuMP.VariableRef,Float64,Float64}},
-    integers::Vector{VariableRef},
-)
-    JuMP.set_integer.(integers)
-    for (x, x_lb, x_ub) in binaries
-        if isnan(x_lb)
-            JuMP.delete_lower_bound(x)
-        else
-            JuMP.set_lower_bound(x, x_lb)
-        end
-        if isnan(x_ub)
-            JuMP.delete_upper_bound(x)
-        else
-            JuMP.set_upper_bound(x, x_ub)
-        end
-        JuMP.set_binary(x)
-    end
-    return
-end
-
 function get_integrality_handler(subproblem::JuMP.Model)
     return get_node(subproblem).integrality_handler
+end
+
+function relax_integrality(model::PolicyGraph)
+    undo = Function[]
+    for (_, node) in model.nodes
+        if node.has_integrality
+            push!(undo, relax_integrality(node, node.integrality_handler))
+        end
+    end
+    function undo_relax()
+        for f in undo
+            f()
+        end
+        return
+    end
+    return undo_relax
 end
 
 # ========================= Continuous relaxation ============================ #
@@ -88,49 +73,8 @@ function get_dual_variables(node::Node, ::ContinuousRelaxation)
     return dual_values
 end
 
-function relax_integrality(model::PolicyGraph, ::ContinuousRelaxation)
-    binaries = Tuple{JuMP.VariableRef,Float64,Float64}[]
-    integers = JuMP.VariableRef[]
-    for (key, node) in model.nodes
-        bins, ints = _relax_integrality(node.subproblem)
-        append!(binaries, bins)
-        append!(integers, ints)
-    end
-    return binaries, integers
-end
-
-# Relax all binary and integer constraints in `model`. Returns two vectors:
-# the first containing a list of binary variables and previous bounds,
-# and the second containing a list of integer variables.
-function _relax_integrality(m::JuMP.Model)
-    # Note: if integrality restriction is added via @constraint then this loop doesn't catch it.
-    binaries = Tuple{JuMP.VariableRef,Float64,Float64}[]
-    integers = JuMP.VariableRef[]
-    # Run through all variables on model and unset integrality
-    for x in JuMP.all_variables(m)
-        if JuMP.is_binary(x)
-            x_lb, x_ub = NaN, NaN
-            JuMP.unset_binary(x)
-            # Store upper and lower bounds
-            if JuMP.has_lower_bound(x)
-                x_lb = JuMP.lower_bound(x)
-                JuMP.set_lower_bound(x, max(x_lb, 0.0))
-            else
-                JuMP.set_lower_bound(x, 0.0)
-            end
-            if JuMP.has_upper_bound(x)
-                x_ub = JuMP.upper_bound(x)
-                JuMP.set_upper_bound(x, min(x_ub, 1.0))
-            else
-                JuMP.set_upper_bound(x, 1.0)
-            end
-            push!(binaries, (x, x_lb, x_ub))
-        elseif JuMP.is_integer(x)
-            JuMP.unset_integer(x)
-            push!(integers, x)
-        end
-    end
-    return binaries, integers
+function relax_integrality(node::Node, ::ContinuousRelaxation)
+    return JuMP.relax_integrality(node.subproblem)
 end
 
 # =========================== SDDiP ========================================== #
@@ -287,9 +231,7 @@ function get_dual_variables(node::Node, integrality_handler::SDDiP)
     return dual_values
 end
 
-function relax_integrality(::PolicyGraph, ::SDDiP)
-    return Tuple{JuMP.VariableRef,Float64,Float64}[], JuMP.VariableRef[]
-end
+relax_integrality(::Node, ::SDDiP) = () -> nothing
 
 function _solve_primal!(
     subgradients::Vector{Float64},

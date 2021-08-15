@@ -477,6 +477,9 @@ function backward_pass(
     objective_states::Vector{NTuple{N,Float64}},
     belief_states::Vector{Tuple{Int,Dict{T,Float64}}},
 ) where {T,NoiseType,N}
+    TimerOutputs.@timeit SDDP_TIMER "relax_integrality" begin
+        undo_relaxation = relax_integrality(model)
+    end
     # TODO(odow): improve storage type.
     cuts = Dict{T,Vector{Any}}(index => Any[] for index in keys(model.nodes))
     for index in length(scenario_path):-1:1
@@ -576,6 +579,9 @@ function backward_pass(
                 end
             end
         end
+    end
+    TimerOutputs.@timeit SDDP_TIMER "undo_relaxation" begin
+        undo_relaxation()
     end
     return cuts
 end
@@ -991,10 +997,6 @@ function train(
         end
     end
 
-    # Perform relaxations required by integrality_handler
-    binaries, integers =
-        relax_integrality(model, last(first(model.nodes)).integrality_handler)
-
     dashboard_callback = if dashboard
         launch_dashboard()
     else
@@ -1031,8 +1033,6 @@ function train(
             rethrow(ex)
         end
     finally
-        # Remember to reset any relaxed integralities.
-        enforce_integrality(binaries, integers)
         # And close the dashboard callback if necessary.
         dashboard_callback(nothing, true)
     end

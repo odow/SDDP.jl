@@ -391,6 +391,7 @@ mutable struct Node{T}
     post_optimize_hook::Union{Nothing,Function}
     # Approach for handling discrete variables.
     integrality_handler::Any # TODO either leave untyped or define ::AbstractIntegralityHandler
+    has_integrality::Bool
     # The user's optimizer. We use this in asynchronous mode.
     optimizer::Any
     # An extension dictionary. This is a useful place for packages that extend
@@ -650,6 +651,7 @@ function PolicyGraph(
             nothing,
             nothing,
             integrality_handler,
+            false,
             direct_mode ? nothing : optimizer,
             # The extension dictionary.
             Dict{Symbol,Any}(),
@@ -668,6 +670,10 @@ function PolicyGraph(
             optimizer,
             length(node.states),
         )
+        ctypes = JuMP.list_of_constraint_types(subproblem)
+        node.has_integrality =
+            (JuMP.VariableRef, MOI.Integer) in ctypes ||
+            (JuMP.VariableRef, MOI.ZeroOne) in ctypes
     end
     # Loop back through and add the arcs/children.
     for (node_index, children) in graph.nodes

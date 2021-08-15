@@ -200,14 +200,11 @@ constraint at `node`.
 function get_dual_variables end
 
 """
-    relax_integrality(model::PolicyGraph, integrality_handler::AbstractIntegralityHandler)
+    relax_integrality(node::Node, handler::AbstractIntegralityHandler)
 
 Performs any binary/integer relaxations prior to the backward pass.
-Returns two vectors, the first containing a list of binary variables, and the
-second containing a list of integer variables. Integrality or binary constraints
-will be enforced for variables in these lists during policy simulation.
 
-See also [`enforce_integrality`](@ref).
+Returns a function that, when called with no arguments, undoes the relaxation.
 """
 function relax_integrality end
 
