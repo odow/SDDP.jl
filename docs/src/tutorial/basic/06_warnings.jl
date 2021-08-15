@@ -4,6 +4,44 @@
 # However, there are a number of subtle things to be aware of before creating
 # your own models.
 
+# ## Relatively complete recourse
+
+# Models built in SDDP.jl need a property called _relatively complete recourse_.
+
+# One definition of relatively complete recourse is that _all_ feasible decisions
+# (not necessarily optimal) in a subproblem lead to feasible decisions in future 
+# subproblems.
+
+# For example, in the following problem, one feasible first stage decision is 
+# `x.out = 0`. But this causes an infeasibility in the second stage which requires 
+# `x.in >= 1`. This will throw an error about infeasibility if you try to solve.
+
+using SDDP, GLPK
+
+model = SDDP.LinearPolicyGraph(
+    stages = 2,
+    lower_bound = 0,
+    optimizer = GLPK.Optimizer,
+) do sp, t
+    @variable(sp, x >= 0, SDDP.State, initial_value = 1)
+    if t == 2
+        @constraint(sp, x.in >= 1)
+    end
+    @stageobjective(sp, x.out)
+end
+
+try                         #hide
+    SDDP.train(model, iteration_limit = 1, print_level = 0)
+catch err                   #hide
+    showerror(stderr, err)  #hide
+end                         #hide
+
+# !!! warning
+#     The actual constraints causing the infeasibilities can be deceptive! A good
+#     strategy to debug is to comment out all constraints. Then, one-by-one,
+#     uncomment the constraints and try resolving the model to check if it finds a
+#     feasible solution.
+
 # ## Numerical stability
 
 # If you aren't aware, SDDP builds an outer-approximation to a convex function

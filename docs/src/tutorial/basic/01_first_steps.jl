@@ -230,7 +230,7 @@
 #
 # **Assumption 5: relatively complete recourse**
 #
-# This is a technical but important assumption. See [Issue #436](https://github.com/odow/SDDP.jl/issues/436)
+# This is a technical but important assumption. See [Relatively complete recourse](@ref)
 # for more details.
 
 # !!! note
