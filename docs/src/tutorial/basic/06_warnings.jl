@@ -30,11 +30,11 @@ model = SDDP.LinearPolicyGraph(
     @stageobjective(sp, x.out)
 end
 
-try                 # src
-SDDP.train(model, iteration_limit = 1, print_level = 0)
-catch err           # src
-    showerror(err)  # src
-end                 # src
+try                         #hide
+    SDDP.train(model, iteration_limit = 1, print_level = 0)
+catch err                   #hide
+    showerror(stderr, err)  #hide
+end                         #hide
 
 # !!! warning
 #     The actual constraints causing the infeasibilities can be deceptive! A good
