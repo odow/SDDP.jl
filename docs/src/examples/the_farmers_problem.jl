@@ -20,13 +20,13 @@
 # > from a wholesaler. Any production in excess of the feeding requirement would
 # > be sold.
 # >
-# > Over the last decade, mean selling prices have been \\\$170 and \\\$150 per
+# > Over the last decade, mean selling prices have been \$170 and \$150 per
 # > ton of wheat and corn, respectively. The purchase prices are 40% more than
 # > this due to the wholesaler’s margin and transportation costs.
 # >
 # > Another profitable crop is sugar beet, which [they expect] to sell at
-# > \\\$36/T; however, the European Commission imposes a quota on sugar beet
-# > production. Any amount in excess of the quota can be sold only at \\\$10/T.
+# > \$36/T; however, the European Commission imposes a quota on sugar beet
+# > production. Any amount in excess of the quota can be sold only at \$10/T.
 # > The farmer’s quota for next year is 6000 T."
 # >
 # > Based on past experience, the farmer knows that the mean yield on [their]
@@ -49,7 +49,7 @@ MAX_AREA = 500.0
 
 CROPS = [:wheat, :corn, :sugar_beet]
 
-# Each of the crops has a different planting cost (\\\$/acre).
+# Each of the crops has a different planting cost (\$/acre).
 
 PLANTING_COST = Dict(:wheat => 150.0, :corn => 230.0, :sugar_beet => 260.0)
 
@@ -64,18 +64,18 @@ MIN_QUANTITIES = Dict(:wheat => 200.0, :corn => 240.0, :sugar_beet => 0.0)
 QUOTA_MAX = Dict(:wheat => Inf, :corn => Inf, :sugar_beet => 6_000.0)
 
 # The farmer can sell crops produced under the quota for the following amounts
-# (\\\$/tonne):
+# (\$/tonne):
 
 SELL_IN_QUOTA = Dict(:wheat => 170.0, :corn => 150.0, :sugar_beet => 36.0)
 
 # If they sell more than their alloted quota, the farmer earns the following on
-# each tonne of crop above the quota (\\\$/tonne):
+# each tonne of crop above the quota (\$/tonne):
 
 SELL_NO_QUOTA = Dict(:wheat => 0.0, :corn => 0.0, :sugar_beet => 10.0)
 
 # The purchase prices for wheat and corn are 40% more than their sales price.
 # However, the description does not address the purchase price of sugar beet.
-# Therefore, we use a large value of \\\$1,000/tonne.
+# Therefore, we use a large value of \$1,000/tonne.
 
 BUY_PRICE = Dict(:wheat => 238.0, :corn => 210.0, :sugar_beet => 1_000.0)
 
@@ -220,8 +220,8 @@ end
 #
 # First, we are maximizing, so we set `sense = :Max`. Second, we need to provide
 # a valid upper bound. (See [Choosing an initial bound](@ref) for more on this.)
-# We know from Birge and Louveaux that the optimal solution is \\\$108,390.  So,
-# let's choose \\\$500,000 just to be safe.
+# We know from Birge and Louveaux that the optimal solution is \$108,390.  So,
+# let's choose \$500,000 just to be safe.
 
 # Here is the full model.
 
@@ -253,7 +253,7 @@ SDDP.train(model; iteration_limit = 20)
 
 # ## Checking the policy
 
-# Birge and Louveaux report that the optimal objective value is \\\$108,390.
+# Birge and Louveaux report that the optimal objective value is \$108,390.
 # Check that we got the correct solution using [`SDDP.calculate_bound`](@ref):
 
 @assert isapprox(SDDP.calculate_bound(model), 108_390.0, atol = 0.1)
