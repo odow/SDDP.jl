@@ -558,7 +558,7 @@ end
         optimizer = nothing,
         bellman_function = nothing,
         direct_mode::Bool = false,
-        integrality_handler = ContinuousRelaxation(),
+        integrality_handler = ConicDuality(),
     ) where {T}
 
 Construct a policy graph based on the graph structure of `graph`. (See
@@ -598,7 +598,7 @@ function PolicyGraph(
     optimizer = nothing,
     bellman_function = nothing,
     direct_mode::Bool = false,
-    integrality_handler = ContinuousRelaxation(),
+    integrality_handler = ConicDuality(),
 ) where {T}
     # Spend a one-off cost validating the graph.
     _validate_graph(graph)

@@ -16,7 +16,7 @@ function all_blacks()
         sense = :Max,
         upper_bound = 100.0,
         optimizer = GLPK.Optimizer,
-        integrality_handler = SDDP.SDDiP(),
+        integrality_handler = SDDP.LagrangianDuality(),
     ) do sp, stage
         ## Seat remaining?
         @variable(sp, 0 <= x[1:N] <= 1, SDDP.State, Bin, initial_value = 1)

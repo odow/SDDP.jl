@@ -95,7 +95,7 @@ end
 function booking_management(integrality_handler)
     m_1_2_5 = booking_management_model(1, 2, 5, integrality_handler)
     SDDP.train(m_1_2_5, iteration_limit = 10, log_frequency = 5)
-    if integrality_handler == SDDP.ContinuousRelaxation()
+    if integrality_handler == SDDP.ConicDuality()
         @test SDDP.calculate_bound(m_1_2_5) >= 7.25 - 1e-4
     else
         @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol = 0.02)
@@ -103,14 +103,14 @@ function booking_management(integrality_handler)
 
     m_2_2_3 = booking_management_model(2, 2, 3, integrality_handler)
     SDDP.train(m_2_2_3, iteration_limit = 50, log_frequency = 10)
-    if integrality_handler == SDDP.ContinuousRelaxation()
+    if integrality_handler == SDDP.ConicDuality()
         @test SDDP.calculate_bound(m_1_2_5) > 6.13
     else
         @test isapprox(SDDP.calculate_bound(m_2_2_3), 6.13, atol = 0.02)
     end
 end
 
-booking_management(SDDP.ContinuousRelaxation())
+booking_management(SDDP.ConicDuality())
 
 # New version of GLPK stalls
-# booking_management(SDDP.SDDiP())
+# booking_management(SDDP.LagrangianDuality())

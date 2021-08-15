@@ -54,6 +54,6 @@ function air_conditioning_model(integrality_handler)
     return
 end
 
-for integrality_handler in [SDDP.SDDiP(), SDDP.ContinuousRelaxation()]
+for integrality_handler in [SDDP.LagrangianDuality(), SDDP.ConicDuality()]
     air_conditioning_model(integrality_handler)
 end

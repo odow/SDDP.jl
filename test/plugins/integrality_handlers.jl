@@ -47,7 +47,7 @@ function easy_single_stage(integrality_handler)
     optimize!(node.subproblem)
     dual_vars = SDDP.get_dual_variables(node, integrality_handler)
 
-    if integrality_handler == SDDP.ContinuousRelaxation()
+    if integrality_handler == SDDP.ConicDuality()
         @test all(values(dual_vars) .<= ones(2))
     else
         @test all(values(dual_vars) .>= -ones(2))
@@ -100,7 +100,7 @@ function xor_single_stage(integrality_handler)
     optimize!(node.subproblem)
     dual_vars = SDDP.get_dual_variables(node, integrality_handler)
 
-    if integrality_handler == SDDP.ContinuousRelaxation()
+    if integrality_handler == SDDP.ConicDuality()
         @test sum(values(dual_vars)) >= -1
     else
         @test sum(values(dual_vars)) <= 1
@@ -109,22 +109,22 @@ function xor_single_stage(integrality_handler)
 end
 
 function test_easy_continuous()
-    easy_single_stage(SDDP.ContinuousRelaxation())
+    easy_single_stage(SDDP.ConicDuality())
     return
 end
 
-function test_easy_sddip()
-    easy_single_stage(SDDP.SDDiP())
+function test_easy_LagrangianDuality()
+    easy_single_stage(SDDP.LagrangianDuality())
     return
 end
 
 function test_xor_continuous()
-    xor_single_stage(SDDP.ContinuousRelaxation())
+    xor_single_stage(SDDP.ConicDuality())
     return
 end
 
-function test_xor_sddip()
-    xor_single_stage(SDDP.SDDiP())
+function test_xor_LagrangianDuality()
+    xor_single_stage(SDDP.LagrangianDuality())
     return
 end
 
@@ -223,8 +223,8 @@ function test_relax_integrality()
     return
 end
 
-function test_update_integrality_handler_sddip()
-    integrality_handler = SDDP.SDDiP()
+function test_update_integrality_handler_LagrangianDuality()
+    integrality_handler = SDDP.LagrangianDuality()
     SDDP.update_integrality_handler!(integrality_handler, GLPK.Optimizer, 3)
     @test length(integrality_handler.subgradients) == 3
     @test length(integrality_handler.old_rhs) == 3
@@ -234,8 +234,8 @@ function test_update_integrality_handler_sddip()
     return
 end
 
-function test_update_integrality_handler_ContinuousRelaxation()
-    integrality_handler = SDDP.ContinuousRelaxation()
+function test_update_integrality_handler_ConicDuality()
+    integrality_handler = SDDP.ConicDuality()
     @test SDDP.update_integrality_handler!(
         integrality_handler,
         GLPK.Optimizer,
@@ -249,7 +249,7 @@ function test_setup_state()
         model = SDDP.PolicyGraph(
             SDDP.LinearGraph(2),
             lower_bound = 0.0,
-            integrality_handler = SDDP.SDDiP(),
+            integrality_handler = SDDP.LagrangianDuality(),
             direct_mode = false,
         ) do node, stage
             return add_state(node)

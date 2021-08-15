@@ -82,8 +82,8 @@ SDDP.adjust_probability
 
 ```@docs
 SDDP.AbstractIntegralityHandler
-SDDP.ContinuousRelaxation
-SDDP.SDDiP
+SDDP.ConicDuality
+SDDP.LagrangianDuality
 ```
 
 ## Simulating the policy

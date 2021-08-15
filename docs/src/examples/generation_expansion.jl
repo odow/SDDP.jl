@@ -77,5 +77,5 @@ function generation_expansion(integrality_handler)
     return
 end
 
-## Solve a continuous relaxation only, tough for SDDiP.
-generation_expansion(SDDP.ContinuousRelaxation())
+## Solve a continuous relaxation only, tough for LagrangianDuality.
+generation_expansion(SDDP.ConicDuality())

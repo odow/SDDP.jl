@@ -28,20 +28,18 @@ end
 # ========================= Continuous relaxation ============================ #
 
 """
-    ContinuousRelaxation()
+    ConicDuality()
 
-The continuous relaxation integrality handler. Duals are obtained in the
-backward pass by solving a continuous relaxation of each subproblem.
-Integrality constraints are retained in policy simulation.
+Obtain dual variables in the backward pass using conic duality.
 """
-struct ContinuousRelaxation <: AbstractIntegralityHandler end
+struct ConicDuality <: AbstractIntegralityHandler end
 
 function setup_state(
     subproblem::JuMP.Model,
     state::State,
     state_info::StateInfo,
     name::String,
-    ::ContinuousRelaxation,
+    ::ConicDuality,
 )
     node = get_node(subproblem)
     sym_name = Symbol(name)
@@ -53,7 +51,7 @@ function setup_state(
 end
 
 # Requires node.subproblem to have been solved with DualStatus == FeasiblePoint
-function get_dual_variables(node::Node, ::ContinuousRelaxation)
+function get_dual_variables(node::Node, ::ConicDuality)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
     dual_values = Dict{Symbol,Float64}()
@@ -73,27 +71,30 @@ function get_dual_variables(node::Node, ::ContinuousRelaxation)
     return dual_values
 end
 
-function relax_integrality(node::Node, ::ContinuousRelaxation)
+function relax_integrality(node::Node, ::ConicDuality)
     return JuMP.relax_integrality(node.subproblem)
 end
 
-# =========================== SDDiP ========================================== #
+# =========================== LagrangianDuality ========================================== #
 
 """
-    SDDiP(; iteration_limit::Int = 100, atol::Float64, rtol::Float64)
+    LagrangianDuality(;
+        iteration_limit::Int = 100,
+        atol::Float64 = 1e-8,
+        rtol::Float64 = 1e-8,
+    )
 
-The SDDiP integrality handler introduced by Zou, J., Ahmed, S. & Sun, X.A.
-Math. Program. (2019) 175: 461. Stochastic dual dynamic integer programming.
-https://doi.org/10.1007/s10107-018-1249-5.
+Obtain dual variables in the backward pass using Lagrangian duality.
 
-Calculates duals by solving the Lagrangian dual for each subproblem. Kelley's
-method is used to compute Lagrange multipliers. `iteration_limit` controls the
-maximum number of iterations, and `atol` and `rtol` are the absolute and
-relative tolerances used in the termination criteria.
+Kelley's method is used to compute Lagrange multipliers.
+
+`iteration_limit` controls the maximum number of iterations
+`atol` and `rtol` are the absolute and relative tolerances used in the
+termination criteria.
 
 All state variables are assumed to take nonnegative values only.
 """
-mutable struct SDDiP <: AbstractIntegralityHandler
+mutable struct LagrangianDuality <: AbstractIntegralityHandler
     iteration_limit::Int
     optimizer::Any
     subgradients::Vector{Float64}
@@ -103,7 +104,7 @@ mutable struct SDDiP <: AbstractIntegralityHandler
     atol::Float64
     rtol::Float64
 
-    function SDDiP(;
+    function LagrangianDuality(;
         iteration_limit::Int = 100,
         atol::Float64 = 1e-8,
         rtol::Float64 = 1e-8,
@@ -117,7 +118,7 @@ mutable struct SDDiP <: AbstractIntegralityHandler
 end
 
 function update_integrality_handler!(
-    integrality_handler::SDDiP,
+    integrality_handler::LagrangianDuality,
     optimizer::Any,
     num_states::Int,
 )
@@ -135,14 +136,16 @@ function setup_state(
     state::State,
     state_info::StateInfo,
     name::String,
-    ::SDDiP,
+    ::LagrangianDuality,
 )
     if state_info.out.binary
         # Only in this case we treat `state` as a real state variable
-        setup_state(subproblem, state, state_info, name, ContinuousRelaxation())
+        setup_state(subproblem, state, state_info, name, ConicDuality())
     else
         if !isfinite(state_info.out.upper_bound)
-            error("When using SDDiP, state variables require an upper bound.")
+            error(
+                "When using LagrangianDuality, state variables require an upper bound.",
+            )
         end
 
         if state_info.out.integer
@@ -208,7 +211,7 @@ function setup_state(
     return
 end
 
-function get_dual_variables(node::Node, integrality_handler::SDDiP)
+function get_dual_variables(node::Node, integrality_handler::LagrangianDuality)
     dual_values = Dict{Symbol,Float64}()
     # TODO implement smart choice for initial duals
     dual_vars = zeros(length(node.states))
@@ -231,7 +234,7 @@ function get_dual_variables(node::Node, integrality_handler::SDDiP)
     return dual_values
 end
 
-relax_integrality(::Node, ::SDDiP) = () -> nothing
+relax_integrality(::Node, ::LagrangianDuality) = () -> nothing
 
 function _solve_primal!(
     subgradients::Vector{Float64},
@@ -257,7 +260,7 @@ end
 function _kelley(
     node::Node,
     dual_vars::Vector{Float64},
-    integrality_handler::SDDiP,
+    integrality_handler::LagrangianDuality,
 )
     atol = integrality_handler.atol
     rtol = integrality_handler.rtol

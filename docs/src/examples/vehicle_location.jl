@@ -112,6 +112,6 @@ function vehicle_location_model(integrality_handler)
     return
 end
 
-# Solve a continuous relaxation only, tough for SDDiP
+# Solve a continuous relaxation only, tough for LagrangianDuality
 
-vehicle_location_model(SDDP.ContinuousRelaxation())
+vehicle_location_model(SDDP.ConicDuality())
