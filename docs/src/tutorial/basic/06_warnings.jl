@@ -38,7 +38,7 @@
 
 # If we define the volume of the reservoir in terms of m³, then a lake might
 # have a capacity of 10^10 m³: `@variable(subproblem, 0 <= volume <= 10^10)`.
-# Moreover, the cost per cubic meter might be around \\\$0.05/m³. To calculate
+# Moreover, the cost per cubic meter might be around \$0.05/m³. To calculate
 # the  value of water in our reservoir, we need to multiple a variable on the
 # order of 10^10, by one on the order of 10⁻²! That is twelve orders of
 # magnitude!
@@ -47,7 +47,7 @@
 # weird behavior), try to re-scale the units of the problem in order to reduce
 # the largest difference in magnitude. For example, if we talk in terms of
 # million m³, then we have a capacity of 10⁴ million m³, and a price of
-# \\\$50,000 per million m³. Now things are only one order of magnitude apart.
+# \$50,000 per million m³. Now things are only one order of magnitude apart.
 
 # ### Numerical stability report
 

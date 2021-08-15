@@ -9,14 +9,14 @@
 
 # Consider the following problem
 # * Produce air conditioners for 3 months
-# * 200 units/month at 100 \\\$/unit
-# * Overtime costs 300 \\\$/unit
+# * 200 units/month at 100 \$/unit
+# * Overtime costs 300 \$/unit
 # * Known demand of 100 units for period 1
 # * Equally likely demand, 100 or 300 units, for periods 2, 3
-# * Storage cost is 50 \\\$/unit
+# * Storage cost is 50 \$/unit
 # * All demand must be met
 
-# The known optimal solution is \\\$62,500
+# The known optimal solution is \$62,500
 
 using SDDP, GLPK, Test
 

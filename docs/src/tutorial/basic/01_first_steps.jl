@@ -323,10 +323,10 @@
 # week, the agent needs to decide how much energy to generate from thermal, and
 # how much energy to generate from hydro.
 #
-# The thermal generator has a short-run marginal cost of \\\$50/MWh in the first
-# stage, \\\$100/MWh in the second stage, and \\\$150/MWh in the third stage.
+# The thermal generator has a short-run marginal cost of \$50/MWh in the first
+# stage, \$100/MWh in the second stage, and \$150/MWh in the third stage.
 #
-# The hydro generator has a short-run marginal cost of \\\$0/MWh.
+# The hydro generator has a short-run marginal cost of \$0/MWh.
 #
 # The hydro generator draws water from a reservoir which has a maximum capacity
 # of 200 MWh. (Although water is usually measured in m³, we measure it in the
@@ -639,7 +639,7 @@ model = SDDP.PolicyGraph(
 
 # * `sense`: the optimization sense. Must be `:Min` or `:Max`.
 # * `lower_bound`: you _must_ supply a valid bound on the objective. For our
-#   problem, we know that we cannot incur a negative cost so \\\$0 is a valid
+#   problem, we know that we cannot incur a negative cost so \$0 is a valid
 #   lower bound.
 # * `optimizer`: This is borrowed directly from JuMP's `Model` constructor:
 #   `Model(GLPK.Optimizer)`

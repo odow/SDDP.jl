@@ -4,8 +4,8 @@
 # stochastic hydro-thermal scheduling model. In this tutorial, we extend the
 # problem by adding uncertainty to the fuel costs.
 
-# Previously, we assumed that the fuel cost was deterministic: \\\$50/MWh in the
-# first stage, \\\$100/MWh in the second stage, and \\\$150/MWh in the third
+# Previously, we assumed that the fuel cost was deterministic: \$50/MWh in the
+# first stage, \$100/MWh in the second stage, and \$150/MWh in the third
 # stage. For this tutorial, we assume that in addition to these base costs, the
 # actual fuel cost is correlated with the inflows.
 
