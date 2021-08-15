@@ -209,12 +209,21 @@ simulations = SDDP.simulate(
 
 You can also pass a vector of scenarios, which are sampled sequentially:
 ```jldoctest
-julia> SDDP.Historical([
-           [(1, 1.0), (2, 2.0), (3, 3.0)],
-           [(1, 1.1), (2, 2.1), (3, 3.1)],
-           [(1, 1.2), (2, 2.2), (3, 3.2)]
-       ])
-A Historical sampler with 3 scenarios sampled sequentially.
+julia> SDDP.Historical(
+           [
+               [
+                   (1, (inflow = 65.0, fuel_multiplier = 1.1)),
+                   (2, (inflow = 10.0, fuel_multiplier = 1.4)), # Can be out-of-sample
+                   (3, (inflow = 65.0, fuel_multiplier = 1.1)),
+               ],
+               [
+                   (1, (inflow = 65.0, fuel_multiplier = 1.1)),
+                   (2, (inflow = 100.0, fuel_multiplier = 0.75)),
+                   (3, (inflow = 0.0, fuel_multiplier = 1.5)),
+               ],
+           ], 
+       )
+A Historical sampler with 2 scenarios sampled sequentially.
 ```
 
 Or a vector of scenarios and a corresponding vector of probabilities so that the
@@ -222,11 +231,22 @@ historical scenarios are sampled probabilistically:
 ```jldoctest
 julia> SDDP.Historical(
            [
-               [(1, 1.0), (2, 2.0), (3, 3.0)],
-               [(1, 1.1), (2, 2.1), (3, 3.1)],
-               [(1, 1.2), (2, 2.2), (3, 3.2)]
-           ],
-           [0.2, 0.5, 0.3],
+               [
+                   (1, (inflow = 65.0, fuel_multiplier = 1.1)),
+                   (2, (inflow = 10.0, fuel_multiplier = 1.4)), # Can be out-of-sample
+                   (3, (inflow = 65.0, fuel_multiplier = 1.1)),
+               ],
+               [
+                   (1, (inflow = 65.0, fuel_multiplier = 1.1)),
+                   (2, (inflow = 100.0, fuel_multiplier = 0.75)),
+                   (3, (inflow = 0.0, fuel_multiplier = 1.5)),
+               ],
+           ], 
+           [0.3, 0.7],
        )
-A Historical sampler with 3 scenarios sampled probabilistically.
+A Historical sampler with 2 scenarios sampled probabilistically.
 ```
+
+!!! tip
+    Your sample space doesn't have to be a `NamedTuple`. It an be any Julia type!
+    Use a `Vector` if that is easier, or define your own `struct`.
