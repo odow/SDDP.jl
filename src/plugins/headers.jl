@@ -208,18 +208,6 @@ Returns a function that, when called with no arguments, undoes the relaxation.
 """
 function relax_integrality end
 
-"""
-setup_state(
-        subproblem::JuMP.Model, state::State, state_info::StateInfo,
-        name::String,
-        integrality_handler::AbstractIntegralityHandler)
-
-Adds the state variable `state` to the node of `subproblem` and registers the
-initial root state in the policy graph of `subproblem`. May perform
-modifications needed by `integrality_handler.` Returns nothing.
-"""
-function setup_state end
-
 # ============================= parallel schemes ============================= #
 
 """

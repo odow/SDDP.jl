@@ -51,20 +51,6 @@ function easy_single_stage(integrality_handler)
         @test all(values(dual_vars) .<= ones(2))
     else
         @test all(values(dual_vars) .>= -ones(2))
-        # Cannot add a variable without an upper bound
-        @test_throws Exception @variable(
-            node.subproblem,
-            w,
-            SDDP.State,
-            initial_value = 0
-        )
-        @test_throws Exception @variable(
-            node.subproblem,
-            w,
-            Int,
-            SDDP.State,
-            initial_value = 0
-        )
     end
     return
 end
@@ -226,10 +212,6 @@ end
 function test_update_integrality_handler_LagrangianDuality()
     integrality_handler = SDDP.LagrangianDuality()
     SDDP.update_integrality_handler!(integrality_handler, GLPK.Optimizer, 3)
-    @test length(integrality_handler.subgradients) == 3
-    @test length(integrality_handler.old_rhs) == 3
-    @test length(integrality_handler.best_mult) == 3
-    @test length(integrality_handler.slacks) == 3
     @test integrality_handler.optimizer == GLPK.Optimizer
     return
 end
@@ -244,57 +226,60 @@ function test_update_integrality_handler_ConicDuality()
     return
 end
 
-function test_setup_state()
-    function new_model(add_state)
-        model = SDDP.PolicyGraph(
-            SDDP.LinearGraph(2),
-            lower_bound = 0.0,
-            integrality_handler = SDDP.LagrangianDuality(),
-            direct_mode = false,
-        ) do node, stage
-            return add_state(node)
+function test_kelleys_min()
+    model = SDDP.LinearPolicyGraph(
+        stages = 10,
+        sense = :Min,
+        lower_bound = -1000,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 1.1)
+        @stageobjective(sp, (-5 + t) * x.out)
+        @constraint(sp, x.out == x.in)
+    end
+    set_optimizer(model, GLPK.Optimizer)
+    l = SDDP.LagrangianDuality()
+    l.optimizer = GLPK.Optimizer
+    for t in 1:10
+        SDDP.parameterize(model[t], nothing)
+        SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
+        JuMP.optimize!(model[t].subproblem)
+        lagrange = SDDP.get_dual_variables(model[t], l)
+        JuMP.optimize!(model[t].subproblem)
+        conic = SDDP.get_dual_variables(model[t], SDDP.ConicDuality())
+        for (k, v) in lagrange
+            @test isapprox(v, conic[k], atol = 1e-5)
         end
-        return model
     end
-    bin_state(node) = @variable(node, x, SDDP.State, Bin, initial_value = 0)
-    model = new_model(bin_state)
-    for stage in 1:2
-        node = model[stage]
-        @test haskey(node.states, :x)
-        @test length(keys(node.states)) == 1
-        @test node.states[:x] == node.subproblem[:x]
-    end
+    return
+end
 
-    int_noupper(node) = @variable(node, x, SDDP.State, Int, initial_value = 0)
-    @test_throws Exception new_model(int_noupper)
-    function int_state(node)
-        @variable(node, x <= 5, SDDP.State, Int, initial_value = 0)
+function test_kelleys_max()
+    model = SDDP.LinearPolicyGraph(
+        stages = 10,
+        sense = :Max,
+        upper_bound = 1000,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 1.1)
+        @stageobjective(sp, (-5 + t) * x.out)
+        @constraint(sp, x.out == x.in)
     end
-    model = new_model(int_state)
-    first_state = Symbol("_bin_x[1]")
-    for stage in 1:2
-        node = model[stage]
-        @test haskey(node.states, first_state)
-        @test length(keys(node.states)) == 3
+    set_optimizer(model, GLPK.Optimizer)
+    l = SDDP.LagrangianDuality()
+    l.optimizer = GLPK.Optimizer
+    for t in 1:10
+        SDDP.parameterize(model[t], nothing)
+        SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
+        JuMP.optimize!(model[t].subproblem)
+        lagrange = SDDP.get_dual_variables(model[t], l)
+        JuMP.optimize!(model[t].subproblem)
+        conic = SDDP.get_dual_variables(model[t], SDDP.ConicDuality())
+        for (k, v) in lagrange
+            @test isapprox(v, conic[k], atol = 1e-5)
+        end
     end
-    cont_noupper(node) = @variable(node, x, SDDP.State, initial_value = 0)
-    @test_throws Exception new_model(cont_noupper)
-    cont_state(node) = @variable(node, x <= 5, SDDP.State, initial_value = 0)
-    model = new_model(cont_state)
-    for stage in 1:2
-        node = model[stage]
-        @test haskey(node.states, first_state)
-        @test length(keys(node.states)) == 6
-    end
-    function cont_state2(node)
-        @variable(node, x <= 5, SDDP.State, initial_value = 0, epsilon = 0.01)
-    end
-    model = new_model(cont_state2)
-    for stage in 1:2
-        node = model[stage]
-        @test haskey(node.states, first_state)
-        @test length(keys(node.states)) == 9
-    end
+    return
 end
 
 end

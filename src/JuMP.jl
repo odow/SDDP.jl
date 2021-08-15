@@ -92,8 +92,12 @@ function JuMP.add_variable(
             name * "_out",
         ),
     )
-    integrality_handler = get_integrality_handler(subproblem)
-    setup_state(subproblem, state, state_info, name, integrality_handler)
+    node = get_node(subproblem)
+    sym_name = Symbol(name)
+    @assert !haskey(node.states, sym_name)  # JuMP prevents duplicate names.
+    node.states[sym_name] = state
+    graph = get_policy_graph(subproblem)
+    graph.initial_root_state[sym_name] = state_info.initial_value
     return state
 end
 
