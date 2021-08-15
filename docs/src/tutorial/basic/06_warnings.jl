@@ -16,7 +16,7 @@
 # `x.out = 0`. But this causes an infeasibility in the second stage which requires 
 # `x.in >= 1`. This will throw an error about infeasibility if you try to solve.
 
-SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0) sp, t
+SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0) do sp, t
     @variable(sp, x >= 0, SDDP.State, initial_value = 1)
     if t == 2
         @constraint(sp, x.in >= 1)
