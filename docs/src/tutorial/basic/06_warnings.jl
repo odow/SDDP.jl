@@ -16,13 +16,25 @@
 # `x.out = 0`. But this causes an infeasibility in the second stage which requires 
 # `x.in >= 1`. This will throw an error about infeasibility if you try to solve.
 
-SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0) do sp, t
+using SDDP, GLPK
+
+model = SDDP.LinearPolicyGraph(
+    stages = 2,
+    lower_bound = 0,
+    optimizer = GLPK.Optimizer,
+) do sp, t
     @variable(sp, x >= 0, SDDP.State, initial_value = 1)
     if t == 2
         @constraint(sp, x.in >= 1)
     end
     @stageobjective(sp, x.out)
 end
+
+try                 # src
+SDDP.train(model, iteration_limit = 1, print_level = 0)
+catch err           # src
+    showerror(err)  # src
+end                 # src
 
 # !!! warning
 #     The actual constraints causing the infeasibilities can be deceptive! A good
