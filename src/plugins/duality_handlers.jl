@@ -3,17 +3,14 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# ========================= General methods ================================== #
-
-function get_duality_handler(subproblem::JuMP.Model)
-    return get_node(subproblem).duality_handler
-end
-
-function relax_integrality(model::PolicyGraph)
+function relax_integrality(
+    model::PolicyGraph,
+    duality_handler::AbstractDualityHandler,
+)
     undo = Function[]
     for (_, node) in model.nodes
         if node.has_integrality
-            push!(undo, relax_integrality(node, node.duality_handler))
+            push!(undo, relax_integrality(node, duality_handler))
         end
     end
     function undo_relax()
@@ -23,6 +20,10 @@ function relax_integrality(model::PolicyGraph)
         return
     end
     return undo_relax
+end
+
+function get_dual_solution(node::Node, ::Nothing)
+    return JuMP.objective_value(node.subproblem), Dict{Symbol,Float64}()
 end
 
 # ========================= Continuous relaxation ============================ #

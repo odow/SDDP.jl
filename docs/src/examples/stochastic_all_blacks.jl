@@ -27,7 +27,6 @@ function stochastic_all_blacks()
         sense = :Max,
         upper_bound = 100.0,
         optimizer = GLPK.Optimizer,
-        duality_handler = SDDP.LagrangianDuality(),
     ) do sp, stage
         ## Seat remaining?
         @variable(sp, 0 <= x[1:N] <= 1, SDDP.State, Bin, initial_value = 1)
@@ -48,7 +47,11 @@ function stochastic_all_blacks()
         @constraint(sp, accept_offer .<= offers_made)
     end
 
-    SDDP.train(model, iteration_limit = 10)
+    SDDP.train(
+        model,
+        iteration_limit = 10,
+        duality_handler = SDDP.LagrangianDuality(),
+    )
     @test SDDP.calculate_bound(model) ≈ 8.0
     return
 end

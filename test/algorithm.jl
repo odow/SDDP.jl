@@ -241,7 +241,7 @@ end
     node = model[1]
     SDDP.pre_optimize_hook(
         node,
-    ) do model, node, state, noise, scenario_path, require_duals
+    ) do model, node, state, noise, scenario_path, duality_handler
         pre_optimize_called = 1
         return pre_optimize_called
     end
@@ -255,7 +255,7 @@ end
         Dict(:x => 0.0),
         nothing,
         Tuple{Int,Any}[(1, nothing)];
-        require_duals = false,
+        duality_handler = nothing,
     )
     @test pre_optimize_called == 1
     @test post_optimize_called == 3

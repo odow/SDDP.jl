@@ -98,6 +98,7 @@ struct Options{T}
     log_file_handle::Any
     log_frequency::Int
     forward_pass::AbstractForwardPass
+    duality_handler::AbstractDualityHandler
 
     # Internal function: users should never construct this themselves.
     function Options(
@@ -116,6 +117,7 @@ struct Options{T}
         log_file_handle,
         log_frequency::Int,
         forward_pass::AbstractForwardPass,
+        duality_handler::AbstractDualityHandler,
     ) where {T}
         return new{T}(
             initial_state,
@@ -135,6 +137,7 @@ struct Options{T}
             log_file_handle,
             log_frequency,
             forward_pass,
+            duality_handler,
         )
     end
 end
@@ -341,15 +344,14 @@ end
 
 # Internal function: solve the subproblem associated with node given the
 # incoming state variables state and realization of the stagewise-independent
-# noise term noise. If require_duals=true, also return the dual variables
-# associated with the fixed constraint of the incoming state variables.
+# noise term noise.
 function solve_subproblem(
     model::PolicyGraph{T},
     node::Node{T},
     state::Dict{Symbol,Float64},
     noise,
     scenario_path::Vector{Tuple{T,S}};
-    require_duals::Bool,
+    duality_handler::Union{Nothing,AbstractDualityHandler},
 ) where {T,S}
     _initialize_solver(node; throw_error = false)
     # Parameterize the model. First, fix the value of the incoming state
@@ -357,7 +359,6 @@ function solve_subproblem(
     # set the objective.
     set_incoming_state(node, state)
     parameterize(node, noise)
-
     pre_optimize_ret = if node.pre_optimize_hook !== nothing
         node.pre_optimize_hook(
             model,
@@ -365,40 +366,26 @@ function solve_subproblem(
             state,
             noise,
             scenario_path,
-            require_duals,
+            duality_handler,
         )
     else
         nothing
     end
-
     JuMP.optimize!(node.subproblem)
-
     if haskey(model.ext, :total_solves)
         model.ext[:total_solves] += 1
     else
         model.ext[:total_solves] = 1
     end
-
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         attempt_numerical_recovery(node)
     end
-
     state = get_outgoing_state(node)
     stage_objective = stage_objective_value(node.stage_objective)
-    # If require_duals = true, check for dual feasibility and return a dict with
-    # the dual on the fixed constraint associated with each incoming state
-    # variable. If require_duals=false, return an empty dictionary for
-    # type-stability.
-    objective, dual_values = if require_duals
-        get_dual_solution(node, node.duality_handler)
-    else
-        JuMP.objective_value(node.subproblem), Dict{Symbol,Float64}()
-    end
-
+    objective, dual_values = get_dual_solution(node, duality_handler)
     if node.post_optimize_hook !== nothing
         node.post_optimize_hook(pre_optimize_ret)
     end
-
     return (
         state = state,
         duals = dual_values,
@@ -476,7 +463,7 @@ function backward_pass(
     belief_states::Vector{Tuple{Int,Dict{T,Float64}}},
 ) where {T,NoiseType,N}
     TimerOutputs.@timeit SDDP_TIMER "relax_integrality" begin
-        undo_relaxation = relax_integrality(model)
+        undo_relaxation = relax_integrality(model, options.duality_handler)
     end
     # TODO(odow): improve storage type.
     cuts = Dict{T,Vector{Any}}(index => Any[] for index in keys(model.nodes))
@@ -499,6 +486,7 @@ function backward_pass(
                     outgoing_state,
                     options.backward_sampling_scheme,
                     scenario_path[1:index],
+                    options.duality_handler,
                 )
             end
             # We need to refine our estimate at all nodes in the partition.
@@ -538,6 +526,7 @@ function backward_pass(
                 outgoing_state,
                 options.backward_sampling_scheme,
                 scenario_path[1:index],
+                options.duality_handler,
             )
             new_cuts = refine_bellman_function(
                 model,
@@ -616,6 +605,7 @@ function solve_all_children(
     outgoing_state::Dict{Symbol,Float64},
     backward_sampling_scheme::AbstractBackwardSamplingScheme,
     scenario_path,
+    duality_handler::Union{Nothing,AbstractDualityHandler},
 ) where {T}
     length_scenario_path = length(scenario_path)
     for child in node.children
@@ -663,7 +653,7 @@ function solve_all_children(
                         outgoing_state,
                         noise.term,
                         scenario_path,
-                        require_duals = true,
+                        duality_handler = duality_handler,
                     )
                 end
                 push!(items.duals, subproblem_results.duals)
@@ -735,7 +725,7 @@ function calculate_bound(
                 root_state,
                 noise.term,
                 Tuple{T,Any}[(child.term, noise.term)],
-                require_duals = false,
+                duality_handler = nothing,
             )
             push!(objectives, subproblem_results.objective)
             push!(probabilities, child.probability * noise.probability)
@@ -878,6 +868,9 @@ Train the policy for `model`. Keyword arguments:
  - `add_to_existing_cuts::Bool`: set to `true` to allow training a model that
    was previously trained. Defaults to `false`.
 
+ - `duality_handler::AbstractDualityHandler`: specify a duality handler to use
+   when creating cuts.
+
 There is also a special option for infinite horizon problems
 
  - `cycle_discretization_delta`: the maximum distance between states allowed on
@@ -905,6 +898,7 @@ function train(
     forward_pass::AbstractForwardPass = DefaultForwardPass(),
     forward_pass_resampling_probability::Union{Nothing,Float64} = nothing,
     add_to_existing_cuts::Bool = false,
+    duality_handler::AbstractDualityHandler = SDDP.ConicDuality(),
 )
     if !add_to_existing_cuts && model.most_recent_training_results !== nothing
         @warn("""
@@ -1017,6 +1011,7 @@ function train(
         log_file_handle,
         log_frequency,
         forward_pass,
+        duality_handler,
     )
 
     status = :not_solved
@@ -1056,7 +1051,7 @@ function _simulate(
     variables::Vector{Symbol};
     sampling_scheme::AbstractSamplingScheme,
     custom_recorders::Dict{Symbol,Function},
-    require_duals::Bool,
+    duality_handler::Union{Nothing,AbstractDualityHandler},
     skip_undefined_variables::Bool,
     incoming_state::Dict{Symbol,Float64},
 ) where {T}
@@ -1104,7 +1099,7 @@ function _simulate(
             incoming_state,
             noise,
             scenario_path[1:depth],
-            require_duals = false,
+            duality_handler = duality_handler,
         )
         # Add the stage-objective
         cumulative_value += subproblem_results.stage_objective
@@ -1168,7 +1163,7 @@ end
         sampling_scheme::AbstractSamplingScheme =
             InSampleMonteCarlo(),
         custom_recorders = Dict{Symbol, Function}(),
-        require_duals::Bool = true,
+        duality_handler::Union{Nothing,AbstractDualityHandler} = nothing,
         skip_undefined_variables::Bool = false,
         parallel_scheme::AbstractParallelScheme = Serial(),
         incoming_state::Dict{String,Float64} = _intial_state(model),
@@ -1220,7 +1215,7 @@ accessed as:
     simulation_results[2][1][:constraint_dual]
 
 If you do not require dual variables (or if they are not available), pass
-`require_duals = false`.
+`duality_handler = nothing`.
 
 If you attempt to simulate the value of a variable that is only defined in some
 of the stage problems, an error will be thrown. To over-ride this (and return a
@@ -1235,7 +1230,7 @@ function simulate(
     variables::Vector{Symbol} = Symbol[];
     sampling_scheme::AbstractSamplingScheme = InSampleMonteCarlo(),
     custom_recorders = Dict{Symbol,Function}(),
-    require_duals::Bool = true,
+    duality_handler::Union{Nothing,AbstractDualityHandler} = nothing,
     skip_undefined_variables::Bool = false,
     parallel_scheme::AbstractParallelScheme = Serial(),
     incoming_state::Dict{String,Float64} = _initial_state(model),
@@ -1247,7 +1242,7 @@ function simulate(
         variables;
         sampling_scheme = sampling_scheme,
         custom_recorders = custom_recorders,
-        require_duals = require_duals,
+        duality_handler = duality_handler,
         skip_undefined_variables = skip_undefined_variables,
         incoming_state = Dict(Symbol(k) => v for (k, v) in incoming_state),
     )
@@ -1299,7 +1294,7 @@ function evaluate(
         incoming_state,
         noise,
         Tuple{T,Any}[];
-        require_duals = false,
+        duality_handler = nothing,
     )
     return (
         stage_objective = ret.stage_objective,

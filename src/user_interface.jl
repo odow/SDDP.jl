@@ -390,7 +390,6 @@ mutable struct Node{T}
     pre_optimize_hook::Union{Nothing,Function}
     post_optimize_hook::Union{Nothing,Function}
     # Approach for handling discrete variables.
-    duality_handler::Any # TODO either leave untyped or define ::AbstractDualityHandler
     has_integrality::Bool
     # The user's optimizer. We use this in asynchronous mode.
     optimizer::Any
@@ -558,7 +557,6 @@ end
         optimizer = nothing,
         bellman_function = nothing,
         direct_mode::Bool = false,
-        duality_handler = ConicDuality(),
     ) where {T}
 
 Construct a policy graph based on the graph structure of `graph`. (See
@@ -598,7 +596,6 @@ function PolicyGraph(
     optimizer = nothing,
     bellman_function = nothing,
     direct_mode::Bool = false,
-    duality_handler = ConicDuality(),
 ) where {T}
     # Spend a one-off cost validating the graph.
     _validate_graph(graph)
@@ -650,7 +647,6 @@ function PolicyGraph(
             # The optimize hook defaults to nothing.
             nothing,
             nothing,
-            duality_handler,
             false,
             direct_mode ? nothing : optimizer,
             # The extension dictionary.

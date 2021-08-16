@@ -27,7 +27,6 @@ function easy_single_stage(duality_handler)
         stages = 2,
         sense = :Min,
         lower_bound = 0,
-        duality_handler = duality_handler,
         optimizer = GLPK.Optimizer,
     ) do sp, stage
         @variable(sp, x[1:2], Bin, SDDP.State, initial_value = 0)
@@ -42,7 +41,7 @@ function easy_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    _ = SDDP.relax_integrality(model)
+    _ = SDDP.relax_integrality(model, duality_handler)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
     obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
@@ -61,7 +60,6 @@ function xor_single_stage(duality_handler)
         stages = 2,
         sense = :Min,
         lower_bound = 0,
-        duality_handler = duality_handler,
         optimizer = GLPK.Optimizer,
     ) do sp, stage
         @variable(sp, x[1:2], Bin, SDDP.State, initial_value = 1)
@@ -81,7 +79,7 @@ function xor_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    _ = SDDP.relax_integrality(model)
+    _ = SDDP.relax_integrality(model, duality_handler)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
     obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
@@ -153,7 +151,7 @@ function test_relax_integrality()
         @test JuMP.lower_bound(node.subproblem[:i3]) == -8
         @test JuMP.upper_bound(node.subproblem[:i3]) == 2
     end
-    undo_relax = SDDP.relax_integrality(model)
+    undo_relax = SDDP.relax_integrality(model, SDDP.ConicDuality())
     for node in [model[1], model[2]]
         @test !JuMP.is_binary(node.subproblem[:b1])
         @test JuMP.lower_bound(node.subproblem[:b1]) == 0.0

@@ -40,7 +40,6 @@ function vehicle_location_model(duality_handler)
         stages = 10,
         lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
-        duality_handler = duality_handler,
     ) do sp, t
         ## Current location of each vehicle at each base.
         @variable(
@@ -107,6 +106,7 @@ function vehicle_location_model(duality_handler)
         iteration_limit = 50,
         log_frequency = 10,
         cut_deletion_minimum = 100,
+        duality_handler = duality_handler,
     )
     @test SDDP.calculate_bound(model) >= 1000
     return

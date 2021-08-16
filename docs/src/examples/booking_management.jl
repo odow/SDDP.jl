@@ -13,12 +13,7 @@
 
 using SDDP, GLPK, Test
 
-function booking_management_model(
-    num_days,
-    num_rooms,
-    num_requests,
-    duality_handler,
-)
+function booking_management_model(num_days, num_rooms, num_requests)
     ## maximum revenue that could be accrued.
     max_revenue = (num_rooms + num_requests) * num_days * num_rooms
     ## booking_requests is a vector of {0,1} arrays of size
@@ -41,7 +36,6 @@ function booking_management_model(
         upper_bound = max_revenue,
         sense = :Max,
         optimizer = GLPK.Optimizer,
-        duality_handler = duality_handler,
     ) do sp, stage
         @variable(
             sp,
@@ -93,16 +87,26 @@ function booking_management_model(
 end
 
 function booking_management(duality_handler)
-    m_1_2_5 = booking_management_model(1, 2, 5, duality_handler)
-    SDDP.train(m_1_2_5, iteration_limit = 10, log_frequency = 5)
+    m_1_2_5 = booking_management_model(1, 2, 5)
+    SDDP.train(
+        m_1_2_5,
+        iteration_limit = 10,
+        log_frequency = 5,
+        duality_handler = duality_handler,
+    )
     if duality_handler == SDDP.ConicDuality()
         @test SDDP.calculate_bound(m_1_2_5) >= 7.25 - 1e-4
     else
         @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol = 0.02)
     end
 
-    m_2_2_3 = booking_management_model(2, 2, 3, duality_handler)
-    SDDP.train(m_2_2_3, iteration_limit = 50, log_frequency = 10)
+    m_2_2_3 = booking_management_model(2, 2, 3)
+    SDDP.train(
+        m_2_2_3,
+        iteration_limit = 50,
+        log_frequency = 10,
+        duality_handler = duality_handler,
+    )
     if duality_handler == SDDP.ConicDuality()
         @test SDDP.calculate_bound(m_1_2_5) > 6.13
     else
