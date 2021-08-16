@@ -54,7 +54,7 @@ We also added support for strengthened Benders cuts, which we call
 We have a number of future plans in the works, including better Lagrangian
 solution methods and better ways of integrating the different types of duality
 handlers (e.g., start with [`SDDP.ConicDuality`](@ref), then shift to
-[`StrengthenedConicDuality`](@ref), then [`SDDP.LagrangianDuality`](@ref)).
+[`SDDP.StrengthenedConicDuality`](@ref), then [`SDDP.LagrangianDuality`](@ref)).
 
 If these sorts of things interest you, the code is now much more hackable, so
 please reach out or read [Issue #246](https://github.com/odow/SDDP.jl/issues/246).
