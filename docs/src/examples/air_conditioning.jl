@@ -25,7 +25,6 @@ function air_conditioning_model(duality_handler)
         stages = 3,
         lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
-        duality_handler = duality_handler,
     ) do sp, stage
         @variable(
             sp,
@@ -49,7 +48,12 @@ function air_conditioning_model(duality_handler)
             100 * production + 300 * overtime + 50 * stored_production.out
         )
     end
-    SDDP.train(model, iteration_limit = 20, log_frequency = 10)
+    SDDP.train(
+        model,
+        iteration_limit = 20,
+        log_frequency = 10,
+        duality_handler = duality_handler,
+    )
     @test SDDP.calculate_bound(model) ≈ 62_500.0
     return
 end
