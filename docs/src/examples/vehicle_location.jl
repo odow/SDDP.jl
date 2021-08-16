@@ -24,7 +24,7 @@
 
 using SDDP, GLPK, Test
 
-function vehicle_location_model(integrality_handler)
+function vehicle_location_model(duality_handler)
     hospital_location = 0
     bases = vcat(hospital_location, [20, 40, 60, 80, 100])
     vehicles = [1, 2, 3]
@@ -40,7 +40,6 @@ function vehicle_location_model(integrality_handler)
         stages = 10,
         lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
-        integrality_handler = integrality_handler,
     ) do sp, t
         ## Current location of each vehicle at each base.
         @variable(
@@ -107,13 +106,12 @@ function vehicle_location_model(integrality_handler)
         iteration_limit = 50,
         log_frequency = 10,
         cut_deletion_minimum = 100,
+        duality_handler = duality_handler,
     )
-    if integrality_handler == SDDP.ContinuousRelaxation()
-        @test isapprox(SDDP.calculate_bound(model), 1700, atol = 5)
-    end
+    @test SDDP.calculate_bound(model) >= 1000
     return
 end
 
-# Solve a continuous relaxation only, tough for SDDiP
+# Solve a continuous relaxation only, tough for LagrangianDuality
 
-vehicle_location_model(SDDP.ContinuousRelaxation())
+vehicle_location_model(SDDP.ConicDuality())

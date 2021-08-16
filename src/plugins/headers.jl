@@ -160,68 +160,36 @@ Returns a `Vector{Noise}` of noises sampled from `node.noise_terms` using
 """
 function sample_backward_noise_terms end
 
-# =========================== integrality_handlers =========================== #
+# =========================== duality_handlers =========================== #
 
 """
-    AbstractIntegralityHandler
+    AbstractDualityHandler
 
-The abstract type for the integrality handlers interface.
+The abstract type for the duality handler interface.
 """
-abstract type AbstractIntegralityHandler end
-
-"""
-    update_integrality_handler!(
-        integrality_handler::AbstractIntegralityHandler,
-        optimizer::Any,
-        num_states::Int
-    )
-
-Helper function to set up `integrality_handler`, allocating any necessary
-storage, given `num_states` state variables.
-"""
-function update_integrality_handler! end
-
-# Fallback
-function update_integrality_handler!(
-    integrality_handler::AbstractIntegralityHandler,
-    ::Any,
-    ::Int,
-)
-    return integrality_handler
-end
+abstract type AbstractDualityHandler end
 
 """
-    get_dual_variables(node::Node, integrality_handler::AbstractIntegralityHandler)
+    get_dual_solution(
+        node::Node,
+        duality_handler::AbstractDualityHandler,
+    )::Tuple{Float64,Dict{Symbol,Float64}}
 
-Returns a `Dict{Symbol, Float64}` where the keys are the names of the state
-variables and the values are the dual variables associated with the fishing
-constraint at `node`.
+Returns a `Float64` for the objective of the dual solution, and a
+`Dict{Symbol,Float64}` where the keys are the names of the state variables and
+the values are the dual variables associated with the fishing constraint at
+`node`.
 """
-function get_dual_variables end
+function get_dual_solution end
 
 """
-    relax_integrality(model::PolicyGraph, integrality_handler::AbstractIntegralityHandler)
+    relax_integrality(node::Node, handler::AbstractDualityHandler)
 
 Performs any binary/integer relaxations prior to the backward pass.
-Returns two vectors, the first containing a list of binary variables, and the
-second containing a list of integer variables. Integrality or binary constraints
-will be enforced for variables in these lists during policy simulation.
 
-See also [`enforce_integrality`](@ref).
+Returns a function that, when called with no arguments, undoes the relaxation.
 """
-function relax_integrality end
-
-"""
-setup_state(
-        subproblem::JuMP.Model, state::State, state_info::StateInfo,
-        name::String,
-        integrality_handler::AbstractIntegralityHandler)
-
-Adds the state variable `state` to the node of `subproblem` and registers the
-initial root state in the policy graph of `subproblem`. May perform
-modifications needed by `integrality_handler.` Returns nothing.
-"""
-function setup_state end
+relax_integrality(::Node, ::AbstractDualityHandler) = () -> nothing
 
 # ============================= parallel schemes ============================= #
 

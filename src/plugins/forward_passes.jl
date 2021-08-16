@@ -79,7 +79,7 @@ function forward_pass(
                 splice!(starting_states, rand(1:length(starting_states)))
         end
         # ===== End: starting state for infinite horizon =====
-        # Solve the subproblem, note that `require_duals = false`.
+        # Solve the subproblem, note that `duality_handler = nothing`.
         TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
             subproblem_results = solve_subproblem(
                 model,
@@ -87,7 +87,7 @@ function forward_pass(
                 incoming_state_value,
                 noise,
                 scenario_path[1:depth],
-                require_duals = false,
+                duality_handler = nothing,
             )
         end
         # Cumulate the stage_objective.

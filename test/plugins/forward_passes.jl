@@ -38,6 +38,7 @@ using Test
             IOBuffer(),
             1,
             SDDP.DefaultForwardPass(),
+            SDDP.ConicDuality(),
         ),
         SDDP.DefaultForwardPass(),
     )
@@ -84,6 +85,7 @@ end
                 IOBuffer(),
                 1,
                 fp,
+                SDDP.ConicDuality(),
             ),
             fp,
         )

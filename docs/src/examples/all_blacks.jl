@@ -16,7 +16,6 @@ function all_blacks()
         sense = :Max,
         upper_bound = 100.0,
         optimizer = GLPK.Optimizer,
-        integrality_handler = SDDP.SDDiP(),
     ) do sp, stage
         ## Seat remaining?
         @variable(sp, 0 <= x[1:N] <= 1, SDDP.State, Bin, initial_value = 1)
@@ -33,7 +32,12 @@ function all_blacks()
             sum(R[i, stage] * offer[i, stage] * accept_offer for i in 1:N)
         )
     end
-    SDDP.train(model, iteration_limit = 10, log_frequency = 5)
+    SDDP.train(
+        model,
+        iteration_limit = 10,
+        log_frequency = 5,
+        duality_handler = SDDP.LagrangianDuality(),
+    )
     @test SDDP.calculate_bound(model) ≈ 9.0
     return
 end

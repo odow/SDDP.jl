@@ -78,12 +78,13 @@ SDDP.AbstractRiskMeasure
 SDDP.adjust_probability
 ```
 
-### Integrality handlers
+### Duality handlers
 
 ```@docs
-SDDP.AbstractIntegralityHandler
-SDDP.ContinuousRelaxation
-SDDP.SDDiP
+SDDP.AbstractDualityHandler
+SDDP.ConicDuality
+SDDP.LagrangianDuality
+SDDP.StrengthenedConicDuality
 ```
 
 ## Simulating the policy

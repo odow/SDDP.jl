@@ -7,7 +7,7 @@
 
 using SDDP, LinearAlgebra, GLPK, Test
 
-function generation_expansion(integrality_handler)
+function generation_expansion(duality_handler)
     build_cost = 1e4
     use_cost = 4
     num_units = 5
@@ -28,7 +28,6 @@ function generation_expansion(integrality_handler)
         stages = 5,
         lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
-        integrality_handler = integrality_handler,
     ) do sp, stage
         @variable(
             sp,
@@ -72,10 +71,15 @@ function generation_expansion(integrality_handler)
             penalty * unmet
         )
     end
-    SDDP.train(model, iteration_limit = 50, log_frequency = 10)
+    SDDP.train(
+        model,
+        iteration_limit = 50,
+        log_frequency = 10,
+        duality_handler = duality_handler,
+    )
     @test SDDP.calculate_bound(model) ≈ 2.078860e6 atol = 1e3
     return
 end
 
-## Solve a continuous relaxation only, tough for SDDiP.
-generation_expansion(SDDP.ContinuousRelaxation())
+## Solve a continuous relaxation only, tough for LagrangianDuality.
+generation_expansion(SDDP.ConicDuality())
