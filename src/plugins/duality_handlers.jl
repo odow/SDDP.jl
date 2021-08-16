@@ -5,15 +5,15 @@
 
 # ========================= General methods ================================== #
 
-function get_integrality_handler(subproblem::JuMP.Model)
-    return get_node(subproblem).integrality_handler
+function get_duality_handler(subproblem::JuMP.Model)
+    return get_node(subproblem).duality_handler
 end
 
 function relax_integrality(model::PolicyGraph)
     undo = Function[]
     for (_, node) in model.nodes
         if node.has_integrality
-            push!(undo, relax_integrality(node, node.integrality_handler))
+            push!(undo, relax_integrality(node, node.duality_handler))
         end
     end
     function undo_relax()

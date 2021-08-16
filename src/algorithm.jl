@@ -390,7 +390,7 @@ function solve_subproblem(
     # variable. If require_duals=false, return an empty dictionary for
     # type-stability.
     objective, dual_values = if require_duals
-        get_dual_solution(node, node.integrality_handler)
+        get_dual_solution(node, node.duality_handler)
     else
         JuMP.objective_value(node.subproblem), Dict{Symbol,Float64}()
     end

@@ -160,7 +160,7 @@ Returns a `Vector{Noise}` of noises sampled from `node.noise_terms` using
 """
 function sample_backward_noise_terms end
 
-# =========================== integrality_handlers =========================== #
+# =========================== duality_handlers =========================== #
 
 """
     AbstractDualityHandler
@@ -172,7 +172,7 @@ abstract type AbstractDualityHandler end
 """
     get_dual_solution(
         node::Node,
-        integrality_handler::AbstractDualityHandler,
+        duality_handler::AbstractDualityHandler,
     )::Tuple{Float64,Dict{Symbol,Float64}}
 
 Returns a `Float64` for the objective of the dual solution, and a

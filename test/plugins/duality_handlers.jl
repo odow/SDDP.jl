@@ -22,12 +22,12 @@ end
 
 # Single-stage model helps set up a node and subproblem to test dual
 # calculations
-function easy_single_stage(integrality_handler)
+function easy_single_stage(duality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Min,
         lower_bound = 0,
-        integrality_handler = integrality_handler,
+        duality_handler = duality_handler,
         optimizer = GLPK.Optimizer,
     ) do sp, stage
         @variable(sp, x[1:2], Bin, SDDP.State, initial_value = 0)
@@ -45,9 +45,9 @@ function easy_single_stage(integrality_handler)
     _ = SDDP.relax_integrality(model)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
-    obj, dual_vars = SDDP.get_dual_solution(node, integrality_handler)
+    obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
 
-    if integrality_handler == SDDP.ConicDuality()
+    if duality_handler == SDDP.ConicDuality()
         @test all(values(dual_vars) .<= ones(2))
     else
         @test all(values(dual_vars) .>= -ones(2))
@@ -56,12 +56,12 @@ function easy_single_stage(integrality_handler)
 end
 
 # 'Exclusive or' function, no obvious choice of "tightest" dual
-function xor_single_stage(integrality_handler)
+function xor_single_stage(duality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Min,
         lower_bound = 0,
-        integrality_handler = integrality_handler,
+        duality_handler = duality_handler,
         optimizer = GLPK.Optimizer,
     ) do sp, stage
         @variable(sp, x[1:2], Bin, SDDP.State, initial_value = 1)
@@ -84,8 +84,8 @@ function xor_single_stage(integrality_handler)
     _ = SDDP.relax_integrality(model)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
-    obj, dual_vars = SDDP.get_dual_solution(node, integrality_handler)
-    if integrality_handler == SDDP.ConicDuality()
+    obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
+    if duality_handler == SDDP.ConicDuality()
         @test sum(values(dual_vars)) >= -1
     else
         @test sum(values(dual_vars)) <= 1
