@@ -170,13 +170,17 @@ The abstract type for the duality handler interface.
 abstract type AbstractDualityHandler end
 
 """
-    get_dual_variables(node::Node, integrality_handler::AbstractDualityHandler)
+    get_dual_solution(
+        node::Node,
+        integrality_handler::AbstractDualityHandler,
+    )::Tuple{Float64,Dict{Symbol,Float64}}
 
-Returns a `Dict{Symbol, Float64}` where the keys are the names of the state
-variables and the values are the dual variables associated with the fishing
-constraint at `node`.
+Returns a `Float64` for the objective of the dual solution, and a
+`Dict{Symbol,Float64}` where the keys are the names of the state variables and
+the values are the dual variables associated with the fishing constraint at
+`node`.
 """
-function get_dual_variables end
+function get_dual_solution end
 
 """
     relax_integrality(node::Node, handler::AbstractDualityHandler)

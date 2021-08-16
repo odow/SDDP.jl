@@ -34,8 +34,7 @@ Obtain dual variables in the backward pass using conic duality.
 """
 struct ConicDuality <: AbstractDualityHandler end
 
-# Requires node.subproblem to have been solved with DualStatus == FeasiblePoint
-function get_dual_variables(node::Node, ::ConicDuality)
+function get_dual_solution(node::Node, ::ConicDuality)
     if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         write_subproblem_to_file(
             node,
@@ -46,10 +45,11 @@ function get_dual_variables(node::Node, ::ConicDuality)
     # Note: due to JuMP's dual convention, we need to flip the sign for
     # maximization problems.
     dual_sign = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1 : -1
-    return Dict{Symbol,Float64}(
+    λ = Dict{Symbol,Float64}(
         name => dual_sign * JuMP.dual(JuMP.FixRef(state.in)) for
         (name, state) in node.states
     )
+    return objective_value(node.subproblem), λ
 end
 
 function relax_integrality(node::Node, ::ConicDuality)
@@ -92,7 +92,7 @@ mutable struct LagrangianDuality <: AbstractDualityHandler
 end
 
 """
-    get_dual_variables(node::Node, lagrange::LagrangianDuality)
+    get_dual_solution(node::Node, lagrange::LagrangianDuality)
 
 Given the problem
 ```
@@ -116,7 +116,7 @@ where `h(x̄) = x̄ - x`.
 In the maximization case, the optimization senses are reversed, but the sign of
 λ stays the same.
 """
-function get_dual_variables(node::Node, lagrange::LagrangianDuality)
+function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     # Assume the model has been solved. Solving the MIP is usually very quick
     # relative to solving for the Lagrangian duals, so we cheat and use the
     # solved model's objective as our bound while searching for the optimal
@@ -125,10 +125,13 @@ function get_dual_variables(node::Node, lagrange::LagrangianDuality)
     # Query the current MIP solution  here. For an optimal dual, we must have
     # equal objective  values. See the check below.
     primal_obj = JuMP.objective_value(node.subproblem)
-    _, λ = _solve_lagrange_with_kelleys(node, lagrange, primal_obj)
-    return Dict{Symbol,Float64}(
-        name => λ[i] for (i, name) in enumerate(keys(node.states))
+    # TODO(odow): check the dual objective value is equal to the primal
+    # objective value.
+    _, λ_vector = _solve_lagrange_with_kelleys(node, lagrange, primal_obj)
+    λ = Dict{Symbol,Float64}(
+        name => λ_vector[i] for (i, name) in enumerate(keys(node.states))
     )
+    return primal_obj, λ
 end
 
 """

@@ -385,16 +385,14 @@ function solve_subproblem(
 
     state = get_outgoing_state(node)
     stage_objective = stage_objective_value(node.stage_objective)
-    objective = JuMP.objective_value(node.subproblem)
-
     # If require_duals = true, check for dual feasibility and return a dict with
     # the dual on the fixed constraint associated with each incoming state
     # variable. If require_duals=false, return an empty dictionary for
     # type-stability.
-    dual_values = if require_duals
-        get_dual_variables(node, node.integrality_handler)
+    objective, dual_values = if require_duals
+        get_dual_solution(node, node.integrality_handler)
     else
-        Dict{Symbol,Float64}()
+        JuMP.objective_value(node.subproblem), Dict{Symbol,Float64}()
     end
 
     if node.post_optimize_hook !== nothing
