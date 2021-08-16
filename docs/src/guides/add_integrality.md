@@ -20,7 +20,7 @@ binary and integer variables.
 ### Breaking changes
 
  * We have renamed `SDDiP` to [`SDDP.LagrangianDuality`](@ref).
- * We have renamed `ContinuousRelaxation` to [`ConicDuality`](@ref).
+ * We have renamed `ContinuousRelaxation` to [`SDDP.ConicDuality`](@ref).
  * Instead of passing the argument to [`SDDP.PolicyGraph`](@ref), you now pass
    it to [`SDDP.train`](@ref), e.g.,
    `SDDP.train(model; duality_handler = SDDP.LagrangianDuality())`
@@ -53,8 +53,8 @@ We also added support for strengthened Benders cuts, which we call
 
 We have a number of future plans in the works, including better Lagrangian
 solution methods and better ways of integrating the different types of duality
-handlers (e.g., start with ConicDuality, then shift to StrengthenedConicDuality,
-then LagrangianDuality).
+handlers (e.g., start with [`SDDP.ConicDuality`](@ref), then shift to
+[`StrengthenedConicDuality`](@ref), then [`SDDP.LagrangianDuality`](@ref)).
 
 If these sorts of things interest you, the code is now much more hackable, so
 please reach out or read [Issue #246](https://github.com/odow/SDDP.jl/issues/246).
