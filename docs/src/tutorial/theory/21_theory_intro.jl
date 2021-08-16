@@ -190,6 +190,10 @@ end
 # (This is the algorithmic simplification that leads us to add $\bar{x}$ and the
 # fishing constraint $\bar{x} = x$.)
 
+# !!! tip
+#     The subproblem can have binary and integer variables, but you'll need to
+#     use Lagrangian duality to compute a subgradient!
+
 # Stochastic dual dynamic programming converts this problem into a tractable
 # form by applying Kelley's cutting plane algorithm to the $V_j$ functions in
 # the cost-to-go term:
