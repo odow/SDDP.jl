@@ -665,11 +665,6 @@ function PolicyGraph(
         if length(node.noise_terms) == 0
             push!(node.noise_terms, Noise(nothing, 1.0))
         end
-        update_integrality_handler!(
-            integrality_handler,
-            optimizer,
-            length(node.states),
-        )
         ctypes = JuMP.list_of_constraint_types(subproblem)
         node.has_integrality =
             (JuMP.VariableRef, MOI.Integer) in ctypes ||

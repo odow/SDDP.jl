@@ -209,23 +209,6 @@ function test_relax_integrality()
     return
 end
 
-function test_update_integrality_handler_LagrangianDuality()
-    integrality_handler = SDDP.LagrangianDuality()
-    SDDP.update_integrality_handler!(integrality_handler, GLPK.Optimizer, 3)
-    @test integrality_handler.optimizer == GLPK.Optimizer
-    return
-end
-
-function test_update_integrality_handler_ConicDuality()
-    integrality_handler = SDDP.ConicDuality()
-    @test SDDP.update_integrality_handler!(
-        integrality_handler,
-        GLPK.Optimizer,
-        3,
-    ) == integrality_handler
-    return
-end
-
 function test_kelleys_min()
     model = SDDP.LinearPolicyGraph(
         stages = 10,

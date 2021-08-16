@@ -77,29 +77,21 @@ All state variables are assumed to take nonnegative values only.
 """
 mutable struct LagrangianDuality <: AbstractDualityHandler
     iteration_limit::Int
-    optimizer::Any
     atol::Float64
     rtol::Float64
+    optimizer::Any
 
     function LagrangianDuality(;
         iteration_limit::Int = 100,
         atol::Float64 = 1e-8,
         rtol::Float64 = 1e-8,
+        optimizer = nothing,
     )
-        return new(iteration_limit, nothing, atol, rtol)
+        return new(iteration_limit, atol, rtol, optimizer)
     end
 end
 
 relax_integrality(::Node, ::LagrangianDuality) = () -> nothing
-
-function update_integrality_handler!(
-    lagrange::LagrangianDuality,
-    optimizer::Any,
-    ::Int,
-)
-    lagrange.optimizer = optimizer
-    return lagrange
-end
 
 """
     get_dual_variables(node::Node, lagrange::LagrangianDuality)
@@ -222,7 +214,11 @@ function _solve_lagrange_with_kelleys(
         JuMP.set_upper_bound(state.in, 1e9)
     end
     primal_sense = JuMP.objective_sense(node.subproblem)
-    model = JuMP.Model(lagrange.optimizer)
+    model = if lagrange.optimizer === nothing
+        JuMP.Model(node.optimizer)
+    else
+        JuMP.Model(lagrange.optimizer)
+    end
     @variable(model, λ[1:num_states])
     if primal_sense == MOI.MIN_SENSE
         @variable(model, t <= initial_bound)

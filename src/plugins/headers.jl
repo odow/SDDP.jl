@@ -170,27 +170,6 @@ The abstract type for the integrality handlers interface.
 abstract type AbstractDualityHandler end
 
 """
-    update_integrality_handler!(
-        integrality_handler::AbstractDualityHandler,
-        optimizer::Any,
-        num_states::Int
-    )
-
-Helper function to set up `integrality_handler`, allocating any necessary
-storage, given `num_states` state variables.
-"""
-function update_integrality_handler! end
-
-# Fallback
-function update_integrality_handler!(
-    integrality_handler::AbstractDualityHandler,
-    ::Any,
-    ::Int,
-)
-    return integrality_handler
-end
-
-"""
     get_dual_variables(node::Node, integrality_handler::AbstractDualityHandler)
 
 Returns a `Dict{Symbol, Float64}` where the keys are the names of the state
