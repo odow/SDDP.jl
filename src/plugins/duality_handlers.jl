@@ -12,7 +12,7 @@ binary and integer variables.
 ## Breaking changes
 
  * We have renamed `SDDiP` to `LagrangianDuality`.
- * We have renamed `ContinuousRelaxation` to `ConicDuality`.
+ * We have renamed `ContinuousRelaxation` to `ContinuousConicDuality`.
  * Instead of passing the argument to `PolicyGraph`, you now pass it to
    `train`, e.g., `SDDP.train(model; duality_handler = SDDP.LagrangianDuality())`
  * We no longer turn continuous and integer states into a binary expansion. If
@@ -44,8 +44,8 @@ We also added support for strengthened Benders cuts, which we call
 
 We have a number of future plans in the works, including better Lagrangian
 solution methods and better ways of integrating the different types of duality
-handlers (e.g., start with ConicDuality, then shift to StrengthenedConicDuality,
-then LagrangianDuality).
+handlers (e.g., start with ContinuousConicDuality, then shift to
+StrengthenedConicDuality, then LagrangianDuality).
 
 If these sorts of things interest you, the code is now much more hackable, so
 please reach out or read https://github.com/odow/SDDP.jl/issues/246.
@@ -61,14 +61,14 @@ SDDiP(args...; kwargs...) = _deprecate_integrality_handler()
 
 ContinuousRelaxation(args...; kwargs...) = _deprecate_integrality_handler()
 
-function relax_integrality(
+function prepare_backward_pass(
     model::PolicyGraph,
     duality_handler::AbstractDualityHandler,
 )
     undo = Function[]
     for (_, node) in model.nodes
         if node.has_integrality
-            push!(undo, relax_integrality(node, duality_handler))
+            push!(undo, prepare_backward_pass(node, duality_handler))
         end
     end
     function undo_relax()
@@ -87,13 +87,30 @@ end
 # ========================= Continuous relaxation ============================ #
 
 """
-    ConicDuality()
+    ContinuousConicDuality()
 
-Obtain dual variables in the backward pass using conic duality.
+Compute dual variables in the backward pass using conic duality, relaxing any
+binary or integer restrictions as necessary.
+
+## Theory
+
+Given the problem
+```
+min Cᵢ(x̄, u, w) + θᵢ
+ st (x̄, x′, u) in Xᵢ(w) ∪ S
+    x̄ - x == 0          [λ]
+```
+where `S ⊆ ℝ×ℤ`, we relax integrality and using conic duality to solve for `λ`
+in the problem:
+```
+min Cᵢ(x̄, u, w) + θᵢ
+ st (x̄, x′, u) in Xᵢ(w)
+    x̄ - x == 0          [λ]
+```
 """
-struct ConicDuality <: AbstractDualityHandler end
+struct ContinuousConicDuality <: AbstractDualityHandler end
 
-function get_dual_solution(node::Node, ::ConicDuality)
+function get_dual_solution(node::Node, ::ContinuousConicDuality)
     if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         write_subproblem_to_file(
             node,
@@ -111,7 +128,7 @@ function get_dual_solution(node::Node, ::ConicDuality)
     return objective_value(node.subproblem), λ
 end
 
-function relax_integrality(node::Node, ::ConicDuality)
+function prepare_backward_pass(node::Node, ::ContinuousConicDuality)
     if !node.has_integrality
         return () -> nothing
     end
@@ -139,6 +156,54 @@ cutting plane method.
  * If `optimizer` is `nothing`, use the same solver as the main PolicyGraph.
    Otherwise, pass a new optimizer factory, potentially with different
    tolerances to ensure tighter convergence.
+
+## Theory
+
+Given the problem
+```
+min Cᵢ(x̄, u, w) + θᵢ
+ st (x̄, x′, u) in Xᵢ(w) ∪ S
+    x̄ - x == 0          [λ]
+```
+where `S ⊆ ℝ×ℤ`, we solve the problem `max L(λ)`, where:
+```
+L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
+        st (x̄, x′, u) in Xᵢ(w) ∪ S
+```
+and where `h(x̄) = x̄ - x`.
+
+In the maximization case, the optimization senses are reversed, but the sign of
+λ stays the same.
+
+The Lagrangian problem is computed using Kelleys cutting plane method.
+
+For primal minimization problems, we solve:
+```
+L(λ_k) = max t
+          st t <= t′ + h(x̄_k)' * (λ - λ_k) for k=1,...
+             t <= initial_bound
+```
+For primal maximization problems, we solve:
+```
+L(λ) >= min t
+         st t >= t′ + h(x̄_k)' * (λ - λ_k) for k=1,...
+            t >= initial_bound
+```
+
+To generate a new cut we solve the cutting plane problem to generate an estimate
+`λ_k`. Then we solve the primal problem:
+```
+L(λ_k) = min/max Cᵢ(x̄, u, w) + θᵢ - λ_k' (x̄ - x_k)
+              st (x̄, x′, u) in Xᵢ(w) ∪ S
+```
+using our estimate `λ_k`.
+
+By inspection, subgradient of `L(λ_k)` is the slack term `-(x̄ - x_k)`.
+
+We converge once `L(λ_k) ≈ t` to the tolerance given by `atol` and `rtol`.
+
+If we hit the iteration limit, then we terminate because something probably went
+wrong.
 """
 mutable struct LagrangianDuality <: AbstractDualityHandler
     iteration_limit::Int
@@ -156,31 +221,6 @@ mutable struct LagrangianDuality <: AbstractDualityHandler
     end
 end
 
-"""
-    get_dual_solution(node::Node, lagrange::LagrangianDuality)
-
-Given the problem
-```
-min Cᵢ(x̄, u, w) + θᵢ
- st (x̄, x′, u) in Xᵢ(w)
-    x̄ - x == 0          [λ]
-```
-Return the dual solution `λ` computed using Lagrangian duality.
-
-That is, solve the problem:
-```
-max L(λ)
-```
-where:
-```
-L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
-        st (x̄, x′, u) in Xᵢ(w)
-```
-where `h(x̄) = x̄ - x`.
-
-In the maximization case, the optimization senses are reversed, but the sign of
-λ stays the same.
-"""
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     # Assume the model has been solved. Solving the MIP is usually very quick
     # relative to solving for the Lagrangian duals, so we cheat and use the
@@ -199,26 +239,6 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     return primal_obj, λ
 end
 
-"""
-    _solve_primal_problem(
-        model::JuMP.Model,
-        λ::Vector{Float64},
-        h_expr::Vector{GenericAffExpr{Float64,VariableRef}},
-        h_k::Vector{Float64},
-    )
-
-Solve the problem:
-```
-L(λ_k) = min/max Cᵢ(x̄, u, w) + θᵢ - λ_k' (x̄ - x_k)
-              st (x̄, x′, u) in Xᵢ(w)
-```
-where `h_expr = x̄ - x_k` and store the solution of `x̄ - x_k` in `h_k`.
-
-By inspection, subgradient of `L(λ_k)` is the slack term `-(x̄ - x_k)`.
-
-!!! warning
-    The dual of λ_k is independent of the optimization sense!
-"""
 function _solve_primal_problem(
     model::JuMP.Model,
     λ::Vector{Float64},
@@ -238,28 +258,6 @@ function _solve_primal_problem(
     return L_λ
 end
 
-"""
-    _solve_lagrange_with_kelleys(
-        node::Node,
-        lagrange::LagrangianDuality,
-        initial_bound::Float64,
-    )
-
-We solve the Lagrangian dual problem using Kelley's cutting plane algorithm.
-
-For primal minimization problems, we solve:
-```
-L(λ_k) = max t
-          st t <= t′ + h(x̄)' * (λ - λ_k)
-             t <= initial_bound
-```
-For primal maximization problems, we solve:
-```
-L(λ) >= min t
-         st t >= t′ + h(x̄)' * (λ - λ_k)
-            t >= initial_bound
-```
-"""
 function _solve_lagrange_with_kelleys(
     node::Node,
     lagrange::LagrangianDuality,
@@ -326,38 +324,36 @@ function _solve_lagrange_with_kelleys(
     return L_best, λ_star
 end
 
-# ======================= StrengthenedConicDuality =========================== #
+# ==================== StrengthenedConicDuality ==================== #
 
 """
     StrengthenedConicDuality()
 
 Obtain dual variables in the backward pass using strengthened conic duality.
-"""
-mutable struct StrengthenedConicDuality <: AbstractDualityHandler end
 
-"""
-    get_dual_solution(node::Node, ::StrengthenedConicDuality)
+## Theory
 
 Given the problem
 ```
 min Cᵢ(x̄, u, w) + θᵢ
- st (x̄, x′, u) in Xᵢ(w)
+ st (x̄, x′, u) in Xᵢ(w) ∪ S
     x̄ - x == 0          [λ]
 ```
-Return the dual solution `λ` computed using strengthened conic duality.
+we first obtain an estiamte for `λ` using [`ContinuousConicDuality`](@ref).
 
-That is, compute λ using conic duality (ignoring integrality), then evaluate the
-Lagrangian function:
+Then, we evaluate the Lagrangian function:
 ```
-L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
-        st (x̄, x′, u) in Xᵢ(w)
+L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' (x̄ - x`)
+        st (x̄, x′, u) in Xᵢ(w) ∪ S
 ```
-where `h(x̄) = x̄ - x` to obtain a better estimate of the intercept.
+to obtain a better estimate of the intercept.
 """
+mutable struct StrengthenedConicDuality <: AbstractDualityHandler end
+
 function get_dual_solution(node::Node, ::StrengthenedConicDuality)
-    undo_relax = relax_integrality(node, ConicDuality())
+    undo_relax = prepare_backward_pass(node, ContinuousConicDuality())
     optimize!(node.subproblem)
-    conic_obj, conic_dual = get_dual_solution(node, ConicDuality())
+    conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_relax()
     if !node.has_integrality
         return conic_obj, conic_dual  # If we're linear, return this!

@@ -462,8 +462,8 @@ function backward_pass(
     objective_states::Vector{NTuple{N,Float64}},
     belief_states::Vector{Tuple{Int,Dict{T,Float64}}},
 ) where {T,NoiseType,N}
-    TimerOutputs.@timeit SDDP_TIMER "relax_integrality" begin
-        undo_relaxation = relax_integrality(model, options.duality_handler)
+    TimerOutputs.@timeit SDDP_TIMER "prepare_backward_pass" begin
+        restore_duality = prepare_backward_pass(model, options.duality_handler)
     end
     # TODO(odow): improve storage type.
     cuts = Dict{T,Vector{Any}}(index => Any[] for index in keys(model.nodes))
@@ -567,8 +567,8 @@ function backward_pass(
             end
         end
     end
-    TimerOutputs.@timeit SDDP_TIMER "undo_relaxation" begin
-        undo_relaxation()
+    TimerOutputs.@timeit SDDP_TIMER "prepare_backward_pass" begin
+        restore_duality()
     end
     return cuts
 end
@@ -898,7 +898,7 @@ function train(
     forward_pass::AbstractForwardPass = DefaultForwardPass(),
     forward_pass_resampling_probability::Union{Nothing,Float64} = nothing,
     add_to_existing_cuts::Bool = false,
-    duality_handler::AbstractDualityHandler = SDDP.ConicDuality(),
+    duality_handler::AbstractDualityHandler = SDDP.ContinuousConicDuality(),
 )
     if !add_to_existing_cuts && model.most_recent_training_results !== nothing
         @warn("""

@@ -82,4 +82,4 @@ function generation_expansion(duality_handler)
 end
 
 ## Solve a continuous relaxation only, tough for LagrangianDuality.
-generation_expansion(SDDP.ConicDuality())
+generation_expansion(SDDP.ContinuousConicDuality())
