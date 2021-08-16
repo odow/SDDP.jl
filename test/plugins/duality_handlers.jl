@@ -222,14 +222,13 @@ function test_kelleys_min()
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
         JuMP.optimize!(model[t].subproblem)
-        lobj, lagrange = SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
+        lobj, lagrange =
+            SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
         JuMP.optimize!(model[t].subproblem)
         cobj, conic = SDDP.get_dual_solution(model[t], SDDP.ConicDuality())
         @test isapprox(lobj, cobj, atol = 1e-5)
-        csc, scd = SDDP.get_dual_solution(
-            model[t],
-            SDDP.StrengthenedConicDuality(),
-        )
+        csc, scd =
+            SDDP.get_dual_solution(model[t], SDDP.StrengthenedConicDuality())
         @test csc == cobj
         for (k, v) in lagrange
             @test isapprox(v, conic[k], atol = 1e-5)
@@ -255,14 +254,13 @@ function test_kelleys_max()
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
         JuMP.optimize!(model[t].subproblem)
-        lobj, lagrange = SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
+        lobj, lagrange =
+            SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
         JuMP.optimize!(model[t].subproblem)
         cobj, conic = SDDP.get_dual_solution(model[t], SDDP.ConicDuality())
         @test isapprox(lobj, cobj, atol = 1e-5)
-        csc, scd = SDDP.get_dual_solution(
-            model[t],
-            SDDP.StrengthenedConicDuality(),
-        )
+        csc, scd =
+            SDDP.get_dual_solution(model[t], SDDP.StrengthenedConicDuality())
         @test csc == cobj
         for (k, v) in lagrange
             @test isapprox(v, conic[k], atol = 1e-5)
@@ -291,11 +289,10 @@ function test_kelleys_ip_min()
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.0))
         JuMP.optimize!(model[t].subproblem)
-        lobj, lagrange = SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
-        csc, scd = SDDP.get_dual_solution(
-            model[t],
-            SDDP.StrengthenedConicDuality(),
-        )
+        lobj, lagrange =
+            SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
+        csc, scd =
+            SDDP.get_dual_solution(model[t], SDDP.StrengthenedConicDuality())
         @test isapprox(lobj, csc, atol = 1e-5)
         for (k, v) in lagrange
             @test isapprox(v, scd[k], atol = 1e-5)
@@ -322,10 +319,8 @@ function test_kelleys_ip_max()
         SDDP.set_incoming_state(model[t], Dict(:x => 2.0))
         JuMP.optimize!(model[t].subproblem)
         lobj, lagrange = SDDP.get_dual_solution(model[t], l)
-        csc, scd = SDDP.get_dual_solution(
-            model[t],
-            SDDP.StrengthenedConicDuality(),
-        )
+        csc, scd =
+            SDDP.get_dual_solution(model[t], SDDP.StrengthenedConicDuality())
         @test isapprox(lobj, csc, atol = 1e-5)
         for (k, v) in lagrange
             @test isapprox(v, scd[k], atol = 1e-5)

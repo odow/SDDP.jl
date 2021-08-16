@@ -67,17 +67,20 @@ end
         iteration_limit::Int = 100,
         atol::Float64 = 1e-8,
         rtol::Float64 = 1e-8,
+        optimizer = nothing
     )
 
-Obtain dual variables in the backward pass using Lagrangian duality.
+Obtain dual variables in the backward pass using Lagrangian duality and Kelley's
+cutting plane method.
 
-Kelley's method is used to compute Lagrange multipliers.
+## Arguments
 
-`iteration_limit` controls the maximum number of iterations
-`atol` and `rtol` are the absolute and relative tolerances used in the
-termination criteria.
-
-All state variables are assumed to take nonnegative values only.
+ * `iteration_limit` controls the maximum number of iterations
+ * `atol` and `rtol` are the absolute and relative tolerances used in the
+   termination criteria
+ * If `optimizer` is `nothing`, use the same solver as the main PolicyGraph.
+   Otherwise, pass a new optimizer factory, potentially with different
+   tolerances to ensure tighter convergence.
 """
 mutable struct LagrangianDuality <: AbstractDualityHandler
     iteration_limit::Int
@@ -186,13 +189,13 @@ end
 
 We solve the Lagrangian dual problem using Kelley's cutting plane algorithm.
 
-For
+For primal minimization problems, we solve:
 ```
 L(λ_k) = max t
           st t <= t′ + h(x̄)' * (λ - λ_k)
              t <= initial_bound
 ```
-
+For primal maximization problems, we solve:
 ```
 L(λ) >= min t
          st t >= t′ + h(x̄)' * (λ - λ_k)
