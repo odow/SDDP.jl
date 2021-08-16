@@ -81,7 +81,7 @@ SDDP.adjust_probability
 ### Integrality handlers
 
 ```@docs
-SDDP.AbstractIntegralityHandler
+SDDP.AbstractDualityHandler
 SDDP.ConicDuality
 SDDP.LagrangianDuality
 ```

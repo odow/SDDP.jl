@@ -24,7 +24,7 @@
 
 using SDDP, GLPK, Test
 
-function vehicle_location_model(integrality_handler)
+function vehicle_location_model(duality_handler)
     hospital_location = 0
     bases = vcat(hospital_location, [20, 40, 60, 80, 100])
     vehicles = [1, 2, 3]
@@ -40,7 +40,7 @@ function vehicle_location_model(integrality_handler)
         stages = 10,
         lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
-        integrality_handler = integrality_handler,
+        duality_handler = duality_handler,
     ) do sp, t
         ## Current location of each vehicle at each base.
         @variable(

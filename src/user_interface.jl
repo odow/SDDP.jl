@@ -390,7 +390,7 @@ mutable struct Node{T}
     pre_optimize_hook::Union{Nothing,Function}
     post_optimize_hook::Union{Nothing,Function}
     # Approach for handling discrete variables.
-    integrality_handler::Any # TODO either leave untyped or define ::AbstractIntegralityHandler
+    integrality_handler::Any # TODO either leave untyped or define ::AbstractDualityHandler
     has_integrality::Bool
     # The user's optimizer. We use this in asynchronous mode.
     optimizer::Any

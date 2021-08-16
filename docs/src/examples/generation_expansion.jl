@@ -7,7 +7,7 @@
 
 using SDDP, LinearAlgebra, GLPK, Test
 
-function generation_expansion(integrality_handler)
+function generation_expansion(duality_handler)
     build_cost = 1e4
     use_cost = 4
     num_units = 5
@@ -28,7 +28,7 @@ function generation_expansion(integrality_handler)
         stages = 5,
         lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
-        integrality_handler = integrality_handler,
+        duality_handler = duality_handler,
     ) do sp, stage
         @variable(
             sp,

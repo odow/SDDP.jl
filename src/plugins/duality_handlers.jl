@@ -32,7 +32,7 @@ end
 
 Obtain dual variables in the backward pass using conic duality.
 """
-struct ConicDuality <: AbstractIntegralityHandler end
+struct ConicDuality <: AbstractDualityHandler end
 
 # Requires node.subproblem to have been solved with DualStatus == FeasiblePoint
 function get_dual_variables(node::Node, ::ConicDuality)
@@ -75,7 +75,7 @@ termination criteria.
 
 All state variables are assumed to take nonnegative values only.
 """
-mutable struct LagrangianDuality <: AbstractIntegralityHandler
+mutable struct LagrangianDuality <: AbstractDualityHandler
     iteration_limit::Int
     optimizer::Any
     atol::Float64

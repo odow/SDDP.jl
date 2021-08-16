@@ -20,12 +20,12 @@
 
 using SDDP, GLPK, Test
 
-function air_conditioning_model(integrality_handler)
+function air_conditioning_model(duality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
-        integrality_handler = integrality_handler,
+        duality_handler = duality_handler,
     ) do sp, stage
         @variable(
             sp,
@@ -54,6 +54,6 @@ function air_conditioning_model(integrality_handler)
     return
 end
 
-for integrality_handler in [SDDP.LagrangianDuality(), SDDP.ConicDuality()]
-    air_conditioning_model(integrality_handler)
+for duality_handler in [SDDP.LagrangianDuality(), SDDP.ConicDuality()]
+    air_conditioning_model(duality_handler)
 end

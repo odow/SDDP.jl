@@ -163,15 +163,15 @@ function sample_backward_noise_terms end
 # =========================== integrality_handlers =========================== #
 
 """
-    AbstractIntegralityHandler
+    AbstractDualityHandler
 
 The abstract type for the integrality handlers interface.
 """
-abstract type AbstractIntegralityHandler end
+abstract type AbstractDualityHandler end
 
 """
     update_integrality_handler!(
-        integrality_handler::AbstractIntegralityHandler,
+        integrality_handler::AbstractDualityHandler,
         optimizer::Any,
         num_states::Int
     )
@@ -183,7 +183,7 @@ function update_integrality_handler! end
 
 # Fallback
 function update_integrality_handler!(
-    integrality_handler::AbstractIntegralityHandler,
+    integrality_handler::AbstractDualityHandler,
     ::Any,
     ::Int,
 )
@@ -191,7 +191,7 @@ function update_integrality_handler!(
 end
 
 """
-    get_dual_variables(node::Node, integrality_handler::AbstractIntegralityHandler)
+    get_dual_variables(node::Node, integrality_handler::AbstractDualityHandler)
 
 Returns a `Dict{Symbol, Float64}` where the keys are the names of the state
 variables and the values are the dual variables associated with the fishing
@@ -200,7 +200,7 @@ constraint at `node`.
 function get_dual_variables end
 
 """
-    relax_integrality(node::Node, handler::AbstractIntegralityHandler)
+    relax_integrality(node::Node, handler::AbstractDualityHandler)
 
 Performs any binary/integer relaxations prior to the backward pass.
 
