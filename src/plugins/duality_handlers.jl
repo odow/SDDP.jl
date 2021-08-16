@@ -54,6 +54,9 @@ function get_dual_solution(node::Node, ::ConicDuality)
 end
 
 function relax_integrality(node::Node, ::ConicDuality)
+    if !node.has_integrality
+        return () -> nothing
+    end
     return JuMP.relax_integrality(node.subproblem)
 end
 
@@ -260,4 +263,58 @@ function _solve_lagrange_with_kelleys(
         JuMP.fix(state.in, incoming_state_value[i], force = true)
     end
     return L_best, λ_star
+end
+
+# ======================= StrengthenedConicDuality =========================== #
+
+"""
+    StrengthenedConicDuality()
+
+Obtain dual variables in the backward pass using strengthened conic duality.
+"""
+mutable struct StrengthenedConicDuality <: AbstractDualityHandler end
+
+"""
+    get_dual_solution(node::Node, ::StrengthenedConicDuality)
+
+Given the problem
+```
+min Cᵢ(x̄, u, w) + θᵢ
+ st (x̄, x′, u) in Xᵢ(w)
+    x̄ - x == 0          [λ]
+```
+Return the dual solution `λ` computed using strengthened conic duality.
+
+That is, compute λ using conic duality (ignoring integrality), then evaluate the
+Lagrangian function:
+```
+L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
+        st (x̄, x′, u) in Xᵢ(w)
+```
+where `h(x̄) = x̄ - x` to obtain a better estimate of the intercept.
+"""
+function get_dual_solution(node::Node, ::StrengthenedConicDuality)
+    undo_relax = relax_integrality(node, ConicDuality())
+    optimize!(node.subproblem)
+    conic_obj, conic_dual = get_dual_solution(node, ConicDuality())
+    undo_relax()
+    if !node.has_integrality
+        return conic_obj, conic_dual  # If we're linear, return this!
+    end
+    num_states = length(node.states)
+    λ_k, h_k, x = zeros(num_states), zeros(num_states), zeros(num_states)
+    h_expr = Vector{AffExpr}(undef, num_states)
+    for (i, (key, state)) in enumerate(node.states)
+        x[i] = JuMP.fix_value(state.in)
+        h_expr[i] = @expression(node.subproblem, state.in - x[i])
+        JuMP.unfix(state.in)
+        JuMP.set_lower_bound(state.in, -1e9)
+        JuMP.set_upper_bound(state.in, 1e9)
+        λ_k[i] = conic_dual[key]
+    end
+    lagrangian_obj = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
+    for (i, (_, state)) in enumerate(node.states)
+        JuMP.fix(state.in, x[i], force = true)
+    end
+    return lagrangian_obj, conic_dual
 end

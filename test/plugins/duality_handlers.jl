@@ -218,18 +218,22 @@ function test_kelleys_min()
         @constraint(sp, x.out == x.in)
     end
     set_optimizer(model, GLPK.Optimizer)
-    l = SDDP.LagrangianDuality()
-    l.optimizer = GLPK.Optimizer
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
         JuMP.optimize!(model[t].subproblem)
-        lobj, lagrange = SDDP.get_dual_solution(model[t], l)
+        lobj, lagrange = SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
         JuMP.optimize!(model[t].subproblem)
         cobj, conic = SDDP.get_dual_solution(model[t], SDDP.ConicDuality())
         @test isapprox(lobj, cobj, atol = 1e-5)
+        csc, scd = SDDP.get_dual_solution(
+            model[t],
+            SDDP.StrengthenedConicDuality(),
+        )
+        @test csc == cobj
         for (k, v) in lagrange
             @test isapprox(v, conic[k], atol = 1e-5)
+            @test conic[k] == scd[k]
         end
     end
     return
@@ -247,18 +251,84 @@ function test_kelleys_max()
         @constraint(sp, x.out == x.in)
     end
     set_optimizer(model, GLPK.Optimizer)
-    l = SDDP.LagrangianDuality()
-    l.optimizer = GLPK.Optimizer
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
         JuMP.optimize!(model[t].subproblem)
-        lobj, lagrange = SDDP.get_dual_solution(model[t], l)
+        lobj, lagrange = SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
         JuMP.optimize!(model[t].subproblem)
         cobj, conic = SDDP.get_dual_solution(model[t], SDDP.ConicDuality())
         @test isapprox(lobj, cobj, atol = 1e-5)
+        csc, scd = SDDP.get_dual_solution(
+            model[t],
+            SDDP.StrengthenedConicDuality(),
+        )
+        @test csc == cobj
         for (k, v) in lagrange
             @test isapprox(v, conic[k], atol = 1e-5)
+            @test conic[k] == scd[k]
+        end
+    end
+    return
+end
+
+"""
+Test duality in a naturally integer problem
+"""
+function test_kelleys_ip_min()
+    model = SDDP.LinearPolicyGraph(
+        stages = 10,
+        sense = :Min,
+        lower_bound = -1000,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, x, Int, SDDP.State, initial_value = 1.0)
+        @stageobjective(sp, (-5 + t) * x.out)
+        @constraint(sp, x.out == x.in)
+    end
+    set_optimizer(model, GLPK.Optimizer)
+    for t in 1:10
+        SDDP.parameterize(model[t], nothing)
+        SDDP.set_incoming_state(model[t], Dict(:x => 1.0))
+        JuMP.optimize!(model[t].subproblem)
+        lobj, lagrange = SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
+        csc, scd = SDDP.get_dual_solution(
+            model[t],
+            SDDP.StrengthenedConicDuality(),
+        )
+        @test isapprox(lobj, csc, atol = 1e-5)
+        for (k, v) in lagrange
+            @test isapprox(v, scd[k], atol = 1e-5)
+        end
+    end
+    return
+end
+
+function test_kelleys_ip_max()
+    model = SDDP.LinearPolicyGraph(
+        stages = 10,
+        sense = :Max,
+        upper_bound = 1000,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, x, Int, SDDP.State, initial_value = 2.0)
+        @stageobjective(sp, (-5 + t) * x.out)
+        @constraint(sp, x.out == x.in)
+    end
+    set_optimizer(model, GLPK.Optimizer)
+    l = SDDP.LagrangianDuality()
+    for t in 1:10
+        SDDP.parameterize(model[t], nothing)
+        SDDP.set_incoming_state(model[t], Dict(:x => 2.0))
+        JuMP.optimize!(model[t].subproblem)
+        lobj, lagrange = SDDP.get_dual_solution(model[t], l)
+        csc, scd = SDDP.get_dual_solution(
+            model[t],
+            SDDP.StrengthenedConicDuality(),
+        )
+        @test isapprox(lobj, csc, atol = 1e-5)
+        for (k, v) in lagrange
+            @test isapprox(v, scd[k], atol = 1e-5)
         end
     end
     return
