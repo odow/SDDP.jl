@@ -3,6 +3,64 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+function _deprecate_integrality_handler()
+    return error(
+        """
+SDDP.jl v0.4.0 introduced a number of breaking changes in how we deal with
+binary and integer variables.
+
+## Breaking changes
+
+ * We have renamed `SDDiP` to `LagrangianDuality`.
+ * We have renamed `ContinuousRelaxation` to `ConicDuality`.
+ * Instead of passing the argument to `PolicyGraph`, you now pass it to
+   `train`, e.g., `SDDP.train(model; duality_handler = SDDP.LagrangianDuality())`
+ * We no longer turn continuous and integer states into a binary expansion. If
+   you want to binarize your states, do it manually.
+
+## Why did we do this?
+
+SDDiP (the algorithm presented in the paper) is really two parts:
+
+ 1. If you have an integer program, you can compute the dual of the fishing
+    constraint using Lagrangian duality; and
+ 2. If you have pure binary state variables, then cuts constructed from the
+    Lagrangian duals result in an optimal policy.
+
+However, these two points are quite independent. If you have integer or
+continuous state variables, you can still use Lagrangian duality!
+
+The new system is more flexible because the duality handler is a property of the
+solution process, not the model. This allows us to use Lagrangian duality to
+solve any dual problem, and it leaves the decision of binarizing the state
+variables up to the user. (Hint: we don't think you should do it!)
+
+## Other additions
+
+We also added support for strengthened Benders cuts, which we call
+`SDDP.StrengthenedConicDuality()`.
+
+## Future plans
+
+We have a number of future plans in the works, including better Lagrangian
+solution methods and better ways of integrating the different types of duality
+handlers (e.g., start with ConicDuality, then shift to StrengthenedConicDuality,
+then LagrangianDuality).
+
+If these sorts of things interest you, the code is now much more hackable, so
+please reach out or read https://github.com/odow/SDDP.jl/issues/246.
+
+Alternatively, if you have interesting examples using SDDiP that you find are
+too slow, please send me the examples so we can use them as benchmarks in future
+improvements.
+    """,
+    )
+end
+
+SDDiP(args...; kwargs...) = _deprecate_integrality_handler()
+
+ContinuousRelaxation(args...; kwargs...) = _deprecate_integrality_handler()
+
 function relax_integrality(
     model::PolicyGraph,
     duality_handler::AbstractDualityHandler,
