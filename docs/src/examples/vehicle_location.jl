@@ -114,4 +114,4 @@ end
 
 # Solve a continuous relaxation only, tough for LagrangianDuality
 
-vehicle_location_model(SDDP.ConicDuality())
+vehicle_location_model(SDDP.ContinuousConicDuality())

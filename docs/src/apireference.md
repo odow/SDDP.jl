@@ -82,7 +82,7 @@ SDDP.adjust_probability
 
 ```@docs
 SDDP.AbstractDualityHandler
-SDDP.ConicDuality
+SDDP.ContinuousConicDuality
 SDDP.LagrangianDuality
 SDDP.StrengthenedConicDuality
 ```

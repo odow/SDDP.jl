@@ -183,13 +183,13 @@ the values are the dual variables associated with the fishing constraint at
 function get_dual_solution end
 
 """
-    relax_integrality(node::Node, handler::AbstractDualityHandler)
+    prepare_backward_pass(node::Node, handler::AbstractDualityHandler)
 
-Performs any binary/integer relaxations prior to the backward pass.
+Performs any setup needed by the duality handler prior to the backward pass.
 
-Returns a function that, when called with no arguments, undoes the relaxation.
+Returns a function that, when called with no arguments, undoes the setup.
 """
-relax_integrality(::Node, ::AbstractDualityHandler) = () -> nothing
+prepare_backward_pass(::Node, ::AbstractDualityHandler) = () -> nothing
 
 # ============================= parallel schemes ============================= #
 

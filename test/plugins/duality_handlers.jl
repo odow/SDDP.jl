@@ -41,12 +41,12 @@ function easy_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    _ = SDDP.relax_integrality(model, duality_handler)
+    _ = SDDP.prepare_backward_pass(model, duality_handler)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
     obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
 
-    if duality_handler == SDDP.ConicDuality()
+    if duality_handler == SDDP.ContinuousConicDuality()
         @test all(values(dual_vars) .<= ones(2))
     else
         @test all(values(dual_vars) .>= -ones(2))
@@ -79,11 +79,11 @@ function xor_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    _ = SDDP.relax_integrality(model, duality_handler)
+    _ = SDDP.prepare_backward_pass(model, duality_handler)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
     obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
-    if duality_handler == SDDP.ConicDuality()
+    if duality_handler == SDDP.ContinuousConicDuality()
         @test sum(values(dual_vars)) >= -1
     else
         @test sum(values(dual_vars)) <= 1
@@ -92,7 +92,7 @@ function xor_single_stage(duality_handler)
 end
 
 function test_easy_continuous()
-    easy_single_stage(SDDP.ConicDuality())
+    easy_single_stage(SDDP.ContinuousConicDuality())
     return
 end
 
@@ -102,7 +102,7 @@ function test_easy_LagrangianDuality()
 end
 
 function test_xor_continuous()
-    xor_single_stage(SDDP.ConicDuality())
+    xor_single_stage(SDDP.ContinuousConicDuality())
     return
 end
 
@@ -111,7 +111,7 @@ function test_xor_LagrangianDuality()
     return
 end
 
-function test_relax_integrality()
+function test_prepare_backward_pass()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -151,7 +151,8 @@ function test_relax_integrality()
         @test JuMP.lower_bound(node.subproblem[:i3]) == -8
         @test JuMP.upper_bound(node.subproblem[:i3]) == 2
     end
-    undo_relax = SDDP.relax_integrality(model, SDDP.ConicDuality())
+    undo_relax =
+        SDDP.prepare_backward_pass(model, SDDP.ContinuousConicDuality())
     for node in [model[1], model[2]]
         @test !JuMP.is_binary(node.subproblem[:b1])
         @test JuMP.lower_bound(node.subproblem[:b1]) == 0.0
@@ -225,7 +226,8 @@ function test_kelleys_min()
         lobj, lagrange =
             SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
         JuMP.optimize!(model[t].subproblem)
-        cobj, conic = SDDP.get_dual_solution(model[t], SDDP.ConicDuality())
+        cobj, conic =
+            SDDP.get_dual_solution(model[t], SDDP.ContinuousConicDuality())
         @test isapprox(lobj, cobj, atol = 1e-5)
         csc, scd =
             SDDP.get_dual_solution(model[t], SDDP.StrengthenedConicDuality())
@@ -257,7 +259,8 @@ function test_kelleys_max()
         lobj, lagrange =
             SDDP.get_dual_solution(model[t], SDDP.LagrangianDuality())
         JuMP.optimize!(model[t].subproblem)
-        cobj, conic = SDDP.get_dual_solution(model[t], SDDP.ConicDuality())
+        cobj, conic =
+            SDDP.get_dual_solution(model[t], SDDP.ContinuousConicDuality())
         @test isapprox(lobj, cobj, atol = 1e-5)
         csc, scd =
             SDDP.get_dual_solution(model[t], SDDP.StrengthenedConicDuality())

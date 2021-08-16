@@ -94,7 +94,7 @@ function booking_management(duality_handler)
         log_frequency = 5,
         duality_handler = duality_handler,
     )
-    if duality_handler == SDDP.ConicDuality()
+    if duality_handler == SDDP.ContinuousConicDuality()
         @test SDDP.calculate_bound(m_1_2_5) >= 7.25 - 1e-4
     else
         @test isapprox(SDDP.calculate_bound(m_1_2_5), 7.25, atol = 0.02)
@@ -107,14 +107,14 @@ function booking_management(duality_handler)
         log_frequency = 10,
         duality_handler = duality_handler,
     )
-    if duality_handler == SDDP.ConicDuality()
+    if duality_handler == SDDP.ContinuousConicDuality()
         @test SDDP.calculate_bound(m_1_2_5) > 6.13
     else
         @test isapprox(SDDP.calculate_bound(m_2_2_3), 6.13, atol = 0.02)
     end
 end
 
-booking_management(SDDP.ConicDuality())
+booking_management(SDDP.ContinuousConicDuality())
 
 # New version of GLPK stalls
 # booking_management(SDDP.LagrangianDuality())

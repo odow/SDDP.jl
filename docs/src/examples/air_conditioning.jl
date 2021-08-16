@@ -58,6 +58,6 @@ function air_conditioning_model(duality_handler)
     return
 end
 
-for duality_handler in [SDDP.LagrangianDuality(), SDDP.ConicDuality()]
+for duality_handler in [SDDP.LagrangianDuality(), SDDP.ContinuousConicDuality()]
     air_conditioning_model(duality_handler)
 end
