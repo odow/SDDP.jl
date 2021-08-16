@@ -91,8 +91,6 @@ mutable struct LagrangianDuality <: AbstractDualityHandler
     end
 end
 
-relax_integrality(::Node, ::LagrangianDuality) = () -> nothing
-
 """
     get_dual_variables(node::Node, lagrange::LagrangianDuality)
 

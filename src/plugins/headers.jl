@@ -165,7 +165,7 @@ function sample_backward_noise_terms end
 """
     AbstractDualityHandler
 
-The abstract type for the integrality handlers interface.
+The abstract type for the duality handler interface.
 """
 abstract type AbstractDualityHandler end
 
@@ -185,7 +185,7 @@ Performs any binary/integer relaxations prior to the backward pass.
 
 Returns a function that, when called with no arguments, undoes the relaxation.
 """
-function relax_integrality end
+relax_integrality(::Node, ::AbstractDualityHandler) = () -> nothing
 
 # ============================= parallel schemes ============================= #
 
