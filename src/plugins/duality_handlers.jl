@@ -274,8 +274,8 @@ function _solve_lagrange_with_kelleys(
         h_expr[i] =
             @expression(node.subproblem, state.in - incoming_state_value[i])
         JuMP.unfix(state.in)
-        JuMP.set_lower_bound(state.in, -1e9)
-        JuMP.set_upper_bound(state.in, 1e9)
+        JuMP.set_lower_bound(state.in, incoming_state_value[i] - 1)
+        JuMP.set_upper_bound(state.in, incoming_state_value[i] + 1)
     end
     primal_sense = JuMP.objective_sense(node.subproblem)
     model = if lagrange.optimizer === nothing
@@ -365,8 +365,8 @@ function get_dual_solution(node::Node, ::StrengthenedConicDuality)
         x[i] = JuMP.fix_value(state.in)
         h_expr[i] = @expression(node.subproblem, state.in - x[i])
         JuMP.unfix(state.in)
-        JuMP.set_lower_bound(state.in, -1e9)
-        JuMP.set_upper_bound(state.in, 1e9)
+        JuMP.set_lower_bound(state.in, x[i] - 1)
+        JuMP.set_upper_bound(state.in, x[i] + 1)
         λ_k[i] = conic_dual[key]
     end
     lagrangian_obj = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
