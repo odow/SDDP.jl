@@ -266,7 +266,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     @variable(model, λ[1:num_states])
     @variable(model, t)
     @variable(model, e)
-    @constraint(model, vcat(e, λ) in MOI.NormOneCone(num_states+1))
+    @constraint(model, vcat(e, λ) in MOI.NormOneCone(num_states + 1))
     primal_sense = JuMP.objective_sense(node.subproblem)
     if primal_sense == MOI.MIN_SENSE
         set_upper_bound(t, primal_obj)
