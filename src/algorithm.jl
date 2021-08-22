@@ -99,6 +99,8 @@ struct Options{T}
     log_frequency::Int
     forward_pass::AbstractForwardPass
     duality_handler::AbstractDualityHandler
+    # A callback called after the forward pass.
+    forward_pass_callback::Any
 
     # Internal function: users should never construct this themselves.
     function Options(
@@ -118,6 +120,7 @@ struct Options{T}
         log_frequency::Int,
         forward_pass::AbstractForwardPass,
         duality_handler::AbstractDualityHandler,
+        forward_pass_callback,
     ) where {T}
         return new{T}(
             initial_state,
@@ -138,6 +141,7 @@ struct Options{T}
             log_frequency,
             forward_pass,
             duality_handler,
+            forward_pass_callback,
         )
     end
 end
@@ -760,6 +764,7 @@ end
 function iteration(model::PolicyGraph{T}, options::Options) where {T}
     TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
         forward_trajectory = forward_pass(model, options, options.forward_pass)
+        options.forward_pass_callback(forward_trajectory)
     end
     TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
         cuts = backward_pass(
@@ -899,6 +904,7 @@ function train(
     forward_pass_resampling_probability::Union{Nothing,Float64} = nothing,
     add_to_existing_cuts::Bool = false,
     duality_handler::AbstractDualityHandler = SDDP.ContinuousConicDuality(),
+    forward_pass_callback::Function = (x) -> nothing,
 )
     if !add_to_existing_cuts && model.most_recent_training_results !== nothing
         @warn("""
@@ -1012,6 +1018,7 @@ function train(
         log_frequency,
         forward_pass,
         duality_handler,
+        forward_pass_callback,
     )
 
     status = :not_solved
