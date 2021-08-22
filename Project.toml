@@ -1,7 +1,7 @@
 name = "SDDP"
 uuid = "f4570300-c277-11e8-125c-4912f86ce65d"
 authors = ["Oscar Dowson <o.dowson@gmail.com"]
-version = "0.4.0"
+version = "0.4.1"
 
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -20,7 +20,7 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
 GLPK = "0.14"
-HTTP = "0.8.1"
+HTTP = "0.8.1, 0.9"
 JSON = "0.21"
 JSONSchema = "0.3"
 JuMP = "0.21"
