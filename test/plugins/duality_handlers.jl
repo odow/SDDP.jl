@@ -273,6 +273,53 @@ function test_kelleys_max()
     return
 end
 
+function test_kelleys_abs_function()
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        sense = :Min,
+        lower_bound = -10.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 1.0)
+        @constraint(sp, x.out >= 1.2(x.in - 1))
+        @constraint(sp, x.out >= 0.1(x.in - 1))
+        @constraint(sp, x.out >= -x.in)
+        @stageobjective(sp, x.out)
+    end
+    set_optimizer(model, GLPK.Optimizer)
+    SDDP.parameterize(model[1], nothing)
+    SDDP.set_incoming_state(model[1], Dict(:x => 1.0))
+    JuMP.optimize!(model[1].subproblem)
+    lobj, lagrange =
+        SDDP.get_dual_solution(model[1], SDDP.LagrangianDuality())
+    @test isapprox(lobj, -10.0, atol = 1e-5)
+    @test isapprox(lagrange[:x], 0.1, atol = 1e-5)
+    return
+end
+
+function test_kelleys_abs_function_max()
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        sense = :Max,
+        upper_bound = 10.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 1.0)
+        @constraint(sp, x.out <= 1.2(x.in - 1))
+        @constraint(sp, x.out <= 0.1(x.in - 1))
+        @stageobjective(sp, x.out)
+    end
+    set_optimizer(model, GLPK.Optimizer)
+    SDDP.parameterize(model[1], nothing)
+    SDDP.set_incoming_state(model[1], Dict(:x => 1.0))
+    JuMP.optimize!(model[1].subproblem)
+    lobj, lagrange =
+        SDDP.get_dual_solution(model[1], SDDP.LagrangianDuality())
+    @test isapprox(lobj, 10.0, atol = 1e-5)
+    @test isapprox(lagrange[:x], 0.1, atol = 1e-5)
+    return
+end
+
 """
 Test duality in a naturally integer problem
 """
