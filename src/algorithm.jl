@@ -382,7 +382,9 @@ function solve_subproblem(
     end
     state = get_outgoing_state(node)
     stage_objective = stage_objective_value(node.stage_objective)
-    objective, dual_values = get_dual_solution(node, duality_handler)
+    TimerOutputs.@timeit SDDP_TIMER "get_dual_solution" begin
+        objective, dual_values = get_dual_solution(node, duality_handler)
+    end
     if node.post_optimize_hook !== nothing
         node.post_optimize_hook(pre_optimize_ret)
     end

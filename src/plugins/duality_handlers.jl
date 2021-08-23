@@ -264,15 +264,12 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         h_expr[i] = @expression(node.subproblem, state.in - x_in_value[i])
         # Relax the constraint from the problem.
         JuMP.unfix(state.in)
-        # We set new bounds here for a few reasons. First, it ensures that the
-        # relaxed primal problem always has a bounded optimal solution. Without
-        # the bounds, the primal problem could be unbounded (i.e., an infeasible
-        # dual solution). With bounds on x_in, it ensures that the dual problem
-        # is always feasible. The choice of ±1 is somewhat arbitrary. It needs
-        # to be large enough to avoid numerical error, but not too large to
-        # cause other issues.
-        JuMP.set_lower_bound(state.in, x_in_value[i] - 1)
-        JuMP.set_upper_bound(state.in, x_in_value[i] + 1)
+        # We need bounds to ensure that the dual problem is feasible. However,
+        # they can't be too tight. Let's use 1e9 as a default...
+        lb = has_lower_bound(state.out) ? lower_bound(state.out) : -1e9
+        ub = has_upper_bound(state.out) ? upper_bound(state.out) : 1e9
+        JuMP.set_lower_bound(state.in, lb)
+        JuMP.set_upper_bound(state.in, ub)
     end
     # Create the model for the cutting plane algorithm
     model = JuMP.Model(something(lagrange.optimizer, node.optimizer))
@@ -391,8 +388,12 @@ function get_dual_solution(node::Node, ::StrengthenedConicDuality)
         x[i] = JuMP.fix_value(state.in)
         h_expr[i] = @expression(node.subproblem, state.in - x[i])
         JuMP.unfix(state.in)
-        JuMP.set_lower_bound(state.in, x[i] - 1)
-        JuMP.set_upper_bound(state.in, x[i] + 1)
+        # We need bounds to ensure that the dual problem is feasible. However,
+        # they can't be too tight. Let's use 1e9 as a default...
+        lb = has_lower_bound(state.out) ? lower_bound(state.out) : -1e9
+        ub = has_upper_bound(state.out) ? upper_bound(state.out) : 1e9
+        JuMP.set_lower_bound(state.in, lb)
+        JuMP.set_upper_bound(state.in, ub)
         λ_k[i] = conic_dual[key]
     end
     lagrangian_obj = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
