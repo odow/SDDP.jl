@@ -265,28 +265,55 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         # Relax the constraint from the problem.
         JuMP.unfix(state.in)
         # We need bounds to ensure that the dual problem is feasible. However,
-        # they can't be too tight. Let's use 1e9 as a default...
-        lb = has_lower_bound(state.out) ? lower_bound(state.out) : -1e9
-        ub = has_upper_bound(state.out) ? upper_bound(state.out) : 1e9
-        JuMP.set_lower_bound(state.in, lb)
-        JuMP.set_upper_bound(state.in, ub)
+        # they can't be too tight.
+        if !has_lower_bound(state.out) || !has_upper_bound(state.out)
+            error(
+                "Unable to compute LagrangianDuality because some state " *
+                "variables do not have finite bounds. Make sure you add " *
+                "realistic bounds using your domain knowledge. Don't put " *
+                "something like `1e9` just for the sake of it or you'll run " *
+                "into numerical issues."
+            )
+        end
+        JuMP.set_lower_bound(state.in, lower_bound(state.out))
+        JuMP.set_upper_bound(state.in, upper_bound(state.out))
     end
     # Create the model for the cutting plane algorithm
     model = JuMP.Model(something(lagrange.optimizer, node.optimizer))
+    set_silent(model)
+    @variable(model, λ[1:num_states])
     @variable(model, λ⁺[1:num_states] >= 0)
-    @variable(model, λ⁻[1:num_states] >= 0)
     @variable(model, t <= s * primal_obj)
-    @expression(model, λ, λ⁺ .- λ⁻)
     @objective(model, Max, t)
+    @constraint(model, λ⁺ .>= λ)
+    @constraint(model, λ⁺ .>= -λ)
     # Step 1: find an optimal dual solution and corresponding objective value.
     iter, t_k = 0, s * primal_obj
-    while !isapprox(L_star, t_k, atol = lagrange.atol, rtol = lagrange.rtol)
+    no_change, last_λ = 0, zeros(num_states)
+    while true
         iter += 1
         if iter > lagrange.iteration_limit
             error("Iteration limit exceeded in Lagrangian subproblem.")
         end
         JuMP.optimize!(model)
-        @assert JuMP.termination_status(model) == JuMP.MOI.OPTIMAL
+        if JuMP.termination_status(model) != JuMP.MOI.OPTIMAL
+            @warn("""
+            Unable to compute dual using LagrangianDuality because the cutting
+            plane subproblem returns a termination status of
+            $(JuMP.termination_status(model))
+
+            There are a few things you could try:
+             - Try passing `LagrangianDuality(optimizer=)` an optimizer with
+               tighter tolerances
+             - Add (or tighten) variable bounds on _all_ of your state variables
+            """)
+            # This shouldn't happen on the first iteration of something truely
+            # went wrong.
+            @assert iter > 1
+            # Provided it's not iteration 1, we have a dual solution, so we
+            # should just continue onwards with the suboptimal dual.
+            break
+        end
         t_k = JuMP.objective_value(model)
         λ_k .= value.(λ)
         L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
@@ -295,17 +322,37 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
             L_star = s * L_k
             λ_star .= λ_k
         end
+        if λ_k ≈ last_λ
+            no_change += 1
+        else
+            no_change, last_λ = 0,  copy(λ_k)
+        end
+        if isapprox(L_star, t_k, atol = lagrange.atol, rtol = lagrange.rtol)
+            break  # The cutting plane method has converged!
+        elseif no_change > 5
+            # We keep getting the same damn point. If we haven't converged by
+            # this iteration, the cutting plane algorithm experienced numerical
+            # issues. The most likely answer is that a primal MIP solution
+            # wasn't tight, and so `t < L_star`
+            break
+        end
     end
     # Step 2: given the optimal dual objective value, try to find the optimal
     # dual solution with the smallest L1-norm ‖λ‖.
-    @objective(model, Min, sum(λ⁺) + sum(λ⁻))
+    @objective(model, Min, sum(λ⁺))
     set_lower_bound(t, t_k)
     # The worst-case scenario in this for-loop is that we run through the
     # iterations without finding a new dual solution. However if that happens
     # we can just keep our current λ_star.
     for _ in (iter+1):lagrange.iteration_limit
         JuMP.optimize!(model)
-        @assert JuMP.termination_status(model) == JuMP.MOI.OPTIMAL
+        if JuMP.termination_status(model) != JuMP.MOI.OPTIMAL
+            # This problem should always be feasible, but due to numerical
+            # issues it sometimes isn't. For example, CPLEX with Zoe Fornier's
+            # model returns ALMOST_INFEASIBLE at one point. Since this step
+            # isn't crucial, we just skip it.
+            break
+        end
         λ_k .= value.(λ)
         L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
         if isapprox(L_star, L_k, atol = lagrange.atol, rtol = lagrange.rtol)
