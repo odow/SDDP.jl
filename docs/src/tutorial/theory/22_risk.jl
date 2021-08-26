@@ -550,7 +550,7 @@ end
 
 # Uh oh! What happened with the last line? It looks our `primal_risk_averse_subgradient`
 # encountered an error and returned a subgradient of `NaN`. This is because of
-# th # overflow issue with `exp(x)`. However, we can be confident that our dual
+# the overflow issue with `exp(x)`. However, we can be confident that our dual
 # method of computing the risk-averse subgradient is both correct and more
 # numerically robust than the primal version.
 
