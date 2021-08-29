@@ -59,6 +59,7 @@ include("visualization/value_functions.jl")
 
 # Other solvers.
 include("deterministic_equivalent.jl")
+include("biobjective.jl")
 
 include("Experimental.jl")
 
