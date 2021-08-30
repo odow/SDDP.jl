@@ -55,7 +55,6 @@ If you use `SDDP.jl`, we ask that you please cite the following:
 	journal = {INFORMS Journal on Computing},
 	author = {Dowson, O. and Kapelevich, L.},
 	doi = {https://doi.org/10.1287/ijoc.2020.0987},
-	note = {Articles in Advance},
 	year = {2021},
 	issue = {33},
 	number = {1},
@@ -68,8 +67,7 @@ If you use the infinite horizon functionality, we ask that you please cite the
 following:
 ```
 @article{dowson_policy_graph,
-	title = {The policy graph decomposition of multistage stochastic
-      optimization problems},
+	title = {The policy graph decomposition of multistage stochastic optimization problems},
 	doi = {https://doi.org/10.1002/net.21932},
 	journal = {Networks},
 	author = {Dowson, O.},
@@ -81,8 +79,8 @@ following:
 ```
 Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2018/11/6914.html).
 
-If you use the partially observable functionality, we ask that you please cite the
-following:
+If you use the partially observable functionality, we ask that you please cite
+the following:
 ```
 @article{dowson_pomsp,
 	title = {Partially observable multistage stochastic programming},
@@ -120,8 +118,7 @@ If you use the entropic risk measure, we ask that you please cite the following:
 	title = {Multistage stochastic programs with the entropic risk measure},
 	journal = {Optimization Online},
 	author = {Dowson, O., Morton, D.P., and Pagnoncelli, B.K.},
-	url = {http://www.optimization-online.org/DB_HTML/2020/08/7984.html}
-	year = {2020}
+	url = {http://www.optimization-online.org/DB_HTML/2020/08/7984.html},
 }
 ```
 Here is a [preprint](http://www.optimization-online.org/DB_HTML/2020/08/7984.html).
