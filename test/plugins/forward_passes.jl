@@ -39,6 +39,7 @@ using Test
             1,
             SDDP.DefaultForwardPass(),
             SDDP.ContinuousConicDuality(),
+            x -> nothing,
         ),
         SDDP.DefaultForwardPass(),
     )
@@ -86,6 +87,7 @@ end
                 1,
                 fp,
                 SDDP.ContinuousConicDuality(),
+                x -> nothing,
             ),
             fp,
         )
