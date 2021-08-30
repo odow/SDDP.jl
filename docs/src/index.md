@@ -56,7 +56,10 @@ If you use `SDDP.jl`, we ask that you please cite the following:
 	author = {Dowson, O. and Kapelevich, L.},
 	doi = {https://doi.org/10.1287/ijoc.2020.0987},
 	note = {Articles in Advance},
-	year = {2020}
+	year = {2021},
+	issue = {33},
+	number = {1},
+	pages = {27-33},
 }
 ```
 Here is an earlier [preprint](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf).
@@ -93,6 +96,23 @@ following:
 }
 ```
 Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2019/03/7141.html).
+
+If you use the objective state functionality, we ask that you please cite the
+following:
+```
+@article{downward_objective,
+	title = {Stochastic dual dynamic programming with stagewise-dependent objective uncertainty},
+	doi = {https://doi.org/10.1016/j.orl.2019.11.002},
+	journal = {Operations Research Letters},
+	author = {Downward, A., Dowson, O., and Baucke, R.},
+	volume = {48},
+	issue = {1},
+	pages = {33-39},
+	year = {2020}
+}
+```
+Here is an earlier [preprint](http://www.optimization-online.org/DB_FILE/2018/02/6454.pdf).
+
 
 If you use the entropic risk measure, we ask that you please cite the following:
 ```
