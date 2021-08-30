@@ -279,7 +279,7 @@ function estimate_statistical_bound(model, filename)
     end
 end
 
-# The experiments can be run by calling `julia powder.jl run`.
+# The experiments can be run by calling `julia paper.jl run`.
 if length(ARGS) > 0
     if ARGS[1] == "run"
         model = infinite_powder(discount_factor = 0.95, stocking_rate = 3.0)

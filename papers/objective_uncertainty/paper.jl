@@ -3,14 +3,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-#=
-    The code in this file runs the examples from the paper
-
-    Downward, A., Dowson, O., and Baucke, R. (2018). On the convergence of a
-    cutting plane method for multistage stochastic programming problems with
-    stagewise dependent price uncertainty. Optimization Online.
-=#
-
 using SDDP, GLPK, Test, Gurobi, Plots, StatsPlots
 
 function river_chain_example(;
