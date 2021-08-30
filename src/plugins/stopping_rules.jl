@@ -143,15 +143,14 @@ function convergence_test(
 ) where {T}
     if length(log) < rule.num_previous_iterations + 1
         return false
-    elseif isapprox(log[1].bound, log[end].bound; atol = 1e-6)
-        # No change in the bound. There are two possibilities:
-        #  1) we haven't added enough cuts and the bound is stuck at the start
-        #  2) the problem was deterministic or myopic
-        # Terminate if all of the simuations are the same (i.e., assume the
-        # policy is deterministic).
-        return all(log) do l
-            return isapprox(l.bound, l.simulation_value; atol = 1e-5)
-        end
+    end
+    # No change in the bound. There are three possibilities:
+    #  1) we haven't added enough cuts
+    #  2) the problem was deterministic or myopic
+    #  3) there were existing cuts
+    existing_solves = log[1].total_solves > log[end].total_solves / length(log)
+    if !existing_solves && isapprox(log[1].bound, log[end].bound; atol = 1e-6)
+        return all(l -> isapprox(l.bound, l.simulation_value; atol = 1e-6), log)
     end
     for i in 1:rule.num_previous_iterations
         if abs(log[end-i].bound - log[end-i+1].bound) > rule.tolerance

@@ -58,6 +58,7 @@ function set_trade_off_weight(model::SDDP.PolicyGraph, weight::Float64)
     @assert 0 <= weight <= 1
     for (_, node) in model.nodes
         node.objective_state.initial_value = (weight,)
+        node.objective_state.state = (weight,)
     end
     return
 end
@@ -66,13 +67,14 @@ end
     train_biobjective(
         model::SDDP.PolicyGraph;
         solution_limit::Int,
+        include_timing::Bool = false,
         kwargs...,
     )
 
 Train a biobjective problem using a variation of the non-inferior set estimation
 method.
 
-## arguments
+## Arguments
 
  * `solution_limit` is the maximum number of unique policies to return.
  * `kwargs` are passed to [`SDDP.train`](@ref) when solving the scalarized
@@ -83,31 +85,58 @@ method.
 Returns a dictionary mapping trade-off weights to their scalarized objective
 value.
 
+If `include_timing`, returns a dictionary mapping trade-off weights to a tuple
+of the scalarized objective value and the solution time to date.
+
 !!! warning
     This function is experimental! It may change in any future release.
 """
 function train_biobjective(
     model::SDDP.PolicyGraph;
     solution_limit::Int,
+    include_timing::Bool = false,
+    log_file_prefix::String = "SDDP",
+    stopping_rules::Function = weight -> SDDP.AbstractStoppingRule[],
     kwargs...,
 )
-    solutions = Dict{Float64,Float64}()
+    start_time = time()
+    solutions = if include_timing
+        Dict{Float64,Tuple{Float64,Float64}}()
+    else
+        Dict{Float64,Float64}()
+    end
+    value(bound) = include_timing ? (bound, time() - start_time) : bound
     for weight in (0.0, 1.0)
         set_trade_off_weight(model, weight)
-        SDDP.train(model; add_to_existing_cuts = true, kwargs...)
-        solutions[weight] = SDDP.calculate_bound(model)
+        SDDP.train(
+            model;
+            add_to_existing_cuts = true,
+            run_numerical_stability_report = false,
+            log_file = "$(log_file_prefix)_$(weight).log",
+            stopping_rules = stopping_rules(weight),
+            kwargs...,
+        )
+        solutions[weight] = value(SDDP.calculate_bound(model))
     end
     queue = Tuple{Float64,Float64}[(0.0, 1.0)]
     while length(queue) > 0 && length(solutions) < solution_limit
         (a, b) = popfirst!(queue)
         w = 0.5 * (a + b)
         set_trade_off_weight(model, w)
-        SDDP.train(model; add_to_existing_cuts = true, kwargs...)
+        SDDP.train(
+            model;
+            add_to_existing_cuts = true,
+            run_numerical_stability_report = false,
+            log_file = "$(log_file_prefix)_$(w).log",
+            stopping_rules = stopping_rules(w),
+            kwargs...,
+        )
         bound = SDDP.calculate_bound(model)
-        if !isapprox(0.5 * (solutions[a] + solutions[b]), bound; rtol = 1e-4)
+        solutions[w] = value(bound)
+        best_bound = 0.5 * (solutions[a][1] + solutions[b][1])
+        if !isapprox(best_bound, bound; rtol = 1e-4)
             push!(queue, (a, w))
             push!(queue, (w, b))
-            solutions[w] = bound
         end
     end
     return solutions

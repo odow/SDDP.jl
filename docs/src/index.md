@@ -111,7 +111,6 @@ following:
 ```
 Here is an earlier [preprint](http://www.optimization-online.org/DB_FILE/2018/02/6454.pdf).
 
-
 If you use the entropic risk measure, we ask that you please cite the following:
 ```
 @article{dowson_entropic,
