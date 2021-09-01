@@ -56,8 +56,8 @@ If you use `SDDP.jl`, we ask that you please cite the following:
 	author = {Dowson, O. and Kapelevich, L.},
 	doi = {https://doi.org/10.1287/ijoc.2020.0987},
 	year = {2021},
-	issue = {33},
-	number = {1},
+	volume = {33},
+	issue = {1},
 	pages = {27-33},
 }
 ```
@@ -86,7 +86,7 @@ the following:
 	title = {Partially observable multistage stochastic programming},
 	doi = {https://doi.org/10.1016/j.orl.2020.06.005},
 	journal = {Operations Research Letters},
-	author = {Dowson, O., Morton, D.P., and Pagnoncelli, B.K.},
+	author = {Dowson, O. and Morton, D.P. and Pagnoncelli, B.K.},
 	volume = {48},
 	issue = {4},
 	pages = {505-512},
@@ -102,7 +102,7 @@ following:
 	title = {Stochastic dual dynamic programming with stagewise-dependent objective uncertainty},
 	doi = {https://doi.org/10.1016/j.orl.2019.11.002},
 	journal = {Operations Research Letters},
-	author = {Downward, A., Dowson, O., and Baucke, R.},
+	author = {Downward, A. and Dowson, O. and Baucke, R.},
 	volume = {48},
 	issue = {1},
 	pages = {33-39},
@@ -117,7 +117,7 @@ If you use the entropic risk measure, we ask that you please cite the following:
 @article{dowson_entropic,
 	title = {Multistage stochastic programs with the entropic risk measure},
 	journal = {Optimization Online},
-	author = {Dowson, O., Morton, D.P., and Pagnoncelli, B.K.},
+	author = {Dowson, O. and Morton, D.P. and Pagnoncelli, B.K.},
 	url = {http://www.optimization-online.org/DB_HTML/2020/08/7984.html},
 }
 ```
