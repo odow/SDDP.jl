@@ -97,7 +97,7 @@ function _add_cut(
     cut_selection::Bool = true,
 ) where {N,T}
     for (key, x) in xᵏ
-        θᵏ -= πᵏ[key] * xᵏ[key]
+        θᵏ -= πᵏ[key] * x
     end
     _dynamic_range_warning(θᵏ, πᵏ)
     cut = Cut(θᵏ, πᵏ, obj_y, belief_y, 1, nothing)
@@ -577,12 +577,14 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
             "multi_cuts" => Dict{String,Any}[],
             "risk_set_cuts" => Vector{Float64}[],
         )
-        for cut in node.bellman_function.global_theta.cut_oracle.cuts
+        oracle = node.bellman_function.global_theta.cut_oracle
+        for (cut, state) in zip(oracle.cuts, oracle.states)
             push!(
                 node_cuts["single_cuts"],
                 Dict(
                     "intercept" => cut.intercept,
                     "coefficients" => copy(cut.coefficients),
+                    "state" => copy(state.state),
                 ),
             )
         end
@@ -621,7 +623,7 @@ function _node_name_parser(::Type{NTuple{N,Int}}, name::String) where {N}
     return tuple(keys...)
 end
 
-function _node_name_parser(T, name)
+function _node_name_parser(::Any, name)
     return error(
         "Unable to read name $(name). Provide a custom parser to " *
         "`read_cuts_from_file` using the `node_name_parser` keyword.",
@@ -630,8 +632,10 @@ end
 
 """
     read_cuts_from_file(
-        model::PolicyGraph{T}, filename::String;
-        node_name_parser::Function = _node_name_parser) where {T}
+        model::PolicyGraph{T},
+        filename::String;
+        node_name_parser::Function = _node_name_parser,
+    ) where {T}
 
 Read cuts (saved using [`SDDP.write_cuts_to_file`](@ref)) from `filename` into
 `model`.
@@ -650,28 +654,44 @@ function read_cuts_from_file(
     filename::String;
     node_name_parser::Function = _node_name_parser,
 ) where {T}
-    # So the cuts are written to file after they have been normalized
-    # to `θᴳ ≥ [θᵏ - ⟨πᵏ, xᵏ⟩] + ⟨πᵏ, x′⟩`. Thus, we pass `xᵏ=0` so that
-    # eveything works out okay.
-    # Importantly, don't run cut selection when adding these cuts.
     cuts = JSON.parsefile(filename, use_mmap = false)
     for node_cuts in cuts
         node_name = node_name_parser(T, node_cuts["node"])::T
         node = model[node_name]
         bf = node.bellman_function
         # Loop through and add the single-cuts.
+        #
+        # The cuts are written to file after they have been normalized
+        # to `θᴳ ≥ [θᵏ - ⟨πᵏ, xᵏ⟩] + ⟨πᵏ, x′⟩`.
+        #
+        # However, if there is a state stored, we need to undo the intercept
+        # offset to make sure eveything works out okay.
+        #
+        # Moreover, only run cut selection if we have states as well. Otherwise
+        # the level-one cut selection will just kick everything out immediately.
         for json_cut in node_cuts["single_cuts"]
             coefficients = Dict{Symbol,Float64}(
                 Symbol(k) => v for (k, v) in json_cut["coefficients"]
             )
+            has_state = haskey(json_cut, "state")
+            intercept = json_cut["intercept"]
+            state = if has_state
+                state = Dict(Symbol(k) => v for (k, v) in json_cut["state"])
+                for (k, v) in state
+                    intercept += coefficients[k] * v
+                end
+                state
+            else
+                Dict(key => 0.0 for key in keys(coefficients))
+            end
             _add_cut(
                 bf.global_theta,
-                json_cut["intercept"],
+                intercept,
                 coefficients,
-                Dict(key => 0.0 for key in keys(coefficients)),
+                state,
                 nothing,
                 nothing;
-                cut_selection = false,
+                cut_selection = has_state,
             )
         end
         # Loop through and add the multi-cuts. There are two parts:
