@@ -579,23 +579,33 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
         )
         oracle = node.bellman_function.global_theta.cut_oracle
         for (cut, state) in zip(oracle.cuts, oracle.states)
+            intercept = cut.intercept
+            for (key, π) in cut.coefficients
+                intercept += π * state.state[key]
+            end
             push!(
                 node_cuts["single_cuts"],
                 Dict(
-                    "intercept" => cut.intercept,
+                    "intercept" => intercept,
                     "coefficients" => copy(cut.coefficients),
                     "state" => copy(state.state),
                 ),
             )
         end
         for (i, theta) in enumerate(node.bellman_function.local_thetas)
-            for cut in theta.cut_oracle.cuts
+            oracle = theta.cut_oracle
+            for (cut, state) in zip(oracle.cuts, oracle.states)
+                intercept = cut.intercept
+                for (key, π) in cut.coefficients
+                    intercept += π * state.state[key]
+                end
                 push!(
                     node_cuts["multi_cuts"],
                     Dict(
                         "realization" => i,
-                        "intercept" => cut.intercept,
+                        "intercept" => intercept,
                         "coefficients" => copy(cut.coefficients),
+                        "state" => copy(state.state),
                     ),
                 )
             end
@@ -660,34 +670,17 @@ function read_cuts_from_file(
         node = model[node_name]
         bf = node.bellman_function
         # Loop through and add the single-cuts.
-        #
-        # The cuts are written to file after they have been normalized
-        # to `θᴳ ≥ [θᵏ - ⟨πᵏ, xᵏ⟩] + ⟨πᵏ, x′⟩`.
-        #
-        # However, if there is a state stored, we need to undo the intercept
-        # offset to make sure eveything works out okay.
-        #
-        # Moreover, only run cut selection if we have states as well. Otherwise
-        # the level-one cut selection will just kick everything out immediately.
         for json_cut in node_cuts["single_cuts"]
-            coefficients = Dict{Symbol,Float64}(
-                Symbol(k) => v for (k, v) in json_cut["coefficients"]
-            )
             has_state = haskey(json_cut, "state")
-            intercept = json_cut["intercept"]
             state = if has_state
-                state = Dict(Symbol(k) => v for (k, v) in json_cut["state"])
-                for (k, v) in state
-                    intercept += coefficients[k] * v
-                end
-                state
+                Dict(Symbol(k) => v for (k, v) in json_cut["state"])
             else
-                Dict(key => 0.0 for key in keys(coefficients))
+                Dict(Symbol(k) => 0.0 for k in keys(json_cut["coefficients"]))
             end
             _add_cut(
                 bf.global_theta,
-                intercept,
-                coefficients,
+                json_cut["intercept"],
+                Dict(Symbol(k) => v for (k, v) in json_cut["coefficients"]),
                 state,
                 nothing,
                 nothing;
@@ -707,17 +700,20 @@ function read_cuts_from_file(
             )
         end
         for json_cut in node_cuts["multi_cuts"]
-            coefficients = Dict{Symbol,Float64}(
-                Symbol(k) => v for (k, v) in json_cut["coefficients"]
-            )
+            has_state = haskey(json_cut, "state")
+            state = if has_state
+                Dict(Symbol(k) => v for (k, v) in json_cut["state"])
+            else
+                Dict(Symbol(k) => 0.0 for k in keys(json_cut["coefficients"]))
+            end
             _add_cut(
                 bf.local_thetas[json_cut["realization"]],
                 json_cut["intercept"],
-                coefficients,
-                Dict(key => 0.0 for key in keys(coefficients)),
+                Dict(Symbol(k) => v for (k, v) in json_cut["coefficients"]),
+                state,
                 nothing,
                 nothing;
-                cut_selection = false,
+                cut_selection = has_state,
             )
         end
         # Here is part (ii): adding the constraints that define the risk-set
