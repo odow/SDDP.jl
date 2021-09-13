@@ -143,7 +143,13 @@ function convergence_test(
     if length(log) < rule.num_previous_iterations + 1
         return false
     elseif isapprox(log[1].bound, log[end].bound; atol = rule.tolerance)
-        return false
+        # No change in the bound. There are two possibilities:
+        #  1) we haven't added enough cuts
+        #  2) the problem was deterministic or myopic
+        return all(
+            l -> isapprox(l.bound, l.simulation_value, rule.tolerance),
+            log,
+        )
     end
     for i in 1:rule.num_previous_iterations
         if abs(log[end-i].bound - log[end-i+1].bound) > rule.tolerance
