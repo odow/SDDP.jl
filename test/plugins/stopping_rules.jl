@@ -140,10 +140,10 @@ end
     @test !SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.1, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(3, 0.1, 0.0, 1.0, 1, 1),
-            SDDP.Log(4, 0.2, 0.0, 1.0, 1, 1),
+            SDDP.Log(1, 0.0, 0.1, 1.0, 1, 1),
+            SDDP.Log(2, 0.0, 0.2, 1.0, 1, 1),
+            SDDP.Log(3, 0.0, 0.1, 1.0, 1, 1),
+            SDDP.Log(4, 0.0, 0.0, 1.0, 1, 1),
         ],
         rule,
     )
