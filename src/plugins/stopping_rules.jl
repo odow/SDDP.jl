@@ -147,7 +147,7 @@ function convergence_test(
         #  1) we haven't added enough cuts
         #  2) the problem was deterministic or myopic
         return all(log) do l
-            return isapprox(l.bound, l.simulation_value; atol = rule.tolerance)
+            return isapprox(l.bound, l.simulation_value; atol = 1e-4)
         end
     end
     for i in 1:rule.num_previous_iterations
