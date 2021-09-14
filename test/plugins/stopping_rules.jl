@@ -123,7 +123,7 @@ end
         ],
         rule,
     )
-    # How there is. But only just...
+    # Now there is. But only just...
     @test SDDP.convergence_test(
         graph,
         [
@@ -138,6 +138,18 @@ end
     # This also meets the test, but we don't terminate because it hasn't
     # differed from the initial bound.
     @test !SDDP.convergence_test(
+        graph,
+        [
+            SDDP.Log(1, 0.1, 0.0, 1.0, 1, 1),
+            SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1),
+            SDDP.Log(3, 0.1, 0.0, 1.0, 1, 1),
+            SDDP.Log(4, 0.2, 0.0, 1.0, 1, 1),
+        ],
+        rule,
+    )
+    # This also meets the test, because it looks like a deterministic
+    # policy
+    @test SDDP.convergence_test(
         graph,
         [
             SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
