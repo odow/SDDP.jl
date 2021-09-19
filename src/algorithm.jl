@@ -476,7 +476,11 @@ function backward_pass(
     belief_states::Vector{Tuple{Int,Dict{T,Float64}}},
 ) where {T,NoiseType,N}
     TimerOutputs.@timeit SDDP_TIMER "prepare_backward_pass" begin
-        restore_duality = prepare_backward_pass(model, options.duality_handler)
+        restore_duality = prepare_backward_pass(
+            model,
+            options.duality_handler,
+            options,
+        )
     end
     # TODO(odow): improve storage type.
     cuts = Dict{T,Vector{Any}}(index => Any[] for index in keys(model.nodes))

@@ -41,7 +41,26 @@ function easy_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    _ = SDDP.prepare_backward_pass(model, duality_handler)
+    options = SDDP.Options(
+        model,
+        Dict(:x => 1.0),
+        SDDP.InSampleMonteCarlo(),
+        SDDP.CompleteSampler(),
+        SDDP.Expectation(),
+        0.0,
+        true,
+        SDDP.AbstractStoppingRule[],
+        (a, b) -> nothing,
+        0,
+        0.0,
+        SDDP.Log[],
+        IOBuffer(),
+        1,
+        SDDP.DefaultForwardPass(),
+        duality_handler,
+        x -> nothing,
+    )
+    _ = SDDP.prepare_backward_pass(model, duality_handler, options)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
     obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)

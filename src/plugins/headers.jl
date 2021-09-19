@@ -190,13 +190,19 @@ the values are the dual variables associated with the fishing constraint at
 function get_dual_solution end
 
 """
-    prepare_backward_pass(node::Node, handler::AbstractDualityHandler)
+    prepare_backward_pass(
+        node::Node,
+        handler::AbstractDualityHandler,
+        options::Options
+    )
 
 Performs any setup needed by the duality handler prior to the backward pass.
 
 Returns a function that, when called with no arguments, undoes the setup.
 """
-prepare_backward_pass(::Node, ::AbstractDualityHandler) = () -> nothing
+function prepare_backward_pass(::Node, ::AbstractDualityHandler, ::Options)
+    return () -> nothing
+end
 
 # ============================= parallel schemes ============================= #
 

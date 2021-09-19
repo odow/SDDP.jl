@@ -64,12 +64,11 @@ ContinuousRelaxation(args...; kwargs...) = _deprecate_integrality_handler()
 function prepare_backward_pass(
     model::PolicyGraph,
     duality_handler::AbstractDualityHandler,
+    options::Options,
 )
     undo = Function[]
     for (_, node) in model.nodes
-        if node.has_integrality
-            push!(undo, prepare_backward_pass(node, duality_handler))
-        end
+        push!(undo, prepare_backward_pass(node, duality_handler, options))
     end
     function undo_relax()
         for f in undo
@@ -128,11 +127,19 @@ function get_dual_solution(node::Node, ::ContinuousConicDuality)
     return objective_value(node.subproblem), λ
 end
 
-function prepare_backward_pass(node::Node, ::ContinuousConicDuality)
+function _relax_integrality(node::Node)
     if !node.has_integrality
         return () -> nothing
     end
     return JuMP.relax_integrality(node.subproblem)
+end
+
+function prepare_backward_pass(
+    node::Node,
+    ::ContinuousConicDuality,
+    ::Options
+)
+    return _relax_integrality(node)
 end
 
 # =========================== LagrangianDuality ============================== #
@@ -374,7 +381,7 @@ to obtain a better estimate of the intercept.
 mutable struct StrengthenedConicDuality <: AbstractDualityHandler end
 
 function get_dual_solution(node::Node, ::StrengthenedConicDuality)
-    undo_relax = prepare_backward_pass(node, ContinuousConicDuality())
+    undo_relax = _relax_integrality(node)
     optimize!(node.subproblem)
     conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_relax()
@@ -401,4 +408,100 @@ function get_dual_solution(node::Node, ::StrengthenedConicDuality)
         JuMP.fix(state.in, x[i], force = true)
     end
     return lagrangian_obj, conic_dual
+end
+
+# ============================== BanditDuality =============================== #
+
+mutable struct _BanditArm{T}
+    handler::T
+    rewards::Vector{Float64}
+end
+
+"""
+    BanditDuality()
+
+Formulates the problem of choosing a duality handler as a multi-armed bandit
+problem. The arms to choose between are:
+
+ * [`ContinuousConicDuality`](@ref)
+ * [`StrengthenedConicDuality`](@ref)
+ * [`LagrangianDuality`](@ref)
+
+Our problem isn't a typical multi-armed bandit for a two reasons:
+
+ 1. The reward distribution is non-stationary (each arm converges to 0 as it
+    keeps getting pulled.
+ 2. The distribution of rewards is dependent on the history of the arms that
+    were chosen.
+
+We choose a very simple heuristic: pick the arm with the best mean + 1 standard
+deviation. That should ensure we consistently pick the arm with the best
+likelihood of improving the value function.
+
+In future, we should consider discounting the rewards of earlier iterations, and
+focus more on the more-recent rewards.
+"""
+mutable struct BanditDuality <: AbstractDualityHandler
+    arms::Vector{_BanditArm}
+    last_arm_index::Int
+    function BanditDuality()
+        return new(
+            _BanditArm[
+                _BanditArm(ContinuousConicDuality(), Float64[]),
+                _BanditArm(StrengthenedConicDuality(), Float64[]),
+                _BanditArm(LagrangianDuality(), Float64[]),
+            ],
+            1,
+        )
+    end
+end
+
+function _reward(arm::_BanditArm)
+    return Statistics.mean(arm.rewards) + Statistics.std(arm.rewards)
+end
+
+function prepare_backward_pass(
+    node::Node,
+    handler::BanditDuality,
+    options::Options,
+)
+    # If there's only one entry in the log, we can't compute a reward.
+    if length(options.log) <= 1
+        return prepare_backward_pass(node, handler.arms[1].handler, options)
+    end
+    # The bound is monotonic, so instead of worring about whether we are
+    # maximizing or minimizing, let's just compute:
+    #          |bound_t - bound_{t-1}|
+    # reward = -----------------------
+    #            time_t - time_{t-1}
+    t, t′ = options.log[end], options.log[end-1]
+    reward = abs(t.bound - t′.bound) / (t.time - t′.time)
+    # This check is needed because we should probably keep using the first
+    # handler until we start to improve the bound. This can take quite a few
+    # iterations in some models. (Until we start to improve, the reward will be
+    # zero, so we'd never revisit it.
+    const_bound = isapprox(
+        options.log[1].bound,
+        options.log[end].bound;
+        atol=1e-6,
+    )
+    # To start with, we should add the reward to all arms to construct a prior
+    # distribution for the arms. The 10 is somewhat arbitrary.
+    if length(options.log) < 10 || const_bound
+        for arm in handler.arms
+            push!(arm.rewards, reward)
+        end
+    else
+        push!(handler.arms[handler.last_arm_index].rewards, reward)
+    end
+    # Now pick the best arm ...
+    _, index = findmax([_reward(arm) for arm in handler.arms])
+    handler.last_arm_index = index
+    best_arm = handler.arms[index]
+    # ... and prepare the backward pass for that arm.
+    return prepare_backward_pass(node, best_arm.handler, options)
+end
+
+function get_dual_solution(node::Node, handler::BanditDuality)
+    return get_dual_solution(node, handler.arms[handler.last_arm_index])
 end
