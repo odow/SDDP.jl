@@ -216,7 +216,11 @@ stage_objective_value(stage_objective::Real) = stage_objective
 stage_objective_value(stage_objective) = JuMP.value(stage_objective)
 
 """
-    write_subproblem_to_file(node::Node, filename::String; throw_error::Bool = false)
+    write_subproblem_to_file(
+        node::Node,
+        filename::String;
+        throw_error::Bool = false,
+    )
 
 Write the subproblem contained in `node` to the file `filename`.
 """
@@ -239,6 +243,7 @@ function write_subproblem_to_file(
             "\nfor more information.",
         )
     end
+    return
 end
 
 """
@@ -276,7 +281,8 @@ end
 """
     _initialize_solver(node::Node; throw_error::Bool)
 
-After passing a model to a different process, we need to set the optimizer again.
+After passing a model to a different process, we need to set the optimizer
+again.
 
 If `throw_error`, throw an error if the model is in direct mode.
 
@@ -307,7 +313,8 @@ end
 """
     _initialize_solver(model::PolicyGraph; throw_error::Bool)
 
-After passing a model to a different process, we need to set the optimizer again.
+After passing a model to a different process, we need to set the optimizer
+again.
 
 If `throw_error`, throw an error if the model is in direct mode.
 
@@ -413,7 +420,8 @@ end
 
 # Internal function: update the objective state given incoming `current_state`
 # and `noise`.
-update_objective_state(obj_state::Nothing, current_state, noise) = nothing
+update_objective_state(::Nothing, ::Any, ::Any) = Nothing
+
 function update_objective_state(obj_state, current_state, noise)
     if length(current_state) == 1
         obj_state.state = (obj_state.update(current_state[1], noise),)
@@ -439,9 +447,8 @@ function distance(
 )
     if length(starting_states) == 0
         return Inf
-    else
-        return minimum(norm.(starting_states, Ref(state)))
     end
+    return minimum(norm.(starting_states, Ref(state)))
 end
 
 # Internal function: the norm to use when checking the distance between two
@@ -679,11 +686,15 @@ function solve_all_children(
         # Drop the last element (i.e., the one we added).
         pop!(scenario_path)
     end
+    return
 end
 
 """
-    SDDP.calculate_bound(model::PolicyGraph, state::Dict{Symbol, Float64},
-                           risk_measure=Expectation())
+    SDDP.calculate_bound(
+        model::PolicyGraph,
+        state::Dict{Symbol,Float64},
+        risk_measure = Expectation(),
+    )
 
 Calculate the lower bound (if minimizing, otherwise upper bound) of the problem
 model at the point state, assuming the risk measure at the root node is
@@ -699,7 +710,6 @@ function calculate_bound(
     probabilities = Float64[]
     objectives = Float64[]
     current_belief = initialize_belief(model)
-
     # Solve all problems that are children of the root node.
     for child in model.root_children
         if isapprox(child.probability, 0.0, atol = 1e-6)
@@ -812,15 +822,16 @@ Query the reason why the training stopped.
 function termination_status(model::PolicyGraph)
     if model.most_recent_training_results === nothing
         return :model_not_solved
-    else
-        return model.most_recent_training_results.status
     end
+    return model.most_recent_training_results.status
 end
 
 """
     SDDP.train(model::PolicyGraph; kwargs...)
 
-Train the policy for `model`. Keyword arguments:
+Train the policy for `model`.
+
+## Keyword arguments
 
  - `iteration_limit::Int`: number of iterations to conduct before termination.
 
@@ -831,14 +842,14 @@ Train the policy for `model`. Keyword arguments:
  - `print_level::Int`: control the level of printing to the screen. Defaults to
     `1`. Set to `0` to disable all printing.
 
- - `log_file::String`: filepath at which to write a log of the training progress.
-    Defaults to `SDDP.log`.
+ - `log_file::String`: filepath at which to write a log of the training
+   progress. Defaults to `SDDP.log`.
 
  - `log_frequency::Int`: control the frequency with which the logging is
     outputted (iterations/log). Defaults to `1`.
 
- - `run_numerical_stability_report::Bool`: generate (and print) a numerical stability
-    report prior to solve. Defaults to `true`.
+ - `run_numerical_stability_report::Bool`: generate (and print) a numerical
+   stability report prior to solve. Defaults to `true`.
 
  - `refine_at_similar_nodes::Bool`: if SDDP can detect that two nodes have the
     same children, it can cheaply add a cut discovered at one to the other. In
@@ -846,10 +857,12 @@ Train the policy for `model`. Keyword arguments:
 
  - `cut_deletion_minimum::Int`: the minimum number of cuts to cache before
     deleting  cuts from the subproblem. The impact on performance is solver
-    specific; however, smaller values result in smaller subproblems (and therefore
-    quicker solves), at the expense of more time spent performing cut selection.
+    specific; however, smaller values result in smaller subproblems (and
+    therefore quicker solves), at the expense of more time spent performing cut
+    selection.
 
- - `risk_measure`: the risk measure to use at each node. Defaults to [`Expectation`](@ref).
+ - `risk_measure`: the risk measure to use at each node. Defaults to
+   [`Expectation`](@ref).
 
  - `sampling_scheme`: a sampling scheme to use on the forward pass of the
     algorithm. Defaults to [`InSampleMonteCarlo`](@ref).
@@ -857,13 +870,14 @@ Train the policy for `model`. Keyword arguments:
  - `backward_sampling_scheme`: a backward pass sampling scheme to use on the
     backward pass of the algorithm. Defaults to `CompleteSampler`.
 
- - `cut_type`: choose between `SDDP.SINGLE_CUT` and `SDDP.MULTI_CUT` versions of SDDP.
+ - `cut_type`: choose between `SDDP.SINGLE_CUT` and `SDDP.MULTI_CUT` versions of
+   SDDP.
 
  - `dashboard::Bool`: open a visualization of the training over time. Defaults
     to `false`.
 
- - `parallel_scheme::AbstractParallelScheme`: specify a scheme for solving in parallel.
-    Defaults to `Serial()`.
+ - `parallel_scheme::AbstractParallelScheme`: specify a scheme for solving in
+   parallel. Defaults to `Serial()`.
 
  - `forward_pass::AbstractForwardPass`: specify a scheme to use for the forward
    passes.
@@ -949,7 +963,6 @@ function train(
             sampling_scheme,
         )
     end
-
     if run_numerical_stability_report
         report = sprint(
             io -> numerical_stability_report(
@@ -960,7 +973,6 @@ function train(
         )
         print_helper(print, log_file_handle, report)
     end
-
     if print_level > 0
         print_helper(print_iteration_header, log_file_handle)
     end
@@ -982,7 +994,6 @@ function train(
             "the call to SDDP.train via a keyboard interrupt ([CTRL+C])."
         )
     end
-
     # Update the nodes with the selected cut type (SINGLE_CUT or MULTI_CUT)
     # and the cut deletion minimum.
     if cut_deletion_minimum < 0
@@ -996,13 +1007,11 @@ function train(
             oracle.cut_oracle.deletion_minimum = cut_deletion_minimum
         end
     end
-
     dashboard_callback = if dashboard
         launch_dashboard()
     else
         (::Any, ::Any) -> nothing
     end
-
     options = Options(
         model,
         model.initial_root_state,
@@ -1022,7 +1031,6 @@ function train(
         duality_handler,
         forward_pass_callback,
     )
-
     status = :not_solved
     try
         status = master_loop(parallel_scheme, model, options)
@@ -1065,8 +1073,7 @@ function _simulate(
     incoming_state::Dict{Symbol,Float64},
 ) where {T}
     # Sample a scenario path.
-    scenario_path, terminated_due_to_cycle =
-        sample_scenario(model, sampling_scheme)
+    scenario_path, _ = sample_scenario(model, sampling_scheme)
 
     # Storage for the simulation results.
     simulation = Dict{Symbol,Any}[]
@@ -1176,7 +1183,7 @@ end
         skip_undefined_variables::Bool = false,
         parallel_scheme::AbstractParallelScheme = Serial(),
         incoming_state::Dict{String,Float64} = _intial_state(model),
-     )::Vector{Vector{Dict{Symbol, Any}}}
+     )::Vector{Vector{Dict{Symbol,Any}}}
 
 Perform a simulation of the policy model with `number_replications` replications
 using the sampling scheme `sampling_scheme`.
@@ -1204,24 +1211,30 @@ useful to obtain the primal value of the state and control variables.
 
 For more complicated data, the `custom_recorders` keyword argument can be used.
 
-    data = Dict{Symbol, Any}()
-    for (key, recorder) in custom_recorders
-        data[key] = foo(subproblem)
-    end
+```julia
+data = Dict{Symbol, Any}()
+for (key, recorder) in custom_recorders
+    data[key] = foo(subproblem)
+end
+```
 
 For example, to record the dual of a constraint named `my_constraint`, pass the
 following:
 
-    simulation_results = SDDP.simulate(model, 2;
-        custom_recorders = Dict{Symbol, Function}(
-            :constraint_dual => (sp) -> JuMP.dual(sp[:my_constraint])
-        )
+```julia
+simulation_results = SDDP.simulate(model, 2;
+    custom_recorders = Dict{Symbol, Function}(
+        :constraint_dual => (sp) -> JuMP.dual(sp[:my_constraint])
     )
+)
+```
 
 The value of the dual in the first stage of the second replication can be
 accessed as:
 
-    simulation_results[2][1][:constraint_dual]
+```julia
+simulation_results[2][1][:constraint_dual]
+```
 
 If you do not require dual variables (or if they are not available), pass
 `duality_handler = nothing`.
@@ -1278,7 +1291,7 @@ end
 """
     evaluate(
         rule::DecisionRule;
-        incoming_state::Dict{Symbol, Float64},
+        incoming_state::Dict{Symbol,Float64},
         noise = nothing,
         controls_to_record = Symbol[],
     )

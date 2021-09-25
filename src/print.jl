@@ -129,10 +129,11 @@ function print_problem_statistics(
 end
 
 function print_iteration_header(io)
-    return println(
+    println(
         io,
         " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves",
     )
+    return
 end
 
 print_value(x::Real) = lpad(Printf.@sprintf("%1.6e", x), 13)
@@ -145,7 +146,8 @@ function print_iteration(io, log::Log)
     print(io, "  ", print_value(log.time))
     print(io, "  ", print_value(log.pid))
     print(io, "  ", print_value(log.total_solves))
-    return println(io)
+    println(io)
+    return
 end
 
 function print_footer(io, training_results::TrainingResults)
@@ -283,23 +285,28 @@ function _update_range(range::Vector{Float64}, func::JuMP.GenericAffExpr)
     for coefficient in values(func.terms)
         _update_range(range, coefficient)
     end
+    return
 end
 
 function _update_range(range::Vector{Float64}, func::MOI.LessThan)
-    return _update_range(range, func.upper)
+    _update_range(range, func.upper)
+    return
 end
 
 function _update_range(range::Vector{Float64}, func::MOI.GreaterThan)
-    return _update_range(range, func.lower)
+    _update_range(range, func.lower)
+    return
 end
 
 function _update_range(range::Vector{Float64}, func::MOI.EqualTo)
-    return _update_range(range, func.value)
+    _update_range(range, func.value)
+    return
 end
 
 function _update_range(range::Vector{Float64}, func::MOI.Interval)
     _update_range(range, func.upper)
-    return _update_range(range, func.lower)
+    _update_range(range, func.lower)
+    return
 end
 
 # Default fallback for unsupported constraints.
@@ -328,8 +335,13 @@ function _coefficient_ranges(model::JuMP.Model)
 end
 
 """
-    numerical_stability_report([io::IO=stdout,] model::PolicyGraph,
-                               by_node::Bool=false, print=true, warn::Bool=true)
+    numerical_stability_report(
+        [io::IO=stdout,]
+        model::PolicyGraph,
+        by_node::Bool = false,
+        print::Bool = true,
+        warn::Bool = true,
+    )
 
 Print a report identifying possible numeric stability issues.
 
@@ -397,7 +409,8 @@ Assumes that the model has been trained via [`SDDP.train`](@ref).
 function write_log_to_csv(model::PolicyGraph, filename::String)
     if model.most_recent_training_results === nothing
         error(
-            "Unable to write the log to file because the model has not been trained.",
+            "Unable to write the log to file because the model has not " *
+            "been trained.",
         )
     end
     open(filename, "w") do io
@@ -415,4 +428,5 @@ function write_log_to_csv(model::PolicyGraph, filename::String)
             )
         end
     end
+    return
 end

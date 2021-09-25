@@ -17,7 +17,7 @@ end
         max_depth::Int = 0,
         terminate_on_cycle::Function = false,
         terminate_on_dummy_leaf::Function = true,
-        rollout_limit::Function = (i::Int) -> typemax(Int)
+        rollout_limit::Function = (i::Int) -> typemax(Int),
     )
 
 A Monte Carlo sampling scheme using the in-sample data from the policy graph
@@ -107,25 +107,31 @@ then `max_depth` must be set > 0.
 
 You can use `rollout_limit` to set iteration specific depth limits. For example:
 
-    OutOfSampleMonteCarlo(rollout_limit = i -> 2 * i)
+```julia
+OutOfSampleMonteCarlo(rollout_limit = i -> 2 * i)
+```
 
-### Example
+## Examples
 
-    # Given linear policy graph `graph` with `T` stages:
-    sampler = OutOfSampleMonteCarlo(graph) do node
-        if node == 0
-            return [SDDP.Noise(1, 1.0)]
-        else
-            noise_terms = [SDDP.Noise(node, 0.3), SDDP.Noise(node + 1, 0.7)]
-            children = node < T ? [SDDP.Noise(node + 1, 0.9)] : SDDP.Noise{Int}[]
-            return children, noise_terms
-        end
+Given linear policy graph `graph` with `T` stages:
+```julia
+sampler = OutOfSampleMonteCarlo(graph) do node
+    if node == 0
+        return [SDDP.Noise(1, 1.0)]
+    else
+        noise_terms = [SDDP.Noise(node, 0.3), SDDP.Noise(node + 1, 0.7)]
+        children = node < T ? [SDDP.Noise(node + 1, 0.9)] : SDDP.Noise{Int}[]
+        return children, noise_terms
     end
+end
+```
 
-    # Given linear policy graph `graph` with `T` stages:
-    sampler = OutOfSampleMonteCarlo(graph, use_insample_transition=true) do node
-        return [SDDP.Noise(node, 0.3), SDDP.Noise(node + 1, 0.7)]
-    end
+Given linear policy graph `graph` with `T` stages:
+```julia
+sampler = OutOfSampleMonteCarlo(graph, use_insample_transition=true) do node
+    return [SDDP.Noise(node, 0.3), SDDP.Noise(node + 1, 0.7)]
+end
+```
 """
 function OutOfSampleMonteCarlo(
     f::Function,
@@ -313,7 +319,7 @@ end
 A sampling scheme that samples a scenario from the vector of scenarios
 `scenarios` according to `probability`.
 
-### Example
+## Examples
 
 ```julia
 Historical(
@@ -346,7 +352,7 @@ end
 A deterministic sampling scheme that iterates through the vector of provided
 `scenarios`.
 
-## Example
+## Examples
 
 ```julia
 Historical([
@@ -365,7 +371,7 @@ end
 
 A deterministic sampling scheme that always samples `scenario`.
 
-## Example
+## Examples
 
 ```julia
 Historical([(1, 0.5), (2, 1.5), (3, 0.75)])

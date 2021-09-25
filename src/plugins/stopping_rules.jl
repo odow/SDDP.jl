@@ -16,11 +16,7 @@ end
 
 stopping_rule_status(::IterationLimit) = :iteration_limit
 
-function convergence_test(
-    graph::PolicyGraph,
-    log::Vector{Log},
-    rule::IterationLimit,
-)
+function convergence_test(::PolicyGraph, log::Vector{Log}, rule::IterationLimit)
     return log[end].iteration >= rule.limit
 end
 
@@ -37,15 +33,19 @@ end
 
 stopping_rule_status(::TimeLimit) = :time_limit
 
-function convergence_test(graph::PolicyGraph, log::Vector{Log}, rule::TimeLimit)
+function convergence_test(::PolicyGraph, log::Vector{Log}, rule::TimeLimit)
     return log[end].time >= rule.limit
 end
 
 # ========================= Statistical Stopping Rule ======================== #
 
 """
-    Statistical(; num_replications, iteration_period = 1, z_score = 1.96,
-                verbose = true)
+    Statistical(;
+        num_replications,
+        iteration_period = 1,
+        z_score = 1.96,
+        verbose = true,
+    )
 
 Perform an in-sample Monte Carlo simulation of the policy with
 `num_replications` replications every `iteration_period`s. Terminate if the
@@ -105,7 +105,8 @@ function convergence_test(
     elseif graph.objective_sense == MOI.MAX_SENSE
         return current_bound <= sample_mean + sample_ci
     else
-        #If sense is none of the above for some awkward reason, return to previous criteria
+        # If sense is none of the above for some awkward reason, return to
+        # previous criteria
         return sample_mean - sample_ci <=
                current_bound <=
                sample_mean + sample_ci
@@ -166,7 +167,7 @@ Terminate once all of the `rules` are statified.
 This stopping rule short-circuits, so subsequent rules are only tested if the
 previous pass.
 
-## Example
+## Examples
 
 A stopping rule that runs 100 iterations, then checks for the bound stalling:
 ```julia
@@ -175,6 +176,7 @@ StoppingChain(IterationLimit(100), BoundStalling(5, 0.1))
 """
 struct StoppingChain <: AbstractStoppingRule
     rules::Vector{AbstractStoppingRule}
+
     function StoppingChain(rules::AbstractStoppingRule...)
         return new(collect(rules))
     end

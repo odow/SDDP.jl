@@ -17,7 +17,9 @@ end
 Run SDDP in serial mode.
 """
 struct Serial <: AbstractParallelScheme end
+
 Base.show(io::IO, ::Serial) = print(io, "serial mode")
+
 interrupt(::Serial) = nothing
 
 function master_loop(
@@ -33,6 +35,7 @@ function master_loop(
             return result.status
         end
     end
+    return
 end
 
 function _simulate(
@@ -60,8 +63,9 @@ end
 
 Run SDDP in asynchronous mode workers with pid's `slave_pids`.
 
-After initializing the models on each worker, call `init_callback(model)`. Note that
-`init_callback` is run _locally on the worker_ and _not_ on the master thread.
+After initializing the models on each worker, call `init_callback(model)`. Note
+that `init_callback` is run _locally on the worker_ and _not_ on the master
+thread.
 """
 function Asynchronous(
     init_callback::Function,
@@ -154,6 +158,7 @@ function slave_loop(
     catch ex
         trap_error(ex)
     end
+    return
 end
 
 trap_error(ex::Exception) = throw(ex)
@@ -255,6 +260,7 @@ function master_loop(
             return status
         end
     end
+    return
 end
 
 function _simulate(
@@ -280,4 +286,5 @@ function _simulate(
             return _simulate(model, variables; kwargs...)
         end
     end
+    return
 end

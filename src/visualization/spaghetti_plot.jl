@@ -67,13 +67,15 @@ Add a new figure to the SpaghettiPlot `plt`, where the y-value of the
  	Defaults to `"linear"` see [the d3 docs](https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md#line_interpolate)
 	for all options.
 
-# Examples
+## Examples
 
-	simulations = simulate(model, 10)
-	plt = SDDP.spaghetti_plot(simulations)
-	SDDP.add_spaghetti(plt; title = "Stage objective") do data
-		return data[:stage_objective]
-	end
+```julia
+simulations = simulate(model, 10)
+plt = SDDP.spaghetti_plot(simulations)
+SDDP.add_spaghetti(plt; title = "Stage objective") do data
+    return data[:stage_objective]
+end
+```
 """
 function add_spaghetti(
     data_function::Function,

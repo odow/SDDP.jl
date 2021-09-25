@@ -142,7 +142,7 @@ end
         iteration_limit::Int = 100,
         atol::Float64 = 1e-8,
         rtol::Float64 = 1e-8,
-        optimizer = nothing
+        optimizer = nothing,
     )
 
 Obtain dual variables in the backward pass using Lagrangian duality and Kelley's

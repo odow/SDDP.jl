@@ -7,16 +7,16 @@
 
 Return `true` or `false` if the graph `G` contains a cycle.
 
-We implement Tarjan's strongly connected components algorithm to detect
-cycles in a directed graph in O(|V| + |E|) time. See this Wiki for details
+We implement Tarjan's strongly connected components algorithm to detect cycles
+in a directed graph in O(|V| + |E|) time. See this Wiki for details
 https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
-The notation here follows the pseudocode in the Wikipedia article, rather
-than the typical JuMP style guide.
+The notation here follows the pseudocode in the Wikipedia article, rather than
+the typical JuMP style guide.
 
-Since we're only checking for cyclic graphs, we can stop as soon as on is
+Since we're only checking for cyclic graphs, we can stop as soon as one is
 found. A cyclic graph has a stongly connected component with at least two
-components, or it has a node with connects to itself. That means we don't
-need to store the set of all strongly connected components.
+components, or it has a node with connects to itself. That means we don't need
+to store the set of all strongly connected components.
 """
 function is_cyclic(G::PolicyGraph{T}) where {T}
     index_counter = 0
