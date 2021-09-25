@@ -420,7 +420,7 @@ end
 
 # Internal function: update the objective state given incoming `current_state`
 # and `noise`.
-update_objective_state(::Nothing, ::Any, ::Any) = Nothing
+update_objective_state(::Nothing, ::Any, ::Any) = nothing
 
 function update_objective_state(obj_state, current_state, noise)
     if length(current_state) == 1
