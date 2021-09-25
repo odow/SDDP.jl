@@ -113,8 +113,8 @@ function xor_single_stage(duality_handler)
         SDDP.Log[],
         IOBuffer(),
         1,
+        SDDP.DefaultForwardPass(),
         duality_handler,
-        SDDP.ContinuousConicDuality(),
         x -> nothing,
     )
     _ = SDDP.prepare_backward_pass(model, duality_handler, options)
