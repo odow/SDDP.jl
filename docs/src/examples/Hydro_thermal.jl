@@ -9,12 +9,12 @@
 
 # In a hydro-thermal problem, the agent controls a hydro-electric generator and reservoir.
 # Each time period, they need to choose a generation quantity from thermal `g_t`, and hydro
-# `g_h`, in order to meed demand `w_d`, which is a stagewise-independent random variable.
+# `g_h`, in order to meet demand `w_d`, which is a stagewise-independent random variable.
 # The state variable, `x`, is the quantity of water in the reservoir at the start of each
 # time period, and it has a minimum level of 5 units and a maximum level of 15 units. We
 # assume that there are 10 units of water in the reservoir at the start of time, so that
 # `x_0 = 10`. The state-variable is connected through time by the water balance constraint:
-# `x.out = x.in - g_t - s + w_i,` where `x.out` is the quantity of water at the end of the
+# `x.out = x.in - g_h - s + w_i,` where `x.out` is the quantity of water at the end of the
 # time period, `x.in` is the quantity of water at the start of the time period, `s` is the
 # quantity of water spilled from the reservoir, and `w_i` is a stagewise-independent random
 # variable that represents the inflow into the reservoir during the time period.
