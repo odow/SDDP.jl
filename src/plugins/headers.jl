@@ -193,14 +193,14 @@ function get_dual_solution end
     prepare_backward_pass(
         node::Node,
         handler::AbstractDualityHandler,
-        options::Options
+        options::Options,
     )
 
 Performs any setup needed by the duality handler prior to the backward pass.
 
 Returns a function that, when called with no arguments, undoes the setup.
 """
-function prepare_backward_pass(::Node, ::AbstractDualityHandler, ::Options)
+function prepare_backward_pass(::Node, ::AbstractDualityHandler, ::Any)
     return () -> nothing
 end
 
