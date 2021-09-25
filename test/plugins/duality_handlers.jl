@@ -98,7 +98,26 @@ function xor_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    _ = SDDP.prepare_backward_pass(model, duality_handler)
+    options = SDDP.Options(
+        model,
+        Dict(:x => 1.0),
+        SDDP.InSampleMonteCarlo(),
+        SDDP.CompleteSampler(),
+        SDDP.Expectation(),
+        0.0,
+        true,
+        SDDP.AbstractStoppingRule[],
+        (a, b) -> nothing,
+        0,
+        0.0,
+        SDDP.Log[],
+        IOBuffer(),
+        1,
+        duality_handler,
+        SDDP.ContinuousConicDuality(),
+        x -> nothing,
+    )
+    _ = SDDP.prepare_backward_pass(model, duality_handler, options)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
     obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
@@ -145,6 +164,25 @@ function test_prepare_backward_pass()
         @variable(sp, -8 <= i3 <= 2, Int)
         @stageobjective(sp, b1 + b2 + b2 + i3 + i1)
     end
+    options = SDDP.Options(
+        model,
+        Dict(:x => 1.0),
+        SDDP.InSampleMonteCarlo(),
+        SDDP.CompleteSampler(),
+        SDDP.Expectation(),
+        0.0,
+        true,
+        SDDP.AbstractStoppingRule[],
+        (a, b) -> nothing,
+        0,
+        0.0,
+        SDDP.Log[],
+        IOBuffer(),
+        1,
+        SDDP.DefaultForwardPass(),
+        SDDP.ContinuousConicDuality(),
+        x -> nothing,
+    )
     for node in [model[1], model[2]]
         @test JuMP.is_binary(node.subproblem[:b1])
         @test !JuMP.has_lower_bound(node.subproblem[:b1])
@@ -170,8 +208,11 @@ function test_prepare_backward_pass()
         @test JuMP.lower_bound(node.subproblem[:i3]) == -8
         @test JuMP.upper_bound(node.subproblem[:i3]) == 2
     end
-    undo_relax =
-        SDDP.prepare_backward_pass(model, SDDP.ContinuousConicDuality())
+    undo_relax = SDDP.prepare_backward_pass(
+        model,
+        SDDP.ContinuousConicDuality(),
+        options,
+    )
     for node in [model[1], model[2]]
         @test !JuMP.is_binary(node.subproblem[:b1])
         @test JuMP.lower_bound(node.subproblem[:b1]) == 0.0

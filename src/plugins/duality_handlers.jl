@@ -134,11 +134,7 @@ function _relax_integrality(node::Node)
     return JuMP.relax_integrality(node.subproblem)
 end
 
-function prepare_backward_pass(
-    node::Node,
-    ::ContinuousConicDuality,
-    ::Options
-)
+function prepare_backward_pass(node::Node, ::ContinuousConicDuality, ::Options)
     return _relax_integrality(node)
 end
 
@@ -480,11 +476,8 @@ function prepare_backward_pass(
     # handler until we start to improve the bound. This can take quite a few
     # iterations in some models. (Until we start to improve, the reward will be
     # zero, so we'd never revisit it.
-    const_bound = isapprox(
-        options.log[1].bound,
-        options.log[end].bound;
-        atol=1e-6,
-    )
+    const_bound =
+        isapprox(options.log[1].bound, options.log[end].bound; atol = 1e-6)
     # To start with, we should add the reward to all arms to construct a prior
     # distribution for the arms. The 10 is somewhat arbitrary.
     if length(options.log) < 10 || const_bound
