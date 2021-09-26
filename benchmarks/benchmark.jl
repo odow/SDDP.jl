@@ -25,14 +25,13 @@ function benchmark_file(filename::String; kwargs...)
 end
 
 function benchmark(; kwargs...)
-    solutions = Dict{String,Any}()
-    models = readdir(joinpath(@__DIR__, "models"))
+    model_dir = joinpath(@__DIR__, "models")
+    models = readdir(model_dir)
     # Precompile to avoid polluting the results!
-    benchmark_file(joinpath(@__DIR__, "models", models[1]); kwargs...)
-    for file in models
-        filename = joinpath(@__DIR__, "models", file)
-        solutions[file] = benchmark_file(filename; kwargs...)
-    end
+    benchmark_file(joinpath(model_dir, models[1]); kwargs...)
+    solutions = Dict{String,Any}(
+        benchmark_file(joinpath(model_dir, file); kwargs...) for file in models
+    )
     time = Dates.format(Dates.now(), "Y_mm_dd_HHMM_SS")
     data = Dict("date" => time, "solutions" => solutions)
     open("benchmark_$(time).json", "w") do io
@@ -123,11 +122,16 @@ function report(io::IO, filename_A::String, filename_B::String)
     return
 end
 
-filename_A = benchmark(time_limit = 3)
+filename_A = benchmark(
+    time_limit = 60,
+    stopping_rules = [SDDP.BoundStalling(10, 1e-6)],
+    duality_handler = SDDP.ContinuousConicDuality(),
+)
 
 filename_B = benchmark(
-    time_limit = 3,
+    time_limit = 60,
     stopping_rules = [SDDP.BoundStalling(10, 1e-6)],
+    duality_handler = SDDP.BanditDuality(),
 )
 
 report(filename_A, filename_B)
