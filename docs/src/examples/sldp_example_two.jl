@@ -45,8 +45,8 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
         end
     end
     if get(ARGS, 1, "") == "--write"
-        # Run `$ julia sldp_example_two.jl --write` to update the benchmark
-        # model directory
+        ## Run `$ julia sldp_example_two.jl --write` to update the benchmark
+        ## model directory
         model_dir = joinpath(@__DIR__, "..", "..", "..", "benchmarks", "models")
         SDDP.write_to_file(
             model,

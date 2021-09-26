@@ -104,8 +104,8 @@ function vehicle_location_model(duality_handler)
         end
     end
     if get(ARGS, 1, "") == "--write"
-        # Run `$ julia vehicle_location.jl --write` to update the benchmark
-        # model directory
+        ## Run `$ julia vehicle_location.jl --write` to update the benchmark
+        ## model directory
         model_dir = joinpath(@__DIR__, "..", "..", "..", "benchmarks", "models")
         SDDP.write_to_file(
             model,
