@@ -29,7 +29,7 @@ Create a `Plots.jl` recipe plot of the simulations.
 
 See `Plots.jl` for the list of keyword arguments.
 
-### Example
+## Examples
 
     SDDP.publication_plot(simulations; title = "My title") do data
         return data[:stage_objective]

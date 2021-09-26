@@ -193,7 +193,7 @@ Evaluate the value function `V` at `point` in the state-space.
 Returns a tuple containing the height of the function, and the subgradient
 w.r.t. the convex state-variables.
 
-## Example
+## Examples
 
 ```julia
 evaluate(V, Dict(:volume => 1.0))
@@ -259,7 +259,7 @@ end
 Evalute the value function `V` at the point in the state-space specified by
 `kwargs`.
 
-## Example
+## Examples
 
     evaluate(V; volume = 1)
 """

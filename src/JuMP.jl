@@ -116,4 +116,5 @@ function JuMP.set_optimizer(model::SDDP.PolicyGraph, optimizer)
     for node in values(model.nodes)
         set_optimizer(node.subproblem, optimizer)
     end
+    return
 end

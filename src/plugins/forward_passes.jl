@@ -136,7 +136,7 @@ end
 """
     RevisitingForwardPass(
         period::Int = 500;
-        sub_pass::AbstractForwardPass = DefaultForwardPass()
+        sub_pass::AbstractForwardPass = DefaultForwardPass(),
     )
 
 A forward pass scheme that generate `period` new forward passes (using

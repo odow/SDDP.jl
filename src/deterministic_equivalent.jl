@@ -173,21 +173,27 @@ function add_linking_constraints(
         end
         add_linking_constraints(model, child, check_time_limit)
     end
+    return
 end
 
 """
     deterministic_equivalent(
         pg::PolicyGraph{T},
         optimizer = nothing;
-        time_limit::Union{Real, Nothing} = 60.0
+        time_limit::Union{Real,Nothing} = 60.0,
     )
 
 Form a JuMP model that represents the deterministic equivalent of the problem.
 
 ## Examples
 
-    deterministic_equivalent(model)
-    deterministic_equivalent(model, GLPK.Optimizer)
+```julia
+deterministic_equivalent(model)
+```
+
+```julia
+deterministic_equivalent(model, GLPK.Optimizer)
+```
 """
 function deterministic_equivalent(
     pg::PolicyGraph{T},

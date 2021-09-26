@@ -53,6 +53,7 @@ mutable struct ConvexApproximation
 end
 
 _magnitude(x) = x ≈ 0 ? 0 : log10(abs(x))
+
 function _dynamic_range_warning(intercept, coefficients)
     lo = hi = _magnitude(intercept)
     lo_v = hi_v = intercept
@@ -80,9 +81,12 @@ function _dynamic_range_warning(intercept, coefficients)
             maxlog = 1,
         )
     end
+    return
 end
 
-# Add the cut `V.θ ≥ θᵏ + ⟨πᵏ, x′ - xᵏ⟩`.
+"""
+Add the cut `V.θ ≥ θᵏ + ⟨πᵏ, x′ - xᵏ⟩`.
+"""
 function _add_cut(
     V::ConvexApproximation,
     θᵏ::Float64,
@@ -129,7 +133,9 @@ function add_cut_constraint_to_model(V::ConvexApproximation, cut::Cut)
     return
 end
 
-# Internal function: calculate the height of `cut` evaluated at `state`.
+"""
+Internal function: calculate the height of `cut` evaluated at `state`.
+"""
 function _eval_height(cut::Cut, state::Dict{Symbol,Float64})
     height = cut.intercept
     for (key, value) in cut.coefficients
@@ -138,12 +144,17 @@ function _eval_height(cut::Cut, state::Dict{Symbol,Float64})
     return height
 end
 
-# Internal function: check if the candidate point dominates the incumbent.
+"""
+Internal function: check if the candidate point dominates the incumbent.
+"""
 function _dominates(candidate, incumbent, minimization::Bool)
     return minimization ? candidate >= incumbent : candidate <= incumbent
 end
 
-# Internal function: update the Level-One datastructures inside `bellman_function`.
+"""
+Internal function: update the Level-One datastructures inside
+`bellman_function`.
+"""
 function _cut_selection_update(
     V::ConvexApproximation,
     cut::Cut,
@@ -157,10 +168,10 @@ function _cut_selection_update(
     model = JuMP.owner_model(V.theta)
     is_minimization = JuMP.objective_sense(model) == MOI.MIN_SENSE
     oracle = V.cut_oracle
-
     sampled_state = SampledState(state, cut, _eval_height(cut, state))
-    # Loop through previously sampled states and compare the height of the most recent cut
-    # against the current best. If this new cut is an improvement, store this one instead.
+    # Loop through previously sampled states and compare the height of the most
+    # recent cut against the current best. If this new cut is an improvement,
+    # store this one instead.
     for old_state in oracle.states
         height = _eval_height(cut, old_state.state)
         if _dominates(height, old_state.best_objective, is_minimization)
@@ -171,9 +182,9 @@ function _cut_selection_update(
         end
     end
     push!(oracle.states, sampled_state)
-
     # Now loop through previously discovered cuts and compare their height at
-    # `sampled_state`. If a cut is an improvement, add it to a queue to be added.
+    # `sampled_state`. If a cut is an improvement, add it to a queue to be
+    # added.
     for old_cut in oracle.cuts
         if old_cut.constraint_ref !== nothing
             # We only care about cuts not currently in the model.
@@ -189,7 +200,6 @@ function _cut_selection_update(
         end
     end
     push!(oracle.cuts, cut)
-
     # Delete cuts that need to be deleted.
     for cut in V.cut_oracle.cuts
         if cut.non_dominated_count < 1
@@ -229,8 +239,11 @@ end
 
 """
     BellmanFunction(;
-        lower_bound = -Inf, upper_bound = Inf, deletion_minimum::Int = 1,
-        cut_type::CutType = MULTI_CUT)
+        lower_bound = -Inf,
+        upper_bound = Inf,
+        deletion_minimum::Int = 1,
+        cut_type::CutType = MULTI_CUT,
+    )
 """
 function BellmanFunction(;
     lower_bound = -Inf,
@@ -332,6 +345,7 @@ end
 # adding 2^N constraints where N = |μ|. This is only feasible for
 # low-dimensional problems, e.g., N < 5.
 _add_initial_bounds(obj_state::Nothing, theta) = nothing
+
 function _add_initial_bounds(obj_state::ObjectiveState, theta)
     model = JuMP.owner_model(theta)
     if length(obj_state.μ) < 5
@@ -596,7 +610,9 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
 end
 
 _node_name_parser(::Type{Int}, name::String) = parse(Int, name)
+
 _node_name_parser(::Type{Symbol}, name::String) = Symbol(name)
+
 function _node_name_parser(::Type{NTuple{N,Int}}, name::String) where {N}
     keys = parse.(Int, strip.(split(name[2:end-1], ",")))
     if length(keys) != N

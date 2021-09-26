@@ -16,12 +16,14 @@ You need to define the following methods:
 abstract type AbstractRiskMeasure end
 
 """
-    adjust_probability(measure::Expectation
-                       risk_adjusted_probability::Vector{Float64},
-                       original_probability::Vector{Float64},
-                       noise_support::Vector{Noise{T}},
-                       objective_realizations::Vector{Float64},
-                       is_minimization::Bool) where T
+    adjust_probability(
+        measure::Expectation
+        risk_adjusted_probability::Vector{Float64},
+        original_probability::Vector{Float64},
+        noise_support::Vector{Noise{T}},
+        objective_realizations::Vector{Float64},
+        is_minimization::Bool,
+    ) where {T}
 """
 function adjust_probability end
 
@@ -38,7 +40,7 @@ You need to define the following methods:
 abstract type AbstractSamplingScheme end
 
 """
-    sample_scenario(graph::PolicyGraph{T}, ::AbstractSamplingScheme) where T
+    sample_scenario(graph::PolicyGraph{T}, ::AbstractSamplingScheme) where {T}
 
 Sample a scenario from the policy graph `graph` based on the sampling scheme.
 
@@ -68,8 +70,10 @@ abstract type AbstractBellmanFunction end
 
 """
     initialize_bellman_function(
-        ::Type{F}, graph::PolicyGraph{T}, node::Node{T}
-        ) where {F<:AbstractBellmanFunction, T}
+        ::Type{F},
+        graph::PolicyGraph{T},
+        node::Node{T},
+    ) where {F<:AbstractBellmanFunction,T}
 
 Return an instance of the Bellman function F for `node` in the policy graph
 `graph`.
@@ -77,16 +81,17 @@ Return an instance of the Bellman function F for `node` in the policy graph
 function initialize_bellman_function end
 
 """
-    refine_bellman_function(graph::PolicyGraph{T},
-                            node::Node{T},
-                            bellman_function::AbstractBellmanFunction,
-                            risk_measure::AbstractRiskMeasure,
-                            state::Dict{Symbol, Float64},
-                            dual_variables::Vector{Dict{Symbol, Float64}},
-                            noise_supports::Vector{<:Noise},
-                            original_probability::Vector{Float64},
-                            objective_realizations::Vector{Float64}
-                            ) where T
+    refine_bellman_function(
+        graph::PolicyGraph{T},
+        node::Node{T},
+        bellman_function::AbstractBellmanFunction,
+        risk_measure::AbstractRiskMeasure,
+        state::Dict{Symbol, Float64},
+        dual_variables::Vector{Dict{Symbol,Float64}},
+        noise_supports::Vector{<:Noise},
+        original_probability::Vector{Float64},
+        objective_realizations::Vector{Float64},
+    ) where {T}
 """
 function refine_bellman_function end
 
@@ -118,12 +123,14 @@ Return a symbol describing the stopping rule.
 function stopping_rule_status end
 
 """
-    convergence_test(model::PolicyGraph, log::Vector{Log}, ::AbstractStoppingRule)::Bool
+    convergence_test(
+        model::PolicyGraph,
+        log::Vector{Log},
+        ::AbstractStoppingRule,
+    )::Bool
 
 Return a `Bool` indicating if the algorithm should terminate the training.
 """
-function convergence_test end
-
 function convergence_test(
     graph::PolicyGraph,
     log::Vector{Log},
@@ -152,7 +159,7 @@ abstract type AbstractBackwardSamplingScheme end
 """
     sample_backward_noise_terms(
         backward_sampling_scheme::AbstractBackwardSamplingScheme,
-        node::Node{T}
+        node::Node{T},
     )::Vector{Noise}
 
 Returns a `Vector{Noise}` of noises sampled from `node.noise_terms` using
@@ -202,7 +209,9 @@ abstract type AbstractParallelScheme end
 
 """
     master_loop(
-        ::AbstractParallelScheme, model::PolicyGraph{T}, options::Options
+        ::AbstractParallelScheme,
+        model::PolicyGraph{T},
+        options::Options,
     )::Symbol where {T}
 
 The solve loop of the SDDP algorithm. Returns a symbol corresponding to the
@@ -245,6 +254,6 @@ Return a forward pass as a named tuple with the following fields:
         cumulative_value,
     )
 
-See `DefaultForwardPass` for details.
+See [`DefaultForwardPass`](@ref) for details.
 """
 function forward_pass end

@@ -135,7 +135,7 @@ end
 
 Create a weighted combination of risk measures.
 
-### Examples
+## Examples
 
     SDDP.ConvexCombination(
         (0.5, SDDP.Expectation()),
@@ -161,6 +161,7 @@ function Base.show(io::IO, measure::ConvexCombination)
         print(io, m[1], " * ", m[2])
         is_first = false
     end
+    return
 end
 
 import Base: +, *
@@ -270,7 +271,7 @@ where
 3. r is a user specified radius - the larger the radius, the more conservative
    the policy.
 
-## Notes 
+## Notes
 
 The largest radius that will work with S scenarios is sqrt((S-1)/S).
 

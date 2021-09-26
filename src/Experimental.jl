@@ -6,7 +6,7 @@
 import SHA
 
 """
-    TestScenario{T, S}(probability::Float64, scenario::Vector{Tuple{T, S}})
+    TestScenario{T,S}(probability::Float64, scenario::Vector{Tuple{T,S}})
 
 A single scenario for testing.
 
@@ -18,7 +18,7 @@ struct TestScenario{T,S}
 end
 
 """
-    TestScenarios{T, S}(scenarios::Vector{TestScenario{T, S}})
+    TestScenarios{T,S}(scenarios::Vector{TestScenario{T,S}})
 
 An [`AbstractSamplingScheme`](@ref) based on a vector of scenarios.
 
@@ -55,6 +55,7 @@ function _throw_if_belief_states(model::PolicyGraph)
     if length(model.belief_partition) != 0
         error("StochOptFormat does not support belief states.")
     end
+    return
 end
 
 function _throw_if_objective_states(model::PolicyGraph)
@@ -63,6 +64,7 @@ function _throw_if_objective_states(model::PolicyGraph)
             error("StochOptFormat does not support objective states.")
         end
     end
+    return
 end
 
 function _throw_if_exisiting_cuts(model::PolicyGraph)
@@ -74,6 +76,7 @@ function _throw_if_exisiting_cuts(model::PolicyGraph)
             )
         end
     end
+    return
 end
 
 function _test_scenarios(model::PolicyGraph, test_scenarios::Int, scenario_map)
@@ -88,6 +91,7 @@ function _test_scenarios(model::PolicyGraph, test_scenarios::Int, scenario_map)
         scenario_map,
     )
 end
+
 function _test_scenarios(
     ::PolicyGraph,
     test_scenarios::TestScenarios,
@@ -139,19 +143,21 @@ possible modifications are supported. These include:
 If your model uses something other than this, this function will silently write
 an incorrect formulation of the problem.
 
-## Example
+## Examples
 
-    open("my_model.sof.json", "w") do io
-        write(
-            io,
-            model;
-            test_scenarios = 10,
-            name = "MyModel",
-            author = "@odow",
-            date = "2020-07-20",
-            description = "Example problem for the SDDP.jl documentation",
-        )
-    end
+```julia
+open("my_model.sof.json", "w") do io
+    write(
+        io,
+        model;
+        test_scenarios = 10,
+        name = "MyModel",
+        author = "@odow",
+        date = "2020-07-20",
+        description = "Example problem for the SDDP.jl documentation",
+    )
+end
+```
 """
 function Base.write(
     io::IO,
@@ -205,6 +211,7 @@ function _add_edges(
             ),
         )
     end
+    return
 end
 
 function _add_node_to_dict(dest::Dict, node::Node, node_name::String)
@@ -238,11 +245,13 @@ end
 
 """
     _reformulate_uncertainty(
-        node::Node, realizations, random_variables
+        node::Node,
+        realizations,
+        random_variables,
     )
 
-Convert any lower and upper variable_bound_storage than depend on the uncertainty into linear
-constraints with a random variable.
+Convert any lower and upper variable_bound_storage than depend on the
+uncertainty into linear constraints with a random variable.
 
 Fixed variables are recorded as random variables, but no transformation is done.
 
@@ -544,6 +553,7 @@ function _reformulate_lower_bound(
     for (realization, bound) in zip(realizations, variable_bound_storage)
         realization["support"][new_name] = bound[x].l
     end
+    return
 end
 
 function _reformulate_upper_bound(
@@ -568,6 +578,7 @@ function _reformulate_upper_bound(
     for (realization, bound) in zip(realizations, variable_bound_storage)
         realization["support"][new_name] = bound[x].u
     end
+    return
 end
 
 function _reformulate_constraint_rhs(
@@ -648,15 +659,16 @@ end
         io::IO,
         ::Type{PolicyGraph};
         bound::Float64 = 1e6,
-    )::Tuple{PolicyGraph, TestScenarios}
+    )::Tuple{PolicyGraph,TestScenarios}
 
 Return a tuple containing a [`PolicyGraph`](@ref) object and a
 [`TestScenarios`](@ref) read from `io` in the StochOptFormat file format.
 
 See also: [`evaluate`](@ref).
 
-WARNING: THIS FUNCTION IS EXPERIMENTAL. THINGS MAY CHANGE BETWEEN COMMITS. YOU
-SHOULD NOT RELY ON THIS FUNCTIONALITY AS A LONG-TERM FILE FORMAT (YET).
+!!! warning
+    This function is experimental. Things may change between commits. You should
+    not rely on this functionality as a long-term file format (yet).
 
 In addition to potential changes to the underlying format, only a subset of
 possible modifications are supported. These include:
@@ -666,11 +678,13 @@ possible modifications are supported. These include:
 If your model uses something other than this, this function may throw an error
 or silently build a non-convex model.
 
-## Example
+## Examples
 
-    open("my_model.sof.json", "r") do io
-        model, test_scenarios = read(io, PolicyGraph)
-    end
+```julia
+open("my_model.sof.json", "r") do io
+    model, test_scenarios = read(io, PolicyGraph)
+end
+```
 """
 function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     data = JSON.parse(io; dicttype = Dict{String,Any})
@@ -773,12 +787,12 @@ function _convert_objective_function(sp::Model, rvs::Vector{String})
     return _convert_objective_function(sp, rvs, objective_function(sp))
 end
 
-function _convert_objective_function(sp::Model, ::Vector{String}, objf)
+function _convert_objective_function(::Model, ::Vector{String}, objf)
     return Dict{String,Any}(), objf
 end
 
 function _convert_objective_function(
-    sp::Model,
+    ::Model,
     rvs::Vector{String},
     objf::QuadExpr,
 )
@@ -797,9 +811,8 @@ function _convert_objective_function(
     end
     if length(terms) == length(objf.terms)
         return terms, aff_obj
-    else
-        return terms, QuadExpr(aff_obj, quad_terms)
     end
+    return terms, QuadExpr(aff_obj, quad_terms)
 end
 
 """
@@ -819,12 +832,15 @@ detecting the file compression to use based on the extension of `filename`.
 See [`Base.write(::IO, ::PolicyGraph)`](@ref) for information on the
 keyword arguments that can be provided.
 
-WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
-[`Base.write(::IO, ::PolicyGraph)`](@ref).
+!!! warning
+    This function is experimental. See the full warning in
+    [`Base.write(::IO, ::PolicyGraph)`](@ref).
 
-## Example
+## Examples
 
-    write_to_file(model, "my_model.sof.json"; test_scenarios = 10)
+```julia
+write_to_file(model, "my_model.sof.json"; test_scenarios = 10)
+```
 """
 function write_to_file(
     model::PolicyGraph,
@@ -854,12 +870,15 @@ detecting the file compression to use based on the extension of `filename`.
 See [`Base.read(::IO, ::Type{PolicyGraph})`](@ref) for information on the
 keyword arguments that can be provided.
 
-WARNING: THIS FUNCTION IS EXPERIMENTAL. SEE THE FULL WARNING IN
-[`Base.read(::IO, ::Type{PolicyGraph})`](@ref).
+!!! warning
+    This function is experimental. See the full warning in
+    [`Base.read(::IO, ::Type{PolicyGraph})`](@ref).
 
-## Example
+## Examples
 
-    model, test_scenarios = read_from_file("my_model.sof.json")
+```julia
+model, test_scenarios = read_from_file("my_model.sof.json")
+```
 """
 function read_from_file(
     filename::String;
@@ -873,17 +892,20 @@ end
 
 """
     evaluate(
-        model::PolicyGraph{T}, test_scenarios::TestScenarios{T, S}
-    ) where {T, S}
+        model::PolicyGraph{T},
+        test_scenarios::TestScenarios{T,S},
+    ) where {T,S}
 
 Evaluate the performance of the policy contained in `model` after a call to
 [`train`](@ref) on the scenarios specified by `test_scenarios`.
 
-## Example
+## Examples
 
-    model, test_scenarios = read_from_file("my_model.sof.json")
-    train(model; iteration_limit = 100)
-    simulations = evaluate(model, test_scenarios)
+```julia
+model, test_scenarios = read_from_file("my_model.sof.json")
+train(model; iteration_limit = 100)
+simulations = evaluate(model, test_scenarios)
+```
 """
 function evaluate(
     model::PolicyGraph{T},

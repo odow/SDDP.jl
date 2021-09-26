@@ -64,6 +64,7 @@ function Base.show(io::IO, graph::Graph)
         end
         println(io)
     end
+    return
 end
 
 # Internal function used to validate the structure of a graph
@@ -95,16 +96,19 @@ function _validate_graph(graph::Graph)
             )
         end
     end
+    return
 end
 
 """
-    add_node(graph::Graph{T}, node::T) where T
+    add_node(graph::Graph{T}, node::T) where {T}
 
 Add a node to the graph `graph`.
 
-### Examples
+## Examples
 
-    add_node(graph, :A)
+```julia
+add_node(graph, :A)
+```
 """
 function add_node(graph::Graph{T}, node::T) where {T}
     if haskey(graph.nodes, node) || node == graph.root_node
@@ -113,19 +117,22 @@ function add_node(graph::Graph{T}, node::T) where {T}
     graph.nodes[node] = Tuple{T,Float64}[]
     return
 end
+
 function add_node(graph::Graph{T}, node) where {T}
     return error("Unable to add node $(node). Nodes must be of type $(T).")
 end
 
 """
-    add_edge(graph::Graph{T}, edge::Pair{T, T}, probability::Float64) where T
+    add_edge(graph::Graph{T}, edge::Pair{T, T}, probability::Float64) where {T}
 
 Add an edge to the graph `graph`.
 
-### Examples
+## Examples
 
-    add_edge(graph, 1 => 2, 0.9)
-    add_edge(graph, :root => :A, 1.0)
+```julia
+add_edge(graph, 1 => 2, 0.9)
+add_edge(graph, :root => :A, 1.0)
+```
 """
 function add_edge(
     graph::Graph{T},
@@ -146,7 +153,11 @@ function add_edge(
 end
 
 """
-    add_ambiguity_set(graph::Graph{T}, set::Vector{T}, lipschitz::Vector{Float64})
+    add_ambiguity_set(
+        graph::Graph{T},
+        set::Vector{T},
+        lipschitz::Vector{Float64},
+    ) where {T}
 
 Add `set` to the belief partition of `graph`.
 
@@ -155,11 +166,13 @@ in `set`. The Lipschitz constant is the maximum slope of the cost-to-go function
 with respect to the belief state associated with each node at any point in the
 state-space.
 
-### Examples
+## Examples
 
-    graph = LinearGraph(3)
-    add_ambiguity_set(graph, [1, 2], [1e3, 1e2])
-    add_ambiguity_set(graph, [3], [1e5])
+```julia
+graph = LinearGraph(3)
+add_ambiguity_set(graph, [1, 2], [1e3, 1e2])
+add_ambiguity_set(graph, [3], [1e5])
+```
 """
 function add_ambiguity_set(
     graph::Graph{T},
@@ -188,11 +201,13 @@ Add `set` to the belief partition of `graph`.
 constant is the maximum slope of the cost-to-go function with respect to the
 belief state associated with each node at any point in the state-space.
 
-### Examples
+## Examples
 
-    graph = LinearGraph(3)
-    add_ambiguity_set(graph, [1, 2], 1e3)
-    add_ambiguity_set(graph, [3], 1e5)
+```julia
+graph = LinearGraph(3)
+add_ambiguity_set(graph, [1, 2], 1e3)
+add_ambiguity_set(graph, [3], 1e5)
+```
 """
 function add_ambiguity_set(
     graph::Graph{T},
@@ -234,12 +249,12 @@ end
 
 Construct a Markovian graph from the vector of transition matrices.
 
-`transition_matrices[t][i, j]` gives the probability of transitioning from Markov state `i`
-in stage `t - 1` to Markov state `j` in stage `t`.
+`transition_matrices[t][i, j]` gives the probability of transitioning from
+Markov state `i` in stage `t - 1` to Markov state `j` in stage `t`.
 
 The dimension of the first transition matrix should be `(1, N)`, and
-`transition_matrics[1][1, i]` is the probability of transitioning from the root node to the
-Markov state `i`.
+`transition_matrics[1][1, i]` is the probability of transitioning from the root
+node to the Markov state `i`.
 """
 function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
     if size(transition_matrices[1], 1) != 1
@@ -292,18 +307,18 @@ end
     MarkovianGraph(;
         stages::Int,
         transition_matrix::Matrix{Float64},
-        root_node_transition::Vector{Float64}
+        root_node_transition::Vector{Float64},
     )
 
-Construct a Markovian graph object with `stages` number of stages and time-independent
-Markov transition probabilities.
+Construct a Markovian graph object with `stages` number of stages and
+time-independent Markov transition probabilities.
 
-`transition_matrix` must be a square matrix, and the probability of transitioning from
-Markov state `i` in stage `t` to Markov state `j` in stage `t + 1` is given by
-`transition_matrix[i, j]`.
+`transition_matrix` must be a square matrix, and the probability of
+transitioning from Markov state `i` in stage `t` to Markov state `j` in stage
+`t + 1` is given by `transition_matrix[i, j]`.
 
-`root_node_transition[i]` is the probability of transitioning from the root node to Markov
-state `i` in the first stage.
+`root_node_transition[i]` is the probability of transitioning from the root node
+to Markov state `i` in the first stage.
 """
 function MarkovianGraph(;
     stages::Int = 1,
@@ -402,7 +417,8 @@ function Base.show(io::IO, node::Node)
     println(io, "Node $(node.index)")
     println(io, "  # State variables : ", length(node.states))
     println(io, "  # Children        : ", length(node.children))
-    return println(io, "  # Noise terms     : ", length(node.noise_terms))
+    println(io, "  # Noise terms     : ", length(node.noise_terms))
+    return
 end
 
 function pre_optimize_hook(f::Function, node::Node)
@@ -477,6 +493,7 @@ function Base.show(io::IO, graph::PolicyGraph)
     else
         println(io, " Node indices: ", nodes[1], ", ..., ", nodes[end])
     end
+    return
 end
 
 # So we can query nodes in the graph as graph[node].
@@ -489,12 +506,12 @@ function construct_subproblem(optimizer_factory, direct_mode::Bool)
     if direct_mode
         return JuMP.direct_model(MOI.instantiate(optimizer_factory))
     else
-        return JuMP.Model() # optimizer_factory)
+        return JuMP.Model()
     end
 end
 
 # Work around different JuMP modes (Automatic / Manual / Direct).
-function construct_subproblem(optimizer_factory::Nothing, direct_mode::Bool)
+function construct_subproblem(::Nothing, direct_mode::Bool)
     if direct_mode
         error(
             "You must specify an optimizer in the form:\n" *
@@ -522,21 +539,23 @@ end
 """
     MarkovianPolicyGraph(
         builder::Function;
-        transition_matrices::Vector{Array{Float64, 2}},
+        transition_matrices::Vector{Array{Float64,2}},
         kwargs...
     )
 
 Create a Markovian policy graph based on the transition matrices given in
 `transition_matrices`.
 
-`transition_matrices[t][i, j]` gives the probability of transitioning from Markov state `i`
-in stage `t - 1` to Markov state `j` in stage `t`.
+`transition_matrices[t][i, j]` gives the probability of transitioning from
+Markov state `i` in stage `t - 1` to Markov state `j` in stage `t`.
 
 The dimension of the first transition matrix should be `(1, N)`, and
-`transition_matrics[1][1, i]` is the probability of transitioning from the root node to the
-Markov state `i`.
+`transition_matrics[1][1, i]` is the probability of transitioning from the root
+node to the Markov state `i`.
 
-See [`SDDP.MarkovianGraph`](@ref) for other ways of specifying a Markovian policy graph.
+See [`SDDP.MarkovianGraph`](@ref) for other ways of specifying a Markovian
+policy graph.
+
 See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
 """
 function MarkovianPolicyGraph(
@@ -562,30 +581,34 @@ end
 Construct a policy graph based on the graph structure of `graph`. (See
 [`SDDP.Graph`](@ref) for details.)
 
-# Example
+## Examples
 
-    function builder(subproblem::JuMP.Model, index)
-        # ... subproblem definition ...
-    end
+```julia
+function builder(subproblem::JuMP.Model, index)
+    # ... subproblem definition ...
+end
 
-    model = PolicyGraph(
-        builder,
-        graph;
-        lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
-        direct_mode = false
-    )
+model = PolicyGraph(
+    builder,
+    graph;
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+    direct_mode = false
+)
+```
 
 Or, using the Julia `do ... end` syntax:
 
-    model = PolicyGraph(
-        graph;
-        lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
-        direct_mode = true
-    ) do subproblem, index
-        # ... subproblem definitions ...
-    end
+```julia
+model = PolicyGraph(
+    graph;
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+    direct_mode = true
+) do subproblem, index
+    # ... subproblem definitions ...
+end
+```
 """
 function PolicyGraph(
     builder::Function,
@@ -744,6 +767,7 @@ function initialize_belief_states(
             end
         end
     end
+    return
 end
 
 # Internal function: When created, θ has bounds of [-M, M], but, since we are
@@ -754,7 +778,7 @@ function add_initial_bounds(node, μ::Dict)
     θ = bellman_term(node.bellman_function)
     lower_bound = JuMP.has_lower_bound(θ) ? JuMP.lower_bound(θ) : -Inf
     upper_bound = JuMP.has_upper_bound(θ) ? JuMP.upper_bound(θ) : Inf
-    for (key, variable) in μ
+    for (_, variable) in μ
         if lower_bound > -Inf
             @constraint(node.subproblem, variable + θ >= lower_bound)
         end
@@ -762,6 +786,7 @@ function add_initial_bounds(node, μ::Dict)
             @constraint(node.subproblem, variable + θ <= upper_bound)
         end
     end
+    return
 end
 
 # Internal function: helper to get the node given a subproblem.
@@ -775,11 +800,12 @@ function get_policy_graph(subproblem::JuMP.Model)
 end
 
 """
-    parameterize(modify::Function,
-                 subproblem::JuMP.Model,
-                 realizations::Vector{T},
-                 probability::Vector{Float64} = fill(1.0 / length(realizations))
-                     ) where T
+    parameterize(
+        modify::Function,
+        subproblem::JuMP.Model,
+        realizations::Vector{T},
+        probability::Vector{Float64} = fill(1.0 / length(realizations))
+    ) where {T}
 
 Add a parameterization function `modify` to `subproblem`. The `modify` function
 takes one argument and modifies `subproblem` based on the realization of the
@@ -789,11 +815,13 @@ noise sampled from `realizations` with corresponding probabilities
 In order to conduct an out-of-sample simulation, `modify` should accept
 arguments that are not in realizations (but still of type T).
 
-# Example
+## Examples
 
-    SDDP.parameterize(subproblem, [1, 2, 3], [0.4, 0.3, 0.3]) do ω
-        JuMP.set_upper_bound(x, ω)
-    end
+```julia
+SDDP.parameterize(subproblem, [1, 2, 3], [0.4, 0.3, 0.3]) do ω
+    JuMP.set_upper_bound(x, ω)
+end
+```
 """
 function parameterize(
     modify::Function,
@@ -823,9 +851,11 @@ end
 
 Set the stage-objective of `subproblem` to `stage_objective`.
 
-# Example
+## Examples
 
-    SDDP.set_stage_objective(subproblem, 2x + 1)
+```julia
+SDDP.set_stage_objective(subproblem, 2x + 1)
+```
 """
 function set_stage_objective(
     subproblem::JuMP.Model,
@@ -849,9 +879,11 @@ end
 
 Set the stage-objective of `subproblem` to `expr`.
 
-### Example
+## Examples
 
-    @stageobjective(subproblem, 2x + y)
+```julia
+@stageobjective(subproblem, 2x + y)
+```
 """
 macro stageobjective(subproblem, expr)
     code = MutableArithmetics.rewrite_and_return(expr)
@@ -885,7 +917,7 @@ Setting tight values for these optional variables can significantly improve the
 speed of convergence.
 
 If the objective state is `N`-dimensional, each keyword argument must be an
-`NTuple{N, Float64}`. For example, `initial_value = (0.0, 1.0)`.
+`NTuple{N,Float64}`. For example, `initial_value = (0.0, 1.0)`.
 """
 function add_objective_state(
     update::Function,
@@ -963,14 +995,12 @@ Can only be called from [`SDDP.parameterize`](@ref).
 """
 function objective_state(subproblem::JuMP.Model)
     objective_state = get_node(subproblem).objective_state
-    if objective_state !== nothing
-        if length(objective_state.state) == 1
-            return objective_state.state[1]
-        else
-            return objective_state.state
-        end
-    else
+    if objective_state === nothing
         error("No objective state defined.")
+    elseif length(objective_state.state) == 1
+        return objective_state.state[1]
+    else
+        return objective_state.state
     end
 end
 
@@ -1009,7 +1039,7 @@ following signature and returns the outgoing belief:
         incoming_belief::Dict{T, Float64},
         observed_partition::Int,
         observed_noise
-    )::Dict{T, Float64}
+    )::Dict{T,Float64}
 
 We use Bayes theorem: P(X′ | Y) = P(Y | X′) × P(X′) / P(Y), where P(Xᵢ′ | Y) is
 the probability of being in node i given the observation of ω. In addition
