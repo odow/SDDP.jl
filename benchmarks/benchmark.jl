@@ -14,27 +14,27 @@ function benchmark_file(filename::String; kwargs...)
     for i in 2:length(log)
         time_weighted_bound += log[i].bound * (log[i].time - log[i-1].time)
     end
+    sign = model.objective_sense == MOI.MAX_SENSE ? -1 : 1
     return (
-        best_bound = log[end].bound,
-        total_time = log[end].time,
+        best_bound = sign * log[end].bound,
+        total_time = sign * log[end].time,
         total_solves = log[end].total_solves,
         time_weighted_bound = time_weighted_bound / log[end].time,
-        bound = map(l -> l.bound, log),
+        bound = map(l -> sign * l.bound, log),
     )
 end
 
 function benchmark(; kwargs...)
     solutions = Dict{String,Any}()
-    for file in readdir(joinpath(@__DIR__, "models"))
+    models = readdir(joinpath(@__DIR__, "models"))
+    # Precompile to avoid polluting the results!
+    benchmark_file(joinpath(@__DIR__, "models", models[1]); kwargs...)
+    for file in models
         filename = joinpath(@__DIR__, "models", file)
         solutions[file] = benchmark_file(filename; kwargs...)
     end
-    time = Dates.format(Dates.now(), "Y_mm_dd_HHMM")
-    data = Dict(
-        "date" => time,
-        "config" => kwargs,
-        "solutions" => solutions,
-    )
+    time = Dates.format(Dates.now(), "Y_mm_dd_HHMM_SS")
+    data = Dict("date" => time, "solutions" => solutions)
     open("benchmark_$(time).json", "w") do io
         write(io, JSON.json(data))
     end
@@ -51,7 +51,6 @@ function _report_columns(filename)
         avg_bound = map(m -> d[m]["time_weighted_bound"], models),
         total_time = map(m -> d[m]["total_time"], models),
         total_solves = map(m -> d[m]["total_solves"], models),
-        config = data["config"],
     )
 end
 
@@ -65,9 +64,6 @@ function _summarize(io, filename_A)
     println(io, "```")
     println(io, "filename: $(filename_A)")
     A = _report_columns(filename_A)
-    for (key, val) in A.config
-        println(io, "$(key): $(val)")
-    end
     println(io, "```\n")
     data = hcat(
         A.models,
@@ -127,14 +123,11 @@ function report(io::IO, filename_A::String, filename_B::String)
     return
 end
 
-# filename_A = benchmark(
-#     time_limit = 3,
-#     stopping_rules = [SDDP.BoundStalling(10, 1e-6)],
-# )
+filename_A = benchmark(time_limit = 3)
 
-# filename_B = benchmark(
-#     time_limit = 3,
-#     stopping_rules = [SDDP.BoundStalling(10, 1e-6)],
-# )
+filename_B = benchmark(
+    time_limit = 3,
+    stopping_rules = [SDDP.BoundStalling(10, 1e-6)],
+)
 
-# report(filename_A, filename_B)
+report(filename_A, filename_B)
