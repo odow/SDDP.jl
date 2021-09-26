@@ -1,0 +1,7 @@
+[deps]
+GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
+HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+SDDP = "f4570300-c277-11e8-125c-4912f86ce65d"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

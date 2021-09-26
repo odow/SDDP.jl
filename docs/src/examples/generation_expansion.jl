@@ -5,7 +5,9 @@
 
 # # Generation expansion
 
-using SDDP, LinearAlgebra, GLPK, Test
+using SDDP
+import GLPK
+import Test
 
 function generation_expansion(duality_handler)
     build_cost = 1e4
@@ -71,13 +73,24 @@ function generation_expansion(duality_handler)
             penalty * unmet
         )
     end
+    if get(ARGS, 1, "") == "--write"
+        ## Run `$ julia generation_expansion.jl --write` to update the benchmark
+        ## model directory
+        model_dir = joinpath(@__DIR__, "..", "..", "..", "benchmarks", "models")
+        SDDP.write_to_file(
+            model,
+            joinpath(model_dir, "generation_expansion.sof.json.gz");
+            test_scenarios = 100,
+        )
+        exit(0)
+    end
     SDDP.train(
         model,
         iteration_limit = 50,
         log_frequency = 10,
         duality_handler = duality_handler,
     )
-    @test SDDP.calculate_bound(model) ≈ 2.078860e6 atol = 1e3
+    Test.@test SDDP.calculate_bound(model) ≈ 2.078860e6 atol = 1e3
     return
 end
 

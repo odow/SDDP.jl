@@ -22,7 +22,9 @@
 # relocated to a different base in preparation for future calls. This incurrs a
 # cost of the driving distance.
 
-using SDDP, GLPK, Test
+using SDDP
+import GLPK
+import Test
 
 function vehicle_location_model(duality_handler)
     hospital_location = 0
@@ -101,6 +103,17 @@ function vehicle_location_model(duality_handler)
             )
         end
     end
+    if get(ARGS, 1, "") == "--write"
+        ## Run `$ julia vehicle_location.jl --write` to update the benchmark
+        ## model directory
+        model_dir = joinpath(@__DIR__, "..", "..", "..", "benchmarks", "models")
+        SDDP.write_to_file(
+            model,
+            joinpath(model_dir, "vehicle_location.sof.json.gz");
+            test_scenarios = 100,
+        )
+        exit(0)
+    end
     SDDP.train(
         model;
         iteration_limit = 50,
@@ -108,7 +121,7 @@ function vehicle_location_model(duality_handler)
         cut_deletion_minimum = 100,
         duality_handler = duality_handler,
     )
-    @test SDDP.calculate_bound(model) >= 1000
+    Test.@test SDDP.calculate_bound(model) >= 1000
     return
 end
 

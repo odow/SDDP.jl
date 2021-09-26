@@ -9,7 +9,9 @@
 # Ahmed, S., Cabral, F. G., & da Costa, B. F. P. (2019). Stochastic Lipschitz
 # Dynamic Programming. Optimization Online. [PDF](http://www.optimization-online.org/DB_FILE/2019/05/7193.pdf)
 
-using SDDP, GLPK, Test
+using SDDP
+import GLPK
+import Test
 
 function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
     model = SDDP.LinearPolicyGraph(
@@ -42,15 +44,26 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
             end
         end
     end
+    if get(ARGS, 1, "") == "--write"
+        ## Run `$ julia sldp_example_two.jl --write` to update the benchmark
+        ## model directory
+        model_dir = joinpath(@__DIR__, "..", "..", "..", "benchmarks", "models")
+        SDDP.write_to_file(
+            model,
+            joinpath(model_dir, "sldp_example_two_$(N).sof.json.gz");
+            test_scenarios = 30,
+        )
+        exit(0)
+    end
     SDDP.train(model, iteration_limit = 100, log_frequency = 10)
     bound = SDDP.calculate_bound(model)
 
     if N == 2
-        @test bound <= -57.0
+        Test.@test bound <= -57.0
     elseif N == 3
-        @test bound <= -59.33
+        Test.@test bound <= -59.33
     elseif N == 6
-        @test bound <= -61.22
+        Test.@test bound <= -61.22
     end
     return
 end
