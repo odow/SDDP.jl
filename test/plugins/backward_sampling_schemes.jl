@@ -3,10 +3,23 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+module TestBackwardPassSamplingSchemes
+
 using SDDP
 using Test
 
-@testset "CompleteSampler" begin
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_CompleteSampler()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -19,9 +32,10 @@ using Test
     end
     terms = SDDP.sample_backward_noise_terms(SDDP.CompleteSampler(), model[1])
     @test terms == model[1].noise_terms
+    return
 end
 
-@testset "MonteCarloSampler(1)" begin
+function test_MonteCarloSampler_1()
     model = SDDP.LinearPolicyGraph(
         stages = 1,
         lower_bound = 0.0,
@@ -46,9 +60,10 @@ end
         end
     end
     @test term_count > 20
+    return
 end
 
-@testset "MonteCarloSampler(100)" begin
+function test_MonteCarloSampler_100()
     model = SDDP.LinearPolicyGraph(
         stages = 1,
         lower_bound = 0.0,
@@ -71,4 +86,9 @@ end
         end
     end
     @test term_count > 20
+    return
 end
+
+end  # module
+
+TestBackwardPassSamplingSchemes.runtests()

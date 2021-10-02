@@ -3,13 +3,30 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-@testset "find_min" begin
+module TestModelingAids
+
+using SDDP
+using Test
+
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_find_min()
     @test SDDP.find_min([1.0, 2.0, 3.0], 2.1) == (abs(2.0 - 2.1), 2)
     @test SDDP.find_min([1.0, 2.0, 3.0], 0.0) == (1.0, 1)
     @test SDDP.find_min([1.0, 2.0, 3.0], 5.0) == (2.0, 3)
+    return
 end
 
-@testset "allocate_support_budget" begin
+function test_allocate_support_budget()
     f() = rand(10)
     @inferred SDDP.allocate_support_budget(f, 20, 100)
     states = SDDP.allocate_support_budget(f, 20, 100)
@@ -33,9 +50,10 @@ end
     @test states === SDDP.allocate_support_budget(f, states, 19)
 
     @test SDDP.allocate_support_budget(() -> rand(3), 2, 10) == [1, 1, 1]
+    return
 end
 
-@testset "lattice_approximation" begin
+function test_lattice_approximation()
     support, probability =
         SDDP.lattice_approximation(() -> rand(5), [1, 2, 3, 4, 5], 100)
     for (t, s) in enumerate(support)
@@ -44,9 +62,10 @@ end
         @test !any(isnan, probability[t])
         @test all(isapprox.(sum(probability[t], dims = 2), 1.0))
     end
+    return
 end
 
-@testset "MarkovianGraph" begin
+function test_MarkovianGraph()
     g = SDDP.MarkovianGraph(() -> rand(5), budget = 10, scenarios = 100)
     @test g.root_node == (0, 0.0)
     @test length(g.nodes) == 11
@@ -57,4 +76,9 @@ end
             @test length(node) == 0
         end
     end
+    return
 end
+
+end  # module
+
+TestModelingAids.runtests()

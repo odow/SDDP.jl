@@ -3,12 +3,25 @@
 #  v. 2.0. If a copy of the MPL was not distributed with this file, You can
 #  obtain one at http://mozilla.org/MPL/2.0/.
 
-using GLPK
+module TestStoppingRules
+
 using Random
 using SDDP
 using Test
+import GLPK
 
-@testset "TimeLimit" begin
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_TimeLimit()
     graph = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         lower_bound = 0.0,
@@ -24,9 +37,10 @@ using Test
         [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)],
         rule,
     )
+    return
 end
 
-@testset "IterationLimit" begin
+function test_IterationLimit()
     graph = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         lower_bound = 0.0,
@@ -46,9 +60,10 @@ end
         [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)],
         rule,
     )
+    return
 end
 
-@testset "Statistical" begin
+function test_Statistical()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
@@ -100,9 +115,10 @@ end
         [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)],
         rule,
     )
+    return
 end
 
-@testset "BoundStalling" begin
+function test_BoundStalling()
     graph = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         lower_bound = 0.0,
@@ -159,9 +175,10 @@ end
         ],
         rule,
     )
+    return
 end
 
-@testset "StoppingChain" begin
+function test_StoppingChain()
     graph = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         lower_bound = 0.0,
@@ -194,4 +211,9 @@ end
         ],
         rule,
     )
+    return
 end
+
+end  # module
+
+TestStoppingRules.runtests()

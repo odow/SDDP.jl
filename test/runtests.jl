@@ -49,11 +49,3 @@ const VISUALIZATION_DIR = joinpath(@__DIR__, "visualization")
         Distributed.rmprocs(procs)
     end
 end
-
-# using JuliaFormatter
-# # Format /src
-# JuliaFormatter.format(joinpath(dirname(@__DIR__), "src"))
-# # Format /test
-# JuliaFormatter.format(@__DIR__)
-# # Format /examples
-# JuliaFormatter.format(joinpath(dirname(@__DIR__), "examples"))

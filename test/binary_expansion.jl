@@ -3,10 +3,23 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+module TestBinaryExpansion
+
 using SDDP: binexpand, bincontract
 using Test
 
-@testset "Binary Expansion" begin
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_Binary_Expansion()
     int_len = round(Int, log(typemax(Int)) / log(2))
     @test_throws Exception binexpand(0)
     @test binexpand(1, 1) == [1]
@@ -46,3 +59,7 @@ using Test
     @test bincontract([1, 1, 0], 0.1) ≈ 0.3
     @test bincontract([1, 0, 1], 0.1) ≈ 0.5
 end
+
+end  # module
+
+TestBinaryExpansion.runtests()
