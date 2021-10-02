@@ -126,6 +126,31 @@ function test_read_write_cuts_to_file_String()
     return
 end
 
+function test_read_write_cuts_to_file_ValueFunction()
+    graph = SDDP.Graph(
+        "root_node",
+        ["week"],
+        [("root_node" => "week", 1.0), ("week" => "week", 0.9)],
+    )
+    model = _create_model(graph)
+    SDDP.train(model; iteration_limit = 50, print_level = 0)
+    @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
+    V = SDDP.ValueFunction(model, node = "week")
+    value_f = SDDP.evaluate(V, reservoir = 10)
+    SDDP.write_cuts_to_file(model, "model.cuts.json")
+    model_2 = _create_model(graph)
+    @test SDDP.calculate_bound(model_2) ≈ 9.17 atol = 0.1
+    SDDP.read_cuts_from_file(
+        model_2,
+        "model.cuts.json",
+        node_name_parser = (::Type{String}, x::String) -> x,
+    )
+    V2 = SDDP.ValueFunction(model_2, node = "week")
+    @test value_f == SDDP.evaluate(V2, reservoir = 10)
+    rm("model.cuts.json")
+    return
+end
+
 function test_add_all_cuts_SINGLE_CUT()
     model = SDDP.LinearPolicyGraph(
         stages = 3,

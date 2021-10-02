@@ -49,6 +49,9 @@
                 },
                 "coefficients": {
                     "type": "object"
+                },
+                "state": {
+                    "type": "object"
                 }
             }
         }
