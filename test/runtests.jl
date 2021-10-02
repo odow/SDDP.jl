@@ -3,7 +3,6 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using Distributed
 using Random
 using Test
 
@@ -23,12 +22,6 @@ function util_test_directory(dir, exclude = String[])
 end
 
 @testset "SDDP.jl" begin
-    util_test_directory(".", ["parallel_schemes.jl", "runtests.jl"])
+    util_test_directory(".", ["runtests.jl"])
     util_test_directory(joinpath(dirname(@__DIR__), "docs", "src", "examples"))
-end
-
-@testset "Parallel" begin
-    procs = Distributed.addprocs(4)
-    include(joinpath(@__DIR__, "plugins", "parallel_schemes.jl"))
-    Distributed.rmprocs(procs)
 end
