@@ -5,47 +5,30 @@
 
 using Distributed
 using Random
-using SDDP
 using Test
 
-function read_dir(dir, exclude = String[])
-    return filter(s -> !(s in exclude) && endswith(s, ".jl"), readdir(dir))
+function util_test_directory(dir, exclude = String[])
+    for (root, _, files) in walkdir(dir)
+        for file in files
+            if endswith(file, ".jl") && !(file in exclude)
+                @testset "$(file)" begin
+                    @info file
+                    Random.seed!(12345)
+                    include(joinpath(root, file))
+                end
+            end
+        end
+    end
+    return
 end
 
-const EXAMPLES_DIR = joinpath(dirname(@__DIR__), "docs", "src", "examples")
-const PLUGINS_DIR = joinpath(@__DIR__, "plugins")
-const VISUALIZATION_DIR = joinpath(@__DIR__, "visualization")
-
 @testset "SDDP.jl" begin
-    @testset "Unit Tests" begin
-        @testset "plugins/$(file)" for file in read_dir(
-            PLUGINS_DIR,
-            ["parallel_schemes.jl"],
-        )
-            @info file
-            include(joinpath(PLUGINS_DIR, file))
-        end
-        @testset "visualization/$(file)" for file in read_dir(VISUALIZATION_DIR)
-            @info file
-            include(joinpath(VISUALIZATION_DIR, file))
-        end
-        @testset "$(file)" for file in read_dir(".", ["runtests.jl"])
-            @info file
-            include(file)
-        end
-    end
+    util_test_directory(".", ["parallel_schemes.jl", "runtests.jl"])
+    util_test_directory(joinpath(dirname(@__DIR__), "docs", "src", "examples"))
+end
 
-    @testset "Examples" begin
-        @testset "$example" for example in read_dir(EXAMPLES_DIR)
-            @info example
-            Random.seed!(12345)
-            include(joinpath(EXAMPLES_DIR, example))
-        end
-    end
-
-    @testset "Parallel" begin
-        procs = Distributed.addprocs(4)
-        include(joinpath(@__DIR__, "plugins", "parallel_schemes.jl"))
-        Distributed.rmprocs(procs)
-    end
+@testset "Parallel" begin
+    procs = Distributed.addprocs(4)
+    include(joinpath(@__DIR__, "plugins", "parallel_schemes.jl"))
+    Distributed.rmprocs(procs)
 end

@@ -3,11 +3,24 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+module TestValueFunctions
+
 using SDDP
 using Test
-using GLPK
+import GLPK
 
-@testset "Min" begin
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_ValueFunction_Min()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -25,9 +38,10 @@ using GLPK
         [(0.0, 0.0, 0.0), (1.0, 2.0, 2.0), (2.0, 4.0, 2.0)]
         @test SDDP.evaluate(V1, Dict(:x => xhat)) == (yhat, Dict(:x => pihat))
     end
+    return
 end
 
-@testset "Max" begin
+function test_ValueFunction_Max()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Max,
@@ -46,9 +60,10 @@ end
         @test y == -yhat
         @test duals == Dict(:x => -pihat)
     end
+    return
 end
 
-@testset "optimizer" begin
+function test_ValueFunction_optimizer()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -65,9 +80,10 @@ end
     JuMP.set_optimizer(V1, GLPK.Optimizer)
     (y, _) = SDDP.evaluate(V1, Dict(:x => 1.0))
     @test y == 2.0
+    return
 end
 
-@testset "objective state" begin
+function test_ValueFunction_objective_state()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -94,9 +110,10 @@ end
           (2.5, Dict(:x => 2.5))
     @test SDDP.evaluate(V1, Dict(:x => 0.0); objective_state = 2) ==
           (0.0, Dict(:x => 3.5))
+    return
 end
 
-@testset "belief state" begin
+function test_ValueFunction_belief_state()
     graph = SDDP.MarkovianGraph(Matrix{Float64}[[0.5 0.5], [1.0 0.0; 0.0 1.0]])
     SDDP.add_ambiguity_set(graph, [(1, 1), (1, 2)])
     SDDP.add_ambiguity_set(graph, [(2, 1), (2, 2)])
@@ -123,9 +140,10 @@ end
     V12 = SDDP.ValueFunction(model[(1, 2)])
     (y, duals) = SDDP.evaluate(V12, Dict(:x => 1.0); belief_state = b)
     @test duals[:x] ≈ y ≈ 1.68
+    return
 end
 
-@testset "plot" begin
+function test_ValuaeFunction_plot()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Min,
@@ -143,4 +161,9 @@ end
     V1 = SDDP.ValueFunction(model[1])
     SDDP.plot(V1; x = 0:0.1:2, y = 0, open = false)
     SDDP.plot(V1; x = 0:0.1:2, y = 0:0.1:2, open = false)
+    return
 end
+
+end  # module
+
+TestValueFunctions.runtests()
