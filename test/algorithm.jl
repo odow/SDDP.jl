@@ -3,11 +3,24 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using GLPK
+module TestAlgorithm
+
 using SDDP
 using Test
+import GLPK
 
-@testset "to nodal forms" begin
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_to_nodal_forms()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
@@ -43,7 +56,7 @@ using Test
     @test SDDP.termination_status(model) == :iteration_limit
 end
 
-@testset "solve" begin
+function test_solve()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
@@ -57,27 +70,26 @@ end
     end
     SDDP.train(model; iteration_limit = 4, print_level = 0)
     @test SDDP.termination_status(model) == :iteration_limit
-    @testset "simulate" begin
-        simulations = SDDP.simulate(model, 11, [:x])
-        @test length(simulations) == 11
-        @test all(length.(simulations) .== 2)
+    simulations = SDDP.simulate(model, 11, [:x])
+    @test length(simulations) == 11
+    @test all(length.(simulations) .== 2)
 
-        simulation = simulations[1][1]
-        @test length(keys(simulation)) == 7
-        @test sort(collect(keys(simulation))) == [
-            :belief,
-            :bellman_term,
-            :node_index,
-            :noise_term,
-            :objective_state,
-            :stage_objective,
-            :x,
-        ]
-        @test typeof(simulation[:x]) == SDDP.State{Float64}
-    end
+    simulation = simulations[1][1]
+    @test length(keys(simulation)) == 7
+    @test sort(collect(keys(simulation))) == [
+        :belief,
+        :bellman_term,
+        :node_index,
+        :noise_term,
+        :objective_state,
+        :stage_objective,
+        :x,
+    ]
+    @test typeof(simulation[:x]) == SDDP.State{Float64}
+    return
 end
 
-@testset "simulate" begin
+function test_simulate()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -88,9 +100,10 @@ end
     end
     simulations = SDDP.simulate(model, 1, [:x])
     @test simulations[1][1][:x] == [SDDP.State(2.0, 1.0), SDDP.State(4.0, 2.0)]
+    return
 end
 
-@testset "simulate_incoming_state" begin
+function test_simulate_incoming_state()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -109,9 +122,10 @@ end
     @test simulations[1][1][:x] == [SDDP.State(3.0, 3.0), SDDP.State(3.0, 3.0)]
     simulations = SDDP.simulate(model, 1, [:x])
     @test simulations[1][1][:x] == [SDDP.State(2.0, 2.0), SDDP.State(4.0, 4.0)]
+    return
 end
 
-@testset "simulate missing" begin
+function test_simulate_missing()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -127,9 +141,10 @@ end
     sims = SDDP.simulate(model, 1, [:y], skip_undefined_variables = true)
     @test sims[1][1][:y] == 0.0
     @test isnan(sims[1][2][:y])
+    return
 end
 
-@testset "infeasible model" begin
+function test_infeasible_model()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -153,9 +168,10 @@ for more information.""",
     @test_throws ex SDDP.train(model; iteration_limit = 1, print_level = 0)
     @test isfile("subproblem_1.mof.json")
     rm("subproblem_1.mof.json")
+    return
 end
 
-@testset "infeasible direct_model" begin
+function test_infeasible_direct_model()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -180,9 +196,10 @@ for more information.""",
     @test_throws ex SDDP.train(model; iteration_limit = 1, print_level = 0)
     @test isfile("subproblem_1.mof.json")
     rm("subproblem_1.mof.json")
+    return
 end
 
-@testset "refine_at_similar_nodes" begin
+function test_refine_at_similar_nodes()
     model = SDDP.MarkovianPolicyGraph(
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
         optimizer = GLPK.Optimizer,
@@ -225,9 +242,10 @@ end
           1
     @test length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts) ==
           1
+    return
 end
 
-@testset "optimize_hook" begin
+function test_optimize_hook()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         optimizer = GLPK.Optimizer,
@@ -259,9 +277,10 @@ end
     )
     @test pre_optimize_called == 1
     @test post_optimize_called == 3
+    return
 end
 
-@testset "write_log_to_csv" begin
+function test_write_log_to_csv()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -285,4 +304,9 @@ end
     @test replace(log, r"[0-9\.]+\n" => "") ==
           replace(saved_log, r"[0-9\.]+\n" => "")
     rm("sddp.csv")
+    return
 end
+
+end  # module
+
+TestAlgorithm.runtests()

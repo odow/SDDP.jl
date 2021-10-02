@@ -3,11 +3,37 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+module TestExperimental
+
+using SDDP
+using Test
 import GLPK
 import JSON
 import JSONSchema
-using SDDP
-using Test
+
+download(
+    "https://odow.github.io/StochOptFormat/versions/sof-0.1.schema.json",
+    "sof.schema.json",
+)
+const SCHEMA =
+    JSONSchema.Schema(JSON.parsefile("sof.schema.json"; use_mmap = false))
+
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    if isfile("experimental.sof.json")
+        rm("experimental.sof.json")
+    end
+    if isfile("sof.schema.json")
+        rm("sof.schema.json")
+    end
+    return
+end
 
 function _create_model(
     minimization::Bool;
@@ -66,145 +92,116 @@ function _create_model(
     return model
 end
 
-download(
-    "https://odow.github.io/StochOptFormat/versions/sof-0.1.schema.json",
-    "sof.schema.json",
-)
-const SCHEMA =
-    JSONSchema.Schema(JSON.parsefile("sof.schema.json"; use_mmap = false))
-
-@testset "StochOptFormat" begin
-    @testset "Min: Read and write to file" begin
-        base_model = _create_model(true)
-        set_optimizer(base_model, GLPK.Optimizer)
-        SDDP.train(base_model; iteration_limit = 50, print_level = 0)
-
-        model = _create_model(true)
-        SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
-        # @test JSONSchema.validate(
-        #     JSON.parsefile("experimental.sof.json"), SCHEMA
-        # ) === nothing
-        set_optimizer(model, GLPK.Optimizer)
-        SDDP.train(model; iteration_limit = 50, print_level = 0)
-
-        new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
-        set_optimizer(new_model, GLPK.Optimizer)
-        SDDP.train(new_model; iteration_limit = 50, print_level = 0)
-
-        @test isapprox(
-            SDDP.calculate_bound(base_model),
-            SDDP.calculate_bound(model);
-            atol = 1e-6,
-        )
-
-        @test isapprox(
-            SDDP.calculate_bound(base_model),
-            SDDP.calculate_bound(new_model);
-            atol = 1e-6,
-        )
-
-        scenarios = SDDP.evaluate(new_model, test_scenarios)
-        @test length(scenarios["problem_sha256_checksum"]) == 64
-        @test length(scenarios["scenarios"]) == 10
-        @test length(scenarios["scenarios"][1]) == 3
-        node_1_1 = scenarios["scenarios"][1][1]
-        @test isapprox(node_1_1["objective"], 9.6; atol = 1e-8)
-        @test node_1_1["primal"]["d"] == 2
-        @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
-        @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
-    end
-
-    @testset "Max: Read and write to file" begin
-        base_model = _create_model(false)
-        set_optimizer(base_model, GLPK.Optimizer)
-        SDDP.train(base_model; iteration_limit = 50, print_level = 0)
-
-        model = _create_model(false)
-        SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
-        # @test JSONSchema.validate(
-        #     JSON.parsefile("experimental.sof.json"), SCHEMA
-        # ) === nothing
-        set_optimizer(model, GLPK.Optimizer)
-        SDDP.train(model; iteration_limit = 50, print_level = 0)
-
-        new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
-        set_optimizer(new_model, GLPK.Optimizer)
-        SDDP.train(new_model; iteration_limit = 50, print_level = 0)
-
-        @test isapprox(
-            SDDP.calculate_bound(base_model),
-            SDDP.calculate_bound(model);
-            atol = 1e-6,
-        )
-
-        @test isapprox(
-            SDDP.calculate_bound(base_model),
-            SDDP.calculate_bound(new_model);
-            atol = 1e-6,
-        )
-
-        scenarios = SDDP.evaluate(new_model, test_scenarios)
-        @test length(scenarios["problem_sha256_checksum"]) == 64
-        @test length(scenarios["scenarios"]) == 10
-        @test length(scenarios["scenarios"][1]) == 3
-        node_1_1 = scenarios["scenarios"][1][1]
-        @test isapprox(node_1_1["objective"], -9.6; atol = 1e-8)
-        @test node_1_1["primal"]["d"] == 2
-        @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
-        @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
-    end
-
-    @testset "kwarg to Base.write" begin
-        model = _create_model(true)
-        SDDP.write_to_file(
-            model,
-            "experimental.sof.json";
-            test_scenarios = 0,
-            name = "Experimental",
-            description = "Experimental model",
-            author = "Oscar Dowson",
-            date = "1234-56-78",
-        )
-        data = JSON.parsefile("experimental.sof.json", use_mmap = false)
-        # @test JSONSchema.validate(data, SCHEMA) === nothing
-        @test data["description"] == "Experimental model"
-        @test data["author"] == "Oscar Dowson"
-        @test data["date"] == "1234-56-78"
-    end
-
-    @testset "Error: existing cuts" begin
-        model = _create_model(true)
-        set_optimizer(model, GLPK.Optimizer)
-        SDDP.train(model; iteration_limit = 1, print_level = 0)
-        err = ErrorException(
-            "StochOptFormat does not support writing after a call to " *
-            "`SDDP.train`.",
-        )
-        @test_throws err Base.write(IOBuffer(), model)
-    end
-
-    @testset "Error: belief states" begin
-        model = _create_model(true; belief = true)
-        err = ErrorException("StochOptFormat does not support belief states.")
-        @test_throws err Base.write(IOBuffer(), model)
-    end
-
-    @testset "Error: objective states" begin
-        model = _create_model(true; objective_state = true)
-        err =
-            ErrorException("StochOptFormat does not support objective states.")
-        @test_throws err Base.write(IOBuffer(), model)
-    end
+function test_write_to_file_Min()
+    base_model = _create_model(true)
+    set_optimizer(base_model, GLPK.Optimizer)
+    SDDP.train(base_model; iteration_limit = 50, print_level = 0)
+    model = _create_model(true)
+    SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
+    set_optimizer(model, GLPK.Optimizer)
+    SDDP.train(model; iteration_limit = 50, print_level = 0)
+    new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
+    set_optimizer(new_model, GLPK.Optimizer)
+    SDDP.train(new_model; iteration_limit = 50, print_level = 0)
+    @test isapprox(
+        SDDP.calculate_bound(base_model),
+        SDDP.calculate_bound(model);
+        atol = 1e-6,
+    )
+    @test isapprox(
+        SDDP.calculate_bound(base_model),
+        SDDP.calculate_bound(new_model);
+        atol = 1e-6,
+    )
+    scenarios = SDDP.evaluate(new_model, test_scenarios)
+    @test length(scenarios["problem_sha256_checksum"]) == 64
+    @test length(scenarios["scenarios"]) == 10
+    @test length(scenarios["scenarios"][1]) == 3
+    node_1_1 = scenarios["scenarios"][1][1]
+    @test isapprox(node_1_1["objective"], 9.6; atol = 1e-8)
+    @test node_1_1["primal"]["d"] == 2
+    @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
+    @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
+    return
 end
 
-if isfile("experimental.sof.json")
-    rm("experimental.sof.json")
-end
-if isfile("sof.schema.json")
-    rm("sof.schema.json")
+function test_write_to_file_Max()
+    base_model = _create_model(false)
+    set_optimizer(base_model, GLPK.Optimizer)
+    SDDP.train(base_model; iteration_limit = 50, print_level = 0)
+    model = _create_model(false)
+    SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
+    set_optimizer(model, GLPK.Optimizer)
+    SDDP.train(model; iteration_limit = 50, print_level = 0)
+    new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
+    set_optimizer(new_model, GLPK.Optimizer)
+    SDDP.train(new_model; iteration_limit = 50, print_level = 0)
+    @test isapprox(
+        SDDP.calculate_bound(base_model),
+        SDDP.calculate_bound(model);
+        atol = 1e-6,
+    )
+    @test isapprox(
+        SDDP.calculate_bound(base_model),
+        SDDP.calculate_bound(new_model);
+        atol = 1e-6,
+    )
+    scenarios = SDDP.evaluate(new_model, test_scenarios)
+    @test length(scenarios["problem_sha256_checksum"]) == 64
+    @test length(scenarios["scenarios"]) == 10
+    @test length(scenarios["scenarios"][1]) == 3
+    node_1_1 = scenarios["scenarios"][1][1]
+    @test isapprox(node_1_1["objective"], -9.6; atol = 1e-8)
+    @test node_1_1["primal"]["d"] == 2
+    @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
+    @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
 end
 
-@testset "slptestset" begin
+function test_write_kwarg()
+    model = _create_model(true)
+    SDDP.write_to_file(
+        model,
+        "experimental.sof.json";
+        test_scenarios = 0,
+        name = "Experimental",
+        description = "Experimental model",
+        author = "Oscar Dowson",
+        date = "1234-56-78",
+    )
+    data = JSON.parsefile("experimental.sof.json", use_mmap = false)
+    @test data["description"] == "Experimental model"
+    @test data["author"] == "Oscar Dowson"
+    @test data["date"] == "1234-56-78"
+    return
+end
+
+function test_error_existing_cuts()
+    model = _create_model(true)
+    set_optimizer(model, GLPK.Optimizer)
+    SDDP.train(model; iteration_limit = 1, print_level = 0)
+    err = ErrorException(
+        "StochOptFormat does not support writing after a call to " *
+        "`SDDP.train`.",
+    )
+    @test_throws err Base.write(IOBuffer(), model)
+    return
+end
+
+function test_error_belief_states()
+    model = _create_model(true; belief = true)
+    err = ErrorException("StochOptFormat does not support belief states.")
+    @test_throws err Base.write(IOBuffer(), model)
+    return
+end
+
+function test_error_objective_states()
+    model = _create_model(true; objective_state = true)
+    err = ErrorException("StochOptFormat does not support objective states.")
+    @test_throws err Base.write(IOBuffer(), model)
+    return
+end
+
+function test_slptestset()
     model, test_scenarios =
         SDDP.read_from_file(joinpath(@__DIR__, "electric.sof.json"))
     set_optimizer(model, GLPK.Optimizer)
@@ -213,4 +210,9 @@ end
     scenarios = SDDP.evaluate(model, test_scenarios)
     @test length(scenarios["problem_sha256_checksum"]) == 64
     @test length(scenarios["scenarios"]) == 3
+    return
 end
+
+end  # module
+
+TestExperimental.runtests()

@@ -3,11 +3,24 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import GLPK
+module TestForwardPasses
+
 using SDDP
 using Test
+import GLPK
 
-@testset "Forward Pass" begin
+function runtests()
+    for name in names(@__MODULE__, all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_DefaultForwardPass()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Max,
@@ -50,9 +63,10 @@ using Test
         simulated_value += noise
     end
     @test simulated_value == forward_trajectory.cumulative_value
+    return
 end
 
-@testset "RevisitingForwardPass" begin
+function test_RevisitingForwardPass()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Max,
@@ -103,9 +117,10 @@ end
             @test length(fp.archive) == 3
         end
     end
+    return
 end
 
-@testset "RiskAdjustedForwardPass" begin
+function test_RiskAdjustedForwardPass()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Max,
@@ -148,4 +163,9 @@ end
         forward_pass_resampling_probability = 0.9,
     )
     @test SDDP.termination_status(model) == :iteration_limit
+    return
 end
+
+end  # module
+
+TestForwardPasses.runtests()

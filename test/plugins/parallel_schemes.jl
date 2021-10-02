@@ -5,6 +5,8 @@
 
 using Distributed
 
+procs = Distributed.addprocs(4)
+
 # !!! IMPORTANT !!!
 #
 # Workers **DON'T** inherit their parent's Pkg environment!
@@ -27,14 +29,16 @@ end
     using SDDP
 end
 
-@testset "Asynchronous" begin
+function test_Asynchronous()
     a = SDDP.Asynchronous()
     @test a.slave_ids == Distributed.workers()
+    @test length(a.slave_ids) > 1
     b = SDDP.Asynchronous([1, 2])
     @test b.slave_ids == [1, 2]
+    return
 end
 
-@testset "slave_update" begin
+function test_slave_update()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Min,
@@ -46,7 +50,6 @@ end
             return JuMP.set_upper_bound(x.out, ω)
         end
     end
-
     result = SDDP.IterationResult(
         1,
         0.0,
@@ -73,7 +76,6 @@ end
     @test length(cons) == 1
     @test replace(sprint(print, cons[1]), "≥" => ">=") ==
           "-2 x_out + noname >= -5.0"
-
     result = SDDP.IterationResult(
         1,
         0.0,
@@ -95,9 +97,10 @@ end
         ),
     )
     @test_throws ErrorException SDDP.slave_update(model, result)
+    return
 end
 
-@testset "Async solve" begin
+function test_async_solve()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Min,
@@ -134,9 +137,10 @@ end
     @test SDDP.termination_status(model) == :iteration_limit
     @test any(l -> l.pid == 1, model.most_recent_training_results.log)
     @test SDDP.calculate_bound(model) == 6.0
+    return
 end
 
-@testset "simulate parallel" begin
+function test_simulate_parallel()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
@@ -155,9 +159,10 @@ end
         parallel_scheme = SDDP.Asynchronous(use_master = false),
     )
     @test all([s[1][:myid] != 1 for s in simulations])
+    return
 end
 
-@testset "trap_error" begin
+function test_trap_error()
     @test SDDP.trap_error(InvalidStateException("a", :a)) === nothing
     @test SDDP.trap_error(InterruptException()) === nothing
     ex = DomainError(-1.0)
@@ -171,4 +176,13 @@ end
     end
     @test SDDP.trap_error(ex) === nothing
     @test flag == true
+    return
 end
+
+test_Asynchronous()
+test_slave_update()
+test_async_solve()
+test_simulate_parallel()
+test_trap_error()
+
+Distributed.rmprocs(procs)
