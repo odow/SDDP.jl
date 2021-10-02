@@ -441,7 +441,7 @@ mutable struct BanditDuality <: AbstractDualityHandler
     arms::Vector{_BanditArm}
     last_arm_index::Int
     iteration::Int
-    function BanditDuality(;kwargs...)
+    function BanditDuality(; kwargs...)
         return new(
             _BanditArm[
                 _BanditArm(ContinuousConicDuality(), Float64[]),
@@ -504,8 +504,5 @@ function prepare_backward_pass(
 end
 
 function get_dual_solution(node::Node, handler::BanditDuality)
-    return get_dual_solution(
-        node,
-        handler.arms[handler.last_arm_index].handler,
-    )
+    return get_dual_solution(node, handler.arms[handler.last_arm_index].handler)
 end

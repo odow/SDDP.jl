@@ -35,7 +35,7 @@ function benchmark(; kwargs...)
     time = Dates.format(Dates.now(), "Y_mm_dd_HHMM_SS")
     data = Dict("date" => time, "solutions" => solutions)
     open("benchmark_$(time).json", "w") do io
-        write(io, JSON.json(data))
+        return write(io, JSON.json(data))
     end
     return "benchmark_$(time).json"
 end
@@ -64,23 +64,12 @@ function _summarize(io, filename_A)
     println(io, "filename: $(filename_A)")
     A = _report_columns(filename_A)
     println(io, "```\n")
-    data = hcat(
-        A.models,
-        A.best_bound,
-        A.avg_bound,
-        A.total_time,
-        A.total_solves,
-    )
+    data =
+        hcat(A.models, A.best_bound, A.avg_bound, A.total_time, A.total_solves)
     PrettyTables.pretty_table(
         io,
         data;
-        header = [
-            "Model",
-            "Best Bound",
-            "Avg. Bound",
-            "Time",
-            "Solves",
-        ],
+        header = ["Model", "Best Bound", "Avg. Bound", "Time", "Solves"],
         tf = PrettyTables.tf_markdown,
     )
     return A
@@ -88,7 +77,7 @@ end
 
 function report(A::String, B::String)
     open("report.md", "w") do io
-        report(io, A, B)
+        return report(io, A, B)
     end
     return
 end
@@ -110,13 +99,7 @@ function report(io::IO, filename_A::String, filename_B::String)
     PrettyTables.pretty_table(
         io,
         data;
-        header = [
-            "Model",
-            "Best Bound",
-            "Avg. Bound",
-            "Time",
-            "Solves",
-        ],
+        header = ["Model", "Best Bound", "Avg. Bound", "Time", "Solves"],
         tf = PrettyTables.tf_markdown,
     )
     return

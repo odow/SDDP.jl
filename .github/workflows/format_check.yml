@@ -22,6 +22,7 @@ jobs:
           Pkg.add(PackageSpec(name="JuliaFormatter", version="0.13.2"))
           using JuliaFormatter
           format("docs"; verbose = true)
+          format("benchmarks"; verbose = true)
           format("src"; verbose = true)
           format("test"; verbose = true)
           out = String(read(Cmd(`git diff`)))
