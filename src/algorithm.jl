@@ -801,6 +801,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             time() - options.start_time,
             Distributed.myid(),
             model.ext[:total_solves],
+            duality_log_key(options.duality_handler),
         ),
     )
     has_converged, status =

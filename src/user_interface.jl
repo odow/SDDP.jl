@@ -438,6 +438,7 @@ struct Log
     time::Float64
     pid::Int
     total_solves::Int
+    duality_key::String
 end
 
 struct TrainingResults

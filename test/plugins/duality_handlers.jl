@@ -437,6 +437,50 @@ function test_kelleys_ip_max()
     return
 end
 
+function test_BanditDuality_show()
+    @test sprint(show, SDDP.BanditDuality()) ==
+          "BanditDuality with arms:\n * SDDP.ContinuousConicDuality()\n * SDDP.StrengthenedConicDuality()"
+    return
+end
+
+function test_BanditDuality_show()
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = -100.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, 0 <= x[1:2] <= 5, SDDP.State, initial_value = 0.0)
+        if t == 1
+            @stageobjective(sp, -1.5 * x[1].out - 4 * x[2].out)
+        else
+            @variable(sp, 0 <= y[1:4] <= 1, Bin)
+            @variable(sp, ω[1:2])
+            @stageobjective(sp, -16 * y[1] - 19 * y[2] - 23 * y[3] - 28 * y[4])
+            @constraint(
+                sp,
+                2 * y[1] + 3 * y[2] + 4 * y[3] + 5 * y[4] <= ω[1] - x[1].in
+            )
+            @constraint(
+                sp,
+                6 * y[1] + 1 * y[2] + 3 * y[3] + 2 * y[4] <= ω[2] - x[2].in
+            )
+            steps = range(5, stop = 15, length = 10)
+            SDDP.parameterize(sp, [[i, j] for i in steps for j in steps]) do φ
+                return JuMP.fix.(ω, φ)
+            end
+        end
+    end
+    handler = SDDP.BanditDuality()
+    SDDP.train(model, duality_handler = handler, iteration_limit = 20)
+    @test sum(
+        l.duality_key == " " for l in model.most_recent_training_results.log
+    ) > 10
+    @test sum(
+        l.duality_key == "S" for l in model.most_recent_training_results.log
+    ) > 0
+    return
+end
+
 end
 
 TestDualityHandlers.runtests()

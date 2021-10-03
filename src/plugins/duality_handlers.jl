@@ -138,6 +138,8 @@ function prepare_backward_pass(node::Node, ::ContinuousConicDuality, ::Options)
     return _relax_integrality(node)
 end
 
+duality_log_key(::ContinuousConicDuality) = " "
+
 # =========================== LagrangianDuality ============================== #
 
 """
@@ -350,6 +352,8 @@ function _solve_primal_problem(
     return L_λ
 end
 
+duality_log_key(::LagrangianDuality) = "L"
+
 # ==================== StrengthenedConicDuality ==================== #
 
 """
@@ -406,6 +410,8 @@ function get_dual_solution(node::Node, ::StrengthenedConicDuality)
     return lagrangian_obj, conic_dual
 end
 
+duality_log_key(::StrengthenedConicDuality) = "S"
+
 # ============================== BanditDuality =============================== #
 
 mutable struct _BanditArm{T}
@@ -440,69 +446,74 @@ focus more on the more-recent rewards.
 mutable struct BanditDuality <: AbstractDualityHandler
     arms::Vector{_BanditArm}
     last_arm_index::Int
-    iteration::Int
-    function BanditDuality(; kwargs...)
-        return new(
-            _BanditArm[
-                _BanditArm(ContinuousConicDuality(), Float64[]),
-                _BanditArm(StrengthenedConicDuality(), Float64[]),
-                # _BanditArm(LagrangianDuality(; kwargs...), Float64[]),
-            ],
-            1,
-            1,
-        )
+    function BanditDuality(args::AbstractDualityHandler...)
+        return new(_BanditArm[_BanditArm(arg, Float64[]) for arg in args], 1)
     end
 end
 
-function _reward(arm::_BanditArm)
-    return Statistics.mean(arm.rewards) + Statistics.std(arm.rewards)
+function Base.show(io::IO, handler::BanditDuality)
+    print(io, "BanditDuality with arms:")
+    for arm in handler.arms
+        print(io, "\n * ", arm.handler)
+    end
+    return
 end
 
-function _update_best_arm(handler::BanditDuality, options::Options)
+function BanditDuality()
+    return BanditDuality(ContinuousConicDuality(), StrengthenedConicDuality())
+end
+
+function _choose_best_arm(handler::BanditDuality)
+    _, index = findmax(
+        map(handler.arms) do arm
+            return Statistics.mean(arm.rewards) + Statistics.std(arm.rewards)
+        end,
+    )
+    handler.last_arm_index = index
+    return handler.arms[index]
+end
+
+function _update_rewards(handler::BanditDuality, log::Vector{Log})
     # The bound is monotonic, so instead of worring about whether we are
     # maximizing or minimizing, let's just compute:
     #          |bound_t - bound_{t-1}|
     # reward = -----------------------
     #            time_t - time_{t-1}
-    t, t′ = options.log[end], options.log[end-1]
+    t, t′ = log[end], log[end-1]
     reward = abs(t.bound - t′.bound) / (t.time - t′.time)
     # This check is needed because we should probably keep using the first
     # handler until we start to improve the bound. This can take quite a few
     # iterations in some models. (Until we start to improve, the reward will be
     # zero, so we'd never revisit it.
-    const_bound =
-        isapprox(options.log[1].bound, options.log[end].bound; atol = 1e-6)
+    const_bound = isapprox(log[1].bound, log[end].bound; atol = 1e-6)
     # To start with, we should add the reward to all arms to construct a prior
     # distribution for the arms. The 10 is somewhat arbitrary.
-    if length(options.log) < 10 || const_bound
+    if length(log) < 10 || const_bound
         for arm in handler.arms
             push!(arm.rewards, reward)
         end
     else
         push!(handler.arms[handler.last_arm_index].rewards, reward)
     end
-    # Now pick the best arm ...
-    _, index = findmax([_reward(arm) for arm in handler.arms])
-    handler.last_arm_index = index
     return
 end
 
 function prepare_backward_pass(
-    node::Node,
+    model::PolicyGraph,
     handler::BanditDuality,
     options::Options,
 )
-    if handler.iteration < length(options.log)
-        _update_best_arm(handler, options)
-        handler.iteration += 1
+    if length(options.log) > 1
+        _update_rewards(handler, options.log)
     end
-    return prepare_backward_pass(
-        node,
-        handler.arms[handler.last_arm_index].handler,
-        options,
-    )
+    arm = _choose_best_arm(handler)
+    return prepare_backward_pass(model, arm.handler, options)
 end
 
 function get_dual_solution(node::Node, handler::BanditDuality)
     return get_dual_solution(node, handler.arms[handler.last_arm_index].handler)
+end
+
+function duality_log_key(handler::BanditDuality)
+    return duality_log_key(handler.arms[handler.last_arm_index].handler)
 end
