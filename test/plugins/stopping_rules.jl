@@ -31,10 +31,14 @@ function test_TimeLimit()
     end
     rule = SDDP.TimeLimit(0.5)
     @test SDDP.stopping_rule_status(rule) == :time_limit
-    @test SDDP.convergence_test(graph, [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1)], rule)
+    @test SDDP.convergence_test(
+        graph,
+        [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " ")],
+        rule,
+    )
     @test !SDDP.convergence_test(
         graph,
-        [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)],
+        [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1, " ")],
         rule,
     )
     return
@@ -52,12 +56,15 @@ function test_IterationLimit()
     @test SDDP.stopping_rule_status(rule) == :iteration_limit
     @test SDDP.convergence_test(
         graph,
-        [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1), SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1)],
+        [
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1, " "),
+        ],
         rule,
     )
     @test !SDDP.convergence_test(
         graph,
-        [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1)],
+        [SDDP.Log(1, 0.0, 0.0, 0.1, 1, 1, " ")],
         rule,
     )
     return
@@ -80,15 +87,19 @@ function test_Statistical()
     rule = SDDP.Statistical(num_replications = 20)
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)
-    @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1)], rule)
+    @test SDDP.convergence_test(
+        model,
+        [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1, " ")],
+        rule,
+    )
     @test !SDDP.convergence_test(
         model,
-        [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1)],
+        [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1, " ")],
         rule,
     )
     @test SDDP.convergence_test(
         model,
-        [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)],
+        [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1, " ")],
         rule,
     )
 
@@ -108,11 +119,19 @@ function test_Statistical()
     rule = SDDP.Statistical(num_replications = 20)
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)
-    @test SDDP.convergence_test(model, [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1)], rule)
-    @test SDDP.convergence_test(model, [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1)], rule)
+    @test SDDP.convergence_test(
+        model,
+        [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1, " ")],
+        rule,
+    )
+    @test SDDP.convergence_test(
+        model,
+        [SDDP.Log(1, 0.0, 9.0, 1.0, 1, 1, " ")],
+        rule,
+    )
     @test !SDDP.convergence_test(
         model,
-        [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1)],
+        [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1, " ")],
         rule,
     )
     return
@@ -132,10 +151,10 @@ function test_BoundStalling()
     @test !SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1),
-            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1),
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1, " "),
         ],
         rule,
     )
@@ -143,11 +162,11 @@ function test_BoundStalling()
     @test SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1),
-            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(5, 2.9, 0.0, 1.0, 1, 1),
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(5, 2.9, 0.0, 1.0, 1, 1, " "),
         ],
         rule,
     )
@@ -156,10 +175,10 @@ function test_BoundStalling()
     @test !SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.1, 1.0, 1, 1),
-            SDDP.Log(2, 0.0, 0.2, 1.1, 1, 2),
-            SDDP.Log(3, 0.0, 0.1, 1.2, 1, 3),
-            SDDP.Log(4, 0.0, 0.0, 1.3, 1, 4),
+            SDDP.Log(1, 0.0, 0.1, 1.0, 1, 1, " "),
+            SDDP.Log(2, 0.0, 0.2, 1.1, 1, 2, " "),
+            SDDP.Log(3, 0.0, 0.1, 1.2, 1, 3, " "),
+            SDDP.Log(4, 0.0, 0.0, 1.3, 1, 4, " "),
         ],
         rule,
     )
@@ -168,10 +187,10 @@ function test_BoundStalling()
     @test SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(3, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(4, 0.0, 0.0, 1.0, 1, 1),
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(3, 0.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(4, 0.0, 0.0, 1.0, 1, 1, " "),
         ],
         rule,
     )
@@ -192,22 +211,25 @@ function test_StoppingChain()
     # Not enough iterations to terminate.
     @test !SDDP.convergence_test(
         graph,
-        [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1)],
+        [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " ")],
         rule,
     )
     # How there is. But not enough time.
     @test !SDDP.convergence_test(
         graph,
-        [SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1), SDDP.Log(2, 0.0, 0.0, 59.0, 1, 1)],
+        [
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(2, 0.0, 0.0, 59.0, 1, 1, " "),
+        ],
         rule,
     )
     # Both satisfied.
     @test SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1),
-            SDDP.Log(2, 0.0, 0.0, 59.0, 1, 1),
-            SDDP.Log(3, 0.0, 0.0, 60.1, 1, 1),
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " "),
+            SDDP.Log(2, 0.0, 0.0, 59.0, 1, 1, " "),
+            SDDP.Log(3, 0.0, 0.0, 60.1, 1, 1, " "),
         ],
         rule,
     )
