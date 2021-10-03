@@ -249,6 +249,7 @@ function master_loop(
                 time() - options.start_time,
                 result.pid,
                 model.ext[:total_solves],
+                duality_log_key(options.duality_handler),
             ),
         )
         log_iteration(options)

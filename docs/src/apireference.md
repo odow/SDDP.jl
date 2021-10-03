@@ -85,6 +85,7 @@ SDDP.AbstractDualityHandler
 SDDP.ContinuousConicDuality
 SDDP.LagrangianDuality
 SDDP.StrengthenedConicDuality
+SDDP.BanditDuality
 ```
 
 ## Simulating the policy

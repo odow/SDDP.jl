@@ -41,7 +41,26 @@ function easy_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    _ = SDDP.prepare_backward_pass(model, duality_handler)
+    options = SDDP.Options(
+        model,
+        Dict(:x => 1.0),
+        SDDP.InSampleMonteCarlo(),
+        SDDP.CompleteSampler(),
+        SDDP.Expectation(),
+        0.0,
+        true,
+        SDDP.AbstractStoppingRule[],
+        (a, b) -> nothing,
+        0,
+        0.0,
+        SDDP.Log[],
+        IOBuffer(),
+        1,
+        SDDP.DefaultForwardPass(),
+        duality_handler,
+        x -> nothing,
+    )
+    _ = SDDP.prepare_backward_pass(model, duality_handler, options)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
     obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
@@ -79,7 +98,26 @@ function xor_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    _ = SDDP.prepare_backward_pass(model, duality_handler)
+    options = SDDP.Options(
+        model,
+        Dict(:x => 1.0),
+        SDDP.InSampleMonteCarlo(),
+        SDDP.CompleteSampler(),
+        SDDP.Expectation(),
+        0.0,
+        true,
+        SDDP.AbstractStoppingRule[],
+        (a, b) -> nothing,
+        0,
+        0.0,
+        SDDP.Log[],
+        IOBuffer(),
+        1,
+        SDDP.DefaultForwardPass(),
+        duality_handler,
+        x -> nothing,
+    )
+    _ = SDDP.prepare_backward_pass(model, duality_handler, options)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
     obj, dual_vars = SDDP.get_dual_solution(node, duality_handler)
@@ -126,6 +164,25 @@ function test_prepare_backward_pass()
         @variable(sp, -8 <= i3 <= 2, Int)
         @stageobjective(sp, b1 + b2 + b2 + i3 + i1)
     end
+    options = SDDP.Options(
+        model,
+        Dict(:x => 1.0),
+        SDDP.InSampleMonteCarlo(),
+        SDDP.CompleteSampler(),
+        SDDP.Expectation(),
+        0.0,
+        true,
+        SDDP.AbstractStoppingRule[],
+        (a, b) -> nothing,
+        0,
+        0.0,
+        SDDP.Log[],
+        IOBuffer(),
+        1,
+        SDDP.DefaultForwardPass(),
+        SDDP.ContinuousConicDuality(),
+        x -> nothing,
+    )
     for node in [model[1], model[2]]
         @test JuMP.is_binary(node.subproblem[:b1])
         @test !JuMP.has_lower_bound(node.subproblem[:b1])
@@ -151,8 +208,11 @@ function test_prepare_backward_pass()
         @test JuMP.lower_bound(node.subproblem[:i3]) == -8
         @test JuMP.upper_bound(node.subproblem[:i3]) == 2
     end
-    undo_relax =
-        SDDP.prepare_backward_pass(model, SDDP.ContinuousConicDuality())
+    undo_relax = SDDP.prepare_backward_pass(
+        model,
+        SDDP.ContinuousConicDuality(),
+        options,
+    )
     for node in [model[1], model[2]]
         @test !JuMP.is_binary(node.subproblem[:b1])
         @test JuMP.lower_bound(node.subproblem[:b1]) == 0.0
@@ -374,6 +434,50 @@ function test_kelleys_ip_max()
             @test isapprox(v, scd[k], atol = 1e-5)
         end
     end
+    return
+end
+
+function test_BanditDuality_show()
+    @test sprint(show, SDDP.BanditDuality()) ==
+          "BanditDuality with arms:\n * SDDP.ContinuousConicDuality()\n * SDDP.StrengthenedConicDuality()"
+    return
+end
+
+function test_BanditDuality_show()
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = -100.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, 0 <= x[1:2] <= 5, SDDP.State, initial_value = 0.0)
+        if t == 1
+            @stageobjective(sp, -1.5 * x[1].out - 4 * x[2].out)
+        else
+            @variable(sp, 0 <= y[1:4] <= 1, Bin)
+            @variable(sp, ω[1:2])
+            @stageobjective(sp, -16 * y[1] - 19 * y[2] - 23 * y[3] - 28 * y[4])
+            @constraint(
+                sp,
+                2 * y[1] + 3 * y[2] + 4 * y[3] + 5 * y[4] <= ω[1] - x[1].in
+            )
+            @constraint(
+                sp,
+                6 * y[1] + 1 * y[2] + 3 * y[3] + 2 * y[4] <= ω[2] - x[2].in
+            )
+            steps = range(5, stop = 15, length = 10)
+            SDDP.parameterize(sp, [[i, j] for i in steps for j in steps]) do φ
+                return JuMP.fix.(ω, φ)
+            end
+        end
+    end
+    handler = SDDP.BanditDuality()
+    SDDP.train(model, duality_handler = handler, iteration_limit = 20)
+    @test sum(
+        l.duality_key == " " for l in model.most_recent_training_results.log
+    ) > 10
+    @test sum(
+        l.duality_key == "S" for l in model.most_recent_training_results.log
+    ) > 0
     return
 end
 
