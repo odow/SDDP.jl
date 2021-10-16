@@ -1001,12 +1001,12 @@ function train(
     if cut_deletion_minimum < 0
         cut_deletion_minimum = typemax(Int)
     end
-    for (key, node) in model.nodes
+    for (_, node) in model.nodes
         node.bellman_function.cut_type = cut_type
-        node.bellman_function.global_theta.cut_oracle.deletion_minimum =
+        node.bellman_function.global_theta.deletion_minimum =
             cut_deletion_minimum
         for oracle in node.bellman_function.local_thetas
-            oracle.cut_oracle.deletion_minimum = cut_deletion_minimum
+            oracle.deletion_minimum = cut_deletion_minimum
         end
     end
     dashboard_callback = if dashboard

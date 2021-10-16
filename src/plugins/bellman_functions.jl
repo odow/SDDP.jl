@@ -20,23 +20,17 @@ mutable struct SampledState
     best_objective::Float64
 end
 
-mutable struct LevelOneOracle
-    cuts::Vector{Cut}
-    states::Vector{SampledState}
-    cuts_to_be_deleted::Vector{Cut}
-    deletion_minimum::Int
-    function LevelOneOracle(deletion_minimum)
-        return new(Cut[], SampledState[], Cut[], deletion_minimum)
-    end
-end
-
 mutable struct ConvexApproximation
     theta::JuMP.VariableRef
     states::Dict{Symbol,JuMP.VariableRef}
-    # TODO(odow): improve type stability
     objective_states::Union{Nothing,NTuple{N,JuMP.VariableRef} where {N}}
     belief_states::Union{Nothing,Dict{T,JuMP.VariableRef} where {T}}
-    cut_oracle::LevelOneOracle
+    # Storage for cut selection
+    cuts::Vector{Cut}
+    sampled_states::Vector{SampledState}
+    cuts_to_be_deleted::Vector{Cut}
+    deletion_minimum::Int
+
     function ConvexApproximation(
         theta::JuMP.VariableRef,
         states::Dict{Symbol,JuMP.VariableRef},
@@ -49,7 +43,10 @@ mutable struct ConvexApproximation
             states,
             objective_states,
             belief_states,
-            LevelOneOracle(deletion_minimum),
+            Cut[],
+            SampledState[],
+            Cut[],
+            deletion_minimum,
         )
     end
 end
@@ -86,9 +83,6 @@ function _dynamic_range_warning(intercept, coefficients)
     return
 end
 
-"""
-Add the cut `V.θ ≥ θᵏ + ⟨πᵏ, x′ - xᵏ⟩`.
-"""
 function _add_cut(
     V::ConvexApproximation,
     θᵏ::Float64,
@@ -143,9 +137,6 @@ function _eval_height(cut::Cut, sampled_state::SampledState)
     for (key, value) in cut.coefficients
         height += value * sampled_state.state[key]
     end
-    if cut.obj_y !== nothing
-        height
-    end
     return height
 end
 
@@ -167,24 +158,17 @@ function _cut_selection_update(
 )
     if cut.obj_y !== nothing || cut.belief_y !== nothing
         # Skip cut selection if belief or objective states present.
-        push!(V.cut_oracle.cuts, cut)
+        push!(V.cuts, cut)
         return
     end
     model = JuMP.owner_model(V.theta)
     is_minimization = JuMP.objective_sense(model) == MOI.MIN_SENSE
-    oracle = V.cut_oracle
-    sampled_state = SampledState(
-        state,
-        cut.obj_y,
-        cut.belief_y,
-        cut,
-        NaN,
-    )
+    sampled_state = SampledState(state, cut.obj_y, cut.belief_y, cut, NaN)
     sampled_state.best_objective = _eval_height(cut, sampled_state)
     # Loop through previously sampled states and compare the height of the most
     # recent cut against the current best. If this new cut is an improvement,
     # store this one instead.
-    for old_state in oracle.states
+    for old_state in V.sampled_states
         height = _eval_height(cut, old_state)
         if _dominates(height, old_state.best_objective, is_minimization)
             old_state.dominating_cut.non_dominated_count -= 1
@@ -193,11 +177,11 @@ function _cut_selection_update(
             old_state.best_objective = height
         end
     end
-    push!(oracle.states, sampled_state)
+    push!(V.sampled_states, sampled_state)
     # Now loop through previously discovered cuts and compare their height at
     # `sampled_state`. If a cut is an improvement, add it to a queue to be
     # added.
-    for old_cut in oracle.cuts
+    for old_cut in V.cuts
         if old_cut.constraint_ref !== nothing
             # We only care about cuts not currently in the model.
             continue
@@ -211,23 +195,23 @@ function _cut_selection_update(
             _add_cut_constraint_to_model(V, old_cut)
         end
     end
-    push!(oracle.cuts, cut)
+    push!(V.cuts, cut)
     # Delete cuts that need to be deleted.
-    for cut in V.cut_oracle.cuts
+    for cut in V.cuts
         if cut.non_dominated_count < 1
             if cut.constraint_ref !== nothing
-                push!(oracle.cuts_to_be_deleted, cut)
+                push!(V.cuts_to_be_deleted, cut)
             end
         end
     end
-    if length(oracle.cuts_to_be_deleted) >= oracle.deletion_minimum
-        for cut in oracle.cuts_to_be_deleted
+    if length(V.cuts_to_be_deleted) >= V.deletion_minimum
+        for cut in V.cuts_to_be_deleted
             JuMP.delete(model, cut.constraint_ref)
             cut.constraint_ref = nothing
             cut.non_dominated_count = 0
         end
     end
-    empty!(oracle.cuts_to_be_deleted)
+    empty!(V.cuts_to_be_deleted)
     return
 end
 
@@ -274,7 +258,7 @@ V(x, b, y) =
          θ ≥ Σ{p(k, w) * φ(w)}_w - μᵀb(k) - νᵀy(k),     ∀ k ∈ K
 ```
 """
-mutable struct BellmanFunction <: AbstractBellmanFunction
+mutable struct BellmanFunction
     global_theta::ConvexApproximation
     local_thetas::Vector{ConvexApproximation}
     cut_type::CutType
@@ -389,10 +373,9 @@ end
 # rectangular, we want to add a constraint at each extreme point. This involves
 # adding 2^N constraints where N = |μ|. This is only feasible for
 # low-dimensional problems, e.g., N < 5.
-_add_initial_bounds(obj_state::Nothing, theta) = nothing
+_add_initial_bounds(::Nothing, ::Any) = nothing
 
 function _add_initial_bounds(obj_state::ObjectiveState, theta)
-    model = JuMP.owner_model(theta)
     if length(obj_state.μ) < 5
         for y in
             Base.product(zip(obj_state.lower_bound, obj_state.upper_bound)...)
@@ -410,6 +393,7 @@ function _add_initial_bounds(obj_state::ObjectiveState, theta)
             obj_state.μ,
         )
     end
+    return
 end
 
 function refine_bellman_function(
@@ -561,40 +545,39 @@ function _add_locals_if_necessary(
 )
     num_local_thetas = length(bellman_function.local_thetas)
     if num_local_thetas == N
-        # Do nothing. Already initialized.
-    elseif num_local_thetas == 0
-        global_theta = bellman_function.global_theta
-        model = JuMP.owner_model(global_theta.theta)
-        local_thetas = @variable(model, [1:N])
-        if JuMP.has_lower_bound(global_theta.theta)
-            JuMP.set_lower_bound.(
-                local_thetas,
-                JuMP.lower_bound(global_theta.theta),
-            )
-        end
-        if JuMP.has_upper_bound(global_theta.theta)
-            JuMP.set_upper_bound.(
-                local_thetas,
-                JuMP.upper_bound(global_theta.theta),
-            )
-        end
-        for local_theta in local_thetas
-            push!(
-                bellman_function.local_thetas,
-                ConvexApproximation(
-                    local_theta,
-                    global_theta.states,
-                    node.objective_state === nothing ? nothing :
-                    node.objective_state.μ,
-                    node.belief_state === nothing ? nothing :
-                    node.belief_state.μ,
-                    global_theta.cut_oracle.deletion_minimum,
-                ),
-            )
-        end
-    else
+        return # Do nothing. Already initialized.
+    elseif num_local_thetas > 0
         error(
-            "Expected $(N) local θ variables but there were $(num_local_thetas).",
+            "Expected $(N) local θ variables but there were " *
+            "$(num_local_thetas).",
+        )
+    end
+    global_theta = bellman_function.global_theta
+    model = JuMP.owner_model(global_theta.theta)
+    local_thetas = @variable(model, [1:N])
+    if JuMP.has_lower_bound(global_theta.theta)
+        JuMP.set_lower_bound.(
+            local_thetas,
+            JuMP.lower_bound(global_theta.theta),
+        )
+    end
+    if JuMP.has_upper_bound(global_theta.theta)
+        JuMP.set_upper_bound.(
+            local_thetas,
+            JuMP.upper_bound(global_theta.theta),
+        )
+    end
+    for local_theta in local_thetas
+        push!(
+            bellman_function.local_thetas,
+            ConvexApproximation(
+                local_theta,
+                global_theta.states,
+                node.objective_state === nothing ? nothing :
+                node.objective_state.μ,
+                node.belief_state === nothing ? nothing : node.belief_state.μ,
+                global_theta.deletion_minimum,
+            ),
         )
     end
     return
@@ -622,8 +605,8 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
             "multi_cuts" => Dict{String,Any}[],
             "risk_set_cuts" => Vector{Float64}[],
         )
-        oracle = node.bellman_function.global_theta.cut_oracle
-        for (cut, state) in zip(oracle.cuts, oracle.states)
+        oracle = node.bellman_function.global_theta
+        for (cut, state) in zip(oracle.cuts, oracle.sampled_states)
             intercept = cut.intercept
             for (key, π) in cut.coefficients
                 intercept += π * state.state[key]
@@ -638,8 +621,7 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
             )
         end
         for (i, theta) in enumerate(node.bellman_function.local_thetas)
-            oracle = theta.cut_oracle
-            for (cut, state) in zip(oracle.cuts, oracle.states)
+            for (cut, state) in zip(theta.cuts, theta.sampled_states)
                 intercept = cut.intercept
                 for (key, π) in cut.coefficients
                     intercept += π * state.state[key]
@@ -799,13 +781,13 @@ You should call this after [`train`](@ref) and before [`simulate`](@ref).
 function add_all_cuts(model::PolicyGraph)
     for node in values(model.nodes)
         global_theta = node.bellman_function.global_theta
-        for cut in global_theta.cut_oracle.cuts
+        for cut in global_theta.cuts
             if cut.constraint_ref === nothing
                 _add_cut_constraint_to_model(global_theta, cut)
             end
         end
         for approximation in node.bellman_function.local_thetas
-            for cut in approximation.cut_oracle.cuts
+            for cut in approximation.cuts
                 if cut.constraint_ref === nothing
                     _add_cut_constraint_to_model(approximation, cut)
                 end

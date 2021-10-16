@@ -12,7 +12,7 @@ using SDDP, GLPK, Test
 function stock_example()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(5),
-        bellman_function = SDDP.BellmanFunction(lower_bound = -2),
+        lower_bound = -2,
         optimizer = GLPK.Optimizer,
     ) do sp, stage
         @variable(sp, 0 <= state <= 1, SDDP.State, initial_value = 0.5)

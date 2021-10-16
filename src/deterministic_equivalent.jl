@@ -30,7 +30,7 @@ function add_node_to_scenario_tree(
         throw_detequiv_error("Objective states detected!")
     elseif node.belief_state !== nothing
         throw_detequiv_error("Belief states detected!")
-    elseif length(node.bellman_function.global_theta.cut_oracle.cuts) > 0
+    elseif length(node.bellman_function.global_theta.cuts) > 0
         throw_detequiv_error(
             "Model has been used for training. Can only form deterministic " *
             "equivalent on a fresh model.",
