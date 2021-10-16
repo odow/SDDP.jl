@@ -14,6 +14,8 @@ end
 
 mutable struct SampledState
     state::Dict{Symbol,Float64}
+    obj_y::Union{Nothing,NTuple{N,Float64} where {N}}
+    belief_y::Union{Nothing,Dict{T,Float64} where {T}}
     dominating_cut::Cut
     best_objective::Float64
 end
@@ -101,14 +103,14 @@ function _add_cut(
     end
     _dynamic_range_warning(θᵏ, πᵏ)
     cut = Cut(θᵏ, πᵏ, obj_y, belief_y, 1, nothing)
-    add_cut_constraint_to_model(V, cut)
+    _add_cut_constraint_to_model(V, cut)
     if cut_selection
         _cut_selection_update(V, cut, xᵏ)
     end
     return
 end
 
-function add_cut_constraint_to_model(V::ConvexApproximation, cut::Cut)
+function _add_cut_constraint_to_model(V::ConvexApproximation, cut::Cut)
     model = JuMP.owner_model(V.theta)
     yᵀμ = JuMP.AffExpr(0.0)
     if V.objective_states !== nothing
@@ -136,10 +138,13 @@ end
 """
 Internal function: calculate the height of `cut` evaluated at `state`.
 """
-function _eval_height(cut::Cut, state::Dict{Symbol,Float64})
+function _eval_height(cut::Cut, sampled_state::SampledState)
     height = cut.intercept
     for (key, value) in cut.coefficients
-        height += value * state[key]
+        height += value * sampled_state.state[key]
+    end
+    if cut.obj_y !== nothing
+        height
     end
     return height
 end
@@ -168,12 +173,19 @@ function _cut_selection_update(
     model = JuMP.owner_model(V.theta)
     is_minimization = JuMP.objective_sense(model) == MOI.MIN_SENSE
     oracle = V.cut_oracle
-    sampled_state = SampledState(state, cut, _eval_height(cut, state))
+    sampled_state = SampledState(
+        state,
+        cut.obj_y,
+        cut.belief_y,
+        cut,
+        NaN,
+    )
+    sampled_state.best_objective = _eval_height(cut, sampled_state)
     # Loop through previously sampled states and compare the height of the most
     # recent cut against the current best. If this new cut is an improvement,
     # store this one instead.
     for old_state in oracle.states
-        height = _eval_height(cut, old_state.state)
+        height = _eval_height(cut, old_state)
         if _dominates(height, old_state.best_objective, is_minimization)
             old_state.dominating_cut.non_dominated_count -= 1
             cut.non_dominated_count += 1
@@ -190,13 +202,13 @@ function _cut_selection_update(
             # We only care about cuts not currently in the model.
             continue
         end
-        height = _eval_height(old_cut, state)
+        height = _eval_height(old_cut, sampled_state)
         if _dominates(height, sampled_state.best_objective, is_minimization)
             sampled_state.dominating_cut.non_dominated_count -= 1
             old_cut.non_dominated_count += 1
             sampled_state.dominating_cut = old_cut
             sampled_state.best_objective = height
-            add_cut_constraint_to_model(V, old_cut)
+            _add_cut_constraint_to_model(V, old_cut)
         end
     end
     push!(oracle.cuts, cut)
@@ -229,6 +241,39 @@ struct InstanceFactory{T}
     InstanceFactory{T}(args...; kwargs...) where {T} = new{T}(args, kwargs)
 end
 
+"""
+    BellmanFunction
+
+A representation of the value function. SDDP.jl uses the following unique
+representation of the value function that is undocumented in the literature.
+
+It supports three types of state variables:
+
+ 1) x - convex "resource" states
+ 2) b - concave "belief" states
+ 3) y - concave "objective" states
+
+In addition, we have three types of cuts:
+
+ 1) Single-cuts (also called "average" cuts in the literature), which involve
+    the risk-adjusted expectation of the cost-to-go.
+ 2) Multi-cuts, which use a different cost-to-go term for each realization w.
+ 3) Risk-cuts, which correspond to the facets of the dual interpretation of a
+    convex risk measure.
+
+Therefore, ValueFunction returns a JuMP model of the following form:
+
+```
+V(x, b, y) =
+    min: μᵀb + νᵀy + θ
+    s.t. # "Single" / "Average" cuts
+         μᵀb(j) + νᵀy(j) + θ >= α(j) + xᵀβ(j),          ∀ j ∈ J
+         # "Multi" cuts
+         μᵀb(k) + νᵀy(k) + φ(w) >= α(k, w) + xᵀβ(k, w), ∀w ∈ Ω, k ∈ K
+         # "Risk-set" cuts
+         θ ≥ Σ{p(k, w) * φ(w)}_w - μᵀb(k) - νᵀy(k),     ∀ k ∈ K
+```
+"""
 mutable struct BellmanFunction <: AbstractBellmanFunction
     global_theta::ConvexApproximation
     local_thetas::Vector{ConvexApproximation}
@@ -756,13 +801,13 @@ function add_all_cuts(model::PolicyGraph)
         global_theta = node.bellman_function.global_theta
         for cut in global_theta.cut_oracle.cuts
             if cut.constraint_ref === nothing
-                add_cut_constraint_to_model(global_theta, cut)
+                _add_cut_constraint_to_model(global_theta, cut)
             end
         end
         for approximation in node.bellman_function.local_thetas
             for cut in approximation.cut_oracle.cuts
                 if cut.constraint_ref === nothing
-                    add_cut_constraint_to_model(approximation, cut)
+                    _add_cut_constraint_to_model(approximation, cut)
                 end
             end
         end
