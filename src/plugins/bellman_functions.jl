@@ -152,11 +152,6 @@ function _cut_selection_update(
     cut::Cut,
     state::Dict{Symbol,Float64},
 )
-    # if cut.obj_y !== nothing || cut.belief_y !== nothing
-    #     # Skip cut selection if belief or objective states present.
-    #     push!(V.cuts, cut)
-    #     return
-    # end
     model = JuMP.owner_model(V.theta)
     is_minimization = JuMP.objective_sense(model) == MOI.MIN_SENSE
     sampled_state = SampledState(state, cut.obj_y, cut.belief_y, cut, NaN)
