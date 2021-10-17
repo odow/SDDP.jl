@@ -147,20 +147,16 @@ function _dominates(candidate, incumbent, minimization::Bool)
     return minimization ? candidate >= incumbent : candidate <= incumbent
 end
 
-"""
-Internal function: update the Level-One datastructures inside
-`bellman_function`.
-"""
 function _cut_selection_update(
     V::ConvexApproximation,
     cut::Cut,
     state::Dict{Symbol,Float64},
 )
-    if cut.obj_y !== nothing || cut.belief_y !== nothing
-        # Skip cut selection if belief or objective states present.
-        push!(V.cuts, cut)
-        return
-    end
+    # if cut.obj_y !== nothing || cut.belief_y !== nothing
+    #     # Skip cut selection if belief or objective states present.
+    #     push!(V.cuts, cut)
+    #     return
+    # end
     model = JuMP.owner_model(V.theta)
     is_minimization = JuMP.objective_sense(model) == MOI.MIN_SENSE
     sampled_state = SampledState(state, cut.obj_y, cut.belief_y, cut, NaN)
@@ -169,6 +165,10 @@ function _cut_selection_update(
     # recent cut against the current best. If this new cut is an improvement,
     # store this one instead.
     for old_state in V.sampled_states
+        # Only compute cut selection at same points in concave space.
+        if old_state.obj_y != cut.obj_y || old_state.belief_y != cut.belief_y
+            continue
+        end
         height = _eval_height(cut, old_state)
         if _dominates(height, old_state.best_objective, is_minimization)
             old_state.dominating_cut.non_dominated_count -= 1
@@ -184,6 +184,12 @@ function _cut_selection_update(
     for old_cut in V.cuts
         if old_cut.constraint_ref !== nothing
             # We only care about cuts not currently in the model.
+            continue
+        elseif old_cut.obj_y != sampled_state.obj_y
+            # Only compute cut selection at same points in objective space.
+            continue
+        elseif old_cut.belief_y != sampled_state.belief_y
+            # Only compute cut selection at same points in belief space.
             continue
         end
         height = _eval_height(old_cut, sampled_state)
@@ -259,9 +265,9 @@ V(x, b, y) =
 ```
 """
 mutable struct BellmanFunction
+    cut_type::CutType
     global_theta::ConvexApproximation
     local_thetas::Vector{ConvexApproximation}
-    cut_type::CutType
     # Cuts defining the dual representation of the risk measure.
     risk_set_cuts::Set{Vector{Float64}}
 end
@@ -335,9 +341,9 @@ function initialize_bellman_function(
     obj_μ = node.objective_state !== nothing ? node.objective_state.μ : nothing
     belief_μ = node.belief_state !== nothing ? node.belief_state.μ : nothing
     return BellmanFunction(
+        cut_type,
         ConvexApproximation(Θᴳ, x′, obj_μ, belief_μ, deletion_minimum),
         ConvexApproximation[],
-        cut_type,
         Set{Vector{Float64}}(),
     )
 end

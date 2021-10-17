@@ -221,6 +221,118 @@ function test_add_all_cuts_MULTI_CUT()
     return
 end
 
+function test_belief_state_cut_selection()
+    demand_values = [1.0, 2.0]
+    demand_prob = Dict(:Ah => [0.2, 0.8], :Bh => [0.8, 0.2])
+    graph = SDDP.Graph(
+        :root_node,
+        [:Ad, :Ah, :Bd, :Bh],
+        [
+            (:root_node => :Ad, 0.5),
+            (:root_node => :Bd, 0.5),
+            (:Ad => :Ah, 1.0),
+            (:Bd => :Bh, 1.0),
+        ],
+    )
+    SDDP.add_ambiguity_set(graph, [:Ad, :Bd], 1e2)
+    SDDP.add_ambiguity_set(graph, [:Ah, :Bh], 1e2)
+    model = SDDP.PolicyGraph(
+        graph,
+        lower_bound = 0.0,
+        optimizer = GLPK.Optimizer,
+    ) do subproblem, node
+        @variables(
+            subproblem,
+            begin
+                0 <= inventory <= 2, (SDDP.State, initial_value = 0.0)
+                buy >= 0
+                demand
+            end
+        )
+        @constraint(subproblem, demand == inventory.in - inventory.out + buy)
+        if node == :Ad || node == :Bd || node == :D
+            JuMP.fix(demand, 0)
+            @stageobjective(subproblem, buy)
+        else
+            SDDP.parameterize(subproblem, demand_values, demand_prob[node]) do ω
+                return JuMP.fix(demand, ω)
+            end
+            @stageobjective(subproblem, 2 * buy + inventory.out)
+        end
+    end
+    SDDP.train(
+        model,
+        iteration_limit = 20,
+        cut_deletion_minimum = 20,
+        print_level = 0,
+    )
+    n_cuts = count(model[:Ad].bellman_function.global_theta.cuts) do cut
+        return cut.constraint_ref !== nothing
+    end
+    @test n_cuts == 20
+    SDDP.train(
+        model,
+        iteration_limit = 1,
+        add_to_existing_cuts = true,
+        print_level = 0,
+    )
+    n_cuts_2 = count(model[:Ad].bellman_function.global_theta.cuts) do cut
+        return cut.constraint_ref !== nothing
+    end
+    @test n_cuts_2 < n_cuts
+    return
+end
+
+function test_biobjective_cut_selection()
+    model = SDDP.LinearPolicyGraph(
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = GLPK.Optimizer,
+    ) do subproblem, _
+        @variable(subproblem, 0 <= v <= 200, SDDP.State, initial_value = 50)
+        @variables(subproblem, begin
+            0 <= g[i = 1:2] <= 100
+            0 <= u <= 150
+            s >= 0
+            shortage_cost >= 0
+        end)
+        @expressions(subproblem, begin
+            objective_1, g[1] + 10 * g[2]
+            objective_2, shortage_cost
+        end)
+        @constraints(subproblem, begin
+                inflow_constraint, v.out == v.in - u - s
+                g[1] + g[2] + u == 150
+                shortage_cost >= 40 - v.out
+                shortage_cost >= 60 - 2 * v.out
+                shortage_cost >= 80 - 4 * v.out
+            end)
+        ## You must call this for a biobjective problem!
+        SDDP.initialize_biobjective_subproblem(subproblem)
+        SDDP.parameterize(subproblem, 0.0:5:50.0) do ω
+            JuMP.set_normalized_rhs(inflow_constraint, ω)
+            ## You must call `set_biobjective_functions` from within
+            ## `SDDP.parameterize`.
+            return SDDP.set_biobjective_functions(
+                subproblem,
+                objective_1,
+                objective_2,
+            )
+        end
+    end
+    SDDP.train_biobjective(
+        model,
+        solution_limit = 10,
+        iteration_limit = 10,
+        print_level = 0,
+    )
+    n_cuts = count(model[1].bellman_function.global_theta.cuts) do cut
+        return cut.constraint_ref !== nothing
+    end
+    @test n_cuts < 100
+    return
+end
+
 end  # module
 
 TestBellmanFunctions.runtests()

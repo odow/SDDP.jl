@@ -489,7 +489,9 @@ function backward_pass(
         if belief_state !== nothing
             # Update the cost-to-go function for partially observable model.
             for (node_index, belief) in belief_state
-                belief == 0.0 && continue
+                if iszero(belief)
+                    continue
+                end
                 solve_all_children(
                     model,
                     model[node_index],
