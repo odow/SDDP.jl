@@ -217,8 +217,8 @@ function test_refine_at_similar_nodes()
         print_level = 0,
     )
     @test SDDP.calculate_bound(model) ≈ 5.7 || SDDP.calculate_bound(model) ≈ 6.3
-    mi1 = length(model[(1, 1)].bellman_function.global_theta.cut_oracle.cuts)
-    mi2 = length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts)
+    mi1 = length(model[(1, 1)].bellman_function.global_theta.cuts)
+    mi2 = length(model[(1, 2)].bellman_function.global_theta.cuts)
     @test mi1 + mi2 == 1
 
     model = SDDP.MarkovianPolicyGraph(
@@ -238,10 +238,8 @@ function test_refine_at_similar_nodes()
         print_level = 0,
     )
     @test SDDP.calculate_bound(model) ≈ 9.5
-    @test length(model[(1, 1)].bellman_function.global_theta.cut_oracle.cuts) ==
-          1
-    @test length(model[(1, 2)].bellman_function.global_theta.cut_oracle.cuts) ==
-          1
+    @test length(model[(1, 1)].bellman_function.global_theta.cuts) == 1
+    @test length(model[(1, 2)].bellman_function.global_theta.cuts) == 1
     return
 end
 

@@ -68,7 +68,7 @@ function _add_to_value_function(
     else
         set_upper_bound(theta, upper_bound(convex_approximation.theta))
     end
-    for cut in convex_approximation.cut_oracle.cuts
+    for cut in convex_approximation.cuts
         cut_expr = @expression(
             model,
             cut.intercept +

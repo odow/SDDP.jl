@@ -12,7 +12,7 @@ using SDDP, GLPK, Test
 function fast_hydro_thermal()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
-        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        lower_bound = 0.0,
         optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, 0 <= x <= 8, SDDP.State, initial_value = 0.0)

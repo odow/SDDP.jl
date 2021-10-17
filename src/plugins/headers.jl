@@ -54,54 +54,6 @@ is the stagewise-independent noise term observed in that node.
 """
 function sample_scenario end
 
-# ============================== bellman_functions =========================== #
-
-"""
-    AbstractBellmanFunction
-
-The abstract type for the Bellman function interface.
-
-You need to define the following methods:
- - [`SDDP.initialize_bellman_function`](@ref)
- - [`SDDP.refine_bellman_function`](@ref)
- - [`SDDP.bellman_term`](@ref)
-"""
-abstract type AbstractBellmanFunction end
-
-"""
-    initialize_bellman_function(
-        ::Type{F},
-        graph::PolicyGraph{T},
-        node::Node{T},
-    ) where {F<:AbstractBellmanFunction,T}
-
-Return an instance of the Bellman function F for `node` in the policy graph
-`graph`.
-"""
-function initialize_bellman_function end
-
-"""
-    refine_bellman_function(
-        graph::PolicyGraph{T},
-        node::Node{T},
-        bellman_function::AbstractBellmanFunction,
-        risk_measure::AbstractRiskMeasure,
-        state::Dict{Symbol, Float64},
-        dual_variables::Vector{Dict{Symbol,Float64}},
-        noise_supports::Vector{<:Noise},
-        original_probability::Vector{Float64},
-        objective_realizations::Vector{Float64},
-    ) where {T}
-"""
-function refine_bellman_function end
-
-"""
-    bellman_term(::AbstractBellmanFunction)
-
-Return a JuMP expression representing the Bellman function.
-"""
-function bellman_term end
-
 # =============================== stopping_rules ============================= #
 
 """

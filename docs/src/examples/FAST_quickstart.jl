@@ -12,7 +12,7 @@ using SDDP, GLPK, Test
 function fast_quickstart()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
-        bellman_function = SDDP.BellmanFunction(lower_bound = -5),
+        lower_bound = -5,
         optimizer = GLPK.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)

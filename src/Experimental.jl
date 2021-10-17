@@ -69,7 +69,7 @@ end
 
 function _throw_if_exisiting_cuts(model::PolicyGraph)
     for (_, node) in model.nodes
-        if length(node.bellman_function.global_theta.cut_oracle.cuts) != 0
+        if length(node.bellman_function.global_theta.cuts) != 0
             error(
                 "StochOptFormat does not support writing after a call to " *
                 "`SDDP.train`.",
