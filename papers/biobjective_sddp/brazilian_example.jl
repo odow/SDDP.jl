@@ -254,7 +254,7 @@ function experiment_3(atol::Float64)
     model = create_model()
     solutions = SDDP.train_biobjective(
         model;
-        solution_limit = N,
+        solution_limit = 9,
         include_timing = true,
         print_level = 1,
         log_file_prefix = "experiment_3",
