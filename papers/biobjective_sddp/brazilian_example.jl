@@ -68,10 +68,10 @@ function create_model(weight = nothing; stages = 60)
             sp,
             begin
                 objective_1,
-                OBJ_1_SCALING *
+                OBJ_1_SCALING / stages *
                 sum(deficit_obj[i] * sum(deficit[i, :]) for i in 1:4)
                 objective_2,
-                OBJ_2_SCALING * sum(
+                OBJ_2_SCALING / stages * sum(
                     thermal_obj[i][j] * thermal[i, j] for i in 1:4 for
                     j in 1:N_THERMAL[i]
                 )
