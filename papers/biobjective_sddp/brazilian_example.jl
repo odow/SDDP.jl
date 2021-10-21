@@ -198,37 +198,30 @@ function SDDP.convergence_test(
 end
 
 """
-    experiment_3(atol::Float64)
+    experiment_2(N::Int, atol::Float64)
 
 Run an experiment in which we time how long it takes to solve the problems from
 experiment_2 using the saddle cuts.
 """
-function experiment_3(atol::Float64)
+function experiment_2(N::Int, atol::Float64)
     # Precompilation to avoid measuring that overhead!
     _model = create_model(1.0)
     SDDP.train(_model; iteration_limit = 1, print_level = 0)
     # Now the real model
-    limit_pairs = Pair{Float64,BoundLimit}[]
-    open("experiment_2.dat", "r") do io
-        for line in readlines(io)
-            items = parse.(Float64, String.(split(line, ",")))
-            push!(limit_pairs, items[1] => BoundLimit(items[2], atol))
-        end
-    end
     start_time = time()
-    for (weight, limit) in limit_pairs
+    for weight in [0.0, 1.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875]
         model = create_model(weight)
         SDDP.train(
             model;
-            log_file = "experiment_3_$(weight).txt",
-            stopping_rules = [limit],
+            log_file = "experiment_2_$(weight).txt",
+            stopping_rules = [SDDP.BoundStalling(10, atol)],
             # Turn of cut selection for this experiment. We don't have it for
             # the interpolation stuff.
             cut_deletion_minimum = 10_000,
 
         )
         bound = SDDP.calculate_bound(model)
-        open("experiment_3.dat", "a") do io
+        open("experiment_2.dat", "a") do io
             println(io, weight, ", ", bound, ", ", time() - start_time)
         end
     end
@@ -236,12 +229,12 @@ function experiment_3(atol::Float64)
 end
 
 """
-    experiment_2(N::Int, atol::Float64)
+    experiment_3(atol::Float64)
 
 Run an experiment in which we time how long it takes to solve N different
 policies.
 """
-function experiment_2(N::Int, atol::Float64)
+function experiment_3(atol::Float64)
     # Precompilation to avoid measuring that overhead!
     _model = create_model()
     SDDP.train_biobjective(
@@ -251,16 +244,23 @@ function experiment_2(N::Int, atol::Float64)
         print_level = 0,
     )
     # Now the real model
+    limits = Dict{Float64,BoundLimit}()
+    open("experiment_2.dat", "r") do io
+        for line in readlines(io)
+            items = parse.(Float64, String.(split(line, ",")))
+            limits[items[1]] = BoundLimit(items[2], atol)
+        end
+    end
     model = create_model()
     solutions = SDDP.train_biobjective(
         model;
         solution_limit = N,
         include_timing = true,
         print_level = 1,
-        log_file_prefix = "experiment_2",
-        stopping_rules = (weight) -> [SDDP.BoundStalling(10, atol)],
+        log_file_prefix = "experiment_3",
+        stopping_rules = (weight) -> [limits[weight]],
     )
-    open("experiment_2.dat", "w") do io
+    open("experiment_3.dat", "w") do io
         X = [(weight, bound, time) for (weight, (bound, time)) in solutions]
         sort!(X, by = x -> x[3])
         for (weight, bound, time) in X
