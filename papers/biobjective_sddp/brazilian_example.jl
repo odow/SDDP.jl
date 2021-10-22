@@ -217,7 +217,7 @@ function experiment_2(N::Int, atol::Float64)
             stopping_rules = [SDDP.BoundStalling(10, atol)],
             # Turn of cut selection for this experiment. We don't have it for
             # the interpolation stuff.
-            cut_deletion_minimum = 10_000,
+            # cut_deletion_minimum = 10_000,
 
         )
         bound = SDDP.calculate_bound(model)
