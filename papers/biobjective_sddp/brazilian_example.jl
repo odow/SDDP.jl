@@ -68,10 +68,10 @@ function create_model(weight = nothing; stages = 60)
             sp,
             begin
                 objective_1,
-                OBJ_1_SCALING / stages *
+                OBJ_1_SCALING / (stages == 12 ? 1 : stages) *
                 sum(deficit_obj[i] * sum(deficit[i, :]) for i in 1:4)
                 objective_2,
-                OBJ_2_SCALING / stages * sum(
+                OBJ_2_SCALING / (stages == 12 ? 1 : stages) * sum(
                     thermal_obj[i][j] * thermal[i, j] for i in 1:4 for
                     j in 1:N_THERMAL[i]
                 )
@@ -215,10 +215,6 @@ function experiment_2(N::Int, atol::Float64)
             model;
             log_file = "experiment_2_$(weight).txt",
             stopping_rules = [SDDP.BoundStalling(10, atol)],
-            # Turn of cut selection for this experiment. We don't have it for
-            # the interpolation stuff.
-            # cut_deletion_minimum = 10_000,
-
         )
         bound = SDDP.calculate_bound(model)
         open("experiment_2.dat", "a") do io

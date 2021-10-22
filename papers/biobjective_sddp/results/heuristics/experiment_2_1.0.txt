@@ -1,0 +1,45 @@
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 60
+  State variables : 4
+  Scenarios       : 8.22275e+112
+  Existing cuts   : false
+  Subproblem structure                      : (min, max)
+    Variables                               : (157, 157)
+    VariableRef in MOI.LessThan{Float64}    : (144, 145)
+    VariableRef in MOI.GreaterThan{Float64} : (149, 149)
+    AffExpr in MOI.EqualTo{Float64}         : (9, 9)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+00]
+  Non-zero Objective range  [2e-01, 1e+00]
+  Non-zero Bounds range     [7e-01, 2e+05]
+  Non-zero RHS range        [7e+03, 5e+04]
+No problems detected
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    7.542507e+04   0.000000e+00   1.539966e+00          1       4899
+        2    5.206462e+04   0.000000e+00   3.063113e+00          1       9798
+        3    2.957309e+04   0.000000e+00   4.623939e+00          1      14697
+        4    3.018115e+04   0.000000e+00   6.182813e+00          1      19596
+        5    2.188327e+04   0.000000e+00   7.742811e+00          1      24495
+        6    1.453196e+04   0.000000e+00   9.310952e+00          1      29394
+        7    1.232047e+04   5.535556e-04   1.090130e+01          1      34293
+        8    1.550944e+04   0.000000e+00   1.250682e+01          1      39192
+        9    8.318344e+03   6.442451e-05   1.409061e+01          1      44091
+       10    9.144492e+03   6.442451e-05   1.568041e+01          1      48990
+       11    7.166052e+03   9.042954e-05   1.726872e+01          1      53889
+
+Terminating training
+  Status         : bound_stalling
+  Total time (s) : 1.726872e+01
+  Total solves   : 53889
+  Best bound     :  9.042954e-05
+  Simulation CI  :  2.510163e+04 ± 1.259274e+04
+------------------------------------------------------------------------------
