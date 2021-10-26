@@ -296,9 +296,19 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         λ_k .= value.(λ)
         L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
         JuMP.@constraint(model, t <= s * (L_k + h_k' * (λ .- λ_k)))
+        # As an improvement step, add a cut halfway between the current iterate
+        # and the previous best. This often has great performance when we're
+        # oscillating!
+        λ_new = 0.5 .* λ_k + 0.5 .* λ_star
+        L_new = _solve_primal_problem(node.subproblem, λ_new, h_expr, h_k)
+        JuMP.@constraint(model, t <= s * (L_new + h_k' * (λ .- λ_new)))
         if s * L_k >= L_star
             L_star = s * L_k
             λ_star .= λ_k
+        end
+        if s * L_new >= L_star
+            L_star = s * L_new
+            λ_star .= λ_new
         end
     end
     # Step 2: given the optimal dual objective value, try to find the optimal
@@ -310,7 +320,9 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     # we can just keep our current λ_star.
     for _ in (iter+1):lagrange.iteration_limit
         JuMP.optimize!(model)
-        @assert JuMP.termination_status(model) == JuMP.MOI.OPTIMAL
+        if JuMP.termination_status(model) != JuMP.MOI.OPTIMAL
+            break  # We probably hit some sort of numerical error
+        end
         λ_k .= value.(λ)
         L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
         if isapprox(L_star, L_k, atol = lagrange.atol, rtol = lagrange.rtol)
