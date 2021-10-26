@@ -14,10 +14,10 @@ const OBJ_1_SCALING = 0.01
 const OBJ_2_SCALING = 0.1
 include("brazilian_data.jl")
 
-function create_model(weight = nothing)
+function create_model(weight = nothing; stages = 60)
     env = Gurobi.Env()
     model = SDDP.LinearPolicyGraph(
-        stages = 12,
+        stages = stages,
         lower_bound = 0.0,
         optimizer = () -> Gurobi.Optimizer(env),
     ) do sp, t
@@ -68,10 +68,10 @@ function create_model(weight = nothing)
             sp,
             begin
                 objective_1,
-                OBJ_1_SCALING *
+                OBJ_1_SCALING / (stages == 12 ? 1 : stages) *
                 sum(deficit_obj[i] * sum(deficit[i, :]) for i in 1:4)
                 objective_2,
-                OBJ_2_SCALING * sum(
+                OBJ_2_SCALING / (stages == 12 ? 1 : stages) * sum(
                     thermal_obj[i][j] * thermal[i, j] for i in 1:4 for
                     j in 1:N_THERMAL[i]
                 )
@@ -149,7 +149,7 @@ Run the first experiment where we train the policy using the true biobjective
 SDDP algorithm.
 """
 function experiment_1()
-    model = create_model()
+    model = create_model(stages = 12)
     env = Gurobi.Env()
     lower_bound, weights, bounds = BiObjectiveSDDP.bi_objective_sddp(
         model,
@@ -200,34 +200,21 @@ end
 """
     experiment_2(N::Int, atol::Float64)
 
-Run an experiment in which we time how long it takes to solve N different
-policies.
+Run an experiment in which we time how long it takes to solve the problems from
+experiment_2 using the saddle cuts.
 """
 function experiment_2(N::Int, atol::Float64)
     # Precompilation to avoid measuring that overhead!
     _model = create_model(1.0)
     SDDP.train(_model; iteration_limit = 1, print_level = 0)
     # Now the real model
-    weights = [0.0, 1.0]
-    queue = [(0.0, 1.0)]
-    while length(weights) < N
-        (a, b) = popfirst!(queue)
-        c = (a + b) / 2
-        push!(weights, c)
-        push!(queue, (a, c))
-        push!(queue, (c, b))
-    end
     start_time = time()
-    for weight in weights
+    for weight in [0.0, 1.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875]
         model = create_model(weight)
         SDDP.train(
             model;
             log_file = "experiment_2_$(weight).txt",
             stopping_rules = [SDDP.BoundStalling(10, atol)],
-            # Turn of cut selection for this experiment. We don't have it for
-            # the interpolation stuff.
-            cut_deletion_minimum = 10_000,
-
         )
         bound = SDDP.calculate_bound(model)
         open("experiment_2.dat", "a") do io
@@ -240,8 +227,8 @@ end
 """
     experiment_3(atol::Float64)
 
-Run an experiment in which we time how long it takes to solve the problems from
-experiment_2 using the saddle cuts.
+Run an experiment in which we time how long it takes to solve N different
+policies.
 """
 function experiment_3(atol::Float64)
     # Precompilation to avoid measuring that overhead!
@@ -253,26 +240,26 @@ function experiment_3(atol::Float64)
         print_level = 0,
     )
     # Now the real model
-    limit_pairs = Pair{Float64,BoundLimit}[]
+    limits = Dict{Float64,BoundLimit}()
     open("experiment_2.dat", "r") do io
         for line in readlines(io)
             items = parse.(Float64, String.(split(line, ",")))
-            push!(limit_pairs, items[1] => BoundLimit(items[2], atol))
+            limits[items[1]] = BoundLimit(items[2], atol)
         end
     end
-    limit_dict = Dict(limit_pairs)
     model = create_model()
     solutions = SDDP.train_biobjective(
         model;
-        solution_limit = length(limit_pairs),
+        solution_limit = 9,
         include_timing = true,
         print_level = 1,
         log_file_prefix = "experiment_3",
-        stopping_rules = weight -> [limit_dict[weight]],
+        stopping_rules = (weight) -> [limits[weight]],
     )
     open("experiment_3.dat", "w") do io
-        for (weight, _) in limit_pairs
-            bound, time = solutions[weight]
+        X = [(weight, bound, time) for (weight, (bound, time)) in solutions]
+        sort!(X, by = x -> x[3])
+        for (weight, bound, time) in X
             println(io, weight, ", ", bound, ", ", time)
         end
     end
