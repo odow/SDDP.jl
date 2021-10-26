@@ -230,14 +230,16 @@ mutable struct LagrangianDuality <: AbstractDualityHandler
     atol::Float64
     rtol::Float64
     optimizer::Any
+    debug::Bool
 
     function LagrangianDuality(;
         iteration_limit::Int = 100,
         atol::Float64 = 1e-8,
         rtol::Float64 = 1e-8,
         optimizer = nothing,
+        debug::Bool = false,
     )
-        return new(iteration_limit, atol, rtol, optimizer)
+        return new(iteration_limit, atol, rtol, optimizer, debug)
     end
 end
 
@@ -285,21 +287,49 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     @objective(model, Max, t)
     # Step 1: find an optimal dual solution and corresponding objective value.
     iter, t_k = 0, s * primal_obj
-    while !isapprox(L_star, t_k, atol = lagrange.atol, rtol = lagrange.rtol)
+    duals_visited = Vector{Float64}[]
+    last_λ, no_change = fill(NaN, num_states), 0
+    while true
         iter += 1
-        if iter > lagrange.iteration_limit
-            error("Iteration limit exceeded in Lagrangian subproblem.")
-        end
         JuMP.optimize!(model)
         @assert JuMP.termination_status(model) == JuMP.MOI.OPTIMAL
         t_k = JuMP.objective_value(model)
         λ_k .= value.(λ)
+        if λ_k ≈ last_λ
+            no_change += 1
+        else
+            last_λ .= λ_k
+            no_change = 0
+        end
+        if isapprox(L_star, t_k, atol = lagrange.atol, rtol = lagrange.rtol)
+            break  # Success
+        elseif iter >= lagrange.iteration_limit
+            if debug
+                for dual in duals_visited
+                    println(dual)
+                end
+            end
+            error("Iteration limit exceeded in Lagrangian subproblem.")
+        elseif no_change > 2
+            # We keep getting the same damn point. If we haven't converged by
+            # this iteration, the cutting plane algorithm experienced numerical
+            # issues. The most likely answer is that a primal MIP solution
+            # didn't converge to a tight-enough solution. Screw it. Let's keep
+            # going.
+            break
+        end
+        if lagrange.debug
+            push!(duals_visited, copy(λ_k))
+        end
         L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
         JuMP.@constraint(model, t <= s * (L_k + h_k' * (λ .- λ_k)))
         # As an improvement step, add a cut halfway between the current iterate
         # and the previous best. This often has great performance when we're
         # oscillating!
         λ_new = 0.5 .* λ_k + 0.5 .* λ_star
+        if lagrange.debug
+            push!(duals_visited, copy(λ_new))
+        end
         L_new = _solve_primal_problem(node.subproblem, λ_new, h_expr, h_k)
         JuMP.@constraint(model, t <= s * (L_new + h_k' * (λ .- λ_new)))
         if s * L_k >= L_star
@@ -314,7 +344,10 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     # Step 2: given the optimal dual objective value, try to find the optimal
     # dual solution with the smallest L1-norm ‖λ‖.
     @objective(model, Min, sum(λ⁺) + sum(λ⁻))
-    set_lower_bound(t, t_k)
+    # The upper bound of t is `s * primal_obj`, but due to numerical error,
+    # sometimes `t_k > s * primal_obj` (but only just). GLPK complains if this
+    # is the case, so add a `min` check here.
+    set_lower_bound(t, min(t_k, s * primal_obj))
     # The worst-case scenario in this for-loop is that we run through the
     # iterations without finding a new dual solution. However if that happens
     # we can just keep our current λ_star.
