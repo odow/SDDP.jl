@@ -347,7 +347,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     # The upper bound of t is `s * primal_obj`, but due to numerical error,
     # sometimes `t_k > s * primal_obj` (but only just). GLPK complains if this
     # is the case, so add a `min` check here.
-    set_lower_bound(t, min(t_k, s *  primal_obj))
+    set_lower_bound(t, min(t_k, s * primal_obj))
     # The worst-case scenario in this for-loop is that we run through the
     # iterations without finding a new dual solution. However if that happens
     # we can just keep our current λ_star.
