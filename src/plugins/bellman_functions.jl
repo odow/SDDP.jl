@@ -51,7 +51,7 @@ mutable struct ConvexApproximation
     end
 end
 
-_magnitude(x) = x ≈ 0 ? 0 : log10(abs(x))
+_magnitude(x) = abs(x) > 0 ? log10(abs(x)) : 0
 
 function _dynamic_range_warning(intercept, coefficients)
     lo = hi = _magnitude(intercept)
