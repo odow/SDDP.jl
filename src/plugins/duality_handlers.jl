@@ -177,9 +177,7 @@ In the maximization case, the optimization senses are reversed, but the sign of
 mutable struct LagrangianDuality <: AbstractDualityHandler
     method::LocalImprovementSearch.AbstractSearchMethod
 
-    function LagrangianDuality(;
-        method = LocalImprovementSearch.BFGS(100),
-    )
+    function LagrangianDuality(; method = LocalImprovementSearch.BFGS(100))
         return new(method)
     end
 end
@@ -206,13 +204,11 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     if L_k === nothing
         return conic_obj, conic_dual
     end
-    L_star, λ_star = LocalImprovementSearch.minimize(
-        lagrange.method,
-        λ_star,
-    ) do x
-        L_k = _solve_primal_problem(node.subproblem, x, h_expr, h_k)
-        return L_k === nothing ? nothing : (s * L_k, s * h_k)
-    end
+    L_star, λ_star =
+        LocalImprovementSearch.minimize(lagrange.method, λ_star) do x
+            L_k = _solve_primal_problem(node.subproblem, x, h_expr, h_k)
+            return L_k === nothing ? nothing : (s * L_k, s * h_k)
+        end
     for (i, (_, state)) in enumerate(node.states)
         JuMP.fix(state.in, x_in_value[i], force = true)
     end

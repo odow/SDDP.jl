@@ -55,7 +55,7 @@ function generation_expansion(duality_handler)
                 ## Meet demand or pay a penalty
                 unmet >= demand - sum(generation)
                 ## For fewer iterations order the units to break symmetry, units are identical (tougher numerically)
-                [j in 1:(num_units - 1)], invested[j].out <= invested[j + 1].out
+                [j in 1:(num_units-1)], invested[j].out <= invested[j+1].out
             end
         )
         ## Demand is uncertain

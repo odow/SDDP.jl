@@ -23,30 +23,30 @@ function test_x_squared()
         return f, f′
     end
     @info "squared = $(calls)"
-    @test isapprox(f, 2.1, atol=1e-6)
-    @test isapprox(x, [1.1], atol=1e-4)
+    @test isapprox(f, 2.1, atol = 1e-6)
+    @test isapprox(x, [1.1], atol = 1e-4)
     return
 end
 
 function test_exp()
     calls = 0
     f, x = LocalImprovementSearch.minimize([1.0]) do x
-        calls +=  1
+        calls += 1
         if x[1] < 0.1 || x[1] > 20
             return nothing
         end
         return exp(x[1]), [exp(x[1])]
     end
     @info "exp = $(calls)"
-    @test isapprox(f, exp(0.1), atol=1e-6)
-    @test isapprox(x, [0.1], atol=1e-6)
+    @test isapprox(f, exp(0.1), atol = 1e-6)
+    @test isapprox(x, [0.1], atol = 1e-6)
     return
 end
 
 function test_piecewise()
     calls = 0
     f, x = LocalImprovementSearch.minimize([0.05]) do x
-        calls +=  1
+        calls += 1
         if x[1] < 0.0
             return nothing
         elseif 0.0 <= x[1] < 0.1
@@ -61,8 +61,8 @@ function test_piecewise()
         end
     end
     @info "piecewise = $(calls)"
-    @test isapprox(f, -0.44, atol=1e-3)
-    @test isapprox(x, [0.4], atol=1e-3)
+    @test isapprox(f, -0.44, atol = 1e-3)
+    @test isapprox(x, [0.4], atol = 1e-3)
     return
 end
 

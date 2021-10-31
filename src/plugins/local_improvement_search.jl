@@ -45,11 +45,7 @@ to this purpose:
      evaluation and first-order gradient information.
  * `x₀::Vector{Float64}`: a feasible starting point.
 """
-function minimize(
-    f::F,
-    bfgs::BFGS,
-    x₀::Vector{Float64},
-) where {F<:Function}
+function minimize(f::F, bfgs::BFGS, x₀::Vector{Float64}) where {F<:Function}
     # Initial estimte for the Hessian matrix in BFGS
     B = zeros(length(x₀), length(x₀))
     for i in 1:size(B, 1)
@@ -90,7 +86,9 @@ function minimize(
         # problems, ||yₖ|| might be 0.0, i.e., we just moved along a facet from
         # from an interior point to a vertex, so the gradient stays the same.
         if _norm(yₖ) > 1e-12
-            B .= B .+ (yₖ * yₖ') / (yₖ' * sₖ) - (B * sₖ * sₖ' * B') / (sₖ' * B * sₖ)
+            B .=
+                B .+ (yₖ * yₖ') / (yₖ' * sₖ) -
+                (B * sₖ * sₖ' * B') / (sₖ' * B * sₖ)
         end
         fₖ, ∇fₖ, xₖ = fₖ₊₁, ∇fₖ₊₁, xₖ + sₖ
     end
