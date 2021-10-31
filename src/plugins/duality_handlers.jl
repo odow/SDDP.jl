@@ -144,17 +144,16 @@ duality_log_key(::ContinuousConicDuality) = " "
 
 """
     LagrangianDuality(;
-        iteration_limit::Int = 100,
-        atol::Float64 = 1e-8,
-        rtol::Float64 = 1e-8,
-        optimizer = nothing,
+        method::LocalImprovementSearch.AbstractSearchMethod =
+            LocalImprovementSearch.BFGS(100),
     )
 
 Obtain dual variables in the backward pass using Lagrangian duality.
 
 ## Arguments
 
- * `iteration_limit` controls the maximum number of iterations
+ * `method`: the `LocalImprovementSearch` method for maximizing the Lagrangian
+   dual problem.
 
 ## Theory
 
@@ -170,9 +169,6 @@ L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
         st (x̄, x′, u) in Xᵢ(w) ∪ S
 ```
 and where `h(x̄) = x̄ - x`.
-
-In the maximization case, the optimization senses are reversed, but the sign of
-λ stays the same.
 """
 mutable struct LagrangianDuality <: AbstractDualityHandler
     method::LocalImprovementSearch.AbstractSearchMethod

@@ -60,7 +60,7 @@ function minimize(f::F, bfgs::BFGS, x₀::Vector{Float64}) where {F<:Function}
     evals = Ref(0)
     while true
         # Search direction. We could be clever here and maintain B⁻¹, but we're
-        # only ever going to be solving this for very small |x| << 1 problems,
+        # only ever going to be solving this for very small |x| << 100 problems,
         # so taking the linear solve every time is okay. (The MIP solve is much
         # more of a bottleneck.)
         pₖ = B \ -∇fₖ
@@ -74,7 +74,6 @@ function minimize(f::F, bfgs::BFGS, x₀::Vector{Float64}) where {F<:Function}
             # Zero(ish) gradient. Return what must be a local maxima.
             return fₖ₊₁, xₖ + αₖ * pₖ
         elseif evals[] > bfgs.evaluation_limit
-            @show evals[]
             # We have evaluated the function too many times. Return our current
             # best.
             return fₖ₊₁, xₖ + αₖ * pₖ
