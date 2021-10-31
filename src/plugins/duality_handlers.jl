@@ -322,6 +322,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
             push!(duals_visited, copy(λ_k))
         end
         L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
+        @assert L_k !== nothing
         JuMP.@constraint(model, t <= s * (L_k + h_k' * (λ .- λ_k)))
         # As an improvement step, add a cut halfway between the current iterate
         # and the previous best. This often has great performance when we're
@@ -331,6 +332,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
             push!(duals_visited, copy(λ_new))
         end
         L_new = _solve_primal_problem(node.subproblem, λ_new, h_expr, h_k)
+        @assert L_new !== nothing
         JuMP.@constraint(model, t <= s * (L_new + h_k' * (λ .- λ_new)))
         if s * L_k >= L_star
             L_star = s * L_k
@@ -358,6 +360,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         end
         λ_k .= value.(λ)
         L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
+        @assert L_k !== nothing
         if isapprox(L_star, L_k, atol = lagrange.atol, rtol = lagrange.rtol)
             # At this point we tried the smallest ‖λ‖ from the cutting plane
             # problem, and it returned the optimal dual objective value. No
@@ -390,7 +393,10 @@ function _solve_primal_problem(
         @expression(model, primal_obj - λ' * h_expr),
     )
     JuMP.optimize!(model)
-    @assert JuMP.termination_status(model) == MOI.OPTIMAL
+    if JuMP.termination_status(model) != MOI.OPTIMAL
+        JuMP.set_objective_function(model, primal_obj)
+        return nothing
+    end
     h_k .= -JuMP.value.(h_expr)
     L_λ = JuMP.objective_value(model)
     JuMP.set_objective_function(model, primal_obj)
@@ -440,19 +446,19 @@ function get_dual_solution(node::Node, ::StrengthenedConicDuality)
         x[i] = JuMP.fix_value(state.in)
         h_expr[i] = @expression(node.subproblem, state.in - x[i])
         JuMP.unfix(state.in)
-        # We need bounds to ensure that the dual problem is feasible. However,
-        # they can't be too tight. Let's use 1e9 as a default...
-        lb = has_lower_bound(state.out) ? lower_bound(state.out) : -1e9
-        ub = has_upper_bound(state.out) ? upper_bound(state.out) : 1e9
-        JuMP.set_lower_bound(state.in, lb)
-        JuMP.set_upper_bound(state.in, ub)
         λ_k[i] = conic_dual[key]
     end
     lagrangian_obj = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
     for (i, (_, state)) in enumerate(node.states)
         JuMP.fix(state.in, x[i], force = true)
     end
-    return lagrangian_obj, conic_dual
+    # If lagrangian_obj is `nothing`, then the primal problem didn't solve
+    # correctly, probably because it was unbounded (i.e., the dual was
+    # infeasible.) But we got the dual from solving the LP relaxation so it must
+    # be feasible! Sometimes however, the dual from the LP solver might be
+    # numerically infeasible when solved in the primal. That's a shame :(
+    # If so, return the conic_obj instead.
+    return something(lagrangian_obj, conic_obj), conic_dual
 end
 
 duality_log_key(::StrengthenedConicDuality) = "S"
