@@ -14,7 +14,7 @@ _norm(x) = sqrt(sum(xi^2 for xi in x))
         evaluation_limit::Int = 100,
     )
 
-Maximizes a concave function `f` using first-order information.
+Minimizes a convex function `f` using first-order information.
 
 The algorithm is a modified version of BFGS, with a specialized back-tracking
 inexact line-search.
@@ -26,6 +26,7 @@ to this purpose:
    constraint information is given.
  * Sub-optimal solutions are okay, so we should focus on improving the feasible
    starting point, instead of finding the global minimizer.
+ * `f` can be piecewise-linear convex with non-differentiable points.
 
 ## Arguments
 
@@ -101,7 +102,7 @@ function _line_search(
         ret = f(xₖ)
         evals[] += 1
         if ret === nothing
-            α /= 4  # Infeasible. So take a smaller step
+            α /= 2  # Infeasible. So take a smaller step
             continue
         end
         fₖ₊₁, ∇fₖ₊₁ = ret
