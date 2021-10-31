@@ -7,12 +7,21 @@ module LocalImprovementSearch
 
 _norm(x) = sqrt(sum(xi^2 for xi in x))
 
+abstract type AbstractSearchMethod end
+
+function minimize(f::Function, x₀::Vector{Float64})
+    return minimize(f, BFGS(100), x₀)
+end
+
+###
+### BFGS
+###
+struct BFGS <: AbstractSearchMethod
+    evaluation_limit::Int
+end
+
 """
-    minimize(
-        f::Function,
-        x₀::Vector{Float64};
-        evaluation_limit::Int = 100,
-    )
+    minimize(f::Function, x₀::Vector{Float64})
 
 Minimizes a convex function `f` using first-order information.
 
@@ -35,13 +44,11 @@ to this purpose:
    * `(f, Δf)::Tuple{Float64,Vector{Float64}`:  a tuple of the function
      evaluation and first-order gradient information.
  * `x₀::Vector{Float64}`: a feasible starting point.
- * `evaluation_limit`: maximum number of function evaluations before
-   terminating.
 """
 function minimize(
     f::F,
-    x₀::Vector{Float64};
-    evaluation_limit::Int = 100,
+    bfgs::BFGS,
+    x₀::Vector{Float64},
 ) where {F<:Function}
     # Initial estimte for the Hessian matrix in BFGS
     B = zeros(length(x₀), length(x₀))
@@ -63,14 +70,15 @@ function minimize(
         pₖ = B \ -∇fₖ
         # Run line search in direction `pₖ`
         αₖ, fₖ₊₁, ∇fₖ₊₁ = _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals)
-        if _norm(αₖ * pₖ) < 1e-4
+        if _norm(αₖ * pₖ) < 1e-6
             # Very small steps! Probably at a boundary. Return the current
             # iterate.
             return fₖ, xₖ
-        elseif _norm(∇fₖ₊₁) < 1e-4
+        elseif _norm(∇fₖ₊₁) < 1e-6
             # Zero(ish) gradient. Return what must be a local maxima.
             return fₖ₊₁, xₖ + αₖ * pₖ
-        elseif evals[] > evaluation_limit
+        elseif evals[] > bfgs.evaluation_limit
+            @show evals[]
             # We have evaluated the function too many times. Return our current
             # best.
             return fₖ₊₁, xₖ + αₖ * pₖ
@@ -97,7 +105,7 @@ function _line_search(
     α::Float64,
     evals::Ref{Int},
 ) where {F<:Function}
-    while _norm(α * p) > 1e-4
+    while _norm(α * p) > 1e-6
         xₖ = x + α * p
         ret = f(xₖ)
         evals[] += 1
@@ -113,7 +121,7 @@ function _line_search(
         #  Step is an ascent, so use Newton's method to find the intersection
         α = (fₖ₊₁ - fₖ - p' * ∇fₖ₊₁ * α) / (p' * ∇fₖ - p' * ∇fₖ₊₁)
     end
-    return 0.0, nothing, nothing
+    return 0.0, fₖ, ∇fₖ
 end
 
 end

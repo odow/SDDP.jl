@@ -150,17 +150,11 @@ duality_log_key(::ContinuousConicDuality) = " "
         optimizer = nothing,
     )
 
-Obtain dual variables in the backward pass using Lagrangian duality and Kelley's
-cutting plane method.
+Obtain dual variables in the backward pass using Lagrangian duality.
 
 ## Arguments
 
  * `iteration_limit` controls the maximum number of iterations
- * `atol` and `rtol` are the absolute and relative tolerances used in the
-   termination criteria
- * If `optimizer` is `nothing`, use the same solver as the main PolicyGraph.
-   Otherwise, pass a new optimizer factory, potentially with different
-   tolerances to ensure tighter convergence.
 
 ## Theory
 
@@ -179,59 +173,14 @@ and where `h(x̄) = x̄ - x`.
 
 In the maximization case, the optimization senses are reversed, but the sign of
 λ stays the same.
-
-The Lagrangian problem is computed using Kelleys cutting plane method.
-
-We solve:
-```
-L(λ) <= max t
-         st t <= s * (L(λ_k) + h(x̄_k)' * (λ - λ_k)) for k=1,...
-            t <= s * initial_bound
-```
-where `s=1` for primal minimization problems and `s=-1` for primal maximization
-problems.
-
-To generate a new cut we solve the cutting plane problem to generate an estimate
-`λ_k`. Then we solve the primal problem:
-```
-L(λ_k) = min/max Cᵢ(x̄, u, w) + θᵢ - λ_k' (x̄ - x_k)
-              st (x̄, x′, u) in Xᵢ(w) ∪ S
-```
-using our estimate `λ_k`.
-
-By inspection, subgradient of `L(λ_k)` is the slack term `-(x̄ - x_k)`.
-
-We converge once `L(λ_k) ≈ t` to the tolerance given by `atol` and `rtol`.
-
-This gives us an optimal dual solution `λ_k`. However, since this will be used
-in a cut for SDDP, we can go a step further and attempt to find a dual solution
-that is "flat" by solving:
-```
-min e
- st e >= ‖λ‖
-    t <= s * (L(λ_k) + h(x̄_k)' * (λ - λ_k)) for k=1,...
-    t <= s * initial_bound
-    t >= t_star
-```
-The L1-norm is implemented as the standard abs-value reformulation:
-```
-min Σλ⁺ + Σλ⁻
- st t <= s * (L(λ_k) + h(x̄_k)' * ([λ⁺ - λ⁻] - λ_k)) for k=1,...
-    t <= s * initial_bound
-    t >= t_star
-    λ⁺, λ⁻ >= 0
-```
-
-If we hit the iteration limit, then we terminate because something probably went
-wrong.
 """
 mutable struct LagrangianDuality <: AbstractDualityHandler
-    iteration_limit::Int
+    method::LocalImprovementSearch.AbstractSearchMethod
 
     function LagrangianDuality(;
-        iteration_limit::Int = 100,
+        method = LocalImprovementSearch.BFGS(100),
     )
-        return new(iteration_limit)
+        return new(method)
     end
 end
 
@@ -258,8 +207,8 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         return conic_obj, conic_dual
     end
     L_star, λ_star = LocalImprovementSearch.minimize(
+        lagrange.method,
         λ_star,
-        evaluation_limit = lagrange.iteration_limit,
     ) do x
         L_k = _solve_primal_problem(node.subproblem, x, h_expr, h_k)
         return L_k === nothing ? nothing : (s * L_k, s * h_k)
