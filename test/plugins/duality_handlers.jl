@@ -348,11 +348,16 @@ function test_kelleys_abs_function()
     end
     set_optimizer(model, GLPK.Optimizer)
     SDDP.parameterize(model[1], nothing)
-    SDDP.set_incoming_state(model[1], Dict(:x => 1.0))
+    SDDP.set_incoming_state(model[1], Dict(:x => 0.5))
     JuMP.optimize!(model[1].subproblem)
     lobj, lagrange = SDDP.get_dual_solution(model[1], SDDP.LagrangianDuality())
-    @test isapprox(lobj, -10.0, atol = 1e-5)
+    @test isapprox(lobj, -10.05, atol = 1e-5)
     @test isapprox(lagrange[:x], 0.1, atol = 1e-5)
+    SDDP.set_incoming_state(model[1], Dict(:x => 1.5))
+    JuMP.optimize!(model[1].subproblem)
+    lobj, lagrange = SDDP.get_dual_solution(model[1], SDDP.LagrangianDuality())
+    @test isapprox(lobj, -9.4, atol = 1e-5)
+    @test isapprox(lagrange[:x], 1.2, atol = 1e-5)
     return
 end
 
@@ -370,10 +375,15 @@ function test_kelleys_abs_function_max()
     end
     set_optimizer(model, GLPK.Optimizer)
     SDDP.parameterize(model[1], nothing)
-    SDDP.set_incoming_state(model[1], Dict(:x => 1.0))
+    SDDP.set_incoming_state(model[1], Dict(:x => 0.5))
     JuMP.optimize!(model[1].subproblem)
     lobj, lagrange = SDDP.get_dual_solution(model[1], SDDP.LagrangianDuality())
-    @test isapprox(lobj, 10.0, atol = 1e-5)
+    @test isapprox(lobj, 9.4, atol = 1e-5)
+    @test isapprox(lagrange[:x], 1.2, atol = 1e-5)
+    SDDP.set_incoming_state(model[1], Dict(:x => 1.5))
+    JuMP.optimize!(model[1].subproblem)
+    lobj, lagrange = SDDP.get_dual_solution(model[1], SDDP.LagrangianDuality())
+    @test isapprox(lobj, 10.05, atol = 1e-5)
     @test isapprox(lagrange[:x], 0.1, atol = 1e-5)
     return
 end

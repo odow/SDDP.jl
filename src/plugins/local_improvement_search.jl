@@ -66,9 +66,17 @@ function minimize(f::F, bfgs::BFGS, x₀::Vector{Float64}) where {F<:Function}
         pₖ = B \ -∇fₖ
         # Run line search in direction `pₖ`
         αₖ, fₖ₊₁, ∇fₖ₊₁ = _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals)
-        if _norm(αₖ * pₖ) < 1e-6
-            # Very small steps! Probably at a boundary. Return the current
-            # iterate.
+        if _norm(αₖ * pₖ) / max(1.0, _norm(xₖ)) < 1e-3
+            # Small steps! Probably at the edge of the feasible region.
+            # Return the current iterate.
+            #
+            # Note that "1e-3" isn't thaaaat small. But we hit a very annoying
+            # feature of solvers: their feasibility checks are only approximate.
+            # This tolerance is needed to pass the `test_kelleys_ip_xxx` tests.
+            # Decreasing the tolerance leads to a _worse_ estimate for the dual,
+            # because we abuse the solvers feasibility tolerance, and end up
+            # returning a solution that is on the edge of numerical dual
+            # feasibility.
             return fₖ, xₖ
         elseif _norm(∇fₖ₊₁) < 1e-6
             # Zero(ish) gradient. Return what must be a local maxima.
@@ -102,7 +110,7 @@ function _line_search(
     α::Float64,
     evals::Ref{Int},
 ) where {F<:Function}
-    while _norm(α * p) > 1e-6
+    while _norm(α * p) / max(1.0, _norm(x)) > 1e-3
         xₖ = x + α * p
         ret = f(xₖ)
         evals[] += 1
