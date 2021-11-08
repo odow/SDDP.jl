@@ -54,7 +54,7 @@ function air_conditioning_model(duality_handler)
         log_frequency = 10,
         duality_handler = duality_handler,
     )
-    @test SDDP.calculate_bound(model) ≈ 62_500.0
+    @test isapprox(SDDP.calculate_bound(model), 62_500.0, atol = 0.1)
     return
 end
 

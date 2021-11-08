@@ -144,23 +144,16 @@ duality_log_key(::ContinuousConicDuality) = " "
 
 """
     LagrangianDuality(;
-        iteration_limit::Int = 100,
-        atol::Float64 = 1e-8,
-        rtol::Float64 = 1e-8,
-        optimizer = nothing,
+        method::LocalImprovementSearch.AbstractSearchMethod =
+            LocalImprovementSearch.BFGS(100),
     )
 
-Obtain dual variables in the backward pass using Lagrangian duality and Kelley's
-cutting plane method.
+Obtain dual variables in the backward pass using Lagrangian duality.
 
 ## Arguments
 
- * `iteration_limit` controls the maximum number of iterations
- * `atol` and `rtol` are the absolute and relative tolerances used in the
-   termination criteria
- * If `optimizer` is `nothing`, use the same solver as the main PolicyGraph.
-   Otherwise, pass a new optimizer factory, potentially with different
-   tolerances to ensure tighter convergence.
+ * `method`: the `LocalImprovementSearch` method for maximizing the Lagrangian
+   dual problem.
 
 ## Theory
 
@@ -176,208 +169,57 @@ L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
         st (x̄, x′, u) in Xᵢ(w) ∪ S
 ```
 and where `h(x̄) = x̄ - x`.
-
-In the maximization case, the optimization senses are reversed, but the sign of
-λ stays the same.
-
-The Lagrangian problem is computed using Kelleys cutting plane method.
-
-We solve:
-```
-L(λ) <= max t
-         st t <= s * (L(λ_k) + h(x̄_k)' * (λ - λ_k)) for k=1,...
-            t <= s * initial_bound
-```
-where `s=1` for primal minimization problems and `s=-1` for primal maximization
-problems.
-
-To generate a new cut we solve the cutting plane problem to generate an estimate
-`λ_k`. Then we solve the primal problem:
-```
-L(λ_k) = min/max Cᵢ(x̄, u, w) + θᵢ - λ_k' (x̄ - x_k)
-              st (x̄, x′, u) in Xᵢ(w) ∪ S
-```
-using our estimate `λ_k`.
-
-By inspection, subgradient of `L(λ_k)` is the slack term `-(x̄ - x_k)`.
-
-We converge once `L(λ_k) ≈ t` to the tolerance given by `atol` and `rtol`.
-
-This gives us an optimal dual solution `λ_k`. However, since this will be used
-in a cut for SDDP, we can go a step further and attempt to find a dual solution
-that is "flat" by solving:
-```
-min e
- st e >= ‖λ‖
-    t <= s * (L(λ_k) + h(x̄_k)' * (λ - λ_k)) for k=1,...
-    t <= s * initial_bound
-    t >= t_star
-```
-The L1-norm is implemented as the standard abs-value reformulation:
-```
-min Σλ⁺ + Σλ⁻
- st t <= s * (L(λ_k) + h(x̄_k)' * ([λ⁺ - λ⁻] - λ_k)) for k=1,...
-    t <= s * initial_bound
-    t >= t_star
-    λ⁺, λ⁻ >= 0
-```
-
-If we hit the iteration limit, then we terminate because something probably went
-wrong.
 """
 mutable struct LagrangianDuality <: AbstractDualityHandler
-    iteration_limit::Int
-    atol::Float64
-    rtol::Float64
-    optimizer::Any
-    debug::Bool
+    method::LocalImprovementSearch.AbstractSearchMethod
 
     function LagrangianDuality(;
-        iteration_limit::Int = 100,
-        atol::Float64 = 1e-8,
-        rtol::Float64 = 1e-8,
-        optimizer = nothing,
-        debug::Bool = false,
+        method = LocalImprovementSearch.BFGS(100),
+        kwargs...,
     )
-        return new(iteration_limit, atol, rtol, optimizer, debug)
+        if length(kwargs) > 0
+            @warn(
+                "Keyword arguments to LagrangianDuality have changed. " *
+                "See the documentation for details.",
+            )
+        end
+        return new(method)
     end
 end
 
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
-    # Assume the model has been solved. Solving the MIP is usually very quick
-    # relative to solving for the Lagrangian duals, so we cheat and use the
-    # solved model's objective as our bound while searching for the optimal
-    # duals.
-    @assert JuMP.termination_status(node.subproblem) == MOI.OPTIMAL
-    # Query the current MIP solution  here. This is used as a bound for the
-    # cutting plane method.
-    primal_obj = JuMP.objective_value(node.subproblem)
-    # A sign bit that is used to avoid if-statements in the models.
-    s = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? 1 : -1
-    # Storage for the cutting plane method.
-    num_states = length(node.states)
-    x_in_value = zeros(num_states)               # The original value of x.
-    λ_k = zeros(num_states)                      # The current estimate for λ
-    λ_star = zeros(num_states)                   # The best estimate for λ
-    # The best estimate for the dual objective value, ignoring optimization
-    # sense (bigger is better).
-    L_star = -Inf
-    h_expr = Vector{AffExpr}(undef, num_states)  # The expression for x̄ - x
-    h_k = zeros(num_states)                      # The value of x̄_k - x
-    # Start by relaxing the fishing constraint.
-    for (i, (_, state)) in enumerate(node.states)
-        # We're going to need this value later when we reset things.
+    undo_relax = _relax_integrality(node)
+    optimize!(node.subproblem)
+    conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
+    undo_relax()
+    s = JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE ? -1 : 1
+    N = length(node.states)
+    x_in_value = zeros(N)
+    λ_star, h_expr, h_k = zeros(N), Vector{AffExpr}(undef, N), zeros(N)
+    for (i, (key, state)) in enumerate(node.states)
         x_in_value[i] = JuMP.fix_value(state.in)
         h_expr[i] = @expression(node.subproblem, state.in - x_in_value[i])
-        # Relax the constraint from the problem.
         JuMP.unfix(state.in)
-        # We need bounds to ensure that the dual problem is feasible. However,
-        # they can't be too tight. Let's use 1e9 as a default...
-        lb = has_lower_bound(state.out) ? lower_bound(state.out) : -1e9
-        ub = has_upper_bound(state.out) ? upper_bound(state.out) : 1e9
-        JuMP.set_lower_bound(state.in, lb)
-        JuMP.set_upper_bound(state.in, ub)
+        λ_star[i] = conic_dual[key]
     end
-    # Create the model for the cutting plane algorithm
-    model = JuMP.Model(something(lagrange.optimizer, node.optimizer))
-    @variable(model, λ⁺[1:num_states] >= 0)
-    @variable(model, λ⁻[1:num_states] >= 0)
-    @variable(model, t <= s * primal_obj)
-    @expression(model, λ, λ⁺ .- λ⁻)
-    @objective(model, Max, t)
-    # Step 1: find an optimal dual solution and corresponding objective value.
-    iter, t_k = 0, s * primal_obj
-    duals_visited = Vector{Float64}[]
-    last_λ, no_change = fill(NaN, num_states), 0
-    while true
-        iter += 1
-        JuMP.optimize!(model)
-        @assert JuMP.termination_status(model) == JuMP.MOI.OPTIMAL
-        t_k = JuMP.objective_value(model)
-        λ_k .= value.(λ)
-        if λ_k ≈ last_λ
-            no_change += 1
-        else
-            last_λ .= λ_k
-            no_change = 0
-        end
-        if isapprox(L_star, t_k, atol = lagrange.atol, rtol = lagrange.rtol)
-            break  # Success
-        elseif iter >= lagrange.iteration_limit
-            if debug
-                for dual in duals_visited
-                    println(dual)
-                end
-            end
-            error("Iteration limit exceeded in Lagrangian subproblem.")
-        elseif no_change > 2
-            # We keep getting the same damn point. If we haven't converged by
-            # this iteration, the cutting plane algorithm experienced numerical
-            # issues. The most likely answer is that a primal MIP solution
-            # didn't converge to a tight-enough solution. Screw it. Let's keep
-            # going.
-            break
-        end
-        if lagrange.debug
-            push!(duals_visited, copy(λ_k))
-        end
-        L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
-        @assert L_k !== nothing
-        JuMP.@constraint(model, t <= s * (L_k + h_k' * (λ .- λ_k)))
-        # As an improvement step, add a cut halfway between the current iterate
-        # and the previous best. This often has great performance when we're
-        # oscillating!
-        λ_new = 0.5 .* λ_k + 0.5 .* λ_star
-        if lagrange.debug
-            push!(duals_visited, copy(λ_new))
-        end
-        L_new = _solve_primal_problem(node.subproblem, λ_new, h_expr, h_k)
-        @assert L_new !== nothing
-        JuMP.@constraint(model, t <= s * (L_new + h_k' * (λ .- λ_new)))
-        if s * L_k >= L_star
-            L_star = s * L_k
-            λ_star .= λ_k
-        end
-        if s * L_new >= L_star
-            L_star = s * L_new
-            λ_star .= λ_new
-        end
+    # Check that the conic dual is feasible for the subproblem. Sometimes it
+    # isn't if the LP dual solution is slightly infeasible due to numerical
+    # issues.
+    L_k = _solve_primal_problem(node.subproblem, λ_star, h_expr, h_k)
+    if L_k === nothing
+        return conic_obj, conic_dual
     end
-    # Step 2: given the optimal dual objective value, try to find the optimal
-    # dual solution with the smallest L1-norm ‖λ‖.
-    @objective(model, Min, sum(λ⁺) + sum(λ⁻))
-    # The upper bound of t is `s * primal_obj`, but due to numerical error,
-    # sometimes `t_k > s * primal_obj` (but only just). GLPK complains if this
-    # is the case, so add a `min` check here.
-    set_lower_bound(t, min(t_k, s * primal_obj))
-    # The worst-case scenario in this for-loop is that we run through the
-    # iterations without finding a new dual solution. However if that happens
-    # we can just keep our current λ_star.
-    for _ in (iter+1):lagrange.iteration_limit
-        JuMP.optimize!(model)
-        if JuMP.termination_status(model) != JuMP.MOI.OPTIMAL
-            break  # We probably hit some sort of numerical error
+    L_star, λ_star =
+        LocalImprovementSearch.minimize(lagrange.method, λ_star) do x
+            L_k = _solve_primal_problem(node.subproblem, x, h_expr, h_k)
+            return L_k === nothing ? nothing : (s * L_k, s * h_k)
         end
-        λ_k .= value.(λ)
-        L_k = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
-        @assert L_k !== nothing
-        if isapprox(L_star, L_k, atol = lagrange.atol, rtol = lagrange.rtol)
-            # At this point we tried the smallest ‖λ‖ from the cutting plane
-            # problem, and it returned the optimal dual objective value. No
-            # other optimal dual vector can have a smaller norm.
-            λ_star = λ_k
-            break
-        end
-        JuMP.@constraint(model, t <= s * (L_k + h_k' * (λ .- λ_k)))
-    end
-    # Restore the fishing constraint x.in == x_in_value
     for (i, (_, state)) in enumerate(node.states)
         JuMP.fix(state.in, x_in_value[i], force = true)
     end
     λ_solution = Dict{Symbol,Float64}(
         name => λ_star[i] for (i, name) in enumerate(keys(node.states))
     )
-    # Remember to correct the sign of the optimal dual objective value.
     return s * L_star, λ_solution
 end
 
