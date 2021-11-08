@@ -173,7 +173,16 @@ and where `h(x̄) = x̄ - x`.
 mutable struct LagrangianDuality <: AbstractDualityHandler
     method::LocalImprovementSearch.AbstractSearchMethod
 
-    function LagrangianDuality(; method = LocalImprovementSearch.BFGS(100))
+    function LagrangianDuality(;
+        method = LocalImprovementSearch.BFGS(100),
+        kwargs...,
+    )
+        if length(kwargs) > 0
+            @warn(
+                "Keyword arguments to LagrangianDuality have changed. " *
+                "See the documentation for details.",
+            )
+        end
         return new(method)
     end
 end

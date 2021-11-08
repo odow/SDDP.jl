@@ -447,6 +447,11 @@ function test_kelleys_ip_max()
     return
 end
 
+function test_LagrangianDuality_warn()
+    @test_logs (:warn,) SDDP.LagrangianDuality(atol = 1e-6)
+    return
+end
+
 function test_BanditDuality_show()
     @test sprint(show, SDDP.BanditDuality()) ==
           "BanditDuality with arms:\n * SDDP.ContinuousConicDuality()\n * SDDP.StrengthenedConicDuality()"
