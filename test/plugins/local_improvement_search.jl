@@ -38,8 +38,8 @@ function test_exp()
         return exp(x[1]), [exp(x[1])]
     end
     @info "exp = $(calls)"
-    @test isapprox(f, exp(0.1), atol = 1e-6)
-    @test isapprox(x, [0.1], atol = 1e-6)
+    @test isapprox(f, exp(0.1), atol = 1e-2)
+    @test isapprox(x, [0.1], atol = 1e-2)
     return
 end
 
