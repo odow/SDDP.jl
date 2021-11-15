@@ -101,8 +101,6 @@ function JuMP.add_variable(
     return state
 end
 
-JuMP.variable_type(model::JuMP.Model, ::Type{State}) = State
-
 function JuMP.value(state::State{JuMP.VariableRef})
     return State(JuMP.value(state.in), JuMP.value(state.out))
 end
