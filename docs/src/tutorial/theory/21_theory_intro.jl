@@ -116,11 +116,12 @@ function kelleys_cutting_plane(
     JuMP.@variable(model, θ >= lower_bound)
     JuMP.@variable(model, x[1:input_dimension])
     JuMP.@objective(model, Min, θ)
+    x_k = fill(NaN, input_dimension)
     lower_bound, upper_bound = -Inf, Inf
     while true
         ## Step (2):
         JuMP.optimize!(model)
-        x_k = JuMP.value.(x)
+        x_k .= JuMP.value.(x)
         ## Step (3):
         lower_bound = JuMP.objective_value(model)
         upper_bound = min(upper_bound, f(x_k))
@@ -138,7 +139,7 @@ function kelleys_cutting_plane(
             break
         end
     end
-    println("Found solution: x_K = ", JuMP.value.(x))
+    println("Found solution: x_K = ", x_k)
     return
 end
 
