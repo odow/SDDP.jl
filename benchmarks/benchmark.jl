@@ -30,7 +30,8 @@ function benchmark(; kwargs...)
     # Precompile to avoid polluting the results!
     benchmark_file(joinpath(model_dir, models[1]); kwargs...)
     solutions = Dict{String,Any}(
-        benchmark_file(joinpath(model_dir, file); kwargs...) for file in models
+        file => benchmark_file(joinpath(model_dir, file); kwargs...) for
+        file in models
     )
     time = Dates.format(Dates.now(), "Y_mm_dd_HHMM_SS")
     data = Dict("date" => time, "solutions" => solutions)
@@ -114,7 +115,7 @@ filename_A = benchmark(
 filename_B = benchmark(
     time_limit = 60,
     stopping_rules = [SDDP.BoundStalling(10, 1e-6)],
-    duality_handler = SDDP.BanditDuality(),
+    duality_handler = SDDP.LagrangianDuality(),
 )
 
 report(filename_A, filename_B)

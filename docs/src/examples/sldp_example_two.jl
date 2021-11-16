@@ -53,7 +53,7 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
             joinpath(model_dir, "sldp_example_two_$(N).sof.json.gz");
             test_scenarios = 30,
         )
-        exit(0)
+        return
     end
     SDDP.train(model, iteration_limit = 100, log_frequency = 10)
     bound = SDDP.calculate_bound(model)
