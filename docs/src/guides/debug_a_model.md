@@ -116,7 +116,6 @@ CachingOptimizer state: EMPTY_OPTIMIZER
 Solver name: GLPK
 
 julia> set_silent(det_equiv)
-true
 
 julia> optimize!(det_equiv)
 
