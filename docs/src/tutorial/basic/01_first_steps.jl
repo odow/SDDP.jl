@@ -817,7 +817,7 @@ simulations[replication][stage]
 
 # Ignore many of the entries for now;  they will be relevant later.
 
-#  One element of iterest is `:volume`.
+#  One element of interest is `:volume`.
 
 outgoing_volume = map(simulations[1]) do node
     return node[:volume].out
