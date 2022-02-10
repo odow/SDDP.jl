@@ -484,8 +484,8 @@ function subproblem_builder(subproblem::Model, node::Int)
 end
 
 # Note how we use the JuMP function
-# [`JuMP.fix`](http://jump.dev/JuMP.jl/v0.21/variables/#JuMP.fix) to set the
-# value of the `inflow` variable to `ω`.
+# [`JuMP.fix`](https://jump.dev/JuMP.jl/stable/reference/variables/#JuMP.fix)
+# to set the value of the `inflow` variable to `ω`.
 
 # !!! warning
 #     [`SDDP.parameterize`](@ref) can only be called once in each subproblem
@@ -614,10 +614,10 @@ function subproblem_builder(subproblem::Model, node::Int)
     return subproblem
 end
 
-# ### Contructing the model
+# ### Constructing the model
 
-# Now that we've written our subproblem, we need to contruct the full model. For
-# that, we're going to need a linear solver. Let's choose GLPK:
+# Now that we've written our subproblem, we need to construct the full model.
+# For that, we're going to need a linear solver. Let's choose GLPK:
 
 using GLPK
 
