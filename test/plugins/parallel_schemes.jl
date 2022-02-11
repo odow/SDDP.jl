@@ -75,7 +75,7 @@ function test_slave_update()
     )
     @test length(cons) == 1
     @test replace(sprint(print, cons[1]), "≥" => ">=") ==
-          "-2 x_out + noname >= -5.0"
+          "-2 x_out + _[3] >= -5.0"
     result = SDDP.IterationResult(
         1,
         0.0,
