@@ -117,7 +117,7 @@ simulator()
 #     Markov transition matrix, and solution times scale poorly, even in the
 #     two-dimensional case.
 
-# The next step is to call [`SDDP.MarkovainGraph`](@ref) with our simulator.
+# The next step is to call [`SDDP.MarkovianGraph`](@ref) with our simulator.
 # This function will attempt to fit a Markov chain to the stochastic process
 # produced by your `simulator`. There are two key arguments:
 #  * `budget` is the total number of nodes we want in the Markov chain
@@ -172,7 +172,7 @@ end
 # ```
 # Here `A` is a 2-by-2 matrix, and `b` and ``\varepsilon`` are 2-by-1 vectors.
 
-model = SDDP.LinearPolicyGraph(
+ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
