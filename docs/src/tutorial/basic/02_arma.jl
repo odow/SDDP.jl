@@ -193,7 +193,9 @@ model = SDDP.LinearPolicyGraph(
     @variable(sp, ε[1:2])
     ## The equation describing our statistical model
     A = [0.8 0.2; 0.2 0.8]
-    @constraint(sp, inflow.out .== A * inflow.in .+ ε)
+    inflow_in = [inflow[i].in for i in 1:2]
+    inflow_out = [inflow[i].in for i in 1:2]
+    @constraint(sp, inflow_out .== A * inflow_in .+ ε)
     ## The new water balance constraint using the state variable
     @constraint(sp, x.out == x.in - g_h - s + inflow[1].out + inflow[2].out)
     ## Assume we have some empirical residuals:
