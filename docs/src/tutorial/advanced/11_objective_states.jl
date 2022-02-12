@@ -143,8 +143,8 @@ print("Finished training and simulating.")
 [stage[:noise_term] for stage in simulations[1]]
 
 # This, the fuel cost in the first stage should be `0.75 * 50 = 37.5`. The fuel
-# cost in the second stage should be `0.9 * 37.5 = 33.75`. The fuel cost in the
-# third stage should be `1.25 * 33.75 = 42.1875`.
+# cost in the second stage should be `1.1 * 37.5 = 41.25`. The fuel cost in the
+# third stage should be `0.75 * 41.25 = 30.9375`.
 
 # To confirm this, the values of the objective state in a simulation can be
 # queried using the `:objective_state` key.
