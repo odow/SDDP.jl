@@ -172,7 +172,7 @@ end
 # ```
 # Here `A` is a 2-by-2 matrix, and `b` and ``\varepsilon`` are 2-by-1 vectors.
 
- model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
