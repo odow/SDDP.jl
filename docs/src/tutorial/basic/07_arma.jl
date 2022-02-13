@@ -29,7 +29,7 @@ import GLPK
 # For simplicitly, we omit any coefficients and other terms, but this could
 # easily be extended to a model like
 # ```math
-# inflow_{t} = \alpha inflow_{t-1} + \beta + \varepsilon
+# inflow_{t} = a \times inflow_{t-1} + b + \varepsilon
 # ```
 
 # In practice, you can estimate a distribution for ``\varepsilon`` by fitting
@@ -149,7 +149,7 @@ model = SDDP.PolicyGraph(
     @constraint(sp, x.out == x.in - g_h - s + inflow)
 end
 
-# ## When can this trick be used?
+# ### When can this trick be used?
 
 # The Markov chain approach should be used when:
 #
@@ -168,7 +168,7 @@ end
 # to vector auto-regressive models. For example, if `inflow` is a 2-dimensional
 # vector, then we can model a vector auto-regressive model to it as follows:
 # ```math
-# inflow_{t} = A inflow_{t-1} + b + \varepsilon
+# inflow_{t} = A \times inflow_{t-1} + b + \varepsilon
 # ```
 # Here `A` is a 2-by-2 matrix, and `b` and ``\varepsilon`` are 2-by-1 vectors.
 
