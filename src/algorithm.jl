@@ -306,6 +306,7 @@ function _initialize_solver(node::Node; throw_error::Bool)
             )
         end
         set_optimizer(node.subproblem, node.optimizer)
+        set_silent(node.subproblem)
     end
     return
 end
