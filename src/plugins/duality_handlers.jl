@@ -96,7 +96,7 @@ binary or integer restrictions as necessary.
 Given the problem
 ```
 min Cᵢ(x̄, u, w) + θᵢ
- st (x̄, x′, u) in Xᵢ(w) ∪ S
+ st (x̄, x′, u) in Xᵢ(w) ∩ S
     x̄ - x == 0          [λ]
 ```
 where `S ⊆ ℝ×ℤ`, we relax integrality and using conic duality to solve for `λ`
@@ -160,13 +160,13 @@ Obtain dual variables in the backward pass using Lagrangian duality.
 Given the problem
 ```
 min Cᵢ(x̄, u, w) + θᵢ
- st (x̄, x′, u) in Xᵢ(w) ∪ S
+ st (x̄, x′, u) in Xᵢ(w) ∩ S
     x̄ - x == 0          [λ]
 ```
 where `S ⊆ ℝ×ℤ`, we solve the problem `max L(λ)`, where:
 ```
 L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
-        st (x̄, x′, u) in Xᵢ(w) ∪ S
+        st (x̄, x′, u) in Xᵢ(w) ∩ S
 ```
 and where `h(x̄) = x̄ - x`.
 """
@@ -259,7 +259,7 @@ Obtain dual variables in the backward pass using strengthened conic duality.
 Given the problem
 ```
 min Cᵢ(x̄, u, w) + θᵢ
- st (x̄, x′, u) in Xᵢ(w) ∪ S
+ st (x̄, x′, u) in Xᵢ(w) ∩ S
     x̄ - x == 0          [λ]
 ```
 we first obtain an estiamte for `λ` using [`ContinuousConicDuality`](@ref).
@@ -267,7 +267,7 @@ we first obtain an estiamte for `λ` using [`ContinuousConicDuality`](@ref).
 Then, we evaluate the Lagrangian function:
 ```
 L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' (x̄ - x`)
-        st (x̄, x′, u) in Xᵢ(w) ∪ S
+        st (x̄, x′, u) in Xᵢ(w) ∩ S
 ```
 to obtain a better estimate of the intercept.
 """
