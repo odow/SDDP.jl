@@ -262,7 +262,7 @@ min Cᵢ(x̄, u, w) + θᵢ
  st (x̄, x′, u) in Xᵢ(w) ∩ S
     x̄ - x == 0          [λ]
 ```
-we first obtain an estiamte for `λ` using [`ContinuousConicDuality`](@ref).
+we first obtain an estimate for `λ` using [`ContinuousConicDuality`](@ref).
 
 Then, we evaluate the Lagrangian function:
 ```
