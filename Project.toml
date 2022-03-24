@@ -1,7 +1,7 @@
 name = "SDDP"
 uuid = "f4570300-c277-11e8-125c-4912f86ce65d"
 authors = ["Oscar Dowson <o.dowson@gmail.com"]
-version = "0.4.5"
+version = "0.4.6"
 
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -23,7 +23,7 @@ GLPK = "0.15, 1"
 HTTP = "0.8.1, 0.9"
 JSON = "0.21"
 JSONSchema = "1"
-JuMP = "0.22, 0.23"
+JuMP = "0.22, 0.23, 1"
 MutableArithmetics = "0.3, 1"
 RecipesBase = "1"
 Reexport = "0.2, 1"
