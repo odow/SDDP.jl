@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
-                      SDDP.jl (c) Oscar Dowson, 2017-21
+          SDDP.jl (c) Oscar Dowson and SDDP.jl contributors, 2017-21
 
 Problem
   Nodes           : 60
