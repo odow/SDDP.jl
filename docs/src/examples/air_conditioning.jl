@@ -5,7 +5,7 @@
 
 # # Air conditioning
 
-# Taken from [Anthony Papavasiliou's notes on SDDP](https://perso.uclouvain.be/anthony.papavasiliou/public_html/SDDP.pdf)
+# Taken from [Anthony Papavasiliou's notes on SDDP](https://web.archive.org/web/20200504214809/https://perso.uclouvain.be/anthony.papavasiliou/public_html/SDDP.pdf)
 
 # Consider the following problem
 # * Produce air conditioners for 3 months
