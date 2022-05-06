@@ -13,7 +13,10 @@ function print_banner(io)
         io,
         "------------------------------------------------------------------------------",
     )
-    println(io, "          SDDP.jl (c) Oscar Dowson and SDDP.jl contributors, 2017-21")
+    println(
+        io,
+        "          SDDP.jl (c) Oscar Dowson and SDDP.jl contributors, 2017-22",
+    )
     return println(io)
 end
 
