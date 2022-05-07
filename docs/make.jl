@@ -47,6 +47,16 @@ for dir in [
     end
 end
 
+OLD_EXAMPLES = filter!(list_of_sorted_files("examples", EXAMPLES_DIR)) do file
+    examples =
+        ("markov_decision_processes", "Hydro_thermal", "the_farmers_problem")
+    for new_example in examples
+        if occursin(new_example, file)
+            return false
+        end
+    end
+end
+
 Documenter.makedocs(
     sitename = "SDDP.jl",
     authors = "Oscar Dowson",
@@ -61,18 +71,30 @@ Documenter.makedocs(
     pages = [
         "Home" => "index.md",
         "Tutorials" => Any[
-            "Basic"=>list_of_sorted_files("tutorial/basic", TUTORIAL_BASIC_DIR),
-            "Advanced"=>list_of_sorted_files(
-                "tutorial/advanced",
-                TUTORIAL_ADVANCED_DIR,
-            ),
-            "Theory"=>list_of_sorted_files(
-                "tutorial/theory",
-                TUTORIAL_THEORY_DIR,
-            ),
+            "Basic" => [
+                "tutorial/basic/01_first_steps.md",
+                "tutorial/basic/03_objective_uncertainty.md",
+                "tutorial/basic/04_markov_uncertianty.md",
+                "tutorial/basic/05_plotting.md",
+                "tutorial/basic/06_warnings.md",
+                "tutorial/basic/07_arma.md",
+            ],
+            "Advanced" => [
+                "tutorial/advanced/11_objective_states.md",
+                "tutorial/advanced/12_belief_states.md",
+            ],
+            "Theory" => [
+                "tutorial/theory/21_theory_intro.md",
+                "tutorial/theory/22_risk.md",
+            ],
         ],
         "How-to guides" => list_of_sorted_files("guides", GUIDES_DIR),
-        "Examples" => list_of_sorted_files("examples", EXAMPLES_DIR),
+        "Examples" => [
+            "examples/markov_decision_processes.md",
+            "examples/Hydro_thermal.md",
+            "examples/the_farmers_problem.md",
+        ],
+        "Old Examples" => OLD_EXAMPLES,
         "API Reference" => "apireference.md",
     ],
     doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"],
