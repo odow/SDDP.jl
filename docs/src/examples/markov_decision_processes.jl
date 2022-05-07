@@ -44,10 +44,6 @@ end
 
 x = solve_as_nonlinear(; N = 3, M = 5)
 
-#-
-
-@test all(isapprox.(x, M / N; atol = 1e-2))
-
 # ## Using SDDP.jl
 
 function solve_as_sddp(; N::Int, M::Int)
@@ -70,7 +66,3 @@ function solve_as_sddp(; N::Int, M::Int)
 end
 
 x = solve_as_sddp(; N = 3, M = 5)
-
-#-
-
-@test all(isapprox.(x, M / N; atol = 1e-2))
