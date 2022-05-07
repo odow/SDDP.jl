@@ -46,7 +46,7 @@ x = solve_as_nonlinear(; N = 3, M = 5)
 
 #-
 
-@test all(isapprox.(x, M / N; atol = 1e-3))
+@test all(isapprox.(x, M / N; atol = 1e-2))
 
 # ## Using SDDP.jl
 
@@ -62,7 +62,7 @@ function solve_as_sddp(; N::Int, M::Int)
         @variable(subproblem, 0 <= s <= S, SDDP.State, initial_value = M)
         @constraint(subproblem, s.out == s.in - x)
     end
-    SDDP.train(model, iteration_limit = 15)
+    SDDP.train(model, iteration_limit = 30)
     ## Now we need to extract the primal solution. Simulate the policy:
     simulations = SDDP.simulate(model, 1, [:x])
     ## And extract `x` from the first simulation:
@@ -73,4 +73,4 @@ x = solve_as_sddp(; N = 3, M = 5)
 
 #-
 
-@test all(isapprox.(x, M / N; atol = 1e-3))
+@test all(isapprox.(x, M / N; atol = 1e-2))
