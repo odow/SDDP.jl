@@ -131,7 +131,15 @@ function add_scenario_to_ef(
     var_src_to_dest = Dict{JuMP.VariableRef,JuMP.VariableRef}()
     for (src, dest) in zip(src_variables, x)
         var_src_to_dest[src] = dest
-        JuMP.set_name(dest, JuMP.name(src))
+        name = JuMP.name(src)
+        if !isempty(name)
+            # append node index to original variable name
+            JuMP.set_name(dest, string(name, "#", node.index))
+        else
+            # append node index to original variable index
+            var_name = string("_[", index(src).value, "]")
+            JuMP.set_name(dest, string(var_name, "#", node.index))
+        end
     end
     # Add constraints:
     for (F, S) in JuMP.list_of_constraint_types(node.subproblem)
