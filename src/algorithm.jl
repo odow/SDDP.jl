@@ -354,6 +354,10 @@ function _uninitialize_solver(model::PolicyGraph; throw_error::Bool)
     return
 end
 
+# Internal function: decide whether we need a feasible dual point
+needs_duals(duality_handler::Nothing) = false
+needs_duals(duality_handler::AbstractDualityHandler) = true
+
 # Internal function: solve the subproblem associated with node given the
 # incoming state variables state and realization of the stagewise-independent
 # noise term noise.
@@ -390,6 +394,9 @@ function solve_subproblem(
         model.ext[:total_solves] = 1
     end
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+        attempt_numerical_recovery(node)
+    elseif needs_duals(duality_handler) &&
+           JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         attempt_numerical_recovery(node)
     end
     state = get_outgoing_state(node)
