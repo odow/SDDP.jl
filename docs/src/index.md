@@ -121,4 +121,4 @@ If you use the entropic risk measure, we ask that you please cite the following:
 	year = {2022},
 }
 ```
-Here is a [preprint](http://www.optimization-online.org/DB_HTML/2020/08/7984.html).
+Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2020/08/7984.html).
