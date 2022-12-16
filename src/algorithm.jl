@@ -389,6 +389,13 @@ function solve_subproblem(
     else
         model.ext[:total_solves] = 1
     end
+    if JuMP.primal_status(node.subproblem) == JuMP.MOI.INTERRUPTED
+        # If the solver was interrupted, the user probably hit CTRL+C but the
+        # solver gracefully exited. Since we're in the middle of training or
+        # simulation, we need to throw an interrupt exception to keep the
+        # interrupt percolating up to the user.
+        throw(InterruptException())
+    end
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
         attempt_numerical_recovery(node)
     end
