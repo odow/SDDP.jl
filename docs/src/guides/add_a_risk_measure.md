@@ -100,6 +100,7 @@ SDDP.Expectation
 ```
 
 ```@repl intermediate_risk
+using SDDP
 SDDP.adjust_probability(
     SDDP.Expectation(),
     risk_adjusted_probability,
@@ -146,7 +147,7 @@ SDDP.adjust_probability(
     cost_realizations,
     is_minimization
 )
-risk_adjusted_probabilitys
+risk_adjusted_probability
 ```
 
 ### Convex combination of risk measures
@@ -209,6 +210,7 @@ SDDP.Wasserstein
 ```
 
 ```@repl intermediate_risk
+import HiGHS
 SDDP.adjust_probability(
     SDDP.Wasserstein(HiGHS.Optimizer; alpha=0.5) do x, y
         return abs(x - y)
