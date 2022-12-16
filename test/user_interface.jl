@@ -761,6 +761,22 @@ function test_objective_state_error_dimension_two_missing_lower_bound()
     return
 end
 
+function test_no_stage_objective()
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        optimizer = HiGHS.Optimizer,
+        lower_bound = 0.0,
+    ) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 1.0)
+        @constraint(sp, x.in == x.out)
+    end
+    @test model[1].stage_objective == 0.0
+    @test model[2].stage_objective == 0.0
+    SDDP.train(model; iteration_limit = 3, print_level = 0)
+    @test SDDP.calculate_bound(model) ≈ 0.0 atol = 1e-8
+    return
+end
+
 end  # module
 
 TestUserInterface.runtests()
