@@ -52,6 +52,40 @@ for dir in [
     end
 end
 
+# ==============================================================================
+#  Modify the release notes
+# ==============================================================================
+
+function fix_release_line(
+    line::String,
+    url::String = "https://github.com/odow/SDDP.jl",
+)
+    # (#XXXX) -> ([#XXXX](url/issue/XXXX))
+    while (m = match(r"\(\#([0-9]+)\)", line)) !== nothing
+        id = m.captures[1]
+        line = replace(line, m.match => "([#$id]($url/issues/$id))")
+    end
+    # ## vX.Y.Z -> [vX.Y.Z](url/releases/tag/vX.Y.Z)
+    while (m = match(r"\#\# (v[0-9]+.[0-9]+.[0-9]+)", line)) !== nothing
+        tag = m.captures[1]
+        line = replace(line, m.match => "## [$tag]($url/releases/tag/$tag)")
+    end
+    # @XXX -> [@XXX](https://github.com/XXX)
+    while (m = match(r"@([a-zA-Z0-9\-]+)", line)) !== nothing
+        tag = m.captures[1]
+        line = replace(line, m.match => "[@$tag](https://github.com/$tag")
+    end
+    return line
+end
+
+open(joinpath(@__DIR__, "src", "changelog.md"), "r") do in_io
+    open(joinpath(@__DIR__, "src", "release_notes.md"), "w") do out_io
+        for line in readlines(in_io; keep = true)
+            write(out_io, fix_release_line(line))
+        end
+    end
+end
+
 Documenter.makedocs(
     sitename = "SDDP.jl",
     authors = "Oscar Dowson",
@@ -79,6 +113,7 @@ Documenter.makedocs(
         "How-to guides" => list_of_sorted_files("guides", GUIDES_DIR),
         "Examples" => list_of_sorted_files("examples", EXAMPLES_DIR),
         "API Reference" => "apireference.md",
+        "Release notes" => "release_notes.md",
     ],
     doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"],
 )
