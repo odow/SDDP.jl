@@ -257,7 +257,7 @@ function parameterize(node::Node, noise)
     return
 end
 
-function attempt_numerical_recovery(node::Node)
+function attempt_numerical_recovery(model::PolicyGraph, node::Node)
     @warn("Attempting to recover from serious numerical issues...")
     if JuMP.mode(node.subproblem) == JuMP.DIRECT
         @warn(
@@ -269,6 +269,8 @@ function attempt_numerical_recovery(node::Node)
         optimize!(node.subproblem)
     end
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+        @info "Writing cuts to the file `model.cuts.json`"
+        write_cuts_to_file(model, "model.cuts.json")
         write_subproblem_to_file(
             node,
             "subproblem_$(node.index).mof.json",
@@ -401,10 +403,10 @@ function solve_subproblem(
         throw(InterruptException())
     end
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-        attempt_numerical_recovery(node)
+        attempt_numerical_recovery(model, node)
     elseif needs_duals(duality_handler) &&
            JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-        attempt_numerical_recovery(node)
+        attempt_numerical_recovery(model, node)
     end
     state = get_outgoing_state(node)
     stage_objective = stage_objective_value(node.stage_objective)
