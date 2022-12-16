@@ -52,7 +52,7 @@ end
 
 function JuMP.set_optimizer(v::ValueFunction, optimizer)
     set_optimizer(v.model, optimizer)
-    set_silent(optimizer)
+    set_silent(v.model)
     return
 end
 

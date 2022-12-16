@@ -125,6 +125,5 @@ function vehicle_location_model(duality_handler)
     return
 end
 
-# Solve a continuous relaxation only, tough for LagrangianDuality
-
-vehicle_location_model(SDDP.ContinuousConicDuality())
+# HiGHS finds a (OPTIMAL, INFEASIBLE_POINT, NO_SOLUTION) solution???
+# vehicle_location_model(SDDP.ContinuousConicDuality())
