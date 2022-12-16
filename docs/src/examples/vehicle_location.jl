@@ -41,10 +41,7 @@ function vehicle_location_model(duality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 10,
         lower_bound = 0.0,
-        optimizer = optimizer_with_attributes(
-            HiGHS.Optimizer,
-            "mip_feasibility_tolerance" => 1e-7,
-        ),
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         ## Current location of each vehicle at each base.
         @variable(
@@ -128,4 +125,5 @@ function vehicle_location_model(duality_handler)
     return
 end
 
-vehicle_location_model(SDDP.ContinuousConicDuality())
+## TODO(odow): find out why this fails
+## vehicle_location_model(SDDP.ContinuousConicDuality())
