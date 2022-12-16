@@ -114,10 +114,11 @@ Here is an earlier [preprint](http://www.optimization-online.org/DB_FILE/2018/02
 If you use the entropic risk measure, we ask that you please cite the following:
 ```
 @article{dowson_entropic,
-	title = {Multistage stochastic programs with the entropic risk measure},
-	journal = {Optimization Online},
+	title = {Incorporating convex risk measures into multistage stochastic programming algorithms},
+	doi = {https://doi.org/10.1007/s10479-022-04977-w},
+	journal = {Annals of Operations Research},
 	author = {Dowson, O. and Morton, D.P. and Pagnoncelli, B.K.},
-	url = {http://www.optimization-online.org/DB_HTML/2020/08/7984.html},
+	year = {2022},
 }
 ```
 Here is a [preprint](http://www.optimization-online.org/DB_HTML/2020/08/7984.html).
