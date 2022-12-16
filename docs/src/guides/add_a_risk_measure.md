@@ -302,7 +302,7 @@ round.(risk_adjusted_probability, digits = 1)
  0.1
  0.1
  0.8
- 0.0
+-0.0
 ```
 
 ### Entropic
