@@ -569,9 +569,11 @@ end
 """
     Entropic(γ::Float64)
 
-The entropic risk measure as described by Dowson, Morton, and Pagnoncelli
-(2020). Multistage stochastic programs with the entropic risk measure.
-http://www.optimization-online.org/DB_HTML/2020/08/7984.html
+The entropic risk measure as described by:
+
+    Dowson, O., Morton, D.P. & Pagnoncelli, B.K. Incorporating convex risk
+    measures into multistage stochastic programming algorithms. Annals of
+    Operations Research (2022). [doi](https://doi.org/10.1007/s10479-022-04977-w).
 
 As γ increases, the measure becomes more risk-averse.
 """

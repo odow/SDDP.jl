@@ -66,7 +66,7 @@ random variable with four outcomes.
 
 The random variable is supported on the values 1, 2, 3, and 4:
 
-```@repl intermediate_risk
+```@repl intermediate_risk; setup=:(using SDDP)
 noise_supports = [1, 2, 3, 4]
 ```
 
@@ -146,7 +146,7 @@ SDDP.adjust_probability(
     cost_realizations,
     is_minimization
 )
-risk_adjusted_probabilitys
+risk_adjusted_probability
 ```
 
 ### Convex combination of risk measures
