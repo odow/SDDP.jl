@@ -7,7 +7,7 @@ module TestForwardPasses
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__, all = true)
@@ -25,7 +25,7 @@ function test_DefaultForwardPass()
         stages = 2,
         sense = :Max,
         upper_bound = 100.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -71,7 +71,7 @@ function test_RevisitingForwardPass()
         stages = 2,
         sense = :Max,
         upper_bound = 100.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -125,7 +125,7 @@ function test_RiskAdjustedForwardPass()
         stages = 2,
         sense = :Max,
         upper_bound = 100.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)

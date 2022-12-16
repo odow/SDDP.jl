@@ -7,13 +7,13 @@
 
 # This example comes from [StochasticDualDynamicProgramming.jl](https://github.com/blegat/StochasticDualDynamicProgramming.jl/blob/fe5ef82db6befd7c8f11c023a639098ecb85737d/test/prob5.2_2stages.jl)
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function test_prob52_2stages()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         direct_mode = true,
     ) do subproblem, stage
         ## ========== Problem data ==========

@@ -7,13 +7,13 @@
 
 # An implementation of the Hydro-thermal example from [FAST](https://github.com/leopoldcambier/FAST/tree/daea3d80a5ebb2c52f78670e34db56d53ca2e778/examples/hydro%20thermal)
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function fast_hydro_thermal()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, 0 <= x <= 8, SDDP.State, initial_value = 0.0)
         @variables(sp, begin
@@ -32,7 +32,7 @@ function fast_hydro_thermal()
         @stageobjective(sp, 5 * p)
     end
 
-    det = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
+    det = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
     set_silent(det)
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) == 10

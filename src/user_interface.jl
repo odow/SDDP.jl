@@ -505,10 +505,11 @@ end
 # Work around different JuMP modes (Automatic / Manual / Direct).
 function construct_subproblem(optimizer_factory, direct_mode::Bool)
     if direct_mode
-        return JuMP.direct_model(MOI.instantiate(optimizer_factory))
-    else
-        return JuMP.Model()
+        model = JuMP.direct_model(MOI.instantiate(optimizer_factory))
+        set_silent(model)
+        return model
     end
+    return JuMP.Model()
 end
 
 # Work around different JuMP modes (Automatic / Manual / Direct).
@@ -593,7 +594,7 @@ model = PolicyGraph(
     builder,
     graph;
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
     direct_mode = false
 )
 ```
@@ -604,7 +605,7 @@ Or, using the Julia `do ... end` syntax:
 model = PolicyGraph(
     graph;
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
     direct_mode = true
 ) do subproblem, index
     # ... subproblem definitions ...

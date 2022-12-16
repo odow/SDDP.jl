@@ -617,9 +617,9 @@ end
 # ### Constructing the model
 
 # Now that we've written our subproblem, we need to construct the full model.
-# For that, we're going to need a linear solver. Let's choose GLPK:
+# For that, we're going to need a linear solver. Let's choose HiGHS:
 
-using GLPK
+using HiGHS
 
 # !!! warning
 #     In larger problems, you should use a more robust commercial LP solver like
@@ -634,7 +634,7 @@ model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 )
 
 # * `sense`: the optimization sense. Must be `:Min` or `:Max`.
@@ -642,7 +642,7 @@ model = SDDP.PolicyGraph(
 #   problem, we know that we cannot incur a negative cost so \$0 is a valid
 #   lower bound.
 # * `optimizer`: This is borrowed directly from JuMP's `Model` constructor:
-#   `Model(GLPK.Optimizer)`
+#   `Model(HiGHS.Optimizer)`
 
 # Because linear policy graphs are the most commonly used structure, we can use
 # [`SDDP.LinearPolicyGraph`](@ref) instead of passing `SDDP.LinearGraph(3)` to
@@ -653,7 +653,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 )
 
 # There is also the option is to use Julia's `do` syntax to avoid needing to
@@ -663,7 +663,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, node
     ## State variables
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)

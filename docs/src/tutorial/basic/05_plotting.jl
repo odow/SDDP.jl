@@ -13,7 +13,7 @@
 # [Markovian policy graphs](@ref), train it for 20 iterations, and then
 # simulate 100 Monte Carlo realizations of the policy.
 
-using SDDP, GLPK
+using SDDP, HiGHS
 
 Ω = [
     (inflow = 0.0, fuel_multiplier = 1.5),
@@ -29,7 +29,7 @@ model = SDDP.MarkovianPolicyGraph(
     ],
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, node
     t, markov_state = node
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)

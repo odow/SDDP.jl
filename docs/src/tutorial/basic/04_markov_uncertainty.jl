@@ -45,7 +45,7 @@ T = Array{Float64,2}[[1.0]', [0.75 0.25], [0.75 0.25; 0.25 0.75]]
 
 # ## Creating a model
 
-using SDDP, GLPK
+using SDDP, HiGHS
 
 Ω = [
     (inflow = 0.0, fuel_multiplier = 1.5),
@@ -61,7 +61,7 @@ model = SDDP.MarkovianPolicyGraph(
     ],
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, node
     ## Unpack the stage and Markov index.
     t, markov_state = node

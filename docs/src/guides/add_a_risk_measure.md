@@ -2,7 +2,7 @@
 
 ```@meta
 DocTestSetup = quote
-    using SDDP, GLPK
+    using SDDP, HiGHS
 end
 ```
 ## Training a risk-averse model
@@ -66,52 +66,31 @@ random variable with four outcomes.
 
 The random variable is supported on the values 1, 2, 3, and 4:
 
-```jldoctest intermediate_risk
-julia> noise_supports = [1, 2, 3, 4]
-4-element Vector{Int64}:
- 1
- 2
- 3
- 4
+```@repl intermediate_risk
+noise_supports = [1, 2, 3, 4]
 ```
 
 The associated probability of each outcome is as follows:
 
-```jldoctest intermediate_risk
-julia> nominal_probability = [0.1, 0.2, 0.3, 0.4]
-4-element Vector{Float64}:
- 0.1
- 0.2
- 0.3
- 0.4
+```@repl intermediate_risk
+nominal_probability = [0.1, 0.2, 0.3, 0.4]
 ```
 
 With each outcome ω, the agent observes a cost `Z(ω)`:
-```jldoctest intermediate_risk
-julia> cost_realizations = [5.0, 4.0, 6.0, 2.0]
-4-element Vector{Float64}:
- 5.0
- 4.0
- 6.0
- 2.0
+```@repl intermediate_risk
+cost_realizations = [5.0, 4.0, 6.0, 2.0]
 ```
 
 We assume that we are minimizing:
-```jldoctest intermediate_risk
-julia> is_minimization = true
-true
+```@repl intermediate_risk
+is_minimization = true
 ```
 
 Finally, we create a vector that will be used to store the risk-adjusted
 probabilities:
 
-```jldoctest intermediate_risk
-julia> risk_adjusted_probability = zeros(4)
-4-element Vector{Float64}:
- 0.0
- 0.0
- 0.0
- 0.0
+```@repl intermediate_risk
+risk_adjusted_probability = zeros(4)
 ```
 
 ### Expectation
@@ -120,7 +99,7 @@ julia> risk_adjusted_probability = zeros(4)
 SDDP.Expectation
 ```
 
-```jldoctest intermediate_risk
+```@repl intermediate_risk
 SDDP.adjust_probability(
     SDDP.Expectation(),
     risk_adjusted_probability,
@@ -129,16 +108,7 @@ SDDP.adjust_probability(
     cost_realizations,
     is_minimization
 )
-
 risk_adjusted_probability
-
-# output
-
-4-element Vector{Float64}:
- 0.1
- 0.2
- 0.3
- 0.4
 ```
 
 [`SDDP.Expectation`](@ref) is the default risk measure in `SDDP.jl`.
@@ -149,7 +119,7 @@ risk_adjusted_probability
 SDDP.WorstCase
 ```
 
-```jldoctest intermediate_risk
+```@repl intermediate_risk
 SDDP.adjust_probability(
     SDDP.WorstCase(),
     risk_adjusted_probability,
@@ -158,16 +128,7 @@ SDDP.adjust_probability(
     cost_realizations,
     is_minimization
 )
-
 risk_adjusted_probability
-
-# output
-
-4-element Vector{Float64}:
- 0.0
- 0.0
- 1.0
- 0.0
 ```
 
 ### Average value at risk (AV@R)
@@ -176,7 +137,7 @@ risk_adjusted_probability
 SDDP.AVaR
 ```
 
-```jldoctest intermediate_risk
+```@repl intermediate_risk
 SDDP.adjust_probability(
     SDDP.AVaR(0.5),
     risk_adjusted_probability,
@@ -185,16 +146,7 @@ SDDP.adjust_probability(
     cost_realizations,
     is_minimization
 )
-
-round.(risk_adjusted_probability, digits = 1)
-
-# output
-
-4-element Vector{Float64}:
- 0.2
- 0.2
- 0.6
- 0.0
+risk_adjusted_probabilitys
 ```
 
 ### Convex combination of risk measures
@@ -203,12 +155,8 @@ Using the axioms of coherent risk measures, it is easy to show that any convex
 combination of coherent risk measures is also a coherent risk measure. Convex
 combinations of risk measures can be created directly:
 
-```jldoctest intermediate_risk
-julia> cvx_comb_measure = 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()
-A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()
-```
-
-```jldoctest intermediate_risk
+```@repl intermediate_risk
+cvx_comb_measure = 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()
 SDDP.adjust_probability(
     cvx_comb_measure,
     risk_adjusted_probability,
@@ -217,23 +165,13 @@ SDDP.adjust_probability(
     cost_realizations,
     is_minimization
 )
-
 risk_adjusted_probability
-
-# output
-
-4-element Vector{Float64}:
- 0.05
- 0.1
- 0.65
- 0.2
 ```
 
 As a special case, the [`SDDP.EAVaR`](@ref) risk-measure is a convex
 combination of [`SDDP.Expectation`](@ref) and [`SDDP.AVaR`](@ref):
-```jldoctest intermediate_risk
-julia> risk_measure = SDDP.EAVaR(beta=0.25, lambda=0.4)
-A convex combination of 0.4 * SDDP.Expectation() + 0.6 * SDDP.AVaR(0.25)
+```@repl intermediate_risk
+SDDP.EAVaR(beta=0.25, lambda=0.4)
 ```
 
 ```@docs
@@ -252,7 +190,7 @@ Wasserstein distance metric.
 SDDP.ModifiedChiSquared
 ```
 
-```jldoctest intermediate_risk
+```@repl intermediate_risk
 SDDP.adjust_probability(
     SDDP.ModifiedChiSquared(0.5),
     risk_adjusted_probability,
@@ -261,16 +199,7 @@ SDDP.adjust_probability(
     cost_realizations,
     is_minimization
 )
-
-round.(risk_adjusted_probability, digits = 4)
-
-# output
-
-4-element Vector{Float64}:
- 0.3333
- 0.0447
- 0.622
- 0.0
+risk_adjusted_probability
 ```
 
 #### Wasserstein
@@ -279,30 +208,18 @@ round.(risk_adjusted_probability, digits = 4)
 SDDP.Wasserstein
 ```
 
-```jldoctest intermediate_risk
-risk_measure = SDDP.Wasserstein(
-        GLPK.Optimizer; alpha=0.5) do x, y
-   return abs(x - y)
-end
-
+```@repl intermediate_risk
 SDDP.adjust_probability(
-    risk_measure,
+    SDDP.Wasserstein(HiGHS.Optimizer; alpha=0.5) do x, y
+        return abs(x - y)
+    end,
     risk_adjusted_probability,
     nominal_probability,
     noise_supports,
     cost_realizations,
     is_minimization
 )
-
-round.(risk_adjusted_probability, digits = 1)
-
-# output
-
-4-element Vector{Float64}:
- 0.1
- 0.1
- 0.8
- 0.0
+risk_adjusted_probability
 ```
 
 ### Entropic
@@ -311,25 +228,14 @@ round.(risk_adjusted_probability, digits = 1)
 SDDP.Entropic
 ```
 
-```jldoctest intermediate_risk
-risk_measure = SDDP.Entropic(0.1)
-
+```@repl intermediate_risk
 SDDP.adjust_probability(
-    risk_measure,
+    SDDP.Entropic(0.1),
     risk_adjusted_probability,
     nominal_probability,
     noise_supports,
     cost_realizations,
     is_minimization
 )
-
-round.(risk_adjusted_probability, digits = 4)
-
-# output
-
-4-element Vector{Float64}:
- 0.11
- 0.1991
- 0.3648
- 0.326
+risk_adjusted_probability
 ```

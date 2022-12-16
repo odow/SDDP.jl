@@ -7,7 +7,7 @@ module TestDualityHandlers
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__, all = true)
@@ -27,7 +27,7 @@ function easy_single_stage(duality_handler)
         stages = 2,
         sense = :Min,
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, stage
         @variable(sp, x[1:2], Bin, SDDP.State, initial_value = 0)
         @variable(sp, y)
@@ -79,7 +79,7 @@ function xor_single_stage(duality_handler)
         stages = 2,
         sense = :Min,
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, stage
         @variable(sp, x[1:2], Bin, SDDP.State, initial_value = 1)
         @variable(sp, y)
@@ -272,13 +272,13 @@ function test_kelleys_min()
         stages = 10,
         sense = :Min,
         lower_bound = -1000,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 1.1)
         @stageobjective(sp, (-5 + t) * x.out)
         @constraint(sp, x.out == x.in)
     end
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
@@ -305,13 +305,13 @@ function test_kelleys_max()
         stages = 10,
         sense = :Max,
         upper_bound = 1000,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 1.1)
         @stageobjective(sp, (-5 + t) * x.out)
         @constraint(sp, x.out == x.in)
     end
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
@@ -338,7 +338,7 @@ function test_kelleys_abs_function()
         stages = 2,
         sense = :Min,
         lower_bound = -10.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 1.0)
         @constraint(sp, x.out >= 1.2(x.in - 1))
@@ -346,7 +346,7 @@ function test_kelleys_abs_function()
         @constraint(sp, x.out >= -x.in)
         @stageobjective(sp, x.out)
     end
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     SDDP.parameterize(model[1], nothing)
     SDDP.set_incoming_state(model[1], Dict(:x => 0.5))
     JuMP.optimize!(model[1].subproblem)
@@ -366,14 +366,14 @@ function test_kelleys_abs_function_max()
         stages = 2,
         sense = :Max,
         upper_bound = 10.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 1.0)
         @constraint(sp, x.out <= 1.2(x.in - 1))
         @constraint(sp, x.out <= 0.1(x.in - 1))
         @stageobjective(sp, x.out)
     end
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     SDDP.parameterize(model[1], nothing)
     SDDP.set_incoming_state(model[1], Dict(:x => 0.5))
     JuMP.optimize!(model[1].subproblem)
@@ -396,13 +396,13 @@ function test_kelleys_ip_min()
         stages = 10,
         sense = :Min,
         lower_bound = -1000,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x, Int, SDDP.State, initial_value = 1.0)
         @stageobjective(sp, (-5 + t) * x.out)
         @constraint(sp, x.out == x.in)
     end
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.0))
@@ -424,13 +424,13 @@ function test_kelleys_ip_max()
         stages = 10,
         sense = :Max,
         upper_bound = 1000,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x, Int, SDDP.State, initial_value = 2.0)
         @stageobjective(sp, (-5 + t) * x.out)
         @constraint(sp, x.out == x.in)
     end
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     l = SDDP.LagrangianDuality()
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
@@ -462,7 +462,7 @@ function test_BanditDuality_show()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = -100.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, 0 <= x[1:2] <= 5, SDDP.State, initial_value = 0.0)
         if t == 1

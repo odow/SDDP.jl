@@ -51,7 +51,9 @@ function Base.show(io::IO, v::ValueFunction)
 end
 
 function JuMP.set_optimizer(v::ValueFunction, optimizer)
-    return set_optimizer(v.model, optimizer)
+    set_optimizer(v.model, optimizer)
+    set_silent(v.model)
+    return
 end
 
 function _add_to_value_function(
@@ -109,6 +111,7 @@ function ValueFunction(node::Node{T}) where {T}
     model = Model()
     if node.optimizer !== nothing
         set_optimizer(model, node.optimizer)
+        set_silent(model)
     end
     set_objective_sense(model, sense)
     states = Dict{Symbol,VariableRef}(

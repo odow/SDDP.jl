@@ -7,7 +7,7 @@ module TestRiskMeasures
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -388,7 +388,7 @@ function test_ModifiedChiSquared_Min_sqrt08()
 end
 
 function _default_wasserstein(alpha)
-    return SDDP.Wasserstein(GLPK.Optimizer; alpha = alpha) do x, y
+    return SDDP.Wasserstein(HiGHS.Optimizer; alpha = alpha) do x, y
         return abs(x - y)
     end
 end

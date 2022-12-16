@@ -26,13 +26,13 @@
 # To add an uncertain objective, we can simply call [`@stageobjective`](@ref)
 # from inside the [`SDDP.parameterize`](@ref) function.
 
-using SDDP, GLPK
+using SDDP, HiGHS
 
 model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, t
     ## Define the state variable.
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)

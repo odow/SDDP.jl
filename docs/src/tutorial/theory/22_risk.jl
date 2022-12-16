@@ -12,7 +12,7 @@
 # of base Julia, or we wrote it.
 
 import ForwardDiff
-import GLPK
+import HiGHS
 import Ipopt
 import JuMP
 import Statistics
@@ -882,7 +882,7 @@ end
 model = PolicyGraph(
     graph = [Dict(2 => 1.0), Dict(3 => 1.0), Dict{Int,Float64}()],
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, t
     JuMP.@variable(subproblem, volume_in == 200)
     JuMP.@variable(subproblem, 0 <= volume_out <= 200)

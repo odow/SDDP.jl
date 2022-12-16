@@ -7,13 +7,13 @@
 
 # This example comes from [StochasticDualDynamicProgramming.jl](https://github.com/blegat/StochasticDualDynamicProgramming.jl/blob/fe5ef82db6befd7c8f11c023a639098ecb85737d/test/prob5.2_3stages.jl).
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function test_prob52_3stages()
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         n = 4
         m = 3
@@ -47,7 +47,7 @@ function test_prob52_3stages()
         end
     end
 
-    det = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
+    det = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
     set_silent(det)
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) ≈ 406712.49 atol = 0.1

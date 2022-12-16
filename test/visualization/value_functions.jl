@@ -7,7 +7,7 @@ module TestValueFunctions
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -24,7 +24,7 @@ function test_ValueFunction_Min()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
         @constraint(sp, x.out == x.in)
@@ -46,7 +46,7 @@ function test_ValueFunction_Max()
         stages = 2,
         sense = :Max,
         upper_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
         @constraint(sp, x.out == x.in)
@@ -67,7 +67,7 @@ function test_ValueFunction_optimizer()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         direct_mode = true,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
@@ -77,7 +77,7 @@ function test_ValueFunction_optimizer()
     SDDP.train(model, iteration_limit = 2, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
     @test_throws JuMP.NoOptimizer() SDDP.evaluate(V1, Dict(:x => 1.0))
-    JuMP.set_optimizer(V1, GLPK.Optimizer)
+    JuMP.set_optimizer(V1, HiGHS.Optimizer)
     (y, _) = SDDP.evaluate(V1, Dict(:x => 1.0))
     @test y == 2.0
     return
@@ -87,7 +87,7 @@ function test_ValueFunction_objective_state()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
         SDDP.add_objective_state(
@@ -120,7 +120,7 @@ function test_ValueFunction_belief_state()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, node
         (t, i) = node
         @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
@@ -148,7 +148,7 @@ function test_ValuaeFunction_plot()
         stages = 2,
         sense = :Min,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
         @variable(sp, y >= 0, SDDP.State, initial_value = 0)

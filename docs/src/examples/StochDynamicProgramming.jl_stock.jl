@@ -7,13 +7,13 @@
 
 # This example comes from [StochDynamicProgramming.jl](https://github.com/JuliaOpt/StochDynamicProgramming.jl/tree/f68b9da541c2f811ce24fc76f6065803a0715c2f/examples/stock-example.jl).
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function stock_example()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(5),
         lower_bound = -2,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, stage
         @variable(sp, 0 <= state <= 1, SDDP.State, initial_value = 0.5)
         @variable(sp, 0 <= control <= 0.5)

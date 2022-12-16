@@ -5,7 +5,7 @@
 
 # # Infinite horizon hydro-thermal
 
-using SDDP, GLPK, Test, Statistics
+using SDDP, HiGHS, Test, Statistics
 
 function infinite_hydro_thermal(; cut_type)
     Ω = [
@@ -24,7 +24,7 @@ function infinite_hydro_thermal(; cut_type)
             lower_bound = 0,
             cut_type = cut_type,
         ),
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, node
         @variable(
             subproblem,
@@ -54,7 +54,7 @@ function infinite_hydro_thermal(; cut_type)
     end
     SDDP.train(
         model;
-        time_limit = 2.0,
+        iteration_limit = 400,
         log_frequency = 100,
         sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
         cycle_discretization_delta = 0.1,

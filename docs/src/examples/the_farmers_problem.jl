@@ -103,9 +103,9 @@ YIELD_MULTIPLIER = Dict(:good => 1.2, :fair => 1.0, :bad => 0.8)
 #     if this isn't familiar to you.
 
 # First up, load `SDDP.jl` and a solver. For this example, we use
-# [`GLPK.jl`](https://github.com/JuliaOpt/GLPK.jl).
+# [`HiGHS.jl`](https://github.com/JuliaOpt/HiGHS.jl).
 
-using SDDP, GLPK
+using SDDP, HiGHS
 
 # ### State variables
 
@@ -229,7 +229,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 2,
     sense = :Max,
     upper_bound = 500_000.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
     direct_mode = false,
 ) do subproblem, stage
     add_state_variables(subproblem)

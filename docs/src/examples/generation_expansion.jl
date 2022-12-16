@@ -6,7 +6,7 @@
 # # Generation expansion
 
 using SDDP
-import GLPK
+import HiGHS
 import Test
 
 function generation_expansion(duality_handler)
@@ -29,7 +29,7 @@ function generation_expansion(duality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 5,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, stage
         @variable(
             sp,

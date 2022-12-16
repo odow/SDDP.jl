@@ -7,13 +7,13 @@
 
 # An implementation of the QuickStart example from [FAST](https://github.com/leopoldcambier/FAST/tree/daea3d80a5ebb2c52f78670e34db56d53ca2e778/demo)
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function fast_quickstart()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         lower_bound = -5,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         if t == 1
@@ -28,7 +28,7 @@ function fast_quickstart()
         end
     end
 
-    det = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
+    det = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
     set_silent(det)
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) == -2

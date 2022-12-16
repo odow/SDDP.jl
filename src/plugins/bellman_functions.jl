@@ -357,8 +357,10 @@ function _add_objective_state_constraint(
         @constraint(model, [i = 1:N], μ[i] == 0.0)
         return
     end
-    expr =
-        @expression(model, sum(y[i] * μ[i] for i = 1:N if is_finite[i]) + theta)
+    expr = @expression(
+        model,
+        sum(y[i] * μ[i] for i in 1:N if is_finite[i]) + theta
+    )
     if lower_bound > -Inf
         @constraint(model, expr >= lower_bound)
     end

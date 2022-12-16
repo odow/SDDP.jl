@@ -27,7 +27,7 @@
 # of base Julia, or we wrote it.
 
 import ForwardDiff
-import GLPK
+import HiGHS
 import JuMP
 import Statistics
 
@@ -112,7 +112,7 @@ function kelleys_cutting_plane(
 )
     ## Step (1):
     K = 0
-    model = JuMP.Model(GLPK.Optimizer)
+    model = JuMP.Model(HiGHS.Optimizer)
     JuMP.@variable(model, θ >= lower_bound)
     JuMP.@variable(model, x[1:input_dimension])
     JuMP.@objective(model, Min, θ)
@@ -390,7 +390,7 @@ model = PolicyGraph(
     subproblem_builder;
     graph = [Dict(2 => 1.0), Dict(3 => 1.0), Dict{Int,Float64}()],
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 )
 
 # ## Implementation: helpful samplers
@@ -784,7 +784,7 @@ model = PolicyGraph(
     subproblem_builder;
     graph = [Dict(2 => 1.0), Dict(3 => 1.0), Dict(2 => 0.5)],
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 )
 
 # Then, train a policy:

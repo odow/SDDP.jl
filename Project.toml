@@ -19,22 +19,22 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
-GLPK = "0.15, 1"
-HTTP = "0.8.1, 0.9"
+HTTP = "1"
+HiGHS = "1"
 JSON = "0.21"
 JSONSchema = "1"
-JuMP = "0.22, 0.23, 1"
-MutableArithmetics = "0.3, 1"
+JuMP = "1"
+MutableArithmetics = "1"
 RecipesBase = "1"
-Reexport = "0.2, 1"
+Reexport = "1"
 TimerOutputs = "0.5"
-julia = "1"
+julia = "1.6"
 
 [extras]
-GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
+HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 JSONSchema = "7d188eb4-7ad8-530c-ae41-71a32a6d4692"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["GLPK", "JSONSchema", "Pkg", "Test"]
+test = ["HiGHS", "JSONSchema", "Pkg", "Test"]

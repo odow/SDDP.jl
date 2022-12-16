@@ -11,7 +11,7 @@
 # Each stage, we receive a booking request and can choose to accept or decline
 # it. Once accepted, bookings cannot be terminated.
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function booking_management_model(num_days, num_rooms, num_requests)
     ## maximum revenue that could be accrued.
@@ -35,7 +35,7 @@ function booking_management_model(num_days, num_rooms, num_requests)
         stages = num_requests,
         upper_bound = max_revenue,
         sense = :Max,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, stage
         @variable(
             sp,
@@ -116,5 +116,5 @@ end
 
 booking_management(SDDP.ContinuousConicDuality())
 
-# New version of GLPK stalls
+# New version of HiGHS stalls
 # booking_management(SDDP.LagrangianDuality())

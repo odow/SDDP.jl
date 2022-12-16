@@ -9,13 +9,13 @@
 # Ahmed, S., Cabral, F. G., & da Costa, B. F. P. (2019). Stochastic Lipschitz
 # Dynamic Programming. Optimization Online. [PDF](http://www.optimization-online.org/DB_FILE/2019/05/7193.pdf)
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function sldp_example_one()
     model = SDDP.LinearPolicyGraph(
         stages = 8,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 2.0)
         @variables(sp, begin

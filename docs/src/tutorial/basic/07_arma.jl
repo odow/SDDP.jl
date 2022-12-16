@@ -13,7 +13,7 @@
 #     it should be apparent how the ideas transfer to other applications.
 
 using SDDP
-import GLPK
+import HiGHS
 
 # ## [The state-space expansion trick](@id state-space-expansion)
 
@@ -48,7 +48,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do sp, t
     @variable(sp, 0 <= x <= 200, SDDP.State, initial_value = 200)
     @variable(sp, g_t >= 0)
@@ -135,7 +135,7 @@ model = SDDP.PolicyGraph(
     graph,  # <--- New stuff
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do sp, node
     t, inflow = node  # <--- New stuff
     @variable(sp, 0 <= x <= 200, SDDP.State, initial_value = 200)
@@ -176,7 +176,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do sp, t
     @variable(sp, 0 <= x <= 200, SDDP.State, initial_value = 200)
     @variable(sp, g_t >= 0)

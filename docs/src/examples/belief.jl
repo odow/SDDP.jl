@@ -5,7 +5,7 @@
 
 # # Partially observable inventory management
 
-using SDDP, GLPK, Random, Statistics, Test
+using SDDP, HiGHS, Random, Statistics, Test
 
 function inventory_management_problem()
     demand_values = [1.0, 2.0]
@@ -30,7 +30,7 @@ function inventory_management_problem()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, node
         @variables(
             subproblem,
