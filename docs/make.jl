@@ -70,10 +70,10 @@ function fix_release_line(
         tag = m.captures[1]
         line = replace(line, m.match => "## [$tag]($url/releases/tag/$tag)")
     end
-    # @XXX -> [@XXX](https://github.com/XXX)
-    while (m = match(r"@([a-zA-Z0-9\-]+)", line)) !== nothing
+    # (Thanks @XXX) -> (Thanks [@XXX](https://github.com/XXX))
+    while (m = match(r"\(Thanks \@(.+)\)", line)) !== nothing
         tag = m.captures[1]
-        line = replace(line, m.match => "[@$tag](https://github.com/$tag")
+        line = replace(line, m.match => "(Thanks [@$tag](https://github.com/$tag))")
     end
     return line
 end
