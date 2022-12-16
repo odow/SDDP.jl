@@ -7,7 +7,7 @@ module TestBellmanFunctions
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -24,7 +24,7 @@ function _create_model(graph)
     return SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, _
         @variable(
             subproblem,
@@ -155,7 +155,7 @@ function test_add_all_cuts_SINGLE_CUT()
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, 5 <= x <= 15, SDDP.State, initial_value = 10)
         @variable(sp, g >= 0)
@@ -190,7 +190,7 @@ function test_add_all_cuts_MULTI_CUT()
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, 5 <= x <= 15, SDDP.State, initial_value = 10)
         @variable(sp, g >= 0)
@@ -239,7 +239,7 @@ function test_belief_state_cut_selection()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, node
         @variables(
             subproblem,
@@ -287,7 +287,7 @@ function test_biobjective_cut_selection()
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, _
         @variable(subproblem, 0 <= v <= 200, SDDP.State, initial_value = 50)
         @variables(subproblem, begin

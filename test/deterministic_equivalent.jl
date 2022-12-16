@@ -7,7 +7,7 @@ module TestDeterministicEquivalent
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -25,7 +25,7 @@ function test_acyclic_linear()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -41,7 +41,7 @@ function test_cyclic_linear()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -66,7 +66,7 @@ function test_cyclic_single_node()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -86,7 +86,7 @@ function test_acyclic_Markovian()
     model = SDDP.MarkovianPolicyGraph(
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -102,7 +102,7 @@ function test_cyclic_Markovian()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -122,7 +122,7 @@ function test_time_limit()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -141,7 +141,7 @@ function test_objective_states()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         SDDP.add_objective_state(
@@ -174,7 +174,7 @@ function test_belief_states()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -191,7 +191,7 @@ function test_existing_policy()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, x.out)
@@ -211,12 +211,13 @@ function test_constant_objective()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(sp, 1.0)
     end
-    d = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
+    d = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
+    set_silent(d)
     optimize!(d)
     @test objective_value(d) == 2.0
     return
@@ -226,13 +227,14 @@ function test_constraint_with_no_terms()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @constraint(sp, x.out <= x.out)
         @stageobjective(sp, 1.0)
     end
-    d = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
+    d = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
+    set_silent(d)
     optimize!(d)
     @test objective_value(d) == 2.0
     return

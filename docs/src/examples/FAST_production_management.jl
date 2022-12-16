@@ -7,7 +7,7 @@
 
 # An implementation of the Production Management example from [FAST](https://github.com/leopoldcambier/FAST/blob/daea3d80a5ebb2c52f78670e34db56d53ca2e778/examples/production management multiple stages/)
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function fast_production_management(; cut_type)
     DEMAND = [2, 10]
@@ -21,7 +21,7 @@ function fast_production_management(; cut_type)
             lower_bound = -50.0,
             cut_type = cut_type,
         ),
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x[1:N] >= 0, SDDP.State, initial_value = 0.0)
         @variables(sp, begin

@@ -18,13 +18,13 @@
 
 # The known optimal solution is \$62,500
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function air_conditioning_model(duality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, stage
         @variable(
             sp,

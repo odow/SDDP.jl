@@ -5,7 +5,7 @@
 
 # # Infinite horizon trivial
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function infinite_trivial()
     graph = SDDP.Graph(
@@ -16,7 +16,7 @@ function infinite_trivial()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, node
         @variable(subproblem, state, SDDP.State, initial_value = 0)
         @constraint(subproblem, state.in == state.out)

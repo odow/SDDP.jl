@@ -10,7 +10,7 @@
 # Springer Series in Operations Research and Financial Engineering,
 # Springer New York, New York, NY, 2011
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function asset_management_stagewise(; cut_type)
     ws = [1.25, 1.06]
@@ -30,7 +30,7 @@ function asset_management_stagewise(; cut_type)
             upper_bound = 1000.0,
             cut_type = cut_type,
         ),
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, node
         t, i = node
         @variable(subproblem, xs >= 0, SDDP.State, initial_value = 0)

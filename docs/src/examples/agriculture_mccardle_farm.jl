@@ -16,7 +16,7 @@
 
 # All data, including short variable names, is taken from that thesis.
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function test_mccardle_farm_model()
     S = [  # cutting, stage
@@ -58,7 +58,7 @@ function test_mccardle_farm_model()
     model = SDDP.PolicyGraph(
         graph,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, index
         stage, weather = index
         ## ===================== State Variables =====================

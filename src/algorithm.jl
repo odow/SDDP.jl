@@ -332,7 +332,7 @@ end
     _uninitialize_solver(model; throw_error::Bool)
 
 Before passing a model to a different process, we need to drop the inner solver
-in case it has some C pointers that we cannot serialize (e.g., GLPK).
+in case it has some C pointers that we cannot serialize (e.g., HiGHS).
 
 If `throw_error`, throw an error if the model is in direct mode.
 

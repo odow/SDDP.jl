@@ -192,7 +192,7 @@ deterministic_equivalent(model)
 ```
 
 ```julia
-deterministic_equivalent(model, GLPK.Optimizer)
+deterministic_equivalent(model, HiGHS.Optimizer)
 ```
 """
 function deterministic_equivalent(

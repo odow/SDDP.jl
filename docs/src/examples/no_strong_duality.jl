@@ -8,7 +8,7 @@
 # This example is interesting, because strong duality doesn't hold for the
 # extensive form (see if you can show why!), but we still converge.
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function no_strong_duality()
     model = SDDP.PolicyGraph(
@@ -17,7 +17,7 @@ function no_strong_duality()
             [:node],
             [(:root => :node, 1.0), (:node => :node, 0.5)],
         ),
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
     ) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 1.0)

@@ -21,7 +21,7 @@
 # ω[t] ~ {0, 0.05, 0.10, ..., 0.45, 0.5} with uniform probability.
 # ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.
 # ```
-using SDDP, GLPK, Statistics, Test
+using SDDP, HiGHS, Statistics, Test
 
 function joint_distribution(; kwargs...)
     names = tuple([first(kw) for kw in kwargs]...)
@@ -36,7 +36,7 @@ function newsvendor_example(; cut_type)
         SDDP.LinearGraph(3),
         sense = :Max,
         upper_bound = 50.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, stage
         @variables(subproblem, begin
             x >= 0, (SDDP.State, initial_value = 2)

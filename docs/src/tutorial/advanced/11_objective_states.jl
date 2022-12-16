@@ -78,13 +78,13 @@
 
 # Here is the full model with the objective state.
 
-using SDDP, GLPK
+using SDDP, HiGHS
 
 model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, t
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     @variables(subproblem, begin
@@ -163,7 +163,7 @@ model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, t
     @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
     @variables(subproblem, begin

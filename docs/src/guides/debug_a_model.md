@@ -19,12 +19,12 @@ node given a noise, and the second writes out the subproblem to a file.
 Here is an example model:
 
 ```jldoctest tutorial_eight
-using SDDP, GLPK
+using SDDP, HiGHS
 
 model = SDDP.LinearPolicyGraph(
             stages = 2,
             lower_bound = 0.0,
-            optimizer = GLPK.Optimizer,
+            optimizer = HiGHS.Optimizer,
             direct_mode = false
         ) do subproblem, t
     @variable(subproblem, x, SDDP.State, initial_value = 1)
@@ -103,7 +103,7 @@ The returned model is just a normal JuMP model. Use JuMP to optimize it and
 query the solution.
 
 ```jldoctest tutorial_eight; filter=r"5.4725[0]+[0-9]"
-julia> det_equiv = SDDP.deterministic_equivalent(model, GLPK.Optimizer)
+julia> det_equiv = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
 A JuMP Model
 Feasibility problem with:
 Variables: 24
@@ -113,7 +113,7 @@ Variables: 24
 `VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 4 constraints
 Model mode: AUTOMATIC
 CachingOptimizer state: EMPTY_OPTIMIZER
-Solver name: GLPK
+Solver name: HiGHS
 
 julia> set_silent(det_equiv)
 

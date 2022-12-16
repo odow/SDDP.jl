@@ -2,7 +2,7 @@
 
 ```@meta
 DocTestSetup = quote
-    using SDDP, GLPK
+    using SDDP, HiGHS
 end
 ```
 ## Training a risk-averse model
@@ -281,7 +281,7 @@ SDDP.Wasserstein
 
 ```jldoctest intermediate_risk
 risk_measure = SDDP.Wasserstein(
-        GLPK.Optimizer; alpha=0.5) do x, y
+        HiGHS.Optimizer; alpha=0.5) do x, y
    return abs(x - y)
 end
 

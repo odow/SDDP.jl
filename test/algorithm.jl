@@ -7,7 +7,7 @@ module TestAlgorithm
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -24,7 +24,7 @@ function test_to_nodal_forms()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -60,7 +60,7 @@ function test_solve()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -93,7 +93,7 @@ function test_simulate()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         @stageobjective(sp, x[1].out + x[2].out)
@@ -107,7 +107,7 @@ function test_simulate_incoming_state()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         @constraint(sp, [i = 1:2], x[i].out == x[i].in)
@@ -129,7 +129,7 @@ function test_simulate_missing()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         if t == 1
@@ -148,7 +148,7 @@ function test_infeasible_model()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @constraint(node, x.out <= -1)
@@ -159,7 +159,7 @@ function test_infeasible_model()
 Unable to retrieve solution from 1.
   Termination status: INFEASIBLE
   Primal status:      NO_SOLUTION
-  Dual status:        INFEASIBILITY_CERTIFICATE.
+  Dual status:        NO_SOLUTION.
 A MathOptFormat file was written to `subproblem_1.mof.json`.
 See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1
 for more information.""",
@@ -175,7 +175,7 @@ function test_infeasible_direct_model()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         direct_mode = true,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
@@ -187,7 +187,7 @@ function test_infeasible_direct_model()
 Unable to retrieve solution from 1.
   Termination status: INFEASIBLE
   Primal status:      NO_SOLUTION
-  Dual status:        INFEASIBILITY_CERTIFICATE.
+  Dual status:        NO_SOLUTION.
 A MathOptFormat file was written to `subproblem_1.mof.json`.
 See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1
 for more information.""",
@@ -202,7 +202,7 @@ end
 function test_refine_at_similar_nodes()
     model = SDDP.MarkovianPolicyGraph(
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
     ) do sp, index
         stage, markov_state = index
@@ -223,7 +223,7 @@ function test_refine_at_similar_nodes()
 
     model = SDDP.MarkovianPolicyGraph(
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
     ) do sp, index
         stage, markov_state = index
@@ -246,7 +246,7 @@ end
 function test_optimize_hook()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0)
@@ -282,7 +282,7 @@ function test_write_log_to_csv()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)

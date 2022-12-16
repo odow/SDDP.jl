@@ -2,7 +2,7 @@
 
 ```@meta
 DocTestSetup = quote
-    using SDDP, GLPK
+    using SDDP, HiGHS
 end
 ```
 
@@ -17,7 +17,7 @@ To demonsrate the different ways of simulating the policy, we're going to use
 the model from the tutorial [Markovian policy graphs](@ref).
 
 ```jldoctest sampling_schemes
-using SDDP, GLPK
+using SDDP, HiGHS
 
 Ω = [
     (inflow = 0.0, fuel_multiplier = 1.5),
@@ -33,7 +33,7 @@ model = SDDP.MarkovianPolicyGraph(
     ],
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer
+    optimizer = HiGHS.Optimizer
 ) do subproblem, node
     # Unpack the stage and Markov index.
     t, markov_state = node
@@ -221,7 +221,7 @@ julia> SDDP.Historical(
                    (2, (inflow = 100.0, fuel_multiplier = 0.75)),
                    (3, (inflow = 0.0, fuel_multiplier = 1.5)),
                ],
-           ], 
+           ],
        )
 A Historical sampler with 2 scenarios sampled sequentially.
 ```
@@ -241,7 +241,7 @@ julia> SDDP.Historical(
                    (2, (inflow = 100.0, fuel_multiplier = 0.75)),
                    (3, (inflow = 0.0, fuel_multiplier = 1.5)),
                ],
-           ], 
+           ],
            [0.3, 0.7],
        )
 A Historical sampler with 2 scenarios sampled probabilistically.

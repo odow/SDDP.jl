@@ -10,14 +10,14 @@
 # Dynamic Programming. Optimization Online. [PDF](http://www.optimization-online.org/DB_FILE/2019/05/7193.pdf)
 
 using SDDP
-import GLPK
+import HiGHS
 import Test
 
 function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = -100.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, 0 <= x[1:2] <= 5, SDDP.State, initial_value = 0.0)
         if t == 1

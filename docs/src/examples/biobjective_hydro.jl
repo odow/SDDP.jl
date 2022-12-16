@@ -5,13 +5,13 @@
 
 # # Biobjective hydro-thermal
 
-using SDDP, GLPK, Statistics, Test
+using SDDP, HiGHS, Statistics, Test
 
 function biobjective_example()
     model = SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, _
         @variable(subproblem, 0 <= v <= 200, SDDP.State, initial_value = 50)
         @variables(subproblem, begin

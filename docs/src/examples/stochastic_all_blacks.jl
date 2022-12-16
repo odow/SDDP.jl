@@ -5,7 +5,7 @@
 
 # # Stochastic All Blacks
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function stochastic_all_blacks()
     ## Number of time periods
@@ -26,7 +26,7 @@ function stochastic_all_blacks()
         stages = T,
         sense = :Max,
         upper_bound = 100.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, stage
         ## Seat remaining?
         @variable(sp, 0 <= x[1:N] <= 1, SDDP.State, Bin, initial_value = 1)

@@ -8,7 +8,7 @@ module TestStoppingRules
 using Random
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -74,7 +74,7 @@ function test_Statistical()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         sense = :Min,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
@@ -106,7 +106,7 @@ function test_Statistical()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         bellman_function = SDDP.BellmanFunction(upper_bound = 6.0),
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
         sense = :Max,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)

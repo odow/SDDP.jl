@@ -14,10 +14,10 @@ jobs:
         # SDDP doesn't have any binary dependencies, so just test on Linux, LTS
         # and current release, 64-bit and 32-bit.
         include:
-          - version: '1.0'
+          - version: '1.6'
             os: ubuntu-latest
             arch: x86
-          - version: '1.0'
+          - version: '1.6'
             os: ubuntu-latest
             arch: x64
           - version: '1'

@@ -25,7 +25,7 @@ end
 
 @everywhere begin
     using Test
-    using GLPK
+    using HiGHS
     using SDDP
 end
 
@@ -105,7 +105,7 @@ function test_async_solve()
         stages = 2,
         sense = :Min,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
@@ -118,7 +118,8 @@ function test_async_solve()
         iteration_limit = 20,
         parallel_scheme = SDDP.Asynchronous(; use_master = false) do m
             for (key, node) in m.nodes
-                JuMP.set_optimizer(node.subproblem, GLPK.Optimizer)
+                JuMP.set_optimizer(node.subproblem, HiGHS.Optimizer)
+                JuMP.set_silent(node.subproblem)
             end
         end,
     )
@@ -130,7 +131,8 @@ function test_async_solve()
         iteration_limit = 20,
         parallel_scheme = SDDP.Asynchronous(; use_master = true) do m
             for (key, node) in m.nodes
-                JuMP.set_optimizer(node.subproblem, GLPK.Optimizer)
+                JuMP.set_optimizer(node.subproblem, HiGHS.Optimizer)
+                JuMP.set_silent(node.subproblem)
             end
         end,
     )
@@ -145,7 +147,7 @@ function test_simulate_parallel()
         stages = 2,
         lower_bound = 0.0,
         sense = :Min,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
         @stageobjective(sp, x[1].out + x[2].out)

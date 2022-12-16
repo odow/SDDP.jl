@@ -7,7 +7,7 @@ module TestExperimental
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 import JSON
 import JSONSchema
 
@@ -94,14 +94,14 @@ end
 
 function test_write_to_file_Min()
     base_model = _create_model(true)
-    set_optimizer(base_model, GLPK.Optimizer)
+    set_optimizer(base_model, HiGHS.Optimizer)
     SDDP.train(base_model; iteration_limit = 50, print_level = 0)
     model = _create_model(true)
     SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 50, print_level = 0)
     new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
-    set_optimizer(new_model, GLPK.Optimizer)
+    set_optimizer(new_model, HiGHS.Optimizer)
     SDDP.train(new_model; iteration_limit = 50, print_level = 0)
     @test isapprox(
         SDDP.calculate_bound(base_model),
@@ -127,14 +127,14 @@ end
 
 function test_write_to_file_Max()
     base_model = _create_model(false)
-    set_optimizer(base_model, GLPK.Optimizer)
+    set_optimizer(base_model, HiGHS.Optimizer)
     SDDP.train(base_model; iteration_limit = 50, print_level = 0)
     model = _create_model(false)
     SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 50, print_level = 0)
     new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
-    set_optimizer(new_model, GLPK.Optimizer)
+    set_optimizer(new_model, HiGHS.Optimizer)
     SDDP.train(new_model; iteration_limit = 50, print_level = 0)
     @test isapprox(
         SDDP.calculate_bound(base_model),
@@ -177,7 +177,7 @@ end
 
 function test_error_existing_cuts()
     model = _create_model(true)
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 1, print_level = 0)
     err = ErrorException(
         "StochOptFormat does not support writing after a call to " *
@@ -204,7 +204,7 @@ end
 function test_slptestset()
     model, test_scenarios =
         SDDP.read_from_file(joinpath(@__DIR__, "electric.sof.json"))
-    set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 20, print_level = 0)
     @test isapprox(SDDP.calculate_bound(model), 381.8533; atol = 1e-3)
     scenarios = SDDP.evaluate(model, test_scenarios)

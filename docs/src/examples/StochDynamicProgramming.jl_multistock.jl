@@ -7,13 +7,13 @@
 
 # This example comes from [StochDynamicProgramming.jl](https://github.com/JuliaOpt/StochDynamicProgramming.jl/tree/f68b9da541c2f811ce24fc76f6065803a0715c2f/examples/multistock-example.jl).
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function test_multistock_example()
     model = SDDP.LinearPolicyGraph(
         stages = 5,
         lower_bound = -5.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, stage
         @variable(
             subproblem,

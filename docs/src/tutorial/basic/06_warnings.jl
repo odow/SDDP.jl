@@ -9,19 +9,19 @@
 # Models built in SDDP.jl need a property called _relatively complete recourse_.
 
 # One definition of relatively complete recourse is that _all_ feasible decisions
-# (not necessarily optimal) in a subproblem lead to feasible decisions in future 
+# (not necessarily optimal) in a subproblem lead to feasible decisions in future
 # subproblems.
 
-# For example, in the following problem, one feasible first stage decision is 
-# `x.out = 0`. But this causes an infeasibility in the second stage which requires 
+# For example, in the following problem, one feasible first stage decision is
+# `x.out = 0`. But this causes an infeasibility in the second stage which requires
 # `x.in >= 1`. This will throw an error about infeasibility if you try to solve.
 
-using SDDP, GLPK
+using SDDP, HiGHS
 
 model = SDDP.LinearPolicyGraph(
     stages = 2,
     lower_bound = 0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do sp, t
     @variable(sp, x >= 0, SDDP.State, initial_value = 1)
     if t == 2
@@ -46,7 +46,7 @@ end                         #hide
 
 # If you aren't aware, SDDP builds an outer-approximation to a convex function
 # using cutting planes. This results in a formulation that is particularly hard
-# for solvers like GLPK, Gurobi, and CPLEX to deal with. As a result, you may
+# for solvers like HiGHS, Gurobi, and CPLEX to deal with. As a result, you may
 # run into weird behavior. This behavior could include:
 #
 #  - Iterations suddenly taking a long time (the solver stalled)
@@ -138,13 +138,13 @@ SDDP.numerical_stability_report(model)
 
 # Consider the following simple model, where we first set `lower_bound` to `0.0`.
 
-using SDDP, GLPK
+using SDDP, HiGHS
 
 model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, t
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 2)
     @variable(subproblem, u >= 0)
@@ -158,13 +158,13 @@ SDDP.train(model, iteration_limit = 5, run_numerical_stability_report = false)
 
 # Now consider the case when we set the `lower_bound` to `10.0`:
 
-using SDDP, GLPK
+using SDDP, HiGHS
 
 model = SDDP.LinearPolicyGraph(
     stages = 3,
     sense = :Min,
     lower_bound = 10.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do subproblem, t
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 2)
     @variable(subproblem, u >= 0)

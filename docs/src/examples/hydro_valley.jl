@@ -26,7 +26,7 @@
 # We can also set the sense to :Min or :Max (the objective and bound are
 # flipped appropriately).
 
-using SDDP, GLPK, Test, Random
+using SDDP, HiGHS, Test, Random
 
 struct Turbine
     flowknots::Vector{Float64}
@@ -95,7 +95,7 @@ function hydrovalleymodel(;
         lower_bound = lower,
         upper_bound = upper,
         transition_matrices = transition,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, node
         t, markov_state = node
 

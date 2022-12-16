@@ -7,7 +7,7 @@ module TestUserInterface
 
 using SDDP
 using Test
-import GLPK
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -193,7 +193,7 @@ function test_PolicyGraph_LinearGraph()
     model = SDDP.PolicyGraph(
         SDDP.LinearGraph(2),
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         return push!(nodes, stage)
     end
@@ -319,7 +319,7 @@ function test_set_stage_objective_Min()
         SDDP.LinearGraph(2),
         sense = :Min,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         @stageobjective(node, 2x)
@@ -344,7 +344,7 @@ function test_set_stage_objective_Max()
         SDDP.LinearGraph(2),
         upper_bound = 0.0,
         sense = :Max,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         @stageobjective(node, 2x)
@@ -473,7 +473,7 @@ function test_objective_state()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, t
         @variable(subproblem, x, SDDP.State, initial_value = 0)
         SDDP.parameterize(subproblem, [1, 2]) do ω
@@ -491,7 +491,7 @@ function test_objective_state()
         SDDP.LinearPolicyGraph(
             stages = 2,
             lower_bound = 0,
-            optimizer = GLPK.Optimizer,
+            optimizer = HiGHS.Optimizer,
         ) do subproblem, t
             @variable(subproblem, x, SDDP.State, initial_value = 0)
             SDDP.add_objective_state(

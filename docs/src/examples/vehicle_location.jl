@@ -23,7 +23,7 @@
 # cost of the driving distance.
 
 using SDDP
-import GLPK
+import HiGHS
 import Test
 
 function vehicle_location_model(duality_handler)
@@ -41,7 +41,7 @@ function vehicle_location_model(duality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 10,
         lower_bound = 0.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do sp, t
         ## Current location of each vehicle at each base.
         @variable(

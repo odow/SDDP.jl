@@ -2,7 +2,7 @@
 
 ```@meta
 DocTestSetup = quote
-    using SDDP, GLPK
+    using SDDP, HiGHS
 end
 ```
 
@@ -128,7 +128,7 @@ julia> graph = SDDP.Graph(
 julia> model = SDDP.PolicyGraph(
                graph,
                lower_bound = 0,
-               optimizer = GLPK.Optimizer) do subproblem, node
+               optimizer = HiGHS.Optimizer) do subproblem, node
            println("Called from node: ", node)
        end;
 Called from node: decision_node

@@ -22,7 +22,7 @@ speed-ups.
    [Gurobi](https://github.com/JuliaOpt/Gurobi.jl), and
    [Xpress](https://github.com/JuliaOpt/Xpress.jl). Using free solvers such as
    [CLP](https://github.com/JuliaOpt/Clp.jl) and
-   [GLPK](https://github.com/JuliaOpt/GLPK.jl) isn't a viable approach for large
+   [HiGHS](https://github.com/JuliaOpt/HiGHS.jl) isn't a viable approach for large
    problems.
 
 - Try different solvers.
@@ -92,9 +92,9 @@ Currently SDDP.jl supports to parallel schemes, [`SDDP.Serial`](@ref) and
 `parallel_scheme` argument of [`SDDP.train`](@ref) and [`SDDP.simulate`](@ref).
 
 ```julia
-using SDDP, GLPK
+using SDDP, HiGHS
 model = SDDP.LinearPolicyGraph(
-  stages = 2, lower_bound = 0, optimizer = GLPK.Optimizer
+  stages = 2, lower_bound = 0, optimizer = HiGHS.Optimizer
 ) do sp, t
      @variable(sp, x >= 0, SDDP.State, initial_value = 1)
      @stageobjective(sp, x.out)

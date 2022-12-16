@@ -30,10 +30,10 @@
 
 # ## Importing packages
 
-# For this example, in addition to `SDDP`, we need `GLPK` as a solver and `Statisitics` to
+# For this example, in addition to `SDDP`, we need `HiGHS` as a solver and `Statisitics` to
 # compute the mean of our simulations.
 
-using GLPK
+using HiGHS
 using SDDP
 using Statistics
 
@@ -74,7 +74,7 @@ model = SDDP.PolicyGraph(
     graph,
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = GLPK.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do sp, t
     @variable(sp, 5 <= x <= 15, SDDP.State, initial_value = 10)
     @variable(sp, g_t >= 0)

@@ -10,7 +10,7 @@
 # Springer Series in Operations Research and Financial Engineering,
 # Springer New York, New York, NY, 2011
 
-using SDDP, GLPK, Test
+using SDDP, HiGHS, Test
 
 function asset_management_simple()
     model = SDDP.PolicyGraph(
@@ -23,7 +23,7 @@ function asset_management_simple()
             ],
         ),
         lower_bound = -1_000.0,
-        optimizer = GLPK.Optimizer,
+        optimizer = HiGHS.Optimizer,
     ) do subproblem, index
         (stage, markov_state) = index
         rstock = [1.25, 1.06]
