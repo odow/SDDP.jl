@@ -7,7 +7,7 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## v0.4.7 (December 17, 2022)
 
 ### Added
 
@@ -18,15 +18,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
  * Rethrow `InterruptException` when solver is interrupted (#534)
  * Fixed numerical recovery when we need dual solutions (#531) (Thanks @bfpc)
+ * Fixed re-using the `dashboard = true` option between solves (#538)
+ * Fixed bug when no `@stageobjective` is set (now defaults to `0.0`) (#539)
+ * Fixed errors thrown when invalid inputs are provided to `add_objective_state`
+   (#540)
 
 ### Other
 
  * Drop support for Julia versions prior to 1.6 (#533)
- * Updated versions of dependencies (#533)
+ * Updated versions of dependencies (#522) (#533)
  * Switched to HiGHS in the documentation and tests (#533)
  * Added license headers (#519)
  * Fixed link in air conditioning example (#521) (Thanks @conema)
  * Clarified variable naming in deterministic equivalent (#525) (Thanks @lucasprocessi)
+ * Added this change log (#536)
+ * Cuts are now written to `model.cuts.json` when numerical instability is
+   discovered. This can aid debugging because it allows to you reload the cuts
+   as of the iteration that caused the numerical issue (#537)
 
 ## v0.4.6 (March 25, 2022)
 
