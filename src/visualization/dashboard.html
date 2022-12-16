@@ -60,7 +60,7 @@
         );
         var plot_div = document.getElementById('plot')
 
-        var connection = new WebSocket('ws://localhost:8001');
+        var connection = new WebSocket('ws://localhost:8000');
         connection.onopen = function () {
             var send_ready = false;
             setInterval(function() {
@@ -72,13 +72,10 @@
                         connection.send("ready");
                         send_ready = true;
                     }
-                    console.log('Still alive')
                 } else if (connection.readyState == 2) {
                     // Connection is closing.
-
                 } else if (connection.readyState == 3) {
                     // Connection is closed.
-                    return
                 }
             }, 250);
         };
@@ -97,7 +94,6 @@
                 },
                 [0, 1, 2]
             );
-            connection.send("ready");
         };
     })();
     </script>
