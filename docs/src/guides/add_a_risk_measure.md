@@ -66,7 +66,7 @@ random variable with four outcomes.
 
 The random variable is supported on the values 1, 2, 3, and 4:
 
-```@repl intermediate_risk; setup=:(using SDDP)
+```@repl intermediate_risk
 noise_supports = [1, 2, 3, 4]
 ```
 
@@ -100,6 +100,7 @@ SDDP.Expectation
 ```
 
 ```@repl intermediate_risk
+using SDDP
 SDDP.adjust_probability(
     SDDP.Expectation(),
     risk_adjusted_probability,
@@ -209,6 +210,7 @@ SDDP.Wasserstein
 ```
 
 ```@repl intermediate_risk
+import HiGHS
 SDDP.adjust_probability(
     SDDP.Wasserstein(HiGHS.Optimizer; alpha=0.5) do x, y
         return abs(x - y)
