@@ -671,6 +671,96 @@ function test_initial_feasibility()
     return
 end
 
+function test_objective_state_error_missing_upper_bound()
+    model = SDDP.LinearPolicyGraph(
+        stages = 3,
+        sense = :Max,
+        upper_bound = 50.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, _
+        @variable(sp, x >= 0, SDDP.State, initial_value = 2)
+        @constraint(sp, x.out <= x.in)
+        SDDP.add_objective_state(
+            sp,
+            initial_value = (1.5,),
+            lower_bound = (0.75,),
+            lipschitz = (100.0,),
+        ) do y, ω
+            return y + ω
+        end
+        SDDP.parameterize(sp, [-0.25, -0.125, 0.125, 0.25]) do ω
+            price = SDDP.objective_state(sp)
+            @stageobjective(sp, price * (x.in - x.out))
+        end
+    end
+    state = model[1].objective_state
+    @test state.lower_bound == (0.75,)
+    @test state.upper_bound == (Inf,)
+    @test state.initial_value == (1.5,)
+    @test JuMP.lower_bound(state.μ[1]) == -100.0
+    @test JuMP.upper_bound(state.μ[1]) == 100.0
+    return
+end
+
+function test_objective_state_error_missing_lower_bound()
+    model = SDDP.LinearPolicyGraph(
+        stages = 3,
+        sense = :Max,
+        upper_bound = 50.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, _
+        @variable(sp, x >= 0, SDDP.State, initial_value = 2)
+        @constraint(sp, x.out <= x.in)
+        SDDP.add_objective_state(
+            sp,
+            initial_value = (1,),
+            lipschitz = (100,),
+        ) do y, ω
+            return y + ω
+        end
+        SDDP.parameterize(sp, [-0.25, -0.125, 0.125, 0.25]) do ω
+            price = SDDP.objective_state(sp)
+            @stageobjective(sp, price * (x.in - x.out))
+        end
+    end
+    state = model[1].objective_state
+    @test state.lower_bound == (-Inf,)
+    @test state.upper_bound == (Inf,)
+    @test state.initial_value == (1.0,)
+    @test JuMP.lower_bound.(state.μ) == (-100.0,)
+    @test JuMP.upper_bound.(state.μ) == (100.0,)
+    return
+end
+
+function test_objective_state_error_dimension_two_missing_lower_bound()
+    err = ErrorException(
+        "Invalid dimension in the input to `add_objective_state`. Got: " *
+        "`(100,)`, but expected it to have length `2`.",
+    )
+    @test_throws err SDDP.LinearPolicyGraph(
+        stages = 3,
+        sense = :Max,
+        upper_bound = 50.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, _
+        @variable(sp, x >= 0, SDDP.State, initial_value = 2)
+        @constraint(sp, x.out <= x.in)
+        SDDP.add_objective_state(
+            sp,
+            initial_value = (1, 0),
+            lipschitz = (100,),
+            upper_bound = (1, Inf),
+        ) do y, ω
+            return y + ω
+        end
+        SDDP.parameterize(sp, [-0.25, -0.125, 0.125, 0.25]) do ω
+            price = SDDP.objective_state(sp)
+            @stageobjective(sp, price * (x.in - x.out))
+        end
+    end
+    return
+end
+
 end  # module
 
 TestUserInterface.runtests()

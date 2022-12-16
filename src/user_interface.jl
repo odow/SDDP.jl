@@ -923,38 +923,33 @@ If the objective state is `N`-dimensional, each keyword argument must be an
 function add_objective_state(
     update::Function,
     subproblem::JuMP.Model;
-    initial_value,
-    lipschitz,
-    lower_bound = -Inf,
-    upper_bound = Inf,
+    initial_value::Union{Real,Tuple},
+    lipschitz::Union{Real,Tuple},
+    lower_bound::Union{Real,Tuple} = -Inf,
+    upper_bound::Union{Real,Tuple} = Inf,
 )
+    tup_initial_value = _to_tuple(initial_value)
+    N = length(tup_initial_value)
     return add_objective_state(
         update,
         subproblem,
-        initial_value,
-        lower_bound,
-        upper_bound,
-        lipschitz,
+        tup_initial_value,
+        _to_tuple(lower_bound, N),
+        _to_tuple(upper_bound, N),
+        _to_tuple(lipschitz, N),
     )
 end
 
-# Internal function: add_objective_state with positional Float64 arguments.
-function add_objective_state(
-    update::Function,
-    subproblem::JuMP.Model,
-    initial_value::Float64,
-    lower_bound::Float64,
-    upper_bound::Float64,
-    lipschitz::Float64,
-)
-    return add_objective_state(
-        update,
-        subproblem,
-        (initial_value,),
-        (lower_bound,),
-        (upper_bound,),
-        (lipschitz,),
-    )
+_to_tuple(x::Real, N::Int = 1) = ntuple(i -> Float64(x), N)
+
+function _to_tuple(x::Tuple, N::Int = length(x))
+    if length(x) != N
+        error(
+            "Invalid dimension in the input to `add_objective_state`. Got: ",
+            "`$x`, but expected it to have length `$N`.",
+        )
+    end
+    return Float64.(x)
 end
 
 # Internal function: add_objective_state with positional NTuple arguments.
