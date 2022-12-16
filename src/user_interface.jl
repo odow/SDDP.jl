@@ -659,7 +659,7 @@ function PolicyGraph(
             Noise[],
             (ω) -> nothing,
             Dict{Symbol,State{JuMP.VariableRef}}(),
-            nothing,
+            0.0,
             false,
             # Delay initializing the bellman function until later so that it can
             # use information about the children and number of
