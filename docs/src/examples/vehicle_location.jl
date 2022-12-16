@@ -30,7 +30,7 @@ function vehicle_location_model(duality_handler)
     hospital_location = 0
     bases = vcat(hospital_location, [20, 40, 60, 80, 100])
     vehicles = [1, 2, 3]
-    requests = 0:2:100
+    requests = 0:10:100
     shift_cost(src, dest) = abs(src - dest)
     function dispatch_cost(base, request)
         return 2 * (abs(request - hospital_location) + abs(request - base))
@@ -41,7 +41,10 @@ function vehicle_location_model(duality_handler)
     model = SDDP.LinearPolicyGraph(
         stages = 10,
         lower_bound = 0.0,
-        optimizer = HiGHS.Optimizer,
+        optimizer = optimizer_with_attributes(
+            HiGHS.Optimizer,
+            "mip_feasibility_tolerance" => 1e-7,
+        ),
     ) do sp, t
         ## Current location of each vehicle at each base.
         @variable(
@@ -116,7 +119,7 @@ function vehicle_location_model(duality_handler)
     end
     SDDP.train(
         model;
-        iteration_limit = 50,
+        iteration_limit = 20,
         log_frequency = 10,
         cut_deletion_minimum = 100,
         duality_handler = duality_handler,
@@ -125,6 +128,4 @@ function vehicle_location_model(duality_handler)
     return
 end
 
-# HiGHS finds a (OPTIMAL, INFEASIBLE_POINT, NO_SOLUTION) solution???
-
-## vehicle_location_model(SDDP.ContinuousConicDuality())
+vehicle_location_model(SDDP.ContinuousConicDuality())
