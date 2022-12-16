@@ -239,6 +239,61 @@ function test_PSR()
     return
 end
 
+function test_InSampleMonteCarlo_initial_node()
+    graph = SDDP.LinearGraph(2)
+    SDDP.add_edge(graph, 2 => 1, 0.9)
+    model = SDDP.PolicyGraph(
+        graph,
+        lower_bound = 0.0,
+        direct_mode = false,
+    ) do node, stage
+        @variable(node, 0 <= x <= 1)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            return JuMP.set_upper_bound(x, ω)
+        end
+    end
+    for (start, node) in (nothing => 1, 1 => 1, 2 => 2)
+        for _ in 1:10
+            scenario, _ = SDDP.sample_scenario(
+                model,
+                SDDP.InSampleMonteCarlo(initial_node = start),
+            )
+            @test scenario[1][1] == node
+        end
+    end
+    return
+end
+
+function test_OutOfSampleMonteCarlo_initial_node()
+    graph = SDDP.LinearGraph(2)
+    SDDP.add_edge(graph, 2 => 1, 0.9)
+    model = SDDP.PolicyGraph(
+        graph,
+        lower_bound = 0.0,
+        direct_mode = false,
+    ) do node, stage
+        @variable(node, 0 <= x <= 1)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            return JuMP.set_upper_bound(x, ω)
+        end
+    end
+    for (start, node) in (nothing => 1, 1 => 1, 2 => 2)
+        for _ in 1:10
+            sampler = SDDP.OutOfSampleMonteCarlo(
+                model;
+                use_insample_transition = true,
+                terminate_on_dummy_leaf = false,
+                max_depth = 4,
+                initial_node = start,
+            ) do stage
+                return [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
+            end
+            scenario, _ = SDDP.sample_scenario(model, sampler)
+            @test scenario[1][1] == node
+        end
+    end
+end
+
 end  # module
 
 TestSamplingSchemes.runtests()
