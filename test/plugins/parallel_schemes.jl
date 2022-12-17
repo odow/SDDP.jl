@@ -38,6 +38,16 @@ function test_Asynchronous()
     return
 end
 
+function test_Asynchronous_optimizer()
+    model = SDDP.LinearPolicyGraph(;stages = 2, lower_bound = 0.0) do sp, _
+        @variable(sp, x, SDDP.State, initial_value = 0.0)
+    end
+    a = SDDP.Asynchronous(HiGHS.Optimizer)
+    a.init_callback(model)
+    @test solver_name(model[2].subproblem) == "HiGHS"
+    return
+end
+
 function test_slave_update()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
@@ -113,15 +123,12 @@ function test_async_solve()
             return JuMP.set_lower_bound(x.out, ω)
         end
     end
+    solver =
+        JuMP.optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
     SDDP.train(
         model,
         iteration_limit = 20,
-        parallel_scheme = SDDP.Asynchronous(; use_master = false) do m
-            for (key, node) in m.nodes
-                JuMP.set_optimizer(node.subproblem, HiGHS.Optimizer)
-                JuMP.set_silent(node.subproblem)
-            end
-        end,
+        parallel_scheme = SDDP.Asynchronous(solver; use_master = false),
     )
     @test SDDP.termination_status(model) == :iteration_limit
     @test all(l -> l.pid != 1, model.most_recent_training_results.log)

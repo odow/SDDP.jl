@@ -59,13 +59,19 @@ struct Asynchronous <: AbstractParallelScheme
 end
 
 """
-    Asynchronous(init_callback::Function, slave_pids::Vector{Int} = workers())
+    Asynchronous(
+        [init_callback::Function,]
+        slave_pids::Vector{Int} = workers();
+        use_master::Bool = true,
+    )
 
 Run SDDP in asynchronous mode workers with pid's `slave_pids`.
 
 After initializing the models on each worker, call `init_callback(model)`. Note
 that `init_callback` is run _locally on the worker_ and _not_ on the master
 thread.
+
+If `use_master` is `true`, iterations are also conducted on the master process.
 """
 function Asynchronous(
     init_callback::Function,
@@ -75,17 +81,33 @@ function Asynchronous(
     return Asynchronous(init_callback, slave_ids, use_master)
 end
 
-"""
-    Asynchronous(slave_pids::Vector{Int} = workers())
-
-Run SDDP in asynchronous mode workers with pid's `slave_pids`.
-"""
 function Asynchronous(
     slave_ids::Vector{Int} = Distributed.workers();
     use_master::Bool = true,
 )
-    return Asynchronous(slave_ids, use_master) do model
+    return Asynchronous(slave_ids; use_master = use_master) do model
         return _initialize_solver(model; throw_error = true)
+    end
+end
+
+"""
+    Asynchronous(
+        solver::Any,
+        slave_pids::Vector{Int} = workers();
+        use_master::Bool = true,
+    )
+
+Run SDDP in asynchronous mode workers with pid's `slave_pids`.
+
+Set the optimizer on each worker by calling `JuMP.set_optimizer(model, solver)`.
+"""
+function Asynchronous(
+    solver::Any,
+    slave_ids::Vector{Int} = Distributed.workers();
+    use_master::Bool = true,
+)
+    return Asynchronous(slave_ids; use_master = use_master) do model
+        return JuMP.set_optimizer(model, solver)
     end
 end
 
