@@ -39,7 +39,7 @@ function test_Asynchronous()
 end
 
 function test_Asynchronous_optimizer()
-    model = SDDP.LinearPolicyGraph(;stages = 2, lower_bound = 0.0) do sp, _
+    model = SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, _
         @variable(sp, x, SDDP.State, initial_value = 0.0)
     end
     a = SDDP.Asynchronous(HiGHS.Optimizer)
