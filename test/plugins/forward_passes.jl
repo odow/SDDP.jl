@@ -166,6 +166,51 @@ function test_RiskAdjustedForwardPass()
     return
 end
 
+function test_DefaultForwardPass()
+    graph = SDDP.LinearGraph(3)
+    SDDP.add_edge(graph, 3 => 1, 0.9)
+    model = SDDP.PolicyGraph(
+        graph;
+        sense = :Max,
+        upper_bound = 100.0,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x, SDDP.State, initial_value = 0.0)
+        @stageobjective(node, x.out)
+        SDDP.parameterize(node, stage * [1.5]) do ω
+            return JuMP.set_upper_bound(x.out, ω)
+        end
+    end
+    options = SDDP.Options(
+        model,
+        Dict(:x => 1.0),
+        SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
+        SDDP.CompleteSampler(),
+        SDDP.Expectation(),
+        0.0,
+        true,
+        SDDP.AbstractStoppingRule[],
+        (a, b) -> nothing,
+        0,
+        0.0,
+        SDDP.Log[],
+        IOBuffer(),
+        1,
+        SDDP.DefaultForwardPass(),
+        SDDP.ContinuousConicDuality(),
+        x -> nothing,
+    )
+    forward_trajectory = SDDP.forward_pass(
+        model,
+        options,
+        SDDP.DefaultForwardPass(),
+    )
+    @test options.starting_states[1] == [Dict(:x => 4.5)]
+    @test isempty(options.starting_states[2])
+    @test isempty(options.starting_states[3])
+    return
+end
+
 end  # module
 
 TestForwardPasses.runtests()

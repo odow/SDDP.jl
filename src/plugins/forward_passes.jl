@@ -106,8 +106,8 @@ function forward_pass(
         # states for that node:
         starting_states = options.starting_states[final_node_index]
         # We also need the incoming state variable to the final node, which is
-        # the outgoing state value of the last node:
-        incoming_state_value = sampled_states[end]
+        # the outgoing state value of the second to last node:
+        incoming_state_value = sampled_states[end-1]
         # If this incoming state value is more than δ away from another state,
         # add it to the list.
         if distance(starting_states, incoming_state_value) >
