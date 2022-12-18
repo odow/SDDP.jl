@@ -4,22 +4,36 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """
-    DefaultForwardPass()
+    DefaultForwardPass(; include_last_node::Bool = true)
 
 The default forward pass.
+
+If `include_last_node = false` and the sample terminated due to a cycle, then
+the last node (which forms the cycle) is omitted. This can be useful option to
+set when training, but it comes at the cost of not knowing which node formed the
+cycle (if there are multiple possibilities).
 """
-struct DefaultForwardPass <: AbstractForwardPass end
+struct DefaultForwardPass <: AbstractForwardPass
+    include_last_node::Bool
+    function DefaultForwardPass(; include_last_node::Bool = true)
+        return new(include_last_node)
+    end
+end
 
 function forward_pass(
     model::PolicyGraph{T},
     options::Options,
-    ::DefaultForwardPass,
+    pass::DefaultForwardPass,
 ) where {T}
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
     TimerOutputs.@timeit SDDP_TIMER "sample_scenario" begin
         scenario_path, terminated_due_to_cycle =
             sample_scenario(model, options.sampling_scheme)
+    end
+    final_node = scenario_path[end]
+    if terminated_due_to_cycle && !pass.include_last_node
+        pop!(scenario_path)
     end
     # Storage for the list of outgoing states that we visit on the forward pass.
     sampled_states = Dict{Symbol,Float64}[]
@@ -100,14 +114,16 @@ function forward_pass(
         push!(sampled_states, incoming_state_value)
     end
     if terminated_due_to_cycle
-        # Get the last node in the scenario.
-        final_node_index = scenario_path[end][1]
         # We terminated due to a cycle. Here is the list of possible starting
         # states for that node:
-        starting_states = options.starting_states[final_node_index]
+        starting_states = options.starting_states[final_node[1]]
         # We also need the incoming state variable to the final node, which is
         # the outgoing state value of the second to last node:
-        incoming_state_value = sampled_states[end-1]
+        incoming_state_value = if pass.include_last_node
+            sampled_states[end-1]
+        else
+            sampled_states[end]
+        end
         # If this incoming state value is more than δ away from another state,
         # add it to the list.
         if distance(starting_states, incoming_state_value) >
