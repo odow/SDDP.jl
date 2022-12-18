@@ -181,6 +181,30 @@ function test_Historical_SingleTrajectory()
     return
 end
 
+function test_Historical_SingleTrajectory_terminate_on_cycle()
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
+        direct_mode = false,
+    ) do node, stage
+        @variable(node, 0 <= x <= 1)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            return JuMP.set_upper_bound(x, ω)
+        end
+    end
+    scenario, terminated_due_to_cycle = SDDP.sample_scenario(
+        model,
+        SDDP.Historical(
+            [(1, 0.1), (2, 0.2), (1, 0.3)];
+            terminate_on_cycle = true,
+        ),
+    )
+    @test length(scenario) == 3
+    @test terminated_due_to_cycle
+    @test scenario == [(1, 0.1), (2, 0.2), (1, 0.3)]
+    return
+end
+
 function test_Historical_multiple()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
