@@ -7,6 +7,18 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.4.8 (December 19, 2022)
+
+### Added
+
+ * Added `terminate_on_cycle` option to [`SDDP.Historical`](@ref) (#549)
+ * Added `include_last_node` option to [`SDDP.DefaultForwardPass`](@ref) (#547)
+
+### Fixed
+
+ * Reverted (#531) because it failed to account for problems with integer
+   variables (#546)
+
 ## v0.4.7 (December 17, 2022)
 
 ### Added
