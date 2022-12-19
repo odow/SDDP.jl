@@ -16,8 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
- * Reverted (#531) because it failed to account for problems with integer
-   variables (#546)
+ * Reverted then fixed (#531) because it failed to account for problems with
+   integer variables (#546) (#551)
 
 ## v0.4.7 (December 17, 2022)
 
