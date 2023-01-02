@@ -16,14 +16,14 @@ for details), we can define the ambiguity partition using
 
 For example, first we create a Markovian graph:
 
-```@repl
+```@repl belief_states
 using SDDP
 G = SDDP.MarkovianGraph([[0.5 0.5], [0.2 0.8; 0.8 0.2]])
 ```
 
 Then we add an ambiguity set over the nodes in the each stage:
 
-```@repl
+```@repl belief_states
 for t in 1:2
     SDDP.add_ambiguity_set(G, [(t, 1), (t, 2)])
 end
@@ -31,6 +31,6 @@ end
 
 This results in the graph:
 
-```@repl
+```@repl belief_states
 G
 ```
