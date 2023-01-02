@@ -102,6 +102,7 @@ Documenter.makedocs(
             "tutorial/arma.md",
             "tutorial/objective_states.md",
             "tutorial/mdps.md",
+            "tutorial/example_newsvendor.md",
         ],
         "How-to guides" => [
             "guides/access_previous_variables.md",
