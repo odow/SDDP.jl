@@ -25,7 +25,7 @@ buy_price, sales_price = 1.0, 1.2
 model = SDDP.LinearPolicyGraph(
     stages = 2,
     sense = :Max,
-    upper_bound = 10 * maximum(Ω) * (sales_price - buy_price),
+    upper_bound = maximum(Ω) * sales_price,
     optimizer = HiGHS.Optimizer,
 ) do subproblem, stage
     @variable(subproblem, inventory >= 0, SDDP.State, initial_value = 0)
@@ -78,7 +78,7 @@ function solve_risk_averse_newsvendor(Ω, risk_measure)
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Max,
-        upper_bound = 10 * maximum(Ω) * (sales_price - buy_price),
+        upper_bound = maximum(Ω) * sales_price,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, stage
         @variable(subproblem, inventory >= 0, SDDP.State, initial_value = 0)
