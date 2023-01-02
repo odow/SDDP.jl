@@ -897,7 +897,3 @@ cost, price = SDDP.evaluate(V, Dict("volume" => 10))
 # function with respect to each state variable. Note that since we are
 # minimizing, the price has a negative sign: each additional unit of water leads
 # to a decrease in the the expected long-run cost.
-
-# This concludes our first tutorial for `SDDP.jl`. In the next tutorial,
-# [Uncertainty in the objective function](@ref), we extend the uncertainty to
-# the fuel cost.

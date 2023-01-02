@@ -113,6 +113,7 @@ function kelleys_cutting_plane(
     ## Step (1):
     K = 0
     model = JuMP.Model(HiGHS.Optimizer)
+    JuMP.set_silent(model)
     JuMP.@variable(model, θ >= lower_bound)
     JuMP.@variable(model, x[1:input_dimension])
     JuMP.@objective(model, Min, θ)
@@ -366,6 +367,7 @@ function PolicyGraph(
     for t in 1:length(graph)
         ## Create a model.
         model = JuMP.Model(optimizer)
+        JuMP.set_silent(model)
         ## Use the provided function to build out each subproblem. The user's
         ## function returns a dictionary mapping `Symbol`s to `State` objects,
         ## and an `Uncertainty` object.
