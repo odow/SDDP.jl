@@ -884,6 +884,7 @@ model = PolicyGraph(
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do subproblem, t
+    JuMP.set_silent(subproblem)
     JuMP.@variable(subproblem, volume_in == 200)
     JuMP.@variable(subproblem, 0 <= volume_out <= 200)
     states = Dict(:volume => State(volume_in, volume_out))
