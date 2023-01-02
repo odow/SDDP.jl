@@ -12,9 +12,10 @@ import HiGHS
 import Plots
 
 # First, we need some discretized distribution of demand. For simplicity, we're
-# going to sample 10 points from the uniform `[0, 1)` distribution.
+# going to sample 10 points from the uniform `[0, 1)` distribution three times
+# and add them together. This is a rough approximation of a normal distribution.
 
-Ω = rand(10)
+Ω = rand(10) .+ rand(10) .+ rand(10)
 
 # We also need some price data. We assume the agent can buy a newspaper for \$1
 # and sell it for \$1.20.
@@ -99,6 +100,7 @@ function solve_risk_averse_newsvendor(Ω, risk_measure)
         risk_measure = risk_measure,
         stopping_rules = [SDDP.BoundStalling(5, 1e-6)],
         print_level = 0,
+        time_limit = 1.0,
     )
     first_stage_rule = SDDP.DecisionRule(model, node = 1)
     solution = SDDP.evaluate(
