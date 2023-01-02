@@ -22,6 +22,8 @@ import Plots
 
 buy_price, sales_price = 1.0, 1.2
 
+# Now we can formulate and train a policy for the two-stage newsvendor problem:
+
 model = SDDP.LinearPolicyGraph(
     stages = 2,
     sense = :Max,
@@ -42,8 +44,6 @@ model = SDDP.LinearPolicyGraph(
         @stageobjective(subproblem, sales_price * sell)
     end
 end
-
-# Now we have a model, we can train it:
 
 SDDP.train(model; stopping_rules = [SDDP.BoundStalling(5, 1e-6)])
 
@@ -127,7 +127,7 @@ solve_risk_averse_newsvendor(Ω, SDDP.WorstCase())
 # Here is what we get if we solve our problem multiple times for different
 # values of the risk aversion parameter ``\gamma``:
 
-Γ = [10^i for i in 0:0.2:6]
+Γ = [10^i for i in -3:0.2:3]
 buy = [solve_risk_averse_newsvendor(Ω, SDDP.Entropic(γ)) for γ in Γ]
 Plots.plot(
     Γ,
