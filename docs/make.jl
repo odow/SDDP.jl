@@ -6,6 +6,7 @@
 import Documenter
 import Literate
 import Random
+import Test
 
 "Call julia docs/make.jl --fix to rebuild the doctests."
 const FIX_DOCTESTS = any(isequal("--fix"), ARGS)
@@ -16,6 +17,11 @@ _sorted_files(dir, ext) = sort(filter(f -> endswith(f, ext), readdir(dir)))
 
 function list_of_sorted_files(prefix, dir, ext = ".md")
     return Any["$(prefix)/$(file)" for file in _sorted_files(dir, ext)]
+end
+
+function _include_sandbox(filename)
+    mod = @eval module $(gensym()) end
+    return Base.include(mod, filename)
 end
 
 # Run the farmer's problem first to precompile a bunch of SDDP.jl functions.
@@ -36,10 +42,18 @@ end
 for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
     for jl_filename in list_of_sorted_files(dir, dir, ".jl")
         Random.seed!(12345)
-        Literate.markdown(jl_filename, dir; documenter = true, execute = true)
-        md_filename = jl_filename[1:(end-3)] * ".md"
-        md = read(md_filename, String)
-        write(md_filename, replace(md, "nothing #hide" => ""))
+        # `include` the file to test it before `#src` lines are removed. It is
+        # in a testset to isolate local variables between files.
+        Test.@testset "$jl_filename" begin
+            _include_sandbox(jl_filename)
+        end
+        Random.seed!(12345)
+        Literate.markdown(
+            jl_filename,
+            dir;
+            documenter = true,
+            postprocess = content -> replace(content, "nothing #hide" => ""),
+        )
     end
 end
 
@@ -102,6 +116,7 @@ Documenter.makedocs(
             "tutorial/arma.md",
             "tutorial/objective_states.md",
             "tutorial/mdps.md",
+            "tutorial/example_newsvendor.md",
         ],
         "How-to guides" => [
             "guides/access_previous_variables.md",
