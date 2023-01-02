@@ -39,15 +39,10 @@ using Statistics
 
 # ## Constructing the policy graph
 
-# There are three stages in our problem, so we construct a linear policy graph with three
-# stages using [`SDDP.LinearGraph`](@ref):
+# There are three stages in our infinite-horizon problem, so we construct a
+# unicyclic policy graph using [`SDDP.UnicyclicGraph`](@ref):
 
-graph = SDDP.LinearGraph(3)
-
-# Then, because we want to solve an infinite-horizon problem, we add an additional edge
-# between node `3` and node `1` with probability `0.95`:
-
-SDDP.add_edge(graph, 3 => 1, 0.95)
+graph = SDDP.UnicyclicGraph(0.95; num_nodes = 3)
 
 # ## Constructing the model
 

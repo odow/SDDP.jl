@@ -7,11 +7,9 @@ end
 ```
 
 SDDP.jl uses the concept of a _policy graph_ to formulate multistage stochastic
-programming problems. We _highly_ recommend that you read the following paper
-before continuing with this tutorial.
-
- - Dowson, O. (2018). The policy graph decomposition of multistage stochastic
-   optimization problems. Optimization Online. [link](http://www.optimization-online.org/DB_HTML/2018/11/6914.html)
+programming problems. For more details, read [An introduction to SDDP.jl](@ref)
+or the paper Dowson, O., (2020). The policy graph decomposition of multistage
+stochastic optimization problems. Networks, 76(1), 3-23. [doi](https://doi.org/10.1002/net.21932).
 
 ## Creating a [`SDDP.Graph`](@ref)
 
@@ -64,6 +62,24 @@ Look! We just made a cyclic graph! SDDP.jl can solve infinite horizon problems.
 The probability on the arc that completes a cycle should be interpreted as a
 discount factor.
 
+### [Unicyclic policy graphs](@id guide_unicyclic_policy_graph)
+
+Linear policy graphs with a single infinite-horizon cycle can be created using
+the [`SDDP.UnicyclicGraph`](@ref) function.
+
+```jldoctest
+julia> SDDP.UnicyclicGraph(0.95; num_nodes = 2)
+Root
+ 0
+Nodes
+ 1
+ 2
+Arcs
+ 0 => 1 w.p. 1.0
+ 1 => 2 w.p. 1.0
+ 2 => 1 w.p. 0.95
+```
+
 ### [Markovian policy graphs](@id guide_markovian_policy_graph)
 
 Markovian policy graphs can be created using the [`SDDP.MarkovianGraph`](@ref)
@@ -113,7 +129,7 @@ Arcs
 
 ## Creating a policy graph
 
-Once you have constructed an instance of [`SDDP.Graph`], you can create a
+Once you have constructed an instance of [`SDDP.Graph`](@ref), you can create a
 policy graph by passing the graph as the first argument.
 
 ```jldoctest
