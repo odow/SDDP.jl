@@ -16,9 +16,9 @@
 # the variable values add up to `M`. Put mathematically, that is:
 # ```math
 # \begin{aligned}
-# \min       & \sum\limits_{i=1}^N x_i^2       \\
-# subject to & \sum\limits_{i=1}^N x_i = M     \\
-#            & x_i \ge 0, \quad i \in 1,\ldots,N
+# \min \;\; & \sum\limits_{i=1}^N x_i^2       \\
+# s.t. \;\; & \sum\limits_{i=1}^N x_i = M     \\
+#           & x_i \ge 0, \quad i \in 1,\ldots,N
 # \end{aligned}
 # ```
 # The optimal objective value is ``M^2/N``, and the optimal solution is
@@ -29,11 +29,11 @@
 
 # ```math
 # \begin{aligned}
-# V_t(s) = \min & x^2 + V_{t+1}(s^\prime) \\
-# subject to & s^\prime = s - x \\
-#            & x \le s \\
-#            & x \ge 0 \\
-#            & s \ge 0
+# V_t(s) = \min \;\; & x^2 + V_{t+1}(s^\prime) \\
+# s.t. \;\; & s^\prime = s - x \\
+#           & x \le s \\
+#           & x \ge 0 \\
+#           & s \ge 0
 # \end{aligned}
 # ```
 # and in the last stage ``V_N``, there is an additional constraint that
@@ -56,7 +56,7 @@ import Ipopt
 M, N = 5, 3
 
 model = SDDP.LinearPolicyGraph(
-    stages = 3,
+    stages = N,
     lower_bound = 0.0,
     optimizer = Ipopt.Optimizer,
 ) do subproblem, node
