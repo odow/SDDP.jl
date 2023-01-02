@@ -6,9 +6,8 @@ CurrentModule = SDDP
 
 [`SDDP.jl`](https://github.com/odow/SDDP.jl) is a package for solving large
 multistage convex stochastic programming problems using *stochastic dual dynamic
-programming*. In this manual, we're going to assume a reasonable amount of
-background knowledge about stochastic optimization, the SDDP algorithm, Julia,
-and JuMP.
+programming*. In this manual, we assume a reasonable amount of background
+knowledge about stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 
 !!! tip
     If you haven't used JuMP before, we recommend that you read the
@@ -17,34 +16,33 @@ and JuMP.
 
 ## Installation
 
-You can install `SDDP.jl` as follows:
+Install `SDDP.jl` as follows:
 
 ```julia
 julia> ] add SDDP
 ```
 
-## Tutorials
+## How the documentation is structured
 
-Once you've got `SDDP.jl` installed, you should read some tutorials, beginning
-with [An introduction to SDDP.jl](@ref).
+Having a high-level overview of how this documentation is structured will help
+you know where to look for certain things.
 
-If you want a basic understanding of the algorithm behind SDDP.jl, start with
-[Introductory theory](@ref).
-## How-to guides
+* **Tutorials** contains step-by-step explanations of how to use SDDP.jl. Once
+  you've got `SDDP.jl` installed, start by reading [An introduction to SDDP.jl](@ref).
 
-If you just want help on a specific topic, check out one of the how-to guides. A
-good one to get started on is [Debug a model](@ref).
+* **Guides** contains "how-to" snippets that demonstrate specific topics within
+  SDDP.jl. A good one to get started on is [Debug a model](@ref).
 
-## Examples
+* **Explanation** contains step-by-step explanations of the theory and
+  algorithms that underpin SDDP.jl. If you want a basic understanding of the
+  algorithm behind SDDP.jl, start with [Introductory theory](@ref).
 
-`SDDP.jl` also contains a number of examples. A good one to get started on is
-the [Hydro-thermal scheduling](@ref) problem. In particular, it shows how to
-solve an infinite horizon problem.
+* **Examples** contain worked examples of various problems solved using SDDP.jl.
+  A good one to get started on is the [Hydro-thermal scheduling](@ref) problem.
+  In particular, it shows how to solve an infinite horizon problem.
 
-## API Reference
-
-If you just want help on a specific function, see the [API Reference](@ref api_reference_list)
-page.
+* The **API Reference** contains a complete list of the functions you can use in
+  SDDP.jl. Look here if you want to know how to use a particular function.
 
 ## Citing `SDDP.jl`
 

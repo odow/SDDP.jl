@@ -101,7 +101,7 @@
 
 # Here is a schematic which we can use to visualize a single node:
 
-# ![Hazard-decision node](../../assets/hazard_decision.png)
+# ![Hazard-decision node](../assets/hazard_decision.png)
 
 # ## Policy graphs
 
@@ -112,7 +112,7 @@
 # The simplest type of policy graph is a **linear policy graph**. Here's a
 # linear policy graph with three nodes:
 
-# ![Linear policy graph](../../assets/stochastic_linear_policy_graph.png)
+# ![Linear policy graph](../assets/stochastic_linear_policy_graph.png)
 
 # Here we have dropped the notations inside each node and replaced them by a
 # label (1, 2, and 3) to represent nodes `i=1`, `i=2`, and `i=3`.
@@ -139,7 +139,7 @@
 # with the stages as columns. There can be more than one node in a stage! Here's
 # an example of a structure we call **Markovian policy graphs**:
 
-# ![Markovian policy graph](../../assets/enso_markovian.png)
+# ![Markovian policy graph](../assets/enso_markovian.png)
 
 # Here each column represents a moment in time, the squiggly lines represent
 # stochastic rainfall, and the rows represent the world in two discrete states:
@@ -152,7 +152,7 @@
 # horizon problems. Here's another example, taken from the paper
 # [Dowson (2020)](https://doi.org/10.1002/net.21932):
 
-# ![POWDer policy graph](../../assets/powder_policy_graph.png)
+# ![POWDer policy graph](../assets/powder_policy_graph.png)
 
 # The columns represent time, and the rows represent different states of the
 # world. In this case, the rows represent different prices that milk can be sold
