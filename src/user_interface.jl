@@ -342,6 +342,17 @@ function MarkovianGraph(;
 end
 
 """
+    UnicyclicGraph(discount_factor::Float64)
+
+Construct a graph composed of a single cycle, with a probability of
+`discount_factor` of continuing the cycle.
+"""
+function UnicyclicGraph(discount_factor::Float64)
+    @assert 0 < discount_factor < 1
+    return Graph(0, [1], [(0 => 1, 1.0), (1 => 1, discount_factor)])
+end
+
+"""
     Noise(support, probability)
 
 An atom of a discrete random variable at the point of support `support` and
