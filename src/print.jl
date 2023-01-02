@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-22, Oscar Dowson and SDDP.jl contributors
+#  Copyright (c) 2017-23, Oscar Dowson and SDDP.jl contributors
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -15,7 +15,7 @@ function print_banner(io)
     )
     println(
         io,
-        "          SDDP.jl (c) Oscar Dowson and SDDP.jl contributors, 2017-22",
+        "          SDDP.jl (c) Oscar Dowson and SDDP.jl contributors, 2017-23",
     )
     return println(io)
 end
