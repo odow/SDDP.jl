@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-22, Oscar Dowson and SDDP.jl contributors.        #src
+#  Copyright (c) 2017-23, Oscar Dowson and SDDP.jl contributors.        #src
 #  This Source Code Form is subject to the terms of the Mozilla Public  #src
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
@@ -36,7 +36,7 @@ model = SDDP.LinearPolicyGraph(
         @variable(subproblem, sell >= 0)
         @constraint(subproblem, sell <= inventory.in)
         SDDP.parameterize(subproblem, Ω) do ω
-            JuMP.set_upper_bound(sell, ω)
+            return JuMP.set_upper_bound(sell, ω)
         end
         @stageobjective(subproblem, sales_price * sell)
     end
@@ -89,7 +89,7 @@ function solve_risk_averse_newsvendor(Ω, risk_measure)
             @variable(subproblem, sell >= 0)
             @constraint(subproblem, sell <= inventory.in)
             SDDP.parameterize(subproblem, Ω) do ω
-                JuMP.set_upper_bound(sell, ω)
+                return JuMP.set_upper_bound(sell, ω)
             end
             @stageobjective(subproblem, 1.2 * sell)
         end
