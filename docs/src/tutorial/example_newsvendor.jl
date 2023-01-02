@@ -25,7 +25,7 @@ buy_price, sales_price = 1.0, 1.2
 model = SDDP.LinearPolicyGraph(
     stages = 2,
     sense = :Max,
-    upper_bound = maximum(Ω) * (sales_price - buy_price),
+    upper_bound = 10 * maximum(Ω) * (sales_price - buy_price),
     optimizer = HiGHS.Optimizer,
 ) do subproblem, stage
     @variable(subproblem, inventory >= 0, SDDP.State, initial_value = 0)
@@ -78,21 +78,21 @@ function solve_risk_averse_newsvendor(Ω, risk_measure)
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Max,
-        upper_bound = 50.0,
+        upper_bound = 10 * maximum(Ω) * (sales_price - buy_price),
         optimizer = HiGHS.Optimizer,
     ) do subproblem, stage
         @variable(subproblem, inventory >= 0, SDDP.State, initial_value = 0)
         if stage == 1
             @variable(subproblem, buy >= 0)
             @constraint(subproblem, inventory.out == inventory.in + buy)
-            @stageobjective(subproblem, -1.0 * buy)
+            @stageobjective(subproblem, -buy_price * buy)
         else
             @variable(subproblem, sell >= 0)
             @constraint(subproblem, sell <= inventory.in)
             SDDP.parameterize(subproblem, Ω) do ω
                 return JuMP.set_upper_bound(sell, ω)
             end
-            @stageobjective(subproblem, 1.2 * sell)
+            @stageobjective(subproblem, sales_price * sell)
         end
     end
     SDDP.train(
@@ -100,7 +100,6 @@ function solve_risk_averse_newsvendor(Ω, risk_measure)
         risk_measure = risk_measure,
         stopping_rules = [SDDP.BoundStalling(5, 1e-6)],
         print_level = 0,
-        time_limit = 1.0,
     )
     first_stage_rule = SDDP.DecisionRule(model, node = 1)
     solution = SDDP.evaluate(
