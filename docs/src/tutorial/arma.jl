@@ -200,7 +200,7 @@ model = SDDP.LinearPolicyGraph(
     A = [0.8 0.2; 0.2 0.8]
     @constraint(
         sp,
-        [i=1:2],
+        [i = 1:2],
         inflow[i].out == sum(A[i, j] * inflow[j].in for j in 1:2) + ε[i],
     )
     ## The new water balance constraint using the state variable
