@@ -342,14 +342,17 @@ function MarkovianGraph(;
 end
 
 """
-    UnicyclicGraph(discount_factor::Float64)
+    UnicyclicGraph(discount_factor::Float64; num_nodes::Int = 1)
 
-Construct a graph composed of a single cycle, with a probability of
-`discount_factor` of continuing the cycle.
+Construct a graph composed of `num_nodes` nodes that form a single cycle, with a
+probability of `discount_factor` of continuing the cycle.
 """
-function UnicyclicGraph(discount_factor::Float64)
+function UnicyclicGraph(discount_factor::Float64; num_nodes::Int = 1)
     @assert 0 < discount_factor < 1
-    return Graph(0, [1], [(0 => 1, 1.0), (1 => 1, discount_factor)])
+    @assert num_nodes > 0
+    graph = LinearGraph(num_nodes)
+    add_edge(graph, num_nodes => 1, discount_factor)
+    return graph
 end
 
 """
