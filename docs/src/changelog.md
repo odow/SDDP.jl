@@ -7,6 +7,24 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.0.0 (January 3, 2023)
+
+Although we're bumping MAJOR version, this is a non-breaking release. Going
+forward:
+
+ * New features, will bump the MINOR release
+ * New bug fixes, maintenance, and documentation updates will bump the PATCH
+   release
+ * We will support only the Long Term Support version of Julia (currently
+   v1.6.7) and the latest patch release (currently v1.8.4). Updates to the LTS
+   version is a MINOR relase.
+ * Updates to the compat bounds of package dependencies are a PATCH release
+
+We do not intend any breaking changes to the public API, which would require a
+new MAJOR release. The public API is everything defined in the documentation.
+Anything not in the documentation is considered private and may change in any
+PATCH release.
+
 ## v0.4.9 (January 3, 2023)
 
 ### Added
