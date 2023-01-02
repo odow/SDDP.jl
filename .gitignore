@@ -1,13 +1,11 @@
 .vscode/*
 docs/build/*
-docs/notebooks/*
 docs/src/examples/*.md
+docs/src/explanation/*.md
 docs/src/tutorial/*.md
-docs/src/tutorial/*/*.md
 docs/src/release_notes.md
-docs/Manifest.toml
-docs/spaghetti_plot.html
 test/*.js
 *.DS_Store
 *.log
 Manifest.toml
+docs/src/tutorial/*.json

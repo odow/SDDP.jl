@@ -11,10 +11,6 @@ import Random
 const FIX_DOCTESTS = any(isequal("--fix"), ARGS)
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "src", "examples")
-const TUTORIAL_BASIC_DIR = joinpath(@__DIR__, "src", "tutorial", "basic")
-const TUTORIAL_ADVANCED_DIR = joinpath(@__DIR__, "src", "tutorial", "advanced")
-const TUTORIAL_THEORY_DIR = joinpath(@__DIR__, "src", "tutorial", "theory")
-const GUIDES_DIR = joinpath(@__DIR__, "src", "guides")
 
 _sorted_files(dir, ext) = sort(filter(f -> endswith(f, ext), readdir(dir)))
 
@@ -29,7 +25,7 @@ include(joinpath(EXAMPLES_DIR, "the_farmers_problem.jl"))
 
 if FIX_DOCTESTS
     # doctest=:fix only works with `\n` line endings. Replace any `\r\n` ones.
-    for dir in [TUTORIAL_BASIC_DIR, TUTORIAL_ADVANCED_DIR, TUTORIAL_THEORY_DIR]
+    for dir in joinpath.(@__DIR__, "src", ("tutorial", "explanation"))
         for filename in list_of_sorted_files(dir, dir)
             code = read(filename, String)
             write(filename, replace(code, "\r\n" => "\n"))
@@ -37,12 +33,7 @@ if FIX_DOCTESTS
     end
 end
 
-for dir in [
-    EXAMPLES_DIR,
-    TUTORIAL_BASIC_DIR,
-    TUTORIAL_ADVANCED_DIR,
-    TUTORIAL_THEORY_DIR,
-]
+for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
     for jl_filename in list_of_sorted_files(dir, dir, ".jl")
         Random.seed!(12345)
         Literate.markdown(jl_filename, dir; documenter = true, execute = true)
@@ -102,18 +93,30 @@ Documenter.makedocs(
     strict = true,
     pages = [
         "Home" => "index.md",
-        "Tutorials" => Any[
-            "Basic"=>list_of_sorted_files("tutorial/basic", TUTORIAL_BASIC_DIR),
-            "Advanced"=>list_of_sorted_files(
-                "tutorial/advanced",
-                TUTORIAL_ADVANCED_DIR,
-            ),
-            "Theory"=>list_of_sorted_files(
-                "tutorial/theory",
-                TUTORIAL_THEORY_DIR,
-            ),
+        "Tutorials" => [
+            "tutorial/first_steps.md",
+            "tutorial/objective_uncertainty.md",
+            "tutorial/markov_uncertainty.md",
+            "tutorial/plotting.md",
+            "tutorial/warnings.md",
+            "tutorial/arma.md",
+            "tutorial/objective_states.md",
         ],
-        "How-to guides" => list_of_sorted_files("guides", GUIDES_DIR),
+        "How-to guides" => [
+            "guides/access_previous_variables.md",
+            "guides/add_a_multidimensional_state_variable.md",
+            "guides/add_a_risk_measure.md",
+            "guides/add_integrality.md",
+            "guides/add_multidimensional_noise.md",
+            "guides/add_noise_in_the_constraint_matrix.md",
+            "guides/choose_a_stopping_rule.md",
+            "guides/create_a_general_policy_graph.md",
+            "guides/debug_a_model.md",
+            "guides/improve_computational_performance.md",
+            "guides/simulate_using_a_different_sampling_scheme.md",
+            "guides/create_a_belief_state.md",
+        ],
+        "Explanation" => ["explanation/theory_intro.md", "explanation/risk.md"],
         "Examples" => list_of_sorted_files("examples", EXAMPLES_DIR),
         "API Reference" => "apireference.md",
         "Release notes" => "release_notes.md",
