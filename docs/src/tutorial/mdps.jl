@@ -184,8 +184,10 @@ simulations = SDDP.simulate(
     model,
     1,
     [:x];
-    sampling_scheme =
-        SDDP.InSampleMonteCarlo(max_depth = 5, terminate_on_dummy_leaf = false),
+    sampling_scheme = SDDP.InSampleMonteCarlo(
+        max_depth = 5,
+        terminate_on_dummy_leaf = false,
+    ),
 );
 
 # Fill in the `path` with the time-step in which we visit the square:
