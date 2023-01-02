@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
- * Added [`UnicyclicGraph`](@ref) (#5560)
+ * Added [`SDDP.UnicyclicGraph`](@ref) (#556)
 
 ### Other
 
@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  * Added two-stage newsvendor tutorial (#557)
  * Refactored the layout of the documentation (#554) (#555)
  * Updated copyright to 2023 (#558)
-
+ * Fixed errors in the documentation (#561)
+ 
 ## v0.4.8 (December 19, 2022)
 
 ### Added
@@ -75,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
- * Fixed many typos (#500) (501) (#506) (#511) (Thanks @bfpc)
+ * Fixed many typos (#500) (#501) (#506) (#511) (Thanks @bfpc)
  * Update to JuMP v0.23 (#514)
  * Added auto-regressive tutorial (#507)
 
