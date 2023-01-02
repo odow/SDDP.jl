@@ -192,8 +192,13 @@ model = SDDP.LinearPolicyGraph(
         lower_bound = (50.0, 50.0),
         upper_bound = (150.0, 150.0),
     ) do fuel_cost, ω
-        fuel_cost′ = fuel_cost[1] + 0.5 * (fuel_cost[1] - fuel_cost[2]) + ω.fuel
-        return (fuel_cost′, fuel_cost[1])
+        ## fuel_cost is a tuple, containing the (fuel_cost[t-1], fuel_cost[t-2])
+        ## This function returns a new tuple containing
+        ## (fuel_cost[t], fuel_cost[t-1]). Thus, we need to compute the new
+        ## cost:
+        new_cost = fuel_cost[1] + 0.5 * (fuel_cost[1] - fuel_cost[2]) + ω.fuel
+        ## And then return the appropriate tuple:
+        return (new_cost, fuel_cost[1])
     end
 
     Ω = [
@@ -202,7 +207,7 @@ model = SDDP.LinearPolicyGraph(
     ]
 
     SDDP.parameterize(subproblem, Ω) do ω
-        (fuel_cost, fuel_cost_old) = SDDP.objective_state(subproblem)
+        fuel_cost, _ = SDDP.objective_state(subproblem)
         @stageobjective(subproblem, fuel_cost * thermal_generation)
         return JuMP.fix(inflow, ω.inflow)
     end
