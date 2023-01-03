@@ -12,18 +12,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Although we're bumping MAJOR version, this is a non-breaking release. Going
 forward:
 
- * New features, will bump the MINOR release
+ * New features, will bump the MINOR version
  * New bug fixes, maintenance, and documentation updates will bump the PATCH
-   release
+   version
  * We will support only the Long Term Support version of Julia (currently
    v1.6.7) and the latest patch release (currently v1.8.4). Updates to the LTS
-   version is a MINOR relase.
- * Updates to the compat bounds of package dependencies are a PATCH release
+   version will bump the MINOR version.
+ * Updates to the compat bounds of package dependencies will bump the PATCH
+   version
 
 We do not intend any breaking changes to the public API, which would require a
 new MAJOR release. The public API is everything defined in the documentation.
 Anything not in the documentation is considered private and may change in any
 PATCH release.
+
+### Added
+
+ * Added `num_nodes` argument to [`SDDP.UnicyclicGraph`](@ref) (#562)
+
+### Other
+
+ * Updated [Plotting tools](@ref) to use live plots (#563)
 
 ## v0.4.9 (January 3, 2023)
 
