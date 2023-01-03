@@ -24,14 +24,14 @@ import HiGHS
 
 # In [An introduction to SDDP.jl](@ref), we assumed that the inflows were
 # stagewise-independent. However, in many cases this is not correct, and inflow
-# models are more accurately described by an autoregressive process such as:
+# models are more accurately described by an auto-regressive process such as:
 # ```math
 # inflow_{t} = inflow_{t-1} + \varepsilon
 # ```
 # Here ``\varepsilon`` is a random variable, and the inflow in stage ``t`` is
 # the inflow in stage ``t-1`` plus ``\varepsilon`` (which might be negative).
 
-# For simplicitly, we omit any coefficients and other terms, but this could
+# For simplicity, we omit any coefficients and other terms, but this could
 # easily be extended to a model like
 # ```math
 # inflow_{t} = a \times inflow_{t-1} + b + \varepsilon

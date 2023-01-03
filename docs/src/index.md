@@ -11,7 +11,7 @@ knowledge about stochastic optimization, the SDDP algorithm, Julia, and JuMP.
 
 !!! tip
     If you haven't used JuMP before, we recommend that you read the
-    [JuMP documentation](http://www.juliaopt.org/JuMP.jl/latest/) and try
+    [JuMP documentation](http://jump.dev/JuMP.jl/stable/) and try
     building and solving JuMP models _before_ trying `SDDP.jl`.
 
 ## Installation

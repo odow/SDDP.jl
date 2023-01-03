@@ -68,7 +68,7 @@ QUOTA_MAX = Dict(:wheat => Inf, :corn => Inf, :sugar_beet => 6_000.0)
 
 SELL_IN_QUOTA = Dict(:wheat => 170.0, :corn => 150.0, :sugar_beet => 36.0)
 
-# If they sell more than their alloted quota, the farmer earns the following on
+# If they sell more than their allotted quota, the farmer earns the following on
 # each tonne of crop above the quota (\$/tonne):
 
 SELL_NO_QUOTA = Dict(:wheat => 0.0, :corn => 0.0, :sugar_beet => 10.0)
@@ -99,11 +99,11 @@ YIELD_MULTIPLIER = Dict(:good => 1.2, :fair => 1.0, :bad => 0.8)
 #     @variable(model, x)
 #     model[:x]
 #     ```
-#     Read the [JuMP documentation](http://www.juliaopt.org/JuMP.jl/v0.19/variables/)
+#     Read the [JuMP documentation](http://jump.dev/JuMP.jl/stable)
 #     if this isn't familiar to you.
 
 # First up, load `SDDP.jl` and a solver. For this example, we use
-# [`HiGHS.jl`](https://github.com/JuliaOpt/HiGHS.jl).
+# [`HiGHS.jl`](https://github.com/jump-dev/HiGHS.jl).
 
 using SDDP, HiGHS
 

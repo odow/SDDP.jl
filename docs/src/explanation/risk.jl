@@ -49,8 +49,8 @@ import Statistics
 #
 # To keep things simple, and because we need it for SDDP, we restrict our
 # attention to random variables $Z$ with a finite sample space $\Omega$
-# and positive probabilities $p_\omega$ for all $\omega \in \Omega$. We denote
-# the realizations of $Z$ by $Z(\omega) = z_\omega$.
+# and positive probabilities $p_{\omega}$ for all $\omega \in \Omega$. We denote
+# the realizations of $Z$ by $Z(\omega) = z_{\omega}$.
 
 # A risk measure, $\mathbb{F}[Z]$, is a **convex risk measure** if it satisfies
 # the following axioms:
@@ -129,7 +129,7 @@ import Statistics
 # ```
 
 # !!! warning
-#     Note how we need to expliclty compute a risk-averse subgradient! (We
+#     Note how we need to explicitly compute a risk-averse subgradient! (We
 #     need a subgradient because the function might not be differentiable.) When
 #     constructing cuts with the expectation operator in [Introductory theory](@ref),
 #     we implicitly used the law of total expectation to combine the two
@@ -188,7 +188,7 @@ function primal_risk end
 # most widely used convex risk measure. The expectation of a random variable is
 # just the sum of $Z$ weighted by the probability:
 # ```math
-# \mathbb{F}[Z] = \mathbb{E}_p[Z] = \sum\limits_{\omega\in\Omega} p_\omega z_\omega.
+# \mathbb{F}[Z] = \mathbb{E}_p[Z] = \sum\limits_{\omega\in\Omega} p_{\omega} z_{\omega}.
 # ```
 
 struct Expectation <: AbstractRiskMeasure end
@@ -207,7 +207,7 @@ primal_risk(Expectation(), Z, p)
 # convex risk measure. This risk measure doesn't care about the probability
 # vector `p`, only the cost vector `Z`:
 # ```math
-# \mathbb{F}[Z] = \max[Z] = \max\limits_{\omega\in\Omega} z_\omega.
+# \mathbb{F}[Z] = \max[Z] = \max\limits_{\omega\in\Omega} z_{\omega}.
 # ```
 
 struct WorstCase <: AbstractRiskMeasure end
@@ -226,7 +226,7 @@ primal_risk(WorstCase(), Z, p)
 # measure. The entropic risk measure is parameterized by a value $\gamma > 0$,
 # and computes the risk of a random variable as:
 # ```math
-# \mathbb{F}_\gamma[Z] = \frac{1}{\gamma}\log\left(\mathbb{E}_p[e^{\gamma Z}]\right) = \frac{1}{\gamma}\log\left(\sum\limits_{\omega\in\Omega}p_\omega e^{\gamma z_\omega}\right).
+# \mathbb{F}_\gamma[Z] = \frac{1}{\gamma}\log\left(\mathbb{E}_p[e^{\gamma Z}]\right) = \frac{1}{\gamma}\log\left(\sum\limits_{\omega\in\Omega}p_{\omega} e^{\gamma z_{\omega}}\right).
 # ```
 
 # !!! tip "Homework challenge"
@@ -283,7 +283,7 @@ end
 # $q$ to a real number, and $\mathcal{M}(p) \subseteq \mathcal{P}$ is a convex
 # subset of the probability simplex:
 # ```math
-# \mathcal{P} = \{p \ge 0\;|\;\sum\limits_{\omega\in\Omega}p_\omega = 1\}.
+# \mathcal{P} = \{p \ge 0\;|\;\sum\limits_{\omega\in\Omega}p_{\omega} = 1\}.
 # ```
 
 # The dual of a convex risk measure can be interpreted as taking the expectation
@@ -348,7 +348,7 @@ dual_risk(WorstCase(), Z, p) == primal_risk(WorstCase(), Z, p)
 
 # For the entropic risk measure, $\mathcal{M}(p) = \mathcal{P}$, and:
 # ```math
-# \alpha(p, q) = \frac{1}{\gamma}\sum\limits_{\omega\in\Omega} q_\omega \log\left(\frac{q_\omega}{p_\omega}\right).
+# \alpha(p, q) = \frac{1}{\gamma}\sum\limits_{\omega\in\Omega} q_\omega \log\left(\frac{q_\omega}{p_{\omega}}\right).
 # ```
 
 # One way to solve the dual problem is to explicitly solve a nonlinear
@@ -396,7 +396,7 @@ end
 # However, for the entropic risk measure, [Dowson, Morton, and Pagnoncelli (2020)](http://www.optimization-online.org/DB_HTML/2020/08/7984.html)
 # derive the following closed form solution for $q^*$:
 # ```math
-# q_\omega^* = \frac{p_\omega e^{\gamma z_\omega}}{\sum\limits_{\varphi \in \Omega} p_\varphi e^{\gamma z_\varphi}}.
+# q_\omega^* = \frac{p_{\omega} e^{\gamma z_{\omega}}}{\sum\limits_{\varphi \in \Omega} p_{\varphi} e^{\gamma z_{\varphi}}}.
 # ```
 # This is faster because we don't need to use Ipopt, and it avoids some of the
 # numerical issues associated with solving a nonlinear program.

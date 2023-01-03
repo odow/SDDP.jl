@@ -17,7 +17,7 @@ function test_prob52_3stages()
     ) do sp, t
         n = 4
         m = 3
-        ic = [16, 5, 32, 2]
+        i_c = [16, 5, 32, 2]
         C = [25, 80, 6.5, 160]
         T = [8760, 7000, 1500] / 8760
         D2 = [diff([0, 3919, 7329, 10315]) diff([0, 7086, 9004, 11169])]
@@ -34,7 +34,7 @@ function test_prob52_3stages()
             [i = 1:n], sum(y[i, :]) <= x[i].in
             [j = 1:m], sum(y[:, j]) + penalty >= ξ[j]
         end)
-        @stageobjective(sp, ic'v + C' * y * T + 1e5 * penalty)
+        @stageobjective(sp, i_c'v + C' * y * T + 1e5 * penalty)
         if t != 1 # no uncertainty in first stage
             SDDP.parameterize(sp, 1:size(D2, 2), p2) do ω
                 for j in 1:m

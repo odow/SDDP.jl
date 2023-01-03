@@ -19,7 +19,7 @@
 # Each stage, a call comes in from somewhere on the number line. The agent must
 # decide which ambulance to dispatch. They pay the cost of twice the driving
 # distance. If an ambulance is not dispatched in a stage, the ambulance can be
-# relocated to a different base in preparation for future calls. This incurrs a
+# relocated to a different base in preparation for future calls. This incurs a
 # cost of the driving distance.
 
 using SDDP
@@ -51,7 +51,7 @@ function vehicle_location_model(duality_handler)
             initial_value = initial_state(b, v)
         )
         @variables(sp, begin
-            ## Which vehicle is dipatched?
+            ## Which vehicle is dispatched?
             0 <= dispatch[bases, vehicles] <= 1, Bin
             ## Shifting vehicles between bases: [src, dest, vehicle]
             0 <= shift[bases, bases, vehicles] <= 1, Bin

@@ -7,7 +7,7 @@ end
 ```
 
 `SDDP.jl` supports coefficients in the constraint matrix through the
-[`JuMP.set_normalized_coefficient`](http://www.juliaopt.org/JuMP.jl/v0.20/constraints/#JuMP.set_normalized_coefficient)
+[`JuMP.set_normalized_coefficient`](https://jump.dev/JuMP.jl/stable/manual/constraints/#Modify-a-variable-coefficient)
 function.
 
 ```jldoctest; filter=r" \: .+?1.0"

@@ -19,7 +19,7 @@ function test_prob52_2stages()
         ## ========== Problem data ==========
         n = 4
         m = 3
-        ic = [16, 5, 32, 2]
+        i_c = [16, 5, 32, 2]
         C = [25, 80, 6.5, 160]
         T = [8760, 7000, 1500] / 8760
         D2 = [diff([0, 3919, 7329, 10315]) diff([0, 7086, 9004, 11169])]
@@ -55,7 +55,7 @@ function test_prob52_2stages()
             end
         end
         ## ========== Stage objective ==========
-        @stageobjective(subproblem, ic' * v + C' * y * T + 1e6 * penalty)
+        @stageobjective(subproblem, i_c' * v + C' * y * T + 1e6 * penalty)
         return
     end
     SDDP.train(model, iteration_limit = 50, log_frequency = 10)

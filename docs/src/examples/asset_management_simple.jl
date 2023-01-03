@@ -26,8 +26,8 @@ function asset_management_simple()
         optimizer = HiGHS.Optimizer,
     ) do subproblem, index
         (stage, markov_state) = index
-        rstock = [1.25, 1.06]
-        rbonds = [1.14, 1.12]
+        r_stock = [1.25, 1.06]
+        r_bonds = [1.14, 1.12]
         @variable(subproblem, stocks >= 0, SDDP.State, initial_value = 0.0)
         @variable(subproblem, bonds >= 0, SDDP.State, initial_value = 0.0)
         if stage == 1
@@ -36,8 +36,8 @@ function asset_management_simple()
         elseif 1 < stage < 4
             @constraint(
                 subproblem,
-                rstock[markov_state] * stocks.in +
-                rbonds[markov_state] * bonds.in == stocks.out + bonds.out
+                r_stock[markov_state] * stocks.in +
+                r_bonds[markov_state] * bonds.in == stocks.out + bonds.out
             )
             @stageobjective(subproblem, 0)
         else
@@ -45,8 +45,8 @@ function asset_management_simple()
             @variable(subproblem, short >= 0)
             @constraint(
                 subproblem,
-                rstock[markov_state] * stocks.in +
-                rbonds[markov_state] * bonds.in - over + short == 80
+                r_stock[markov_state] * stocks.in +
+                r_bonds[markov_state] * bonds.in - over + short == 80
             )
             @stageobjective(subproblem, -over + 4 * short)
         end

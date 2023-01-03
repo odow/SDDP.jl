@@ -14,13 +14,13 @@
 # breakpoints in the piecewise linear function as the knots in the Turbine
 # struct.
 
-# The model can be created using the hydrovalleymodel function. It has a few
+# The model can be created using the hydro_valley_model function. It has a few
 # keyword arguments to allow automated testing of the library.
 # `hasstagewiseinflows` determines if the RHS noise constraint should be added.
-# `hasmarkovprice` determines if the price uncertainty (modelled by a markov
+# `hasmarkovprice` determines if the price uncertainty (modelled by a Markov
 # chain) should be added.
 
-# In the third stage, the markov chain has some unreachable states to test
+# In the third stage, the Markov chain has some unreachable states to test
 # some code-paths in the library.
 
 # We can also set the sense to :Min or :Max (the objective and bound are
@@ -42,7 +42,7 @@ struct Reservoir
     inflows::Vector{Float64}
 end
 
-function hydrovalleymodel(;
+function hydro_valley_model(;
     hasstagewiseinflows::Bool = true,
     hasmarkovprice::Bool = true,
     sense::Symbol = :Max,
@@ -68,7 +68,7 @@ function hydrovalleymodel(;
 
     turbine(i) = valley_chain[i].turbine
 
-    ## Prices[t, markov state]
+    ## Prices[t, Markov state]
     prices = [
         1 2 0
         2 1 0
@@ -216,7 +216,7 @@ function test_hydro_valley_model()
 
     ## deterministic
     deterministic_model =
-        hydrovalleymodel(hasmarkovprice = false, hasstagewiseinflows = false)
+        hydro_valley_model(hasmarkovprice = false, hasstagewiseinflows = false)
     SDDP.train(
         deterministic_model,
         iteration_limit = 10,
@@ -226,23 +226,23 @@ function test_hydro_valley_model()
     @test SDDP.calculate_bound(deterministic_model) ≈ 835.0 atol = 1e-3
 
     ## stagewise inflows
-    stagewise_model = hydrovalleymodel(hasmarkovprice = false)
+    stagewise_model = hydro_valley_model(hasmarkovprice = false)
     SDDP.train(stagewise_model, iteration_limit = 20, print_level = 0)
     @test SDDP.calculate_bound(stagewise_model) ≈ 838.33 atol = 1e-2
 
-    ## markov prices
-    markov_model = hydrovalleymodel(hasstagewiseinflows = false)
+    ## Markov prices
+    markov_model = hydro_valley_model(hasstagewiseinflows = false)
     SDDP.train(markov_model, iteration_limit = 10, print_level = 0)
     @test SDDP.calculate_bound(markov_model) ≈ 851.8 atol = 1e-2
 
-    ## stagewise inflows and markov prices
+    ## stagewise inflows and Markov prices
     markov_stagewise_model =
-        hydrovalleymodel(hasstagewiseinflows = true, hasmarkovprice = true)
+        hydro_valley_model(hasstagewiseinflows = true, hasmarkovprice = true)
     SDDP.train(markov_stagewise_model, iteration_limit = 10, print_level = 0)
     @test SDDP.calculate_bound(markov_stagewise_model) ≈ 855.0 atol = 1.0
 
-    ## risk averse stagewise inflows and markov prices
-    riskaverse_model = hydrovalleymodel()
+    ## risk averse stagewise inflows and Markov prices
+    riskaverse_model = hydro_valley_model()
     SDDP.train(
         riskaverse_model,
         risk_measure = SDDP.EAVaR(lambda = 0.5, beta = 0.66),
@@ -251,8 +251,8 @@ function test_hydro_valley_model()
     )
     @test SDDP.calculate_bound(riskaverse_model) ≈ 828.157 atol = 1.0
 
-    ## stagewise inflows and markov prices
-    worst_case_model = hydrovalleymodel(sense = :Min)
+    ## stagewise inflows and Markov prices
+    worst_case_model = hydro_valley_model(sense = :Min)
     SDDP.train(
         worst_case_model,
         risk_measure = SDDP.EAVaR(lambda = 0.5, beta = 0.0),
@@ -261,8 +261,8 @@ function test_hydro_valley_model()
     )
     @test SDDP.calculate_bound(worst_case_model) ≈ -780.867 atol = 1.0
 
-    ## stagewise inflows and markov prices
-    cutselection_model = hydrovalleymodel()
+    ## stagewise inflows and Markov prices
+    cutselection_model = hydro_valley_model()
     SDDP.train(
         cutselection_model,
         iteration_limit = 10,
@@ -272,7 +272,7 @@ function test_hydro_valley_model()
     @test SDDP.calculate_bound(cutselection_model) ≈ 855.0 atol = 1.0
 
     ## Distributionally robust Optimization
-    dro_model = hydrovalleymodel(hasmarkovprice = false)
+    dro_model = hydro_valley_model(hasmarkovprice = false)
     SDDP.train(
         dro_model,
         risk_measure = SDDP.ModifiedChiSquared(sqrt(2 / 3) - 1e-6),
@@ -281,7 +281,7 @@ function test_hydro_valley_model()
     )
     @test SDDP.calculate_bound(dro_model) ≈ 835.0 atol = 1.0
 
-    dro_model = hydrovalleymodel(hasmarkovprice = false)
+    dro_model = hydro_valley_model(hasmarkovprice = false)
     SDDP.train(
         dro_model,
         risk_measure = SDDP.ModifiedChiSquared(1 / 6),

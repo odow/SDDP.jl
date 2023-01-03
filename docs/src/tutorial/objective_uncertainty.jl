@@ -14,7 +14,7 @@
 # stage. For this tutorial, we assume that in addition to these base costs, the
 # actual fuel cost is correlated with the inflows.
 
-# Our new model for the uncertinty is given by the following table:
+# Our new model for the uncertainty is given by the following table:
 #
 # | ω               |   1 |   2 |    3 |
 # | ----            | --- | --- | ---- |

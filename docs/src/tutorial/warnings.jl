@@ -44,7 +44,7 @@ end                         #hide
 # !!! warning
 #     The actual constraints causing the infeasibilities can be deceptive! A good
 #     strategy to debug is to comment out all constraints. Then, one-by-one,
-#     uncomment the constraints and try resolving the model to check if it finds a
+#     un-comment the constraints and try resolving the model to check if it finds a
 #     feasible solution.
 
 # ## Numerical stability

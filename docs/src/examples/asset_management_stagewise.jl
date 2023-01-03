@@ -13,8 +13,8 @@
 using SDDP, HiGHS, Test
 
 function asset_management_stagewise(; cut_type)
-    ws = [1.25, 1.06]
-    wb = [1.14, 1.12]
+    w_s = [1.25, 1.06]
+    w_b = [1.14, 1.12]
     Phi = [-1, 5]
     Psi = [0.02, 0.0]
 
@@ -42,7 +42,7 @@ function asset_management_stagewise(; cut_type)
             @variable(subproblem, phi)
             @constraint(
                 subproblem,
-                ws[i] * xs.in + wb[i] * xb.in + phi == xs.out + xb.out
+                w_s[i] * xs.in + w_b[i] * xb.in + phi == xs.out + xb.out
             )
             SDDP.parameterize(subproblem, [1, 2], [0.6, 0.4]) do ω
                 JuMP.fix(phi, Phi[ω])
@@ -51,7 +51,7 @@ function asset_management_stagewise(; cut_type)
         else
             @variable(subproblem, u >= 0)
             @variable(subproblem, v >= 0)
-            @constraint(subproblem, ws[i] * xs.in + wb[i] * xb.in + u - v == 80)
+            @constraint(subproblem, w_s[i] * xs.in + w_b[i] * xb.in + u - v == 80)
             @stageobjective(subproblem, -4u + v)
         end
     end

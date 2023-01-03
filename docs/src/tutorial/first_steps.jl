@@ -102,7 +102,7 @@
 # To choose their control variables in node $i$, the agent uses a **decision**
 # **rule** $u = \pi_i(x, \omega)$, which is a function that maps the incoming
 # state variable and observation of the random variable to a control $u$. This
-# control must satisfy some feasibilty requirements $u \in U_i(x, \omega)$.
+# control must satisfy some feasibility requirements $u \in U_i(x, \omega)$.
 
 # Here is a schematic which we can use to visualize a single node:
 
@@ -249,7 +249,7 @@
 
 # Now that we have formulated our problem, we need some ways of computing
 # optimal decision rules. One way is to just use a heuristic like "choose a
-# control randomally from the set of feasible controls." However, such a policy
+# control randomly from the set of feasible controls." However, such a policy
 # is unlikely to be optimal.
 
 # A better way of obtaining an optimal policy is to use [Bellman's principle of
@@ -283,7 +283,7 @@
 # behind-the-scenes.
 
 # The subproblem view of a multistage stochastic program is also important,
-# because it provides a convienient way of communicating the different parts of
+# because it provides a convenient way of communicating the different parts of
 # the broader problem, and it is how we will communicate the problem to SDDP.jl.
 # All we need to do is drop the cost-to-go term and fishing constraint, and
 # define a new subproblem `SP` as:
@@ -344,7 +344,7 @@
 # spillway (bypassing the turbine) in order to prevent the water from
 # over-topping the dam. We assume that there is no cost of spillage.
 
-# In addtion to water leaving the reservoir, water that flows into the reservoir
+# In addition to water leaving the reservoir, water that flows into the reservoir
 # through rainfall or rivers are referred to as inflows. These inflows are
 # uncertain, and are the cause of the main trade-off in hydro-thermal
 # scheduling: the desire to use water now to generate cheap electricity, against
@@ -428,7 +428,7 @@ end
 
 # #### Control variables
 
-# The next part of the subproblem we need to identiy are the control variables.
+# The next part of the subproblem we need to identity are the control variables.
 # The control variables for our problem are:
 #  - `thermal_generation`: the quantity of energy generated from thermal
 #    [MWh/week]
@@ -497,7 +497,7 @@ end
 #     definition! If your random variable is multi-variate, read
 #     [Add multi-dimensional noise terms](@ref).
 
-# #### Transition function and contraints
+# #### Transition function and constraints
 
 # Now that we've identified our variables, we can define the transition function
 # and the constraints.
@@ -901,4 +901,4 @@ cost, price = SDDP.evaluate(V, Dict("volume" => 10))
 # This returns the cost-to-go (`cost`), and the gradient of the cost-to-go
 # function with respect to each state variable. Note that since we are
 # minimizing, the price has a negative sign: each additional unit of water leads
-# to a decrease in the the expected long-run cost.
+# to a decrease in the expected long-run cost.

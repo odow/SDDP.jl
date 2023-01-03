@@ -25,7 +25,7 @@ binary and integer variables.
    it to [`SDDP.train`](@ref), e.g.,
    `SDDP.train(model; duality_handler = SDDP.LagrangianDuality())`
  * We no longer turn continuous and integer states into a binary expansion. If
-   you want to binarize your states, do it manually.
+   you want to convert your states to binary, do it manually.
 
 ### Why did we do this?
 
@@ -41,8 +41,9 @@ continuous state variables, you can still use Lagrangian duality!
 
 The new system is more flexible because the duality handler is a property of the
 solution process, not the model. This allows us to use Lagrangian duality to
-solve any dual problem, and it leaves the decision of binarizing the state
-variables up to the user. (Hint: we don't think you should do it!)
+solve any dual problem, and it leaves the decision of whether to convert the
+state variables to binary up to the user. (Hint: we don't think you should do
+it!)
 
 ### Other additions
 

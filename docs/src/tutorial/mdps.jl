@@ -6,7 +6,7 @@
 # # Example: Markov Decision Processes
 
 # `SDDP.jl` can be used to solve a variety of Markov Decision processes. If the
-# problem has continous state and control spaces, and the objective and
+# problem has continuous state and control spaces, and the objective and
 # transition function are convex, then SDDP.jl can find a globally optimal
 # policy. In other cases, SDDP.jl will find a locally optimal policy.
 
@@ -82,7 +82,7 @@ SDDP.train(model; stopping_rules = [SDDP.BoundStalling(5, 1e-6)])
 
 SDDP.calculate_bound(model), M^2 / N
 
-# And check that we cound the theoretical value for each ``x_i``:
+# And check that we found the theoretical value for each ``x_i``:
 
 simulations = SDDP.simulate(model, 1, [:x])
 for data in simulations[1]
@@ -178,7 +178,7 @@ end
 
 # !!! warning
 #     Since there are discrete decisions here, SDDP.jl is not guaranteed to find
-#     the gobally optimal policy.
+#     the globally optimal policy.
 
 SDDP.train(model; stopping_rules = [SDDP.BoundStalling(5, 1e-6)])
 

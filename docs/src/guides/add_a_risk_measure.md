@@ -181,7 +181,7 @@ SDDP.EAVaR
 
 ### Distributionally robust
 
-`SDDP.jl` supports two types of distrbutionally robust risk measures: the
+`SDDP.jl` supports two types of distributionally robust risk measures: the
 modified Χ² method of Philpott et al. (2018), and a method based on the
 Wasserstein distance metric.
 
