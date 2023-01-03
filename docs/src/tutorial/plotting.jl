@@ -113,7 +113,7 @@ end
 # ```
 #
 # ```@raw html
-# <embed type="text/html" src="../assets/spaghetti_plot.html" width="100%">
+# <embed type="text/html" src="../../assets/spaghetti_plot.html" width="100%">
 # ```
 #
 # This should open a webpage that looks like [this one](../assets/spaghetti_plot.html).
@@ -154,13 +154,7 @@ Plots.plot(
     xlabel = "Stage",
     ylims = (0, 200),
     layout = (1, 2),
-    margin_bottom = 5,
-    size = (1000, 300),
 )
-
-# This should open a plot window with a plot that looks like:
-#
-# ![publication plot](../assets/publication_plot.png)
 
 # You can save this plot as a PDF using the `Plots.jl` function `savefig`:
 # ```julia
@@ -187,7 +181,7 @@ SDDP.evaluate(V; volume = 1)
 # ```
 #
 # ```@raw html
-# <embed type="text/html" src="../assets/value_function.html" width="100%">
+# <embed type="text/html" src="../../assets/value_function.html" width="100%">
 # ```
 #
 # This should open a webpage that looks like [this one](../assets/value_function.html).
