@@ -284,7 +284,7 @@ struct PolicyGraph
 end
 
 # There is a vector of nodes, as well as a data structure for the arcs. `arcs`
-# is a vector of dictionaries, where `arcs[i][j]` gives the probabiltiy of
+# is a vector of dictionaries, where `arcs[i][j]` gives the probability of
 # transitioning from node `i` to node `j`, if an arc exists.
 
 # To simplify things, we will assume that the root node transitions to node `1`

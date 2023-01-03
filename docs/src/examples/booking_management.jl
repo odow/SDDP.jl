@@ -6,7 +6,7 @@
 # # Booking management
 
 # This example concerns the acceptance of booking requests for rooms in a
-# hotel in the leadup to a large event.
+# hotel in the lead up to a large event.
 
 # Each stage, we receive a booking request and can choose to accept or decline
 # it. Once accepted, bookings cannot be terminated.
@@ -21,7 +21,7 @@ function booking_management_model(num_days, num_rooms, num_requests)
     booking_requests = Array{Int,2}[]
     for room in 1:num_rooms
         for day in 1:num_days
-            ## note: length_of_stay is 0 indexed to avoid unncecessary +/- 1
+            ## note: length_of_stay is 0 indexed to avoid unnecessary +/- 1
             ## on the indexing
             for length_of_stay in 0:(num_days-day)
                 req = zeros(Int, (num_rooms, num_days))

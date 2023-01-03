@@ -94,7 +94,7 @@ End
 julia> rm("subproblem.lp")  # Clean up.
 ```
 
-## Solve the determinstic equivalent
+## Solve the deterministic equivalent
 
 Sometimes, it can be helpful to solve the deterministic equivalent of a
 problem in order to obtain an exact solution to the problem. To obtain a JuMP
@@ -124,5 +124,5 @@ julia> objective_value(det_equiv)
 ```
 
 !!! warning
-    The determinstic equivalent scales poorly with problem size. Only use this
+    The deterministic equivalent scales poorly with problem size. Only use this
     on small problems!

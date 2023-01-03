@@ -9,11 +9,11 @@ end
 By default, [`SDDP.simulate`](@ref) will simulate the policy using the
 distributions of noise terms that were defined when the model was created. We
 call these _in-sample_ simulations. However, in general the _in-sample_
-distributions are an approximation of some underlying probabiltiy model which
+distributions are an approximation of some underlying probability model which
 we term the _true process_. Therefore, `SDDP.jl` makes it easy to simulate the
-policy using different probability distrutions.
+policy using different probability distributions.
 
-To demonsrate the different ways of simulating the policy, we're going to use
+To demonstrate the different ways of simulating the policy, we're going to use
 the model from the tutorial [Markovian policy graphs](@ref).
 
 ```jldoctest sampling_schemes

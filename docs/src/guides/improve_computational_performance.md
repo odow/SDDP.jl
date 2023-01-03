@@ -18,11 +18,11 @@ speed-ups.
 
  - Choose a commercial solver.
 
-   Options include [CPLEX](https://github.com/JuliaOpt/CPLEX.jl),
-   [Gurobi](https://github.com/JuliaOpt/Gurobi.jl), and
-   [Xpress](https://github.com/JuliaOpt/Xpress.jl). Using free solvers such as
-   [CLP](https://github.com/JuliaOpt/Clp.jl) and
-   [HiGHS](https://github.com/JuliaOpt/HiGHS.jl) isn't a viable approach for large
+   Options include [CPLEX](https://github.com/jump-dev/CPLEX.jl),
+   [Gurobi](https://github.com/jump-dev/Gurobi.jl), and
+   [Xpress](https://github.com/jump-dev/Xpress.jl). Using free solvers such as
+   [CLP](https://github.com/jump-dev/Clp.jl) and
+   [HiGHS](https://github.com/jump-dev/HiGHS.jl) isn't a viable approach for large
    problems.
 
 - Try different solvers.
@@ -119,7 +119,7 @@ the log you will see that the initial iterations take place on the master thread
 
 ### Data movement
 
-By defualt, data defined on the master process is not made available to the workers.
+By default, data defined on the master process is not made available to the workers.
 Therefore, a model like the following:
 ```julia
 data = 1

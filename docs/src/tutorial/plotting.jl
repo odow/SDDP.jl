@@ -172,7 +172,7 @@ V = SDDP.ValueFunction(model[(1, 1)])
 
 SDDP.evaluate(V; volume = 1)
 
-# `evaluate` returns the heigh of the value function, and a subgradient with respect to the
+# `evaluate` returns the height of the value function, and a subgradient with respect to the
 # convex state variables.
 
 # You can also plot the value function using [`SDDP.plot`](@ref)

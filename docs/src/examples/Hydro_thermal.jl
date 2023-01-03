@@ -105,7 +105,7 @@ println("On average, $(mu) units of thermal are used in the first stage.")
 # Finally, we can use [`SDDP.ValueFunction`](@ref) and [`SDDP.evaluate`](@ref) to obtain and
 # evaluate the value function at different points in the state-space. Note that since we
 # are minimizing, the price has a negative sign: each additional unit of water leads to a
-# decrease in the the expected long-run cost.
+# decrease in the expected long-run cost.
 
 V = SDDP.ValueFunction(model[1])
 cost, price = SDDP.evaluate(V, x = 10)
