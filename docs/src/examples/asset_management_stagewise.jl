@@ -51,7 +51,10 @@ function asset_management_stagewise(; cut_type)
         else
             @variable(subproblem, u >= 0)
             @variable(subproblem, v >= 0)
-            @constraint(subproblem, w_s[i] * xs.in + w_b[i] * xb.in + u - v == 80)
+            @constraint(
+                subproblem,
+                w_s[i] * xs.in + w_b[i] * xb.in + u - v == 80,
+            )
             @stageobjective(subproblem, -4u + v)
         end
     end
