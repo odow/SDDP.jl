@@ -7,6 +7,36 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.0.0 (January 3, 2023)
+
+Although we're bumping MAJOR version, this is a non-breaking release. Going
+forward:
+
+ * New features will bump the MINOR version
+ * Bug fixes, maintenance, and documentation updates will bump the PATCH
+   version
+ * We will support only the Long Term Support (currently v1.6.7) and the latest
+   patch (currently v1.8.4) releases of Julia. Updates to the LTS version will
+   bump the MINOR version
+ * Updates to the compat bounds of package dependencies will bump the PATCH
+   version.
+
+We do not intend any breaking changes to the public API, which would require a
+new MAJOR release. The public API is everything defined in the documentation.
+Anything not in the documentation is considered private and may change in any
+PATCH release.
+
+### Added
+
+ * Added `num_nodes` argument to [`SDDP.UnicyclicGraph`](@ref) (#562)
+ * Added support for passing an optimizer to [`SDDP.Asynchronous`](@ref) (#545)
+
+### Other
+
+ * Updated [Plotting tools](@ref) to use live plots (#563)
+ * Added [vale](https://vale.sh) as a linter (#565)
+ * Improved documentation for initializing a parallel scheme (#566)
+
 ## v0.4.9 (January 3, 2023)
 
 ### Added
