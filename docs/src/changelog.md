@@ -29,11 +29,13 @@ PATCH release.
 ### Added
 
  * Added `num_nodes` argument to [`SDDP.UnicyclicGraph`](@ref) (#562)
+ * Added support for passing an optimizer to [`SDDP.Asynchronous`](@ref) (#545)
 
 ### Other
 
  * Updated [Plotting tools](@ref) to use live plots (#563)
  * Added [vale](https://vale.sh) as a linter (#565)
+ * Improved documentation for initializing a parallel scheme (#566)
 
 ## v0.4.9 (January 3, 2023)
 
