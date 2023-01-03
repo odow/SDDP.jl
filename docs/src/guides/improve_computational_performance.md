@@ -173,22 +173,21 @@ model = build_model()
 !!! warning
     This is important if you use Gurobi!
 
-[`SDDP.Asynchronous`](@ref) accepts a pre-processing hook that is run on each worker process
-_before_ the model is solved. The most useful situation is for solvers than need an
-initialization step. A good example is Gurobi, which can share an environment amongst all
-models on a worker. Notably, this environment **cannot** be shared amongst workers, so
-defining one environment at the top of a script will fail!
+[`SDDP.Asynchronous`](@ref) accepts a pre-processing hook that is run on each
+worker process _before_ the model is solved. The most useful situation is for
+solvers than need an initialization step. A good example is Gurobi, which can
+share an environment amongst all models on a worker. Notably, this environment
+**cannot** be shared amongst workers, so defining one environment at the top of
+a script will fail!
 
 To initialize a new environment on each worker, use the following:
+
 ```julia
 SDDP.train(
-    model,
-    parallel_scheme = SDDP.Asynchronous() do m
+    model;
+    parallel_scheme = SDDP.Asynchronous() do m::SDDP.PolicyGraph
         env = Gurobi.Env()
-        for node in values(m.nodes)
-            set_optimizer(node.subproblem, () -> Gurobi.Optimizer(env))
-            set_silent(node.subproblem)
-        end
-    end
+        set_optimizer(m, () -> Gurobi.Optimizer(env))
+    end,
 )
 ```
