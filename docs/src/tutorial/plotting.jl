@@ -111,9 +111,12 @@ end
 # ```julia
 # SDDP.plot(plt, "spaghetti_plot.html")
 # ```
-
-# This should open a webpage that looks like [this
-# one](../assets/spaghetti_plot.html).
+#
+# ```@raw html
+# <embed type="text/html" src="../../assets/spaghetti_plot.html" width="100%">
+# ```
+#
+# This should open a webpage that looks like [this one](../assets/spaghetti_plot.html).
 
 # Using the mouse, you can highlight individual trajectories by hovering over
 # them. This makes it possible to visualize a single trajectory across multiple
@@ -140,26 +143,18 @@ end
 # ribbons of the 0-100, 10-90, and 25-75 percentiles. The dark, solid line in the
 # middle is the median (i.e. 50'th percentile).
 
-# ```julia
-# using Plots
-# plot(
-#     SDDP.publication_plot(simulations, title = "Outgoing volume") do data
-#         return data[:volume].out
-#     end,
-#     SDDP.publication_plot(simulations, title = "Thermal generation") do data
-#         return data[:thermal_generation]
-#     end,
-#     xlabel = "Stage",
-#     ylims = (0, 200),
-#     layout = (1, 2),
-#     margin_bottom = 5,
-#     size = (1000, 300)
-# )
-# ```
-
-# This should open a plot window with a plot that looks like:
-#
-# ![publication plot](../assets/publication_plot.png)
+import Plots
+Plots.plot(
+    SDDP.publication_plot(simulations, title = "Outgoing volume") do data
+        return data[:volume].out
+    end,
+    SDDP.publication_plot(simulations, title = "Thermal generation") do data
+        return data[:thermal_generation]
+    end;
+    xlabel = "Stage",
+    ylims = (0, 200),
+    layout = (1, 2),
+)
 
 # You can save this plot as a PDF using the `Plots.jl` function `savefig`:
 # ```julia
@@ -184,6 +179,11 @@ SDDP.evaluate(V; volume = 1)
 # ```julia
 # SDDP.plot(V, volume = 0:200, filename = "value_function.html")
 # ```
+#
+# ```@raw html
+# <embed type="text/html" src="../../assets/value_function.html" width="100%">
+# ```
+#
 # This should open a webpage that looks like [this one](../assets/value_function.html).
 
 # ## Convergence dashboard
