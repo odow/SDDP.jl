@@ -428,7 +428,7 @@ end
 
 # #### Control variables
 
-# The next part of the subproblem we need to identity are the control variables.
+# The next part of the subproblem we need to identify are the control variables.
 # The control variables for our problem are:
 #  - `thermal_generation`: the quantity of energy generated from thermal
 #    [MWh/week]
