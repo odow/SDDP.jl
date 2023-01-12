@@ -587,13 +587,24 @@ function _add_locals_if_necessary(
 end
 
 """
-    write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
+    write_cuts_to_file(
+        model::PolicyGraph{T},
+        filename::String;
+        node_name_parser::Function = string,
+    ) where {T}
 
 Write the cuts that form the policy in `model` to `filename` in JSON format.
 
+`node_name_parser` is a function which converts the name of each node into a
+string representation. It has the signature: `node_name_parser(::T)::String`.
+
 See also [`SDDP.read_cuts_from_file`](@ref).
 """
-function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
+function write_cuts_to_file(
+    model::PolicyGraph{T},
+    filename::String;
+    node_name_parser::Function = string,
+) where {T}
     cuts = Dict{String,Any}[]
     for (node_name, node) in model.nodes
         if node.objective_state !== nothing || node.belief_state !== nothing
@@ -603,7 +614,7 @@ function write_cuts_to_file(model::PolicyGraph{T}, filename::String) where {T}
             )
         end
         node_cuts = Dict(
-            "node" => string(node_name),
+            "node" => node_name_parser(node_name),
             "single_cuts" => Dict{String,Any}[],
             "multi_cuts" => Dict{String,Any}[],
             "risk_set_cuts" => Vector{Float64}[],
@@ -687,6 +698,8 @@ type `T`, provide a function `node_name_parser` with the signature
 `node_name_parser(T, name::String)::T where {T}` that returns the name of each
 node given the string name `name`.
 
+If `node_name_parser` returns `nothing`, those cuts are skipped.
+
 See also [`SDDP.write_cuts_to_file`](@ref).
 """
 function read_cuts_from_file(
@@ -696,7 +709,10 @@ function read_cuts_from_file(
 ) where {T}
     cuts = JSON.parsefile(filename, use_mmap = false)
     for node_cuts in cuts
-        node_name = node_name_parser(T, node_cuts["node"])::T
+        node_name = node_name_parser(T, node_cuts["node"])::Union{Nothing,T}
+        if node_name === nothing
+            continue  # Skip reading these cuts
+        end
         node = model[node_name]
         bf = node.bellman_function
         # Loop through and add the single-cuts.

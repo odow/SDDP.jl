@@ -151,6 +151,51 @@ function test_read_write_cuts_to_file_ValueFunction()
     return
 end
 
+function test_read_read_cuts_from_file_nothing()
+    graph = SDDP.Graph(
+        "root_node",
+        ["week"],
+        [("root_node" => "week", 1.0), ("week" => "week", 0.9)],
+    )
+    model = _create_model(graph)
+    SDDP.train(model; iteration_limit = 50, print_level = 0)
+    @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
+    V = SDDP.ValueFunction(model, node = "week")
+    value_f = SDDP.evaluate(V, reservoir = 10)
+    SDDP.write_cuts_to_file(
+        model,
+        "model.cuts.json";
+        node_name_parser = s -> "myname_$s",
+    )
+    model_2 = _create_model(graph)
+    @test SDDP.calculate_bound(model_2) ≈ 9.17 atol = 0.1
+    function parser(::Type{String}, x::String)
+        @test startswith(x, "myname_")
+        return replace(x, "myname_" => "")
+    end
+    SDDP.read_cuts_from_file(
+        model_2,
+        "model.cuts.json",
+        node_name_parser = parser,
+    )
+    N = num_constraints(
+        model_2["week"].subproblem;
+        count_variable_in_set_constraints = true,
+    )
+    SDDP.read_cuts_from_file(
+        model_2,
+        "model.cuts.json",
+        node_name_parser = (::Any, s) -> nothing,
+    )
+    N2 = num_constraints(
+        model_2["week"].subproblem;
+        count_variable_in_set_constraints = true,
+    )
+    @test N == N2
+    rm("model.cuts.json")
+    return
+end
+
 function test_add_all_cuts_SINGLE_CUT()
     model = SDDP.LinearPolicyGraph(
         stages = 3,
