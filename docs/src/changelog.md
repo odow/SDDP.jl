@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
- * Added the `node_name_parser` argument to [`SDDP.write_cuts_from_file`](@ref)
+ * Added the `node_name_parser` argument to [`SDDP.write_cuts_to_file`](@ref)
    and added the option to skip nodes in [`SDDP.read_cuts_from_file`](@ref)
    (#565)
 
