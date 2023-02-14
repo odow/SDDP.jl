@@ -453,6 +453,7 @@ struct Log
     pid::Int
     total_solves::Int
     duality_key::String
+    serious_numerical_issues::Int
 end
 
 struct TrainingResults
@@ -494,6 +495,7 @@ mutable struct PolicyGraph{T}
             Dict{T,Node{T}}(),
             Set{T}[],
             nothing,
+            0,
             Dict{Symbol,Any}(),
         )
     end
