@@ -495,7 +495,6 @@ mutable struct PolicyGraph{T}
             Dict{T,Node{T}}(),
             Set{T}[],
             nothing,
-            0,
             Dict{Symbol,Any}(),
         )
     end

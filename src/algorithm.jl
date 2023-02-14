@@ -393,6 +393,9 @@ function solve_subproblem(
     else
         model.ext[:total_solves] = 1
     end
+    if !haskey(model.ext, :numerical_issue_counter)
+        model.ext[:numerical_issue_counter] = 0
+    end
     if JuMP.primal_status(node.subproblem) == JuMP.MOI.INTERRUPTED
         # If the solver was interrupted, the user probably hit CTRL+C but the
         # solver gracefully exited. Since we're in the middle of training or
@@ -816,7 +819,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             Distributed.myid(),
             model.ext[:total_solves],
             duality_log_key(options.duality_handler),
-            model.ext[:numerical_issue_counter]
+            model.ext[:numerical_issue_counter],
         ),
     )
     has_converged, status =
