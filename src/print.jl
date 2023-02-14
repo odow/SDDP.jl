@@ -134,7 +134,7 @@ end
 function print_iteration_header(io)
     println(
         io,
-        " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves",
+        " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves     Num. Issues",
     )
     return
 end
@@ -150,6 +150,7 @@ function print_iteration(io, log::Log)
     print(io, "  ", print_value(log.time))
     print(io, "  ", print_value(log.pid))
     print(io, "  ", print_value(log.total_solves))
+    print(io, "  ", print_value(log.serious_numerical_issues))
     println(io)
     return
 end
