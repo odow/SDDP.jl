@@ -39,6 +39,18 @@ if FIX_DOCTESTS
     end
 end
 
+function add_binder_links(filename, content)
+    filename = replace(filename, ".jl" => ".ipynb")
+    links = """
+
+
+    #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/$filename)
+    #md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/$filename)
+    """
+    m = match(r"(\# \# .+)", content)
+    return replace(content, m[1] => m[1] * links)
+end
+
 for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
     for jl_filename in list_of_sorted_files(dir, dir, ".jl")
         Random.seed!(12345)
@@ -52,8 +64,13 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
             jl_filename,
             dir;
             documenter = true,
+            preprocess = content -> add_binder_links(
+                replace(jl_filename, joinpath(@__DIR__, "src", "") => ""),
+                content,
+            ),
             postprocess = content -> replace(content, "nothing #hide" => ""),
         )
+        Literate.notebook(jl_filename, dir; execute = false)
     end
 end
 
