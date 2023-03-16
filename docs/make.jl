@@ -54,6 +54,7 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
             documenter = true,
             postprocess = content -> replace(content, "nothing #hide" => ""),
         )
+        Literate.notebook(jl_filename, dir; documenter = true, execute = false)
     end
 end
 
