@@ -29,13 +29,13 @@ import Plots
 # ## Data
 
 # The data for this tutorial is contained in the `example_reservoir.csv` file in
-# the SDDP.jl repository. To run locally, save the CSV file, then change
-# `filename` to point to the location where you downloaded it to.
+# the SDDP.jl repository. To run locally, [download the CSV file](https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/example_reservoir.csv),
+# then change `filename` to point to the location where you downloaded it to.
 
 filename = joinpath(@__DIR__, "example_reservoir.csv")
-data = CSV.read("data52.csv", DataFrames.DataFrame)
+data = CSV.read(filename, DataFrames.DataFrame)
 
-# It's easier to visualize if we plot it:
+# It's easier to visualize the data if we plot it:
 
 Plots.plot(
     Plots.plot(data[!, :inflow], ylabel = "Inflow"),
@@ -142,24 +142,37 @@ model = SDDP.LinearPolicyGraph(
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
-) do sp, t
+) do subproblem, t
     @variable(
-        sp,
+        subproblem,
         0 <= x <= reservoir_max,
         SDDP.State,
         initial_value = reservoir_initial,
     )
-    @variable(sp, 0 <= u <= flow_max)
-    @variable(sp, 0 <= r)
-    @variable(sp, 0 <= s)
-    @variable(sp, i)
+    @variable(subproblem, 0 <= u <= flow_max)
+    @variable(subproblem, 0 <= r)
+    @variable(subproblem, 0 <= s)
+    @variable(subproblem, i)
     fix(i, data[t, :inflow])
-    @constraint(sp, x.out == x.in - u - s + i)
-    @constraint(sp, u + r == data[t, :demand])
-    @stageobjective(sp, data[t, :cost] * r)
+    @constraint(subproblem, x.out == x.in - u - s + i)
+    @constraint(subproblem, u + r == data[t, :demand])
+    @stageobjective(subproblem, data[t, :cost] * r)
 end
 
-# Can you see the differences?
+# Can you see how the JuMP model maps to this syntax? We have created a
+# [`SDDP.LinearPolicyGraph`](@ref) with `T` stages, we're minimizing, and we're
+# using `HiGHS.Optimizer` as the optimizer.
+
+# A few bits might be non-obvious:
+#
+# * We need to provide a lower bound for the objective function. Since our costs
+#   are always positive, a valid lower bound for the total cost is `0.0`.
+# * We define `x` as a state variable usign `SDDP.State`. A state variable is
+#   any variable that flows through time, and for which we need to the value of
+#   it in stage `t-1` to compute the best action in stage `t`. The state
+#   variable `x` is actually two decision variables, `x.in` and `x.out`, which
+#   represent `x[t]` and `x[t+1]` respectively.
+# * We need to use `@stageobjective` instead of `@objective`.
 
 # Instead of calling `JuMP.optimize!`, SDDP.jl uses a `train` method. With our
 # machine learning hat on, you can think of SDDP.jl as training a function for
@@ -214,6 +227,10 @@ Plots.plot(x_sim; label = "Storage", xlabel = "Week")
 
 # ## Stochastic SDDP model
 
+# Now we add stochasticity to our model. In each stage, we assume that the
+# inflow could be 2 units lower, with 30% probability, the same as before, with
+# 40% probability, or 5 units higher, with 30% probability.
+
 model = SDDP.LinearPolicyGraph(
     stages = T,
     sense = :Min,
@@ -232,14 +249,16 @@ model = SDDP.LinearPolicyGraph(
     @variable(sp, i)
     ## <--- This bit is new
     Ω = [data[t, :inflow] - 2, data[t, :inflow], data[t, :inflow] + 5]
-	P = [0.3, 0.4, 0.3]
+    P = [0.3, 0.4, 0.3]
     SDDP.parameterize(sp, Ω, P) do ω
-        fix(i,ω)
+        fix(i, ω)
+        return
     end
     ## --->
     @constraint(sp, x.out == x.in - u - s + i)
     @constraint(sp, u + r == data[t, :demand])
     @stageobjective(sp, data[t, :cost] * r)
+    return
 end
 
 # Can you see the differences?
@@ -269,7 +288,7 @@ plt
 
 plt = SDDP.SpaghettiPlot(simulations)
 SDDP.add_spaghetti(plt; title = "Storage") do sim
-   return sim[:x].out
+    return sim[:x].out
 end
 SDDP.add_spaghetti(plt; title = "Hydro") do sim
     return sim[:u]
