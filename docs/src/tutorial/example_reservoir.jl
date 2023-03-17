@@ -6,6 +6,11 @@
 
 # # Example: deterministic to stochastic
 
+# _This tutorial was written by Oscar Dowson and Andy Philpott for the 2023
+# Winter School "Planning under Uncertainty in Energy Markets," held March 26 to
+# 31 in Geilo, Norway.
+# [Download this tutorial as a notebook](../example_reservoir.ipynb)._
+
 # The purpose of this tutorial is to explain how we can go from a deterministic
 # time-staged optimal control model in JuMP to a multistage stochastic
 # optimization model in `SDDP.jl`. As a motivating problem, we consider the
@@ -17,9 +22,6 @@
 #  * [Hydro-thermal scheduling](@ref)
 #  * [Hydro valleys](@ref)
 #  * [Infinite horizon hydro-thermal](@ref)
-
-# _This tutorial was written by Oscar Dowson and Andy Philpott for the 2023
-# Stochastic Programming Winter School, held March XX to XX in XXX, Norway._
 
 # ## Packages
 
@@ -67,19 +69,16 @@ set_silent(model)
 # `x[t]`: the amount of water in the reservoir at the start of stage `t`:
 
 reservoir_max = 320.0
-
 @variable(model, 0 <= x[1:T+1] <= reservoir_max)
 
 # We need an initial condition for `x[1]`. Fix it to 300 units:
 
 reservoir_initial = 300
-
 fix(x[1], reservoir_initial; force = true)
 
 # `u[t]`: the amount of water to flow through the turbine in stage `t`:
 
 flow_max = 12
-
 @variable(model, 0 <= u[i = 1:T] <= flow_max)
 
 # `s[t]`: the amount of water to spill from the reservoir in stage `t`,
@@ -234,8 +233,8 @@ Plots.plot(x_sim; label = "Storage", xlabel = "Week")
 # ## Stochastic SDDP model
 
 # Now we add some randomness to our model. In each stage, we assume that the
-# inflow could be 2 units lower, with 30% probability, the same as before, with
-# 40% probability, or 5 units higher, with 30% probability.
+# inflow could be: 2 units lower, with 30% probability; the same as before, with
+# 40% probability; or 5 units higher, with 30% probability.
 
 model = SDDP.LinearPolicyGraph(
     stages = T,
@@ -310,8 +309,11 @@ SDDP.plot(
 )
 
 # ```@raw html
-# <embed type="text/html" src="../spaghetti_plot.html" width="100%" height="500">
+# <iframe src="../spaghetti_plot.html" style="width:100%;height:500px;"></iframe>
 # ```
+
+# If you have trouble viewing the plot, you can
+# [open it in a new window](../spaghetti_plot.html).
 
 # ## Next steps
 
@@ -319,10 +321,47 @@ SDDP.plot(
 # documentation has a range of similar examples and hints for how to achieve
 # them.
 
+# ### Terminal value functions
+
+# The model ends with an empty reservoir. That isn't ideal for the following
+# year. Can you modify the objective in the final stage to encourage ending the
+# year with a full reservoir?
+
+# You might write some variation of:
+#
+# ```julia
+# if t == 52
+#     @variable(sp, terminal_cost_function >= 0)
+#     @constraint(sp, terminal_cost_function >= reservoir_initial - x.out)
+#     @stageobjective(sp, data[t, :cost] * r + terminal_cost_function)
+# else
+#     @stageobjective(sp, data[t, :cost] * r)
+# end
+# ```
+
+# ### Higher fidelity modeling
+
+# Our model is very basic. There are many aspects that we could improve:
+#
+# * Instead of hard-coding a terminal value function, can you solve an infinite
+#   horizon model? What are the differences?
+#
 # * Can you add a second reservoir to make a river chain?
+#
+# * Can you modify the problem and data to use proper units, including a
+#   conversion between the volume of water flowing through the turbine and the
+#   electrical power output?
+#
 # * Can you add random demand or cost data as well as inflows?
-# * Can you add a risk measure to make the policy risk-averse?
+
+# ### Algorithmic considerations
+
+# The algorithm implemented by SDDP.jl has a number of tuneable parameters:
+#
+# * Try using a different lower bound. What happens if it is too low, or too
+#   high?
+#
 # * Was our stopping rule correct? What happens if we use fewer or more
 #   iterations? What other stopping rules could you try?
-# * The model ends with an empty reservoir. That isn't ideal for the following
-#   year. Can you solve an infinite horizon model instead of finite horizon?
+#
+# * Can you add a risk measure to make the policy risk-averse?
