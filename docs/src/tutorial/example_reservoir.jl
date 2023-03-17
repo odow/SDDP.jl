@@ -174,7 +174,7 @@ end
 #
 # * We need to provide a lower bound for the objective function. Since our costs
 #   are always positive, a valid lower bound for the total cost is `0.0`.
-# * We define `x` as a state variable usign `SDDP.State`. A state variable is
+# * We define `x` as a state variable using `SDDP.State`. A state variable is
 #   any variable that flows through time, and for which we need to the value of
 #   it in stage `t-1` to compute the best action in stage `t`. The state
 #   variable `x` is actually two decision variables, `x.in` and `x.out`, which
@@ -198,7 +198,7 @@ SDDP.calculate_bound(model)
 # and then extract the values of the decision variables from the results of the
 # simulation.
 
-# Since our model is determministic, we need only 1 replication of the
+# Since our model is deterministic, we need only 1 replication of the
 # simulation, and we want to record the values of the `x`, `u`, and `r`
 # variables:
 
@@ -234,7 +234,7 @@ Plots.plot(x_sim; label = "Storage", xlabel = "Week")
 
 # ## Stochastic SDDP model
 
-# Now we add stochasticity to our model. In each stage, we assume that the
+# Now we add some randomness to our model. In each stage, we assume that the
 # inflow could be 2 units lower, with 30% probability, the same as before, with
 # 40% probability, or 5 units higher, with 30% probability.
 
@@ -283,28 +283,28 @@ simulations = SDDP.simulate(model, n_replications, [:x, :u, :r, :i]);
 
 # And let's plot the use of thermal generation in each replication:
 
-plt = Plots.plot(data[!, :demand]; label = "Demand", xlabel = "Week")
+plot = Plots.plot(data[!, :demand]; label = "Demand", xlabel = "Week")
 for simulation in simulations
-    Plots.plot!(plt, [sim[:r] for sim in simulation], label = "")
+    Plots.plot!(plot, [sim[:r] for sim in simulation], label = "")
 end
-plt
+plot
 
 # Viewing an interpreting static plots like this is difficult, particularly as
 # the number of simulations grows. SDDP.jl includes an interactive
 # `SpaghettiPlot` that makes things easier:
 
-plt = SDDP.SpaghettiPlot(simulations)
-SDDP.add_spaghetti(plt; title = "Storage") do sim
+plot = SDDP.SpaghettiPlot(simulations)
+SDDP.add_spaghetti(plot; title = "Storage") do sim
     return sim[:x].out
 end
-SDDP.add_spaghetti(plt; title = "Hydro") do sim
+SDDP.add_spaghetti(plot; title = "Hydro") do sim
     return sim[:u]
 end
-SDDP.add_spaghetti(plt; title = "Inflow") do sim
+SDDP.add_spaghetti(plot; title = "Inflow") do sim
     return sim[:i]
 end
 SDDP.plot(
-    plt,
+    plot,
     "spaghetti_plot.html";
     ## We need this to build the documentation. Set to true if running locally.
     open = false,
