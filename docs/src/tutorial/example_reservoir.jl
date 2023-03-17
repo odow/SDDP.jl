@@ -296,7 +296,16 @@ end
 SDDP.add_spaghetti(plt; title = "Inflow") do sim
     return sim[:i]
 end
-SDDP.plot(plt, "spaghetti_plot.html")
+SDDP.plot(
+    plt,
+    "spaghetti_plot.html";
+    ## We need this to build the documentation.     #src
+    open = false,                                   #src
+)
+
+# ```@raw html
+# <embed type="text/html" src="spaghetti_plot.html" width="100%">
+# ```
 
 # ## Next steps
 
