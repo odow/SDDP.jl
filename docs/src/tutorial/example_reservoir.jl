@@ -310,7 +310,7 @@ SDDP.plot(
 )
 
 # ```@raw html
-# <embed type="text/html" src="../spaghetti_plot.html" width="100%">
+# <embed type="text/html" src="../spaghetti_plot.html" width="100%" height="500">
 # ```
 
 # ## Next steps
