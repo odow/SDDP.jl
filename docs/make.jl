@@ -134,6 +134,7 @@ Documenter.makedocs(
             "tutorial/objective_states.md",
             "tutorial/mdps.md",
             "tutorial/example_newsvendor.md",
+            "tutorial/example_reservoir.md",
         ],
         "How-to guides" => [
             "guides/access_previous_variables.md",
