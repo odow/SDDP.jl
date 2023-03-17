@@ -312,8 +312,9 @@ SDDP.plot(
 # <iframe src="../spaghetti_plot.html" style="width:100%;height:500px;"></iframe>
 # ```
 
-# If you have trouble viewing the plot, you can
-# [open it in a new window](../spaghetti_plot.html).
+# !!! info
+#     If you have trouble viewing the plot, you can
+#     [open it in a new window](../../spaghetti_plot.html).
 
 # ## Next steps
 
