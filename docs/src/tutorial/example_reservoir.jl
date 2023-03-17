@@ -11,6 +11,13 @@
 # optimization model in `SDDP.jl`. As a motivating problem, we consider the
 # hydro-thermal problem with a single reservoir.
 
+# For variations on this problem, see the examples and tutorials:
+#
+#  * [An introduction to SDDP.jl](@ref)
+#  * [Hydro-thermal scheduling](@ref)
+#  * [Hydro valleys](@ref)
+#  * [Infinite horizon hydro-thermal](@ref)
+
 # _This tutorial was written by Oscar Dowson and Andy Philpott for the 2023
 # Stochastic Programming Winter School, held March XX to XX in XXX, Norway._
 
@@ -299,8 +306,8 @@ end
 SDDP.plot(
     plt,
     "spaghetti_plot.html";
-    ## We need this to build the documentation.     #src
-    open = false,                                   #src
+    ## We need this to build the documentation. Set to true if running locally.
+    open = false,
 )
 
 # ```@raw html
