@@ -10,7 +10,7 @@
 # Winter School "Planning under Uncertainty in Energy Markets," held March 26 to
 # 31 in Geilo, Norway._
 
-# [Download this tutorial as a notebook.](../example_reservoir.ipynb)
+# [Download this tutorial as a notebook.](../../example_reservoir.ipynb)
 
 # The purpose of this tutorial is to explain how we can go from a deterministic
 # time-staged optimal control model in JuMP to a multistage stochastic
