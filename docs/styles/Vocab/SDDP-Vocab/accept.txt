@@ -25,6 +25,7 @@ zero'th
 Baucke
 Birge
 da
+Geilo
 Gurobi
 Ipopt
 Javascript

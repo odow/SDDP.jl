@@ -10,3 +10,4 @@ test/*.js
 Manifest.toml
 docs/src/tutorial/*.json
 docs/src/*/*.ipynb
+docs/src/tutorial/spaghetti_plot.html
