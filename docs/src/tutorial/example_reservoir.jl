@@ -174,8 +174,8 @@ end
 # * We need to provide a lower bound for the objective function. Since our costs
 #   are always positive, a valid lower bound for the total cost is `0.0`.
 # * We define `x` as a state variable using `SDDP.State`. A state variable is
-#   any variable that flows through time, and for which we need to the value of
-#   it in stage `t-1` to compute the best action in stage `t`. The state
+#   any variable that flows through time, and for which we need to know the value
+#   of it in stage `t-1` to compute the best action in stage `t`. The state
 #   variable `x` is actually two decision variables, `x.in` and `x.out`, which
 #   represent `x[t]` and `x[t+1]` respectively.
 # * We need to use `@stageobjective` instead of `@objective`.
