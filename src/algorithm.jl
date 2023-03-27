@@ -1196,7 +1196,7 @@ end
         duality_handler::Union{Nothing,AbstractDualityHandler} = nothing,
         skip_undefined_variables::Bool = false,
         parallel_scheme::AbstractParallelScheme = Serial(),
-        incoming_state::Dict{String,Float64} = _intial_state(model),
+        incoming_state::Dict{String,Float64} = _initial_state(model),
      )::Vector{Vector{Dict{Symbol,Any}}}
 
 Perform a simulation of the policy model with `number_replications` replications
