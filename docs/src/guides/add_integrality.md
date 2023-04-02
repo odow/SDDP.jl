@@ -35,35 +35,39 @@ find an integer feasible policy that performs well in simulation.
 
 Moreover, when the number of nodes in the graph is large, or there is
 uncertainty, we are not aware of another algorithm that _can_ claim to find a
-globally optimal policy, which means you should compare SDDP with integer
-variables against other heuristics such as solving a rolling-horizon problem
-with lookahead.
+globally optimal policy.
 
-## SDDiP
+## Does SDDP.jl implement the SDDiP algorithm?
 
-Many discussions of SDDiP in the literature confuse two unrelated things.
+Most discussions of SDDiP in the literature confuse two unrelated things.
 
-FIrst, how to compute dual variables.
+ * First, how to compute dual variables
+ * Second, when the algorithm will converge to a globally optimal policy
+ 
+### Computing dual variables
 
 The stochastic dual dynamic programming algorithm requires a subgradient of the
-objective with respect to the incoming state variable. (See [Preliminaries: approximating the cost-to-go term](@ref)
-for details.)
+objective with respect to the incoming state variable. 
 
-The easiest option is to relax integrality of the discrete variables to form a
-linear program and then use linear programming duality to obtain a subgradient.
-But you could also use Lagrangian duality.
+One way to obtain a valid subgradient is to compute an optimal value of the
+dual variable ``\lambda`` in the following subproblem:
 
-To compute the Lagrangian dual ``\lambda``, we take the subproblem:
 ```math
 \begin{aligned}
 V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
 & x^\prime = T_i(\bar{x}, u, \omega) \\
 & u \in U_i(\bar{x}, \omega) \\
-& \bar{x} = x,
+& \bar{x} = x \quad [\lambda],
 \end{aligned}
 ```
-and penalize ``\lambda^\top(\bar{x} - x)`` in the objective instead of adding it
-as a constraint:
+
+The easiest option is to relax integrality of the discrete variables to form a
+linear program and then use linear programming duality to obtain the dual. But
+we could also use Lagrangian duality without needing to relax the integrality
+constraints.
+
+To compute the Lagrangian dual ``\lambda``, we penalize ``\lambda^\top(\bar{x} - x)``
+in the objective instead of enforcing the constraint:
 ```math
 \begin{aligned}
 \max\limits_{\lambda}\min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)] - \lambda^\top(\bar{x} - x)\\
@@ -72,10 +76,12 @@ as a constraint:
 \end{aligned}
 ```
 
-Compared with linear programming duality, The Lagrangian problem is difficult
+Compared with linear programming duality, the Lagrangian problem is difficult
 to solve because it requires the solution of many mixed-integer programs
 instead of a single linear program. This is one reason why "SDDiP" has poor
 performance.
+
+### Convergence
 
 The second part to SDDiP is a very tightly scoped claim: _if_ all of the state
 variables are binary _and_ the algorithm uses Lagrangian duality to compute a
@@ -85,11 +91,11 @@ In many cases, papers claim to "do SDDiP," but they have state variables which
 are not binary. In these cases, the algorithm is not guaranteed to converge to a
 globally optimal policy.
 
-One work-around that has been attempted is to discretize the state variables
+One work-around that has been suggested is to discretize the state variables
 into a set of binary state variables. However, this leads to a large number of
-binary state vairables, which is another reason why "SDDiP" has poor
+binary state variables, which is another reason why "SDDiP" has poor
 performance.
 
 In general, we recommend that you introduce integer variables into your model
-where necessary, and treat the resulting policy as a good heuristic, rather than
-attempting to find a globally optimal policy.
+without fear of the consequences, and that you treat the resulting policy as a
+good heuristic, rather than an attempt to find a globally optimal policy.
