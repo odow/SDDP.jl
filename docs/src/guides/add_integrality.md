@@ -7,6 +7,7 @@ variables. Use the standard JuMP syntax to add binary or integer variables.
 For example:
 
 ```@example
+using JuMP, HiGHS
 model = SDDP.LinearPolicyGraph(
    stages = 3,
    lower_bound = 0.0,
@@ -19,6 +20,12 @@ model = SDDP.LinearPolicyGraph(
    @stageobjective(sp, 2u + 6v + x.out)
 end
 ```
+
+If you want finer control over how SDDP.jl computes subgradients in the backward
+pass, you can pass an [`SDDP.AbstractDualityHandler`](@ref) to the
+`duality_handler` argument of [`SDDP.train`](@ref).
+
+See [Duality handlers](@ref) for the list of handlers you can pass.
 
 ## Convergence
 
@@ -86,12 +93,3 @@ performance.
 In general, we recommend that you introduce integer variables into your model
 where necessary, and treat the resulting policy as a good heuristic, rather than
 attempting to find a globally optimal policy.
-
-## Duality handlers
-
-If you want finer control over how SDDP.jl computes subgradients in the backward
-pass, you can pass an [`SDDP.AbstractDualityHandler`](@ref) to the
-`duality_handler` argument of [`SDDP.train`](@ref).
-
-See the [Duality handlers](@ref) section for the list of options you can pass.
-
