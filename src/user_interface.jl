@@ -18,6 +18,34 @@ end
     Graph(root_node::T) where T
 
 Create an empty graph struture with the root node `root_node`.
+
+## Example
+
+```jldoctest
+julia> graph = SDDP.Graph(0)
+Root
+ 0
+Nodes
+ {}
+Arcs
+ {}
+
+julia> graph = SDDP.Graph(:root)
+Root
+ root
+Nodes
+ {}
+Arcs
+ {}
+
+julia> graph = SDDP.Graph((0, 0))
+Root
+ (0, 0)
+Nodes
+ {}
+Arcs
+ {}
+```
 """
 function Graph(root_node::T) where {T}
     return Graph{T}(
@@ -46,23 +74,30 @@ function Base.show(io::IO, graph::Graph)
         splice!(nodes, findfirst(isequal(graph.root_node), nodes))
         prepend!(nodes, [graph.root_node])
     end
-    println.(Ref(io), " ", filter(n -> n != graph.root_node, nodes))
-    println(io, "Arcs")
-    for node in nodes
-        for (child, probability) in graph.nodes[node]
-            println(io, " ", node, " => ", child, " w.p. ", probability)
+    tree_nodes = filter(n -> n != graph.root_node, nodes)
+    if isempty(tree_nodes)
+        println(io, " {}")
+    else
+        for node in tree_nodes
+            println(io, " ", node)
         end
     end
-    if length(graph.belief_partition) > 0
-        println(io, "Partition")
-        for element in graph.belief_partition
-            println(io, " {")
-            for node in sort_nodes(element)
-                println(io, "    ", node)
-            end
-            print(io, " }")
+    print(io, "Arcs")
+    has_arc = false
+    for node in nodes
+        for (child, probability) in graph.nodes[node]
+            print(io, "\n ", node, " => ", child, " w.p. ", probability)
+            has_arc = true
         end
-        println(io)
+    end
+    if !has_arc
+        print(io, "\n {}")
+    end
+    if length(graph.belief_partition) > 0
+        print(io, "\nPartitions")
+        for element in graph.belief_partition
+            print(io, "\n {", join(string.(sort_nodes(element)), ", "), "}")
+        end
     end
     return
 end
@@ -106,8 +141,32 @@ Add a node to the graph `graph`.
 
 ## Examples
 
-```julia
-add_node(graph, :A)
+```jldoctest
+julia> graph = SDDP.Graph(:root);
+
+julia> SDDP.add_node(graph, :A)
+
+julia> graph
+Root
+ root
+Nodes
+ A
+Arcs
+ {}
+```
+
+```jldoctest
+julia> graph = SDDP.Graph(0);
+
+julia> SDDP.add_node(graph, 2)
+
+julia> graph
+Root
+ 0
+Nodes
+ 2
+Arcs
+ {}
 ```
 """
 function add_node(graph::Graph{T}, node::T) where {T}
@@ -129,9 +188,36 @@ Add an edge to the graph `graph`.
 
 ## Examples
 
-```julia
-add_edge(graph, 1 => 2, 0.9)
-add_edge(graph, :root => :A, 1.0)
+```jldoctest
+julia> graph = SDDP.Graph(0);
+
+julia> SDDP.add_node(graph, 1)
+
+julia> SDDP.add_edge(graph, 0 => 1, 0.9)
+
+julia> graph
+Root
+ 0
+Nodes
+ 1
+Arcs
+ 0 => 1 w.p. 0.9
+```
+
+```jldoctest
+julia> graph = SDDP.Graph(:root);
+
+julia> SDDP.add_node(graph, :A)
+
+julia> SDDP.add_edge(graph, :root => :A, 1.0)
+
+julia> graph
+Root
+ root
+Nodes
+ A
+Arcs
+ root => A w.p. 1.0
 ```
 """
 function add_edge(
@@ -169,9 +255,36 @@ state-space.
 ## Examples
 
 ```julia
-graph = LinearGraph(3)
-add_ambiguity_set(graph, [1, 2], [1e3, 1e2])
-add_ambiguity_set(graph, [3], [1e5])
+julia> graph = SDDP.LinearGraph(3)
+Root
+ 0
+Nodes
+ 1
+ 2
+ 3
+Arcs
+ 0 => 1 w.p. 1.0
+ 1 => 2 w.p. 1.0
+ 2 => 3 w.p. 1.0
+
+julia> SDDP.add_ambiguity_set(graph, [1, 2], [1e3, 1e2])
+
+julia> SDDP.add_ambiguity_set(graph, [3], [1e5])
+
+julia> graph
+Root
+ 0
+Nodes
+ 1
+ 2
+ 3
+Arcs
+ 0 => 1 w.p. 1.0
+ 1 => 2 w.p. 1.0
+ 2 => 3 w.p. 1.0
+Partitions
+ {1, 2}
+ {3}
 ```
 """
 function add_ambiguity_set(
@@ -204,9 +317,26 @@ belief state associated with each node at any point in the state-space.
 ## Examples
 
 ```julia
-graph = LinearGraph(3)
-add_ambiguity_set(graph, [1, 2], 1e3)
-add_ambiguity_set(graph, [3], 1e5)
+julia> graph = SDDP.LinearGraph(3);
+
+julia> SDDP.add_ambiguity_set(graph, [1, 2], 1e3)
+
+julia> SDDP.add_ambiguity_set(graph, [3], 1e5)
+
+julia> graph
+Root
+ 0
+Nodes
+ 1
+ 2
+ 3
+Arcs
+ 0 => 1 w.p. 1.0
+ 1 => 2 w.p. 1.0
+ 2 => 3 w.p. 1.0
+Partitions
+ {1, 2}
+ {3}
 ```
 """
 function add_ambiguity_set(
@@ -235,6 +365,24 @@ end
 
 """
     LinearGraph(stages::Int)
+
+Create a linear graph with `stages` number of nodes.
+
+## Examples
+
+```jldoctest
+julia> graph = SDDP.LinearGraph(3)
+Root
+ 0
+Nodes
+ 1
+ 2
+ 3
+Arcs
+ 0 => 1 w.p. 1.0
+ 1 => 2 w.p. 1.0
+ 2 => 3 w.p. 1.0
+```
 """
 function LinearGraph(stages::Int)
     edges = Tuple{Pair{Int,Int},Float64}[]
@@ -255,6 +403,28 @@ Markov state `i` in stage `t - 1` to Markov state `j` in stage `t`.
 The dimension of the first transition matrix should be `(1, N)`, and
 `transition_matrics[1][1, i]` is the probability of transitioning from the root
 node to the Markov state `i`.
+
+## Examples
+
+```jldoctest
+julia> graph = SDDP.MarkovianGraph([ones(1, 1), [0.5 0.5], [0.8 0.2; 0.2 0.8]])
+Root
+ (0, 1)
+Nodes
+ (1, 1)
+ (2, 1)
+ (2, 2)
+ (3, 1)
+ (3, 2)
+Arcs
+ (0, 1) => (1, 1) w.p. 1.0
+ (1, 1) => (2, 1) w.p. 0.5
+ (1, 1) => (2, 2) w.p. 0.5
+ (2, 1) => (3, 1) w.p. 0.8
+ (2, 1) => (3, 2) w.p. 0.2
+ (2, 2) => (3, 1) w.p. 0.2
+ (2, 2) => (3, 2) w.p. 0.8
+```
 """
 function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
     if size(transition_matrices[1], 1) != 1
@@ -319,6 +489,36 @@ transitioning from Markov state `i` in stage `t` to Markov state `j` in stage
 
 `root_node_transition[i]` is the probability of transitioning from the root node
 to Markov state `i` in the first stage.
+
+## Examples
+
+```jldoctest
+julia> graph = SDDP.MarkovianGraph(;
+           stages = 3,
+           transition_matrix = [0.8 0.2; 0.2 0.8],
+           root_node_transition = [0.5, 0.5],
+       )
+Root
+ (0, 1)
+Nodes
+ (1, 1)
+ (1, 2)
+ (2, 1)
+ (2, 2)
+ (3, 1)
+ (3, 2)
+Arcs
+ (0, 1) => (1, 1) w.p. 0.5
+ (0, 1) => (1, 2) w.p. 0.5
+ (1, 1) => (2, 1) w.p. 0.8
+ (1, 1) => (2, 2) w.p. 0.2
+ (1, 2) => (2, 1) w.p. 0.2
+ (1, 2) => (2, 2) w.p. 0.8
+ (2, 1) => (3, 1) w.p. 0.8
+ (2, 1) => (3, 2) w.p. 0.2
+ (2, 2) => (3, 1) w.p. 0.2
+ (2, 2) => (3, 2) w.p. 0.8
+```
 """
 function MarkovianGraph(;
     stages::Int = 1,
@@ -346,6 +546,21 @@ end
 
 Construct a graph composed of `num_nodes` nodes that form a single cycle, with a
 probability of `discount_factor` of continuing the cycle.
+
+## Examples
+
+```jldoctest
+julia> graph = SDDP.UnicyclicGraph(0.9; num_nodes = 2)
+Root
+ 0
+Nodes
+ 1
+ 2
+Arcs
+ 0 => 1 w.p. 1.0
+ 1 => 2 w.p. 1.0
+ 2 => 1 w.p. 0.9
+```
 """
 function UnicyclicGraph(discount_factor::Float64; num_nodes::Int = 1)
     @assert 0 < discount_factor < 1
@@ -544,6 +759,16 @@ end
 Create a linear policy graph with `stages` number of stages.
 
 See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
+
+## Examples
+
+```jldoctest
+julia> SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
+    # ... build model ...
+end
+A policy graph with 2 nodes.
+Node indices: 1, 2
+```
 """
 function LinearPolicyGraph(builder::Function; stages::Int, kwargs...)
     if stages < 1
@@ -573,6 +798,20 @@ See [`SDDP.MarkovianGraph`](@ref) for other ways of specifying a Markovian
 policy graph.
 
 See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
+
+## Examples
+
+```jldoctest
+julia> SDDP.MarkovianPolicyGraph(;
+           transition_matrices = [ones(1, 1), [0.5 0.5], [0.8 0.2; 0.2 0.8]],
+           lower_bound = 0.0,
+       ) do sp, node
+           # ... build model ...
+       end
+A policy graph with 5 nodes.
+ Node indices: (1, 1), (2, 1), (2, 2), (3, 1), (3, 2)
+```
+
 """
 function MarkovianPolicyGraph(
     builder::Function;
