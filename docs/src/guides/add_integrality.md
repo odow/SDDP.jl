@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = SDDP
+```
+
 # Integrality
 
 There's nothing special about binary and integer variables in SDDP.jl. Your
