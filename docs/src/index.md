@@ -2,25 +2,48 @@
 CurrentModule = SDDP
 ```
 
-# SDDP.jl
+```@html
+<img class="display-light-only" src="assets/logo_text.svg" alt="logo"/>
+```
 
-[`SDDP.jl`](https://github.com/odow/SDDP.jl) is a package for solving large
-multistage convex stochastic programming problems using *stochastic dual dynamic
-programming*. In this manual, we assume a reasonable amount of background
-knowledge about stochastic optimization, the SDDP algorithm, Julia, and JuMP.
+# Introduction
 
-!!! tip
-    If you haven't used JuMP before, we recommend that you read the
-    [JuMP documentation](http://jump.dev/JuMP.jl/stable/) and try
-    building and solving JuMP models _before_ trying `SDDP.jl`.
+Welcome to the documentation for [`SDDP.jl`](https://github.com/odow/SDDP.jl), a
+package for solving large multistage convex stochastic programming problems
+using *stochastic dual dynamic programming*.
+
+SDDP.jl is built on [JuMP](https://jump.dev), so it supports a number of
+open-source and commercial solvers, making it a powerful and flexible tool for
+stochastic optimization.
+
+The implementation of the stochastic dual dynamic programming algorithm in
+SDDP.jl is state of the art, and it includes support for a number of advanced
+features not commonly found in other implementations. This includes support for:
+
+ * infinite horizon problems
+ * convex risk measures
+ * mixed-integer state and control variables
+ * partially observable stochastic processes.
 
 ## Installation
 
 Install `SDDP.jl` as follows:
 
 ```julia
-julia> ] add SDDP
+julia> import Pkg
+
+julia> Pkg.add("SDDP")
 ```
+
+## Resources for getting started
+
+There are a few ways to get started with SDDP.jl:
+
+ * Become familiar with JuMP by reading the [JuMP documentation](http://jump.dev/JuMP.jl/stable/)
+ * Read the introductory tutorial [An introduction to SDDP.jl](@ref)
+ * Browse some of the examples, such as [Example: deterministic to stochastic](@ref)
+
+If you need help, please [open a GitHub issue](https://github.com/odow/SDDP.jl/issues/new).
 
 ## How the documentation is structured
 
