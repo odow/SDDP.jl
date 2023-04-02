@@ -11,7 +11,7 @@ variables. Use the standard JuMP syntax to add binary or integer variables.
 For example:
 
 ```@example
-using JuMP, HiGHS
+using SDDP, HiGHS
 model = SDDP.LinearPolicyGraph(
    stages = 3,
    lower_bound = 0.0,
