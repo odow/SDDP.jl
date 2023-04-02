@@ -2,7 +2,7 @@
 CurrentModule = SDDP
 ```
 
-```@html
+```@raw html
 <img class="display-light-only" src="assets/logo_text.svg" alt="logo"/>
 ```
 
