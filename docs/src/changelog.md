@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Other
 
  - Fixed typo in [Example: deterministic to stochastic](@ref) tutorial (#578)
- - Fixed docstring of [`SDDP.simulate`](@ref) (#577)
+ - Fixed typo in documentation of [`SDDP.simulate`](@ref) (#577)
 
 ## v1.1.2 (March 18, 2023)
 
