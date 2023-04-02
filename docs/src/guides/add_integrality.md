@@ -46,7 +46,7 @@ globally optimal policy.
 Most discussions of SDDiP in the literature confuse two unrelated things.
 
  * First, how to compute dual variables
- * Second, when the algorithm will converge to a globally optimal policy
+ * Second, when the algorithm will converge to a globally optimal policy.
  
 ### Computing dual variables
 
@@ -61,7 +61,7 @@ dual variable ``\lambda`` in the following subproblem:
 V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; & C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
 & x^\prime = T_i(\bar{x}, u, \omega) \\
 & u \in U_i(\bar{x}, \omega) \\
-& \bar{x} = x \quad [\lambda],
+& \bar{x} = x \quad [\lambda]
 \end{aligned}
 ```
 
@@ -79,6 +79,9 @@ in the objective instead of enforcing the constraint:
 & u \in U_i(\bar{x}, \omega)
 \end{aligned}
 ```
+
+You can use Lagrangian duality in SDDP.jl by passing [`SDDP.LagrangianDuality`](@ref)
+to the `duality_handler` argument of [`SDDP.train`](@ref).
 
 Compared with linear programming duality, the Lagrangian problem is difficult
 to solve because it requires the solution of many mixed-integer programs
