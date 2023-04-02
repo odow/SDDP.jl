@@ -158,7 +158,7 @@ function test_belief_partition()
             "Arcs",
             " root => x w.p. 0.5",
             " root => y w.p. 0.5",
-            "Partition",
+            "Partitions",
             " {x, y}",
         ],
         "\n",
