@@ -109,7 +109,9 @@ julia> graph = SDDP.Graph(:root_node)
 Root
  root_node
 Nodes
+ {}
 Arcs
+ {}
 
 julia> SDDP.add_node(graph, :decision_node)
 

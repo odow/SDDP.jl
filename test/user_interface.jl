@@ -41,7 +41,7 @@ function test_LinearGraph()
           "Arcs\n" *
           " 0 => 1 w.p. 1.0\n" *
           " 1 => 2 w.p. 1.0\n" *
-          " 2 => 3 w.p. 1.0\n"
+          " 2 => 3 w.p. 1.0"
     @test length(graph.belief_partition) == 0
     return
 end
@@ -158,11 +158,8 @@ function test_belief_partition()
             "Arcs",
             " root => x w.p. 0.5",
             " root => y w.p. 0.5",
-            "Partition",
-            " {",
-            "    x",
-            "    y",
-            " }\n",
+            "Partitions",
+            " {x, y}",
         ],
         "\n",
     )
@@ -577,8 +574,7 @@ function test_Ensure_root_printed_first()
     Nodes
      a
     Arcs
-     root => a w.p. 1.0
-    """
+     root => a w.p. 1.0"""
     return
 end
 
@@ -598,8 +594,7 @@ function test_Tuple_Int_Float64_nodes_sorted()
      (1, 1.0)
      (2, 0.1)
     Arcs
-     (0, 0.0) => (2, 0.1) w.p. 1.0
-    """
+     (0, 0.0) => (2, 0.1) w.p. 1.0"""
     return
 end
 
@@ -614,8 +609,7 @@ function test_String_nodes_unsorted()
      b
     Arcs
      a => b w.p. 1.0
-     b => c w.p. 1.0
-    """
+     b => c w.p. 1.0"""
     return
 end
 
