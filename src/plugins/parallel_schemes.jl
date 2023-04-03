@@ -8,7 +8,9 @@ function log_iteration(options)
     if options.print_level > 0 &&
        mod(length(options.log), options.log_frequency) == 0
         print_helper(print_iteration, options.log_file_handle, options.log[end])
+        flush(options.log_file_handle)
     end
+    return
 end
 
 """
