@@ -265,12 +265,12 @@ function attempt_numerical_recovery(model::PolicyGraph, node::Node)
             "creating the policy graph."
         )
     else
-        model.ext[:numerical_issue_counter] += 1
+        model.ext[:numerical_issue] = true
         MOI.Utilities.reset_optimizer(node.subproblem)
         optimize!(node.subproblem)
     end
     if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
-        model.ext[:numerical_issue_counter] += 1
+        model.ext[:numerical_issue] = true
         @info "Writing cuts to the file `model.cuts.json`"
         write_cuts_to_file(model, "model.cuts.json")
         write_subproblem_to_file(
@@ -392,9 +392,6 @@ function solve_subproblem(
         model.ext[:total_solves] += 1
     else
         model.ext[:total_solves] = 1
-    end
-    if !haskey(model.ext, :numerical_issue_counter)
-        model.ext[:numerical_issue_counter] = 0
     end
     if JuMP.primal_status(node.subproblem) == JuMP.MOI.INTERRUPTED
         # If the solver was interrupted, the user probably hit CTRL+C but the
@@ -792,6 +789,7 @@ struct IterationResult{T}
 end
 
 function iteration(model::PolicyGraph{T}, options::Options) where {T}
+    model.ext[:numerical_issue] = false
     TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
         forward_trajectory = forward_pass(model, options, options.forward_pass)
         options.forward_pass_callback(forward_trajectory)
@@ -819,7 +817,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             Distributed.myid(),
             model.ext[:total_solves],
             duality_log_key(options.duality_handler),
-            model.ext[:numerical_issue_counter],
+            model.ext[:numerical_issue],
         ),
     )
     has_converged, status =
