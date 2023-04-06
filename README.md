@@ -1,23 +1,23 @@
-<img src="https://raw.githubusercontent.com/odow/SDDP.jl/e9de84e0a4b57374bd9e0c95148da1501816e4c5/docs/src/assets/logo_text.png" alt="logo" width="400px"/>
+<img src="https://raw.githubusercontent.com/odow/SDDP.jl/e9de84e0a4b57374bd9e0c95148da1501816e4c5/docs/src/assets/logo.png" alt="logo" width="100px"/>
 
-| **Documentation** | **Build Status** | **Coverage** |
-|:-----------------:|:--------------------:|:----------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![Build Status][build-img]][build-url] | [![Codecov branch][codecov-img]][codecov-url]
+# SDDP.jl
 
-`SDDP.jl` is a package for solving large multistage convex stochastic programming
-problems using _stochastic dual dynamic programming_. You can find the documentation
-at https://odow.github.io/SDDP.jl/stable/.
+[![Build Status](https://github.com/odow/SDDP.jl/workflows/CI/badge.svg?branch=master)](https://github.com/odow/SDDP.jl/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/odow/SDDP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/odow/SDDP.jl)
 
-If you need help, file a Github issue: https://github.com/odow/SDDP.jl/issues/new
+[SDDP.jl](https://github.com/odow/SDDP.jl) is a JuMP extension for solving large
+convex multistage stochastic programming problems using stochastic dual dynamic
+programming.
 
-[build-img]: https://github.com/odow/SDDP.jl/workflows/CI/badge.svg?branch=master
-[build-url]: https://github.com/odow/SDDP.jl/actions?query=workflow%3ACI
+## License
 
-[codecov-img]: https://codecov.io/github/odow/SDDP.jl/coverage.svg?branch=master
-[codecov-url]: https://codecov.io/github/odow/SDDP.jl?branch=master
+`SDDP.jl` is licensed under the [MPL 2.0 license](https://github.com/odow/SDDP.jl/blob/master/LICENSE.md).
 
-[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://odow.github.io/SDDP.jl/stable/
+## Documentation
 
-[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: https://odow.github.io/SDDP.jl/latest/
+You can find the documentation at
+[https://odow.github.io/SDDP.jl/stable/](https://odow.github.io/SDDP.jl/stable).
+
+## Help
+
+If you need help, please [open a Github issue](https://github.com/odow/SDDP.jl/issues/new).
