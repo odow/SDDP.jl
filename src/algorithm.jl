@@ -968,7 +968,7 @@ function train(
     end
     # Reset the TimerOutput.
     TimerOutputs.reset_timer!(SDDP_TIMER)
-    log_file_handle = open(log_file, "w+")
+    log_file_handle = open(log_file, "a")
     log = Log[]
 
     if print_level > 0
