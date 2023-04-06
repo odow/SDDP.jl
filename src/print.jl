@@ -134,13 +134,14 @@ end
 function print_iteration_header(io)
     println(
         io,
-        " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves     Num. Issues",
+        " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves     Num. Issue",
     )
     return
 end
 
 print_value(x::Real) = lpad(Printf.@sprintf("%1.6e", x), 13)
 print_value(x::Int) = Printf.@sprintf("%9d", x)
+print_value(x::Bool) = Printf.@sprintf("%9s", ifelse(x, "†", ""))
 
 function print_iteration(io, log::Log)
     print(io, print_value(log.iteration))
@@ -150,7 +151,7 @@ function print_iteration(io, log::Log)
     print(io, "  ", print_value(log.time))
     print(io, "  ", print_value(log.pid))
     print(io, "  ", print_value(log.total_solves))
-    print(io, "  ", print_value(log.serious_numerical_issues))
+    print(io, "  ", print_value(log.serious_numerical_issue))
     println(io)
     return
 end
@@ -173,7 +174,8 @@ function print_footer(io, training_results::TrainingResults)
     μ, σ =
         confidence_interval(map(l -> l.simulation_value, training_results.log))
     println(io, "  Simulation CI  : ", print_value(μ), " ±", print_value(σ))
-    println(io, "  Num. issues    : ", training_results.log[end].serious_numerical_issues)
+    all_iterations_num_issues = getfield.(training_results.log,:serious_numerical_issue)
+    println(io, "  Num. issues    : ", sum(all_iterations_num_issues))
     println(
         io,
         "------------------------------------------------------------------------------",

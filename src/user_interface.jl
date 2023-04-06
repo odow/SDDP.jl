@@ -453,7 +453,7 @@ struct Log
     pid::Int
     total_solves::Int
     duality_key::String
-    serious_numerical_issues::Int
+    serious_numerical_issue::Bool
 end
 
 struct TrainingResults
