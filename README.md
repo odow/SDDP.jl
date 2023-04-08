@@ -20,4 +20,4 @@ You can find the documentation at
 
 ## Help
 
-If you need help, please [open a Github issue](https://github.com/odow/SDDP.jl/issues/new).
+If you need help, please [open a GitHub issue](https://github.com/odow/SDDP.jl/issues/new).
