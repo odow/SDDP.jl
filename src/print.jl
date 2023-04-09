@@ -134,14 +134,13 @@ end
 function print_iteration_header(io)
     println(
         io,
-        " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves     Num. Issue",
+        " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves",
     )
     return
 end
 
 print_value(x::Real) = lpad(Printf.@sprintf("%1.6e", x), 13)
 print_value(x::Int) = Printf.@sprintf("%9d", x)
-print_value(x::Bool) = Printf.@sprintf("%9s", ifelse(x, "†", ""))
 
 function print_iteration(io, log::Log)
     print(io, print_value(log.iteration))
@@ -151,7 +150,9 @@ function print_iteration(io, log::Log)
     print(io, "  ", print_value(log.time))
     print(io, "  ", print_value(log.pid))
     print(io, "  ", print_value(log.total_solves))
-    print(io, "  ", print_value(log.serious_numerical_issue))
+    if log.serious_numerical_issue
+        print(io, "†")
+    end
     println(io)
     return
 end
