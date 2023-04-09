@@ -76,6 +76,7 @@ function test_slave_update()
             )],
             2 => Any[],
         ),
+        false,
     )
     SDDP.slave_update(model, result)
     cons = JuMP.all_constraints(
@@ -105,6 +106,7 @@ function test_slave_update()
             ],
             2 => Any[],
         ),
+        false,
     )
     @test_throws ErrorException SDDP.slave_update(model, result)
     return

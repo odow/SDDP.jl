@@ -786,6 +786,7 @@ struct IterationResult{T}
     has_converged::Bool
     status::Symbol
     cuts::Dict{T,Vector{Any}}
+    numerical_issue::Bool
 end
 
 function iteration(model::PolicyGraph{T}, options::Options) where {T}
@@ -829,6 +830,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
         has_converged,
         status,
         cuts,
+        model.ext[:numerical_issue],
     )
 end
 
