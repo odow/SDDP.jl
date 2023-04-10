@@ -7,6 +7,20 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.1.4 (April 10, 2023)
+
+### Fixed
+
+ - Logs are now flushed every iteration (#584)
+
+### Other
+
+ - Added docstrings to various functions (#581)
+ - Minor documentation updates (#580)
+ - Clarified integrality documentation (#582)
+ - Updated the README (#585)
+ - Number of numerical issues is now printed to the log (#586)
+
 ## v1.1.3 (April 2, 2023)
 
 ### Other
