@@ -176,7 +176,7 @@ function print_footer(io, training_results::TrainingResults)
         confidence_interval(map(l -> l.simulation_value, training_results.log))
     println(io, "  Simulation CI  : ", print_value(μ), " ±", print_value(σ))
     num_issues = sum(l -> l.serious_numerical_issue, training_results.log)
-    println(io, "  Num. issues    : ", num_issues)
+    println(io, "  Numeric issues : ", num_issues)
     println(
         io,
         "------------------------------------------------------------------------------",
