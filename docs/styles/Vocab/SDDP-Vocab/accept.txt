@@ -4,6 +4,7 @@ dest
 devnull
 discretiz[e|ing]
 [Dd]istributionally
+[Dd]ocstring(?s)
 doi
 elseif
 equivariance
