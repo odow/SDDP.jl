@@ -274,6 +274,7 @@ function master_loop(
                 result.pid,
                 model.ext[:total_solves],
                 duality_log_key(options.duality_handler),
+                result.numerical_issue,
             ),
         )
         log_iteration(options)

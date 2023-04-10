@@ -150,6 +150,9 @@ function print_iteration(io, log::Log)
     print(io, "  ", print_value(log.time))
     print(io, "  ", print_value(log.pid))
     print(io, "  ", print_value(log.total_solves))
+    if log.serious_numerical_issue
+        print(io, "†")
+    end
     println(io)
     return
 end
@@ -172,6 +175,8 @@ function print_footer(io, training_results::TrainingResults)
     μ, σ =
         confidence_interval(map(l -> l.simulation_value, training_results.log))
     println(io, "  Simulation CI  : ", print_value(μ), " ±", print_value(σ))
+    num_issues = sum(l -> l.serious_numerical_issue, training_results.log)
+    println(io, "  Numeric issues : ", num_issues)
     println(
         io,
         "------------------------------------------------------------------------------",
