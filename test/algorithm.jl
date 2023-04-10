@@ -311,7 +311,7 @@ function test_print_log()
           "        1    0.000000e+00   0.000000e+00   1.000000e+00          1          1\n"
     log = SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " ", true)
     @test sprint(SDDP.print_iteration, log) ==
-        "        1    0.000000e+00   0.000000e+00   1.000000e+00          1          1†\n"
+          "        1    0.000000e+00   0.000000e+00   1.000000e+00          1          1†\n"
     return
 end
 
