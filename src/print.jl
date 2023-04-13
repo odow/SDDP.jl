@@ -12,7 +12,7 @@ end
 
 function print_banner(io)
     println(io, _RULE)
-    println(io, "           SDDP.jl (c) Oscar Dowson and contributors, 2017-23")
+    println(io, "         SDDP.jl (c) Oscar Dowson and contributors, 2017-23")
     println(io, _RULE)
     return
 end
@@ -119,10 +119,11 @@ function print_problem_statistics(
     println(io, "  solver          : ", parallel_scheme)
     println(io, "  risk measure    : ", risk_measure)
     println(io, "  sampling scheme : ", typeof(sampling_scheme))
-    println(io, rpad("subproblem structure", pad + 4), " : [min, max]")
-    println(io, "  ", rpad("VariableRef", pad), " : ", variables)
+    println(io, rpad("subproblem structure", pad + 2), " : [min, max]")
+    a, b = variables
+    println(io, "  ", rpad("VariableRef", pad), " : [", a, ", ", b, "]")
     for (k, v) in constraint_types
-        println(io, "    ", rpad(k, pad), " : [", v[1], ", ", v[2], "]")
+        println(io, "  ", rpad(k, pad), " : [", v[1], ", ", v[2], "]")
     end
     return
 end
