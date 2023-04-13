@@ -119,7 +119,7 @@ function print_problem_statistics(
     println(io, "  solver          : ", parallel_scheme)
     println(io, "  risk measure    : ", risk_measure)
     println(io, "  sampling scheme : ", typeof(sampling_scheme))
-    println(io, rpad("subproblem structure", pad + 2), " : [min, max]")
+    println(io, "subproblem structure")
     a, b = variables
     println(io, "  ", rpad("VariableRef", pad), " : [", a, ", ", b, "]")
     for (k, v) in constraint_types
