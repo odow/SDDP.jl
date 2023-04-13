@@ -3,8 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-const _RULE =
-    "-------------------------------------------------------------------------"
+const _RULE = "-------------------------------------------------------------------------"
 
 function print_helper(f, io, args...)
     f(stdout, args...)
@@ -157,11 +156,7 @@ end
 function print_footer(io, training_results::TrainingResults)
     println(io, _RULE)
     println(io, "status         : ", training_results.status)
-    println(
-        io,
-        "total time (s) :",
-        print_value(training_results.log[end].time),
-    )
+    println(io, "total time (s) :", print_value(training_results.log[end].time))
     println(io, "total solves   : ", training_results.log[end].total_solves)
     println(
         io,
@@ -170,7 +165,7 @@ function print_footer(io, training_results::TrainingResults)
     )
     μ, σ =
         confidence_interval(map(l -> l.simulation_value, training_results.log))
-    println(io, "simulation CI  : ", print_value(μ), " ±", print_value(σ))
+    println(io, "simulation ci  : ", print_value(μ), " ±", print_value(σ))
     num_issues = sum(l -> l.serious_numerical_issue, training_results.log)
     println(io, "numeric issues : ", num_issues)
     println(io, _RULE)
