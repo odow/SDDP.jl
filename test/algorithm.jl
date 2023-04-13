@@ -308,10 +308,10 @@ end
 function test_print_log()
     log = SDDP.Log(12, 1.1, -0.5, 123.4, 123, 1, "L", false)
     @test sprint(SDDP.print_iteration, log) ==
-          "        12L -5.000000e-01  1.100000e+00  1.234000e+03       123         1\n"
+          "        12L -5.000000e-01  1.100000e+00  1.234000e+02         1 123\n"
     log = SDDP.Log(1, 1.1, -0.5, 1.0, 1, 1, "L", true)
     @test sprint(SDDP.print_iteration, log) ==
-          "†       12L -5.000000e-01  1.100000e+00  1.234000e+03       123         1\n"
+          "†        1L -5.000000e-01  1.100000e+00  1.000000e+00         1   1\n"
     return
 end
 

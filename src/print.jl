@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-const _RULE = "-------------------------------------------------------------------------"
+const _RULE = "-------------------------------------------------------------------"
 
 function print_helper(f, io, args...)
     f(stdout, args...)
@@ -119,10 +119,10 @@ function print_problem_statistics(
     println(io, "  solver          : ", parallel_scheme)
     println(io, "  risk measure    : ", risk_measure)
     println(io, "  sampling scheme : ", typeof(sampling_scheme))
-    println(io, rpad("subproblem structure", pad + 4), " : (min, max)")
-    println(io, "    ", rpad("Variables", pad), " : ", variables)
+    println(io, rpad("subproblem structure", pad + 4), " : [min, max]")
+    println(io, "  ", rpad("VariableRef", pad), " : ", variables)
     for (k, v) in constraint_types
-        println(io, "    ", rpad(k, pad), " : ", v)
+        println(io, "    ", rpad(k, pad), " : [", v[1], ", ", v[2], "]")
     end
     return
 end
@@ -131,7 +131,7 @@ function print_iteration_header(io)
     println(io, _RULE)
     println(
         io,
-        " iteration    simulation      bound        time (s)     solves     pid",
+        " iteration    simulation      bound        time (s)     solves  pid",
     )
     println(io, _RULE)
     return
@@ -139,6 +139,7 @@ end
 
 print_value(x::Real) = lpad(Printf.@sprintf("%1.6e", x), 13)
 print_value(x::Int) = Printf.@sprintf("%9d", x)
+print_value3(x::Int) = Printf.@sprintf("%3d", x)
 
 function print_iteration(io, log::Log)
     print(io, log.serious_numerical_issue ? "†" : " ")
@@ -148,7 +149,7 @@ function print_iteration(io, log::Log)
     print(io, " ", print_value(log.bound))
     print(io, " ", print_value(log.time))
     print(io, " ", print_value(log.total_solves))
-    print(io, " ", print_value(log.pid))
+    print(io, " ", print_value3(log.pid))
     println(io)
     return
 end
@@ -374,23 +375,11 @@ function numerical_stability_report(
         print && println(io, "numerical stability report")
         _print_numerical_stability_report(io, graph_ranges, print, warn)
     end
-    print && println(io)
     return
 end
 
-function numerical_stability_report(
-    model::PolicyGraph;
-    by_node::Bool = false,
-    print::Bool = true,
-    warn::Bool = true,
-)
-    return numerical_stability_report(
-        stdout,
-        model,
-        by_node = by_node,
-        print = print,
-        warn = warn,
-    )
+function numerical_stability_report(model::PolicyGraph; kwargs...)
+    return numerical_stability_report(stdout, model; kwargs...)
 end
 
 ###

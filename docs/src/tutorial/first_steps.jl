@@ -735,11 +735,15 @@ SDDP.train(model; iteration_limit = 10)
 
 # There's a lot going on in this printout! Let's break it down.
 
-# The first section ("Problem") gives some problem statistics. In this example
+# The first section, "problem," gives some problem statistics. In this example
 # there are 3 nodes, 1 state variable, and 27 scenarios ($3^3$). We haven't
 # solved this problem before so there are no existing cuts.
 
-# The "Subproblem structure" section also needs explaining. This looks at all of
+# The "options" section lists some options we are using to solve the problem.
+# For more information on the numerical stability report, read the
+# [Numerical stability report](@ref) section.
+
+# The "subproblem structure" section also needs explaining. This looks at all of
 # the nodes in the policy graph and reports the minimum and maximum number of
 # variables and each constraint type in the corresponding subproblem. In this
 # case each subproblem has 7 variables and various numbers of different
@@ -747,36 +751,38 @@ SDDP.train(model; iteration_limit = 10)
 # formulation as you wrote it, because SDDP.jl adds some extra variables for the
 # cost-to-go function.
 
-# The "Options" section lists some options we are using to solve the problem.
-# For more information on the numerical stability report, read the
-# [Numerical stability report](@ref) section.
-
 # Then comes the iteration log, which is the main part of the printout. It has
 # the following columns:
-#  - `Iteration`: the SDDP iteration
-#  - `Simulation`: the cost of the single forward pass simulation for that
+#  - `iteration`: the SDDP iteration
+#  - `simulation`: the cost of the single forward pass simulation for that
 #    iteration. This value is stochastic and is not guaranteed to improve over
 #    time. However, it's useful to check that the units are reasonable, and that
 #    it is not deterministic if you intended for the problem to be stochastic,
 #    etc.
-#  - `Bound`: this is a lower bound (upper if maximizing) for the value of the
+#  - `bound`: this is a lower bound (upper if maximizing) for the value of the
 #    optimal policy. This should be monotonically improving (increasing if
 #    minimizing, decreasing if maximizing).
-#  - `Time (s)`: the total number of seconds spent solving so far
-#  - `Proc. ID`: the ID of the processor used to solve that iteration. This
-#    should be 1 unless you are using parallel computation.
-#  - `# Solves`: the total number of subproblem solves to date. This can be very
+#  - `time (s)`: the total number of seconds spent solving so far
+#  - `solves`: the total number of subproblem solves to date. This can be very
 #    large!
+#  - `pid`: the ID of the processor used to solve that iteration. This
+#    should be 1 unless you are using parallel computation.
+
+# In addition, if the first character of a line is `†`, then SDDP.jl experienced
+# numerical issues during the solve, but successfully recovered.
 
 # The printout finishes with some summary statistics:
-#  - `Status`: why did the solver stop?
-#  - `Total time (s)`, `Best bound`, and `Total solves` are the values from the
+#
+#  - `status`: why did the solver stop?
+#  - `total time (s)`, `best bound`, and `total solves` are the values from the
 #    last iteration of the solve.
-#  - `Simulation CI`: a confidence interval that estimates the quality of the
+#  - `simulation ci`: a confidence interval that estimates the quality of the
 #    policy from the `Simulation` column.
+#  - `numeric issues`: the number of iterations that experienced numerical
+#    issues.
 
 # !!! warning
-#     The `Simulation CI` result can be misleading if you run a small number of
+#     The `simulation ci` result can be misleading if you run a small number of
 #     iterations, or if the initial simulations are very bad. On a more
 #     technical note, it is an _in-sample simulation_, which may not reflect the
 #     true performance of the policy. See [Obtaining bounds](@ref) for more
