@@ -461,8 +461,8 @@ function test_numerical_stability_report()
     @test occursin("WARNING", report)
     report_2 =
         sprint(io -> SDDP.numerical_stability_report(io, model, by_node = true))
-    @test occursin("Numerical stability report for node: 1", report_2)
-    @test occursin("Numerical stability report for node: 2", report_2)
+    @test occursin("numerical stability report for node: 1", report_2)
+    @test occursin("numerical stability report for node: 2", report_2)
     return
 end
 

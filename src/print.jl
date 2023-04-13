@@ -3,21 +3,19 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+const _RULE =
+    "-------------------------------------------------------------------------"
+
 function print_helper(f, io, args...)
     f(stdout, args...)
     return f(io, args...)
 end
 
 function print_banner(io)
-    println(
-        io,
-        "------------------------------------------------------------------------------",
-    )
-    println(
-        io,
-        "          SDDP.jl (c) Oscar Dowson and SDDP.jl contributors, 2017-23",
-    )
-    return println(io)
+    println(io, _RULE)
+    println(io, "           SDDP.jl (c) Oscar Dowson and contributors, 2017-23")
+    println(io, _RULE)
+    return
 end
 
 function _unique_paths(model::PolicyGraph{T}) where {T}
@@ -112,30 +110,31 @@ function print_problem_statistics(
         end
     end
     pad = maximum(length(k) for k in keys(constraint_types))
-    println(io, "Problem")
-    println(io, "  Nodes           : ", length(model.nodes))
-    println(io, "  State variables : ", length(model.initial_root_state))
+    println(io, "problem")
+    println(io, "  nodes           : ", length(model.nodes))
+    println(io, "  state variables : ", length(model.initial_root_state))
     paths = Printf.@sprintf("%1.5e", _unique_paths(model))
-    println(io, "  Scenarios       : ", paths)
-    println(io, "  Existing cuts   : ", existing_cuts)
-    println(io, rpad("  Subproblem structure", pad + 4), " : (min, max)")
+    println(io, "  scenarios       : ", paths)
+    println(io, "  existing cuts   : ", existing_cuts)
+    println(io, "options")
+    println(io, "  solver          : ", parallel_scheme)
+    println(io, "  risk measure    : ", risk_measure)
+    println(io, "  sampling scheme : ", typeof(sampling_scheme))
+    println(io, rpad("subproblem structure", pad + 4), " : (min, max)")
     println(io, "    ", rpad("Variables", pad), " : ", variables)
     for (k, v) in constraint_types
         println(io, "    ", rpad(k, pad), " : ", v)
     end
-    println(io, "Options")
-    println(io, "  Solver          : ", parallel_scheme)
-    println(io, "  Risk measure    : ", risk_measure)
-    println(io, "  Sampling scheme : ", typeof(sampling_scheme))
-    println(io)
     return
 end
 
 function print_iteration_header(io)
+    println(io, _RULE)
     println(
         io,
-        " Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves",
+        " iteration    simulation      bound        time (s)     solves     pid",
     )
+    println(io, _RULE)
     return
 end
 
@@ -143,44 +142,39 @@ print_value(x::Real) = lpad(Printf.@sprintf("%1.6e", x), 13)
 print_value(x::Int) = Printf.@sprintf("%9d", x)
 
 function print_iteration(io, log::Log)
+    print(io, log.serious_numerical_issue ? "†" : " ")
     print(io, print_value(log.iteration))
     print(io, log.duality_key)
-    print(io, "  ", print_value(log.simulation_value))
-    print(io, "  ", print_value(log.bound))
-    print(io, "  ", print_value(log.time))
-    print(io, "  ", print_value(log.pid))
-    print(io, "  ", print_value(log.total_solves))
-    if log.serious_numerical_issue
-        print(io, "†")
-    end
+    print(io, " ", print_value(log.simulation_value))
+    print(io, " ", print_value(log.bound))
+    print(io, " ", print_value(log.time))
+    print(io, " ", print_value(log.total_solves))
+    print(io, " ", print_value(log.pid))
     println(io)
     return
 end
 
 function print_footer(io, training_results::TrainingResults)
-    println(io)
-    println(io, "Terminating training")
-    println(io, "  Status         : ", training_results.status)
+    println(io, _RULE)
+    println(io, "status         : ", training_results.status)
     println(
         io,
-        "  Total time (s) :",
+        "total time (s) :",
         print_value(training_results.log[end].time),
     )
-    println(io, "  Total solves   : ", training_results.log[end].total_solves)
+    println(io, "total solves   : ", training_results.log[end].total_solves)
     println(
         io,
-        "  Best bound     : ",
+        "best bound     : ",
         print_value(training_results.log[end].bound),
     )
     μ, σ =
         confidence_interval(map(l -> l.simulation_value, training_results.log))
-    println(io, "  Simulation CI  : ", print_value(μ), " ±", print_value(σ))
+    println(io, "simulation CI  : ", print_value(μ), " ±", print_value(σ))
     num_issues = sum(l -> l.serious_numerical_issue, training_results.log)
-    println(io, "  Numeric issues : ", num_issues)
-    println(
-        io,
-        "------------------------------------------------------------------------------",
-    )
+    println(io, "numeric issues : ", num_issues)
+    println(io, _RULE)
+    println(io)
     return
 end
 
@@ -237,25 +231,21 @@ function _print_numerical_stability_report(
     warn::Bool,
 )
     warnings = Tuple{String,String}[]
-    _print_coefficients(io, "Matrix", ranges.matrix, print, warnings)
-    _print_coefficients(io, "Objective", ranges.objective, print, warnings)
-    _print_coefficients(io, "Bounds", ranges.bounds, print, warnings)
-    _print_coefficients(io, "RHS", ranges.rhs, print, warnings)
-    if warn
-        if length(warnings) > 0
-            println(io, "WARNING: numerical stability issues detected")
-            for (name, sense) in warnings
-                println(io, "  - $(name) range contains $(sense) coefficients")
-            end
-            println(
-                io,
-                "Very large or small absolute values of coefficients\n",
-                "can cause numerical stability issues. Consider\n",
-                "reformulating the model.",
-            )
-        else
-            print && println(io, "No problems detected")
+    _print_coefficients(io, "matrix", ranges.matrix, print, warnings)
+    _print_coefficients(io, "objective", ranges.objective, print, warnings)
+    _print_coefficients(io, "bounds", ranges.bounds, print, warnings)
+    _print_coefficients(io, "rhs", ranges.rhs, print, warnings)
+    if warn && !isempty(warnings)
+        println(io, "WARNING: numerical stability issues detected")
+        for (name, sense) in warnings
+            println(io, "  - $(name) range contains $(sense) coefficients")
         end
+        println(
+            io,
+            "Very large or small absolute values of coefficients\n",
+            "can cause numerical stability issues. Consider\n",
+            "reformulating the model.",
+        )
     end
     return
 end
@@ -270,13 +260,17 @@ function _print_coefficients(
     if print
         println(
             io,
-            "  Non-zero ",
+            "  ",
             rpad(string(name, " range"), 17),
             _stringify_bounds(range),
         )
     end
-    range[1] < 1e-4 && push!(warnings, (name, "small"))
-    range[2] > 1e7 && push!(warnings, (name, "large"))
+    if range[1] < 1e-4
+        push!(warnings, (name, "small"))
+    end
+    if range[2] > 1e7
+        push!(warnings, (name, "large"))
+    end
     return
 end
 
@@ -376,13 +370,13 @@ function numerical_stability_report(
             _merge(node_ranges, node_ranges_2)
         end
         if by_node
-            print && println(io, "Numerical stability report for node: ", key)
+            print && println(io, "numerical stability report for node: ", key)
             _print_numerical_stability_report(io, node_ranges, print, warn)
         end
         _merge(graph_ranges, node_ranges)
     end
     if !by_node
-        print && println(io, "Numerical stability report")
+        print && println(io, "numerical stability report")
         _print_numerical_stability_report(io, graph_ranges, print, warn)
     end
     print && println(io)
