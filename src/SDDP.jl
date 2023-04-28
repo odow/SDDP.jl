@@ -14,6 +14,7 @@ import JSON
 import MutableArithmetics
 import Printf
 import Random
+import SHA
 import Statistics
 import TimerOutputs
 

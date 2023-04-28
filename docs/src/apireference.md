@@ -128,7 +128,7 @@ SDDP.write_to_file
 SDDP.read_from_file
 Base.write(::IO, ::SDDP.PolicyGraph)
 Base.read(::IO, ::Type{SDDP.PolicyGraph})
-SDDP.evaluate(::SDDP.PolicyGraph{T}, ::SDDP.TestScenarios{T}) where {T}
-SDDP.TestScenarios
-SDDP.TestScenario
+SDDP.evaluate(::SDDP.PolicyGraph{T}, ::SDDP.ValidationScenarios{T}) where {T}
+SDDP.ValidationScenarios
+SDDP.ValidationScenario
 ```
