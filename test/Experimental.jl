@@ -12,7 +12,7 @@ import JSON
 import JSONSchema
 
 download(
-    "https://odow.github.io/StochOptFormat/versions/sof-0.1.schema.json",
+    "https://odow.github.io/StochOptFormat/versions/sof-0.2.schema.json",
     "sof.schema.json",
 )
 const SCHEMA =
@@ -97,10 +97,15 @@ function test_write_to_file_Min()
     set_optimizer(base_model, HiGHS.Optimizer)
     SDDP.train(base_model; iteration_limit = 50, print_level = 0)
     model = _create_model(true)
-    SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
+    SDDP.write_to_file(
+        model,
+        "experimental.sof.json";
+        validation_scenarios = 10,
+    )
     set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 50, print_level = 0)
-    new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
+    new_model, validation_scenarios =
+        SDDP.read_from_file("experimental.sof.json")
     set_optimizer(new_model, HiGHS.Optimizer)
     SDDP.train(new_model; iteration_limit = 50, print_level = 0)
     @test isapprox(
@@ -113,7 +118,7 @@ function test_write_to_file_Min()
         SDDP.calculate_bound(new_model);
         atol = 1e-6,
     )
-    scenarios = SDDP.evaluate(new_model, test_scenarios)
+    scenarios = SDDP.evaluate(new_model, validation_scenarios)
     @test length(scenarios["problem_sha256_checksum"]) == 64
     @test length(scenarios["scenarios"]) == 10
     @test length(scenarios["scenarios"][1]) == 3
@@ -130,10 +135,15 @@ function test_write_to_file_Max()
     set_optimizer(base_model, HiGHS.Optimizer)
     SDDP.train(base_model; iteration_limit = 50, print_level = 0)
     model = _create_model(false)
-    SDDP.write_to_file(model, "experimental.sof.json"; test_scenarios = 10)
+    SDDP.write_to_file(
+        model,
+        "experimental.sof.json";
+        validation_scenarios = 10,
+    )
     set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 50, print_level = 0)
-    new_model, test_scenarios = SDDP.read_from_file("experimental.sof.json")
+    new_model, validation_scenarios =
+        SDDP.read_from_file("experimental.sof.json")
     set_optimizer(new_model, HiGHS.Optimizer)
     SDDP.train(new_model; iteration_limit = 50, print_level = 0)
     @test isapprox(
@@ -146,7 +156,7 @@ function test_write_to_file_Max()
         SDDP.calculate_bound(new_model);
         atol = 1e-6,
     )
-    scenarios = SDDP.evaluate(new_model, test_scenarios)
+    scenarios = SDDP.evaluate(new_model, validation_scenarios)
     @test length(scenarios["problem_sha256_checksum"]) == 64
     @test length(scenarios["scenarios"]) == 10
     @test length(scenarios["scenarios"][1]) == 3
@@ -162,7 +172,7 @@ function test_write_kwarg()
     SDDP.write_to_file(
         model,
         "experimental.sof.json";
-        test_scenarios = 0,
+        validation_scenarios = 0,
         name = "Experimental",
         description = "Experimental model",
         author = "Oscar Dowson",
@@ -202,12 +212,12 @@ function test_error_objective_states()
 end
 
 function test_slptestset()
-    model, test_scenarios =
+    model, validation_scenarios =
         SDDP.read_from_file(joinpath(@__DIR__, "electric.sof.json"))
     set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 20, print_level = 0)
     @test isapprox(SDDP.calculate_bound(model), 381.8533; atol = 1e-3)
-    scenarios = SDDP.evaluate(model, test_scenarios)
+    scenarios = SDDP.evaluate(model, validation_scenarios)
     @test length(scenarios["problem_sha256_checksum"]) == 64
     @test length(scenarios["scenarios"]) == 3
     return
