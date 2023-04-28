@@ -11,7 +11,6 @@ A single scenario for testing.
 See also: [`ValidationScenarios`](@ref).
 """
 struct ValidationScenario{T,S}
-    probability::Float64
     scenario::Vector{Tuple{T,S}}
 end
 
@@ -98,7 +97,7 @@ function _validation_scenarios(
     scenario_map,
 )
     return map(validation_scenarios.scenarios) do scenario
-        return map(scenario.scenaro) do (node, ω)
+        return map(scenario.scenario) do (node, ω)
             return Dict("node" => "$node", "support" => scenario_map[node][ω])
         end
     end
@@ -166,9 +165,8 @@ function Base.write(
     _throw_if_belief_states(model)
     _throw_if_objective_states(model)
     _throw_if_exisiting_cuts(model)
-    _add_edges(edges, "$(model.root_node)", model.root_children)
     nodes = Dict{String,Any}()
-    subprolems = Dict{String,Any}()
+    subproblems = Dict{String,Any}()
     scenario_map = Dict{T,Any}()
     for (node_name, node) in model.nodes
         _add_node_to_dict(node, node_name, nodes, subproblems, scenario_map)
@@ -722,7 +720,7 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
             sp,
             convert(
                 Vector{String},
-                data["subproblem_name"][subproblem_name]["random_variables"],
+                data["subproblems"][subproblem_name]["random_variables"],
             ),
         )
         parameterize(sp, Ω, P) do ω
@@ -770,7 +768,7 @@ function _validation_scenarios(data::Dict, SHA256::String)
     scenarios = [
         ValidationScenario([
             (item["node"], substitute_nothing(item["support"])) for
-            item in scenario["scenario"]
+            item in scenario
         ],) for scenario in data["validation_scenarios"]
     ]
     return ValidationScenarios(scenarios; SHA256 = SHA256)
