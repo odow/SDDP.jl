@@ -187,11 +187,8 @@ function Base.write(
         "subproblems" => subproblems,
     )
     if validation_scenarios !== nothing
-        sof["validation_scenarios"] = _validation_scenarios(
-            model,
-            validation_scenarios,
-            scenario_map,
-        )
+        sof["validation_scenarios"] =
+            _validation_scenarios(model, validation_scenarios, scenario_map)
     end
     for (k, v) in kwargs
         sof["$(k)"] = v

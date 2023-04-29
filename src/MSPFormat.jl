@@ -177,14 +177,14 @@ function read_from_file(problem_filename::String, lattice_filename::String)
             objective = _get_constant(variable["obj"])
             sym_name = Symbol(variable["name"])
             x = if variable["name"] in state_variables
-                x = sp[sym_name] = JuMP.@variable(
+                sp[sym_name] = JuMP.@variable(
                     sp,
                     variable_type = SDDP.State,
                     # Because MSPFormat ignores initial values
                     initial_value = 0.0,
                     base_name = "$sym_name",
                 )
-                x.out
+                sp[sym_name].out
             else
                 sp[sym_name] = JuMP.@variable(sp, base_name = "$sym_name")
             end
@@ -225,8 +225,9 @@ function read_from_file(problem_filename::String, lattice_filename::String)
         SDDP.parameterize(sp, [graph_data[node]["state"]]) do ω
             SDDP.@stageobjective(
                 sp,
-                stage_objective +
-                sum(x * _get_constant(terms, ω) for (x, terms) in ω_objective)
+                stage_objective + sum(
+                    x * _get_constant(terms, ω) for (x, terms) in ω_objective
+                )
             )
             for (x, terms) in ω_lower_bound
                 JuMP.set_lower_bound(x, _get_constant(terms, ω))
@@ -249,4 +250,3 @@ function read_from_file(problem_filename::String, lattice_filename::String)
 end
 
 end  # module
-
