@@ -107,13 +107,13 @@ end
     Base.write(
         io::IO,
         model::PolicyGraph;
-        validation_scenarios::Union{Int, ValidationScenarios} = 1_000,
+        validation_scenarios::Union{Nothing,Int,ValidationScenarios} = nothing,
         kwargs...
     )
 
 Write `model` to `io` in the StochOptFormat file format.
 
-Pass an `Int` to `validation_scenarios` (default `1_000`) to specify the number
+Pass an `Int` to `validation_scenarios` (default `nothing`) to specify the number
 of test scenarios to generate using the [`InSampleMonteCarlo`](@ref) sampling
 scheme. Alternatively, pass a [`ValidationScenarios`](@ref) object to manually
 specify the test scenarios to use.
@@ -159,7 +159,7 @@ end
 function Base.write(
     io::IO,
     model::PolicyGraph{T};
-    validation_scenarios::Union{Int,ValidationScenarios{T,S}} = 1_000,
+    validation_scenarios::Union{Nothing,Int,ValidationScenarios{T,S}} = nothing,
     kwargs...,
 ) where {T,S}
     _throw_if_belief_states(model)
@@ -185,12 +185,14 @@ function Base.write(
         ),
         "nodes" => nodes,
         "subproblems" => subproblems,
-        "validation_scenarios" => _validation_scenarios(
+    )
+    if validation_scenarios !== nothing
+        sof["validation_scenarios"] = _validation_scenarios(
             model,
             validation_scenarios,
             scenario_map,
-        ),
-    )
+        )
+    end
     for (k, v) in kwargs
         sof["$(k)"] = v
     end

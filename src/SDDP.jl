@@ -64,5 +64,6 @@ include("deterministic_equivalent.jl")
 include("biobjective.jl")
 
 include("Experimental.jl")
+include("MSPFormat.jl")
 
 end
