@@ -467,3 +467,42 @@ function sample_scenario(
     end
     return s.scenarios[s.counter]
 end
+
+
+mutable struct SimulatorSamplingScheme{F} <: AbstractSamplingScheme
+    simulator::F
+end
+
+function Base.show(io::IO, h::SimulatorSamplingScheme)
+    print(io, "SimulatorSamplingScheme")
+    return
+end
+
+function _closest_index(graph, t, value)
+    min_value, min_dist = value, Inf
+    for (t_, value_) in keys(graph.nodes)
+        if t_ == t
+            if abs(value - value_) < min_dist
+                min_value = value_
+                min_dist = abs(value - value_)
+            end
+        end
+    end
+    return (t, min_value)
+end
+
+function sample_scenario(
+    graph::PolicyGraph{Tuple{Int,Float64}},
+    s::SimulatorSamplingScheme{F},
+) where {F,A}
+    scenario_path = Tuple{Tuple{Int,Float64},Any}[]
+    for (t, value) in enumerate(s.simulator())
+        node_index = _closest_index(graph, t, value)
+        node = graph[node_index]
+        noise_terms = get_noise_terms(InSampleMonteCarlo(), node, node_index)
+        noise = sample_noise(noise_terms)
+        @assert noise[1] == node_index[2]
+        push!(scenario_path, (node_index, (value, noise[2])))
+    end
+    return scenario_path, false
+end
