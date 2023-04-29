@@ -771,6 +771,9 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
 end
 
 function _validation_scenarios(data::Dict, SHA256::String)
+    if !haskey(data, "validation_scenarios")
+        return nothing
+    end
     scenarios = map(data["validation_scenarios"]) do scenario
         items = map(scenario) do item
             support = get(item, "support", Any[])
