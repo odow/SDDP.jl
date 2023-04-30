@@ -155,6 +155,9 @@ Return a [`SDDP.PolicyGraph`](@ref) built from the MSPFormat files
 `problem_filename` and `lattice_filename`, which point to the `.problem.json`
 and `.lattice.json` files respectively.
 
+!!! warning
+    This function is experimental and may change in any future commit.
+
 ## Keyword arguments
 
  * `bound::Float64 = 1e6`. The absolute value of the lower bound (if minimizing)
