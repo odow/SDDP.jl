@@ -25,14 +25,13 @@ end
 function test_get_constant()
     @test MSPFormat._get_constant(Any[1.0]) == 1.0
     @test MSPFormat._get_constant(Any[2.4]) == 2.4
-    @test MSPFormat._get_constant(Any["inf"]) == nothing
-    @test MSPFormat._get_constant(Any["-inf"]) == nothing
+    @test MSPFormat._get_constant(Any["inf"]) == Inf
+    @test MSPFormat._get_constant(Any["-inf"]) == -Inf
     state = Dict{String,Any}("inflow" => 12.0)
     @test MSPFormat._get_constant(Any[1.0], state) == 1.0
     @test MSPFormat._get_constant(Any[2.4], state) == 2.4
-    @test MSPFormat._get_constant(Any["inf"], state) == nothing
-    @test MSPFormat._get_constant(Any["-inf"], state) == nothing
-    @test MSPFormat._get_constant(Any["inf"]) == nothing
+    @test MSPFormat._get_constant(Any["inf"], state) == Inf
+    @test MSPFormat._get_constant(Any["-inf"], state) == -Inf
     terms = [Dict("ADD" => "inflow"), Dict("ADD" => 0.0)]
     @test MSPFormat._get_constant(terms) === terms
     @test MSPFormat._get_constant(terms, state) === 12.0
@@ -68,7 +67,8 @@ end
 
 function test_SimpleHydroThermal()
     problem = joinpath(@__DIR__, "Simple_Hydrothermal")
-    if !isfile("$problem.problem.json")
+    if haskey(ENV, "CI")
+        @test !isfile("$problem.problem.json")
         return  # Skip tests
     end
     model = MSPFormat.read_from_file(problem)
@@ -80,7 +80,8 @@ end
 
 function test_SimpleHydroThermal_round_trip()
     problem = joinpath(@__DIR__, "Simple_Hydrothermal")
-    if !isfile("$problem.problem.json")
+    if haskey(ENV, "CI")
+        @test !isfile("$problem.problem.json")
         return  # Skip tests
     end
     src = MSPFormat.read_from_file(problem)

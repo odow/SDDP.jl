@@ -1,4 +1,4 @@
-#  Copyright (c) 2023, Oscar Dowson
+#  Copyright (c) 2017-23, Oscar Dowson and SDDP.jl contributors
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,21 +8,6 @@ module MSPFormat
 import JSON
 import JuMP
 import ..SDDP
-
-const Object = Dict{String,Any}
-
-_func_variable(name) = Object("type" => "Variable", "name" => name)
-
-function _to_set(type, value)
-    if type == "EQ"
-        return Object("type" => "EqualTo", "value" => value)
-    elseif type == "LEQ"
-        return Object("type" => "LessThan", "upper" => value)
-    else
-        @assert type == "GEQ"
-        return Object("type" => "GreaterThan", "lower" => value)
-    end
-end
 
 function _parse_lattice(filename::String)
     data = JuMP.MOI.FileFormats.compressed_open(
@@ -41,6 +26,8 @@ function _parse_lattice(filename::String)
             SDDP.add_edge(graph, key => child, probability)
         end
     end
+    # MSPFormat doesn't have explicit root -> stage 1 arcs. Assume uniform.
+    # Also, MSPFormat uses 0-indexed stages.
     stage_zero = String[key for (key, value) in data if value["stage"] == 0]
     for key in stage_zero
         SDDP.add_edge(graph, "root" => key, 1 / length(stage_zero))
@@ -48,18 +35,22 @@ function _parse_lattice(filename::String)
     return graph, data
 end
 
+# If the state is missing, the default is `0.0`.
 _get_constant(terms::String, state::Dict) = get(state, terms, 0.0)
 
 function _get_constant(terms::Vector, state::Union{Dict,Nothing} = nothing)
     if length(terms) == 1
+        # Special case: if `terms = Any[1.0]` or `terms = Any["inf"]`, then we
+        # don't need complicated recursive logic. Bail early.
         if terms[1] isa Number
             return terms[1]
-        elseif terms[1] == "inf" || terms[1] == "-inf"
-            return nothing
+        elseif terms[1] == "inf"
+            return Inf
+        elseif terms[1] == "-inf"
+            return -Inf
         end
     end
-    constant = 0.0
-    multipliers = 1.0
+    mul_term, add_term = 1.0, 0.0
     for term in terms
         @assert term isa Dict
         key = get(term, "ADD", 0.0)
@@ -67,21 +58,21 @@ function _get_constant(terms::Vector, state::Union{Dict,Nothing} = nothing)
             return terms
         end
         value = get(state, key, key)
-        if !(value isa Number)
+        if !(value isa Number)  # term is recursive.
             value = _get_constant(value, state)
         end
-        constant += value
+        add_term += value
         key = get(term, "MUL", 1.0)
         if state == nothing && key isa String
             return terms
         end
         value = get(state, key, key)
-        if !(value isa Number)
+        if !(value isa Number)  # term is recursive.
             value = _get_constant(value, state)
         end
-        constant *= value
+        mul_term *= value
     end
-    return multipliers * constant
+    return mul_term * add_term
 end
 
 function _set_type(rhs::Number, type)
@@ -95,19 +86,27 @@ function _set_type(rhs::Number, type)
     end
 end
 
+# If the RHS is not a Number, it must be a random expression. Use a default RHS
+# of 0.0.
 _set_type(::Any, type) = _set_type(0.0, type)
 
 function _build_lhs(stage::Int, sp::JuMP.Model, terms::Vector{Any})
     if maximum(term["stage"] for term in terms) != stage
+        # Skip constraints which are not relevant for this stage.
         return nothing, nothing
     end
+    # For now, we assume the LHS is affine.
     lhs = JuMP.AffExpr(0.0)
+    # lhs_data will store random coefficient terms for each variable.
     lhs_data = Dict{JuMP.VariableRef,Any}()
     for term in terms
+        # Lookup variable by name from the JuMP model.
         x = sp[Symbol(term["name"])]
         if x isa JuMP.VariableRef
             @assert term["stage"] == stage
         else
+            # `x` is a state, so we need to distinguish whether we want the
+            # `.in` or `.out` variables.
             @assert x isa SDDP.State
             if term["stage"] == stage
                 x = x.out
@@ -118,7 +117,8 @@ function _build_lhs(stage::Int, sp::JuMP.Model, terms::Vector{Any})
         end
         coef = _get_constant(term["coefficient"])
         if coef isa Vector{Any}
-            lhs_data[x] = coef
+            lhs_data[x] = coef  # Store the random data
+            # Set lhs += 1.0 * x for now. This will get updated in parameterize.
             lhs += x
         else
             lhs += coef * x
@@ -127,6 +127,9 @@ function _build_lhs(stage::Int, sp::JuMP.Model, terms::Vector{Any})
     return lhs, lhs_data
 end
 
+# MSPFormat does not store an explicit list of state variables. Detect state
+# variables by finding two variables in the same constraint with the same name
+# and different `stage` values.
 function _state_variables(problem)
     states = Set{String}()
     for constraint in problem["constraints"]
@@ -141,24 +144,35 @@ function _state_variables(problem)
     return sort(collect(states))
 end
 
-function read_from_file(problem_name::String)
-    problem_filename = problem_name * ".problem.json"
-    lattice_filename = problem_name * ".lattice.json"
-    if !isfile(lattice_filename)
-        lattice_filename *= ".gz"
-    end
-    return read_from_file(problem_filename, lattice_filename)
-end
+"""
+    read_from_file(
+        problem_filename::String,
+        lattice_filename::String;
+        bound::Float64 = 1e6,
+    )
 
-function read_from_file(problem_filename::String, lattice_filename::String)
+Return a [`SDDP.PolicyGraph`](@ref) built from the MSPFormat files
+`problem_filename` and `lattice_filename`, which point to the `.problem.json`
+and `.lattice.json` files respectively.
+
+## Keyword arguments
+
+ * `bound::Float64 = 1e6`. The absolute value of the lower bound (if minimizing)
+   or the upper bound (if maximizing).
+"""
+function read_from_file(
+    problem_filename::String,
+    lattice_filename::String;
+    bound::Float64 = 1e6,
+)
     graph, graph_data = _parse_lattice(lattice_filename)
     problem = JSON.parsefile(problem_filename)
     state_variables = _state_variables(problem)
     model = SDDP.PolicyGraph(
         graph;
         sense = problem["maximize"] ? :Max : :Min,
-        lower_bound = problem["maximize"] ? -Inf : 0,
-        upper_bound = problem["maximize"] ? 1e7 : Inf,
+        lower_bound = problem["maximize"] ? -Inf : -bound,
+        upper_bound = problem["maximize"] ? bound : Inf,
     ) do sp, node
         ω_lower_bound = Dict{JuMP.VariableRef,Any}()
         ω_upper_bound = Dict{JuMP.VariableRef,Any}()
@@ -166,12 +180,11 @@ function read_from_file(problem_filename::String, lattice_filename::String)
         ω_lhs_coefficient = Dict{JuMP.ConstraintRef,Any}()
         ω_rhs_coefficient = Dict{JuMP.ConstraintRef,Any}()
         stage = graph_data[node]["stage"]
-        stage_objective = 0.0
+        stage_objective = JuMP.AffExpr(0.0)
         for variable in problem["variables"]
             if variable["stage"] != stage
                 continue
             end
-            @assert variable["type"] == "CONTINUOUS"
             lower_bound = _get_constant(variable["lb"])
             upper_bound = _get_constant(variable["ub"])
             objective = _get_constant(variable["obj"])
@@ -188,12 +201,19 @@ function read_from_file(problem_filename::String, lattice_filename::String)
             else
                 sp[sym_name] = JuMP.@variable(sp, base_name = "$sym_name")
             end
-            if lower_bound isa Number
+            if variable["type"] == "BINARY"
+                set_binary(x)
+            elseif variable["type"] == "INTEGER"
+                set_integer(x)
+            else
+                @assert variable["type"] == "CONTINUOUS"
+            end
+            if lower_bound isa Number && isfinite(lower_bound)
                 JuMP.set_lower_bound(x, lower_bound)
             elseif lower_bound isa Vector{Any}
                 ω_lower_bound[x] = lower_bound
             end
-            if upper_bound isa Number
+            if upper_bound isa Number && isfinite(upper_bound)
                 JuMP.set_upper_bound(x, upper_bound)
             elseif upper_bound isa Vector{Any}
                 ω_upper_bound[x] = upper_bound
@@ -218,9 +238,6 @@ function read_from_file(problem_filename::String, lattice_filename::String)
             if lhs_data !== nothing
                 ω_lhs_coefficient[con] = lhs_data
             end
-        end
-        if isempty(stage_objective)
-            SDDP.@stageobjective(sp, stage_objective)
         end
         SDDP.parameterize(sp, [graph_data[node]["state"]]) do ω
             SDDP.@stageobjective(
@@ -247,6 +264,31 @@ function read_from_file(problem_filename::String, lattice_filename::String)
         return
     end
     return model
+end
+
+"""
+    read_from_file(problem_name::String)
+
+A utility for reading MSPFormat files that saves writing out both the problem
+and lattice filenames if they are in the same location and differ only by the
+suffix.
+
+It is equivalent to a call like:
+
+```julia
+read_from_file(problem_name * ".problem.json", problem_name * ".lattice.json")
+```
+
+In addition, this function searches for compressed `.gz` versions of the lattice
+file, since it may be very large.
+"""
+function read_from_file(problem_name::String)
+    problem_filename = problem_name * ".problem.json"
+    lattice_filename = problem_name * ".lattice.json"
+    if !isfile(lattice_filename)
+        lattice_filename *= ".gz"
+    end
+    return read_from_file(problem_filename, lattice_filename)
 end
 
 end  # module
