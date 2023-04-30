@@ -468,6 +468,61 @@ function sample_scenario(
     return s.scenarios[s.counter]
 end
 
+"""
+    SimulatorSamplingScheme(simulator::Function)
+
+Create a sampling scheme based on a univariate scenario generator `simulator`,
+which returns a `Vector{Float64}` when called with no arguments like
+`simulator()`.
+
+This sampling scheme must be used with a Markovian graph constructed from the
+same `simulator`.
+
+The sample space for [`SDDP.parameterize`](@ref) must be a tuple in which the
+first element is the Markov state.
+
+This sampling scheme generates a new scenario by calling `simulator()`, and then
+picking the sequence of nodes in the Markovian graph that is closest to the new
+trajectory.
+
+## Example
+
+```julia
+julia> using SDDP
+
+julia> import HiGHS
+
+julia> simulator() = cumsum(rand(10))
+simulator (generic function with 1 method)
+
+julia> model = SDDP.PolicyGraph(
+           SDDP.MarkovianGraph(simulator; budget = 20, scenarios = 100);
+           sense = :Max,
+           upper_bound = 12,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, node
+           t, markov_state = node
+           @variable(sp, x >= 0, SDDP.State, initial_value = 1)
+           @variable(sp, u >= 0)
+           @constraint(sp, x.out == x.in - u)
+           # Elements of Ω must be a tuple in which `markov_state` is the first
+           # element.
+           Ω = [(markov_state, (u = u_max,)) for u_max in (0.0, 0.5)]
+           SDDP.parameterize(sp, Ω) do (markov_state, ω)
+               set_upper_bound(u, ω.u)
+               @stageobjective(sp, markov_state * u)
+           end
+       end;
+
+julia> SDDP.train(
+           model;
+           print_level = 0,
+           iteration_limit = 10,
+           sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
+       )
+
+```
+"""
 mutable struct SimulatorSamplingScheme{F} <: AbstractSamplingScheme
     simulator::F
 end
