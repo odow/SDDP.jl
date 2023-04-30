@@ -468,7 +468,6 @@ function sample_scenario(
     return s.scenarios[s.counter]
 end
 
-
 mutable struct SimulatorSamplingScheme{F} <: AbstractSamplingScheme
     simulator::F
 end

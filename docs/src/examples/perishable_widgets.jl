@@ -23,21 +23,21 @@
 # engages in a forward contracting programme.
 
 # The forward contracting programme is a deal for physical widgets at a future
-# date in time. The company can engage in x_forward for sales up to six months
-# in the future.
+# date in time. The company can engage in `x_forward` for sales up to four
+# months in the future.
 
 # The futures price is the current spot price, plus some forward contango (the
 # buyers gain certainty that they will receive the widgets in the future).
 
 # In general, the widget company should forward contract (since they reduce
-# their price risk), however they also have u_production risk. Therefore, it may
+# their price risk), however they also have production risk. Therefore, it may
 # be the case that they forward contract a fixed amount, but find that they do
 # not produce enough widgets to meet the fixed demand. They are then forced to
 # buy additional widgets on the spot market.
 
 # The goal of the widget company is to choose the extent to which they forward
 # contract in order to maximise (risk-adjusted) revenues, whilst managing their
-# u_production risk.
+# production risk.
 
 using SDDP
 import HiGHS
@@ -54,8 +54,6 @@ function simulator()
     return scenario
 end
 
-sampling_scheme = SDDP.SimulatorSamplingScheme(simulator)
-
 model = SDDP.PolicyGraph(
     SDDP.MarkovianGraph(simulator; budget = 60, scenarios = 100_000);
     sense = :Max,
@@ -63,32 +61,42 @@ model = SDDP.PolicyGraph(
     optimizer = HiGHS.Optimizer,
 ) do sp, node
     t, markov_state = node
-    c_contango = [1.0, 1.025, 1.05, 1.075, 1.1, 1.125]
+    c_contango = [1.0, 1.025, 1.05, 1.075]
     c_transaction, c_perish_factor, c_buy_premium = 0.01, 0.95, 1.5
     F, P = length(c_contango), 5
-    @variables(sp, begin
-        0 <= x_forward[1:F], SDDP.State, (initial_value = 0)
-        0 <= x_stock[p=1:P], SDDP.State, (initial_value = 0)
-        0 <= u_spot_sell[1:P]
-        0 <= u_spot_buy
-        0 <= u_forward_deliver[1:P]
-        0 <= u_forward_sell[1:F] <= 10
-        0 <= u_production
-    end)
+    @variable(sp, 0 <= x_forward[1:F], SDDP.State, (initial_value = 0))
+    @variable(sp, 0 <= x_stock[p = 1:P], SDDP.State, (initial_value = 0))
+    @variable(sp, 0 <= u_spot_sell[1:P])
+    @variable(sp, 0 <= u_spot_buy)
+    @variable(sp, 0 <= u_forward_deliver[1:P])
+    @variable(sp, 0 <= u_forward_sell[1:F] <= 10)
+    @variable(sp, 0 <= u_production)
     for f in 1:F
         if t + f >= 12
             fix(u_forward_sell[f], 0.0; force = true)
         end
     end
-    @constraints(sp, begin
-        ## Contract balance
-        [i=1:F-1], x_forward[i].out == x_forward[i+1].in + u_forward_sell[i]
-        x_forward[F].out == u_forward_sell[F]
-        x_forward[1].in == sum(u_forward_deliver)
-        ## Inventory balance balance
-        x_stock[1].out == u_production - u_forward_deliver[1] - u_spot_sell[1] + u_spot_buy
-        [i=2:P], x_stock[i].out == c_perish_factor * x_stock[i-1].in - u_forward_deliver[i] - u_spot_sell[i]
-    end)
+    ## Contract balance
+    @constraint(
+        sp,
+        [i = 1:F-1],
+        x_forward[i].out == x_forward[i+1].in + u_forward_sell[i],
+    )
+    @constraint(sp, x_forward[F].out == u_forward_sell[F])
+    @constraint(sp, x_forward[1].in == sum(u_forward_deliver))
+    ## Inventory balance
+    @constraint(
+        sp,
+        x_stock[1].out ==
+        u_production - u_forward_deliver[1] - u_spot_sell[1] + u_spot_buy
+    )
+    @constraint(
+        sp,
+        [i = 2:P],
+        x_stock[i].out ==
+        c_perish_factor * x_stock[i-1].in - u_forward_deliver[i] -
+        u_spot_sell[i]
+    )
     Ω = [(markov_state, (production = p,)) for p in range(0.1, 0.2; length = 5)]
     SDDP.parameterize(sp, Ω) do (markov_state, ω)
         set_upper_bound(u_production, ω.production)
@@ -102,11 +110,12 @@ model = SDDP.PolicyGraph(
     end
 end
 
-status = SDDP.train(model;
+status = SDDP.train(
+    model;
     iteration_limit = 300,
     time_limit = 20,
-    risk_measure = 0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.25),
-    sampling_scheme = sampling_scheme,
+    risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.25),
+    sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
 )
 
 simulations = SDDP.simulate(
@@ -121,7 +130,7 @@ simulations = SDDP.simulate(
         :u_spot_buy,
         :u_production,
     ];
-    sampling_scheme = sampling_scheme,
+    sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
 );
 
 # plt = SDDP.SpaghettiPlot(simulations)
