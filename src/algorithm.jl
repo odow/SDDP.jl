@@ -96,7 +96,7 @@ struct Options{T}
     start_time::Float64
     log::Vector{Log}
     log_file_handle::Any
-    log_frequency::Int
+    log_frequency::Union{Int,Function}
     forward_pass::AbstractForwardPass
     duality_handler::AbstractDualityHandler
     # A callback called after the forward pass.
@@ -117,7 +117,7 @@ struct Options{T}
         start_time::Float64,
         log::Vector{Log},
         log_file_handle,
-        log_frequency::Int,
+        log_frequency::Union{Int,Function},
         forward_pass::AbstractForwardPass,
         duality_handler::AbstractDualityHandler,
         forward_pass_callback,
@@ -868,6 +868,9 @@ Train the policy for `model`.
  - `log_frequency::Int`: control the frequency with which the logging is
     outputted (iterations/log). Defaults to `1`.
 
+ - `log_every_seconds::Float64`: control the frequency with which the logging is
+   outputted (seconds/log). Defaults to `0.0`.
+
  - `run_numerical_stability_report::Bool`: generate (and print) a numerical
    stability report prior to solve. Defaults to `true`.
 
@@ -925,6 +928,7 @@ function train(
     print_level::Int = 1,
     log_file::String = "SDDP.log",
     log_frequency::Int = 1,
+    log_every_seconds::Float64 = 0.0,
     run_numerical_stability_report::Bool = true,
     stopping_rules = AbstractStoppingRule[],
     risk_measure = SDDP.Expectation(),
@@ -942,6 +946,17 @@ function train(
     duality_handler::AbstractDualityHandler = SDDP.ContinuousConicDuality(),
     forward_pass_callback::Function = (x) -> nothing,
 )
+    function log_frequency_f(log::Vector{Log})
+        if mod(length(log), log_frequency) != 0
+            return false
+        end
+        if length(log) >= 2
+            return div(log[end-1].time, log_every_seconds) <
+                   div(log[end].time, log_every_seconds)
+        end
+        return true
+    end
+
     if !add_to_existing_cuts && model.most_recent_training_results !== nothing
         @warn("""
         Re-training a model with existing cuts!
@@ -1046,7 +1061,7 @@ function train(
         time(),
         log,
         log_file_handle,
-        log_frequency,
+        log_frequency_f,
         forward_pass,
         duality_handler,
         forward_pass_callback,
