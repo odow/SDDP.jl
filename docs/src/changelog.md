@@ -7,6 +7,18 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.2.0 (May 1, 2023)
+
+### Added
+
+ - Added [`SDDP.SimulatorSamplingScheme`](@ref) (#594)
+ - Added `log_every_seconds` argument to [`SDDP.train`](@ref) (#595)
+
+### Other
+
+ - Tweaked how the log is printed (#588)
+ - Updated to StochOptFormat v0.2 (#592)
+
 ## v1.1.4 (April 10, 2023)
 
 ### Fixed
