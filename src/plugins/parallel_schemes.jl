@@ -3,10 +3,18 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+function _should_log(options, log_frequency::Int)
+    return options.print_level > 0 &&
+           mod(length(options.log), log_frequency) == 0
+end
+
+function _should_log(options, log_frequency::Function)
+    return options.print_level > 0 && log_frequency(options.log)
+end
+
 function log_iteration(options)
     options.dashboard_callback(options.log[end], false)
-    if options.print_level > 0 &&
-       mod(length(options.log), options.log_frequency) == 0
+    if _should_log(options, options.log_frequency)
         print_helper(print_iteration, options.log_file_handle, options.log[end])
         flush(options.log_file_handle)
     end
