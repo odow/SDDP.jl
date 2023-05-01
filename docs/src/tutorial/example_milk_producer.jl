@@ -5,7 +5,7 @@
 
 # # Example: the milk producer
 
-# The purpose of this tutorial is to demonstrate how to fix a Markovian policy
+# The purpose of this tutorial is to demonstrate how to fit a Markovian policy
 # graph to a univariate stochastic process.
 
 # This tutorial uses the following packages:
@@ -92,6 +92,7 @@ plot = Plots.plot(
 # a [`SDDP.MarkovianGraph`](@ref) directly from the simulator:
 
 graph = SDDP.MarkovianGraph(simulator; budget = 60, scenarios = 10_000);
+nothing  # hide
 
 # Here `budget` is the number of nodes in the policy graph, and `scenarios` is
 # the number of simulations to use when estimating the transition probabilities.
@@ -184,7 +185,7 @@ end
 # the new out-of-sample price instead of the price associated with the Markov
 # node.
 
-status = SDDP.train(
+SDDP.train(
     model;
     time_limit = 20,
     risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.25),
@@ -207,6 +208,7 @@ simulations = SDDP.simulate(
     Symbol[:x_forward, :x_stock, :u_spot_sell, :u_spot_buy];
     sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
 );
+nothing  # hide
 
 # To show how the sampling scheme uses the new out-of-sample price instead of
 # the price associated with the Markov node, compare the index of the Markov
