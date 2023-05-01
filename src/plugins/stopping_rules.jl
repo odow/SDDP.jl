@@ -199,3 +199,77 @@ function convergence_test(
     end
     return true
 end
+
+# ======================= Bound-stalling Stopping Rule ======================= #
+
+"""
+    PrimalSimulation()
+
+
+```julia
+stopping_rule = SDDP.PrimalSimulation(
+    N::Int,
+    Symbol[];
+    sampling_scheme = SDDP.InSampleMonteCarlo(),
+)
+
+end
+"""
+mutable struct PrimalSimulation{F} <: AbstractStoppingRule
+    simulator::F
+    period::Int
+    data::Vector{Any}
+    distances::Vector{Float64}
+end
+
+function PrimalSimulation(;
+    replications::Int,
+    period::Int,
+    variables::Vector{Symbol},
+    sampling_scheme = SDDP.InSampleMonteCarlo(),
+)
+    function simulator()
+        scenarios = SDDP.simulate(
+            model,
+            replications;
+            sampling_scheme =
+                SDDP.PSRSamplingScheme(N; sampling_scheme = sampling_scheme),
+        )
+        return map(scenarios) do scenario
+            return [getindex.(scenario, key) for key in variables]
+        end
+    end
+    return PrimalSimulation(simulator, period, Any[], Float64[])
+end
+
+stopping_rule_status(::PrimalSimulation) = :PrimalSimulation
+
+function _compute_distance(new_data::Vector, old_data::Vector)
+    d = zeros(length(new_data), length(old_data))
+    for i in 1:length(new_data)
+        for j in 1:length(old_data)
+        end
+    end
+    return 0.0
+end
+
+function convergence_test(
+    ::PolicyGraph{T},
+    log::Vector{Log},
+    rule::PrimalSimulation,
+) where {T}
+    if mod(length(log), period) == 0
+        new_data = rule.simulator()
+    end
+    if isempty(rule.data)
+        rule.data = new_data
+        return false
+    end
+    push!(rule.distances, _compuate_distance(new_data, rule.data))
+    rule.data = new_data
+    @info rule.distances
+    if length(rule.distances) < 2
+        return false
+    end
+    return isapprox(rule.distances[end], rule.distances[end-1]; rtol = 0.01)
+end
