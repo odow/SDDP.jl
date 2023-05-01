@@ -950,7 +950,7 @@ function train(
         if mod(length(log), log_frequency) != 0
             return false
         end
-        if length(log) >= 2
+        if length(log) >= 2 && log_every_seconds > 0.0
             return div(log[end-1].time, log_every_seconds) <
                    div(log[end].time, log_every_seconds)
         end
