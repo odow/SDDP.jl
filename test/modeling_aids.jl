@@ -26,30 +26,31 @@ function test_find_min()
     return
 end
 
-function test_allocate_support_budget()
-    @inferred SDDP.allocate_support_budget(() -> rand(10), 20, 100)
-    states = SDDP.allocate_support_budget(() -> rand(10), 20, 100)
+function test__allocate_support_budget()
+    @inferred SDDP._allocate_support_budget(() -> rand(10), 20, 100)
+    states = SDDP._allocate_support_budget(() -> rand(10), 20, 100)
     @test isa(states, Vector{Int})
     @test sum(states) == 20
     @test all(states .> 0)
-    @inferred SDDP.allocate_support_budget(() -> [1, 2, 3 + rand()], 17, 31)
-    states = SDDP.allocate_support_budget(() -> [1, 2, 3 + rand()], 17, 31)
+    @inferred SDDP._allocate_support_budget(() -> [1, 2, 3 + rand()], 17, 31)
+    states = SDDP._allocate_support_budget(() -> [1, 2, 3 + rand()], 17, 31)
     @test sum(states) == 17
     @test all(states .> 0)
-    @inferred SDDP.allocate_support_budget(() -> [1.0, 2.0, 3.0], 5, 10)
-    states = SDDP.allocate_support_budget(() -> [1.0, 2.0, 3.0], 5, 10)
+    @inferred SDDP._allocate_support_budget(() -> [1.0, 2.0, 3.0], 5, 10)
+    states = SDDP._allocate_support_budget(() -> [1.0, 2.0, 3.0], 5, 10)
     @test states == [1, 1, 1]
     @test all(states .> 0)
     states = [1, 3, 5]
-    new_states = SDDP.allocate_support_budget(() -> [1.0, 2.0, 3.0], states, 19)
+    new_states =
+        SDDP._allocate_support_budget(() -> [1.0, 2.0, 3.0], states, 19)
     @test states == new_states
-    @test SDDP.allocate_support_budget(() -> rand(3), 2, 10) == [1, 1, 1]
+    @test SDDP._allocate_support_budget(() -> rand(3), 2, 10) == [1, 1, 1]
     return
 end
 
-function test_lattice_approximation()
+function test__lattice_approximation()
     support, probability =
-        SDDP.lattice_approximation(() -> rand(5), [1, 2, 3, 4, 5], 100)
+        SDDP._lattice_approximation(() -> rand(5), [1, 2, 3, 4, 5], 100)
     for (t, s) in enumerate(support)
         @test length(s) == t
         @test all(x -> 0 <= x <= 1, s)

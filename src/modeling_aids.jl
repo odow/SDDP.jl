@@ -1,4 +1,4 @@
-# The function `lattice_approximation` is derived from a function of the same name in the
+# The function `_lattice_approximation` is derived from a function of the same name in the
 # `ScenTrees.jl` package by Kipngeno Kirui and released under the MIT license.
 # The reproduced function, and other functions contained only in this file, are also
 # released under MIT.
@@ -37,12 +37,12 @@ function find_min(x::Vector{T}, y::T) where {T<:Real}
     return best_z, best_i
 end
 
-function lattice_approximation(
+function _lattice_approximation(
     f::Function,
     states::Vector{Int},
     scenarios::Int,
 )
-    return lattice_approximation(
+    return _lattice_approximation(
         f,
         states,
         scenarios,
@@ -57,7 +57,7 @@ function _quantiles(x, N)
     return Statistics.quantile(x, range(0.01, 0.99; length = N))
 end
 
-function lattice_approximation(
+function _lattice_approximation(
     f::Function,
     states::Vector{Int},
     scenarios::Int,
@@ -87,37 +87,34 @@ function lattice_approximation(
         end
         distance = (distance * (n - 1) + dist) / n
     end
-    for i in 1:length(support)
-        Ω, p = support[i], probability[i]
+    for p in probability
         p ./= sum(p, dims = 2)
         if any(isnan, p)
-            indices = vec(isnan.(sum(p, dims = 2)))
-            support[i] = Ω[indices]
-            probability[i][indices, :] .= 0.0
+            p[vec(isnan.(sum(p, dims = 2))), :] .= 0.0
         end
     end
     return support, probability
 end
 
 """
-    allocate_support_budget(f, budget, scenarios)
+    _allocate_support_budget(f, budget, scenarios)
 
 Allocate the `budget` nodes amongst the stages for a Markovian approximation.
 By default, we distribute nodes based on the relative variance of the stages.
 """
-function allocate_support_budget(
+function _allocate_support_budget(
     f::Function,
     budget::Int,
     scenarios::Int,
 )::Vector{Int}
-    return allocate_support_budget(
+    return _allocate_support_budget(
         [f()::Vector{Float64} for _ in 1:scenarios],
         budget,
         scenarios,
     )
 end
 
-function allocate_support_budget(
+function _allocate_support_budget(
     simulations::Vector{Vector{Float64}},
     budget::Int,
     scenarios::Int,
@@ -151,13 +148,7 @@ function allocate_support_budget(
     return states
 end
 
-function allocate_support_budget(
-    f::Any,
-    budget::Vector{Int},
-    scenarios::Int,
-)
-    return budget
-end
+_allocate_support_budget(::Any, budget::Vector{Int}, ::Int) = budget
 
 """
     MarkovianGraph(
@@ -182,9 +173,9 @@ function MarkovianGraph(
 )
     scenarios = max(scenarios, 10)
     simulations = [simulator()::Vector{Float64} for _ in 1:scenarios]
-    states = allocate_support_budget(simulations, budget, scenarios)
+    states = _allocate_support_budget(simulations, budget, scenarios)
     support, probability =
-        lattice_approximation(simulator, states, scenarios, simulations)
+        _lattice_approximation(simulator, states, scenarios, simulations)
     g = Graph((0, 0.0))
     for (i, si) in enumerate(support[1])
         add_node(g, (1, si))
