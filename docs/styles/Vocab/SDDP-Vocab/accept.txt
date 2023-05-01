@@ -21,6 +21,7 @@ stagewise
 subgradient
 [Ss]ubproblems
 [Uu]nicyclic
+univariate
 zero'th
 
 Baucke
@@ -45,3 +46,4 @@ MWh
 atol
 [xy]axis
 [xy]label
+[xy]lims

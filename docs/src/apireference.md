@@ -53,6 +53,7 @@ SDDP.InSampleMonteCarlo
 SDDP.OutOfSampleMonteCarlo
 SDDP.Historical
 SDDP.PSRSamplingScheme
+SDDP.SimulatorSamplingScheme
 ```
 
 ### Parallel schemes

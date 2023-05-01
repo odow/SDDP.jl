@@ -1,4 +1,4 @@
-# The function `lattice_approximation` is derived from a function of the same name in the
+# The function `_lattice_approximation` is derived from a function of the same name in the
 # `ScenTrees.jl` package by Kipngeno Kirui and released under the MIT license.
 # The reproduced function, and other functions contained only in this file, are also
 # released under MIT.
@@ -37,14 +37,40 @@ function find_min(x::Vector{T}, y::T) where {T<:Real}
     return best_z, best_i
 end
 
-function lattice_approximation(f::Function, states::Vector{Int}, scenarios::Int)
-    path = f()::Vector{Float64}
-    support = [fill(path[t], states[t]) for t in 1:length(states)]
+function _lattice_approximation(
+    f::Function,
+    states::Vector{Int},
+    scenarios::Int,
+)
+    return _lattice_approximation(
+        f,
+        states,
+        scenarios,
+        [f()::Vector{Float64} for _ in 1:scenarios],
+    )
+end
+
+function _quantiles(x, N)
+    if N == 1
+        return [Statistics.mean(x)]
+    end
+    return Statistics.quantile(x, range(0.01, 0.99; length = N))
+end
+
+function _lattice_approximation(
+    f::Function,
+    states::Vector{Int},
+    scenarios::Int,
+    simulations::Vector{Vector{Float64}},
+)
+    simulation_matrix = reduce(hcat, simulations)
+    support = map(1:length(states)) do t
+        return _quantiles(@view(simulation_matrix[t, :]), states[t])
+    end
     probability = [zeros(states[t-1], states[t]) for t in 2:length(states)]
     prepend!(probability, Ref(zeros(1, states[1])))
     distance = 0.0
-    for n in 1:scenarios
-        copyto!(path, f())
+    for (n, path) in enumerate(simulations)
         dist, last_index = 0.0, 1
         for t in 1:length(states)
             for i in 1:length(states[t])
@@ -64,28 +90,36 @@ function lattice_approximation(f::Function, states::Vector{Int}, scenarios::Int)
     for p in probability
         p ./= sum(p, dims = 2)
         if any(isnan, p)
-            @warn(
-                "Too few scenarios to form an approximation of the lattice. " *
-                "Restarting the approximation with $(10 * scenarios) scenarios.",
-            )
-            return lattice_approximation(f, states, 10 * scenarios)
+            p[vec(isnan.(sum(p, dims = 2))), :] .= 0.0
         end
     end
     return support, probability
 end
 
 """
-    allocate_support_budget(f, budget, scenarios)
+    _allocate_support_budget(f, budget, scenarios)
 
 Allocate the `budget` nodes amongst the stages for a Markovian approximation.
 By default, we distribute nodes based on the relative variance of the stages.
 """
-function allocate_support_budget(
+function _allocate_support_budget(
     f::Function,
     budget::Int,
     scenarios::Int,
 )::Vector{Int}
-    stage_var = Statistics.var([f()::Vector{Float64} for _ in 1:scenarios])
+    return _allocate_support_budget(
+        [f()::Vector{Float64} for _ in 1:scenarios],
+        budget,
+        scenarios,
+    )
+end
+
+function _allocate_support_budget(
+    simulations::Vector{Vector{Float64}},
+    budget::Int,
+    scenarios::Int,
+)::Vector{Int}
+    stage_var = Statistics.var(simulations)
     states = ones(Int, length(stage_var))
     if budget < length(stage_var)
         @warn(
@@ -114,13 +148,7 @@ function allocate_support_budget(
     return states
 end
 
-function allocate_support_budget(
-    f::Function,
-    budget::Vector{Int},
-    scenarios::Int,
-)
-    return budget
-end
+_allocate_support_budget(::Any, budget::Vector{Int}, ::Int) = budget
 
 """
     MarkovianGraph(
@@ -144,8 +172,10 @@ function MarkovianGraph(
     scenarios::Int = 1000,
 )
     scenarios = max(scenarios, 10)
-    states = allocate_support_budget(simulator, budget, scenarios)
-    support, probability = lattice_approximation(simulator, states, scenarios)
+    simulations = [simulator()::Vector{Float64} for _ in 1:scenarios]
+    states = _allocate_support_budget(simulations, budget, scenarios)
+    support, probability =
+        _lattice_approximation(simulator, states, scenarios, simulations)
     g = Graph((0, 0.0))
     for (i, si) in enumerate(support[1])
         add_node(g, (1, si))

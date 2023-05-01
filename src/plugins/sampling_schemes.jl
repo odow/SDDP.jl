@@ -467,3 +467,96 @@ function sample_scenario(
     end
     return s.scenarios[s.counter]
 end
+
+"""
+    SimulatorSamplingScheme(simulator::Function)
+
+Create a sampling scheme based on a univariate scenario generator `simulator`,
+which returns a `Vector{Float64}` when called with no arguments like
+`simulator()`.
+
+This sampling scheme must be used with a Markovian graph constructed from the
+same `simulator`.
+
+The sample space for [`SDDP.parameterize`](@ref) must be a tuple in which the
+first element is the Markov state.
+
+This sampling scheme generates a new scenario by calling `simulator()`, and then
+picking the sequence of nodes in the Markovian graph that is closest to the new
+trajectory.
+
+## Example
+
+```julia
+julia> using SDDP
+
+julia> import HiGHS
+
+julia> simulator() = cumsum(rand(10))
+simulator (generic function with 1 method)
+
+julia> model = SDDP.PolicyGraph(
+           SDDP.MarkovianGraph(simulator; budget = 20, scenarios = 100);
+           sense = :Max,
+           upper_bound = 12,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, node
+           t, markov_state = node
+           @variable(sp, x >= 0, SDDP.State, initial_value = 1)
+           @variable(sp, u >= 0)
+           @constraint(sp, x.out == x.in - u)
+           # Elements of Ω must be a tuple in which `markov_state` is the first
+           # element.
+           Ω = [(markov_state, (u = u_max,)) for u_max in (0.0, 0.5)]
+           SDDP.parameterize(sp, Ω) do (markov_state, ω)
+               set_upper_bound(u, ω.u)
+               @stageobjective(sp, markov_state * u)
+           end
+       end;
+
+julia> SDDP.train(
+           model;
+           print_level = 0,
+           iteration_limit = 10,
+           sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
+       )
+
+```
+"""
+mutable struct SimulatorSamplingScheme{F} <: AbstractSamplingScheme
+    simulator::F
+end
+
+function Base.show(io::IO, h::SimulatorSamplingScheme)
+    print(io, "SimulatorSamplingScheme")
+    return
+end
+
+function _closest_index(graph, t, value)
+    min_value, min_dist = value, Inf
+    for (t_, value_) in keys(graph.nodes)
+        if t_ == t
+            if abs(value - value_) < min_dist
+                min_value = value_
+                min_dist = abs(value - value_)
+            end
+        end
+    end
+    return (t, min_value)
+end
+
+function sample_scenario(
+    graph::PolicyGraph{Tuple{Int,Float64}},
+    s::SimulatorSamplingScheme{F},
+) where {F,A}
+    scenario_path = Tuple{Tuple{Int,Float64},Any}[]
+    for (t, value) in enumerate(s.simulator())
+        node_index = _closest_index(graph, t, value)
+        node = graph[node_index]
+        noise_terms = get_noise_terms(InSampleMonteCarlo(), node, node_index)
+        noise = sample_noise(noise_terms)
+        @assert noise[1] == node_index[2]
+        push!(scenario_path, (node_index, (value, noise[2])))
+    end
+    return scenario_path, false
+end
