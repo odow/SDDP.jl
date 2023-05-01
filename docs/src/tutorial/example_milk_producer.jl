@@ -190,6 +190,7 @@ SDDP.train(
     time_limit = 20,
     risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.25),
     sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
+    log_every_seconds = 2.0,
 )
 
 # !!! warning
