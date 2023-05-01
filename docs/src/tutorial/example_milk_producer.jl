@@ -5,7 +5,7 @@
 
 # # Example: the milk producer
 
-# The purpose of this tutorial is to demonsrate how to fix a Markovian policy
+# The purpose of this tutorial is to demonstrate how to fix a Markovian policy
 # graph to a univariate stochastic process.
 
 # This tutorial uses the following packages:
@@ -74,7 +74,7 @@ simulator()
 
 # It may be helpful to visualize a number of simulations of the price process:
 
-plt = Plots.plot(
+plot = Plots.plot(
     [simulator() for _ in 1:500];
     color = "gray",
     opacity = 0.2,
@@ -101,7 +101,7 @@ graph = SDDP.MarkovianGraph(simulator; budget = 60, scenarios = 10_000);
 for ((t, price), edges) in graph.nodes
     for ((t′, price′), probability) in edges
         Plots.plot!(
-            plt,
+            plot,
             [t, t′],
             [price, price′];
             color = "red",
@@ -109,7 +109,8 @@ for ((t, price), edges) in graph.nodes
         )
     end
 end
-plt
+
+plot
 
 # That looks okay. Try changing `budget` and `scenarios` to see how different
 # Markovian policy graphs can be created.
@@ -179,8 +180,9 @@ end
 # Now we have a model, we train a policy. The [`SDDP.SimulatorSamplingScheme`](@ref)
 # is used in the forward pass. It generates an out-of-sample sequence of prices
 # using `simulator` and traverses the closest sequence of nodes in the policy
-# graph. when parameterizing each subproblem, it uses the new out-of-sample
-# price instead of the price associated with the Markov node.
+# graph. When calling [`SDDP.parameterize`](@ref) for each subproblem, it uses
+# the new out-of-sample price instead of the price associated with the Markov
+# node.
 
 status = SDDP.train(
     model;
