@@ -31,10 +31,11 @@ TimerOutputs = "0.5"
 julia = "1.6"
 
 [extras]
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 JSONSchema = "7d188eb4-7ad8-530c-ae41-71a32a6d4692"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["HiGHS", "JSONSchema", "Pkg", "Test"]
+test = ["Downloads", "HiGHS", "JSONSchema", "Pkg", "Test"]

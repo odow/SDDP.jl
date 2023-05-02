@@ -7,11 +7,12 @@ module TestExperimental
 
 using SDDP
 using Test
+import Downloads
 import HiGHS
 import JSON
 import JSONSchema
 
-download(
+Downloads.download(
     "https://odow.github.io/StochOptFormat/versions/sof-0.3.schema.json",
     "sof.schema.json",
 )

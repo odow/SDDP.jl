@@ -214,16 +214,16 @@ function _add_node_to_dict(
     ]
     undo_reformulation =
         _reformulate_uncertainty(node, realizations, random_variables)
-    nodes[s_node_name] = Dict("subproblem" => s_node_name)
+    nodes[s_node_name] = Dict{String,Any}("subproblem" => s_node_name)
     if !isempty(realizations)
         nodes[s_node_name]["realizations"] = realizations
     end
     if !isempty(node.children)
-        nodes[s_node_name]["successors"] => Dict(
+        nodes[s_node_name]["successors"] = Dict(
             "$(child.term)" => child.probability for child in node.children
         )
     end
-    subproblems[s_node_name] = Dict(
+    subproblems[s_node_name] = Dict{String,Any}(
         "state_variables" => Dict(
             "$state_name" =>
                 Dict("in" => name(state.in), "out" => name(state.out))
@@ -772,7 +772,7 @@ end
 
 function _validation_scenarios(data::Dict, SHA256::String)
     scenarios = map(data["validation_scenarios"]) do scenario
-        items = map(scenario) do data
+        items = map(scenario) do item
             support = get(item, "support", Any[])
             return (item["node"], isempty(support) ? nothing : support)
         end
