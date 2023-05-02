@@ -723,7 +723,11 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
             sp,
             convert(
                 Vector{String},
-                data["subproblems"][subproblem_name]["random_variables"],
+                get(
+                    data["subproblems"][subproblem_name],
+                    "random_variables",
+                    String[],
+                ),
             ),
         )
         parameterize(sp, Ω, P) do ω
