@@ -35,8 +35,9 @@ function _parse_lattice(filename::String)
     return graph, data
 end
 
-# If the state is missing, the default is `0.0`.
-_get_constant(terms::String, state::Dict) = get(state, terms, 0.0)
+_get_constant(terms::String, state::Dict) = state[terms]
+_get_constant(::String, ::Nothing) = nothing
+_get_constant(key::Number, ::Union{Dict,Nothing}) = key
 
 function _get_constant(terms::Vector, state::Union{Dict,Nothing} = nothing)
     if length(terms) == 1
@@ -50,29 +51,25 @@ function _get_constant(terms::Vector, state::Union{Dict,Nothing} = nothing)
             return -Inf
         end
     end
-    mul_term, add_term = 1.0, 0.0
+    result = nothing
     for term in terms
         @assert term isa Dict
-        key = get(term, "ADD", 0.0)
-        if state == nothing && key isa String
-            return terms
+        if haskey(term, "ADD")
+            value = _get_constant(term["ADD"], state)
+            if value === nothing
+                return terms
+            end
+            result = something(result, 0.0) + value
+        else
+            @assert haskey(term, "MUL")
+            value = _get_constant(term["MUL"], state)
+            if value === nothing
+                return terms
+            end
+            result = something(result, 1.0) * value
         end
-        value = get(state, key, key)
-        if !(value isa Number)  # term is recursive.
-            value = _get_constant(value, state)
-        end
-        add_term += value
-        key = get(term, "MUL", 1.0)
-        if state == nothing && key isa String
-            return terms
-        end
-        value = get(state, key, key)
-        if !(value isa Number)  # term is recursive.
-            value = _get_constant(value, state)
-        end
-        mul_term *= value
     end
-    return mul_term * add_term
+    return result::Number
 end
 
 function _set_type(rhs::Number, type)

@@ -49,6 +49,16 @@ function test_get_constant()
     ]
     @test MSPFormat._get_constant(terms) === terms
     @test MSPFormat._get_constant(terms, state) === 213.0
+    terms = Any[Dict("ADD" => "inflow"), Dict("MUL" => -1.0)]
+    @test MSPFormat._get_constant(terms) === terms
+    @test MSPFormat._get_constant(terms, state) === -12.0
+    terms = Any[
+        Dict("ADD" => "inflow"),
+        Dict("MUL" => -1.0),
+        Dict("MUL" => 0.5),
+    ]
+    @test MSPFormat._get_constant(terms) === terms
+    @test MSPFormat._get_constant(terms, state) === -6.0
     return
 end
 
@@ -66,11 +76,7 @@ function test_set_type()
 end
 
 function test_SimpleHydroThermal()
-    problem = joinpath(@__DIR__, "Simple_Hydrothermal")
-    if haskey(ENV, "CI")
-        @test !isfile("$problem.problem.json")
-        return  # Skip tests
-    end
+    problem = joinpath(@__DIR__, "hydro_thermal")
     model = MSPFormat.read_from_file(problem)
     JuMP.set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 10, print_level = 0)
@@ -79,11 +85,7 @@ function test_SimpleHydroThermal()
 end
 
 function test_SimpleHydroThermal_round_trip()
-    problem = joinpath(@__DIR__, "Simple_Hydrothermal")
-    if haskey(ENV, "CI")
-        @test !isfile("$problem.problem.json")
-        return  # Skip tests
-    end
+    problem = joinpath(@__DIR__, "hydro_thermal")
     src = MSPFormat.read_from_file(problem)
     SDDP.write_to_file(src, "$problem.sof.json")
     model, validation = SDDP.read_from_file("$problem.sof.json")
