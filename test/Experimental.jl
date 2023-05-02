@@ -12,7 +12,7 @@ import JSON
 import JSONSchema
 
 download(
-    "https://odow.github.io/StochOptFormat/versions/sof-0.2.schema.json",
+    "https://odow.github.io/StochOptFormat/versions/sof-0.3.schema.json",
     "sof.schema.json",
 )
 const SCHEMA =

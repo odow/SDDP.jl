@@ -172,12 +172,11 @@ function Base.write(
         _add_node_to_dict(node, node_name, nodes, subproblems, scenario_map)
     end
     sof = Dict{String,Any}(
-        "version" => Dict("major" => 0, "minor" => 2),
+        "version" => Dict("major" => 0, "minor" => 3),
         "root" => Dict{String,Any}(
             "name" => "$(model.root_node)",
             "state_variables" => Dict{String,Any}(
-                "$(k)" => Dict{String,Any}("initial_value" => v) for
-                (k, v) in model.initial_root_state
+                "$(k)" => v for (k, v) in model.initial_root_state
             ),
             "successors" => Dict(
                 "$(child.term)" => child.probability for
@@ -215,22 +214,26 @@ function _add_node_to_dict(
     ]
     undo_reformulation =
         _reformulate_uncertainty(node, realizations, random_variables)
-    nodes[s_node_name] = Dict(
-        "subproblem" => s_node_name,
-        "realizations" => realizations,
-        "successors" => Dict(
+    nodes[s_node_name] = Dict("subproblem" => s_node_name)
+    if !isempty(realizations)
+        nodes[s_node_name]["realizations"] = realizations
+    end
+    if !isempty(node.children)
+        nodes[s_node_name]["successors"] => Dict(
             "$(child.term)" => child.probability for child in node.children
-        ),
-    )
+        )
+    end
     subproblems[s_node_name] = Dict(
         "state_variables" => Dict(
             "$state_name" =>
                 Dict("in" => name(state.in), "out" => name(state.out))
             for (state_name, state) in node.states
         ),
-        "random_variables" => random_variables,
         "subproblem" => _subproblem_to_dict(node.subproblem),
     )
+    if !isempty(random_variables)
+        subproblems[s_node_name]["random_variables"] = random_variables
+    end
     undo_reformulation()
     scenario_map[node_name] = Dict(
         noise.term => realizations[i]["support"] for
@@ -679,11 +682,11 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
     for from_node in keys(data["nodes"])
         add_node(graph, from_node)
     end
-    for (to_node, probability) in data["root"]["successors"]
+    for (to_node, probability) in get(data["root"], "successors", Any[])
         add_edge(graph, "__root__" => to_node, probability)
     end
     for (from_node, node) in data["nodes"]
-        for (to_node, probability) in node["successors"]
+        for (to_node, probability) in get(node, "successors", Any[])
             add_edge(graph, from_node => to_node, probability)
         end
     end
@@ -705,7 +708,7 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
             )
         end
         Ω, P = Dict[], Float64[]
-        for realization in data["nodes"][node_name]["realizations"]
+        for realization in get(data["nodes"][node_name], "realizations", Any[])
             push!(P, realization["probability"])
             push!(Ω, realization["support"])
         end
@@ -756,7 +759,7 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
         )
     end
     for (k, v) in data["root"]["state_variables"]
-        model.initial_root_state[Symbol(k)] = v["initial_value"]
+        model.initial_root_state[Symbol(k)] = v
     end
     seekstart(io)
     SHA256 = bytes2hex(SHA.sha2_256(io))

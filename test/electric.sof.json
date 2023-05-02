@@ -1,22 +1,21 @@
 {
     "author": "Oscar Dowson",
     "name": "electric.sof.jsonn",
-    "version": {"major": 0, "minor": 2},
+    "version": {"major": 0, "minor": 3},
     "root": {
         "state_variables": {
-            "1": {"initial_value": 0.0},
-            "2": {"initial_value": 0.0},
-            "3": {"initial_value": 0.0},
-            "4": {"initial_value": 0.0},
-            "5": {"initial_value": 0.0},
-            "6": {"initial_value": 0.0}
+            "1": 0.0,
+            "2": 0.0,
+            "3": 0.0,
+            "4": 0.0,
+            "5": 0.0,
+            "6": 0.0
         },
         "successors": {"1": 1.0}
     },
     "nodes": {
         "1": {
             "subproblem": "first_stage",
-            "realizations": [],
             "successors": {"2": 1.0}
         },
         "2": {
@@ -25,8 +24,7 @@
                 {"support": {"δh[5]": 2.0}, "probability": 0.3},
                 {"support": {"δh[5]": 4.0}, "probability": 0.4},
                 {"support": {"δh[5]": 6.0}, "probability": 0.3}
-            ],
-            "successors": {}
+            ]
         }
     },
     "subproblems": {
@@ -39,7 +37,6 @@
                 "5": {"out": "x′[5]", "in": "x[5]"},
                 "6": {"out": "x′[6]", "in": "x[6]"}
             },
-            "random_variables": [],
             "subproblem": {
                 "version": {"major": 1, "minor": 2},                
                 "variables": [
@@ -321,14 +318,9 @@
             }
         }
     },
-    "validation_scenarios": [[
-        {"node": "1", "support": {}},
-        {"node": "2", "support": {"δh[5]": 2.0}}
-    ], [
-        {"node": "1", "support": {}},
-        {"node": "2", "support": {"δh[5]": 4.0}}
-    ], [
-        {"node": "1", "support": {}},
-        {"node": "2", "support": {"δh[5]": 6.0}}
-    ]]
+    "validation_scenarios": [
+        [{"node": "1"}, {"node": "2", "support": {"δh[5]": 2.0}}],
+        [{"node": "1"}, {"node": "2", "support": {"δh[5]": 4.0}}],
+        [{"node": "1"}, {"node": "2", "support": {"δh[5]": 6.0}}]
+    ]
 }
