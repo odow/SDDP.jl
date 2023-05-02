@@ -87,7 +87,7 @@ end
 # of 0.0.
 _set_type(::Any, type) = _set_type(0.0, type)
 
-function _build_lhs(stage::Int, sp::JuMP.Model, terms::Vector{Any})
+function _build_lhs(stage::Integer, sp::JuMP.Model, terms::Vector{Any})
     if maximum(term["stage"] for term in terms) != stage
         # Skip constraints which are not relevant for this stage.
         return nothing, nothing
