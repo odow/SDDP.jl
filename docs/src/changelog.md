@@ -7,6 +7,16 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.3.0 (May 3, 2023)
+
+### Added
+
+ - Added experimental support for `SDDP.MSPFormat.read_from_file` (#593)
+
+### Other
+
+ - Updated to StochOptFormat v0.3 (#600)
+
 ## v1.2.1 (May 1, 2023)
 
 ### Fixed
