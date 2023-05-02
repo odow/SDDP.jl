@@ -710,7 +710,7 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
         Ω, P = Dict[], Float64[]
         for realization in get(data["nodes"][node_name], "realizations", Any[])
             push!(P, realization["probability"])
-            push!(Ω, realization["support"])
+            push!(Ω, get(realization, "support", Dict()))
         end
         if objective_sense(sp) != model_sense
             @warn(
@@ -771,13 +771,13 @@ function Base.read(io::IO, ::Type{PolicyGraph}; bound::Float64 = 1e6)
 end
 
 function _validation_scenarios(data::Dict, SHA256::String)
-    substitute_nothing(x) = isempty(x) ? nothing : x
-    scenarios = [
-        ValidationScenario([
-            (item["node"], substitute_nothing(item["support"])) for
-            item in scenario
-        ],) for scenario in data["validation_scenarios"]
-    ]
+    scenarios = map(data["validation_scenarios"]) do scenario
+        items = map(scenario) do data
+            support = get(item, "support", Any[])
+            return (item["node"], isempty(support) ? nothing : support)
+        end
+        return ValidationScenario(items)
+    end
     return ValidationScenarios(scenarios; SHA256 = SHA256)
 end
 
