@@ -32,6 +32,9 @@ function test_get_constant()
     @test MSPFormat._get_constant(Any[2.4], state) == 2.4
     @test MSPFormat._get_constant(Any["inf"], state) == Inf
     @test MSPFormat._get_constant(Any["-inf"], state) == -Inf
+    terms = Any["inflow"]
+    @test MSPFormat._get_constant(terms) === terms
+    @test MSPFormat._get_constant(terms, state) == 12.0
     terms = [Dict("ADD" => "inflow"), Dict("ADD" => 0.0)]
     @test MSPFormat._get_constant(terms) === terms
     @test MSPFormat._get_constant(terms, state) === 12.0
