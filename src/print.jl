@@ -122,8 +122,9 @@ function print_problem_statistics(
     println(io, "subproblem structure")
     a, b = variables
     println(io, "  ", rpad("VariableRef", pad), " : [", a, ", ", b, "]")
-    for (k, v) in constraint_types
-        println(io, "  ", rpad(k, pad), " : [", v[1], ", ", v[2], "]")
+    for k in sort!(collect(keys(constraint_types)))
+        F, S = constraint_types[k]
+        println(io, "  ", rpad(k, pad), " : [", F, ", ", S, "]")
     end
     return
 end
