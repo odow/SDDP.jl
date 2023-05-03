@@ -49,6 +49,9 @@ function _get_constant(terms::Vector, state::Union{Dict,Nothing} = nothing)
             return Inf
         elseif terms[1] == "-inf"
             return -Inf
+        elseif terms[1] isa String
+            value = _get_constant(terms[1], state)
+            return something(value, terms)
         end
     end
     result = nothing
