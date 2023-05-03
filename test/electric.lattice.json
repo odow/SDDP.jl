@@ -1,0 +1,6 @@
+{
+    "0": {"stage": 0, "state": {}, "successors": {"1": 0.3, "2": 0.4, "3": 0.3}},
+    "1": {"stage": 1, "state": {"d": 2.0}, "successors": {}},
+    "2": {"stage": 1, "state": {"d": 4.0}, "successors": {}},
+    "3": {"stage": 1, "state": {"d": 6.0}, "successors": {}}
+}
