@@ -270,7 +270,7 @@ function read_from_file(
 end
 
 """
-    read_from_file(problem_name::String)
+    read_from_file(problem_name::String; kwargs...)
 
 A utility for reading MSPFormat files that saves writing out both the problem
 and lattice filenames if they are in the same location and differ only by the
@@ -285,13 +285,13 @@ read_from_file(problem_name * ".problem.json", problem_name * ".lattice.json")
 In addition, this function searches for compressed `.gz` versions of the lattice
 file, since it may be very large.
 """
-function read_from_file(problem_name::String)
+function read_from_file(problem_name::String; kwargs...)
     problem_filename = problem_name * ".problem.json"
     lattice_filename = problem_name * ".lattice.json"
     if !isfile(lattice_filename)
         lattice_filename *= ".gz"
     end
-    return read_from_file(problem_filename, lattice_filename)
+    return read_from_file(problem_filename, lattice_filename; kwargs...)
 end
 
 end  # module
