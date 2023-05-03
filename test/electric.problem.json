@@ -1,0 +1,119 @@
+{
+    "version": "MSMLP 1.1",
+    "name": "electric",
+    "maximize": false,
+    "variables": [
+        {"name": "x1", "stage": 0, "obj": [10.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x2", "stage": 0, "obj": [7.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x3", "stage": 0, "obj": [16.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x4", "stage": 0, "obj": [6.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x5", "stage": 0, "obj": [0.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x6", "stage": 0, "obj": [0.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        
+        {"name": "x1", "stage": 1, "obj": [40.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x2", "stage": 1, "obj": [24.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x3", "stage": 1, "obj": [4.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x4", "stage": 1, "obj": [45.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x5", "stage": 1, "obj": [27.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x6", "stage": 1, "obj": [4.5], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        
+        {"name": "x7", "stage": 1, "obj": [32.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x8", "stage": 1, "obj": [19.2], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x9", "stage": 1, "obj": [3.2], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x10", "stage": 1, "obj": [55.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x11", "stage": 1, "obj": [33.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x12", "stage": 1, "obj": [5.5], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x13", "stage": 1, "obj": [0.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x14", "stage": 1, "obj": [0.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x15", "stage": 1, "obj": [0.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"},
+        {"name": "x16", "stage": 1, "obj": [0.0], "lb": [0.0], "ub": ["inf"], "type": "CONTINUOUS"}
+    ],
+    "constraints": [{
+            "type": "EQ",
+            "lhs": [
+                {"name": "x1", "stage": 0, "coefficient": [1.0]},
+                {"name": "x2", "stage": 0, "coefficient": [1.0]},
+                {"name": "x3", "stage": 0, "coefficient": [1.0]},
+                {"name": "x4", "stage": 0, "coefficient": [1.0]},
+                {"name": "x5", "stage": 0, "coefficient": [-1.0]}
+            ],
+            "rhs": [12.0]
+    }, {
+        "type": "EQ",
+        "lhs": [
+                {"name": "x1", "stage": 0, "coefficient": [10.0]},
+                {"name": "x2", "stage": 0, "coefficient": [7.0]},
+                {"name": "x3", "stage": 0, "coefficient": [16.0]},
+                {"name": "x4", "stage": 0, "coefficient": [6.0]},
+                {"name": "x6", "stage": 0, "coefficient": [1.0]}
+        ],
+        "rhs": [120.0]
+    }, {
+        "type": "EQ",
+        "lhs": [
+                {"name": "x1", "stage": 0, "coefficient": [-1.0]},
+                {"name": "x1", "stage": 1, "coefficient": [1.0]},
+                {"name": "x2", "stage": 1, "coefficient": [1.0]},
+                {"name": "x3", "stage": 1, "coefficient": [1.0]},
+                {"name": "x13", "stage": 1, "coefficient": [1.0]}
+        ],
+        "rhs": [0.0]
+    }, {
+        "type": "EQ",
+        "lhs": [
+                {"name": "x2", "stage": 0, "coefficient": [-1.0]},
+                {"name": "x4", "stage": 1, "coefficient": [1.0]},
+                {"name": "x5", "stage": 1, "coefficient": [1.0]},
+                {"name": "x6", "stage": 1, "coefficient": [1.0]},
+                {"name": "x14", "stage": 1, "coefficient": [1.0]}
+        ],
+        "rhs": [0.0]
+    }, {
+        "type": "EQ",
+        "lhs": [
+                {"name": "x3", "stage": 0, "coefficient": [-1.0]},
+                {"name": "x7", "stage": 1, "coefficient": [1.0]},
+                {"name": "x8", "stage": 1, "coefficient": [1.0]},
+                {"name": "x9", "stage": 1, "coefficient": [1.0]},
+                {"name": "x15", "stage": 1, "coefficient": [1.0]}
+        ],
+        "rhs": [0.0]
+    }, {
+        "type": "EQ",
+        "lhs": [
+                {"name": "x4", "stage": 0, "coefficient": [-1.0]},
+                {"name": "x10", "stage": 1, "coefficient": [1.0]},
+                {"name": "x11", "stage": 1, "coefficient": [1.0]},
+                {"name": "x12", "stage": 1, "coefficient": [1.0]},
+                {"name": "x16", "stage": 1, "coefficient": [1.0]}
+        ],
+        "rhs": [0.0]
+    }, {
+        "type": "EQ",
+        "lhs": [
+                {"name": "x2", "stage": 1, "coefficient": [1.0]},
+                {"name": "x5", "stage": 1, "coefficient": [1.0]},
+                {"name": "x8", "stage": 1, "coefficient": [1.0]},
+                {"name": "x11", "stage": 1, "coefficient": [1.0]}
+        ],
+        "rhs": [3.0]
+    }, {
+        "type": "EQ",
+        "lhs": [
+                {"name": "x3", "stage": 1, "coefficient": [1.0]},
+                {"name": "x6", "stage": 1, "coefficient": [1.0]},
+                {"name": "x9", "stage": 1, "coefficient": [1.0]},
+                {"name": "x12", "stage": 1, "coefficient": [1.0]}
+        ],
+        "rhs": [2.0]
+    }, {
+        "type": "EQ",
+        "lhs": [
+                {"name": "x1", "stage": 1, "coefficient": [1.0]},
+                {"name": "x4", "stage": 1, "coefficient": [1.0]},
+                {"name": "x7", "stage": 1, "coefficient": [1.0]},
+                {"name": "x10", "stage": 1, "coefficient": [1.0]}
+        ],
+        "rhs": [{"ADD": 1.0}, {"ADD": "d"}]
+    }]
+}
