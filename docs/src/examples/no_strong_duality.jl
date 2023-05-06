@@ -24,7 +24,12 @@ function no_strong_duality()
         @stageobjective(sp, x.out)
         @constraint(sp, x.in == x.out)
     end
-    SDDP.train(model, iteration_limit = 20, log_frequency = 10)
+    SDDP.train(
+        model;
+        stopping_rules = [
+            SDDP.PrimalSimulation(replications = 100, period = 5),
+        ],
+    )
     @test SDDP.calculate_bound(model) ≈ 2.0 atol = 1e-8
     return
 end

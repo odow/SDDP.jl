@@ -200,20 +200,18 @@ function convergence_test(
     return true
 end
 
-# ======================= Bound-stalling Stopping Rule ======================= #
+# ====================== PrimalSimulation Stopping Rule ====================== #
 
 """
     PrimalSimulation()
 
 
 ```julia
-stopping_rule = SDDP.PrimalSimulation(
-    N::Int,
-    Symbol[];
+stopping_rule = PrimalSimulation(;
+    replications::Int,
+    period::Int,
     sampling_scheme = SDDP.InSampleMonteCarlo(),
 )
-
-end
 """
 mutable struct PrimalSimulation{F} <: AbstractStoppingRule
     simulator::F
@@ -222,21 +220,33 @@ mutable struct PrimalSimulation{F} <: AbstractStoppingRule
     distances::Vector{Float64}
 end
 
+function _get_state_variable_value(key)
+    return sp -> JuMP.value(JuMP.variable_by_name(sp, "$(key)_out"))
+end
+
 function PrimalSimulation(;
     replications::Int,
     period::Int,
-    variables::Vector{Symbol},
     sampling_scheme = SDDP.InSampleMonteCarlo(),
 )
-    function simulator()
+    cached_sampling_scheme = SDDP.PSRSamplingScheme(
+        replications;
+        sampling_scheme = sampling_scheme,
+    )
+    function simulator(model)
+        states = collect(keys(model.initial_root_state))
+        custom_recorders = Dict{Symbol,Function}(
+            k => _get_state_variable_value(k) for k in states
+        )
         scenarios = SDDP.simulate(
             model,
             replications;
-            sampling_scheme =
-                SDDP.PSRSamplingScheme(N; sampling_scheme = sampling_scheme),
+            sampling_scheme = cached_sampling_scheme,
+            custom_recorders = custom_recorders,
         )
+
         return map(scenarios) do scenario
-            return [getindex.(scenario, key) for key in variables]
+            return [getindex.(scenario, k) for k in vcat(states, :bellman_term)]
         end
     end
     return PrimalSimulation(simulator, period, Any[], Float64[])
@@ -244,32 +254,44 @@ end
 
 stopping_rule_status(::PrimalSimulation) = :PrimalSimulation
 
+function _compute_distance_inner(x::Float64, y::Float64)
+    return abs(x - y) / max(1, abs(x), abs(y))
+end
+
+function _compute_distance_inner(x::SDDP.State, y::SDDP.State)
+    return sqrt(
+        _compute_distance_inner(x.in, y.in)^2 +
+        _compute_distance_inner(x.out, y.out)^2
+    )
+end
+
+function _compute_distance_inner(sim_1::AbstractArray, sim_2::AbstractArray)
+    d = [_compute_distance_inner(x, y)^2 for (x, y) in zip(sim_1, sim_2)]
+    return sqrt(sum(d))
+end
+
 function _compute_distance(new_data::Vector, old_data::Vector)
-    d = zeros(length(new_data), length(old_data))
-    for i in 1:length(new_data)
-        for j in 1:length(old_data)
-        end
-    end
-    return 0.0
+    d = [_compute_distance_inner(x, y)^2 for (x, y) in zip(new_data, old_data)]
+    return sqrt(sum(d))
 end
 
 function convergence_test(
-    ::PolicyGraph{T},
+    model::PolicyGraph{T},
     log::Vector{Log},
     rule::PrimalSimulation,
 ) where {T}
-    if mod(length(log), period) == 0
-        new_data = rule.simulator()
+    if !isempty(log) && mod(length(log), rule.period) != 0
+        return false
     end
+    new_data = rule.simulator(model)
     if isempty(rule.data)
         rule.data = new_data
         return false
     end
-    push!(rule.distances, _compuate_distance(new_data, rule.data))
+    push!(rule.distances, _compute_distance(new_data, rule.data))
     rule.data = new_data
-    @info rule.distances
     if length(rule.distances) < 2
         return false
     end
-    return isapprox(rule.distances[end], rule.distances[end-1]; rtol = 0.01)
+    return isapprox(rule.distances[end], rule.distances[end-1]; atol = 0.01)
 end

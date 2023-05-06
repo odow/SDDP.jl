@@ -129,9 +129,9 @@ model = SDDP.PolicyGraph(
     optimizer = HiGHS.Optimizer,
 ) do sp, node
     t, price = node
-    c_contango = [1.0, 1.025, 1.05, 1.075]
+    c_contango = [1.0, 1.025] # , 1.05, 1.075]
     c_transaction, c_perish_factor, c_buy_premium = 0.01, 0.95, 1.5
-    F, P = length(c_contango), 5
+    F, P = length(c_contango), 2 # 5
     @variable(sp, 0 <= x_forward[1:F], SDDP.State, initial_value = 0)
     @variable(sp, 0 <= x_stock[p = 1:P], SDDP.State, initial_value = 0)
     @variable(sp, 0 <= u_spot_sell[1:P])
