@@ -240,7 +240,7 @@ function test_SimulationStoppingRule()
     graph = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = 0.0,
-        optimizer = HiGHS.Optimizer
+        optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0)
         @stageobjective(node, x.out)
@@ -249,7 +249,7 @@ function test_SimulationStoppingRule()
     @test rule.replications == -1
     @test SDDP.stopping_rule_status(rule) == :simulation_stopping
     log = [
-        SDDP.Log(1, 0.000000e+00, 8.316000e+03, 1.559195, 1,  14, "", false),
+        SDDP.Log(1, 0.000000e+00, 8.316000e+03, 1.559195, 1, 14, "", false),
         SDDP.Log(2, 3.171195e+03, 8.767171e+03, 1.801409, 1, 136, "", false),
         SDDP.Log(3, 4.057980e+03, 4.500000e+03, 1.807249, 1, 150, "", false),
         SDDP.Log(4, 4.074139e+03, 2.314272e+03, 1.813528, 1, 164, "", false),
