@@ -54,7 +54,7 @@ function infinite_hydro_thermal(; cut_type)
     end
     SDDP.train(
         model;
-        iteration_limit = 400,
+        stopping_rules = [SDDP.PrimalSimulation()],
         log_frequency = 100,
         sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
         cycle_discretization_delta = 0.1,

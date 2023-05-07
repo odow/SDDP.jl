@@ -36,12 +36,17 @@ SDDP.read_cuts_from_file
 SDDP.write_log_to_csv
 ```
 
-### Stopping rules
+### [Stopping rules](@id api_stopping_rules)
 
 ```@docs
 SDDP.AbstractStoppingRule
 SDDP.stopping_rule_status
 SDDP.convergence_test
+SDDP.IterationLimit
+SDDP.TimeLimit
+SDDP.Statistical
+SDDP.BoundStalling
+SDDP.StoppingChain
 ```
 
 ### Sampling schemes

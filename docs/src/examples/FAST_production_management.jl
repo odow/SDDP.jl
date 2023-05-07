@@ -37,7 +37,12 @@ function fast_production_management(; cut_type)
         end
         @stageobjective(sp, sum(C[i] * x[i].out for i in 1:N) - S's)
     end
-    SDDP.train(model, iteration_limit = 10, print_level = 2, log_frequency = 5)
+    SDDP.train(
+        model;
+        stopping_rules = [SDDP.PrimalSimulation()],
+        print_level = 2,
+        log_frequency = 5,
+    )
     @test SDDP.calculate_bound(model) ≈ -23.96 atol = 1e-2
 end
 

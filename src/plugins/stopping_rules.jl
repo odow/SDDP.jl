@@ -202,66 +202,69 @@ end
 
 # ====================== PrimalSimulation Stopping Rule ====================== #
 
-"""
-    PrimalSimulation()
-
-
-```julia
-stopping_rule = PrimalSimulation(;
-    replications::Int,
-    period::Int,
-    sampling_scheme = SDDP.InSampleMonteCarlo(),
-)
-"""
 mutable struct PrimalSimulation{F} <: AbstractStoppingRule
     simulator::F
+    replications::Int
     period::Int
     data::Vector{Any}
-    distances::Vector{Float64}
 end
 
 function _get_state_variable_value(key)
     return sp -> JuMP.value(JuMP.variable_by_name(sp, "$(key)_out"))
 end
 
-function PrimalSimulation(;
-    replications::Int,
-    period::Int,
+"""
+    PrimalSimulation(;
+        replications::Int,
+        period::Int,
+        sampling_scheme::AbstractSamplingScheme = SDDP.InSampleMonteCarlo(),
+    )
+
+## Example
+
+```julia
+stopping_rule = PrimalSimulation(;
+    replications = 100,
+    period = 50,
     sampling_scheme = SDDP.InSampleMonteCarlo(),
 )
-    cached_sampling_scheme = SDDP.PSRSamplingScheme(
-        replications;
-        sampling_scheme = sampling_scheme,
-    )
-    function simulator(model)
+"""
+function PrimalSimulation(;
+    replications::Int = -1,
+    period::Int = -1,
+    sampling_scheme::AbstractSamplingScheme = SDDP.InSampleMonteCarlo(),
+)
+    cached_sampling_scheme =
+        SDDP.PSRSamplingScheme(replications; sampling_scheme = sampling_scheme)
+    function simulator(model, N)
+        cached_sampling_scheme.N = max(N, cached_sampling_scheme.N)
         states = collect(keys(model.initial_root_state))
         custom_recorders = Dict{Symbol,Function}(
             k => _get_state_variable_value(k) for k in states
         )
         scenarios = SDDP.simulate(
             model,
-            replications;
+            N;
             sampling_scheme = cached_sampling_scheme,
             custom_recorders = custom_recorders,
         )
-
         return map(scenarios) do scenario
             return [getindex.(scenario, k) for k in vcat(states, :bellman_term)]
         end
     end
-    return PrimalSimulation(simulator, period, Any[], Float64[])
+    return PrimalSimulation(simulator, replications, period, Any[])
 end
 
 stopping_rule_status(::PrimalSimulation) = :PrimalSimulation
 
 function _compute_distance_inner(x::Float64, y::Float64)
-    return abs(x - y) / max(1, abs(x), abs(y))
+    return abs(x - y) / max(1.0, abs(x), abs(y))
 end
 
 function _compute_distance_inner(x::SDDP.State, y::SDDP.State)
     return sqrt(
         _compute_distance_inner(x.in, y.in)^2 +
-        _compute_distance_inner(x.out, y.out)^2
+        _compute_distance_inner(x.out, y.out)^2,
     )
 end
 
@@ -280,18 +283,26 @@ function convergence_test(
     log::Vector{Log},
     rule::PrimalSimulation,
 ) where {T}
+    if rule.replications == -1
+        paths = _unique_paths(model)
+        rule.replications = min(100, paths)
+    end
+    if rule.period == -1
+        rule.period = length(model.nodes)
+    end
     if !isempty(log) && mod(length(log), rule.period) != 0
         return false
     end
-    new_data = rule.simulator(model)
+    new_data = rule.simulator(model, rule.replications)
     if isempty(rule.data)
         rule.data = new_data
         return false
     end
-    push!(rule.distances, _compute_distance(new_data, rule.data))
+    distance = _compute_distance(new_data, rule.data)
     rule.data = new_data
-    if length(rule.distances) < 2
-        return false
+    converged = distance < 0.01
+    if !converged && rule.period < 100
+        rule.period *= 2
     end
-    return isapprox(rule.distances[end], rule.distances[end-1]; atol = 0.01)
+    return converged
 end
