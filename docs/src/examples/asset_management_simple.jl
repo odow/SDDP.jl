@@ -53,7 +53,7 @@ function asset_management_simple()
     end
     SDDP.train(
         model;
-        stopping_rules = [SDDP.PrimalSimulation()],
+        stopping_rules = [SDDP.SimulationStoppingRule()],
         log_frequency = 5,
     )
     @test SDDP.calculate_bound(model) ≈ 1.514 atol = 1e-4

@@ -39,7 +39,7 @@ function fast_production_management(; cut_type)
     end
     SDDP.train(
         model;
-        stopping_rules = [SDDP.PrimalSimulation()],
+        stopping_rules = [SDDP.SimulationStoppingRule()],
         print_level = 2,
         log_frequency = 5,
     )

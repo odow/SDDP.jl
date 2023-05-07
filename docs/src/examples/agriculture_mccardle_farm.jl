@@ -132,8 +132,8 @@ function test_mccardle_farm_model()
         end
         return
     end
-    SDDP.train(model; stopping_rules = [SDDP.PrimalSimulation()])
-    @test SDDP.termination_status(model) == :PrimalSimulation
+    SDDP.train(model; stopping_rules = [SDDP.SimulationStoppingRule()])
+    @test SDDP.termination_status(model) == :simulation_stopping
     @test SDDP.calculate_bound(model) ≈ 4074.1391 atol = 1e-5
 end
 

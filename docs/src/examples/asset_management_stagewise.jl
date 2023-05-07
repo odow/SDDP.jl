@@ -60,7 +60,7 @@ function asset_management_stagewise(; cut_type)
     end
     SDDP.train(
         model;
-        stopping_rules = [SDDP.PrimalSimulation()],
+        stopping_rules = [SDDP.SimulationStoppingRule()],
         log_frequency = 10,
         risk_measure = (node) -> begin
             if node[1] != 3

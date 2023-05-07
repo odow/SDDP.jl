@@ -51,7 +51,7 @@ function air_conditioning_model(duality_handler)
     SDDP.train(
         model;
         duality_handler = duality_handler,
-        stopping_rules = [SDDP.PrimalSimulation()],
+        stopping_rules = [SDDP.SimulationStoppingRule()],
     )
     @test isapprox(SDDP.calculate_bound(model), 62_500.0, atol = 0.1)
     return

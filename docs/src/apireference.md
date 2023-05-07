@@ -47,6 +47,7 @@ SDDP.TimeLimit
 SDDP.Statistical
 SDDP.BoundStalling
 SDDP.StoppingChain
+SDDP.SimulationStoppingRule
 ```
 
 ### Sampling schemes
