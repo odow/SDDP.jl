@@ -41,8 +41,9 @@ function test_multistock_example()
         @stageobjective(subproblem, (sin(3 * stage) - 1) * sum(control))
     end
     SDDP.train(
-        model,
+        model;
         iteration_limit = 100,
+        stopping_rules = [SDDP.SimulationStoppingRule()],
         cut_type = SDDP.SINGLE_CUT,
         log_frequency = 10,
     )

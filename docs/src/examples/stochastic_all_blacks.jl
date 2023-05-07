@@ -48,8 +48,8 @@ function stochastic_all_blacks()
     end
 
     SDDP.train(
-        model,
-        iteration_limit = 10,
+        model;
+        stopping_rules = [SDDP.SimulationStoppingRule()],
         duality_handler = SDDP.LagrangianDuality(),
     )
     @test SDDP.calculate_bound(model) ≈ 8.0
