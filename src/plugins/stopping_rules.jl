@@ -288,7 +288,7 @@ function convergence_test(
         rule.replications = min(100, paths)
     end
     if rule.period == -1
-        rule.period = length(model.nodes)
+        rule.period = max(div(rule.replications, 5), length(model.nodes))
     end
     if !isempty(log) && mod(length(log), rule.period) != 0
         return false
