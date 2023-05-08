@@ -80,14 +80,17 @@ function _validation_scenarios(
     model::PolicyGraph,
     num_scenarios::Int,
     scenario_map,
+    sampling_scheme::AbstractSamplingScheme,
 )
+    scenarios = map(1:num_scenarios) do _
+        scenario, _ = sample_scenario(model, sampling_scheme)
+        return ValidationScenario(scenario)
+    end
     return _validation_scenarios(
         model,
-        ValidationScenarios([
-            ValidationScenario(sample_scenario(model, InSampleMonteCarlo())[1])
-            for _ in 1:num_scenarios
-        ]),
+        ValidationScenarios(scenarios),
         scenario_map,
+        sampling_scheme,
     )
 end
 
@@ -95,6 +98,7 @@ function _validation_scenarios(
     ::PolicyGraph,
     validation_scenarios::ValidationScenarios,
     scenario_map,
+    ::AbstractSamplingScheme,
 )
     return map(validation_scenarios.scenarios) do scenario
         return map(scenario.scenario) do (node, ω)
@@ -108,13 +112,14 @@ end
         io::IO,
         model::PolicyGraph;
         validation_scenarios::Union{Nothing,Int,ValidationScenarios} = nothing,
+        sampling_scheme::AbstractSamplingScheme = InSampleMonteCarlo(),
         kwargs...
     )
 
 Write `model` to `io` in the StochOptFormat file format.
 
-Pass an `Int` to `validation_scenarios` (default `nothing`) to specify the number
-of test scenarios to generate using the [`InSampleMonteCarlo`](@ref) sampling
+Pass an `Int` to `validation_scenarios` (default `nothing`) to specify the
+number of test scenarios to generate using the `sampling_scheme` sampling
 scheme. Alternatively, pass a [`ValidationScenarios`](@ref) object to manually
 specify the test scenarios to use.
 
@@ -160,6 +165,7 @@ function Base.write(
     io::IO,
     model::PolicyGraph{T};
     validation_scenarios::Union{Nothing,Int,ValidationScenarios{T,S}} = nothing,
+    sampling_scheme::AbstractSamplingScheme = InSampleMonteCarlo(),
     kwargs...,
 ) where {T,S}
     _throw_if_belief_states(model)
@@ -187,8 +193,12 @@ function Base.write(
         "subproblems" => subproblems,
     )
     if validation_scenarios !== nothing
-        sof["validation_scenarios"] =
-            _validation_scenarios(model, validation_scenarios, scenario_map)
+        sof["validation_scenarios"] = _validation_scenarios(
+            model,
+            validation_scenarios,
+            scenario_map,
+            sampling_scheme,
+        )
     end
     for (k, v) in kwargs
         sof["$(k)"] = v
