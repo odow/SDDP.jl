@@ -291,7 +291,7 @@ end
 
 stopping_rule_status(::SimulationStoppingRule) = :simulation_stopping
 
-function _compute_distance(x::Float64, y::Float64)
+function _compute_distance(x::Real, y::Real)
     if x ≈ y
         return 0.0
     end
