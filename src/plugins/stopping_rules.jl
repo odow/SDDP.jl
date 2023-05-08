@@ -208,6 +208,8 @@ mutable struct SimulationStoppingRule{F} <: AbstractStoppingRule
     period::Int
     data::Vector{Any}
     last_iteration::Int
+    distance_tol::Float64
+    bound_tol::Float64
 end
 
 function _get_state_variable_value(key)
@@ -219,6 +221,8 @@ end
         sampling_scheme::AbstractSamplingScheme = SDDP.InSampleMonteCarlo(),
         replications::Int = -1,
         period::Int = -1,
+        distance_tol::Float64 = 1e-2,
+        bound_tol::Float64 = 1e-4,
     )
 
 Terminate the algorithm using a mix of heuristics. Unless you know otherwise,
@@ -228,14 +232,14 @@ this is typically a good default.
 
 First, we check that the deterministic bound has stabilized. That is, over the
 last five iterations, the deterministic bound has changed by less than an
-absolute or relative tolerance of `1e-4`.
+absolute or relative tolerance of `bound_tol`.
 
 Then, if we have not done one in the last `period` iterations, we perform a
 primal simulation of the policy using `replications` out-of-sample realizations
 from `sampling_scheme`. The realizations are stored and re-used in each
-simulation. From each simulation, we record the values of the stage objective
-and state variables. We terminate the policy if each of the trajectories in two
-consecutive simulations differ by less than 1%.
+simulation. From each simulation, we record the value of the stage objective.
+We terminate the policy if each of the trajectories in two consecutive
+simulations differ by less than `distance_tol`.
 
 By default, `replications` and `period` are `-1`, and SDDP.jl will guess good
 values for these. Over-ride the default behavior by setting an appropriate
@@ -251,49 +255,52 @@ function SimulationStoppingRule(;
     sampling_scheme::AbstractSamplingScheme = SDDP.InSampleMonteCarlo(),
     replications::Int = -1,
     period::Int = -1,
+    distance_tol::Float64 = 1e-2,
+    bound_tol::Float64 = 1e-4,
 )
     cached_sampling_scheme =
         SDDP.PSRSamplingScheme(replications; sampling_scheme = sampling_scheme)
     function simulator(model, N)
         cached_sampling_scheme.N = max(N, cached_sampling_scheme.N)
-        states = collect(keys(model.initial_root_state))
-        custom_recorders = Dict{Symbol,Function}(
-            k => _get_state_variable_value(k) for k in states
-        )
         scenarios = SDDP.simulate(
             model,
             N;
             sampling_scheme = cached_sampling_scheme,
-            custom_recorders = custom_recorders,
         )
+        # !!! info
+        #     At one point, I tried adding the primal value of the state
+        #     variables. But it didn't work for some models because of
+        #     degeneracy, that is, the value of a state variable will oscillate
+        #     between two equally optimal outcomes in subsequent iterations.
+        #     So for now, I just use the stage objective and the bellman term.
+        keys = [:stage_objective, :bellman_term]
         return map(scenarios) do scenario
-            return [getindex.(scenario, k) for k in vcat(states, :bellman_term)]
+            return [getindex.(scenario, k) for k in keys]
         end
     end
-    return SimulationStoppingRule(simulator, replications, period, Any[], 0)
+    return SimulationStoppingRule(
+        simulator,
+        replications,
+        period,
+        Any[],
+        0,
+        distance_tol,
+        bound_tol,
+    )
 end
 
 stopping_rule_status(::SimulationStoppingRule) = :simulation_stopping
 
-function _compute_distance_inner(x::Float64, y::Float64)
+function _compute_distance(x::Float64, y::Float64)
+    if x ≈ y
+        return 0.0
+    end
     return abs(x - y) / max(1.0, abs(x), abs(y))
 end
 
-function _compute_distance_inner(x::SDDP.State, y::SDDP.State)
-    return sqrt(
-        _compute_distance_inner(x.in, y.in)^2 +
-        _compute_distance_inner(x.out, y.out)^2,
-    )
-end
-
-function _compute_distance_inner(sim_1::AbstractArray, sim_2::AbstractArray)
-    d = [_compute_distance_inner(x, y)^2 for (x, y) in zip(sim_1, sim_2)]
-    return sqrt(sum(d))
-end
-
 function _compute_distance(new_data::Vector, old_data::Vector)
-    d = [_compute_distance_inner(x, y)^2 for (x, y) in zip(new_data, old_data)]
-    return sqrt(sum(d))
+    d = sum(_compute_distance(x, y)^2 for (x, y) in zip(new_data, old_data))
+    return sqrt(d)
 end
 
 function _period(period, iterations)
@@ -326,7 +333,12 @@ function convergence_test(
     if length(log) <= 5
         return false  # Always do at least 5 iterations.
     end
-    if !isapprox(log[end].bound, log[end-5].bound; atol = 1e-4, rtol = 1e-4)
+    if !isapprox(
+        log[end].bound,
+        log[end-5].bound;
+        atol = rule.bound_tol,
+        rtol = rule.bound_tol,
+    )
         return false  # If the lower bound haven't stalled, keep going.
     end
     if length(log) - rule.last_iteration < _period(rule.period, length(log))
@@ -336,5 +348,5 @@ function convergence_test(
     distance = _compute_distance(new_data, rule.data)
     rule.data = new_data
     rule.last_iteration = length(log)
-    return distance < 0.01
+    return distance < rule.distance_tol
 end
