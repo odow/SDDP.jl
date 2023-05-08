@@ -102,6 +102,7 @@ function test_write_to_file_Min()
         model,
         "experimental.sof.json";
         validation_scenarios = 10,
+        sampling_scheme = SDDP.PSRSamplingScheme(2),
     )
     set_optimizer(model, HiGHS.Optimizer)
     SDDP.train(model; iteration_limit = 50, print_level = 0)
@@ -128,6 +129,13 @@ function test_write_to_file_Min()
     @test node_1_1["primal"]["d"] == 2
     @test isapprox(node_1_1["primal"]["x[1]_out"], 1; atol = 1e-8)
     @test isapprox(node_1_1["primal"]["x[2]_out"], 12; atol = 1e-8)
+    demands = map(scenarios["scenarios"]) do s
+        return [si["primal"]["d"] for si in s]
+    end
+    for i in 3:2:10
+        @test demands[1] == demands[i]
+        @test demands[2] == demands[i+1]
+    end
     return
 end
 
