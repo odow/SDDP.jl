@@ -252,18 +252,17 @@ SDDP.train(model; sampling_schemes = [SimulationStoppingRule()])
 ```
 """
 function SimulationStoppingRule(;
-    sampling_scheme::AbstractSamplingScheme = SDDP.InSampleMonteCarlo(),
+    sampling_scheme::AbstractSamplingScheme = InSampleMonteCarlo(),
     replications::Int = -1,
     period::Int = -1,
     distance_tol::Float64 = 1e-2,
     bound_tol::Float64 = 1e-4,
 )
     cached_sampling_scheme =
-        SDDP.PSRSamplingScheme(replications; sampling_scheme = sampling_scheme)
+        PSRSamplingScheme(replications; sampling_scheme = sampling_scheme)
     function simulator(model, N)
         cached_sampling_scheme.N = max(N, cached_sampling_scheme.N)
-        scenarios =
-            SDDP.simulate(model, N; sampling_scheme = cached_sampling_scheme)
+        scenarios = simulate(model, N; sampling_scheme = cached_sampling_scheme)
         # !!! info
         #     At one point, I tried adding the primal value of the state
         #     variables. But it didn't work for some models because of
