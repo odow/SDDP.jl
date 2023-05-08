@@ -280,7 +280,7 @@ PATCH release.
 
 ### Fixed
 
- - Fixed sanitization bug in [`SDDP.@stageobjective`](@ref) (#407)
+ - Fixed scoping bug in [`SDDP.@stageobjective`](@ref) (#407)
  - Fixed a bug when the initial point is infeasible (#411)
  - Set subproblems to silent by default (#409)
 
