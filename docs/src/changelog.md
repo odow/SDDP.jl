@@ -412,7 +412,7 @@ PATCH release.
 
 ### Breaking
 
-Breaking changes to update to JuMP v0.21 (#300).
+ - Breaking changes to update to JuMP v0.21 (#300).
 
 ## v0.2.4 (February 7, 2020)
 
@@ -488,6 +488,12 @@ features. It probably could have been a v1.1 release.
 A complete rewrite of SDDP.jl based on the policy graph framework. This was
 essentially a new package. It has minimal code in common with the previous
 implementation.
+
+Development started on September 28, 2018 in [Kokako.jl](https://github.com/odow/Kokako.jl),
+and the code was merged into `SDDP.jl` on March 14, 2019.
+
+The pull request [SDDP.jl#180](https://github.com/odow/SDDP.jl/pull/180) lists
+the 29 issues that the rewrite closed.
 
 ## v0.0.1 (April 18, 2018)
 
