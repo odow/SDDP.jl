@@ -263,7 +263,7 @@ function SimulationStoppingRule(;
     function simulator(model, N)
         cached_sampling_scheme.N = max(N, cached_sampling_scheme.N)
         scenarios =
-            gSDDP.simulate(model, N; sampling_scheme = cached_sampling_scheme)
+            SDDP.simulate(model, N; sampling_scheme = cached_sampling_scheme)
         # !!! info
         #     At one point, I tried adding the primal value of the state
         #     variables. But it didn't work for some models because of
