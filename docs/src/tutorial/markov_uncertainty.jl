@@ -112,7 +112,7 @@ end
 
 # As in the previous three tutorials, we train the policy:
 
-SDDP.train(model; iteration_limit = 10)
+SDDP.train(model; stopping_rules = [SDDP.SimulationStoppingRule()])
 
 # Instead of performing a Monte Carlo simulation like the previous tutorials, we
 # may want to simulate one particular sequence of noise realizations. This

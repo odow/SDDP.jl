@@ -32,12 +32,5 @@ as a vector to the `stopping_rules` keyword. For example:
 SDDP.train(model, stopping_rules = [SDDP.BoundStalling(10, 1e-4)])
 ```
 
-Here are the stopping rules implemented in `SDDP.jl`:
-
-```@docs
-SDDP.IterationLimit
-SDDP.TimeLimit
-SDDP.Statistical
-SDDP.BoundStalling
-SDDP.StoppingChain
-```
+See [Stopping rules](@ref api_stopping_rules) for a list of stopping rules
+supported by SDDP.jl.

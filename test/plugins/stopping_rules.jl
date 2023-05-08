@@ -236,6 +236,49 @@ function test_StoppingChain()
     return
 end
 
+function test_SimulationStoppingRule()
+    graph = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0)
+        @stageobjective(node, x.out)
+    end
+    rule = SDDP.SimulationStoppingRule()
+    @test rule.replications == -1
+    @test SDDP.stopping_rule_status(rule) == :simulation_stopping
+    log = [
+        SDDP.Log(1, 0.000000e+00, 8.316000e+03, 1.559195, 1, 14, "", false),
+        SDDP.Log(2, 3.171195e+03, 8.767171e+03, 1.801409, 1, 136, "", false),
+        SDDP.Log(3, 4.057980e+03, 4.500000e+03, 1.807249, 1, 150, "", false),
+        SDDP.Log(4, 4.074139e+03, 2.314272e+03, 1.813528, 1, 164, "", false),
+        SDDP.Log(5, 4.074139e+03, 4.716000e+03, 1.819679, 1, 178, "", false),
+        SDDP.Log(6, 4.074139e+03, 2.308500e+03, 1.824431, 1, 192, "", false),
+        SDDP.Log(7, 4.074139e+03, 2.308500e+03, 1.830817, 1, 206, "", false),
+        SDDP.Log(8, 4.074139e+03, 2.308500e+03, 1.837420, 1, 220, "", false),
+        SDDP.Log(9, 4.074139e+03, 5.132230e+03, 1.843861, 1, 234, "", false),
+        SDDP.Log(10, 4.074139e+03, 5.197500e+03, 1.850351, 1, 248, "", false),
+        SDDP.Log(11, 4.074139e+03, 4.716000e+03, 1.856620, 1, 262, "", false),
+        SDDP.Log(12, 4.074139e+03, 2.308500e+03, 1.862838, 1, 276, "", false),
+        SDDP.Log(13, 4.074139e+03, 2.308500e+03, 1.869224, 1, 290, "", false),
+        SDDP.Log(14, 4.074139e+03, 2.308500e+03, 1.875853, 1, 304, "", false),
+        SDDP.Log(15, 4.074139e+03, 2.308500e+03, 1.882504, 1, 318, "", false),
+        SDDP.Log(16, 4.074139e+03, 5.197500e+03, 1.889759, 1, 332, "", false),
+        SDDP.Log(17, 4.074139e+03, 5.132230e+03, 1.896462, 1, 346, "", false),
+        SDDP.Log(18, 4.074139e+03, 8.086500e+03, 1.903102, 1, 360, "", false),
+        SDDP.Log(19, 4.074139e+03, 2.308500e+03, 1.910075, 1, 374, "", false),
+        SDDP.Log(20, 4.074139e+03, 5.132230e+03, 1.917460, 1, 388, "", false),
+    ]
+    @test !SDDP.convergence_test(graph, log[1:1], rule)
+    @test rule.replications == 1
+    @test !SDDP.convergence_test(graph, log[1:4], rule)
+    @test !SDDP.convergence_test(graph, log[1:10], rule)
+    @test !SDDP.convergence_test(graph, log[1:19], rule)
+    @test SDDP.convergence_test(graph, log[1:20], rule)
+    return
+end
+
 end  # module
 
 TestStoppingRules.runtests()

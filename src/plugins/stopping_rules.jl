@@ -199,3 +199,150 @@ function convergence_test(
     end
     return true
 end
+
+# ========================== SimulationStoppingRule ========================== #
+
+mutable struct SimulationStoppingRule{F} <: AbstractStoppingRule
+    simulator::F
+    replications::Int
+    period::Int
+    data::Vector{Any}
+    last_iteration::Int
+    distance_tol::Float64
+    bound_tol::Float64
+end
+
+function _get_state_variable_value(key)
+    return sp -> JuMP.value(JuMP.variable_by_name(sp, "$(key)_out"))
+end
+
+"""
+    SimulationStoppingRule(;
+        sampling_scheme::AbstractSamplingScheme = SDDP.InSampleMonteCarlo(),
+        replications::Int = -1,
+        period::Int = -1,
+        distance_tol::Float64 = 1e-2,
+        bound_tol::Float64 = 1e-4,
+    )
+
+Terminate the algorithm using a mix of heuristics. Unless you know otherwise,
+this is typically a good default.
+
+## Termination criteria
+
+First, we check that the deterministic bound has stabilized. That is, over the
+last five iterations, the deterministic bound has changed by less than an
+absolute or relative tolerance of `bound_tol`.
+
+Then, if we have not done one in the last `period` iterations, we perform a
+primal simulation of the policy using `replications` out-of-sample realizations
+from `sampling_scheme`. The realizations are stored and re-used in each
+simulation. From each simulation, we record the value of the stage objective.
+We terminate the policy if each of the trajectories in two consecutive
+simulations differ by less than `distance_tol`.
+
+By default, `replications` and `period` are `-1`, and SDDP.jl will guess good
+values for these. Over-ride the default behavior by setting an appropriate
+value.
+
+## Example
+
+```julia
+SDDP.train(model; sampling_schemes = [SimulationStoppingRule()])
+```
+"""
+function SimulationStoppingRule(;
+    sampling_scheme::AbstractSamplingScheme = InSampleMonteCarlo(),
+    replications::Int = -1,
+    period::Int = -1,
+    distance_tol::Float64 = 1e-2,
+    bound_tol::Float64 = 1e-4,
+)
+    cached_sampling_scheme =
+        PSRSamplingScheme(replications; sampling_scheme = sampling_scheme)
+    function simulator(model, N)
+        cached_sampling_scheme.N = max(N, cached_sampling_scheme.N)
+        scenarios = simulate(model, N; sampling_scheme = cached_sampling_scheme)
+        # !!! info
+        #     At one point, I tried adding the primal value of the state
+        #     variables. But it didn't work for some models because of
+        #     degeneracy, that is, the value of a state variable will oscillate
+        #     between two equally optimal outcomes in subsequent iterations.
+        #     So for now, I just use the stage objective and the bellman term.
+        keys = [:stage_objective, :bellman_term]
+        return map(scenarios) do scenario
+            return [getindex.(scenario, k) for k in keys]
+        end
+    end
+    return SimulationStoppingRule(
+        simulator,
+        replications,
+        period,
+        Any[],
+        0,
+        distance_tol,
+        bound_tol,
+    )
+end
+
+stopping_rule_status(::SimulationStoppingRule) = :simulation_stopping
+
+function _compute_distance(x::Real, y::Real)
+    if x ≈ y
+        return 0.0
+    end
+    return abs(x - y) / max(1.0, abs(x), abs(y))
+end
+
+function _compute_distance(new_data::Vector, old_data::Vector)
+    d = sum(_compute_distance(x, y)^2 for (x, y) in zip(new_data, old_data))
+    return sqrt(d)
+end
+
+function _period(period, iterations)
+    if period != -1
+        return period
+    elseif iterations <= 100
+        return 20
+    elseif iterations <= 1_000
+        return 100
+    else
+        return 500
+    end
+end
+
+function convergence_test(
+    model::PolicyGraph{T},
+    log::Vector{Log},
+    rule::SimulationStoppingRule,
+) where {T}
+    # Setup parameters based on the model.
+    if rule.replications == -1
+        rule.replications = min(100, _unique_paths(model))
+    end
+    if isempty(rule.data)
+        # On the first iteration, run a simulation and keep going.
+        rule.data = rule.simulator(model, rule.replications)
+        rule.last_iteration = 0
+        return false
+    end
+    if length(log) <= 5
+        return false  # Always do at least 5 iterations.
+    end
+    if !isapprox(
+        log[end].bound,
+        log[end-5].bound;
+        atol = rule.bound_tol,
+        rtol = rule.bound_tol,
+    )
+        return false  # If the lower bound haven't stalled, keep going.
+    end
+    if length(log) - rule.last_iteration < _period(rule.period, length(log))
+        return false  # Do at least rule.period iterations since the last trial
+    end
+    new_data = rule.simulator(model, rule.replications)
+    distance = _compute_distance(new_data, rule.data)
+    rule.data = new_data
+    rule.last_iteration = length(log)
+    return distance < rule.distance_tol
+end

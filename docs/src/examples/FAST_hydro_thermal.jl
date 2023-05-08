@@ -36,8 +36,7 @@ function fast_hydro_thermal()
     set_silent(det)
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) == 10
-
-    SDDP.train(model, iteration_limit = 10, log_frequency = 5)
+    SDDP.train(model; stopping_rules = [SDDP.SimulationStoppingRule()])
     @test SDDP.calculate_bound(model) == 10
     return
 end

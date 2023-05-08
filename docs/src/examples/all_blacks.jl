@@ -33,10 +33,9 @@ function all_blacks()
         )
     end
     SDDP.train(
-        model,
-        iteration_limit = 10,
-        log_frequency = 5,
+        model;
         duality_handler = SDDP.LagrangianDuality(),
+        stopping_rules = [SDDP.SimulationStoppingRule()],
     )
     @test SDDP.calculate_bound(model) ≈ 9.0
     return
