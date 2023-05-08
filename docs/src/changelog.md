@@ -7,6 +7,18 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.4.0 (May 8, 2023)
+
+### Added
+
+ - Added [`SDDP.SimulationStoppingRule`](@ref) (#598)
+ - Added `sampling_scheme` argument to [`SDDP.write_to_file`](@ref) (#607)
+
+### Fixed
+
+ - Fixed parsing of some `MSPFormat` files (#602) (#604)
+ - Fixed printing in header (#605)
+
 ## v1.3.0 (May 3, 2023)
 
 ### Added
