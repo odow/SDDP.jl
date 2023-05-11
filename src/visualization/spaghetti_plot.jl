@@ -3,21 +3,6 @@
 #  v. 2.0. If a copy of the MPL was not distributed with this file, You can
 #  obtain one at http://mozilla.org/MPL/2.0/.
 
-const ASSET_DIR = dirname(@__FILE__)
-const SPAGHETTI_HTML_FILE = joinpath(ASSET_DIR, "spaghetti_plot.html")
-const SPAGHETTI_JS_FILE = joinpath(ASSET_DIR, "spaghetti_plot.js")
-const D3_JS_FILE = joinpath(ASSET_DIR, "d3.v3.min.js")
-
-const PLOT_DATA = Dict{String,Any}(
-    "cumulative" => false,
-    "title" => "",
-    "ylabel" => "",
-    "xlabel" => "Stages",
-    "interpolate" => "linear",
-    "ymin" => "",
-    "ymax" => "",
-)
-
 """
 	SDDP.SpaghettiPlot(; stages, scenarios)
 
@@ -147,6 +132,10 @@ function plot(
     );
     open::Bool = true,
 )
+    ASSET_DIR = dirname(@__FILE__)
+    D3_JS_FILE = joinpath(ASSET_DIR, "d3.v3.min.js")
+    SPAGHETTI_JS_FILE = joinpath(ASSET_DIR, "spaghetti_plot.js")
+    SPAGHETTI_HTML_FILE = joinpath(ASSET_DIR, "spaghetti_plot.html")
     fill_template(
         filename,
         "<!--DATA-->" => JSON.json(plt.data),

@@ -694,6 +694,7 @@ mutable struct PolicyGraph{T}
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol,Any}
+    timer_output::TimerOutputs.TimerOutput
 
     function PolicyGraph(sense::Symbol, root_node::T) where {T}
         if sense != :Min && sense != :Max
@@ -711,6 +712,7 @@ mutable struct PolicyGraph{T}
             Set{T}[],
             nothing,
             Dict{Symbol,Any}(),
+            TimerOutputs.TimerOutput(),
         )
     end
 end
