@@ -3,8 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-const _log2inv = inv(log(2))
-_bitsrequired(x::T) where {T<:Integer} = floor(T, log(x) * _log2inv) + 1
+_bitsrequired(x::T) where {T<:Integer} = floor(T, log(x) * inv(log(2))) + 1
 
 """
     binexpand(x::Int, maximum::Int)

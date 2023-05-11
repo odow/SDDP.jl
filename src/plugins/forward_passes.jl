@@ -27,7 +27,7 @@ function forward_pass(
 ) where {T}
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
-    TimerOutputs.@timeit SDDP_TIMER "sample_scenario" begin
+    TimerOutputs.@timeit model.timer_output "sample_scenario" begin
         scenario_path, terminated_due_to_cycle =
             sample_scenario(model, options.sampling_scheme)
     end
@@ -94,7 +94,7 @@ function forward_pass(
         end
         # ===== End: starting state for infinite horizon =====
         # Solve the subproblem, note that `duality_handler = nothing`.
-        TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
+        TimerOutputs.@timeit model.timer_output "solve_subproblem" begin
             subproblem_results = solve_subproblem(
                 model,
                 node,

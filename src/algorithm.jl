@@ -3,8 +3,6 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-const SDDP_TIMER = TimerOutputs.TimerOutput()
-
 # to_nodal_form is an internal helper function so users can pass arguments like:
 # risk_measure = SDDP.Expectation(),
 # risk_measure = Dict(1=>Expectation(), 2=>WorstCase())
@@ -405,7 +403,7 @@ function solve_subproblem(
     end
     state = get_outgoing_state(node)
     stage_objective = stage_objective_value(node.stage_objective)
-    TimerOutputs.@timeit SDDP_TIMER "get_dual_solution" begin
+    TimerOutputs.@timeit model.timer_output "get_dual_solution" begin
         objective, dual_values = get_dual_solution(node, duality_handler)
     end
     if node.post_optimize_hook !== nothing
@@ -487,7 +485,7 @@ function backward_pass(
     objective_states::Vector{NTuple{N,Float64}},
     belief_states::Vector{Tuple{Int,Dict{T,Float64}}},
 ) where {T,NoiseType,N}
-    TimerOutputs.@timeit SDDP_TIMER "prepare_backward_pass" begin
+    TimerOutputs.@timeit model.timer_output "prepare_backward_pass" begin
         restore_duality =
             prepare_backward_pass(model, options.duality_handler, options)
     end
@@ -595,7 +593,7 @@ function backward_pass(
             end
         end
     end
-    TimerOutputs.@timeit SDDP_TIMER "prepare_backward_pass" begin
+    TimerOutputs.@timeit model.timer_output "prepare_backward_pass" begin
         restore_duality()
     end
     return cuts
@@ -674,7 +672,7 @@ function solve_all_children(
                         noise.term,
                     )
                 end
-                TimerOutputs.@timeit SDDP_TIMER "solve_subproblem" begin
+                TimerOutputs.@timeit model.timer_output "solve_subproblem" begin
                     subproblem_results = solve_subproblem(
                         model,
                         child_node,
@@ -791,11 +789,11 @@ end
 
 function iteration(model::PolicyGraph{T}, options::Options) where {T}
     model.ext[:numerical_issue] = false
-    TimerOutputs.@timeit SDDP_TIMER "forward_pass" begin
+    TimerOutputs.@timeit model.timer_output "forward_pass" begin
         forward_trajectory = forward_pass(model, options, options.forward_pass)
         options.forward_pass_callback(forward_trajectory)
     end
-    TimerOutputs.@timeit SDDP_TIMER "backward_pass" begin
+    TimerOutputs.@timeit model.timer_output "backward_pass" begin
         cuts = backward_pass(
             model,
             options,
@@ -805,7 +803,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             forward_trajectory.belief_states,
         )
     end
-    TimerOutputs.@timeit SDDP_TIMER "calculate_bound" begin
+    TimerOutputs.@timeit model.timer_output "calculate_bound" begin
         bound = calculate_bound(model)
     end
     push!(
@@ -982,7 +980,7 @@ function train(
         )
     end
     # Reset the TimerOutput.
-    TimerOutputs.reset_timer!(SDDP_TIMER)
+    TimerOutputs.reset_timer!(model.timer_output)
     log_file_handle = open(log_file, "a")
     log = Log[]
 
@@ -1086,7 +1084,11 @@ function train(
     if print_level > 0
         print_helper(print_footer, log_file_handle, training_results)
         if print_level > 1
-            print_helper(TimerOutputs.print_timer, log_file_handle, SDDP_TIMER)
+            print_helper(
+                TimerOutputs.print_timer,
+                log_file_handle,
+                model.timer_output,
+            )
             # Annoyingly, TimerOutputs doesn't end the print section with `\n`,
             # so we do it here.
             print_helper(println, log_file_handle)
