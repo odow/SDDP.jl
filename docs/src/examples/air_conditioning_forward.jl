@@ -32,6 +32,11 @@ end
 
 convex = create_air_conditioning_model(; convex = true)
 non_convex = create_air_conditioning_model(; convex = false)
-SDDP.train_with_forward_model(non_convex, convex; iteration_limit = 10)
+SDDP.train(
+    convex;
+    forward_pass = SDDP.AlternativeForwardPass(non_convex),
+    post_iteration_callback = SDDP.AlternativePostIterationCallback(non_convex),
+    iteration_limit = 10,
+)
 Test.@test isapprox(SDDP.calculate_bound(non_convex), 62_500.0, atol = 0.1)
 Test.@test isapprox(SDDP.calculate_bound(convex), 62_500.0, atol = 0.1)

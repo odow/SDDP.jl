@@ -40,6 +40,7 @@ function master_loop(
     _initialize_solver(model; throw_error = false)
     while true
         result = iteration(model, options)
+        options.post_iteration_callback(result)
         log_iteration(options)
         if result.has_converged
             return result.status
@@ -167,6 +168,7 @@ function slave_loop(
         results_to_add = IterationResult{T}[]
         while true
             result = iteration(model, options)
+            options.post_iteration_callback(result)
             # The next four lines are subject to a race condition: if the master closes
             # `results` _after_ the call to `isopen` and _before_` the call to `put!` has
             # executed, we get an `InvalidStateException`. This gets trapped in the outer
@@ -243,6 +245,7 @@ function master_loop(
         # implementation anyway.
         while async.use_master && !isready(results)
             result = iteration(model, options)
+            options.post_iteration_callback(result)
             for (_, ch) in updates
                 put!(ch, result)
             end

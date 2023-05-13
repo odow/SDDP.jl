@@ -99,7 +99,7 @@ struct Options{T}
     duality_handler::AbstractDualityHandler
     # A callback called after the forward pass.
     forward_pass_callback::Any
-
+    post_iteration_callback::Any
     # Internal function: users should never construct this themselves.
     function Options(
         model::PolicyGraph{T},
@@ -119,6 +119,7 @@ struct Options{T}
         forward_pass::AbstractForwardPass = DefaultForwardPass(),
         duality_handler::AbstractDualityHandler = ContinuousConicDuality(),
         forward_pass_callback = x -> nothing,
+        post_iteration_callback = result -> nothing,
     ) where {T}
         return new{T}(
             initial_state,
@@ -140,6 +141,7 @@ struct Options{T}
             forward_pass,
             duality_handler,
             forward_pass_callback,
+            post_iteration_callback,
         )
     end
 end
@@ -913,6 +915,10 @@ Train the policy for `model`.
  - `duality_handler::AbstractDualityHandler`: specify a duality handler to use
    when creating cuts.
 
+ - `post_iteration_callback::Function`: a callback with the signature
+   `post_iteration_callback(::IterationResult)` that is evaluated after each
+   iteration of the algorithm.
+
 There is also a special option for infinite horizon problems
 
  - `cycle_discretization_delta`: the maximum distance between states allowed on
@@ -943,6 +949,7 @@ function train(
     add_to_existing_cuts::Bool = false,
     duality_handler::AbstractDualityHandler = SDDP.ContinuousConicDuality(),
     forward_pass_callback::Function = (x) -> nothing,
+    post_iteration_callback = result -> nothing,
 )
     function log_frequency_f(log::Vector{Log})
         if mod(length(log), log_frequency) != 0
@@ -1063,6 +1070,7 @@ function train(
         forward_pass,
         duality_handler,
         forward_pass_callback,
+        post_iteration_callback,
     )
     status = :not_solved
     try
