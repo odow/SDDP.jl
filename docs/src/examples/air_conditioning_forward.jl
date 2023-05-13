@@ -9,7 +9,7 @@ using SDDP
 import HiGHS
 import Test
 
-function model(; convex::Bool)
+function create_air_conditioning_model(; convex::Bool)
     return SDDP.LinearPolicyGraph(
         stages = 3,
         lower_bound = 0.0,
@@ -30,8 +30,8 @@ function model(; convex::Bool)
     end
 end
 
-convex = model(; convex = true)
-nonconvex = model(; convex = false)
-SDDP.train_with_forward_model(nonconvex, convex; iteration_limit = 10)
-Test.@test isapprox(SDDP.calculate_bound(nonconvex), 62_500.0, atol = 0.1)
+convex = create_air_conditioning_model(; convex = true)
+non_convex = create_air_conditioning_model(; convex = false)
+SDDP.train_with_forward_model(non_convex, convex; iteration_limit = 10)
+Test.@test isapprox(SDDP.calculate_bound(non_convex), 62_500.0, atol = 0.1)
 Test.@test isapprox(SDDP.calculate_bound(convex), 62_500.0, atol = 0.1)
