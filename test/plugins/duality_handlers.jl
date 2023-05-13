@@ -43,22 +43,8 @@ function easy_single_stage(duality_handler)
     node = model.nodes[2]
     options = SDDP.Options(
         model,
-        Dict(:x => 1.0),
-        SDDP.InSampleMonteCarlo(),
-        SDDP.CompleteSampler(),
-        SDDP.Expectation(),
-        0.0,
-        true,
-        SDDP.AbstractStoppingRule[],
-        (a, b) -> nothing,
-        0,
-        0.0,
-        SDDP.Log[],
-        IOBuffer(),
-        1,
-        SDDP.DefaultForwardPass(),
-        duality_handler,
-        x -> nothing,
+        Dict(:x => 1.0);
+        duality_handler = duality_handler,
     )
     _ = SDDP.prepare_backward_pass(model, duality_handler, options)
     SDDP._initialize_solver(node; throw_error = false)
@@ -100,22 +86,8 @@ function xor_single_stage(duality_handler)
     node = model.nodes[2]
     options = SDDP.Options(
         model,
-        Dict(:x => 1.0),
-        SDDP.InSampleMonteCarlo(),
-        SDDP.CompleteSampler(),
-        SDDP.Expectation(),
-        0.0,
-        true,
-        SDDP.AbstractStoppingRule[],
-        (a, b) -> nothing,
-        0,
-        0.0,
-        SDDP.Log[],
-        IOBuffer(),
-        1,
-        SDDP.DefaultForwardPass(),
-        duality_handler,
-        x -> nothing,
+        Dict(:x => 1.0);
+        duality_handler = duality_handler,
     )
     _ = SDDP.prepare_backward_pass(model, duality_handler, options)
     SDDP._initialize_solver(node; throw_error = false)
@@ -166,22 +138,8 @@ function test_prepare_backward_pass()
     end
     options = SDDP.Options(
         model,
-        Dict(:x => 1.0),
-        SDDP.InSampleMonteCarlo(),
-        SDDP.CompleteSampler(),
-        SDDP.Expectation(),
-        0.0,
-        true,
-        SDDP.AbstractStoppingRule[],
-        (a, b) -> nothing,
-        0,
-        0.0,
-        SDDP.Log[],
-        IOBuffer(),
-        1,
-        SDDP.DefaultForwardPass(),
-        SDDP.ContinuousConicDuality(),
-        x -> nothing,
+        Dict(:x => 1.0);
+        duality_handler = SDDP.ContinuousConicDuality(),
     )
     for node in [model[1], model[2]]
         @test JuMP.is_binary(node.subproblem[:b1])
