@@ -2,7 +2,20 @@
 #  This Source Code Form is subject to the terms of the Mozilla Public
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+"""
+    AlternativeForwardPass(;
+        forward_model::SDDP.PolicyGraph{T},
+    )
 
+A forward pass for holding an alternative foward model. This is useful for
+calculating cuts and simulating the policy under different models.
+For example, simulating the forward passes with the AC-OPF to obtain forward trajectories,
+and then refine the value functions on the backward pass using some convex approximation 
+(e.g., DC with line losses) as in the following paper:
+ - Rosemberg, Andrew Rosemberg, Alexandre Street, Joaquim Dias Garcia, Davi M. Valladão, Thuener Silva, and Oscar Dowson.
+"Assessing the cost of network simplifications in long-term hydrothermal dispatch planning models." 
+IEEE Transactions on Sustainable Energy 13, no. 1 (2021): 196-206.
+"""
 struct AlternativeForwardPass{T} <: AbstractForwardPass
     model::PolicyGraph{T}
 end
@@ -41,6 +54,8 @@ function master_loop(
 end
 
 function train_with_forward_model(nonconvex, convex; kwargs...)
+    @assert isempty(setdiff(keys(nonconvex.initial_root_state), keys(convex.initial_root_state)))
+    @assert isempty(setdiff(keys(convex.initial_root_state), keys(nonconvex.initial_root_state)))
     return SDDP.train(
         convex;
         forward_pass = AlternativeForwardPass(nonconvex),
