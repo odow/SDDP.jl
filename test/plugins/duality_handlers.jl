@@ -41,11 +41,8 @@ function easy_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    options = SDDP.Options(
-        model,
-        Dict(:x => 1.0);
-        duality_handler = duality_handler,
-    )
+    options =
+        SDDP.Options(model, Dict(:x => 1.0); duality_handler = duality_handler)
     _ = SDDP.prepare_backward_pass(model, duality_handler, options)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
@@ -84,11 +81,8 @@ function xor_single_stage(duality_handler)
         end
     end
     node = model.nodes[2]
-    options = SDDP.Options(
-        model,
-        Dict(:x => 1.0);
-        duality_handler = duality_handler,
-    )
+    options =
+        SDDP.Options(model, Dict(:x => 1.0); duality_handler = duality_handler)
     _ = SDDP.prepare_backward_pass(model, duality_handler, options)
     SDDP._initialize_solver(node; throw_error = false)
     optimize!(node.subproblem)
