@@ -7,6 +7,25 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.5.0 (May 14, 2023)
+
+### Added
+
+ - Added the ability to use a different model for the forward pass. This is a
+   novel feature that lets you train better policies when the model is
+   non-convex or does not have a well-defined dual. See the [Alternative forward models](@ref)
+   tutorial in which we train convex and non-convex formlations of the optimal
+   power flow problem. (#611)
+
+### Other
+
+ - Updated missing `changelog` entries (#608)
+ - Removed global variables (#610)
+ - Converted the `Options` struct to keyword arguments. This struct was a
+   private implementation detail, but the change is breaking if you developed an
+   extension to SDDP that touched these internals. (#612)
+ - Fixed some typos (#613)
+
 ## v1.4.0 (May 8, 2023)
 
 ### Added
