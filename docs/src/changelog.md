@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Added the ability to use a different model for the forward pass. This is a
    novel feature that lets you train better policies when the model is
    non-convex or does not have a well-defined dual. See the [Alternative forward models](@ref)
-   tutorial in which we train convex and non-convex formlations of the optimal
+   tutorial in which we train convex and non-convex formulations of the optimal
    power flow problem. (#611)
 
 ### Other
