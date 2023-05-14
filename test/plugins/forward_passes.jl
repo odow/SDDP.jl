@@ -35,25 +35,7 @@ function test_DefaultForwardPass()
     end
     forward_trajectory = SDDP.forward_pass(
         model,
-        SDDP.Options(
-            model,
-            Dict(:x => 1.0),
-            SDDP.InSampleMonteCarlo(),
-            SDDP.CompleteSampler(),
-            SDDP.Expectation(),
-            0.0,
-            true,
-            SDDP.AbstractStoppingRule[],
-            (a, b) -> nothing,
-            0,
-            0.0,
-            SDDP.Log[],
-            IOBuffer(),
-            1,
-            SDDP.DefaultForwardPass(),
-            SDDP.ContinuousConicDuality(),
-            x -> nothing,
-        ),
+        SDDP.Options(model, Dict(:x => 1.0)),
         SDDP.DefaultForwardPass(),
     )
     simulated_value = 0.0
@@ -84,25 +66,7 @@ function test_RevisitingForwardPass()
     for i in 1:5
         pass = SDDP.forward_pass(
             model,
-            SDDP.Options(
-                model,
-                Dict(:x => 1.0),
-                SDDP.InSampleMonteCarlo(),
-                SDDP.CompleteSampler(),
-                SDDP.Expectation(),
-                0.0,
-                true,
-                SDDP.AbstractStoppingRule[],
-                (a, b) -> nothing,
-                0,
-                0.0,
-                SDDP.Log[],
-                IOBuffer(),
-                1,
-                fp,
-                SDDP.ContinuousConicDuality(),
-                x -> nothing,
-            ),
+            SDDP.Options(model, Dict(:x => 1.0); forward_pass = fp),
             fp,
         )
         if i <= 2
@@ -184,22 +148,9 @@ function test_DefaultForwardPass_cyclic()
     pass = SDDP.DefaultForwardPass()
     options = SDDP.Options(
         model,
-        Dict(:x => 1.0),
-        SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
-        SDDP.CompleteSampler(),
-        SDDP.Expectation(),
-        0.0,
-        true,
-        SDDP.AbstractStoppingRule[],
-        (a, b) -> nothing,
-        0,
-        0.0,
-        SDDP.Log[],
-        IOBuffer(),
-        1,
-        pass,
-        SDDP.ContinuousConicDuality(),
-        x -> nothing,
+        Dict(:x => 1.0);
+        sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
+        forward_pass = pass,
     )
     forward_trajectory = SDDP.forward_pass(model, options, pass)
     @test length(forward_trajectory.scenario_path) == 4
@@ -228,22 +179,9 @@ function test_DefaultForwardPass_cyclic_include_last_node()
     pass = SDDP.DefaultForwardPass(include_last_node = false)
     options = SDDP.Options(
         model,
-        Dict(:x => 1.0),
-        SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
-        SDDP.CompleteSampler(),
-        SDDP.Expectation(),
-        0.0,
-        true,
-        SDDP.AbstractStoppingRule[],
-        (a, b) -> nothing,
-        0,
-        0.0,
-        SDDP.Log[],
-        IOBuffer(),
-        1,
-        pass,
-        SDDP.ContinuousConicDuality(),
-        x -> nothing,
+        Dict(:x => 1.0);
+        sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
+        forward_pass = pass,
     )
     forward_trajectory = SDDP.forward_pass(model, options, pass)
     @test length(forward_trajectory.scenario_path) == 3
@@ -271,22 +209,9 @@ function test_DefaultForwardPass_acyclic_include_last_node()
     pass = SDDP.DefaultForwardPass(include_last_node = false)
     options = SDDP.Options(
         model,
-        Dict(:x => 1.0),
-        SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
-        SDDP.CompleteSampler(),
-        SDDP.Expectation(),
-        0.0,
-        true,
-        SDDP.AbstractStoppingRule[],
-        (a, b) -> nothing,
-        0,
-        0.0,
-        SDDP.Log[],
-        IOBuffer(),
-        1,
-        pass,
-        SDDP.ContinuousConicDuality(),
-        x -> nothing,
+        Dict(:x => 1.0);
+        sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
+        forward_pass = pass,
     )
     forward_trajectory = SDDP.forward_pass(model, options, pass)
     @test length(forward_trajectory.scenario_path) == 3
