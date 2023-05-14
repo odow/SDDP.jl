@@ -39,7 +39,7 @@ import Statistics
 # !!! tip
 #     You can follow along by installing the above packages, and copy-pasting
 #     the code we will write into a Julia REPL. Alternatively, you can download
-#     the Julia `.jl` file which created this tutorial [from Github](https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/21_theory_intro.jl).
+#     the Julia `.jl` file which created this tutorial [from GitHub](https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/21_theory_intro.jl).
 
 # ## Preliminaries: background theory
 
@@ -536,7 +536,7 @@ trajectory, simulation_cost = forward_pass(model);
 
 # ## Implementation: the backward pass
 
-# From the forward pass, we obtained a vector of nodes visted and their
+# From the forward pass, we obtained a vector of nodes visited and their
 # corresponding outgoing state variables. Now we need to refine the
 # approximation for each node at the candidate solution for the outgoing state
 # variable. That is, we need to add a new cut:
@@ -555,10 +555,10 @@ trajectory, simulation_cost = forward_pass(model);
 # However, we can be smarter than that.
 
 # If we traverse the list of nodes visited in the forward pass in reverse, then
-# we come to refine the $i$th node in the trajectory, we will already have
-# improved the approximation of the $(i+1)$th node in the trajectory as well!
-# Therefore, our refinement of the $i$th node will be better than if we improved
-# node $i$ first, and then refined node $(i+1)$.
+# we come to refine the $i^{th}$ node in the trajectory, we will already have
+# improved the approximation of the $(i+1)^{th}$ node in the trajectory as well!
+# Therefore, our refinement of the $i^{th}$ node will be better than if we
+# improved node $i$ first, and then refined node $(i+1)$.
 
 # Because we walk the nodes in reverse, we call this the **backward pass**.
 
