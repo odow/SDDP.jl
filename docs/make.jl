@@ -132,6 +132,7 @@ Documenter.makedocs(
             "tutorial/warnings.md",
             "tutorial/arma.md",
             "tutorial/objective_states.md",
+            "tutorial/pglib_opf.md",
             "tutorial/mdps.md",
             "tutorial/example_newsvendor.md",
             "tutorial/example_reservoir.md",

@@ -77,6 +77,8 @@ SDDP.AbstractForwardPass
 SDDP.DefaultForwardPass
 SDDP.RevisitingForwardPass
 SDDP.RiskAdjustedForwardPass
+SDDP.AlternativeForwardPass
+SDDP.AlternativePostIterationCallback
 ```
 
 ### Risk Measures
