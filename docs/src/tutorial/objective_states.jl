@@ -38,9 +38,8 @@
 # !!! warning
 #     Support for objective states in `SDDP.jl` is experimental. Models are
 #     considerably more computational intensive, the interface is less
-#     user-friendly, and there are [subtle gotchas to be aware of](@ref
-#     objective_state_warnings). Only use this if you have read and understood
-#     the theory behind the method.
+#     user-friendly, and there are [subtle gotchas to be aware of](@ref objective_state_warnings).
+#     Only use this if you have read and understood the theory behind the method.
 
 # ## One-dimensional objective states
 

@@ -20,7 +20,7 @@
 # | ----            | --- | --- | ---- |
 # | P(ω)            | 1/3 | 1/3 |  1/3 |
 # | inflow          |   0 |  50 |  100 |
-# | fuel_multiplier | 1.5 | 1.0 | 0.75 |
+# | fuel multiplier | 1.5 | 1.0 | 0.75 |
 
 # In stage `t`, the objective is now to minimize:
 #

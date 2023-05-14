@@ -12,12 +12,13 @@ infeasibilities
 kwargs
 multistock
 [Nn]ewsvendor
-parameterizes
+parameteriz(es|ing)
 performant
 preprint
 Rethrow
 src
 stagewise
+stochasticity
 subgradient
 [Ss]ubproblems
 [Uu]nicyclic

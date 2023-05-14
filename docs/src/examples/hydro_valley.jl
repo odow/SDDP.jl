@@ -14,7 +14,7 @@
 # breakpoints in the piecewise linear function as the knots in the Turbine
 # struct.
 
-# The model can be created using the hydro_valley_model function. It has a few
+# The model can be created using the `hydro_valley_model` function. It has a few
 # keyword arguments to allow automated testing of the library.
 # `hasstagewiseinflows` determines if the RHS noise constraint should be added.
 # `hasmarkovprice` determines if the price uncertainty (modelled by a Markov
