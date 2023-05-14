@@ -218,7 +218,7 @@ nothing  # hide
 
 simulations[1][12][:node_index]
 
-# to the realization of the noice `(price, ω)` passed to [`SDDP.parameterize`](@ref):
+# to the realization of the noise `(price, ω)` passed to [`SDDP.parameterize`](@ref):
 
 simulations[1][12][:noise_term]
 

@@ -373,7 +373,7 @@ using SDDP
 
 # #### Graph structure
 
-# First, we need to identify the structre of the policy graph. From the problem
+# First, we need to identify the structure of the policy graph. From the problem
 # statement, we want to model the problem over three weeks in weekly stages.
 # Therefore, the policy graph is a linear graph with three stages:
 
