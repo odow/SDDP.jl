@@ -15,14 +15,16 @@ This is often useful if your first-stage decisions are capacity-expansion type
 decisions (e.g., you choose first how much capacity to add, but because it takes
 time to build, it only shows up in some future stage).
 
-```julia
+```@repl
+using SDDP, HiGHS
 SDDP.LinearPolicyGraph(
     stages = 10,
     sense = :Max,
-    lower_bound = -100.0,
+    upper_bound = 100.0,
+    optimizer = HiGHS.Optimizer,
 ) do sp, t
     # Capacity of the generator. Decided in the first stage.
-    @variable(sp, capcity, SDDP.State, initial_value = 0)
+    @variable(sp, capacity >= 0, SDDP.State, initial_value = 0)
     # Quantity of water stored.
     @variable(sp, reservoir >= 0, SDDP.State, initial_value = 0)
     # Quantity of water to use for electricity generation in current stage.
@@ -54,11 +56,13 @@ end
 
 This is often useful if have some inventory problem with a lead-time on orders.
 
-```julia
+```@repl
+using SDDP, HiGHS
 SDDP.LinearPolicyGraph(
     stages = 10,
     sense = :Max,
     upper_bound = 100,
+    optimizer = HiGHS.Optimizer,
 ) do sp, t
     # Current inventory on hand.
     @variable(sp, inventory >= 0, SDDP.State, initial_value = 0)
