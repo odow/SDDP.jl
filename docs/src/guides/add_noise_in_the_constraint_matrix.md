@@ -26,9 +26,9 @@ A policy graph with 3 nodes.
  Node indices: 1, 2, 3
 
 julia> SDDP.simulate(model, 1);
-emissions : x_out <= 1.0
-emissions : 0.2 x_out <= 1.0
-emissions : 0.5 x_out <= 1.0
+emissions : x_out <= 1
+emissions : 0.2 x_out <= 1
+emissions : 0.5 x_out <= 1
 ```
 
 !!! note

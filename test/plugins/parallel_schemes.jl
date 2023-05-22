@@ -85,8 +85,9 @@ function test_slave_update()
         MOI.GreaterThan{Float64},
     )
     @test length(cons) == 1
-    @test replace(sprint(print, cons[1]), "≥" => ">=") ==
-          "-2 x_out + _[3] >= -5.0"
+    obj = JuMP.constraint_object(cons[1])
+    @test obj.set == MOI.GreaterThan(-5.0)
+    @test length(obj.func.terms) == 2
     result = SDDP.IterationResult(
         1,
         0.0,
