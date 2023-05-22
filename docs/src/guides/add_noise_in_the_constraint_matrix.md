@@ -10,7 +10,7 @@ end
 [`JuMP.set_normalized_coefficient`](https://jump.dev/JuMP.jl/stable/manual/constraints/#Modify-a-variable-coefficient)
 function.
 
-```jldoctest; filter=r" \: .+?1.0"
+```jldoctest; filter=r" \: .+?1"
 julia> model = SDDP.LinearPolicyGraph(
                stages=3, lower_bound = 0, optimizer = HiGHS.Optimizer
                ) do subproblem, t
@@ -26,9 +26,9 @@ A policy graph with 3 nodes.
  Node indices: 1, 2, 3
 
 julia> SDDP.simulate(model, 1);
-emissions : x_out <= 1.0
-emissions : 0.2 x_out <= 1.0
-emissions : 0.5 x_out <= 1.0
+emissions : x_out <= 1
+emissions : 0.2 x_out <= 1
+emissions : 0.5 x_out <= 1
 ```
 
 !!! note
