@@ -88,7 +88,7 @@ end
 
 # Once a model has been constructed, the next step is to train the policy.
 
-SDDP.train(models)
+SDDP.train(model)
 
 # ## Simulating the policy
 
