@@ -58,11 +58,7 @@ function test_prob52_2stages()
         @stageobjective(subproblem, i_c' * v + C' * y * T + 1e6 * penalty)
         return
     end
-    SDDP.train(
-        model;
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-        log_frequency = 10,
-    )
+    SDDP.train(model; log_frequency = 10)
     @test SDDP.calculate_bound(model) ≈ 340315.52 atol = 0.1
     return
 end

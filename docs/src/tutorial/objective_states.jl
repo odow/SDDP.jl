@@ -137,7 +137,6 @@ end
 
 SDDP.train(
     model;
-    stopping_rules = [SDDP.SimulationStoppingRule()],
     log_every_seconds = 0.1,
     run_numerical_stability_report = false,
 )
@@ -219,7 +218,6 @@ end
 
 SDDP.train(
     model;
-    stopping_rules = [SDDP.SimulationStoppingRule()],
     log_every_seconds = 0.5,
     run_numerical_stability_report = false,
 )

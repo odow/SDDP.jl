@@ -52,11 +52,7 @@ function test_prob52_3stages()
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) ≈ 406712.49 atol = 0.1
 
-    SDDP.train(
-        model;
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-        log_frequency = 10,
-    )
+    SDDP.train(model; log_frequency = 10)
     @test SDDP.calculate_bound(model) ≈ 406712.49 atol = 0.1
     return
 end

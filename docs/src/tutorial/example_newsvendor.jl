@@ -45,7 +45,7 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(model; stopping_rules = [SDDP.SimulationStoppingRule()])
+SDDP.train(model)
 
 # To check the first-stage buy decision, we need to obtain a decision rule for
 # the first-stage node `1`:
@@ -95,12 +95,7 @@ function solve_risk_averse_newsvendor(Ω, risk_measure)
             @stageobjective(subproblem, sales_price * sell)
         end
     end
-    SDDP.train(
-        model;
-        risk_measure = risk_measure,
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-        print_level = 0,
-    )
+    SDDP.train(model; risk_measure = risk_measure, print_level = 0)
     first_stage_rule = SDDP.DecisionRule(model, node = 1)
     solution = SDDP.evaluate(
         first_stage_rule;

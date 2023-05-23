@@ -33,7 +33,7 @@ function fast_quickstart()
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) == -2
 
-    SDDP.train(model; stopping_rules = [SDDP.SimulationStoppingRule()])
+    SDDP.train(model)
     @test SDDP.calculate_bound(model) == -2
 end
 

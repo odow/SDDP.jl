@@ -857,7 +857,8 @@ Train the policy for `model`.
 
  - `time_limit::Float64`: number of seconds to train before termination.
 
- - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)s.
+ - `stoping_rules`: a vector of [`SDDP.AbstractStoppingRule`](@ref)s. Defaults
+   to [`SimulationStoppingRule`](@ref).
 
  - `print_level::Int`: control the level of printing to the screen. Defaults to
     `1`. Set to `0` to disable all printing.
@@ -1020,6 +1021,9 @@ function train(
     # something like stopping_rules = [SDDP.IterationLimit(100)], the vector
     # will be concretely typed and we can't add a TimeLimit.
     stopping_rules = convert(Vector{AbstractStoppingRule}, stopping_rules)
+    if isempty(stopping_rules)
+        push!(stopping_rules, SimulationStoppingRule())
+    end
     # Add the limits as stopping rules. An IterationLimit or TimeLimit may
     # already exist in stopping_rules, but that doesn't matter.
     if iteration_limit !== nothing
@@ -1027,12 +1031,6 @@ function train(
     end
     if time_limit !== nothing
         push!(stopping_rules, TimeLimit(time_limit))
-    end
-    if length(stopping_rules) == 0
-        @warn(
-            "You haven't specified a stopping rule! You can only terminate " *
-            "the call to SDDP.train via a keyboard interrupt ([CTRL+C])."
-        )
     end
     # Update the nodes with the selected cut type (SINGLE_CUT or MULTI_CUT)
     # and the cut deletion minimum.

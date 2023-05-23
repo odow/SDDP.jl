@@ -32,11 +32,7 @@ function all_blacks()
             sum(R[i, stage] * offer[i, stage] * accept_offer for i in 1:N)
         )
     end
-    SDDP.train(
-        model;
-        duality_handler = SDDP.LagrangianDuality(),
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-    )
+    SDDP.train(model; duality_handler = SDDP.LagrangianDuality())
     @test SDDP.calculate_bound(model) ≈ 9.0
     return
 end

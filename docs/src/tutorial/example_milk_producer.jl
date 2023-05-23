@@ -188,7 +188,6 @@ end
 SDDP.train(
     model;
     time_limit = 20,
-    stopping_rules = [SDDP.SimulationStoppingRule()],
     risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.25),
     sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
     log_every_seconds = 2.0,
