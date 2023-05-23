@@ -43,7 +43,6 @@ function test_multistock_example()
     SDDP.train(
         model;
         iteration_limit = 100,
-        stopping_rules = [SDDP.SimulationStoppingRule()],
         cut_type = SDDP.SINGLE_CUT,
         log_frequency = 10,
     )

@@ -76,7 +76,7 @@ end
 
 # As in the previous two tutorials, we train and simulate the policy:
 
-SDDP.train(model; stopping_rules = [SDDP.SimulationStoppingRule()])
+SDDP.train(model)
 
 simulations = SDDP.simulate(model, 500)
 

@@ -51,11 +51,7 @@ function asset_management_simple()
             @stageobjective(subproblem, -over + 4 * short)
         end
     end
-    SDDP.train(
-        model;
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-        log_frequency = 5,
-    )
+    SDDP.train(model; log_frequency = 5)
     @test SDDP.calculate_bound(model) ≈ 1.514 atol = 1e-4
     return
 end

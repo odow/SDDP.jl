@@ -48,11 +48,7 @@ function air_conditioning_model(duality_handler)
             100 * production + 300 * overtime + 50 * stored_production.out
         )
     end
-    SDDP.train(
-        model;
-        duality_handler = duality_handler,
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-    )
+    SDDP.train(model; duality_handler = duality_handler)
     @test isapprox(SDDP.calculate_bound(model), 62_500.0, atol = 0.1)
     return
 end

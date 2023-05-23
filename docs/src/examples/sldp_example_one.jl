@@ -39,11 +39,7 @@ function sldp_example_one()
         ]
         return SDDP.parameterize(φ -> JuMP.fix(ω, φ), sp, [points; -points])
     end
-    SDDP.train(
-        model;
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-        log_frequency = 10,
-    )
+    SDDP.train(model; log_frequency = 10)
     @test SDDP.calculate_bound(model) <= 1.1675
     return
 end

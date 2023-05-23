@@ -65,7 +65,6 @@ function newsvendor_example(; cut_type)
     end
     SDDP.train(
         model;
-        stopping_rules = [SDDP.SimulationStoppingRule()],
         log_frequency = 10,
         time_limit = 20.0,
         cut_type = cut_type,

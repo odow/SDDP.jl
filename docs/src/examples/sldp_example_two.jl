@@ -55,11 +55,7 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
         )
         return
     end
-    SDDP.train(
-        model;
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-        log_frequency = 10,
-    )
+    SDDP.train(model; log_frequency = 10)
     bound = SDDP.calculate_bound(model)
 
     if N == 2

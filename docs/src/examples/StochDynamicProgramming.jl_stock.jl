@@ -24,11 +24,7 @@ function stock_example()
         end
         @stageobjective(sp, (sin(3 * stage) - 1) * control)
     end
-    SDDP.train(
-        model;
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-        log_frequency = 10,
-    )
+    SDDP.train(model; log_frequency = 10)
     @test SDDP.calculate_bound(model) ≈ -1.471 atol = 0.001
     simulation_results = SDDP.simulate(model, 1_000)
     @test length(simulation_results) == 1_000

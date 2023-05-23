@@ -47,11 +47,7 @@ function stochastic_all_blacks()
         @constraint(sp, accept_offer .<= offers_made)
     end
 
-    SDDP.train(
-        model;
-        stopping_rules = [SDDP.SimulationStoppingRule()],
-        duality_handler = SDDP.LagrangianDuality(),
-    )
+    SDDP.train(model; duality_handler = SDDP.LagrangianDuality())
     @test SDDP.calculate_bound(model) ≈ 8.0
     return
 end
