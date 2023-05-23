@@ -217,11 +217,7 @@ function test_hydro_valley_model()
     ## deterministic
     deterministic_model =
         hydro_valley_model(hasmarkovprice = false, hasstagewiseinflows = false)
-    SDDP.train(
-        deterministic_model;
-        cut_deletion_minimum = 1,
-        print_level = 0,
-    )
+    SDDP.train(deterministic_model; cut_deletion_minimum = 1, print_level = 0)
     @test SDDP.calculate_bound(deterministic_model) ≈ 835.0 atol = 1e-3
 
     ## stagewise inflows
@@ -260,11 +256,7 @@ function test_hydro_valley_model()
 
     ## stagewise inflows and Markov prices
     cutselection_model = hydro_valley_model()
-    SDDP.train(
-        cutselection_model;
-        print_level = 0,
-        cut_deletion_minimum = 2,
-    )
+    SDDP.train(cutselection_model; print_level = 0, cut_deletion_minimum = 2)
     @test SDDP.calculate_bound(cutselection_model) ≈ 855.0 atol = 1.0
 
     ## Distributionally robust Optimization
