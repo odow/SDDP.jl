@@ -86,11 +86,9 @@ end
 
 # ## Training the policy
 
-# Once a model has been constructed, the next step is to train the policy. This can be
-# achieved using [`SDDP.train`](@ref). There are many options that can be passed, but
-# `iteration_limit` terminates the training after the prescribed number of SDDP iterations.
+# Once a model has been constructed, the next step is to train the policy.
 
-SDDP.train(model, iteration_limit = 100)
+SDDP.train(models)
 
 # ## Simulating the policy
 
