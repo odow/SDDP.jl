@@ -1100,9 +1100,7 @@ function train(
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
     if print_level > 0
-        if options.last_log_iteration[] != length(options.log)
-            log_iteration(options)
-        end
+        log_iteration(options; force_if_needed = true)
         print_helper(print_footer, log_file_handle, training_results)
         if print_level > 1
             print_helper(
