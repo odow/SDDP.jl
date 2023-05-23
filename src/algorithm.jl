@@ -100,6 +100,7 @@ struct Options{T}
     # A callback called after the forward pass.
     forward_pass_callback::Any
     post_iteration_callback::Any
+    last_log_iteration::Ref{Int}
     # Internal function: users should never construct this themselves.
     function Options(
         model::PolicyGraph{T},
@@ -142,6 +143,7 @@ struct Options{T}
             duality_handler,
             forward_pass_callback,
             post_iteration_callback,
+            Ref{Int}(0),  # last_log_iteration
         )
     end
 end
@@ -933,7 +935,7 @@ function train(
     print_level::Int = 1,
     log_file::String = "SDDP.log",
     log_frequency::Int = 1,
-    log_every_seconds::Float64 = 0.0,
+    log_every_seconds::Float64 = -1.0,
     run_numerical_stability_report::Bool = true,
     stopping_rules = AbstractStoppingRule[],
     risk_measure = SDDP.Expectation(),
@@ -959,6 +961,16 @@ function train(
         if length(log) >= 2 && log_every_seconds > 0.0
             return div(log[end-1].time, log_every_seconds) <
                    div(log[end].time, log_every_seconds)
+        end
+        if length(log) >= 2 && log_every_seconds < 0.0
+            seconds = if log[end].time < 10
+                1.0
+            elseif log[end].time <= 120
+                5.0
+            else
+                30.0
+            end
+            return div(log[end-1].time, seconds) < div(log[end].time, seconds)
         end
         return true
     end
@@ -1088,6 +1100,9 @@ function train(
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
     if print_level > 0
+        if options.last_log_iteration[] != length(options.log)
+            log_iteration(options)
+        end
         print_helper(print_footer, log_file_handle, training_results)
         if print_level > 1
             print_helper(

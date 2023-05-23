@@ -17,6 +17,7 @@ function log_iteration(options)
     if _should_log(options, options.log_frequency)
         print_helper(print_iteration, options.log_file_handle, options.log[end])
         flush(options.log_file_handle)
+        options.last_log_iteration[] = length(options.log)
     end
     return
 end
