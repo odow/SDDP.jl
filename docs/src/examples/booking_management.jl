@@ -88,11 +88,7 @@ end
 
 function booking_management(duality_handler)
     m_1_2_5 = booking_management_model(1, 2, 5)
-    SDDP.train(
-        m_1_2_5;
-        log_frequency = 5,
-        duality_handler = duality_handler,
-    )
+    SDDP.train(m_1_2_5; log_frequency = 5, duality_handler = duality_handler)
     if duality_handler == SDDP.ContinuousConicDuality()
         @test SDDP.calculate_bound(m_1_2_5) >= 7.25 - 1e-4
     else
@@ -100,11 +96,7 @@ function booking_management(duality_handler)
     end
 
     m_2_2_3 = booking_management_model(2, 2, 3)
-    SDDP.train(
-        m_2_2_3;
-        log_frequency = 10,
-        duality_handler = duality_handler,
-    )
+    SDDP.train(m_2_2_3; log_frequency = 10, duality_handler = duality_handler)
     if duality_handler == SDDP.ContinuousConicDuality()
         @test SDDP.calculate_bound(m_1_2_5) > 6.13
     else

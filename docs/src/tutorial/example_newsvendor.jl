@@ -95,11 +95,7 @@ function solve_risk_averse_newsvendor(Ω, risk_measure)
             @stageobjective(subproblem, sales_price * sell)
         end
     end
-    SDDP.train(
-        model;
-        risk_measure = risk_measure,
-        print_level = 0,
-    )
+    SDDP.train(model; risk_measure = risk_measure, print_level = 0)
     first_stage_rule = SDDP.DecisionRule(model, node = 1)
     solution = SDDP.evaluate(
         first_stage_rule;

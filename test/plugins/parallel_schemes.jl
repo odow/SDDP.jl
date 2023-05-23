@@ -130,7 +130,7 @@ function test_async_solve()
         JuMP.optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
     SDDP.train(
         model,
-        iteration_limit = 20,
+        stopping_rules = [SDDP.IterationLimit(20)],
         parallel_scheme = SDDP.Asynchronous(solver; use_master = false),
     )
     @test SDDP.termination_status(model) == :iteration_limit
@@ -138,7 +138,7 @@ function test_async_solve()
     @test SDDP.calculate_bound(model) == 6.0
     SDDP.train(
         model,
-        iteration_limit = 20,
+        stopping_rules = [SDDP.IterationLimit(20)],
         parallel_scheme = SDDP.Asynchronous(; use_master = true) do m
             for (key, node) in m.nodes
                 JuMP.set_optimizer(node.subproblem, HiGHS.Optimizer)

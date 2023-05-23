@@ -84,11 +84,7 @@ function generation_expansion(duality_handler)
         )
         exit(0)
     end
-    SDDP.train(
-        model;
-        log_frequency = 10,
-        duality_handler = duality_handler,
-    )
+    SDDP.train(model; log_frequency = 10, duality_handler = duality_handler)
     Test.@test SDDP.calculate_bound(model) ≈ 2.078860e6 atol = 1e3
     return
 end
