@@ -135,11 +135,7 @@ end
 
 # After creating our model, we can train and simulate as usual.
 
-SDDP.train(
-    model;
-    log_every_seconds = 0.1,
-    run_numerical_stability_report = false,
-)
+SDDP.train(model; run_numerical_stability_report = false)
 
 simulations = SDDP.simulate(model, 1)
 
@@ -216,11 +212,7 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(
-    model;
-    log_every_seconds = 0.5,
-    run_numerical_stability_report = false,
-)
+SDDP.train(model; run_numerical_stability_report = false)
 
 simulations = SDDP.simulate(model, 1)
 

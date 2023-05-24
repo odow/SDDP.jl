@@ -76,7 +76,7 @@ model = SDDP.LinearPolicyGraph(
     return
 end
 
-SDDP.train(model; log_every_seconds = 1.0)
+SDDP.train(model)
 
 # Check that we got the theoretical optimum:
 
@@ -180,7 +180,7 @@ end
 #     Since there are discrete decisions here, SDDP.jl is not guaranteed to find
 #     the globally optimal policy.
 
-SDDP.train(model; log_every_seconds = 1.0)
+SDDP.train(model)
 
 # Simulating a cyclic policy graph requires an explicit `sampling_scheme` that
 # does not terminate early based on the cycle probability:
