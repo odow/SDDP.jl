@@ -9,7 +9,7 @@ end
 Multi-dimensional stagewise-independent random variables can be created by
 forming the Cartesian product of the random variables.
 
-## A simple examle
+## A simple example
 
 If the sample space and probabilities are given as vectors for each marginal
 distribution, do:
