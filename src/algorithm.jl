@@ -100,6 +100,7 @@ struct Options{T}
     # A callback called after the forward pass.
     forward_pass_callback::Any
     post_iteration_callback::Any
+    last_log_iteration::Ref{Int}
     # Internal function: users should never construct this themselves.
     function Options(
         model::PolicyGraph{T},
@@ -142,6 +143,7 @@ struct Options{T}
             duality_handler,
             forward_pass_callback,
             post_iteration_callback,
+            Ref{Int}(0),  # last_log_iteration
         )
     end
 end
@@ -933,7 +935,7 @@ function train(
     print_level::Int = 1,
     log_file::String = "SDDP.log",
     log_frequency::Int = 1,
-    log_every_seconds::Float64 = 0.0,
+    log_every_seconds::Float64 = log_frequency == 1 ? -1.0 : 0.0,
     run_numerical_stability_report::Bool = true,
     stopping_rules = AbstractStoppingRule[],
     risk_measure = SDDP.Expectation(),
@@ -956,11 +958,23 @@ function train(
         if mod(length(log), log_frequency) != 0
             return false
         end
-        if length(log) >= 2 && log_every_seconds > 0.0
-            return div(log[end-1].time, log_every_seconds) <
-                   div(log[end].time, log_every_seconds)
+        last = options.last_log_iteration[]
+        if last == 0
+            return true
+        elseif last == length(log)
+            return false
         end
-        return true
+        seconds = log_every_seconds
+        if log_every_seconds < 0.0
+            if log[end].time <= 10
+                seconds = 1.0
+            elseif log[end].time <= 120
+                seconds = 5.0
+            else
+                seconds = 30.0
+            end
+        end
+        return log[end].time - log[last].time >= seconds
     end
 
     if !add_to_existing_cuts && model.most_recent_training_results !== nothing
@@ -1088,6 +1102,7 @@ function train(
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
     if print_level > 0
+        log_iteration(options; force_if_needed = true)
         print_helper(print_footer, log_file_handle, training_results)
         if print_level > 1
             print_helper(
