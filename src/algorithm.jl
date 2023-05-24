@@ -961,6 +961,8 @@ function train(
         last = options.last_log_iteration[]
         if last == 0
             return true
+        elseif last == length(log)
+            return false
         end
         seconds = log_every_seconds
         if log_every_seconds < 0.0
