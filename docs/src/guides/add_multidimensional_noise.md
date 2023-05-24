@@ -51,7 +51,7 @@ small enough that it makes sense to enumerate each element, we can use
 We can then evaluate the density function of the product distribution on each
 element of this space to get the vector of corresponding probabilities, `P`.
 
-```jldoctest; filter=[r"\(\d, \d, \d\)", r"1\-element.+"s]
+```jldoctest; filter=[r"\[\d+, \d+, \d+\]", r"1\-element.+"s]
 julia> import Distributions
 
 julia> distributions = [
@@ -93,7 +93,7 @@ the full sample space, and `P` is the uniform distribution over those points.
 Points with higher density in the full sample space will appear more frequently
 in `Ω`.
 
-```jldoctest; filter=[r"\[\d, \d, \d\]", r"1\-element.+"s]
+```jldoctest; filter=[r"\[\d+, \d+, \d+\]", r"1\-element.+"s]
 julia> import Distributions
 
 julia> distributions = Distributions.Product([
