@@ -935,7 +935,7 @@ function train(
     print_level::Int = 1,
     log_file::String = "SDDP.log",
     log_frequency::Int = 1,
-    log_every_seconds::Float64 = -1.0,
+    log_every_seconds::Float64 = log_frequency == 1 ? -1.0 : 0.0,
     run_numerical_stability_report::Bool = true,
     stopping_rules = AbstractStoppingRule[],
     risk_measure = SDDP.Expectation(),
