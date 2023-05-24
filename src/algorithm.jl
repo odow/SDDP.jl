@@ -958,21 +958,21 @@ function train(
         if mod(length(log), log_frequency) != 0
             return false
         end
-        if length(log) >= 2 && log_every_seconds > 0.0
-            return div(log[end-1].time, log_every_seconds) <
-                   div(log[end].time, log_every_seconds)
+        last = options.last_log_iteration[]
+        if last == 0
+            return true
         end
-        if length(log) >= 2 && log_every_seconds < 0.0
-            seconds = if log[end].time < 10
-                1.0
+        seconds = log_every_seconds
+        if log_every_seconds < 0.0
+            if log[end].time <= 10
+                seconds = 1.0
             elseif log[end].time <= 120
-                5.0
+                seconds = 5.0
             else
-                30.0
+                seconds = 30.0
             end
-            return div(log[end-1].time, seconds) < div(log[end].time, seconds)
         end
-        return true
+        return log[end].time - log[last].time >= seconds
     end
 
     if !add_to_existing_cuts && model.most_recent_training_results !== nothing
