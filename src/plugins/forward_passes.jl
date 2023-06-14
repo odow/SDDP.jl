@@ -290,3 +290,64 @@ function forward_pass(
     )
     return pass
 end
+
+mutable struct RegularizedForwardPass{T<:AbstractForwardPass} <: AbstractForwardPass
+    forward_pass::T
+    trial_centre::Dict{Symbol,Float64}
+    penalty::Union{Nothing,Float64}
+    ρ::Float64
+
+    function RegularizedForwardPass(;
+        rho::Float64 = 0.97,
+        forward_pass::AbstractForwardPass = DefaultForwardPass(),
+    )
+        centre = Dict{Symbol,Float64}()
+        return new{typeof(forward_pass)}(forward_pass, centre, nothing, rho)
+    end
+end
+
+function forward_pass(
+    model::PolicyGraph,
+    options::Options,
+    fp::RegularizedForwardPass,
+)
+    if length(model.root_children) != 1
+        error("RegularizedForwardPass cannot be applied")
+    end
+    node = model[model.root_children[1].term]
+    if length(node.noise_terms) > 1
+        error("RegularizedForwardPass cannot be applied")
+    end
+    if isempty(fp.trial_centre)
+        for (k, v) in model.initial_root_state
+            fp.trial_centre[k] = v
+        end
+    end
+    penalty(x, y::Float64) = (x - y)^2 / max(1.0, abs(y))
+    @show fp.penalty
+    penalty_obj = @expression(
+        node.subproblem,
+        sum(
+            something(fp.penalty, 1) * penalty(x.out, fp.trial_centre[k]) for
+            (k, x) in node.states
+        ),
+    )
+    original_objective = node.stage_objective
+    set_stage_objective(node.subproblem, node.stage_objective + penalty_obj)
+    pass = forward_pass(model, options, fp.forward_pass)
+    divergence = sum(
+        penalty(pass.sampled_states[1][k], fp.trial_centre[k]) for
+        (k, x) in node.states
+    )
+    if fp.penalty === nothing
+        N = length(pass.scenario_path)
+        fp.penalty = pass.cumulative_value / max(1, divergence) / N
+    end
+    @show fp.penalty * divergence
+    for k in keys(fp.trial_centre)
+        fp.trial_centre[k] = pass.sampled_states[1][k]
+    end
+    fp.penalty *= fp.ρ
+    set_stage_objective(node.subproblem, original_objective)
+    return pass
+end
