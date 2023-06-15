@@ -291,18 +291,41 @@ function forward_pass(
     return pass
 end
 
+"""
+    RegularizedForwardPass(;
+        rho::Float64 = 0.05,
+        forward_pass::AbstractForwardPass = DefaultForwardPass(),
+    )
+
+A forward pass that regularizes the outgoing first-stage state variables with an
+L-infty trust-region constraint about the previous iteration's solution.
+Specifically, the bounds of the outgoing state variable `x` are updated from
+`(l, u)` to `max(l, x^k - rho * (u - l)) <= x <= min(u, x^k + rho * (u - l))`,
+where `x^k` is the optimal solution of `x` in the previous iteration. On the
+first iteration, the value of the state at the root node is used.
+
+By default, `rho` is set to 5%, which seems to work well empirically.
+
+Pass a different `forward_pass` to control the forward pass within the
+regularized forward pass.
+
+This forward pass is largely intended to be used for investment problems in
+which the first stage makes a series of capacity decisions that then influence
+the rest of the graph. An error is thrown if the first stage problem is not
+deterministic, and states are silently skipped if they do not have finite
+bounds.
+"""
 mutable struct RegularizedForwardPass{T<:AbstractForwardPass} <: AbstractForwardPass
     forward_pass::T
     trial_centre::Dict{Symbol,Float64}
-    penalty::Union{Nothing,Float64}
     ρ::Float64
 
     function RegularizedForwardPass(;
-        rho::Float64 = 0.97,
+        rho::Float64 = 0.05,
         forward_pass::AbstractForwardPass = DefaultForwardPass(),
     )
         centre = Dict{Symbol,Float64}()
-        return new{typeof(forward_pass)}(forward_pass, centre, nothing, rho)
+        return new{typeof(forward_pass)}(forward_pass, centre, rho)
     end
 end
 
@@ -312,42 +335,32 @@ function forward_pass(
     fp::RegularizedForwardPass,
 )
     if length(model.root_children) != 1
-        error("RegularizedForwardPass cannot be applied")
+        error(
+            "RegularizedForwardPass cannot be applied because first-stage is " *
+            "not deterministic",
+        )
     end
     node = model[model.root_children[1].term]
     if length(node.noise_terms) > 1
-        error("RegularizedForwardPass cannot be applied")
+        error(
+            "RegularizedForwardPass cannot be applied because first-stage is " *
+            "not deterministic",
+        )
     end
-    if isempty(fp.trial_centre)
-        for (k, v) in model.initial_root_state
-            fp.trial_centre[k] = v
+    old_bounds = Dict{Symbol,Tuple{Float64,Float64}}()
+    for (k, v) in node.states
+        if has_lower_bound(v.out) && has_upper_bound(v.out)
+            old_bounds[k] = (l, u) = (lower_bound(v.out), upper_bound(v.out))
+            x = get(fp.trial_centre, k, model.initial_root_state[k])
+            set_lower_bound(v.out, max(l, x - fp.ρ * (u - l)))
+            set_upper_bound(v.out, min(u, x + fp.ρ * (u - l)))
         end
     end
-    penalty(x, y::Float64) = (x - y)^2 / max(1.0, abs(y))
-    @show fp.penalty
-    penalty_obj = @expression(
-        node.subproblem,
-        sum(
-            something(fp.penalty, 1) * penalty(x.out, fp.trial_centre[k]) for
-            (k, x) in node.states
-        ),
-    )
-    original_objective = node.stage_objective
-    set_stage_objective(node.subproblem, node.stage_objective + penalty_obj)
     pass = forward_pass(model, options, fp.forward_pass)
-    divergence = sum(
-        penalty(pass.sampled_states[1][k], fp.trial_centre[k]) for
-        (k, x) in node.states
-    )
-    if fp.penalty === nothing
-        N = length(pass.scenario_path)
-        fp.penalty = pass.cumulative_value / max(1, divergence) / N
-    end
-    @show fp.penalty * divergence
-    for k in keys(fp.trial_centre)
+    for (k, (l, u)) in old_bounds
         fp.trial_centre[k] = pass.sampled_states[1][k]
+        set_lower_bound(node.states[k].out, l)
+        set_upper_bound(node.states[k].out, u)
     end
-    fp.penalty *= fp.ρ
-    set_stage_objective(node.subproblem, original_objective)
     return pass
 end
