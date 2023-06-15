@@ -234,37 +234,29 @@ function test_RegularizedForwardPass()
             lower_bound = 0.0,
             optimizer = HiGHS.Optimizer,
         ) do sp, node
-            @variable(
-                sp,
-                0 <= x_capacity <= 400,
-                SDDP.State,
-                initial_value = hint,
-            )
-            @variable(sp, 0 <= x_prod, SDDP.State, initial_value = 0)
+            @variable(sp, 0 <= x <= 400, SDDP.State, initial_value = hint)
+            @variable(sp, 0 <= y, SDDP.State, initial_value = 0)
             if node == 1
-                @stageobjective(sp, capacity_cost * x_capacity.out)
-                @constraint(sp, x_prod.out == x_prod.in)
+                @stageobjective(sp, capacity_cost * x.out)
+                @constraint(sp, y.out == y.in)
             else
                 @variable(sp, 0 <= u_prod <= 200)
                 @variable(sp, u_overtime >= 0)
-                @stageobjective(sp, 100u_prod + 300u_overtime + 50x_prod.out)
-                @constraint(sp, x_capacity.out == x_capacity.in)
-                @constraint(sp, x_prod.out <= x_capacity.in)
-                @constraint(sp, c_bal, x_prod.out == x_prod.in + u_prod + u_overtime)
-                SDDP.parameterize(sp,  [100, 300]) do ω
+                @stageobjective(sp, 100u_prod + 300u_overtime + 50y.out)
+                @constraint(sp, x.out == x.in)
+                @constraint(sp, y.out <= x.in)
+                @constraint(sp, c_bal, y.out == y.in + u_prod + u_overtime)
+                SDDP.parameterize(sp, [100, 300]) do ω
                     set_normalized_rhs(c_bal, -ω)
+                    return
                 end
             end
             return
         end
-        SDDP.train(
-            model;
-            print_level = 0,
-            forward_pass = forward_pass,
-        )
-        results = SDDP.simulate(model, 1, [:x_capacity])
+        SDDP.train(model; print_level = 0, forward_pass = forward_pass)
+        results = SDDP.simulate(model, 1, [:x])
         log = model.most_recent_training_results.log
-        return results[1][1][:x_capacity].out, length(log)
+        return results[1][1][:x].out, length(log)
     end
     for (cost, hint) in [(0, 400), (200, 100), (400, 0)]
         fp = SDDP.RegularizedForwardPass()
