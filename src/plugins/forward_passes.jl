@@ -315,7 +315,8 @@ the rest of the graph. An error is thrown if the first stage problem is not
 deterministic, and states are silently skipped if they do not have finite
 bounds.
 """
-mutable struct RegularizedForwardPass{T<:AbstractForwardPass} <: AbstractForwardPass
+mutable struct RegularizedForwardPass{T<:AbstractForwardPass} <:
+               AbstractForwardPass
     forward_pass::T
     trial_centre::Dict{Symbol,Float64}
     ρ::Float64
