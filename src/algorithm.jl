@@ -236,13 +236,16 @@ function write_subproblem_to_file(
     MOI.write_to_file(model, filename)
     if throw_error
         error(
-            "Unable to retrieve solution from $(node.index).\n",
-            "  Termination status: $(JuMP.termination_status(node.subproblem))\n",
-            "  Primal status:      $(JuMP.primal_status(node.subproblem))\n",
-            "  Dual status:        $(JuMP.dual_status(node.subproblem)).\n",
-            "A MathOptFormat file was written to `$(filename)`.\n",
-            "See https://odow.github.io/SDDP.jl/latest/tutorial/06_warnings/#Numerical-stability-1",
-            "\nfor more information.",
+            "Unable to retrieve solution from node $(node.index).\n\n",
+            "  Termination status : $(JuMP.termination_status(node.subproblem))\n",
+            "  Primal status      : $(JuMP.primal_status(node.subproblem))\n",
+            "  Dual status        : $(JuMP.dual_status(node.subproblem)).\n\n",
+            "The current subproblem was written to `$(filename)`.\n\n",
+            "There are two common causes of this error:\n",
+            "  1) you have a mistake in your formulation, or you violated\n",
+            "     the assumption of relatively complete recourse\n",
+            "  2) the solver encountered numerical issues\n\n",
+            "See https://odow.github.io/SDDP.jl/stable/tutorial/warnings/ for more information.",
         )
     end
     return
@@ -260,7 +263,6 @@ function parameterize(node::Node, noise)
 end
 
 function attempt_numerical_recovery(model::PolicyGraph, node::Node)
-    @warn("Attempting to recover from serious numerical issues...")
     if JuMP.mode(node.subproblem) == JuMP.DIRECT
         @warn(
             "Unable to recover in direct mode! Remove `direct = true` when " *
