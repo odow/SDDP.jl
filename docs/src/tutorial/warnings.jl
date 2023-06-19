@@ -58,14 +58,6 @@ end                         #hide
 #  - Subproblems turning infeasible or unbounded after many iterations
 #  - Solvers returning "Numerical Error" statuses
 
-# ### Attempting to recover from serious numerical issues...
-
-# `SDDP.jl` will try hard to avoid and overcome numerical issues. If it
-# encounters issues, you may see the warning `Attempting to recover from serious
-# numerical issues...`. If you see this warning multiple times, you should try
-# to follow the suggestions in this tutorial to improve the stability of your
-# model.
-
 # ### Problem scaling
 
 # In almost all cases, the cause of this is poor problem scaling. For our
