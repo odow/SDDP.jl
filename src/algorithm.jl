@@ -260,7 +260,6 @@ function parameterize(node::Node, noise)
 end
 
 function attempt_numerical_recovery(model::PolicyGraph, node::Node)
-    @warn("Attempting to recover from serious numerical issues...")
     if JuMP.mode(node.subproblem) == JuMP.DIRECT
         @warn(
             "Unable to recover in direct mode! Remove `direct = true` when " *
