@@ -14,7 +14,6 @@ function test_prob52_2stages()
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
-        direct_mode = true,
     ) do subproblem, stage
         ## ========== Problem data ==========
         n = 4

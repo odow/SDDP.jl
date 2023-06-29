@@ -19,11 +19,8 @@ function infinite_hydro_thermal(; cut_type)
         [(:root_node => :week, 1.0), (:week => :week, 0.9)],
     )
     model = SDDP.PolicyGraph(
-        graph,
-        bellman_function = SDDP.BellmanFunction(
-            lower_bound = 0,
-            cut_type = cut_type,
-        ),
+        graph;
+        lower_bound = 0,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, node
         @variable(
@@ -54,6 +51,7 @@ function infinite_hydro_thermal(; cut_type)
     end
     SDDP.train(
         model;
+        cut_type = cut_type,
         log_frequency = 100,
         sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
         cycle_discretization_delta = 0.1,

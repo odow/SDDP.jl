@@ -13,10 +13,9 @@ function infinite_ball_on_beam()
         [(:root_node => :time_step, 1.0), (:time_step => :time_step, 0.999)],
     )
     model = SDDP.PolicyGraph(
-        graph,
-        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        graph;
+        lower_bound = 0.0,
         optimizer = Ipopt.Optimizer,
-        direct_mode = false,
         sense = :Min,
     ) do subproblem, node
         set_optimizer_attribute(subproblem, "print_level", 0)

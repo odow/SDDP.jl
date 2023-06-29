@@ -26,10 +26,7 @@ function asset_management_stagewise(; cut_type)
             [0.5 0.5; 0.5 0.5],
             [0.5 0.5; 0.5 0.5],
         ],
-        bellman_function = SDDP.BellmanFunction(
-            upper_bound = 1000.0,
-            cut_type = cut_type,
-        ),
+        upper_bound = 1000.0,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, node
         t, i = node
@@ -60,6 +57,7 @@ function asset_management_stagewise(; cut_type)
     end
     SDDP.train(
         model;
+        cut_type = cut_type,
         log_frequency = 10,
         risk_measure = (node) -> begin
             if node[1] != 3
