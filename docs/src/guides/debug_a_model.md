@@ -25,7 +25,6 @@ model = SDDP.LinearPolicyGraph(
             stages = 2,
             lower_bound = 0.0,
             optimizer = HiGHS.Optimizer,
-            direct_mode = false
         ) do subproblem, t
     @variable(subproblem, x, SDDP.State, initial_value = 1)
     @variable(subproblem, y)

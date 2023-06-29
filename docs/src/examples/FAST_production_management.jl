@@ -15,12 +15,9 @@ function fast_production_management(; cut_type)
     N = 2
     C = [0.2, 0.7]
     S = 2 .+ [0.33, 0.54]
-    model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(H),
-        bellman_function = SDDP.BellmanFunction(
-            lower_bound = -50.0,
-            cut_type = cut_type,
-        ),
+    model = SDDP.LinearPolicyGraph(;
+        stages = H,
+        lower_bound = -50.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x[1:N] >= 0, SDDP.State, initial_value = 0.0)
@@ -37,7 +34,7 @@ function fast_production_management(; cut_type)
         end
         @stageobjective(sp, sum(C[i] * x[i].out for i in 1:N) - S's)
     end
-    SDDP.train(model; print_level = 2, log_frequency = 5)
+    SDDP.train(model; cut_type = cut_type, print_level = 2, log_frequency = 5)
     @test SDDP.calculate_bound(model) ≈ -23.96 atol = 1e-2
 end
 

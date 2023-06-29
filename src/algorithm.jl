@@ -225,6 +225,15 @@ stage_objective_value(stage_objective) = JuMP.value(stage_objective)
     )
 
 Write the subproblem contained in `node` to the file `filename`.
+
+The `throw_error` is an argument used internally by SDDP.jl. If set, an error
+will be thrown.
+
+## Example
+
+```julia
+SDDP.write_subproblem_to_file(model[1], "subproblem_1.lp")
+```
 """
 function write_subproblem_to_file(
     node::Node,
@@ -711,8 +720,8 @@ end
 """
     SDDP.calculate_bound(
         model::PolicyGraph,
-        state::Dict{Symbol,Float64},
-        risk_measure = Expectation(),
+        state::Dict{Symbol,Float64} = model.initial_root_state;
+        risk_measure::AbstractRiskMeasure = Expectation(),
     )
 
 Calculate the lower bound (if minimizing, otherwise upper bound) of the problem
@@ -722,7 +731,7 @@ risk_measure.
 function calculate_bound(
     model::PolicyGraph{T},
     root_state::Dict{Symbol,Float64} = model.initial_root_state;
-    risk_measure = Expectation(),
+    risk_measure::AbstractRiskMeasure = Expectation(),
 ) where {T}
     # Initialization.
     noise_supports = Any[]
@@ -839,7 +848,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
 end
 
 """
-    termination_status(model::PolicyGraph)
+    termination_status(model::PolicyGraph)::Symbol
 
 Query the reason why the training stopped.
 """
@@ -1245,12 +1254,9 @@ end
         incoming_state::Dict{String,Float64} = _initial_state(model),
      )::Vector{Vector{Dict{Symbol,Any}}}
 
-Perform a simulation of the policy model with `number_replications` replications
-using the sampling scheme `sampling_scheme`.
+Perform a simulation of the policy model with `number_replications` replications.
 
-Use `incoming_state` to pass an initial value of the state variable, if it
-differs from that at the root node. Each key should be the string name of the
-state variable.
+## Return data structure
 
 Returns a vector with one element for each replication. Each element is a vector
 with one-element for each node in the scenario that was sampled. Each element in
@@ -1258,25 +1264,58 @@ that vector is a dictionary containing information about the subproblem that was
 solved.
 
 In that dictionary there are four special keys:
- - :node_index, which records the index of the sampled node in the policy model
- - :noise_term, which records the noise observed at the node
- - :stage_objective, which records the stage-objective of the subproblem
- - :bellman_term, which records the cost/value-to-go of the node.
-The sum of :stage_objective + :bellman_term will equal the objective value of
+
+ - `:node_index`, which records the index of the sampled node in the policy model
+
+ - `:noise_term`, which records the noise observed at the node
+
+ - `:stage_objective`, which records the stage-objective of the subproblem
+
+ - `:bellman_term`, which records the cost/value-to-go of the node.
+
+The sum of `:stage_objective + :bellman_term` will equal the objective value of
 the solved subproblem.
 
 In addition to the special keys, the dictionary will contain the result of
-`JuMP.value(subproblem[key])` for each `key` in `variables`. This is
+`key => JuMP.value(subproblem[key])` for each `key` in `variables`. This is
 useful to obtain the primal value of the state and control variables.
 
-For more complicated data, the `custom_recorders` keyword argument can be used.
+## Positonal arguments
 
-```julia
-data = Dict{Symbol, Any}()
-for (key, recorder) in custom_recorders
-    data[key] = foo(subproblem)
-end
-```
+ - `model`: the model to simulate
+
+ - `number_replications::Int = 1`: the number of simulation replications to
+   conduct, that is, the length of the simulation vector that is returned by
+   this function. If omitted, this defaults to `1`.`
+
+ - `variables::Vector{Symbol} = Symbol[]`: a list of the variable names to
+   record the value of in each stage.
+
+## Keyword arguments
+
+ - `sampling_scheme`: the sampling scheme used when simulating.
+
+ - `custom_recorders`: see `Custom recorders` section below.
+
+ - `duality_handler`: the [`SDDP.AbstractDualityHandler`](@ref) used to compute
+   dual variables. If you do not require dual variables (or if they are not
+   available), pass `duality_handler = nothing`.
+
+ - `skip_undefined_variables`: If you attempt to simulate the value of a
+   variable that is only defined in some of the stage problems, an error will be
+   thrown. To over-ride this (and return a `NaN` instead), pass
+   `skip_undefined_variables = true`.
+
+ - `parallel_scheme`: Use `parallel_scheme::[AbstractParallelScheme](@ref)` to
+   specify a scheme for simulating in parallel. Defaults to [`Serial`](@ref).
+
+ - `initial_state`: Use `incoming_state` to pass an initial value of the state
+   variable, if it differs from that at the root node. Each key should be the
+   string name of the state variable.
+
+## Custom recorders
+
+For more complicated data, the `custom_recorders` keyword argument can be used.
 
 For example, to record the dual of a constraint named `my_constraint`, pass the
 following:
@@ -1284,27 +1323,15 @@ following:
 ```julia
 simulation_results = SDDP.simulate(model, 2;
     custom_recorders = Dict{Symbol, Function}(
-        :constraint_dual => (sp) -> JuMP.dual(sp[:my_constraint])
+        :constraint_dual => sp -> JuMP.dual(sp[:my_constraint])
     )
 )
 ```
-
 The value of the dual in the first stage of the second replication can be
 accessed as:
-
 ```julia
 simulation_results[2][1][:constraint_dual]
 ```
-
-If you do not require dual variables (or if they are not available), pass
-`duality_handler = nothing`.
-
-If you attempt to simulate the value of a variable that is only defined in some
-of the stage problems, an error will be thrown. To over-ride this (and return a
-`NaN` instead), pass `skip_undefined_variables = true`.
-
-Use `parallel_scheme::[AbstractParallelScheme](@ref)` to specify a scheme for
-simulating in parallel. Defaults to [`Serial`](@ref).
 """
 function simulate(
     model::PolicyGraph,
@@ -1334,6 +1361,12 @@ end
     DecisionRule(model::PolicyGraph{T}; node::T)
 
 Create a decision rule for node `node` in `model`.
+
+## Example
+
+```julia
+rule = SDDP.DecisionRule(model; node = 1)
+```
 """
 struct DecisionRule{T}
     model::PolicyGraph{T}

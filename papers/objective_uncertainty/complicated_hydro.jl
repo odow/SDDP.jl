@@ -16,8 +16,8 @@ const POWER_KNOTS = [55.0, 65.0, 70.0]
 
 model = SDDP.LinearPolicyGraph(
     stages = T,
-    sense = :Min,
-    bellman_function = SDDP.BellmanFunction(lower_bound = 0, deletion_minimum = 1_000_000),
+    sense = :Min;
+    lower_bound = 0,
     optimizer = GLPK.Optimizer,
 ) do subproblem, t
     @variable(subproblem, 0 <= volume[1:3] <= 200, SDDP.State, initial_value = 50)
@@ -88,6 +88,6 @@ model = SDDP.LinearPolicyGraph(
     end
 end
 
-SDDP.train(model, iteration_limit = 50)
+SDDP.train(model; iteration_limit = 50, cut_deletion_minimum = 1_000_000)
 
 @test SDDP.calculate_bound(model) ≈ 129_469 atol = 1

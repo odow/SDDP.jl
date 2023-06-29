@@ -337,8 +337,8 @@ end
 
 """
     numerical_stability_report(
-        [io::IO=stdout,]
-        model::PolicyGraph,
+        [io::IO = stdout,]
+        model::PolicyGraph;
         by_node::Bool = false,
         print::Bool = true,
         warn::Bool = true,
@@ -346,9 +346,13 @@ end
 
 Print a report identifying possible numeric stability issues.
 
-- If `by_node`, print a report for each node in the graph.
-- If `print`, print to `io`.
-- If `warn`, warn if the coefficients may cause numerical issues.
+## Keyword arguments
+
+ - If `by_node`, print a report for each node in the graph.
+
+ - If `print`, print to `io`.
+
+ - If `warn`, warn if the coefficients may cause numerical issues.
 """
 function numerical_stability_report(
     io::IO,

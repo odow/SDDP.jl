@@ -761,12 +761,26 @@ end
 
 Create a linear policy graph with `stages` number of stages.
 
-See [`SDDP.PolicyGraph`](@ref) for the other keyword arguments.
+## Keyword arguments
+
+ - `stages`: the number of stages in the graph
+
+ - `kwargs`: other keyword arguments are passed to [`SDDP.PolicyGraph`](@ref).
 
 ## Examples
 
 ```jldoctest
 julia> SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
+    # ... build model ...
+end
+A policy graph with 2 nodes.
+Node indices: 1, 2
+```
+is equivalent to
+```jldoctest
+julia> graph = SDDP.LinearGraph(2);
+
+julia> SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, t
     # ... build model ...
 end
 A policy graph with 2 nodes.
@@ -790,12 +804,17 @@ end
 Create a Markovian policy graph based on the transition matrices given in
 `transition_matrices`.
 
-`transition_matrices[t][i, j]` gives the probability of transitioning from
-Markov state `i` in stage `t - 1` to Markov state `j` in stage `t`.
+## Keyword arguments
 
-The dimension of the first transition matrix should be `(1, N)`, and
-`transition_matrics[1][1, i]` is the probability of transitioning from the root
-node to the Markov state `i`.
+ - `transition_matrices[t][i, j]` gives the probability of transitioning from
+   Markov state `i` in stage `t - 1` to Markov state `j` in stage `t`.
+   The dimension of the first transition matrix should be `(1, N)`, and
+   `transition_matrics[1][1, i]` is the probability of transitioning from the
+   root node to the Markov state `i`.
+
+ - `kwargs`: other keyword arguments are passed to [`SDDP.PolicyGraph`](@ref).
+
+## See also
 
 See [`SDDP.MarkovianGraph`](@ref) for other ways of specifying a Markovian
 policy graph.
@@ -814,7 +833,16 @@ julia> SDDP.MarkovianPolicyGraph(;
 A policy graph with 5 nodes.
  Node indices: (1, 1), (2, 1), (2, 2), (3, 1), (3, 2)
 ```
+is equivalent to
+```jldoctest
+julia> graph = SDDP.MarkovianGraph([ones(1, 1), [0.5 0.5], [0.8 0.2; 0.2 0.8]]);
 
+julia> SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, t
+    # ... build model ...
+end
+A policy graph with 5 nodes.
+ Node indices: (1, 1), (2, 1), (2, 2), (3, 1), (3, 2)
+```
 """
 function MarkovianPolicyGraph(
     builder::Function;
@@ -832,12 +860,22 @@ end
         lower_bound = -Inf,
         upper_bound = Inf,
         optimizer = nothing,
-        bellman_function = nothing,
-        direct_mode::Bool = false,
     ) where {T}
 
 Construct a policy graph based on the graph structure of `graph`. (See
 [`SDDP.Graph`](@ref) for details.)
+
+## Keyword arguments
+
+ - `sense`: whether we are minimizing (`:Min`) or maximizing (`:Max`).
+
+ - `lower_bound`: if mimimizing, a valid lower bound for the cost to go in all
+   subproblems.
+
+ - `upper_bound`: if maximizing, a valid upper bound for the value to go in all
+   subproblems.
+
+ - `optimizer`: the optimizer to use for each of the subproblems
 
 ## Examples
 
@@ -851,7 +889,6 @@ model = PolicyGraph(
     graph;
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
-    direct_mode = false
 )
 ```
 
@@ -862,7 +899,6 @@ model = PolicyGraph(
     graph;
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
-    direct_mode = true
 ) do subproblem, index
     # ... subproblem definitions ...
 end
@@ -875,6 +911,7 @@ function PolicyGraph(
     lower_bound = -Inf,
     upper_bound = Inf,
     optimizer = nothing,
+    # These arguments are deprecated
     bellman_function = nothing,
     direct_mode::Bool = false,
 ) where {T}
@@ -1103,7 +1140,7 @@ end
 """
     set_stage_objective(
         subproblem::JuMP.Model,
-        stage_objective::JuMP.AbstractJuMPScalar,
+        stage_objective::Union{Real,JuMP.AbstractJuMPScalar},
     )
 
 Set the stage-objective of `subproblem` to `stage_objective`.
