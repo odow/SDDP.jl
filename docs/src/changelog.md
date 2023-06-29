@@ -7,6 +7,27 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.5.1 (June 30, 2023)
+
+This release contains a number of minor code changes, but it has a large impact
+on the content that is printed to screen. In particular, we now log
+periodically, instead of each iteration, and a "good" stopping rule is used as
+the default if none are specified. Try using `SDDP.train(model)` to see the
+difference.
+
+### Other
+
+ - Fixed various typos in the documentation (#617)
+ - Fixed printing test after changes in JuMP (#618)
+ - Set [`SimulationStoppingRule`](@ref) as the default stopping rule (#619)
+ - Changed the default logging frequency. Pass `log_every_seconds = 0.0` to
+   [`train`](@ref) to revert to the old behavior. (#620)
+ - Added example usage with Distributions.jl (@slwu89) (#622)
+ - Removed the numerical issue `@warn` (#627)
+ - Improved the quality of docstrings (#630)
+
+### Other
+
 ## v1.5.0 (May 14, 2023)
 
 ### Added
