@@ -548,7 +548,7 @@ end
 function sample_scenario(
     graph::PolicyGraph{Tuple{Int,Float64}},
     s::SimulatorSamplingScheme{F},
-) where {F,A}
+) where {F}
     scenario_path = Tuple{Tuple{Int,Float64},Any}[]
     for (t, value) in enumerate(s.simulator())
         node_index = _closest_index(graph, t, value)
