@@ -8,6 +8,7 @@ module TestForwardPasses
 using SDDP
 using Test
 import HiGHS
+import Random
 
 function runtests()
     for name in names(@__MODULE__, all = true)
@@ -219,6 +220,58 @@ function test_DefaultForwardPass_acyclic_include_last_node()
     @test isempty(options.starting_states[1])
     @test isempty(options.starting_states[2])
     @test isempty(options.starting_states[3])
+    return
+end
+
+function test_RegularizedForwardPass()
+    function main(capacity_cost, forward_pass, hint)
+        Random.seed!(1245)
+        graph = SDDP.LinearGraph(2)
+        SDDP.add_edge(graph, 2 => 2, 0.95)
+        model = SDDP.PolicyGraph(
+            graph;
+            sense = :Min,
+            lower_bound = 0.0,
+            optimizer = HiGHS.Optimizer,
+        ) do sp, node
+            @variable(sp, 0 <= x <= 400, SDDP.State, initial_value = hint)
+            @variable(sp, 0 <= y, SDDP.State, initial_value = 0)
+            if node == 1
+                @stageobjective(sp, capacity_cost * x.out)
+                @constraint(sp, y.out == y.in)
+            else
+                @variable(sp, 0 <= u_prod <= 200)
+                @variable(sp, u_overtime >= 0)
+                @stageobjective(sp, 100u_prod + 300u_overtime + 50y.out)
+                @constraint(sp, x.out == x.in)
+                @constraint(sp, y.out <= x.in)
+                @constraint(sp, c_bal, y.out == y.in + u_prod + u_overtime)
+                SDDP.parameterize(sp, [100, 300]) do ω
+                    set_normalized_rhs(c_bal, -ω)
+                    return
+                end
+            end
+            return
+        end
+        SDDP.train(
+            model;
+            print_level = 0,
+            forward_pass = forward_pass,
+            iteration_limit = 10,
+        )
+        return SDDP.calculate_bound(model)
+    end
+    for (cost, hint) in [(0, 400), (200, 100), (400, 0)]
+        fp = SDDP.RegularizedForwardPass()
+        reg_bound = main(cost, fp, hint)
+        bound = main(cost, SDDP.DefaultForwardPass(), hint)
+        @test reg_bound >= bound - 1e-6
+    end
+    # Test that initializingn with a bad guess performs poorly
+    fp = SDDP.RegularizedForwardPass()
+    reg_bound = main(400, fp, 400)
+    bound = main(400, SDDP.DefaultForwardPass(), 0)
+    @test reg_bound < bound
     return
 end
 
