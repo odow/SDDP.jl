@@ -248,7 +248,7 @@ value.
 ## Example
 
 ```julia
-SDDP.train(model; sampling_schemes = [SimulationStoppingRule()])
+SDDP.train(model; stopping_rules = [SimulationStoppingRule()])
 ```
 """
 function SimulationStoppingRule(;
