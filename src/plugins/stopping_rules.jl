@@ -346,3 +346,64 @@ function convergence_test(
     rule.last_iteration = length(log)
     return distance < rule.distance_tol
 end
+
+# ========================== FirstStageStoppingRule ========================== #
+
+mutable struct FirstStageStoppingRule <: AbstractStoppingRule
+    data::Vector{Any}
+    atol::Float64
+    iterations::Int
+end
+
+"""
+    FirstStageStoppingRule(; atol::Float64 = 1e-3, iterations::Int = 50)
+
+Terminate the algorithm when the outgoing values of the first-stage state
+variables have not changed by more than `atol` for `iterations` number of
+consecutive iterations.
+
+## Example
+
+```julia
+SDDP.train(model; stopping_rules = [FirstStageStoppingRule()])
+```
+"""
+function FirstStageStoppingRule(; atol::Float64 = 1e-3, iterations::Int = 50)
+    return FirstStageStoppingRule(Any[], atol, iterations)
+end
+
+stopping_rule_status(::FirstStageStoppingRule) = :first_stage_stopping
+
+function convergence_test(
+    model::PolicyGraph{T},
+    log::Vector{Log},
+    rule::FirstStageStoppingRule,
+) where {T}
+    if length(model.root_children) != 1
+        error(
+            "FirstStageStoppingRule cannot be applied because first-stage is " *
+            "not deterministic",
+        )
+    end
+    node = model[model.root_children[1].term]
+    if length(node.noise_terms) > 1
+        error(
+            "FirstStageStoppingRule cannot be applied because first-stage is " *
+            "not deterministic",
+        )
+    end
+    set_incoming_state(node, model.initial_root_state)
+    parameterize(node, first(node.noise_terms).term)
+    optimize!(node.subproblem)
+    state = get_outgoing_state(node)
+    push!(rule.data, state)
+    if length(rule.data) < rule.iterations
+        return false
+    end
+    for i in 1:(rule.iterations-1), (k, v) in state
+        if !isapprox(rule.data[end-i][k], v; atol = rule.atol)
+            return false
+        end
+    end
+    return true
+end
