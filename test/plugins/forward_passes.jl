@@ -253,23 +253,25 @@ function test_RegularizedForwardPass()
             end
             return
         end
-        SDDP.train(model; print_level = 0, forward_pass = forward_pass)
-        results = SDDP.simulate(model, 1, [:x])
-        log = model.most_recent_training_results.log
-        return results[1][1][:x].out, length(log)
+        SDDP.train(
+            model;
+            print_level = 0,
+            forward_pass = forward_pass,
+            iteration_limit = 10,
+        )
+        return SDDP.calculate_bound(model)
     end
     for (cost, hint) in [(0, 400), (200, 100), (400, 0)]
         fp = SDDP.RegularizedForwardPass()
-        reg_capacity, reg_num_iterations = main(cost, fp, hint)
-        capacity, num_iterations = main(cost, SDDP.DefaultForwardPass(), hint)
-        @test isapprox(reg_capacity, capacity; atol = 1e-2)
-        @test reg_num_iterations <= num_iterations
+        reg_bound = main(cost, fp, hint)
+        bound = main(cost, SDDP.DefaultForwardPass(), hint)
+        @test reg_bound >= bound - 1e-6
     end
+    # Test that initializingn with a bad guess performs poorly
     fp = SDDP.RegularizedForwardPass()
-    reg_capacity, reg_num_iterations = main(0, fp, 0)
-    capacity, num_iterations = main(0, SDDP.DefaultForwardPass(), 0)
-    @test isapprox(reg_capacity, capacity; atol = 1e-2)
-    @test reg_num_iterations > num_iterations
+    reg_bound = main(400, fp, 400)
+    bound = main(400, SDDP.DefaultForwardPass(), 0)
+    @test reg_bound < bound
     return
 end
 
