@@ -48,6 +48,7 @@ SDDP.Statistical
 SDDP.BoundStalling
 SDDP.StoppingChain
 SDDP.SimulationStoppingRule
+SDDP.FirstStageStoppingRule
 ```
 
 ### Sampling schemes

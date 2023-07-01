@@ -279,6 +279,68 @@ function test_SimulationStoppingRule()
     return
 end
 
+function test_FirstStageStoppingRule()
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0)
+        @stageobjective(node, x.out)
+    end
+    rule = SDDP.FirstStageStoppingRule()
+    SDDP.train(model; stopping_rules = [rule])
+    @test length(rule.data) == 50
+    log = model.most_recent_training_results.log
+    set_lower_bound(model[1].subproblem[:x].out, 1.0)
+    @test !SDDP.convergence_test(model, log, rule)
+    @test length(rule.data) == 51
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0)
+        SDDP.parameterize(node, 1:2) do w
+            return @stageobjective(node, w * x.out)
+        end
+        return
+    end
+    @test_throws(
+        ErrorException(
+            "FirstStageStoppingRule cannot be applied because first-stage is " *
+            "not deterministic",
+        ),
+        SDDP.train(
+            model;
+            print_level = 0,
+            stopping_rules = [SDDP.FirstStageStoppingRule()],
+        ),
+    )
+    graph = SDDP.Graph(0, [1, 2], [(0 => 1, 0.5), (0 => 2, 0.5)])
+    model = SDDP.PolicyGraph(
+        graph;
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0)
+        @stageobjective(node, x.out)
+        return
+    end
+    @test_throws(
+        ErrorException(
+            "FirstStageStoppingRule cannot be applied because first-stage is " *
+            "not deterministic",
+        ),
+        SDDP.train(
+            model;
+            print_level = 0,
+            stopping_rules = [SDDP.FirstStageStoppingRule()],
+        ),
+    )
+    return
+end
+
 end  # module
 
 TestStoppingRules.runtests()
