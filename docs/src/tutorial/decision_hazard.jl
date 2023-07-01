@@ -109,7 +109,7 @@ train_and_compute_cost(decision_hazard)
 # adds a cost of \$250. But does this make sense?
 
 # If we look carefully at our `decision_hazard` model, the incoming value of
-# `u_thermal.in` in the first stage is fixed the the `initial_value` of `0`.
+# `u_thermal.in` in the first stage is fixed to the `initial_value` of `0`.
 # Therefore, we must always meet the full demand with `u_hydro`, which we cannot
 # do without incurring unmet demand.
 
