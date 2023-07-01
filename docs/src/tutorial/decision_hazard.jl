@@ -3,13 +3,21 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # Here-and-now decisions
+# # Here-and-now and hazard-decision
 
 # SDDP.jl assumes that the agent gets to make a decision _after_ observing the
 # realization of the random variable. This is called a _wait-and-see_ or
 # _hazard-decision_ model. In contrast, you might want your agent to make
-# decisions _before_ observing the random variable. These is called a
+# decisions _before_ observing the random variable. This is called a
 # _here-and-now_ or _decision-hazard_ model.
+
+# !!! info
+#     The terms decision-hazard and hazard-decision from the French _hasard_,
+#     meaning chance. It could also have been translated as uncertainty-decision
+#     and decision-uncertainty, but the community seems to have settled on the
+#     transliteration _hazard_ instead. We like the hazard-decision and
+#     decision-hazard terms because they clearly communicate the order of the
+#     decision and the uncertainty.
 
 # The purpose of this tutorial is to demonstrate how to model here-and-how
 # decisions in SDDP.jl.
@@ -18,12 +26,10 @@
 
 using SDDP
 import HiGHS
-import Random
-import Statistics
 
-# ## Wait-and-see formulation
+# ## Hazard-decision formulation
 
-# For our problem, we're going to build a standard hydro-thermal scheduling
+# As an example, we're going to build a standard hydro-thermal scheduling
 # model, with a single hydro-reservoir and a single thermal generation plant.
 # In each of the four stages, we need to choose some mix of `u_thermal` and
 # `u_hydro` to meet a demand of `9` units, where unmet demand is penalized at a
@@ -41,7 +47,7 @@ hazard_decision = SDDP.LinearPolicyGraph(
         u_hydro >= 0
         u_unmet_demand >= 0
     end)
-    @constraint(sp, u_thermal + u_hydro >= 9 - u_unmet_demand)
+    @constraint(sp, u_thermal + u_hydro == 9 - u_unmet_demand)
     @constraint(sp, c_balance, x_storage.out == x_storage.in - u_hydro + 0)
     SDDP.parameterize(sp, [2, 3]) do ω_inflow
         return set_normalized_rhs(c_balance, ω_inflow)
@@ -49,7 +55,7 @@ hazard_decision = SDDP.LinearPolicyGraph(
     @stageobjective(sp, 500 * u_unmet_demand + 20 * u_thermal)
 end
 
-# ## Here-and-now formulation
+# ## Decision-hazard formulation
 
 # In the wait-and-see formulation, we get to decide the generation variables
 # _after_ observing the realization of `ω_inflow`. However, a common modeling
@@ -75,7 +81,7 @@ decision_hazard = SDDP.LinearPolicyGraph(
         u_hydro >= 0
         u_unmet_demand >= 0
     end)
-    @constraint(sp, u_thermal.in + u_hydro >= 9 - u_unmet_demand)  # <-- changed
+    @constraint(sp, u_thermal.in + u_hydro == 9 - u_unmet_demand)  # <-- changed
     @constraint(sp, c_balance, x_storage.out == x_storage.in - u_hydro + 0)
     SDDP.parameterize(sp, [2, 3]) do ω
         return set_normalized_rhs(c_balance, ω)
@@ -88,7 +94,7 @@ end
 # `u_thermal.out` is the here-and-how decision for stage `t+1`.
 
 # (If you can spot a "mistake" with this model, don't worry, we'll fix it below.
-# presenting it like this simplifies the exposition.)
+# Presenting it like this simplifies the exposition.)
 
 # ## Comparison
 
@@ -117,12 +123,12 @@ train_and_compute_cost(decision_hazard)
 # first-stage, we need to add an extra stage that is deterministic with no
 # stage objective.
 
-# ## Fixing the decision-hazard model
+# ## Fixing the decision-hazard
 
 # In the following model, we now have five stages, so that stage `t+1` in
 # `decision_hazard_2` corresponds to stage `t` in `decision_hazard`. We've also
-# added an `if`-statement which adds different constraints depending on the
-# node. Now that we need to add an `x_storage.out == x_storage.in` constraint
+# added an `if`-statement, which adds different constraints depending on the
+# node. Note that we need to add an `x_storage.out == x_storage.in` constraint
 # because the storage can't change in this new first-stage.
 
 decision_hazard_2 = SDDP.LinearPolicyGraph(
@@ -141,7 +147,7 @@ decision_hazard_2 = SDDP.LinearPolicyGraph(
         @constraint(sp, x_storage.out == x_storage.in)  # <-- new
         @stageobjective(sp, 0)                          # <-- new
     else
-        @constraint(sp, u_thermal.in + u_hydro >= 9 - u_unmet_demand)
+        @constraint(sp, u_thermal.in + u_hydro == 9 - u_unmet_demand)
         @constraint(sp, c_balance, x_storage.out == x_storage.in - u_hydro + 0)
         SDDP.parameterize(sp, [2, 3]) do ω
             return set_normalized_rhs(c_balance, ω)
@@ -157,10 +163,14 @@ train_and_compute_cost(decision_hazard_2)
 
 # ## Summary
 
-# * To create a here-and-now decision, add it as a state variable to the
-#   previous stage
-# * In some cases, you'll need to add an additional "first-stage" problem to
-#   enable the model to choose an optimal value for the here-and-now decision
-#   variable. You do not need to do this if the first stage is deterministic.
-# * You must make sure that the subproblem is feasible for all possible incoming
-#   values of the here-and-now decision variable.
+# To summarize, the difference between here-and-now and wait-and-see variables
+# is a modeling choice.
+
+# To create a here-and-now decision, add it as a state variable to the
+# previous stage
+
+# In some cases, you'll need to add an additional "first-stage" problem to
+# enable the model to choose an optimal value for the here-and-now decision
+# variable. You do not need to do this if the first stage is deterministic. You
+# must make sure that the subproblem is feasible for all possible incoming
+# values of the here-and-now decision variable.
