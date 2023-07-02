@@ -7,6 +7,19 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.6.0 (July 3, 2023)
+
+### Added
+
+ - Added [`RegularizedForwardPass`](@ref) (#624)
+ - Added [`FirstStageStoppingRule`](@ref) (#634)
+
+### Other
+
+ - Removed an unbound type parameter (#632)
+ - Fixed typo in docstring (#633)
+ - Added [Here-and-now and hazard-decision](@ref) tutorial (#635)
+
 ## v1.5.1 (June 30, 2023)
 
 This release contains a number of minor code changes, but it has a large impact
@@ -25,8 +38,6 @@ difference.
  - Added example usage with Distributions.jl (@slwu89) (#622)
  - Removed the numerical issue `@warn` (#627)
  - Improved the quality of docstrings (#630)
-
-### Other
 
 ## v1.5.0 (May 14, 2023)
 
