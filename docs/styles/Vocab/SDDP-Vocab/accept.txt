@@ -8,6 +8,7 @@ discretiz[e|ing]
 doi
 elseif
 equivariance
+hasard
 infeasibilities
 kwargs
 multistock
