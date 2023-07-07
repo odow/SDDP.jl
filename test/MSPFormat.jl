@@ -59,6 +59,7 @@ function test_get_constant()
         Any[Dict("ADD" => "inflow"), Dict("MUL" => -1.0), Dict("MUL" => 0.5)]
     @test MSPFormat._get_constant(terms) === terms
     @test MSPFormat._get_constant(terms, state) === -6.0
+    @test MSPFormat._get_constant("bad_inflow", state) === 0.0
     return
 end
 

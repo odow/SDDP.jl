@@ -35,7 +35,8 @@ function _parse_lattice(filename::String)
     return graph, data
 end
 
-_get_constant(terms::String, state::Dict) = state[terms]
+# Use a default of 0.0 for any missing keys.
+_get_constant(terms::String, state::Dict) = get(state, terms, 0.0)
 _get_constant(::String, ::Nothing) = nothing
 _get_constant(key::Number, ::Union{Dict,Nothing}) = key
 
