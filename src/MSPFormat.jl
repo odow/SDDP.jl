@@ -215,7 +215,7 @@ function read_from_file(
             if lower_bound isa Number && isfinite(lower_bound)
                 JuMP.set_lower_bound(x, lower_bound)
                 if lower_bound > 0
-                    graph.initial_root_state[sym_name] = lower_bound
+                    model.initial_root_state[sym_name] = lower_bound
                 end
             elseif lower_bound isa Vector{Any}
                 ω_lower_bound[x] = lower_bound
@@ -223,7 +223,7 @@ function read_from_file(
             if upper_bound isa Number && isfinite(upper_bound)
                 JuMP.set_upper_bound(x, upper_bound)
                 if upper_bound < 0
-                    graph.initial_root_state[sym_name] = upper_bound
+                    model.initial_root_state[sym_name] = upper_bound
                 end
             elseif upper_bound isa Vector{Any}
                 ω_upper_bound[x] = upper_bound
