@@ -193,12 +193,19 @@ function read_from_file(
             upper_bound = _get_constant(variable["ub"])
             objective = _get_constant(variable["obj"])
             sym_name = Symbol(variable["name"])
+            initial_value = 0.0
+            if lower_bound isa Number && isfinite(lower_bound)
+                initial_value = max(initial_value, lower_bound)
+            end
+            if upper_bound isa Number && isfinite(upper_bound)
+                initial_value = min(initial_value, upper_bound)
+            end
             x = if variable["name"] in state_variables
                 sp[sym_name] = JuMP.@variable(
                     sp,
                     variable_type = SDDP.State,
                     # Because MSPFormat ignores initial values
-                    initial_value = 0.0,
+                    initial_value = initial_value,
                     base_name = "$sym_name",
                 )
                 sp[sym_name].out
@@ -214,17 +221,11 @@ function read_from_file(
             end
             if lower_bound isa Number && isfinite(lower_bound)
                 JuMP.set_lower_bound(x, lower_bound)
-                if lower_bound > 0
-                    model.initial_root_state[sym_name] = lower_bound
-                end
             elseif lower_bound isa Vector{Any}
                 ω_lower_bound[x] = lower_bound
             end
             if upper_bound isa Number && isfinite(upper_bound)
                 JuMP.set_upper_bound(x, upper_bound)
-                if upper_bound < 0
-                    model.initial_root_state[sym_name] = upper_bound
-                end
             elseif upper_bound isa Vector{Any}
                 ω_upper_bound[x] = upper_bound
             end
