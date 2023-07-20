@@ -118,6 +118,9 @@ then `max_depth` must be set > 0.
 Control which node the trajectories start from using `initial_node`. If it is
 left as `nothing`, the root node is used as the starting node.
 
+If a node is deterministic, pass `[SDDP.Noise(nothing, 1.0)]` as the vector of
+noise terms.
+
 You can use `rollout_limit` to set iteration specific depth limits. For example:
 
 ```julia
