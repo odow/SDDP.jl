@@ -172,6 +172,7 @@ function read_from_file(
     graph, graph_data = _parse_lattice(lattice_filename)
     problem = JSON.parsefile(problem_filename)
     state_variables = _state_variables(problem)
+    initial_values = Dict{Symbol,Float64}()
     model = SDDP.PolicyGraph(
         graph;
         sense = problem["maximize"] ? :Max : :Min,
@@ -193,12 +194,22 @@ function read_from_file(
             upper_bound = _get_constant(variable["ub"])
             objective = _get_constant(variable["obj"])
             sym_name = Symbol(variable["name"])
+            if !haskey(initial_values, sym_name)
+                initial_values[sym_name] = 0.0
+            end
+            if lower_bound isa Number && isfinite(lower_bound)
+                initial_values[sym_name] =
+                    max(initial_values[sym_name], lower_bound)
+            end
+            if upper_bound isa Number && isfinite(upper_bound)
+                initial_values[sym_name] =
+                    min(initial_values[sym_name], upper_bound)
+            end
             x = if variable["name"] in state_variables
                 sp[sym_name] = JuMP.@variable(
                     sp,
                     variable_type = SDDP.State,
-                    # Because MSPFormat ignores initial values
-                    initial_value = 0.0,
+                    initial_value = initial_values[sym_name],
                     base_name = "$sym_name",
                 )
                 sp[sym_name].out
