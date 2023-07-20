@@ -7,6 +7,16 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.6.1 (July 20, 2023)
+
+### Fixed
+
+ - Fixed bugs in MSPFormat reader (#638) (#639)
+
+### Other
+
+ - Clarified `OutOfSampleMonteCarlo` docstring (#643)
+
 ## v1.6.0 (July 3, 2023)
 
 ### Added
