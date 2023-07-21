@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
- - Fixed bugs in MSPFormat reader (#638) (#639)
+ - Fixed bugs in `MSPFormat` reader (#638) (#639)
 
 ### Other
 
