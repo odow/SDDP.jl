@@ -20,7 +20,7 @@ import Test
 # hydro-electric generator.
 
 # The formulation of our optimal power flow problem depends on `model_type`,
-# which must be on of the `PowerModels` formulations.
+# which must be one of the `PowerModels` formulations.
 
 function build_model(model_type)
     filename = joinpath(@__DIR__, "pglib_opf_case5_pjm.m")
