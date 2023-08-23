@@ -196,7 +196,7 @@ end
 # economic interpretation of this dual variable is that it represents the change
 # in the objective function if the right-hand side $x$ is increased on the scale
 # of one unit. In other words, and with a slight abuse of notation, it is the
-# value `\frac{d}{dx} V_i(x, \omega)`. (Because $V_i$ is not differentiable, it
+# value $\frac{d}{dx} V_i(x, \omega)$. (Because $V_i$ is not differentiable, it
 # is a [subgradient](https://en.wikipedia.org/wiki/Subderivative) instead of a
 # derivative.)
 
