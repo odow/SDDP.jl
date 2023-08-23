@@ -60,8 +60,8 @@ obj: 1.1 x_out + 1 x2
 subject to
 balance: -1 y + 1 x_in - 1 x_out = 0
 Bounds
-x2 >= 0
 y = 1.1
+x2 >= 0
 x_in free
 x_out free
 End
@@ -84,8 +84,8 @@ obj: 3.3 x_out + 1 x2
 subject to
 balance: -1 y + 1 x_in - 1 x_out = 0
 Bounds
-x2 >= 0
 y = 3.3
+x2 >= 0
 x_in free
 x_out free
 End
