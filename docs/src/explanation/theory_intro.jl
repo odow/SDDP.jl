@@ -188,14 +188,22 @@ end
 # $V_i(x, \omega)$ can be formulated as a linear program (this also works for
 # convex programs, but the math is more involved), then we can make some
 # progress by noticing that $x$ only appears as a right-hand side term of the
-# fishing constraint $\bar{x} = x$.
+# fishing constraint $\bar{x} = x$. Therefore, $V_i(x, \cdot)$ is convex with
+# respect to $x$ for fixed $\omega$. (If you have not seen this result before,
+# try to prove it.)
 
-# Therefore, $V_i(x, \cdot)$ is convex with respect to $x$ for fixed $\omega$.
-# Moreover, if we implement the constraint $\bar{x} = x$ by setting the lower-
-# and upper bounds of $\bar{x}$ to $x$, then the reduced cost of the decision
-# variable $\bar{x}$ is a subgradient of the function $V_i$ with respect to $x$!
-# (This is the algorithmic simplification that leads us to add $\bar{x}$ and the
-# fishing constraint $\bar{x} = x$.)
+# The fishing constraint $\bar{x} = x$ has an associated dual variable. The
+# economic interpretation of this dual variable is that it represents the change
+# in the objective function if the right-hand side $x$ is increased on the scale
+# of one unit. In other words, and with a slight abuse of notation, it is the
+# value $\frac{d}{dx} V_i(x, \omega)$. (Because $V_i$ is not differentiable, it
+# is a [subgradient](https://en.wikipedia.org/wiki/Subderivative) instead of a
+# derivative.)
+
+# If we implement the constraint $\bar{x} = x$ by setting the lower- and upper
+# bounds of $\bar{x}$ to $x$, then the [reduced cost](https://en.wikipedia.org/wiki/Reduced_cost)
+# of the decision variable $\bar{x}$ is the subgradient, and we do not need to
+# explicitly add the fishing constraint as a row to the constraint matrix.
 
 # !!! tip
 #     The subproblem can have binary and integer variables, but you'll need to
