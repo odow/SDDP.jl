@@ -98,6 +98,32 @@ function test_SimpleHydroThermal_round_trip()
     return
 end
 
+function test_electric_non_stagewise()
+    model_stagewise = MSPFormat.read_from_file(
+        joinpath(@__DIR__, "electric.problem.json"),
+        joinpath(@__DIR__, "electric.lattice.json"),
+    )
+    @test length(model_stagewise.nodes) == 2
+    @test model_stagewise["0"].children == [SDDP.Noise("1", 1.0)]
+    @test length(model_stagewise["0"].noise_terms) == 1
+    @test model_stagewise["1"].children == SDDP.Noise{String}[]
+    @test length(model_stagewise["1"].noise_terms) == 3
+    model_tree = MSPFormat.read_from_file(
+        joinpath(@__DIR__, "electric.problem.json"),
+        joinpath(@__DIR__, "electric-tree.lattice.json"),
+    )
+    @test length(model_tree.nodes) == 5
+    @test model_tree["0"].children == SDDP.Noise.(["2", "3"], [0.3, 0.7])
+    @test model_tree["1"].children == SDDP.Noise.(["3", "4"], [0.4, 0.6])
+    @test model_tree["2"].children == SDDP.Noise{String}[]
+    @test model_tree["3"].children == SDDP.Noise{String}[]
+    @test model_tree["4"].children == SDDP.Noise{String}[]
+    for i in 0:4
+        @test length(model_tree["$i"].noise_terms) == 1
+    end
+    return
+end
+
 function test_electric()
     problem = joinpath(@__DIR__, "electric")
     model = MSPFormat.read_from_file(problem)

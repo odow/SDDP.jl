@@ -21,7 +21,7 @@ function _parse_lattice(filename::String)
         SDDP.add_node(graph, key)
     end
     for (key, value) in data
-        for (child, probability) in value["successors"]
+        for (child, probability) in sort(value["successors"])
             SDDP.add_edge(graph, key => child, probability)
         end
     end
@@ -91,7 +91,7 @@ function _reduce_lattice(graph, data)
     )
     parent = "root"
     while !isempty(graph.nodes[parent])
-        for (node, probability) in graph.nodes[parent]
+        for (node, probability) in sort(graph.nodes[parent])
             t = string(data[node]["stage"])
             push!(graph_data[t]["sample_space"], data[node]["state"])
             push!(graph_data[t]["probability"], probability)
