@@ -87,8 +87,7 @@ function _reduce_lattice(graph, data)
             "stage" => t,
             "sample_space" => Any[],
             "probability" => Float64[],
-        )
-        for t in keys(nodes_by_stage)
+        ) for t in keys(nodes_by_stage)
     )
     parent = "root"
     while !isempty(graph.nodes[parent])
