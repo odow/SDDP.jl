@@ -7,6 +7,18 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.6.2 (August 24, 2023)
+
+### Fixed
+
+ - `MSPFormat` now detect and exploit stagewise independent lattices (#653)
+ - Fixed `set_optimizer` for models read from file (#654)
+
+### Other
+
+ - Fixed typo in `pglib_opf.jl` (#647)
+ - Fixed documentation build and added color (#652)
+
 ## v1.6.1 (July 20, 2023)
 
 ### Fixed
