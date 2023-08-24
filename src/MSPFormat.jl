@@ -11,18 +11,17 @@ import ..SDDP
 
 function _parse_lattice(filename::String)
     data = JuMP.MOI.FileFormats.compressed_open(
+        JSON.parse,
         filename,
         "r",
         JuMP.MOI.FileFormats.AutomaticCompression(),
-    ) do io
-        return JSON.parse(io)
-    end
+    )
     graph = SDDP.Graph("root")
     for key in keys(data)
         SDDP.add_node(graph, key)
     end
     for (key, value) in data
-        for (child, probability) in value["successors"]
+        for (child, probability) in sort(value["successors"])
             SDDP.add_edge(graph, key => child, probability)
         end
     end
@@ -32,7 +31,74 @@ function _parse_lattice(filename::String)
     for key in stage_zero
         SDDP.add_edge(graph, "root" => key, 1 / length(stage_zero))
     end
-    return graph, data
+    return _reduce_lattice(graph, data)
+end
+
+"""
+    _reduce_lattice(graph, data)
+
+This function takes a graph and associated data from `_parse_lattice`, which is
+assumed to represent a Markovian lattice, and tries to collapse nodes in the
+graph to be stagewise independent (if possible).
+
+For now, a trivial way to detect stagewise independence is to group nodes by
+their unique `graph.nodes`, and then check that the nodes in the group match the
+nodes in a stage.
+"""
+function _reduce_lattice(graph, data)
+    arcs_to_node = Dict{UInt64,Vector{String}}()
+    for (node, arcs) in graph.nodes
+        push!(get!(() -> String[], arcs_to_node, hash(arcs)), node)
+    end
+    for v in values(arcs_to_node)
+        sort!(v)
+    end
+    nodes_by_stage = Dict{Int,Vector{String}}()
+    for (node, d) in data
+        push!(get!(() -> String[], nodes_by_stage, d["stage"]), node)
+    end
+    for v in values(nodes_by_stage)
+        sort!(v)
+    end
+    if !all(n -> n in Set(values(arcs_to_node)), values(nodes_by_stage))
+        # Model is not stagewise independent
+        graph_data = Dict(
+            k => Dict(
+                "stage" => v["stage"],
+                "sample_space" => [v["state"]],
+                "probability" => [1.0],
+            ) for (k, v) in data
+        )
+        return graph, graph_data
+    end
+    new_graph = SDDP.Graph("root")
+    for t in keys(nodes_by_stage)
+        SDDP.add_node(new_graph, "$t")
+    end
+    for t in keys(nodes_by_stage)
+        if t == 0
+            SDDP.add_edge(new_graph, "root" => "$t", 1.0)
+        else
+            SDDP.add_edge(new_graph, "$(t-1)" => "$t", 1.0)
+        end
+    end
+    graph_data = Dict(
+        "$t" => Dict{String,Any}(
+            "stage" => t,
+            "sample_space" => Any[],
+            "probability" => Float64[],
+        ) for t in keys(nodes_by_stage)
+    )
+    parent = "root"
+    while !isempty(graph.nodes[parent])
+        for (node, probability) in sort(graph.nodes[parent])
+            t = string(data[node]["stage"])
+            push!(graph_data[t]["sample_space"], data[node]["state"])
+            push!(graph_data[t]["probability"], probability)
+            parent = node
+        end
+    end
+    return new_graph, graph_data
 end
 
 # Use a default of 0.0 for any missing keys.
@@ -254,7 +320,9 @@ function read_from_file(
                 ω_lhs_coefficient[con] = lhs_data
             end
         end
-        SDDP.parameterize(sp, [graph_data[node]["state"]]) do ω
+        Ω = graph_data[node]["sample_space"]
+        P = graph_data[node]["probability"]
+        SDDP.parameterize(sp, Ω, P) do ω
             SDDP.@stageobjective(
                 sp,
                 stage_objective + sum(
