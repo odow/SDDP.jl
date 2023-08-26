@@ -317,7 +317,7 @@ PATCH release.
  - A large refactoring for how we handle stochastic integer programs. This added
    support for things like [`SDDP.ContinuousConicDuality`](@ref) and
    [`SDDP.LagrangianDuality`](@ref). It was breaking because we removed the
-   `integrality_handler` argument to `PolicyGraph`. (#499) (#453)
+   `integrality_handler` argument to `PolicyGraph`. (#449) (#453)
 
 ### Other
 
