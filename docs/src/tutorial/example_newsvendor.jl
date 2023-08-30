@@ -35,8 +35,8 @@ import Statistics
 # After a few weeks of poor decision making, you decide to put your knowledge of
 # Operations Research to good use, starting with some data collection.
 
-# Each pie costs you $2 to make, and you sell them at $5 each. Disposal of an
-# unsold pie costs $0.10. Based on three weeks of data collected, in which you
+# Each pie costs you \$2 to make, and you sell them at \$5 each. Disposal of an
+# unsold pie costs \$0.10. Based on three weeks of data collected, in which you
 # made 200 pies each week, you sold 150, 190, and 200 pies. Thus, as a guess,
 # you assume a triangular distribution of demand with a minimum of 150, a median
 # of 200, and a maximum of 250.
