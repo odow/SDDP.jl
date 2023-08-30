@@ -94,10 +94,18 @@ value(x)
 
 total_cost = [2 * value(x) + value(z[ω]) for ω in Ω]
 
-bins = extrema(total_cost)
+# Let's plot it:
+
+"""
+    bin_distribution(x::Vector{Float64}, N::Int)
+
+A helper function that discretizes `x` into bins of width `N`.
+"""
+bin_distribution(x, N) = N * (floor(minimum(x) / N):ceil(maximum(x) / N))
+
 plot = StatsPlots.histogram(
     -total_cost;
-    bins = 20,
+    bins = bin_distribution(-total_cost, 50),
     label = "",
     xlabel = "Profit [\$]",
     ylabel = "Number of outcomes",
@@ -109,6 +117,7 @@ Plots.vline!(
     label = "Expected profit (\$$(round(Int, μ)))",
     linewidth = 3,
 )
+plot
 
 # ## Exercises
 
@@ -181,7 +190,7 @@ cvar_05 = CVaR(total_cost, P; γ = 0.5)
 
 plot = StatsPlots.histogram(
     -total_cost;
-    bins = 20,
+    bins = bin_distribution(-total_cost, 50),
     label = "",
     xlabel = "Profit [\$]",
     ylabel = "Number of outcomes",
@@ -192,6 +201,7 @@ Plots.vline!(
     label = ["γ = 1.0" "γ = 0.5" "γ = 0.0"],
     linewidth = 3,
 )
+plot
 
 # ## Risk averse sample average approximation
 
@@ -219,17 +229,16 @@ value(x)
 # The distribution of total profit is:
 
 risk_averse_total_profit = [-value(2x + Z[ω]) for ω in Ω]
-plot = StatsPlots.histogram(
-    -total_cost;
-    label = "Expectation",
-    bins = 300:25:650,
-)
+bins = bin_distribution([-total_cost; risk_averse_total_profit], 25)
+plot = StatsPlots.histogram(-total_cost; label = "Expectation", bins = bins)
 StatsPlots.histogram!(
+    plot,
     risk_averse_total_profit;
     label = "CV@R",
-    bins = 300:25:650,
+    bins = bins,
     alpha = 0.5,
 )
+plot
 
 # ## Policy Graph
 
@@ -279,10 +288,7 @@ first_stage_rule = SDDP.DecisionRule(model, node = 1)
 
 # Then we can evaluate it, passing in a starting point for the incoming state:
 
-solution = SDDP.evaluate(
-    first_stage_rule;
-    incoming_state = Dict(:x => 0.0),
-)
+solution = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x => 0.0))
 
 # The optimal value of the `buy` variable is stored here:
 
@@ -354,10 +360,7 @@ function solve_risk_averse_newsvendor(risk_measure)
     end
     SDDP.train(model; risk_measure = risk_measure, print_level = 0)
     first_stage_rule = SDDP.DecisionRule(model; node = 1)
-    solution = SDDP.evaluate(
-        first_stage_rule;
-        incoming_state = Dict(:x => 0.0),
-    )
+    solution = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x => 0.0))
     return solution.outgoing_state[:x]
 end
 
