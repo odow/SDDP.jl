@@ -55,7 +55,7 @@ import Statistics
 # x \ge 0.
 # \end{aligned}
 # ```
-# Note that we are minimizingn cost, so the profit from selling a pie is a
+# Note that we are minimizing cost, so the profit from selling a pie is a
 # negative cost.
 
 # ## Sample Average approximation
@@ -136,8 +136,8 @@ plot
 # Our model currently uses the expectation risk measure, but others are possible
 # too. One popular risk measure is the conditional value at risk (CVaR).
 
-# CVaR has a parameter $\gamma$. Thhe risk measure computes the expectation of
-# the worst $\gamma$ fraction of outcomes.
+# CVaR has a parameter $\gamma$, and it computes the expectation of the worst
+# $\gamma$ fraction of outcomes.
 
 # The definition of CVaR is:
 # ```math
@@ -248,7 +248,7 @@ plot
 
 graph = SDDP.LinearGraph(2)
 
-# Then, we need to write a function which builds a JuMP model for eachh node in
+# Then, we need to write a function which builds a JuMP model for each node in
 # the graph:
 
 function build_subproblem(subproblem::JuMP.Model, stage::Int)
@@ -304,7 +304,7 @@ model = SDDP.LinearPolicyGraph(
     optimizer = HiGHS.Optimizer,
 )
 
-# and we can use Julia's `do` syntax to avoid writing a separate functionn:
+# and we can use Julia's `do` syntax to avoid writing a separate function:
 
 model = SDDP.LinearPolicyGraph(;
     stages = 2,
