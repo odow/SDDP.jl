@@ -81,14 +81,14 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   2.500000e+04  1.991887e+03  4.827023e-03        18   1
-        40   5.000000e+03  8.072917e+03  1.423960e-01      1320   1
+         1   3.750000e+04  1.991887e+03  5.535126e-03        18   1
+        40   1.125000e+04  8.072917e+03  1.688781e-01      1320   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 1.423960e-01
+total time (s) : 1.688781e-01
 total solves   : 1320
 best bound     :  8.072917e+03
-simulation ci  :  8.917822e+03 ± 2.131420e+03
+simulation ci  :  9.767358e+03 ± 2.983607e+03
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><p>Instead of performing a Monte Carlo simulation like the previous tutorials, we may want to simulate one particular sequence of noise realizations. This <em>historical</em> simulation can also be conducted by passing a <a href="../../apireference/#SDDP.Historical"><code>SDDP.Historical</code></a> sampling scheme to the <code>sampling_scheme</code> keyword of the <a href="../../apireference/#SDDP.simulate"><code>SDDP.simulate</code></a> function.</p><p>We can confirm that the historical sequence of nodes was visited by querying the <code>:node_index</code> key of the simulation results.</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
     model,
@@ -102,4 +102,4 @@ numeric issues : 0
 [stage[:node_index] for stage in simulations[1]]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Tuple{Int64, Int64}}:
  (1, 1)
  (2, 2)
- (3, 1)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../objective_uncertainty/">« Uncertainty in the objective function</a><a class="docs-footer-nextpage" href="../plotting/">Plotting tools »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Thursday 31 August 2023 04:20">Thursday 31 August 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ (3, 1)</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../objective_uncertainty/">« Uncertainty in the objective function</a><a class="docs-footer-nextpage" href="../plotting/">Plotting tools »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Thursday 31 August 2023 09:24">Thursday 31 August 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
