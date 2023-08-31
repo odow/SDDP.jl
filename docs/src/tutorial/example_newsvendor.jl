@@ -49,14 +49,12 @@ import Statistics
 # We can formulate this problem as follows:
 # ```math
 # \begin{aligned}
-# \min\limits_{x,y_\omega} & 2x + \mathbb{E}_\omega[-5y_\omega + 0.1(x - y_\omega)] \\
-#   & y_\omega \le x \quad \forall \omega \in \Omega \\
-#   & 0 \le y_\omega \le d_\omega \quad \forall \omega \in \Omega \\
+# \max\limits_{x,y_\omega} \;\; & -2x + \mathbb{E}_\omega[5y_\omega - 0.1(x - y_\omega)] \\
+#   & y_\omega \le x              & \quad \forall \omega \in \Omega \\
+#   & 0 \le y_\omega \le d_\omega & \quad \forall \omega \in \Omega \\
 #   & x \ge 0.
 # \end{aligned}
 # ```
-# Note that we are minimizing cost, so the profit from selling a pie is a
-# negative cost.
 
 # ## Sample Average approximation
 
@@ -142,14 +140,14 @@ plot
 # If we are maximizing, so that small outcomes are bad, the definition of CVaR
 # is:
 # ```math
-# CVaR_{\gamma}[Z] = \max\limits_{\xi} \xi - \frac{1}{\gamma}\mathbb{E}_\omega\left[(\xi - Z)_+\right]
+# CVaR_{\gamma}[Z] = \max\limits_{\xi} \;\; \xi - \frac{1}{\gamma}\mathbb{E}_\omega\left[(\xi - Z)_+\right]
 # ```
 # which can be formulated as the linear program:
 # ```math
 # \begin{aligned}
-# CVaR_{\gamma}[Z] = \max & \xi - \frac{1}{\gamma}\sum P_\omega z_\omega\\
-#  & z_\omega \ge \xi - Z_\omega \\
-#  & z_\omega \ge 0 \quad \forall \omega
+# CVaR_{\gamma}[Z] = \max\limits_{\xi, z_\omega} \;\; & \xi - \frac{1}{\gamma}\sum P_\omega z_\omega\\
+#  & z_\omega \ge \xi - Z_\omega & \quad \forall \omega \\
+#  & z_\omega \ge 0 & \quad \forall \omega.
 # \end{aligned}
 # ```
 
@@ -331,7 +329,7 @@ end
 
 # SDDP.jl contains a number of risk measures. One example is:
 
-SDDP.CVaR(0.4)
+0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()
 
 # You can construct a risk-averse policy by passing a risk measure to the
 # `risk_measure` keyword argument of [`SDDP.train`](@ref).
@@ -339,7 +337,7 @@ SDDP.CVaR(0.4)
 # We can explore how the optimal decision changes with risk by creating a
 # function:
 
-function solve_risk_averse_newsvendor(risk_measure)
+function solve_newsvendor(risk_measure::SDDP.AbstractRiskMeasure)
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         sense = :Max,
@@ -366,13 +364,13 @@ function solve_risk_averse_newsvendor(risk_measure)
     return solution.outgoing_state[:x]
 end
 
-# Now we can see how many units a risk-neutral decision maker would order:
+# Now we can see how many units a decision maker would order using `CVaR`:
 
-solve_risk_averse_newsvendor(SDDP.CVaR(0.4))
+solve_newsvendor(SDDP.CVaR(0.4))
 
 # as well as a decision-maker who cares only about the worst-case outcome:
 
-solve_risk_averse_newsvendor(SDDP.WorstCase())
+solve_newsvendor(SDDP.WorstCase())
 
 # In general, the decision-maker will be somewhere between the two extremes.
 # The [`SDDP.Entropic`](@ref) risk measure is a risk measure that has a single
@@ -384,13 +382,13 @@ solve_risk_averse_newsvendor(SDDP.WorstCase())
 # values of the risk aversion parameter ``\gamma``:
 
 Γ = [10^i for i in -4:0.5:1]
-buy = [solve_risk_averse_newsvendor(SDDP.Entropic(γ)) for γ in Γ]
+buy = [solve_newsvendor(SDDP.Entropic(γ)) for γ in Γ]
 Plots.plot(
     Γ,
     buy;
     xaxis = :log,
     xlabel = "Risk aversion parameter γ",
-    ylabel = "First-stage buy decision",
+    ylabel = "Number of pies to make",
     legend = false,
 )
 
