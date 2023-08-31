@@ -264,7 +264,7 @@ model = SDDP.LinearPolicyGraph(
     @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
     ## <--- This bit is new
-    Ω, P = [- 2, 0, 5], [0.3, 0.4, 0.3]
+    Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
     SDDP.parameterize(sp, Ω, P) do ω
         fix(ω_inflow, data[t, :inflow] + ω)
         return
@@ -286,11 +286,8 @@ SDDP.train(model; iteration_limit = 100)
 # Now simulate the policy. This time we do 100 replications because the policy
 # is now stochastic instead of deterministic:
 
-simulations = SDDP.simulate(
-    model,
-    100,
-    [:x_storage, :u_flow, :u_thermal, :ω_inflow],
-);
+simulations =
+    SDDP.simulate(model, 100, [:x_storage, :u_flow, :u_thermal, :ω_inflow]);
 
 # And let's plot the use of thermal generation in each replication:
 
