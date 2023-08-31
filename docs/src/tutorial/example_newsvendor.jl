@@ -49,10 +49,10 @@ import Statistics
 # We can formulate this problem as follows:
 # ```math
 # \begin{aligned}
-# \min 2x + \mathbb{E}_\omega[-5y_\omega + 0.1(x - y_\omega)] \\
-# y_\omega \le x \quad \forall \omega \in \Omega \\
-# 0 \le y_\omega \le d_\omega \quad \forall \omega \in \Omega \\
-# x \ge 0.
+# \min\limits_{x,y_\omega} & 2x + \mathbb{E}_\omega[-5y_\omega + 0.1(x - y_\omega)] \\
+#   & y_\omega \le x \quad \forall \omega \in \Omega \\
+#   & 0 \le y_\omega \le d_\omega \quad \forall \omega \in \Omega \\
+#   & x \ge 0.
 # \end{aligned}
 # ```
 # Note that we are minimizing cost, so the profit from selling a pie is a
@@ -70,7 +70,7 @@ N = 100
 d = sort!(rand(D, N));
 Ω = 1:N
 P = fill(1 / N, N);
-StatsPlots.histogram(d; bins = 20)
+StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
 # ## JuMP model
 
@@ -81,8 +81,8 @@ set_silent(model)
 @variable(model, x >= 0)
 @variable(model, 0 <= y[ω in Ω] <= d[ω])
 @constraint(model, [ω in Ω], y[ω] <= x)
-@expression(model, z[ω in Ω], -5y[ω] + 0.1 * (x - y[ω]))
-@objective(model, Min, 2x + sum(P[ω] * z[ω] for ω in Ω))
+@expression(model, z[ω in Ω], 5y[ω] - 0.1 * (x - y[ω]))
+@objective(model, Max, -2x + sum(P[ω] * z[ω] for ω in Ω))
 optimize!(model)
 solution_summary(model)
 
@@ -92,7 +92,7 @@ value(x)
 
 # The distribution of total profit is:
 
-total_cost = [2 * value(x) + value(z[ω]) for ω in Ω]
+total_profit = [-2 * value(x) + value(z[ω]) for ω in Ω]
 
 # Let's plot it:
 
@@ -104,13 +104,13 @@ A helper function that discretizes `x` into bins of width `N`.
 bin_distribution(x, N) = N * (floor(minimum(x) / N):ceil(maximum(x) / N))
 
 plot = StatsPlots.histogram(
-    -total_cost;
-    bins = bin_distribution(-total_cost, 50),
+    total_profit;
+    bins = bin_distribution(total_profit, 25),
     label = "",
     xlabel = "Profit [\$]",
     ylabel = "Number of outcomes",
 )
-μ = Statistics.mean(-total_cost)
+μ = Statistics.mean(total_profit)
 Plots.vline!(
     plot,
     [μ];
@@ -139,16 +139,17 @@ plot
 # CVaR has a parameter $\gamma$, and it computes the expectation of the worst
 # $\gamma$ fraction of outcomes.
 
-# The definition of CVaR is:
+# If we are maximizing, so that small outcomes are bad, the definition of CVaR
+# is:
 # ```math
-# CVaR_{\gamma}[Z] = \min\limits_{\xi} \xi + \frac{1}{\gamma}\mathbb{E}_\omega[(Z - \xi)_+]
+# CVaR_{\gamma}[Z] = \max\limits_{\xi} \xi - \frac{1}{\gamma}\mathbb{E}_\omega\left[(\xi - Z)_+\right]
 # ```
 # which can be formulated as the linear program:
 # ```math
 # \begin{aligned}
-# CVaR_{\gamma}[Z] = \min \xi + \frac{1}{\gamma}\sum P_\omega z_\omega\\
-#  & z_\omega \ge Z_\omega - \xi \\
-#  & z_\omega \ge 0 \forall \omega
+# CVaR_{\gamma}[Z] = \max & \xi - \frac{1}{\gamma}\sum P_\omega z_\omega\\
+#  & z_\omega \ge \xi - Z_\omega \\
+#  & z_\omega \ge 0 \quad \forall \omega
 # \end{aligned}
 # ```
 
@@ -159,45 +160,45 @@ function CVaR(Z::Vector{Float64}, P::Vector{Float64}; γ::Float64)
     set_silent(model)
     @variable(model, ξ)
     @variable(model, z[1:N] >= 0)
-    @constraint(model, [i in 1:N], z[i] >= Z[i] - ξ)
-    @objective(model, Min, ξ + 1 / γ * sum(P[i] * z[i] for i in 1:N))
+    @constraint(model, [i in 1:N], z[i] >= ξ - Z[i])
+    @objective(model, Max, ξ - 1 / γ * sum(P[i] * z[i] for i in 1:N))
     optimize!(model)
     return objective_value(model)
 end
 
-# When `γ` is `1.0`, we compute the mean of the cost:
+# When `γ` is `1.0`, we compute the mean of the profit:
 
-cvar_10 = CVaR(total_cost, P; γ = 1.0)
-
-#-
-
-Statistics.mean(total_cost)
-
-# As `γ` approaches `0.0`, we compute the worst-case (maximum) cost:
-
-cvar_00 = CVaR(total_cost, P; γ = 0.0001)
+cvar_10 = CVaR(total_profit, P; γ = 1.0)
 
 #-
 
-maximum(total_cost)
+Statistics.mean(total_profit)
+
+# As `γ` approaches `0.0`, we compute the worst-case (minimum) profit:
+
+cvar_00 = CVaR(total_profit, P; γ = 0.0001)
+
+#-
+
+minimum(total_profit)
 
 # By varying `γ` between `0` and `1` we can compute some trade-off of these two
 # extremes:
 
-cvar_05 = CVaR(total_cost, P; γ = 0.5)
+cvar_05 = CVaR(total_profit, P; γ = 0.5)
 
 # Let's plot these outcomes on our distribution:
 
 plot = StatsPlots.histogram(
-    -total_cost;
-    bins = bin_distribution(-total_cost, 50),
+    total_profit;
+    bins = bin_distribution(total_profit, 25),
     label = "",
     xlabel = "Profit [\$]",
     ylabel = "Number of outcomes",
 )
 Plots.vline!(
     plot,
-    -[cvar_10 cvar_05 cvar_00];
+    [cvar_10 cvar_05 cvar_00];
     label = ["γ = 1.0" "γ = 0.5" "γ = 0.0"],
     linewidth = 3,
 )
@@ -205,9 +206,8 @@ plot
 
 # ## Risk averse sample average approximation
 
-# Because CVaR can be formulated as a minimization linear program, we can form a
-# risk averse sample average approximation model by combining the two
-# formulations:
+# Because CVaR can be formulated as a linear program, we can form a risk averse
+# sample average approximation model by combining the two formulations:
 
 γ = 0.4
 model = Model(HiGHS.Optimizer)
@@ -215,11 +215,11 @@ set_silent(model)
 @variable(model, x >= 0)
 @variable(model, 0 <= y[ω in Ω] <= d[ω])
 @constraint(model, [ω in Ω], y[ω] <= x)
-@expression(model, Z[ω in Ω], -5 * y[ω] + 0.1(x - y[ω]))
+@expression(model, Z[ω in Ω], 5 * y[ω] - 0.1(x - y[ω]))
 @variable(model, ξ)
 @variable(model, z[ω in Ω] >= 0)
-@constraint(model, [ω in Ω], z[ω] >= Z[ω] - ξ)
-@objective(model, Min, 2x + ξ + 1 / γ * sum(P[ω] * z[ω] for ω in Ω))
+@constraint(model, [ω in Ω], z[ω] >= ξ - Z[ω])
+@objective(model, Max, -2x + ξ - 1 / γ * sum(P[ω] * z[ω] for ω in Ω))
 optimize!(model)
 
 # When ``\gamma = 0.4``, the optimal number of pies to bake is:
@@ -228,9 +228,9 @@ value(x)
 
 # The distribution of total profit is:
 
-risk_averse_total_profit = [-value(2x + Z[ω]) for ω in Ω]
-bins = bin_distribution([-total_cost; risk_averse_total_profit], 25)
-plot = StatsPlots.histogram(-total_cost; label = "Expectation", bins = bins)
+risk_averse_total_profit = [value(-2x + Z[ω]) for ω in Ω]
+bins = bin_distribution([total_profit; risk_averse_total_profit], 25)
+plot = StatsPlots.histogram(total_profit; label = "Expectation", bins = bins)
 StatsPlots.histogram!(
     plot,
     risk_averse_total_profit;
@@ -254,7 +254,7 @@ graph = SDDP.LinearGraph(2)
 function build_subproblem(subproblem::JuMP.Model, stage::Int)
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 0)
     if stage == 1
-        @stageobjective(subproblem, 2 * x.out)
+        @stageobjective(subproblem, -2 * x.out)
     else
         @variable(subproblem, y >= 0)
         @constraint(subproblem, y <= x.in)
@@ -262,7 +262,7 @@ function build_subproblem(subproblem::JuMP.Model, stage::Int)
             set_upper_bound(y, ω)
             return
         end
-        @stageobjective(subproblem, -5 * y + 0.1 * (x.in - y))
+        @stageobjective(subproblem, 5 * y - 0.1 * (x.in - y))
     end
     return
 end
@@ -272,8 +272,8 @@ end
 model = SDDP.PolicyGraph(
     build_subproblem,
     graph;
-    sense = :Min,
-    lower_bound = -5 * maximum(d),
+    sense = :Max,
+    upper_bound = 5 * maximum(d),
     optimizer = HiGHS.Optimizer,
 )
 
@@ -299,8 +299,8 @@ solution.outgoing_state[:x]
 model = SDDP.LinearPolicyGraph(
     build_subproblem;
     stages = 2,
-    sense = :Min,
-    lower_bound = -5 * maximum(d),
+    sense = :Max,
+    upper_bound = 5 * maximum(d),
     optimizer = HiGHS.Optimizer,
 )
 
@@ -308,13 +308,13 @@ model = SDDP.LinearPolicyGraph(
 
 model = SDDP.LinearPolicyGraph(;
     stages = 2,
-    sense = :Min,
-    lower_bound = -5 * maximum(d),
+    sense = :Max,
+    upper_bound = 5 * maximum(d),
     optimizer = HiGHS.Optimizer,
 ) do subproblem::JuMP.Model, stage::Int
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 0)
     if stage == 1
-        @stageobjective(subproblem, 2 * x.out)
+        @stageobjective(subproblem, -2 * x.out)
     else
         @variable(subproblem, y >= 0)
         @constraint(subproblem, y <= x.in)
@@ -322,17 +322,19 @@ model = SDDP.LinearPolicyGraph(;
             set_upper_bound(y, ω)
             return
         end
-        @stageobjective(subproblem, -5 * y + 0.1 * (x.in - y))
+        @stageobjective(subproblem, 5 * y - 0.1 * (x.in - y))
     end
     return
 end
 
-# ## Introducing risk
+# ## Risk aversion revisited
 
-# The solution of a single newsvendor problem offers little insight about how
-# a decision-maker should act. In particular, they may be averse to bad
-# outcomes, such as when they purchase a larger number of newspapers only for
-# there to be little demand.
+# SDDP.jl contains a number of risk measures. One example is:
+
+SDDP.CVaR(0.4)
+
+# You can construct a risk-averse policy by passing a risk measure to the
+# `risk_measure` keyword argument of [`SDDP.train`](@ref).
 
 # We can explore how the optimal decision changes with risk by creating a
 # function:
@@ -340,13 +342,13 @@ end
 function solve_risk_averse_newsvendor(risk_measure)
     model = SDDP.LinearPolicyGraph(
         stages = 2,
-        sense = :Min,
-        lower_bound = -5 * maximum(d),
+        sense = :Max,
+        upper_bound = 5 * maximum(d),
         optimizer = HiGHS.Optimizer,
     ) do subproblem, stage
         @variable(subproblem, x >= 0, SDDP.State, initial_value = 0)
         if stage == 1
-            @stageobjective(subproblem, 2 * x.out)
+            @stageobjective(subproblem, -2 * x.out)
         else
             @variable(subproblem, y >= 0)
             @constraint(subproblem, y <= x.in)
@@ -354,7 +356,7 @@ function solve_risk_averse_newsvendor(risk_measure)
                 set_upper_bound(y, ω)
                 return
             end
-            @stageobjective(subproblem, -5 * y + 0.1 * (x.in - y))
+            @stageobjective(subproblem, 5 * y - 0.1 * (x.in - y))
         end
         return
     end
@@ -366,7 +368,7 @@ end
 
 # Now we can see how many units a risk-neutral decision maker would order:
 
-solve_risk_averse_newsvendor(SDDP.AVaR(0.4))
+solve_risk_averse_newsvendor(SDDP.CVaR(0.4))
 
 # as well as a decision-maker who cares only about the worst-case outcome:
 
@@ -381,7 +383,7 @@ solve_risk_averse_newsvendor(SDDP.WorstCase())
 # Here is what we get if we solve our problem multiple times for different
 # values of the risk aversion parameter ``\gamma``:
 
-Γ = [10^i for i in -5:0.5:2]
+Γ = [10^i for i in -4:0.5:1]
 buy = [solve_risk_averse_newsvendor(SDDP.Entropic(γ)) for γ in Γ]
 Plots.plot(
     Γ,
