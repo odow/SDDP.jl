@@ -167,9 +167,9 @@ model = SDDP.PolicyGraph(
         fix(ω_production, ω[2])
         @stageobjective(
             sp,
-            # Sales on spot market
+            ## Sales on spot market
             ω[1] * (u_spot_sell - c_buy_premium * u_spot_buy) +
-            # Sales on futures smarket
+            ## Sales on futures smarket
             (ω[1] * c_contango - c_transaction) * u_forward_sell
         )
         return
