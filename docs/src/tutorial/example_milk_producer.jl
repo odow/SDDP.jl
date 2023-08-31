@@ -18,22 +18,20 @@ import Plots
 
 # A company produces milk for sale on a spot market each month. The quantity of
 # milk they produce is uncertain, and so too is the price on the spot market.
-
-# The company can store the milk, but, over time, some milk spoils and must be
-# discarded. Eventually the milk expires and is worthless.
+# The company can store unsold milk in a stockpile of dried milk powder.
 
 # The spot price is determined by an auction system, and so varies from month to
 # month, but demonstrates serial correlation. In each auction, there is
 # sufficient demand that the milk producer finds a buyer for all their
-# widgets, regardless of the quantity they supply. Furthermore, the spot price
+# milk, regardless of the quantity they supply. Furthermore, the spot price
 # is independent of the milk producer (they are a small player in the market).
 
 # The spot price is highly volatile, and is the result of a process that is out
 # of the control of the company. To counteract their price risk, the company
 # engages in a forward contracting programme.
 
-# The forward contracting programme is a deal for physical milk at a future
-# date in time, up to four months in the future.
+# The forward contracting programme is a deal for physical milk four months in
+# the future.
 
 # The futures price is the current spot price, plus some forward contango (the
 # buyers gain certainty that they will receive the milk in the future).
@@ -91,7 +89,7 @@ plot = Plots.plot(
 # We can't incorporate this price process directly into SDDP.jl, but we can fit
 # a [`SDDP.MarkovianGraph`](@ref) directly from the simulator:
 
-graph = SDDP.MarkovianGraph(simulator; budget = 60, scenarios = 10_000);
+graph = SDDP.MarkovianGraph(simulator; budget = 30, scenarios = 10_000);
 nothing  # hide
 
 # Here `budget` is the number of nodes in the policy graph, and `scenarios` is
@@ -125,55 +123,58 @@ plot
 model = SDDP.PolicyGraph(
     graph;
     sense = :Max,
-    upper_bound = 1e4,
+    upper_bound = 1e2,
     optimizer = HiGHS.Optimizer,
 ) do sp, node
-    t, price = node
-    c_contango = [1.0, 1.025, 1.05, 1.075]
-    c_transaction, c_perish_factor, c_buy_premium = 0.01, 0.95, 1.5
-    F, P = length(c_contango), 5
-    @variable(sp, 0 <= x_forward[1:F], SDDP.State, initial_value = 0)
-    @variable(sp, 0 <= x_stock[p = 1:P], SDDP.State, initial_value = 0)
-    @variable(sp, 0 <= u_spot_sell[1:P])
-    @variable(sp, 0 <= u_spot_buy)
-    @variable(sp, 0 <= u_forward_deliver[1:P])
-    @variable(sp, 0 <= u_forward_sell[1:F] <= 10)
-    @variable(sp, 0 <= u_production)
-    for f in 1:F
-        if t + f >= 12
-            fix(u_forward_sell[f], 0.0; force = true)
-        end
-    end
+    ## Decompose the node into the month (::Int) and spot price (::Float64)
+    t, price = node::Tuple{Int,Float64}
+    ## Transactions on the futures market cost 0.01
+    c_transaction = 0.01
+    ## It costs the company +50% to buy milk on the spot market and deliver to
+    ## their customers
+    c_buy_premium = 1.5
+    ## Buyer is willing to pay +5% for certainty
+    c_contango = 1.05
+    ## Distribution of production
+    Ω_production = range(0.1, 0.2; length = 5)
+    c_max_production = 12 * maximum(Ω_production)
+    ## x_stock: quantity of milk in stock pile
+    @variable(sp, 0 <= x_stock, SDDP.State, initial_value = 0)
+    ## x_forward[i]: quantity of milk for delivery in i months
+    @variable(sp, 0 <= x_forward[1:4], SDDP.State, initial_value = 0)
+    ## u_spot_sell: quantity of milk to sell on spot market
+    @variable(sp, 0 <= u_spot_sell <= c_max_production)
+    ## u_spot_buy: quantity of milk to buy on spot market
+    @variable(sp, 0 <= u_spot_buy <= c_max_production)
+    ## u_spot_buy: quantity of milk to sell on futures market
+    c_max_futures = t <= 8 ? c_max_production : 0.0
+    @variable(sp, 0 <= u_forward_sell <= c_max_futures)
+    ## ω_production: production random variable
+    @variable(sp, ω_production)
+    ## Forward contracting constraints:
+    @constraint(sp, [i in 1:3], x_forward[i].out == x_forward[i+1].in)
+    @constraint(sp, x_forward[4].out == u_forward_sell)
+    ## Stockpile balance constraint
     @constraint(
         sp,
-        [i = 1:F-1],
-        x_forward[i].out == x_forward[i+1].in + u_forward_sell[i],
+        x_stock.out ==
+        x_stock.in + ω_production + u_spot_buy - x_forward[1].in - u_spot_sell
     )
-    @constraint(sp, x_forward[F].out == u_forward_sell[F])
-    @constraint(sp, x_forward[1].in == sum(u_forward_deliver))
-    @constraint(
-        sp,
-        x_stock[1].out ==
-        u_production - u_forward_deliver[1] - u_spot_sell[1] + u_spot_buy
-    )
-    @constraint(
-        sp,
-        [i = 2:P],
-        x_stock[i].out ==
-        c_perish_factor * x_stock[i-1].in - u_forward_deliver[i] -
-        u_spot_sell[i]
-    )
-    Ω = [(price, (production = p,)) for p in range(0.1, 0.2; length = 5)]
-    SDDP.parameterize(sp, Ω) do (price, ω)
-        set_upper_bound(u_production, ω.production)
+    ## The random variables. `price` comes from the Markov node
+    Ω = [(price, p) for p in Ω_production]
+    SDDP.parameterize(sp, Ω) do ω::Tuple{Float64,Float64}
+        ## Fix the ω_production variable
+        fix(ω_production, ω[2])
         @stageobjective(
             sp,
-            price * sum(u_spot_sell) +
-            price * sum(c_contango[f] * u_forward_sell[f] for f in 1:F) -
-            price * c_buy_premium * u_spot_buy -
-            c_transaction * sum(u_forward_sell)
+            ## Sales on spot market
+            ω[1] * (u_spot_sell - c_buy_premium * u_spot_buy) +
+            ## Sales on futures smarket
+            (ω[1] * c_contango - c_transaction) * u_forward_sell
         )
+        return
     end
+    return
 end
 
 # ## Training a policy
@@ -188,7 +189,7 @@ end
 SDDP.train(
     model;
     time_limit = 20,
-    risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.25),
+    risk_measure = 0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.25),
     sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
 )
 
@@ -205,7 +206,7 @@ SDDP.train(
 simulations = SDDP.simulate(
     model,
     200,
-    Symbol[:x_forward, :x_stock, :u_spot_sell, :u_spot_buy];
+    Symbol[:x_stock, :u_forward_sell, :u_spot_sell, :u_spot_buy];
     sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
 );
 nothing  # hide
@@ -226,18 +227,24 @@ simulations[1][12][:noise_term]
 # terminated the training early, so we should run the re-train the policy for
 # more iterations before making too many judgements).
 
-Plots.plot(
-    SDDP.publication_plot(simulations; title = "sum(x_stock.out)") do data
-        return sum(y.out for y in data[:x_stock])
+plot = Plots.plot(
+    SDDP.publication_plot(simulations; title = "x_stock.out") do data
+        return data[:x_stock].out
     end,
-    SDDP.publication_plot(simulations; title = "sum(x_forward.out)") do data
-        return sum(y.out for y in data[:x_forward])
+    SDDP.publication_plot(simulations; title = "u_forward_sell") do data
+        return data[:u_forward_sell]
     end,
     SDDP.publication_plot(simulations; title = "u_spot_buy") do data
         return data[:u_spot_buy]
     end,
-    SDDP.publication_plot(simulations; title = "sum(u_spot_sell)") do data
-        return sum(data[:u_spot_sell])
+    SDDP.publication_plot(simulations; title = "u_spot_sell") do data
+        return data[:u_spot_sell]
     end;
     layout = (2, 2),
 )
+
+# ## Next steps
+
+# * Train the policy for longer. What do you observe?
+# * Try creating different Markovian graphs. What happens if you add more nodes?
+# * Try different risk measures
