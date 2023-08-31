@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Theory I: an intro to SDDP · SDDP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">SDDP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../01_first_steps/">Basic I: first steps</a></li><li><a class="tocitem" href="../02_adding_uncertainty/">Basic II: adding uncertainty</a></li><li><a class="tocitem" href="../03_objective_uncertainty/">Basic III: objective uncertainty</a></li><li><a class="tocitem" href="../04_markov_uncertainty/">Basic IV: Markov uncertainty</a></li><li><a class="tocitem" href="../05_plotting/">Basic V: plotting</a></li><li><a class="tocitem" href="../06_warnings/">Basic VI: words of warning</a></li><li><a class="tocitem" href="../11_objective_states/">Advanced I: objective states</a></li><li><a class="tocitem" href="../12_belief_states/">Advanced II: belief states</a></li><li><a class="tocitem" href="../13_integrality/">Advanced III: integrality</a></li><li class="is-active"><a class="tocitem" href>Theory I: an intro to SDDP</a><ul class="internal"><li><a class="tocitem" href="#Preliminaries:-background-theory"><span>Preliminaries: background theory</span></a></li><li><a class="tocitem" href="#Preliminaries:-Kelley&#39;s-cutting-plane-algorithm"><span>Preliminaries: Kelley&#39;s cutting plane algorithm</span></a></li><li><a class="tocitem" href="#Preliminaries:-approximating-the-cost-to-go-term"><span>Preliminaries: approximating the cost-to-go term</span></a></li><li><a class="tocitem" href="#Implementation:-modeling"><span>Implementation: modeling</span></a></li><li><a class="tocitem" href="#Implementation:-helpful-samplers"><span>Implementation: helpful samplers</span></a></li><li><a class="tocitem" href="#Implementation:-the-forward-pass"><span>Implementation: the forward pass</span></a></li><li><a class="tocitem" href="#Implementation:-the-backward-pass"><span>Implementation: the backward pass</span></a></li><li><a class="tocitem" href="#Implementation:-bounds"><span>Implementation: bounds</span></a></li><li><a class="tocitem" href="#Implementation:-the-training-loop"><span>Implementation: the training loop</span></a></li><li><a class="tocitem" href="#Implementation:-evaluating-the-policy"><span>Implementation: evaluating the policy</span></a></li><li><a class="tocitem" href="#Example:-infinite-horizon"><span>Example: infinite horizon</span></a></li></ul></li><li><a class="tocitem" href="../22_risk/">Theory II: risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Theory I: an intro to SDDP</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Theory I: an intro to SDDP</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/21_theory_intro.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Theory-I:-an-intro-to-SDDP"><a class="docs-heading-anchor" href="#Theory-I:-an-intro-to-SDDP">Theory I: an intro to SDDP</a><a id="Theory-I:-an-intro-to-SDDP-1"></a><a class="docs-heading-anchor-permalink" href="#Theory-I:-an-intro-to-SDDP" title="Permalink"></a></h1><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>This tutorial is aimed at advanced undergraduates or early-stage graduate students. You don&#39;t need prior exposure to stochastic programming! (Indeed, it may be better if you don&#39;t, because our approach is non-standard in the literature.)</p><p>This tutorial is also a living document. If parts are unclear, please <a href="https://github.com/odow/SDDP.jl/issues/new">open an issue</a> so it can be improved!</p></div></div><p>This tutorial will teach you how the stochastic dual dynamic programming algorithm works by implementing a simplified version of the algorithm.</p><p>Our implementation is very much a &quot;vanilla&quot; version of SDDP; it doesn&#39;t have (m)any fancy computational tricks (e.g., the ones included in SDDP.jl) that you need to code a performant or stable version that will work on realistic instances. However, our simplified implementation will work on arbitrary policy graphs, including those with cycles such as infinite horizon problems!</p><p><strong>Packages</strong></p><p>This tutorial uses the following packages. For clarity, we call <code>import PackageName</code> so that we must prefix <code>PackageName.</code> to all functions and structs provided by that package. Everything not prefixed is either part of base Julia, or we wrote it.</p><pre><code class="language-julia">import ForwardDiff
+import GLPK
+import JuMP
+import Statistics</code></pre><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>You can follow along by installing the above packages, and copy-pasting the code we will write into a Julia REPL. Alternatively, you can download the Julia <code>.jl</code> file which created this tutorial <a href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/21_theory_intro.jl">from Github</a>.</p></div></div><h2 id="Preliminaries:-background-theory"><a class="docs-heading-anchor" href="#Preliminaries:-background-theory">Preliminaries: background theory</a><a id="Preliminaries:-background-theory-1"></a><a class="docs-heading-anchor-permalink" href="#Preliminaries:-background-theory" title="Permalink"></a></h2><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>This section is copied verbatim from <a href="../01_first_steps/#Basic-I:-first-steps">Basic I: first steps</a>. If it&#39;s familiar, skip to <a href="#Preliminaries:-Kelley&#39;s-cutting-plane-algorithm">Preliminaries: Kelley&#39;s cutting plane algorithm</a>.</p></div></div><p>Multistage stochastic programming is complicated, and the literature has not settled upon standard naming conventions, so we must begin with some unavoidable theory and notation.</p><h3 id="Policy-graphs"><a class="docs-heading-anchor" href="#Policy-graphs">Policy graphs</a><a id="Policy-graphs-1"></a><a class="docs-heading-anchor-permalink" href="#Policy-graphs" title="Permalink"></a></h3><p>A multistage stochastic program can be modeled by a <strong>policy graph</strong>. A policy graph is a graph with nodes and arcs. The simplest type of policy graph is a linear graph. Here&#39;s a linear graph with three nodes:</p><p><img src="../../assets/stochastic_linear_policy_graph.png" alt="Linear policy graph"/></p><p>In addition to nodes 1, 2, and 3, there is also a root node (the circle), and three arcs. Each arc has an origin node and a destination node, like <code>1 =&gt; 2</code>, and a corresponding probability of transitioning from the origin to the destination. Unless specified, we assume that the arc probabilities are uniform over the number of outgoing arcs. Thus, in this picture the arc probabilities are all 1.0. The squiggly lines denote random variables that we will discuss shortly.</p><p>We denote the set of nodes by <span>$\mathcal{N}$</span>, the root node by <span>$R$</span>, and the probability of transitioning from node <span>$i$</span> to node <span>$j$</span> by <span>$p_{ij}$</span>. (If no arc exists, then <span>$p_{ij} = 0$</span>.) We define the set of successors of node <span>$i$</span> as <span>$i^+ = \{j \in \mathcal{N} | p_{ij} &gt; 0\}$</span>.</p><p>Each square node in the graph corresponds to a place at which the agent makes a decision, and we call moments in time at which the agent makes a decision <strong>stages</strong>. By convention, we try to draw policy graphs from left-to-right, with the stages as columns. There can be more than one node in a stage! Here&#39;s an example, taken from the paper <a href="https://doi.org/10.1002/net.21932">Dowson (2020)</a>:</p><p><img src="../../assets/powder_policy_graph.png" alt="Markovian policy graph"/></p><p>The columns represent time, and the rows represent different states of the world. In this case, the rows represent different prices that milk can be sold for at the end of each year. The squiggly lines denote a multivariate random variable that models the weekly amount of rainfall that occurs. You can think of the nodes as forming a Markov chain, therefore, we call problems with a structure like this <strong>Markovian policy graphs</strong>. Moreover, note that policy graphs can have cycles! This allows them to model infinite horizon problems.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>The sum of probabilities on the outgoing arcs of node <span>$i$</span> can be less than 1, i.e., <span>$\sum\limits_{j\in i^+} p_{ij} \le 1$</span>. What does this mean? One interpretation is that the probability is a <a href="https://en.wikipedia.org/wiki/Discounting">discount factor</a>. Another interpretation is that there is an implicit &quot;zero&quot; node that we have not modeled, with <span>$p_{i0} = 1 - \sum\limits_{j\in i^+} p_{ij}$</span>. This zero node has <span>$C_0(x, u, \omega) = 0$</span>, and <span>$0^+ = \varnothing$</span>.</p></div></div><h3 id="Problem-notation"><a class="docs-heading-anchor" href="#Problem-notation">Problem notation</a><a id="Problem-notation-1"></a><a class="docs-heading-anchor-permalink" href="#Problem-notation" title="Permalink"></a></h3><p>A common feature of multistage stochastic optimization problems is that they model an agent controlling a system over time. This system can be described by three types of variables.</p><ol><li><p><strong>State</strong> variables track a property of the system over time.</p><p>Each node has an associated <em>incoming</em> state variable (the value of the state at the start of the node), and an <em>outgoing</em> state variable (the value of the state at the end of the node).</p><p>Examples of state variables include the volume of water in a reservoir, the number of units of inventory in a warehouse, or the spatial position of a moving vehicle.</p><p>Because state variables track the system over time, each node must have the same set of state variables.</p><p>We denote state variables by the letter <span>$x$</span> for the incoming state variable and <span>$x^\prime$</span> for the outgoing state variable.</p></li><li><p><strong>Control</strong> variables are actions taken (implicitly or explicitly) by the agent within a node which modify the state variables.</p><p>Examples of control variables include releases of water from the reservoir, sales or purchasing decisions, and acceleration or braking of the vehicle.</p><p>Control variables are local to a node <span>$i$</span>, and they can differ between nodes. For example, some control variables may be available within certain nodes.</p><p>We denote control variables by the letter <span>$u$</span>.</p></li><li><p><strong>Random</strong> variables are finite, discrete, exogenous random variables that the agent observes at the start of a node, before the control variables are decided.</p><p>Examples of random variables include rainfall inflow into a reservoir, probalistic perishing of inventory, and steering errors in a vehicle.</p><p>Random variables are local to a node <span>$i$</span>, and they can differ between nodes. For example, some nodes may have random variables, and some nodes may not.</p><p>We denote random variables by the Greek letter <span>$\omega$</span> and the sample space from which they are drawn by <span>$\Omega_i$</span>. The probability of sampling <span>$\omega$</span> is denoted <span>$p_{\omega}$</span> for simplicity.</p><p>Importantly, the random variable associated with node <span>$i$</span> is independent of the random variables in all other nodes.</p></li></ol><p>In a node <span>$i$</span>, the three variables are related by a <strong>transition function</strong>, which maps the incoming state, the controls, and the random variables to the outgoing state as follows: <span>$x^\prime = T_i(x, u, \omega)$</span>.</p><p>As a result of entering a node <span>$i$</span> with the incoming state <span>$x$</span>, observing random variable <span>$\omega$</span>, and choosing control <span>$u$</span>, the agent incurs a cost <span>$C_i(x, u, \omega)$</span>. (If the agent is a maximizer, this can be a profit, or a negative cost.) We call <span>$C_i$</span> the <strong>stage objective</strong>.</p><p>To choose their control variables in node <span>$i$</span>, the agent uses a <strong>decision</strong> <strong>rule</strong> <span>$u = \pi_i(x, \omega)$</span>, which is a function that maps the incoming state variable and observation of the random variable to a control <span>$u$</span>. This control must satisfy some feasibilty requirements <span>$u \in U_i(x, \omega)$</span>.</p><p>The set of decision rules, with one element for each node in the policy graph, is called a <strong>policy</strong>.</p><p>The goal of the agent is to find a policy that minimizes the expected cost of starting at the root node with some initial condition <span>$x_R$</span>, and proceeding from node to node along the probabilistic arcs until they reach a node with no outgoing arcs (or it reaches an implicit &quot;zero&quot; node).</p><p class="math-container">\[\min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)],\]</p><p>where</p><p class="math-container">\[V_i^\pi(x, \omega) = C_i(x, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)],\]</p><p>where <span>$u = \pi_i(x, \omega) \in U_i(x, \omega)$</span>, and <span>$x^\prime = T_i(x, u, \omega)$</span>.</p><p>The expectations are a bit complicated, but they are equivalent to:</p><p class="math-container">\[\mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)] = \sum\limits_{j \in i^+} p_{ij} \sum\limits_{\varphi \in \Omega_j} p_{\varphi}V_j(x^\prime, \varphi).\]</p><p>An optimal policy is the set of decision rules that the agent can use to make decisions and achieve the smallest expected cost.</p><h3 id="Assumptions"><a class="docs-heading-anchor" href="#Assumptions">Assumptions</a><a id="Assumptions-1"></a><a class="docs-heading-anchor-permalink" href="#Assumptions" title="Permalink"></a></h3><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>This section is important!</p></div></div><p>The space of problems you can model with this framework is very large. Too large, in fact, for us to form tractable solution algorithms for! Stochastic dual dynamic programming requires the following assumptions in order to work:</p><p><strong>Assumption 1: finite nodes</strong></p><p>There is a finite number of nodes in <span>$\mathcal{N}$</span>.</p><p><strong>Assumption 2: finite random variables</strong></p><p>The sample space <span>$\Omega_i$</span> is finite and discrete for each node <span>$i\in\mathcal{N}$</span>.</p><p><strong>Assumption 3: convex problems</strong></p><p>Given fixed <span>$\omega$</span>, <span>$C_i(x, u, \omega)$</span> is a convex function, <span>$T_i(x, u, \omega)$</span> is linear, and  <span>$U_i(x, u, \omega)$</span> is a non-empty, bounded convex set with respect to <span>$x$</span> and <span>$u$</span>.</p><p><strong>Assumption 4: no infinite loops</strong></p><p>For all loops in the policy graph, the product of the arc transition probabilities around the loop is strictly less than 1.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>SDDP.jl relaxes assumption (3) to allow for integer state and control variables, but we won&#39;t go into the details here. Assumption (4) essentially means that we obtain a discounted-cost solution for infinite-horizon problems, instead of an average-cost solution; see <a href="https://doi.org/10.1002/net.21932">Dowson (2020)</a> for details.</p></div></div><h3 id="Dynamic-programming-and-subproblems"><a class="docs-heading-anchor" href="#Dynamic-programming-and-subproblems">Dynamic programming and subproblems</a><a id="Dynamic-programming-and-subproblems-1"></a><a class="docs-heading-anchor-permalink" href="#Dynamic-programming-and-subproblems" title="Permalink"></a></h3><p>Now that we have formulated our problem, we need some ways of computing optimal decision rules. One way is to just use a heuristic like &quot;choose a control randomally from the set of feasible controls.&quot; However, such a policy is unlikely to be optimal.</p><p>A better way of obtaining an optimal policy is to use <a href="https://en.wikipedia.org/wiki/Bellman_equation#Bellman&#39;s_principle_of_optimality">Bellman&#39;s principle of optimality</a>, a.k.a Dynamic Programming, and define a recursive <strong>subproblem</strong> as follows:</p><p class="math-container">\[\begin{aligned}
+V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
+&amp; x^\prime = T_i(\bar{x}, u, \omega) \\
+&amp; u \in U_i(\bar{x}, \omega) \\
+&amp; \bar{x} = x.
+\end{aligned}\]</p><p>Our decision rule, <span>$\pi_i(x, \omega)$</span>, solves this optimization problem and returns a <span>$u^*$</span> corresponding to an optimal solution.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>We add <span>$\bar{x}$</span> as a decision variable, along with the fishing constraint <span>$\bar{x} = x$</span> for two reasons: it makes it obvious that formulating a problem with <span>$x \times u$</span> results in a bilinear program instead of a linear program (see Assumption 3), and it simplifies the implementation of the SDDP algorithm.</p></div></div><p>These subproblems are very difficult to solve exactly, because they involve recursive optimization problems with lots of nested expectations.</p><p>Therefore, instead of solving them exactly, SDDP works by iteratively approximating the expectation term of each subproblem, which is also called the cost-to-go term. For now, you don&#39;t need to understand the details, we will explain how in <a href="#Preliminaries:-approximating-the-cost-to-go-term">Preliminaries: approximating the cost-to-go term</a>.</p><p>The subproblem view of a multistage stochastic program is also important, because it provides a convienient way of communicating the different parts of the broader problem, and it is how we will communicate the problem to SDDP.jl. All we need to do is drop the cost-to-go term and fishing constraint, and define a new subproblem <code>SP</code> as:</p><p class="math-container">\[\begin{aligned}
+\texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) \\
+&amp; x^\prime = T_i(\bar{x}, u, \omega) \\
+&amp; u \in U_i(\bar{x}, \omega).
+\end{aligned}\]</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>When we talk about formulating a <strong>subproblem</strong> with SDDP.jl, this is the formulation we mean.</p></div></div><p>We&#39;ve retained the transition function and uncertainty set because they help to motivate the different components of the subproblem. However, in general, the subproblem can be more general. A better (less restrictive) representation might be:</p><p class="math-container">\[\begin{aligned}
+\texttt{SP}_i(x, \omega) : \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, x^\prime, u, \omega) \\
+&amp; (\bar{x}, x^\prime, u) \in \mathcal{X}_i(\omega).
+\end{aligned}\]</p><p>Note that the outgoing state variable can appear in the objective, and we can add constraints involving the incoming and outgoing state variables. It should be obvious how to map between the two representations.</p><h2 id="Preliminaries:-Kelley&#39;s-cutting-plane-algorithm"><a class="docs-heading-anchor" href="#Preliminaries:-Kelley&#39;s-cutting-plane-algorithm">Preliminaries: Kelley&#39;s cutting plane algorithm</a><a id="Preliminaries:-Kelley&#39;s-cutting-plane-algorithm-1"></a><a class="docs-heading-anchor-permalink" href="#Preliminaries:-Kelley&#39;s-cutting-plane-algorithm" title="Permalink"></a></h2><p>Kelley&#39;s cutting plane algorithm is an iterative method for minimizing convex functions. Given a convex function <span>$f(x)$</span>, Kelley&#39;s constructs an under-approximation of the function at the minimum by a set of first-order Taylor series approximations (called <strong>cuts</strong>) constructed at a set of points <span>$k = 1,\ldots,K$</span>:</p><p class="math-container">\[\begin{aligned}
+f^K = \min\limits_{\theta \in \mathbb{R}, x \in \mathbb{R}^N} \;\; &amp; \theta\\
+&amp; \theta \ge f(x_k) + \frac{d}{dx}f(x_k)^\top (x - x_k),\quad k=1,\ldots,K\\
+&amp; \theta \ge M,
+\end{aligned}\]</p><p>where <span>$M$</span> is a sufficiently large negative number that is a lower bound for <span>$f$</span> over the domain of <span>$x$</span>.</p><p>Kelley&#39;s cutting plane algorithm is a structured way of choosing points <span>$x_k$</span> to visit, so that as more cuts are added:</p><p class="math-container">\[\lim_{K \rightarrow \infty} f^K = \min\limits_{x \in \mathbb{R}^N} f(x)\]</p><p>However, before we introduce the algorithm, we need to introduce some bounds.</p><h3 id="Bounds"><a class="docs-heading-anchor" href="#Bounds">Bounds</a><a id="Bounds-1"></a><a class="docs-heading-anchor-permalink" href="#Bounds" title="Permalink"></a></h3><p>By convexity, <span>$f^K \le f(x)$</span> for all <span>$x$</span>. Thus, if <span>$x^*$</span> is a minimizer of <span>$f$</span>, then at any point in time we can construct a lower bound for <span>$f(x^*)$</span> by solving <span>$f^K$</span>.</p><p>Moreover, we can use the primal solutions <span>$x_k^*$</span> returned by solving <span>$f^k$</span> to evaluate <span>$f(x_k^*)$</span> to generate an upper bound.</p><p>Therefore, <span>$f^K \le f(x^*) \le \min\limits_{k=1,\ldots,K} f(x_k^*)$</span>.</p><p>When the lower bound is sufficiently close to the upper bound, we can terminate the algorithm and declare that we have found an solution that is close to optimal.</p><h3 id="Implementation"><a class="docs-heading-anchor" href="#Implementation">Implementation</a><a id="Implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation" title="Permalink"></a></h3><p>Here is pseudo-code fo the Kelley algorithm:</p><ol><li>Take as input a convex function <span>$f(x)$</span> and a iteration limit <span>$K_{max}$</span>. Set <span>$K = 0$</span>, and initialize <span>$f^K$</span>. Set <span>$lb = -\infty$</span> and <span>$ub = \infty$</span>.</li><li>Solve <span>$f^K$</span> to obtain a candidate solution <span>$x_{K+1}$</span>.</li><li>Update <span>$lb = f^K$</span> and <span>$ub = \min\{ub, f(x_{K+1})\}$</span>.</li><li>Add a cut <span>$\theta \ge f(x_{K+1}) + \frac{d}{dx}f\left(x_{K+1}\right)^\top (x - x_{K+1})$</span> to form <span>$f^{K+1}$</span>.</li><li>Increment <span>$K$</span>.</li><li>If <span>$K = K_{max}$</span> or <span>$|ub - lb| &lt; \epsilon$</span>, STOP, otherwise, go to step 2.</li></ol><p>And here&#39;s a complete implementation:</p><pre><code class="language-julia">function kelleys_cutting_plane(
+    # The function to be minimized.
+    f::Function,
+    # The gradient of `f`. By default, we use automatic differentiation to
+    # compute the gradient of f so the user doesn&#39;t have to!
+    dfdx::Function = x -&gt; ForwardDiff.gradient(f, x);
+    # The number of arguments to `f`.
+    input_dimension::Int,
+    # A lower bound for the function `f` over its domain.
+    lower_bound::Float64,
+    # The number of iterations to run Kelley&#39;s algorithm for before stopping.
+    iteration_limit::Int,
+    # The absolute tolerance ϵ to use for convergence.
+    tolerance::Float64 = 1e-6,
+)
+    # Step (1):
+    K = 0
+    model = JuMP.Model(GLPK.Optimizer)
+    JuMP.@variable(model, θ &gt;= lower_bound)
+    JuMP.@variable(model, x[1:input_dimension])
+    JuMP.@objective(model, Min, θ)
+    lower_bound, upper_bound = -Inf, Inf
+    while true
+        # Step (2):
+        JuMP.optimize!(model)
+        x_k = JuMP.value.(x)
+        # Step (3):
+        lower_bound = JuMP.objective_value(model)
+        upper_bound = min(upper_bound, f(x_k))
+        println(&quot;K = $K : $(lower_bound) &lt;= f(x*) &lt;= $(upper_bound)&quot;)
+        # Step (4):
+        JuMP.@constraint(model, θ &gt;= f(x_k) + dfdx(x_k)&#39; * (x .- x_k))
+        # Step (5):
+        K = K + 1
+        # Step (6):
+        if K == iteration_limit
+            println(&quot;-- Termination status: iteration limit --&quot;)
+            break
+        elseif abs(upper_bound - lower_bound) &lt; tolerance
+            println(&quot;-- Termination status: converged --&quot;)
+            break
+        end
+    end
+    println(&quot;Found solution: x_K = &quot;, JuMP.value.(x))
+    return
+end</code></pre><pre><code class="language-none">kelleys_cutting_plane (generic function with 2 methods)</code></pre><p>Let&#39;s run our algorithm to see what happens:</p><pre><code class="language-julia">kelleys_cutting_plane(
+    input_dimension = 2,
+    lower_bound = 0.0,
+    iteration_limit = 20,
+) do x
+    return (x[1] - 1)^2 + (x[2] + 2)^2 + 1.0
+end</code></pre><pre><code class="language-none">K = 0 : 0.0 &lt;= f(x*) &lt;= 6.0
+K = 1 : 0.0 &lt;= f(x*) &lt;= 2.25
+K = 2 : 0.0 &lt;= f(x*) &lt;= 2.25
+K = 3 : 0.0 &lt;= f(x*) &lt;= 1.0986328125
+K = 4 : 0.0 &lt;= f(x*) &lt;= 1.0986328125
+K = 5 : 0.0 &lt;= f(x*) &lt;= 1.0986328125
+K = 6 : 0.31451789700255095 &lt;= f(x*) &lt;= 1.0986328125
+K = 7 : 0.5251698041461692 &lt;= f(x*) &lt;= 1.0986328125
+K = 8 : 0.7300616982038292 &lt;= f(x*) &lt;= 1.0986328125
+K = 9 : 0.8034849495130736 &lt;= f(x*) &lt;= 1.0283101871093756
+K = 10 : 0.928700455583042 &lt;= f(x*) &lt;= 1.0283101871093756
+K = 11 : 0.9487595478289129 &lt;= f(x*) &lt;= 1.005714217279734
+K = 12 : 0.9823564684073586 &lt;= f(x*) &lt;= 1.005714217279734
+K = 13 : 0.9878994829249163 &lt;= f(x*) &lt;= 1.0023277313143473
+K = 14 : 0.9948297447399878 &lt;= f(x*) &lt;= 1.0023277313143473
+K = 15 : 0.9966035252317598 &lt;= f(x*) &lt;= 1.0002586136309095
+K = 16 : 0.9988344662887894 &lt;= f(x*) &lt;= 1.0002586136309095
+K = 17 : 0.999400719780466 &lt;= f(x*) &lt;= 1.0002586136309095
+K = 18 : 0.9995654191110327 &lt;= f(x*) &lt;= 1.0000883284156266
+K = 19 : 0.9998024915692464 &lt;= f(x*) &lt;= 1.0000370583103833
+-- Termination status: iteration limit --
+Found solution: x_K = [0.99392, -1.9997]
+</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>It&#39;s hard to choose a valid lower bound! If you choose one too loose, the algorithm can take a long time to converge. However, if you choose one so tight that <span>$M &gt; f(x^*)$</span>, then you can obtain a suboptimal solution. For a deeper discussion of the implications for SDDP.jl, see <a href="../06_warnings/#Choosing-an-initial-bound">Choosing an initial bound</a>.</p></div></div><h2 id="Preliminaries:-approximating-the-cost-to-go-term"><a class="docs-heading-anchor" href="#Preliminaries:-approximating-the-cost-to-go-term">Preliminaries: approximating the cost-to-go term</a><a id="Preliminaries:-approximating-the-cost-to-go-term-1"></a><a class="docs-heading-anchor-permalink" href="#Preliminaries:-approximating-the-cost-to-go-term" title="Permalink"></a></h2><p>In the background theory section, we discussed how you could formulate an optimal policy to a multistage stochastic program using the dynamic programming recursion:</p><p class="math-container">\[\begin{aligned}
+V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
+&amp; x^\prime = T_i(\bar{x}, u, \omega) \\
+&amp; u \in U_i(\bar{x}, \omega) \\
+&amp; \bar{x} = x,
+\end{aligned}\]</p><p>where our decision rule, <span>$\pi_i(x, \omega)$</span>, solves this optimization problem and returns a <span>$u^*$</span> corresponding to an optimal solution. Moreover, we alluded to the fact that the cost-to-go term (the nasty recursive expectation) makes this problem intractable to solve.</p><p>However, if, excluding the cost-to-go term (i.e., the <code>SP</code> formulation), <span>$V_i(x, \omega)$</span> can be formulated as a linear program (this also works for convex programs, but the math is more involved), then we can make some progress by noticing that <span>$x$</span> only appears as a right-hand side term of the fishing constraint <span>$\bar{x} = x$</span>.</p><p>Therefore, <span>$V_i(x, \cdot)$</span> is convex with respect to <span>$x$</span> for fixed <span>$\omega$</span>. Moreover, if we implement the constraint <span>$\bar{x} = x$</span> by setting the lower- and upper bounds of <span>$\bar{x}$</span> to <span>$x$</span>, then the reduced cost of the decision variable <span>$\bar{x}$</span> is a subgradient of the function <span>$V_i$</span> with respect to <span>$x$</span>! (This is the algorithmic simplification that leads us to add <span>$\bar{x}$</span> and the fishing constraint <span>$\bar{x} = x$</span>.)</p><p>Stochastic dual dynamic programming converts this problem into a tractable form by applying Kelley&#39;s cutting plane algorithm to the <span>$V_j$</span> functions in the cost-to-go term:</p><p class="math-container">\[\begin{aligned}
+V_i^K(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) + \theta\\
+&amp; x^\prime = T_i(\bar{x}, u, \omega) \\
+&amp; u \in U_i(\bar{x}, \omega) \\
+&amp; \bar{x} = x \\
+&amp; \theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right],\quad k=1,\ldots,K \\
+&amp; \theta \ge M.
+\end{aligned}\]</p><p>All we need now is a way of generating these cutting planes in an iterative manner. Before we get to that though, let&#39;s start writing some code.</p><h2 id="Implementation:-modeling"><a class="docs-heading-anchor" href="#Implementation:-modeling">Implementation: modeling</a><a id="Implementation:-modeling-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-modeling" title="Permalink"></a></h2><p>Let&#39;s make a start by defining the problem structure. Like SDDP.jl, we need a few things:</p><ol><li>A description of the structure of the policy graph: how many nodes there are, and the arcs linking the nodes together with their corresponding probabilities.</li><li>A JuMP model for each node in the policy graph.</li><li>A way to identify the incoming and outgoing state variables of each node.</li><li>A description of the random variable, as well as a function that we can call that will modify the JuMP model to reflect the realization of the random variable.</li><li>A decision variable to act as the approximated cost-to-go term.</li></ol><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>In the interests of brevity, there is minimal error checking. Think about all the different ways you could break the code!</p></div></div><h3 id="Structs"><a class="docs-heading-anchor" href="#Structs">Structs</a><a id="Structs-1"></a><a class="docs-heading-anchor-permalink" href="#Structs" title="Permalink"></a></h3><p>The first struct we are going to use is a <code>State</code> struct that will wrap an incoming and outgoing state variable:</p><pre><code class="language-julia">struct State
+    in::JuMP.VariableRef
+    out::JuMP.VariableRef
+end</code></pre><p>Next, we need a struct to wrap all of the uncertainty within a node:</p><pre><code class="language-julia">struct Uncertainty
+    parameterize::Function
+    Ω::Vector{Any}
+    P::Vector{Float64}
+end</code></pre><p><code>parameterize</code> is a function which takes a realization of the random variable <span>$\omega\in\Omega$</span> and updates the subproblem accordingly. The finite discrete random variable is defined by the vectors <code>Ω</code> and <code>P</code>, so that the random variable takes the value <code>Ω[i]</code> with probability <code>P[i]</code>. As such, <code>P</code> should sum to 1. (We don&#39;t check this here, but we should; we do in SDDP.jl.)</p><p>Now we have two building blocks, we can declare the structure of each node:</p><pre><code class="language-julia">struct Node
+    subproblem::JuMP.Model
+    states::Dict{Symbol,State}
+    uncertainty::Uncertainty
+    cost_to_go::JuMP.VariableRef
+end</code></pre><ul><li><code>subproblem</code> is going to be the JuMP model that we build at each node.</li><li><code>states</code> is a dictionary that maps a symbolic name of a state variable to a <code>State</code> object wrapping the incoming and outgoing state variables in <code>subproblem</code>.</li><li><code>uncertainty</code> is an <code>Uncertainty</code> object described above.</li><li><code>cost_to_go</code> is a JuMP variable that approximates the cost-to-go term.</li></ul><p>Finally, we define a simplified policy graph as follows:</p><pre><code class="language-julia">struct PolicyGraph
+    nodes::Vector{Node}
+    arcs::Vector{Dict{Int,Float64}}
+end</code></pre><p>There is a vector of nodes, as well as a data structure for the arcs. <code>arcs</code> is a vector of dictionaries, where <code>arcs[i][j]</code> gives the probabiltiy of transitioning from node <code>i</code> to node <code>j</code>, if an arc exists.</p><p>To simplify things, we will assume that the root node transitions to node <code>1</code> with probability 1, and there are no other incoming arcs to node 1. Notably, we can still define cyclic graphs though!</p><p>We also define a nice <code>show</code> method so that we don&#39;t accidentally print a large amount of information to the screen when creating a model:</p><pre><code class="language-julia">function Base.show(io::IO, model::PolicyGraph)
+    println(io, &quot;A policy graph with $(length(model.nodes)) nodes&quot;)
+    println(io, &quot;Arcs:&quot;)
+    for (from, arcs) in enumerate(model.arcs)
+        for (to, probability) in arcs
+            println(io, &quot;  $(from) =&gt; $(to) w.p. $(probability)&quot;)
+        end
+    end
+    return
+end</code></pre><h3 id="Functions"><a class="docs-heading-anchor" href="#Functions">Functions</a><a id="Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Functions" title="Permalink"></a></h3><p>Now we have some basic types, let&#39;s implement some functions so that the user can create a model.</p><p>First, we need an example of a function that the user will provide. Like SDDP.jl, this takes an empty <code>subproblem</code>, and a node index, in this case <code>t::Int</code>. You could change this function to change the model, or define a new one later in the code.</p><p>We&#39;re going to copy the example from <a href="../02_adding_uncertainty/#Basic-II:-adding-uncertainty">Basic II: adding uncertainty</a>, with some minor adjustments for the fact we don&#39;t have many of the bells and whistles of SDDP.jl. You can probably see how some of the SDDP.jl functionality like <a href="../../apireference/#SDDP.@stageobjective"><code>@stageobjective</code></a> and <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a> help smooth some of the usability issues like needing to construct both the incoming and outgoing state variables, or needing to explicitly declare <code>return states, uncertainty</code>.</p><pre><code class="language-julia">function subproblem_builder(subproblem::JuMP.Model, t::Int)
+    # Define the state variables. Note how we fix the incoming state to the
+    # initial state variable regardless of `t`! This isn&#39;t strictly necessary;
+    # it only matters that we do it for the first node.
+    JuMP.@variable(subproblem, volume_in == 200)
+    JuMP.@variable(subproblem, 0 &lt;= volume_out &lt;= 200)
+    states = Dict(:volume =&gt; State(volume_in, volume_out))
+    # Define the control variables.
+    JuMP.@variables(subproblem, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+        inflow
+    end)
+    # Define the constraints
+    JuMP.@constraints(subproblem, begin
+        volume_out == volume_in + inflow - hydro_generation - hydro_spill
+        demand_constraint, thermal_generation + hydro_generation == 150.0
+    end)
+    # Define the objective for each stage `t`. Note that we can use `t` as an
+    # index for t = 1, 2, 3.
+    fuel_cost = [50.0, 100.0, 150.0]
+    JuMP.@objective(subproblem, Min, fuel_cost[t] * thermal_generation)
+    # Finally, we define the uncertainty object. Because this is a simplified
+    # implementation of SDDP, we shall politely ask the user to only modify the
+    # constraints, and not the objective function! (Not that it changes the
+    # algorithm, we just have to add more information to keep track of things.)
+    uncertainty = Uncertainty([0.0, 50.0, 100.0], [1 / 3, 1 / 3, 1 / 3]) do ω
+        JuMP.fix(inflow, ω)
+    end
+    return states, uncertainty
+end</code></pre><pre><code class="language-none">subproblem_builder (generic function with 1 method)</code></pre><p>The next function we need to define is the analog of <a href="../../apireference/#SDDP.PolicyGraph"><code>SDDP.PolicyGraph</code></a>. It should be pretty readable.</p><pre><code class="language-julia">function PolicyGraph(
+    subproblem_builder::Function;
+    graph::Vector{Dict{Int,Float64}},
+    lower_bound::Float64,
+    optimizer,
+)
+    nodes = Node[]
+    for t = 1:length(graph)
+        # Create a model.
+        model = JuMP.Model(optimizer)
+        # Use the provided function to build out each subproblem. The user&#39;s
+        # function returns a dictionary mapping `Symbol`s to `State` objects,
+        # and an `Uncertainty` object.
+        states, uncertainty = subproblem_builder(model, t)
+        # Now add the cost-to-go terms:
+        JuMP.@variable(model, cost_to_go &gt;= lower_bound)
+        obj = JuMP.objective_function(model)
+        JuMP.@objective(model, Min, obj + cost_to_go)
+        # If there are no outgoing arcs, the cost-to-go is 0.0.
+        if length(graph[t]) == 0
+            JuMP.fix(cost_to_go, 0.0; force = true)
+        end
+        push!(nodes, Node(model, states, uncertainty, cost_to_go))
+    end
+    return PolicyGraph(nodes, graph)
+end</code></pre><pre><code class="language-none">Main.##1527.PolicyGraph</code></pre><p>Then, we can create a model using the <code>subproblem_builder</code> function we defined earlier:</p><pre><code class="language-julia">model = PolicyGraph(
+    subproblem_builder;
+    graph = [
+        Dict(2 =&gt; 1.0),
+        Dict(3 =&gt; 1.0),
+        Dict{Int,Float64}(),
+    ],
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+)</code></pre><pre><code class="language-none">A policy graph with 3 nodes
+Arcs:
+  1 =&gt; 2 w.p. 1.0
+  2 =&gt; 3 w.p. 1.0
+</code></pre><h2 id="Implementation:-helpful-samplers"><a class="docs-heading-anchor" href="#Implementation:-helpful-samplers">Implementation: helpful samplers</a><a id="Implementation:-helpful-samplers-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-helpful-samplers" title="Permalink"></a></h2><p>Before we get properly coding the solution algorithm, it&#39;s also going to be useful to have a function that samples a realization of the random variable defined by <code>Ω</code> and <code>P</code>.</p><pre><code class="language-julia">function sample_uncertainty(uncertainty::Uncertainty)
+    r = rand()
+    for (p, ω) in zip(uncertainty.P, uncertainty.Ω)
+        r -= p
+        if r &lt; 0.0
+            return ω
+        end
+    end
+    error(&quot;We should never get here because P should sum to 1.0.&quot;)
+end</code></pre><pre><code class="language-none">sample_uncertainty (generic function with 1 method)</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p><code>rand()</code> samples a uniform random variable in <code>[0, 1)</code>.</p></div></div><p>For example:</p><pre><code class="language-julia">for i = 1:3
+    println(&quot;ω = &quot;, sample_uncertainty(model.nodes[1].uncertainty))
+end</code></pre><pre><code class="language-none">ω = 50.0
+ω = 100.0
+ω = 50.0
+</code></pre><p>It&#39;s also going to be useful to define a function that generates a random walk through the nodes of the graph:</p><pre><code class="language-julia">function sample_next_node(model::PolicyGraph, current::Int)
+    if length(model.arcs[current]) == 0
+        # No outgoing arcs!
+        return nothing
+    else
+        r = rand()
+        for (to, probability) in model.arcs[current]
+            r -= probability
+            if r &lt; 0.0
+                return to
+            end
+        end
+        # We looped through the outgoing arcs and still have probability left
+        # over! This means we&#39;ve hit an implicit &quot;zero&quot; node.
+        return nothing
+    end
+end</code></pre><pre><code class="language-none">sample_next_node (generic function with 1 method)</code></pre><p>For example:</p><pre><code class="language-julia">for i = 1:3
+    # We use `repr` to print the next node, because `sample_next_node` can
+    # return `nothing`.
+    println(&quot;Next node from $(i) = &quot;, repr(sample_next_node(model, i)))
+end</code></pre><pre><code class="language-none">Next node from 1 = 2
+Next node from 2 = 3
+Next node from 3 = nothing
+</code></pre><p>This is a little boring, because our graph is simple. However, more complicated graphs will generate more interesting trajectories!</p><h2 id="Implementation:-the-forward-pass"><a class="docs-heading-anchor" href="#Implementation:-the-forward-pass">Implementation: the forward pass</a><a id="Implementation:-the-forward-pass-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-the-forward-pass" title="Permalink"></a></h2><p>Recall that, after approximating the cost-to-go term, we need a way of generating the cuts. As the first step, we need a way of generating candidate solutions <span>$x_k^\prime$</span>. However, unlike the Kelley&#39;s example, our functions <span>$V_j^k(x^\prime, \varphi)$</span> need two inputs: an outgoing state variable and a realization of the random variable.</p><p>One way of getting these inputs is just to pick a random (feasible) value. However, in doing so, we might pick outgoing state variables that we will never see in practice, or we might infrequently pick outgoing state variables that we will often see in practice. Therefore, a better way of generating the inputs is to use a simulation of the policy, which we call the <strong>forward</strong> <strong>pass</strong>.</p><p>The forward pass walks the policy graph from start to end, transitioning randomly along the arcs. At each node, it observes a realization of the random variable and solves the approximated subproblem to generate a candidate outgoing state variable <span>$x_k^\prime$</span>. The outgoing state variable is passed as the incoming state variable to the next node in the trajectory.</p><pre><code class="language-julia">function forward_pass(model::PolicyGraph, io::IO = stdout)
+    println(io, &quot;| Forward Pass&quot;)
+    # First, get the value of the state at the root node (e.g., x_R).
+    incoming_state = Dict(
+        k =&gt; JuMP.fix_value(v.in) for (k, v) in model.nodes[1].states
+    )
+    # `simulation_cost` is an accumlator that is going to sum the stage-costs
+    # incurred over the forward pass.
+    simulation_cost = 0.0
+    # We also need to record the nodes visited and resultant outgoing state
+    # variables so we can pass them to the backward pass.
+    trajectory = Tuple{Int,Dict{Symbol,Float64}}[]
+    # Now&#39;s the meat of the forward pass: beginning at the first node:
+    t = 1
+    while t !== nothing
+        node = model.nodes[t]
+        println(io, &quot;| | Visiting node $(t)&quot;)
+        # Sample the uncertainty:
+        ω = sample_uncertainty(node.uncertainty)
+        println(io, &quot;| | | ω = &quot;, ω)
+        # Parameterizing the subproblem using the user-provided function:
+        node.uncertainty.parameterize(ω)
+        println(io, &quot;| | | x = &quot;, incoming_state)
+        # Update the incoming state variable:
+        for (k, v) in incoming_state
+            JuMP.fix(node.states[k].in, v; force = true)
+        end
+        # Now solve the subproblem and check we found an optimal solution:
+        JuMP.optimize!(node.subproblem)
+        if JuMP.termination_status(node.subproblem) != JuMP.MOI.OPTIMAL
+            error(&quot;Something went terribly wrong!&quot;)
+        end
+        # Compute the outgoing state variables:
+        outgoing_state = Dict(k =&gt; JuMP.value(v.out) for (k, v) in node.states)
+        println(io, &quot;| | | x′ = &quot;, outgoing_state)
+        # We also need to compute the stage cost to add to our
+        # `simulation_cost` accumulator:
+        stage_cost = JuMP.objective_value(node.subproblem) - JuMP.value(node.cost_to_go)
+        simulation_cost += stage_cost
+        println(io, &quot;| | | C(x, u, ω) = &quot;, stage_cost)
+        # As a penultimate step, set the outgoing state of stage t and the
+        # incoming state of stage t + 1, and add the node to the trajectory.
+        incoming_state = outgoing_state
+        push!(trajectory, (t, outgoing_state))
+        # Finally, sample a new node to step to. If `t === nothing`, the
+        # `while` loop will break.
+        t = sample_next_node(model, t)
+    end
+    return trajectory, simulation_cost
+end</code></pre><pre><code class="language-none">forward_pass (generic function with 2 methods)</code></pre><p>Let&#39;s take a look at one forward pass:</p><pre><code class="language-julia">trajectory, simulation_cost = forward_pass(model);
+</code></pre><pre><code class="language-none">| Forward Pass
+| | Visiting node 1
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;100.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 2
+| | | ω = 0.0
+| | | x = Dict(:volume=&gt;100.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 5000.0
+| | Visiting node 3
+| | | ω = 0.0
+| | | x = Dict(:volume=&gt;0.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 22500.0
+</code></pre><h2 id="Implementation:-the-backward-pass"><a class="docs-heading-anchor" href="#Implementation:-the-backward-pass">Implementation: the backward pass</a><a id="Implementation:-the-backward-pass-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-the-backward-pass" title="Permalink"></a></h2><p>From the forward pass, we obtained a vector of nodes visted and their corresponding outgoing state variables. Now we need to refine the approximation for each node at the candidate solution for the outgoing state variable. That is, we need to add a new cut:</p><p class="math-container">\[\theta \ge \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right]\]</p><p>or alternatively:</p><p class="math-container">\[\theta \ge \sum\limits_{j \in i^+} \sum\limits_{\varphi \in \Omega_j} p_{ij} p_{\varphi}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right]\]</p><p>It doesn&#39;t matter what order we visit the nodes to generate these cuts for. For example, we could compute them all in parallel, using the current approximations of <span>$V^K_i$</span>.</p><p>However, we can be smarter than that.</p><p>If we traverse the list of nodes visited in the forward pass in reverse, then we come to refine the <span>$i$</span>th node in the trajectory, we will already have improved the approximation of the <span>$(i+1)$</span>th node in the trajectory as well! Therefore, our refinement of the <span>$i$</span>th node will be better than if we improved node <span>$i$</span> first, and then refined node <span>$(i+1)$</span>.</p><p>Because we walk the nodes in reverse, we call this the <strong>backward pass</strong>.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>If you&#39;re into deep learning, you could view this as the equivalent of back-propagation: the forward pass pushes primal information through the graph (outgoing state variables), and the backward pass pulls dual information (cuts) back through the graph to improve our decisions on the next forward pass.</p></div></div><pre><code class="language-julia">function backward_pass(
+    model::PolicyGraph,
+    trajectory::Vector{Tuple{Int,Dict{Symbol,Float64}}},
+    io::IO = stdout,
+)
+    println(io, &quot;| Backward pass&quot;)
+    # For the backward pass, we walk back up the nodes.
+    for i = reverse(1:length(trajectory))
+        index, outgoing_states = trajectory[i]
+        node = model.nodes[index]
+        println(io, &quot;| | Visiting node $(index)&quot;)
+        if length(model.arcs[index]) == 0
+            # If there are no children, the cost-to-go is 0.
+            println(io, &quot;| | | Skipping node because the cost-to-go is 0&quot;)
+            continue
+        end
+        # Create an empty affine expression that we will use to build up the
+        # right-hand side of the cut expression.
+        cut_expression = JuMP.AffExpr(0.0)
+        # For each node j ∈ i⁺
+        for (j, P_ij) in model.arcs[index]
+            next_node = model.nodes[j]
+            # Set the incoming state variables of node j to the outgoing state
+            # variables of node i
+            for (k, v) in outgoing_states
+                JuMP.fix(next_node.states[k].in, v; force = true)
+            end
+            # Then for each realization of φ ∈ Ωⱼ
+            for (pφ, φ) in zip(next_node.uncertainty.P, next_node.uncertainty.Ω)
+                # Setup and solve for the realization of φ
+                println(io, &quot;| | | Solving φ = &quot;, φ)
+                next_node.uncertainty.parameterize(φ)
+                JuMP.optimize!(next_node.subproblem)
+                # Then prepare the cut `P_ij * pφ * [V + dVdxᵀ(x - x_k)]``
+                V = JuMP.objective_value(next_node.subproblem)
+                println(io, &quot;| | | | V = &quot;, V)
+                dVdx = Dict(
+                    k =&gt; JuMP.reduced_cost(v.in) for (k, v) in next_node.states
+                )
+                println(io, &quot;| | | | dVdx′ = &quot;, dVdx)
+                cut_expression += JuMP.@expression(
+                    node.subproblem,
+                    P_ij * pφ * (
+                        V + sum(
+                            dVdx[k] * (x.out - outgoing_states[k])
+                            for (k, x) in node.states
+                        )
+                    ),
+                )
+            end
+        end
+        # And then refine the cost-to-go variable by adding the cut:
+        c = JuMP.@constraint(node.subproblem, node.cost_to_go &gt;= cut_expression)
+        println(io, &quot;| | | Adding cut : &quot;, c)
+    end
+    return nothing
+end</code></pre><pre><code class="language-none">backward_pass (generic function with 2 methods)</code></pre><h2 id="Implementation:-bounds"><a class="docs-heading-anchor" href="#Implementation:-bounds">Implementation: bounds</a><a id="Implementation:-bounds-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-bounds" title="Permalink"></a></h2><h3 id="Lower-bounds"><a class="docs-heading-anchor" href="#Lower-bounds">Lower bounds</a><a id="Lower-bounds-1"></a><a class="docs-heading-anchor-permalink" href="#Lower-bounds" title="Permalink"></a></h3><p>Recall from Kelley&#39;s that we can obtain a lower bound for <span>$f(x^*)$</span> be evaluating <span>$f^K$</span>. The analogous lower bound for a multistage stochastic program is:</p><p class="math-container">\[\mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^K(x_R, \omega)] \le \min_{\pi} \mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]\]</p><p>Here&#39;s how we compute the lower bound:</p><pre><code class="language-julia">function lower_bound(model::PolicyGraph)
+    node = model.nodes[1]
+    bound = 0.0
+    for (p, ω) in zip(node.uncertainty.P, node.uncertainty.Ω)
+        node.uncertainty.parameterize(ω)
+        JuMP.optimize!(node.subproblem)
+        bound += p * JuMP.objective_value(node.subproblem)
+    end
+    return bound
+end</code></pre><pre><code class="language-none">lower_bound (generic function with 1 method)</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>The implementation is simplified because we assumed that there is only one arc from the root node, and that it pointed to the first node in the vector.</p></div></div><p>Because we haven&#39;t trained a policy yet, the lower bound is going to be very bad:</p><pre><code class="language-julia">lower_bound(model)</code></pre><pre><code class="language-none">0.0</code></pre><h3 id="Upper-bounds"><a class="docs-heading-anchor" href="#Upper-bounds">Upper bounds</a><a id="Upper-bounds-1"></a><a class="docs-heading-anchor-permalink" href="#Upper-bounds" title="Permalink"></a></h3><p>With Kelley&#39;s algorithm, we could easily construct an upper bound by evaluating <span>$f(x_K)$</span>. However, it is almost always intractable to evaluate an upper bound for multistage stochastic programs due to the large number of nodes and the nested expectations. Instead, we can perform a Monte Carlo simulation of the policy to build a statistical estimate for the value of <span>$\mathbb{E}_{i \in R^+, \omega \in \Omega_i}[V_i^\pi(x_R, \omega)]$</span>, where <span>$\pi$</span> is the policy defined by the current approximations <span>$V^K_i$</span>.</p><pre><code class="language-julia">function upper_bound(model::PolicyGraph; replications::Int)
+    # Pipe the output to `devnull` so we don&#39;t print too much!
+    simulations = [forward_pass(model, devnull) for i = 1:replications]
+    z = [s[2] for s in simulations]
+    μ  = Statistics.mean(z)
+    tσ = 1.96 * Statistics.std(z) / sqrt(replications)
+    return μ, tσ
+end</code></pre><pre><code class="language-none">upper_bound (generic function with 1 method)</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>The width of the confidence interval is incorrect if there are cycles in the graph, because the distribution of simulation costs <code>z</code> is not symmetric. The mean is correct, however.</p></div></div><h3 id="Termination-criteria"><a class="docs-heading-anchor" href="#Termination-criteria">Termination criteria</a><a id="Termination-criteria-1"></a><a class="docs-heading-anchor-permalink" href="#Termination-criteria" title="Permalink"></a></h3><p>In Kelley&#39;s algorithm, the upper bound was deterministic. Therefore, we could terminate the algorithm when the lower bound was sufficiently close to the upper bound. However, our upper bound for SDDP is not deterministic; it is a confidence interval!</p><p>Some people suggest terminating SDDP when the lower bound is contained within the confidence interval. However, this is a poor choice because it is too easy to generate a false positive. For example, if we use a small number of replications then the width of the confidence will be large, and we are more likely to terminate!</p><p>In a future tutorial (not yet written...) we will discuss termination criteria in more depth. For now, pick a large number of iterations and train for as long as possible.</p><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>For a rule of thumb, pick a large number of iterations to train the policy for (e.g., <span>$10 \times |\mathcal{N}| \times \max\limits_{i\in\mathcal{N}} |\Omega_i|$</span>)</p></div></div><h2 id="Implementation:-the-training-loop"><a class="docs-heading-anchor" href="#Implementation:-the-training-loop">Implementation: the training loop</a><a id="Implementation:-the-training-loop-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-the-training-loop" title="Permalink"></a></h2><p>The <code>train</code> loop of SDDP just applies the forward and backward passes iteratively, followed by a final simulation to compute the upper bound confidence interval:</p><pre><code class="language-julia">function train(
+    model::PolicyGraph;
+    iteration_limit::Int,
+    replications::Int,
+    io::IO = stdout,
+)
+    for i = 1:iteration_limit
+        println(io, &quot;Starting iteration $(i)&quot;)
+        outgoing_states, _ = forward_pass(model, io)
+        backward_pass(model, outgoing_states, io)
+        println(io, &quot;| Finished iteration&quot;)
+        println(io, &quot;| | lower_bound = &quot;, lower_bound(model))
+    end
+    println(io, &quot;Termination status: iteration limit&quot;)
+    μ, tσ = upper_bound(model; replications = replications)
+    println(io, &quot;Upper bound = $(μ) ± $(tσ)&quot;)
+    return
+end</code></pre><pre><code class="language-none">train (generic function with 1 method)</code></pre><p>Using our <code>model</code> we defined earlier, we can go:</p><pre><code class="language-julia">train(model; iteration_limit = 3, replications = 100)</code></pre><pre><code class="language-none">Starting iteration 1
+| Forward Pass
+| | Visiting node 1
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;100.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 2
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;100.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 3
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;0.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 15000.0
+| Backward pass
+| | Visiting node 3
+| | | Skipping node because the cost-to-go is 0
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 22500.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 15000.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 100.0
+| | | | V = 7500.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 15000.0
+| | Visiting node 1
+| | | Solving φ = 0.0
+| | | | V = 15000.0
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 50.0
+| | | | V = 10000.0
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 100.0
+| | | | V = 5000.0
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Adding cut : 99.99999999999999 volume_out + cost_to_go ≥ 20000.0
+| Finished iteration
+| | lower_bound = 5000.000000000002
+Starting iteration 2
+| Forward Pass
+| | Visiting node 1
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;200.0)
+| | | C(x, u, ω) = 5000.000000000002
+| | Visiting node 2
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;100.0)
+| | | C(x, u, ω) = -2.8421709430404007e-12
+| | Visiting node 3
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;100.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 0.0
+| Backward pass
+| | Visiting node 3
+| | | Skipping node because the cost-to-go is 0
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 7500.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 0.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 100.0
+| | | | V = 0.0
+| | | | dVdx′ = Dict(:volume=&gt;0.0)
+| | | Adding cut : 100 volume_out + cost_to_go ≥ 12500.0
+| | Visiting node 1
+| | | Solving φ = 0.0
+| | | | V = 7499.999999999997
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 50.0
+| | | | V = 2499.9999999999973
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 100.0
+| | | | V = 0.0
+| | | | dVdx′ = Dict(:volume=&gt;0.0)
+| | | Adding cut : 66.66666666666666 volume_out + cost_to_go ≥ 16666.666666666664
+| Finished iteration
+| | lower_bound = 8333.333333333332
+Starting iteration 3
+| Forward Pass
+| | Visiting node 1
+| | | ω = 100.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;200.0)
+| | | C(x, u, ω) = 2500.0
+| | Visiting node 2
+| | | ω = 100.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;125.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 3
+| | | ω = 0.0
+| | | x = Dict(:volume=&gt;125.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 3750.0
+| Backward pass
+| | Visiting node 3
+| | | Skipping node because the cost-to-go is 0
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 3750.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 0.0
+| | | | dVdx′ = Dict(:volume=&gt;0.0)
+| | | Solving φ = 100.0
+| | | | V = 0.0
+| | | | dVdx′ = Dict(:volume=&gt;0.0)
+| | | Adding cut : 50 volume_out + cost_to_go ≥ 7500.0
+| | Visiting node 1
+| | | Solving φ = 0.0
+| | | | V = 7500.0
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 50.0
+| | | | V = 2500.0
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 100.0
+| | | | V = 0.0
+| | | | dVdx′ = Dict(:volume=&gt;0.0)
+| | | Adding cut : 66.66666666666666 volume_out + cost_to_go ≥ 16666.666666666664
+| Finished iteration
+| | lower_bound = 8333.333333333332
+Termination status: iteration limit
+Upper bound = 8475.0 ± 858.3515973343701
+</code></pre><p>Success! We trained a policy for a finite horizon multistage stochastic program using stochastic dual dynamic programming.</p><h2 id="Implementation:-evaluating-the-policy"><a class="docs-heading-anchor" href="#Implementation:-evaluating-the-policy">Implementation: evaluating the policy</a><a id="Implementation:-evaluating-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-evaluating-the-policy" title="Permalink"></a></h2><p>A final step is the ability to evaluate the policy at a given point.</p><pre><code class="language-julia">function evaluate_policy(
+    model::PolicyGraph;
+    node::Int,
+    incoming_state::Dict{Symbol,Float64},
+    random_variable,
+)
+    the_node = model.nodes[node]
+    the_node.uncertainty.parameterize(random_variable)
+    for (k, v) in incoming_state
+        JuMP.fix(the_node.states[k].in, v; force = true)
+    end
+    JuMP.optimize!(the_node.subproblem)
+    return Dict(
+        k =&gt; JuMP.value.(v)
+        for (k, v) in JuMP.object_dictionary(the_node.subproblem)
+    )
+end
+
+evaluate_policy(
+    model;
+    node = 1,
+    incoming_state = Dict(:volume =&gt; 150.0),
+    random_variable = 75,
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 8 entries:
+  :volume_out =&gt; 200.0
+  :demand_constraint =&gt; 150.0
+  :hydro_spill =&gt; 0.0
+  :inflow =&gt; 75.0
+  :volume_in =&gt; 150.0
+  :thermal_generation =&gt; 125.0
+  :hydro_generation =&gt; 25.0
+  :cost_to_go =&gt; 3333.33</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>The random variable can be <strong>out-of-sample</strong>, i.e., it doesn&#39;t have to be in the vector <span>$\Omega$</span> we created when defining the model! This is a notable difference to other multistage stochastic solution methods like progressive hedging or using the deterministic equivalent.</p></div></div><h2 id="Example:-infinite-horizon"><a class="docs-heading-anchor" href="#Example:-infinite-horizon">Example: infinite horizon</a><a id="Example:-infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-infinite-horizon" title="Permalink"></a></h2><p>As promised earlier, our implementation is actually pretty general. It can solve any multistage stochastic (linear) program defined by a policy graph, including infinite horizon problems!</p><p>Here&#39;s an example, where we have extended our earlier problem with an arc from node 3 to node 2 with probability 0.5. You can interpret the 0.5 as a discount factor.</p><pre><code class="language-julia">model = PolicyGraph(
+    subproblem_builder;
+    graph = [
+        Dict(2 =&gt; 1.0),
+        Dict(3 =&gt; 1.0),
+        Dict(2 =&gt; 0.5),
+    ],
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+)</code></pre><pre><code class="language-none">A policy graph with 3 nodes
+Arcs:
+  1 =&gt; 2 w.p. 1.0
+  2 =&gt; 3 w.p. 1.0
+  3 =&gt; 2 w.p. 0.5
+</code></pre><p>Then, train a policy:</p><pre><code class="language-julia">train(model; iteration_limit = 3, replications = 100)</code></pre><pre><code class="language-none">Starting iteration 1
+| Forward Pass
+| | Visiting node 1
+| | | ω = 0.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;50.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 2
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;50.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 5000.0
+| | Visiting node 3
+| | | ω = 100.0
+| | | x = Dict(:volume=&gt;0.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 7500.0
+| Backward pass
+| | Visiting node 3
+| | | Solving φ = 0.0
+| | | | V = 15000.0
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 50.0
+| | | | V = 10000.0
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 100.0
+| | | | V = 5000.0
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Adding cut : 49.99999999999999 volume_out + cost_to_go ≥ 4999.999999999999
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 27500.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 20000.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 100.0
+| | | | V = 12500.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 20000.0
+| | Visiting node 1
+| | | Solving φ = 0.0
+| | | | V = 27500.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 20000.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 100.0
+| | | | V = 13333.333333333334
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Adding cut : 133.33333333333331 volume_out + cost_to_go ≥ 26944.444444444445
+| Finished iteration
+| | lower_bound = 5277.777777777781
+Starting iteration 2
+| Forward Pass
+| | Visiting node 1
+| | | ω = 100.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;200.0)
+| | | C(x, u, ω) = 2500.0
+| | Visiting node 2
+| | | ω = 100.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;133.333)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 3
+| | | ω = 100.0
+| | | x = Dict(:volume=&gt;133.333)
+| | | x′ = Dict(:volume=&gt;83.3333)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 2
+| | | ω = 100.0
+| | | x = Dict(:volume=&gt;83.3333)
+| | | x′ = Dict(:volume=&gt;133.333)
+| | | C(x, u, ω) = 10000.0
+| | Visiting node 3
+| | | ω = 50.0
+| | | x = Dict(:volume=&gt;133.333)
+| | | x′ = Dict(:volume=&gt;33.3333)
+| | | C(x, u, ω) = 0.0
+| Backward pass
+| | Visiting node 3
+| | | Solving φ = 0.0
+| | | | V = 30000.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 22500.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 100.0
+| | | | V = 15000.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Adding cut : 75 volume_out + cost_to_go ≥ 13750.000000000002
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 16249.999999999998
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 11250.0
+| | | | dVdx′ = Dict(:volume=&gt;-75.0)
+| | | Solving φ = 100.0
+| | | | V = 7500.0
+| | | | dVdx′ = Dict(:volume=&gt;-75.0)
+| | | Adding cut : 100 volume_out + cost_to_go ≥ 25000.0
+| | Visiting node 3
+| | | Solving φ = 0.0
+| | | | V = 31666.666666666664
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 50.0
+| | | | V = 26666.666666666664
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 100.0
+| | | | V = 21666.666666666664
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Adding cut : 49.99999999999999 volume_out + cost_to_go ≥ 17499.999999999996
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 19999.999999999996
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 15833.333333333328
+| | | | dVdx′ = Dict(:volume=&gt;-50.0)
+| | | Solving φ = 100.0
+| | | | V = 13333.333333333328
+| | | | dVdx′ = Dict(:volume=&gt;-50.0)
+| | | Adding cut : 83.33333333333331 volume_out + cost_to_go ≥ 27499.999999999993
+| | Visiting node 1
+| | | Solving φ = 0.0
+| | | | V = 23333.33333333333
+| | | | dVdx′ = Dict(:volume=&gt;-83.3333)
+| | | Solving φ = 50.0
+| | | | V = 19166.66666666666
+| | | | dVdx′ = Dict(:volume=&gt;-83.3333)
+| | | Solving φ = 100.0
+| | | | V = 14999.999999999996
+| | | | dVdx′ = Dict(:volume=&gt;-83.3333)
+| | | Adding cut : 83.33333333333331 volume_out + cost_to_go ≥ 35833.33333333333
+| Finished iteration
+| | lower_bound = 24166.666666666664
+Starting iteration 3
+| Forward Pass
+| | Visiting node 1
+| | | ω = 0.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;200.0)
+| | | C(x, u, ω) = 7500.0
+| | Visiting node 2
+| | | ω = 0.0
+| | | x = Dict(:volume=&gt;200.0)
+| | | x′ = Dict(:volume=&gt;50.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 3
+| | | ω = 100.0
+| | | x = Dict(:volume=&gt;50.0)
+| | | x′ = Dict(:volume=&gt;0.0)
+| | | C(x, u, ω) = 0.0
+| Backward pass
+| | Visiting node 3
+| | | Solving φ = 0.0
+| | | | V = 42499.99999999999
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 50.0
+| | | | V = 37499.99999999999
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 100.0
+| | | | V = 32499.999999999993
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Adding cut : 49.99999999999999 volume_out + cost_to_go ≥ 18749.999999999996
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 33750.0
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 50.0
+| | | | V = 26249.999999999996
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Solving φ = 100.0
+| | | | V = 18749.999999999996
+| | | | dVdx′ = Dict(:volume=&gt;-150.0)
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 33750.0
+| | Visiting node 1
+| | | Solving φ = 0.0
+| | | | V = 24062.499999999993
+| | | | dVdx′ = Dict(:volume=&gt;-100.0)
+| | | Solving φ = 50.0
+| | | | V = 19166.66666666666
+| | | | dVdx′ = Dict(:volume=&gt;-83.3333)
+| | | Solving φ = 100.0
+| | | | V = 14999.999999999996
+| | | | dVdx′ = Dict(:volume=&gt;-83.3333)
+| | | Adding cut : 88.88888888888887 volume_out + cost_to_go ≥ 37187.49999999999
+| Finished iteration
+| | lower_bound = 24409.72222222222
+Termination status: iteration limit
+Upper bound = 26581.25 ± 4608.667643704225
+</code></pre><p>Success! We trained a policy for an infinite horizon multistage stochastic program using stochastic dual dynamic programming. Note how some of the forward passes are different lengths!</p><pre><code class="language-julia">evaluate_policy(
+    model;
+    node = 3,
+    incoming_state = Dict(:volume =&gt; 100.0),
+    random_variable = 10.0,
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 8 entries:
+  :volume_out =&gt; 0.0
+  :demand_constraint =&gt; 150.0
+  :hydro_spill =&gt; 0.0
+  :inflow =&gt; 10.0
+  :volume_in =&gt; 100.0
+  :thermal_generation =&gt; 40.0
+  :hydro_generation =&gt; 110.0
+  :cost_to_go =&gt; 18750.0</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../13_integrality/">« Advanced III: integrality</a><a class="docs-footer-nextpage" href="../22_risk/">Theory II: risk aversion »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 26 March 2021 23:40">Friday 26 March 2021</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

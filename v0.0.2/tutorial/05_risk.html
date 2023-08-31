@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial Five: risk · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="01_first_steps.html">Tutorial One: first steps</a></li><li><a class="toctext" href="02_rhs_noise.html">Tutorial Two: RHS noise</a></li><li><a class="toctext" href="03_objective_noise.html">Tutorial Three: objective noise</a></li><li><a class="toctext" href="04_markovian_policygraphs.html">Tutorial Four: Markovian policy graphs</a></li><li class="current"><a class="toctext" href="05_risk.html">Tutorial Five: risk</a><ul class="internal"><li><a class="toctext" href="#Formulating-the-problem-1">Formulating the problem</a></li><li><a class="toctext" href="#Solving-the-problem-1">Solving the problem</a></li><li><a class="toctext" href="#Extra-for-experts:-new-risk-measures-1">Extra for experts: new risk measures</a></li></ul></li><li><a class="toctext" href="06_cut_selection.html">Tutorial Six: cut selection</a></li><li><a class="toctext" href="07_plotting.html">Tutorial Seven: plotting</a></li><li><a class="toctext" href="08_odds_and_ends.html">Tutorial Eight: odds and ends</a></li><li><a class="toctext" href="09_nonlinear.html">Tutorial Nine: nonlinear models</a></li><li><a class="toctext" href="10_parallel.html">Tutorial Ten: parallelism</a></li><li><a class="toctext" href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a></li><li><a class="toctext" href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a></li><li><a class="toctext" href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a></li></ul></li><li><a class="toctext" href="../readings.html">Readings</a></li><li><a class="toctext" href="../apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href="05_risk.html">Tutorial Five: risk</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/05_risk.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorial Five: risk</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-Five:-risk-1" href="#Tutorial-Five:-risk-1">Tutorial Five: risk</a></h1><p>Over the previous four tutorials, we formulated a simple hydrothermal scheduling problem. Now, in this tutorial, we introduce some <em>risk</em> into the model using nested risk measures.</p><p>Recall that our model for the hydrothermal scheduling problem from <a href="04_markovian_policygraphs.html#Tutorial-Four:-Markovian-policy-graphs-1">Tutorial Four: Markovian policy graphs</a> is:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0,
+      markov_transition = Array{Float64, 2}[
+          [ 1.0 ]&#39;,
+          [ 0.75 0.25 ],
+          [ 0.75 0.25 ; 0.25 0.75 ]
+      ]
+                                        ) do sp, t, i
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+        outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+    )
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, mupliplier = [1.2, 1.0, 0.8],
+        mupliplier * fuel_cost[t] * thermal_generation
+    )
+    if i == 1  # wet climate state
+        setnoiseprobability!(sp, [1/6, 1/3, 0.5])
+    else       # dry climate state
+        setnoiseprobability!(sp, [0.5, 1/3, 1/6])
+    end
+end</code></pre><h2><a class="nav-anchor" id="Formulating-the-problem-1" href="#Formulating-the-problem-1">Formulating the problem</a></h2><p>For this problem, we are going to use a convex combination of the expectation ($\mathbb{E}$) and average value-at-risk measures (AV@R${}_{1-\beta}$). In particular, we use AV@R at the β=0.1 quantile (i.e. the worst 10% of outcomes). This can be constructed as:</p><pre><code class="language-julia">risk_measure = 0.5 * Expectation() + 0.5 * AVaR(0.1)</code></pre><p>Since this is a commonly used risk measure, a slightly more computationally efficient form is <a href="../apireference.html#SDDP.EAVaR"><code>EAVaR</code></a>:</p><pre><code class="language-julia">risk_measure = EAVaR(lambda=0.5, beta=0.1)</code></pre><p>This is short-hand for <code>lambda * Expectation() + (1-lambda) * AVaR(beta)</code>. As <code>lambda</code> and <code>beta</code> tend toward <code>1.0</code>, the measure becomes more risk-neutral (i.e. less risk averse).</p><p>Risk measures are set in the model using the <code>risk_measure</code> keyword in the <a href="../apireference.html#SDDP.SDDPModel"><code>SDDPModel</code></a> constructor. For example, our model is now:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0,
+      markov_transition = Array{Float64, 2}[
+          [ 1.0 ]&#39;,
+          [ 0.75 0.25 ],
+          [ 0.75 0.25 ; 0.25 0.75 ]
+      ],
+           risk_measure = EAVaR(lambda=0.5, beta=0.1)
+                                        ) do sp, t, i
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+        outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+    )
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, mupliplier = [1.2, 1.0, 0.8],
+        mupliplier * fuel_cost[t] * thermal_generation
+    )
+    if i == 1  # wet climate state
+        setnoiseprobability!(sp, [1/6, 1/3, 0.5])
+    else       # dry climate state
+        setnoiseprobability!(sp, [0.5, 1/3, 1/6])
+    end
+end</code></pre><h2><a class="nav-anchor" id="Solving-the-problem-1" href="#Solving-the-problem-1">Solving the problem</a></h2><p>Deciding when to terminate a risk-averse SDDP model is an unresolved problem in the literature. In addition to the termination methods discussed in previous tutorials, the user can also terminate the solve using the keys <code>[CRTL]+[C]</code>.</p><p>In addition, to demonstrate that we cannot use Monte Carlo simulation to estimate the upper bound of a risk-averse model, we perform a Monte Carlo simulation of the policy every two iterations. If left unchecked, this solve will not terminate as we have set <code>terminate=false</code>.</p><pre><code class="language-julia">status = solve(m,
+    simulation = MonteCarloSimulation(
+        frequency  = 2,
+        confidence = 0.95,
+        terminate  = false,
+        min        = 50,
+        step       = 50,
+        max        = 100,
+    )
+)</code></pre><p>After 7 iterations, we interrupt the solve using the <code>[CRTL]+[C]</code> keys. (Since this is a trivial model to solve, we had to be very quick to terminate!) The return value <code>status</code> is <code>:interrupted</code>, and the log is:</p><pre><code class="language-none">-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         3
+        States:         1
+        Subproblems:    5
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+       21.000K         8.520K        |     1    0.0      0    0.0    0.0
+   6.857K    9.363K   12.465K -45.0  |     2    0.0     50    0.0    0.0
+        7.000K        12.465K        |     3    0.0     50    0.0    0.1
+   7.911K   11.189K   12.465K -36.5  |     4    0.0    100    0.1    0.1
+        8.000K        12.477K        |     5    0.0    100    0.1    0.1
+   7.490K   10.230K   12.477K -40.0  |     6    0.0    150    0.1    0.1
+        2.000K        12.477K        |     7    0.0    150    0.1    0.1
+WARNING: Terminating solve due to user interaction
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         7
+        Termination Status: interrupted
+===============================================================================</code></pre><h2><a class="nav-anchor" id="Extra-for-experts:-new-risk-measures-1" href="#Extra-for-experts:-new-risk-measures-1">Extra for experts: new risk measures</a></h2><p>One of the cool features of SDDP.jl is how easy it is to create new risk measures. To illustrate this, we consider implementing the worst-case risk measure. First, we need to create a new concrete subtype of the abstract type <code>AbstractRiskMeasure</code> defined by SDDP.jl:</p><pre><code class="language-julia">&quot;&quot;&quot;
+    TheWorstCase()
+
+Create an instance of the worst-case risk measures. This places all of the
+weight on the maximum outcome if minimizing, and the minimum outcome if
+maximizing.
+&quot;&quot;&quot;
+struct TheWorstCase &lt;: SDDP.AbstractRiskMeasure end</code></pre><p>Then, we need to overload the <a href="../apireference.html#SDDP.modifyprobability!"><code>SDDP.modifyprobability!</code></a> function provided by SDDP.jl. This function takes six arguments:</p><ol><li><p>an instance of the risk measure (e.g. <code>TheWorstCase()</code>);</p></li><li><p>a vector of the risk-adjusted probability distribution that the function modifies in-place;</p></li><li><p>a vector of the original probability distribution;</p></li><li><p>a vector of the observations;</p></li><li><p>the SDDPModel <code>m</code>; and</p></li><li><p>the JuMP subproblem <code>sp</code>.</p></li></ol><p>For example, the worst-case risk measure places all of the probability on the worst outcome:</p><pre><code class="language-julia">function SDDP.modifyprobability!(::TheWorstCase,
+    risk_adjusted_distribution,
+    original_distribution::Vector{Float64},
+    observations::Vector{Float64},
+    m::SDDPModel,
+    sp::JuMP.Model
+    )
+    if getsense(sp) == :Min
+        worst_index = indmax(observations)
+    else
+        worst_index = indmin(observations)
+    end
+    risk_adjusted_distribution .= 0.0
+    risk_adjusted_distribution[worst_index] = 1.0
+    return nothing
+end</code></pre><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>This implementation isn&#39;t a proper implementation as it assumes that the worst-case outcome has a positive probability of occurring. Accounting for this edge-case efficiently makes the implementation to verbose for this simple example.</p></div></div><p>Now <code>TheWorstCase()</code> can be used like a risk measure defined by SDDP.jl. It is even possible to compose it with other risk measures, for example:</p><pre><code class="language-julia">risk_measure = 0.5 * Expectation() + 0.5 * TheWorstCase()</code></pre><p>This concludes our fifth tutorial for SDDP.jl. In the next tutorial, <a href="06_cut_selection.html#Tutorial-Six:-cut-selection-1">Tutorial Six: cut selection</a>, we introduce cut selection.</p><footer><hr/><a class="previous" href="04_markovian_policygraphs.html"><span class="direction">Previous</span><span class="title">Tutorial Four: Markovian policy graphs</span></a><a class="next" href="06_cut_selection.html"><span class="direction">Next</span><span class="title">Tutorial Six: cut selection</span></a></footer></article></body></html>

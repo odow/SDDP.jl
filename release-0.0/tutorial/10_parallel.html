@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial Ten: parallelism · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="01_first_steps.html">Tutorial One: first steps</a></li><li><a class="toctext" href="02_rhs_noise.html">Tutorial Two: RHS noise</a></li><li><a class="toctext" href="03_objective_noise.html">Tutorial Three: objective noise</a></li><li><a class="toctext" href="04_markovian_policygraphs.html">Tutorial Four: Markovian policy graphs</a></li><li><a class="toctext" href="05_risk.html">Tutorial Five: risk</a></li><li><a class="toctext" href="06_cut_selection.html">Tutorial Six: cut selection</a></li><li><a class="toctext" href="07_plotting.html">Tutorial Seven: plotting</a></li><li><a class="toctext" href="08_odds_and_ends.html">Tutorial Eight: odds and ends</a></li><li><a class="toctext" href="09_nonlinear.html">Tutorial Nine: nonlinear models</a></li><li class="current"><a class="toctext" href="10_parallel.html">Tutorial Ten: parallelism</a><ul class="internal"></ul></li><li><a class="toctext" href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a></li><li><a class="toctext" href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a></li><li><a class="toctext" href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a></li></ul></li><li><a class="toctext" href="../readings.html">Readings</a></li><li><a class="toctext" href="../apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href="10_parallel.html">Tutorial Ten: parallelism</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/10_parallel.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorial Ten: parallelism</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-Ten:-parallelism-1" href="#Tutorial-Ten:-parallelism-1">Tutorial Ten: parallelism</a></h1><p>The SDDP algorithm is highly parallelizable. In SDDP.jl, we chose to implement an approach that minimizes inter-process communication. We call this asynchronous SDDP.</p><p>In our implementation, one process is designated the <em>master</em> process and the remainder are designated as <em>slaves</em>. Each slave receives a full copy of the SDDP model and is set to work, performing iterations. At the end of each iteration, the slave passes the master the cuts it discovered during the iteration and receives any new cuts discovered by other slaves. The slave also queries the master as to whether it should terminate, perform another iteration, or perform a simulation. If the master requests a simulation (for example, to calculate a confidence interval in order to test for convergence), the slave returns the objective value of the simulation rather than a new set of cuts.</p><p>In this tutorial, we explain how to use the asynchronous solve feature of SDDP.jl.</p><p>First, we need to add some extra processes to Julia. This can be done two ways. We can start Julia using <code>julia -p N</code>, where <code>N</code> is the number of worker processes to add, or we can use the <code>addprocs(N)</code> function while Julia is running. The main process that co-ordinates everything is called the <em>master</em> process, and the remote  processes are called <em>workers</em>. For example, to add two workers, we run:</p><pre><code class="language-julia">julia&gt; addprocs(2)
+2-element Array{Int64, 1}:
+ 2
+ 3</code></pre><p>One way of running a command on all of the processes is to use the <code>@everywhere</code> macro. We can also use the <code>myid()</code> function to query the index of the process. For example:</p><pre><code class="language-julia">julia&gt; @everywhere println(&quot;Called from: $(myid())&quot;)
+Called from: 1
+        From worker 3:  Called from: 3
+        From worker 2:  Called from: 2</code></pre><p>Note that the order we receive things from the worker processes is not deterministic.</p><p>Now what we need to do is to initialize the random number generator on each process. However, we need to be careful not to use the same seed on each process or each process will perform identical SDDP iterations!</p><pre><code class="language-julia">julia&gt; @everywhere srand(123 * myid())</code></pre><p>This will set <code>srand(123)</code> on process <code>1</code>, <code>srand(246)</code> on process <code>2</code>, and so on.</p><p>!!!note     If you are using any data or function in the subproblem definition, these     need to be copied to every process. The easiest way to do this is to place     everything in a file and then run <code>@everywhere include(&quot;path/to/my/file&quot;)</code>.</p><p>Recall from <a href="04_markovian_policygraphs.html#Tutorial-Four:-Markovian-policy-graphs-1">Tutorial Four: Markovian policy graphs</a> that our model is:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0,
+      markov_transition = Array{Float64, 2}[
+          [ 1.0 ]&#39;,
+          [ 0.75 0.25 ],
+          [ 0.75 0.25 ; 0.25 0.75 ]
+      ]
+                                        ) do sp, t, i
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+        outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+    )
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, mupliplier = [1.2, 1.0, 0.8],
+        mupliplier * fuel_cost[t] * thermal_generation
+    )
+    if i == 1  # wet climate state
+        setnoiseprobability!(sp, [1/6, 1/3, 0.5])
+    else       # dry climate state
+        setnoiseprobability!(sp, [0.5, 1/3, 1/6])
+    end
+end</code></pre><p>We can solve this using SDDP.jl&#39;s asynchronous feature by passing an instance of <a href="../apireference.html#SDDP.Asynchronous"><code>Asynchronous</code></a> to the <code>solve_type</code> keyword in <a href="../apireference.html#JuMP.solve"><code>solve</code></a>:</p><pre><code class="language-julia">status = solve(m,
+    iteration_limit = 10,
+    solve_type      = Asynchronous()
+)</code></pre><p>If you have multiple processes, SDDP.jl will detect this and choose asynchronous by default. You can force the serial solution by passing an instance of <a href="../apireference.html#SDDP.Serial"><code>Serial</code></a> to <code>solve_type</code>.</p><p>The log is:</p><pre><code class="language-none">-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Asynchronous solver with 2 slave processors
+    Model:
+        Stages:         3
+        States:         1
+        Subproblems:    5
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+       27.000K         5.818K        |     2    0.0      0    0.0    0.0
+        0.000          6.198K        |     1    0.0      0    0.0    0.0
+        9.000K         6.952K        |     3    0.0      0    0.0    0.0
+        2.000K         7.135K        |     4    0.0      0    0.0    0.0
+        2.000K         7.135K        |     5    0.0      0    0.0    0.0
+        5.000K         7.135K        |     6    0.0      0    0.0    0.0
+        5.000K         7.135K        |     7    0.0      0    0.0    0.0
+        2.000K         7.135K        |     8    0.0      0    0.0    0.1
+       24.000K         7.135K        |     9    0.0      0    0.0    0.1
+       20.000K         7.135K        |    10    0.1      0    0.0    0.1
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         10
+        Termination Status: iteration_limit
+===============================================================================</code></pre><p>Note that the order of the <em>Cut #</em> column is not sequential because they are numbered in order of when they were created.</p><p>This concludes our tenth tutorial on <code>SDDP.jl</code>. In the next tutorial, <a href="11_DRO.html#Tutorial-Eleven:-distributionally-robust-SDDP-1">Tutorial Eleven: distributionally robust SDDP</a>, we will learn how distributionally robust optimization can be incorporated in <code>SDDP.jl</code>.</p><footer><hr/><a class="previous" href="09_nonlinear.html"><span class="direction">Previous</span><span class="title">Tutorial Nine: nonlinear models</span></a><a class="next" href="11_DRO.html"><span class="direction">Next</span><span class="title">Tutorial Eleven: distributionally robust SDDP</span></a></footer></article></body></html>
