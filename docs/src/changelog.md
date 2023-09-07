@@ -7,6 +7,16 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.6.3 (September 8, 2023)
+
+### Fixed
+
+ - Fixed default stopping rule with `iteration_limit` or `time_limit` set (#662)
+
+### Other
+
+ - Various documentation improvements (#651) (#657) (#659) (#660)
+
 ## v1.6.2 (August 24, 2023)
 
 ### Fixed
