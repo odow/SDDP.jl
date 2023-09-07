@@ -1054,7 +1054,7 @@ function train(
     if time_limit !== nothing
         push!(stopping_rules, TimeLimit(time_limit))
     end
-    # If no stoppinng rule exists, add the default rule.
+    # If no stopping rule exists, add the default rule.
     if isempty(stopping_rules)
         push!(stopping_rules, SimulationStoppingRule())
     end
