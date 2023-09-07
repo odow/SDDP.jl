@@ -1046,9 +1046,6 @@ function train(
     # something like stopping_rules = [SDDP.IterationLimit(100)], the vector
     # will be concretely typed and we can't add a TimeLimit.
     stopping_rules = convert(Vector{AbstractStoppingRule}, stopping_rules)
-    if isempty(stopping_rules)
-        push!(stopping_rules, SimulationStoppingRule())
-    end
     # Add the limits as stopping rules. An IterationLimit or TimeLimit may
     # already exist in stopping_rules, but that doesn't matter.
     if iteration_limit !== nothing
@@ -1056,6 +1053,10 @@ function train(
     end
     if time_limit !== nothing
         push!(stopping_rules, TimeLimit(time_limit))
+    end
+    # If no stoppinng rule exists, add the default rule.
+    if isempty(stopping_rules)
+        push!(stopping_rules, SimulationStoppingRule())
     end
     # Update the nodes with the selected cut type (SINGLE_CUT or MULTI_CUT)
     # and the cut deletion minimum.
