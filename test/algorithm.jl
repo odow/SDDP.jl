@@ -327,6 +327,19 @@ function test_print_log()
     return
 end
 
+function test_log_frequency_argument_error()
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
+        @stageobjective(node, x.out)
+    end
+    @test_throws ArgumentError SDDP.train(model; log_frequency = 0)
+    return
+end
+
 end  # module
 
 TestAlgorithm.runtests()

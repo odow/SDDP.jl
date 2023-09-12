@@ -880,7 +880,7 @@ Train the policy for `model`.
    progress. Defaults to `SDDP.log`.
 
  - `log_frequency::Int`: control the frequency with which the logging is
-    outputted (iterations/log). Defaults to `1`.
+    outputted (iterations/log). It must be at least `1`. Defaults to `1`.
 
  - `log_every_seconds::Float64`: control the frequency with which the logging is
    outputted (seconds/log). Defaults to `0.0`.
@@ -965,6 +965,10 @@ function train(
     forward_pass_callback::Function = (x) -> nothing,
     post_iteration_callback = result -> nothing,
 )
+    if log_frequency <= 0
+        msg = "`log_frequency` must be at least `1`. Got $log_frequency."
+        throw(ArgumentError(msg))
+    end
     function log_frequency_f(log::Vector{Log})
         if mod(length(log), log_frequency) != 0
             return false
