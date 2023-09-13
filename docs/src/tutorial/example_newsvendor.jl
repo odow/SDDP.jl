@@ -68,7 +68,7 @@ model = SDDP.PolicyGraph(
     build_subproblem,
     graph;
     sense = :Max,
-    upper_bound = 5 * maximum(d),
+    upper_bound = 5 * maximum(d), #= some large upper bound =#
     optimizer = HiGHS.Optimizer,
 )
 
@@ -240,6 +240,8 @@ Plots.plot(
 #  * What happens if you can only buy and sell integer numbers of newspapers?
 #    Try this by adding `Int` to the variable definitions:
 #    `@variable(subproblem, buy >= 0, Int)`
+#  * What happens if you use a different upper bound? Try an invalid one like
+#    `-100`, and a very large one like `1e12`.
 
 # ## Other graphs
 
