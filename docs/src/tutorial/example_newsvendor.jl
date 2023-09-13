@@ -131,10 +131,13 @@ end
 # policy:
 
 SDDP.train(model)
+
+#-
+
 simulations = SDDP.simulate(
     model,
     10,  #= number of replications =#
-    [:x, :u_sell, :u_buy];  #= variables to record =#
+    [:x, :u_sell, :u_make];  #= variables to record =#
     skip_undefined_variables = true,
 );
 
@@ -298,7 +301,7 @@ SDDP.train(model)
 simulations = SDDP.simulate(
     model,
     10,  #= number of replications =#
-    [:x, :u_sell, :u_buy];  #= variables to record =#
+    [:x, :u_sell, :u_make];  #= variables to record =#
     skip_undefined_variables = true,
 );
 
