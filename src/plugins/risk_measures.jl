@@ -88,6 +88,19 @@ struct AVaR <: AbstractRiskMeasure
     end
 end
 
+"""
+    CVaR(γ)
+
+The conditional value at risk (CV@R) risk measure.
+
+Computes the expectation of the γ fraction of worst outcomes. γ must be in `[0,
+1]`. When `γ=1`, this is equivalent to the [`Expectation`](@ref) risk measure.
+When `γ=0`, this is equivalent  to the [`WorstCase`](@ref) risk measure.
+
+CV@R is also known as the average value at risk (AV@R) or expected shortfall.
+"""
+const CVaR = AVaR
+
 function adjust_probability(
     measure::AVaR,
     risk_adjusted_probability::Vector{Float64},
