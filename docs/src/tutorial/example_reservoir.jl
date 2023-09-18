@@ -37,11 +37,33 @@ import Plots
 
 # ## Data
 
-# The data for this tutorial is contained in the `example_reservoir.csv` file in
-# the SDDP.jl repository. To run locally, [download the CSV file](https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/example_reservoir.csv),
-# then change `filename` to point to the location where you downloaded it to.
+# First, we need some data for the problem. For this tutorial, we'll write CSV
+# files to a temporary directory from Julia. If you have an existing file, you
+# could change the filename to point to that instead.
 
-filename = joinpath(@__DIR__, "example_reservoir.csv")
+dir = mktempdir()
+filename = joinpath(dir, "example_reservoir.csv")
+
+# Here is the data
+
+csv_data = """
+week,inflow,demand,cost
+1,3,7,10.2\n2,2,7.1,10.4\n3,3,7.2,10.6\n4,2,7.3,10.9\n5,3,7.4,11.2\n
+6,2,7.6,11.5\n7,3,7.8,11.9\n8,2,8.1,12.3\n9,3,8.3,12.7\n10,2,8.6,13.1\n
+11,3,8.9,13.6\n12,2,9.2,14\n13,3,9.5,14.5\n14,2,9.8,14.9\n15,3,10.1,15.3\n
+16,2,10.4,15.8\n17,3,10.7,16.2\n18,2,10.9,16.6\n19,3,11.2,17\n20,3,11.4,17.4\n
+21,3,11.6,17.7\n22,2,11.7,18\n23,3,11.8,18.3\n24,2,11.9,18.5\n25,3,12,18.7\n
+26,2,12,18.9\n27,3,12,19\n28,2,11.9,19.1\n29,3,11.8,19.2\n30,2,11.7,19.2\n
+31,3,11.6,19.2\n32,2,11.4,19.2\n33,3,11.2,19.1\n34,2,10.9,19\n35,3,10.7,18.9\n
+36,2,10.4,18.8\n37,3,10.1,18.6\n38,2,9.8,18.5\n39,3,9.5,18.4\n40,3,9.2,18.2\n
+41,2,8.9,18.1\n42,3,8.6,17.9\n43,2,8.3,17.8\n44,3,8.1,17.7\n45,2,7.8,17.6\n
+46,3,7.6,17.5\n47,2,7.4,17.5\n48,3,7.3,17.5\n49,2,7.2,17.5\n50,3,7.1,17.6\n
+51,3,7,17.7\n52,3,7,17.8\n
+"""
+write(filename, csv_data);
+
+# And here we read it into a DataFrame:
+
 data = CSV.read(filename, DataFrames.DataFrame)
 
 # It's easier to visualize the data if we plot it:
