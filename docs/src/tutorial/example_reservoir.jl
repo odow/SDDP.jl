@@ -10,8 +10,6 @@
 # Winter School "Planning under Uncertainty in Energy Markets," held March 26 to
 # 31 in Geilo, Norway._
 
-# [Download this tutorial as a notebook.](../../example_reservoir.ipynb)
-
 # The purpose of this tutorial is to explain how we can go from a deterministic
 # time-staged optimal control model in JuMP to a multistage stochastic
 # optimization model in `SDDP.jl`. As a motivating problem, we consider the
@@ -346,7 +344,7 @@ SDDP.plot(
 
 # !!! info
 #     If you have trouble viewing the plot, you can
-#     [open it in a new window](../../spaghetti_plot.html).
+#     [open it in a new window](spaghetti_plot.html).
 
 # ## Next steps
 

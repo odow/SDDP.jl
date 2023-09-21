@@ -121,7 +121,6 @@ Documenter.makedocs(
     ),
     clean = true,
     doctest = FIX_DOCTESTS ? :fix : true,
-    strict = true,
     pages = [
         "Home" => "index.md",
         "Tutorials" => [
