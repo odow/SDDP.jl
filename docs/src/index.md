@@ -9,7 +9,7 @@ CurrentModule = SDDP
 # Introduction
 
 [![Build Status](https://github.com/odow/SDDP.jl/workflows/CI/badge.svg?branch=master)](https://github.com/odow/SDDP.jl/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/odow/SDDP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/odow/SDDP.jl)
+[![code coverage](https://codecov.io/gh/odow/SDDP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/odow/SDDP.jl)
 
 Welcome to [SDDP.jl](https://github.com/odow/SDDP.jl), a package for solving large
 convex multistage stochastic programming problems using stochastic dual dynamic
