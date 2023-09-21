@@ -8,9 +8,12 @@ CurrentModule = SDDP
 
 # Introduction
 
-Welcome to the documentation for [`SDDP.jl`](https://github.com/odow/SDDP.jl), a
-package for solving large multistage convex stochastic programming problems
-using *stochastic dual dynamic programming*.
+[![Build Status](https://github.com/odow/SDDP.jl/workflows/CI/badge.svg?branch=master)](https://github.com/odow/SDDP.jl/actions?query=workflow%3ACI)
+[![code coverage](https://codecov.io/gh/odow/SDDP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/odow/SDDP.jl)
+
+Welcome to [SDDP.jl](https://github.com/odow/SDDP.jl), a package for solving large
+convex multistage stochastic programming problems using stochastic dual dynamic
+programming.
 
 SDDP.jl is built on [JuMP](https://jump.dev), so it supports a number of
 open-source and commercial solvers, making it a powerful and flexible tool for
@@ -35,6 +38,10 @@ julia> import Pkg
 julia> Pkg.add("SDDP")
 ```
 
+## License
+
+`SDDP.jl` is licensed under the [MPL 2.0 license](https://github.com/odow/SDDP.jl/blob/master/LICENSE.md).
+
 ## Resources for getting started
 
 There are a few ways to get started with SDDP.jl:
@@ -42,6 +49,8 @@ There are a few ways to get started with SDDP.jl:
  * Become familiar with JuMP by reading the [JuMP documentation](http://jump.dev/JuMP.jl/stable/)
  * Read the introductory tutorial [An introduction to SDDP.jl](@ref)
  * Browse some of the examples, such as [Example: deterministic to stochastic](@ref)
+
+## Getting help
 
 If you need help, please [open a GitHub issue](https://github.com/odow/SDDP.jl/issues/new).
 
