@@ -15,8 +15,7 @@ programming.
 
 ## Documentation
 
-You can find the documentation at
-[https://odow.github.io/SDDP.jl/stable/](https://odow.github.io/SDDP.jl/stable).
+You can find the documentation at [sddp.dev](https://sddp.dev).
 
 ## Help
 
