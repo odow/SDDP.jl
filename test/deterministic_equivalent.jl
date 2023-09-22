@@ -31,7 +31,9 @@ function test_acyclic_linear()
         @stageobjective(sp, x.out)
     end
     @test SDDP.is_cyclic(model) == false
-    @test typeof(SDDP.deterministic_equivalent(model)) == JuMP.Model
+    det = SDDP.deterministic_equivalent(model)
+    @test typeof(det) == JuMP.Model
+    @test objetive_sense(det) == MOI.MIN_SENSE
     return
 end
 

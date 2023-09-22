@@ -10,9 +10,10 @@
 using SDDP, HiGHS, Test
 
 function fast_hydro_thermal()
-    model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
         lower_bound = 0.0,
+        sense = :Max,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, 0 <= x <= 8, SDDP.State, initial_value = 0.0)
@@ -29,15 +30,16 @@ function fast_hydro_thermal()
         SDDP.parameterize(sp, RAINFALL) do ω
             return JuMP.fix(ξ, ω)
         end
-        @stageobjective(sp, 5 * p)
+        @stageobjective(sp, -5 * p)
     end
 
     det = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
     set_silent(det)
     JuMP.optimize!(det)
-    @test JuMP.objective_value(det) == 10
+    @test JuMP.objective_sense(det) == MOI.MAX_SENSE
+    @test JuMP.objective_value(det) == -10
     SDDP.train(model)
-    @test SDDP.calculate_bound(model) == 10
+    @test SDDP.calculate_bound(model) == -10
     return
 end
 
