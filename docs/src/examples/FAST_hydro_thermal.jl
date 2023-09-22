@@ -12,7 +12,7 @@ using SDDP, HiGHS, Test
 function fast_hydro_thermal()
     model = SDDP.LinearPolicyGraph(;
         stages = 2,
-        lower_bound = 0.0,
+        upper_bound = 0.0,
         sense = :Max,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
