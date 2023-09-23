@@ -7,6 +7,19 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.6.4 (September 23, 2023)
+
+### Fixed
+
+ - Fixed error for invalid `log_frequency` values (#665)
+ - Fixed objective sense in [`deterministic_equivalent`](@ref) (#673)
+
+### Other
+
+ - Documentation updates (#658) (#666) (#671)
+ - Switch to GitHub action for deploying docs (#668) (#670)
+ - Update to Documenter@1 (#669)
+
 ## v1.6.3 (September 8, 2023)
 
 ### Fixed
