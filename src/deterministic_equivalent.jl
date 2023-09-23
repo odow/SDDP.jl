@@ -232,6 +232,7 @@ function deterministic_equivalent(
     end
     # Step 2: create a extensive-form JuMP model and add subproblems.
     model = optimizer === nothing ? JuMP.Model() : JuMP.Model(optimizer)
+    set_objective_sense(model, pg.objective_sense)
     for child in tree.children
         add_scenario_to_ef(model, child, check_time_limit)
     end

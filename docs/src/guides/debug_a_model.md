@@ -104,8 +104,9 @@ query the solution.
 ```jldoctest tutorial_eight; filter=r"5.4725[0]+[0-9]"
 julia> det_equiv = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
 A JuMP Model
-Feasibility problem with:
+Minimization problem with:
 Variables: 24
+Objective function type: AffExpr
 `AffExpr`-in-`MathOptInterface.EqualTo{Float64}`: 10 constraints
 `VariableRef`-in-`MathOptInterface.EqualTo{Float64}`: 8 constraints
 `VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 6 constraints
