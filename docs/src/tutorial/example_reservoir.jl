@@ -341,7 +341,7 @@ SDDP.plot(
 # the time horizon. This is because our model does not consider the cost of
 # future years after the `T` weeks.
 
-# We can fix this using a cylic policy graph. One way to construct a graph is
+# We can fix this using a cyclic policy graph. One way to construct a graph is
 # with the [`SDDP.UnicyclicGraph`](@ref) constructor:
 
 SDDP.UnicyclicGraph(0.7; num_nodes = 2)
@@ -349,7 +349,7 @@ SDDP.UnicyclicGraph(0.7; num_nodes = 2)
 # This graph has two nodes, and a loop from node 2 back to node 1 with
 # probability 0.7.
 
-# We can construct a cylic policy graph as follows:
+# We can construct a cyclic policy graph as follows:
 
 graph = SDDP.UnicyclicGraph(0.95; num_nodes = T)
 model = SDDP.PolicyGraph(
