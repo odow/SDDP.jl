@@ -4,7 +4,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # Example: hydro-thermal scheduling
+# # Example: deterministic to stochastic
 
 # The purpose of this tutorial is to explain how we can go from a deterministic
 # time-staged optimal control model in JuMP to a multistage stochastic
@@ -342,7 +342,7 @@ SDDP.plot(
 # future years after the `T` weeks.
 
 # We can fix this using a cylic policy graph. One way to construct a graph is
-# with the [`UnicyclicGraph`](@ref) constructor:
+# with the [`SDDP.UnicyclicGraph`](@ref) constructor:
 
 SDDP.UnicyclicGraph(0.7; num_nodes = 2)
 
