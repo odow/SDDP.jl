@@ -157,7 +157,7 @@ end
 
 SDDP.train(model)
 
-# One way to query the optimal policy is with [`DecisionRule`](@ref):
+# One way to query the optimal policy is with [`SDDP.DecisionRule`](@ref):
 
 first_stage_rule = SDDP.DecisionRule(model; node = 1)
 
