@@ -41,21 +41,80 @@ end
 
 """
     Statistical(;
-        num_replications,
-        iteration_period = 1,
-        z_score = 1.96,
-        verbose = true,
+        num_replications::Int,
+        iteration_period::Int = 1,
+        z_score::Float64 = 1.96,
+        verbose::Bool = true,
+        disable_warning::Bool = false,
     )
 
 Perform an in-sample Monte Carlo simulation of the policy with
-`num_replications` replications every `iteration_period`s. Terminate if the
-deterministic bound (lower if minimizing) calls into the confidence interval for
-the mean of the simulated cost. If `verbose = true`, print the confidence
-interval.
+`num_replications` replications every `iteration_period`s and terminate if the
+deterministic bound (lower if minimizing) falls into the confidence interval for
+the mean of the simulated cost.
 
-Note that this tests assumes that the simulated values are normally distributed.
-In infinite horizon models, this is almost never the case. The distribution is
-usually closer to exponential or log-normal.
+If `verbose = true`, print the confidence interval.
+
+If `disable_warning = true`, disable the warning telling you not to use this
+stopping rule (see below).
+
+## Why this stopping rule is not good
+
+This stopping rule is one of the most common stopping rules seen in the
+literature. Don't follow the crowd. It is a poor choice for your model, and
+should be rarely used. Instead, you should use the default stopping rule, or use
+a fixed limit like a time or iteration limit.
+
+To understand why this stopping rule is a bad idea, assume we have conducted
+`num_replications` simulations and the objectives are in a vector
+`objectives::Vector{Float64}`.
+
+Our mean is `μ = mean(objectives)` and the half-width of the confidence interval
+is `w = z_score * std(objectives) / sqrt(num_replications)`.
+
+Many papers suggest terminating the algorithm once the deterministic bound
+(lower if minimizing, upper if maximizing) is contained within the confidence
+interval. That is, if `μ - w <= bound <= μ + w`. Even worse, some papers define
+an optimization gap of `(μ + w) / bound` (if minimizing) or `(μ - w) / bound`
+(if maximizing), and they terminate once the gap is less than a value like 1%.
+
+Both of these approaches are misleading, and more often than not, they will
+result in terminating with a sub-optimal policy that performs worse than
+expected. There are two main reasons for this:
+
+ 1. The half-width depends on the number of replications. To reduce the
+    computational cost, users are often tempted to choose a small number of
+    replications. This increases the half-width and makes it more likely that
+    the algorithm will stop early. But if we choose a large number of
+    replications, then the computational cost is high, and we would have been
+    better off to run a fixed number of iterations and use that computational
+    time to run extra training iterations.
+ 2. The confidence interval assumes that the simulated values are normally
+    distributed. In infinite horizon models, this is almost never the case. The
+    distribution is usually closer to exponential or log-normal.
+
+There is a third, more technical reason which relates to the conditional
+dependence of constructing multiple confidence intervals.
+
+The default value of `z_score = 1.96` corresponds to a 95% confidence
+interval. You should interpret the interval as "if we re-run this simulation
+100 times, then the true mean will lie in the confidence interval 95 times
+out of 100." But if the bound is within the confidence interval, then we know
+the true mean cannot be better than the bound. Therfore, there is a more than
+95% chance that the mean is within the interval.
+
+A separate problem arises if we simulate, find that the bound is outside the
+confidence interval, keep training, and then re-simulate to compute a new
+confidence interval. Because we will terminate when the bound enters the
+confidence interval, the repeated construction of a confidence interval means
+that the unconditional probability that we terminate with a false positive is
+larger than 5% (there are now more chances that the sample mean is optimistic
+and that the confidence interval includes the bound but not the true mean). One
+fix is to simulate with a sequentially increasing number of replicates, so that
+the unconditional probability stays at 95%, but this runs into the problem of
+computational cost. For more information on sequential sampling, see, for
+example, Güzin Bayraksan, David P. Morton, (2011) A Sequential Sampling
+Procedure for Stochastic Programming. Operations Research 59(4):898-913.
 """
 struct Statistical <: AbstractStoppingRule
     num_replications::Int
@@ -67,7 +126,17 @@ struct Statistical <: AbstractStoppingRule
         iteration_period = 1,
         z_score = 1.96,
         verbose = true,
+        disable_warning::Bool = false,
     )
+        if !disable_warning
+            @warn(
+                "Are you really sure you want to use this stopping rule? " *
+                "Read why we don't recommend it by typing `? " *
+                "SDDP.Statistical` into the REPL to read the docstring.\n\n" *
+                "If you understand what you are doing, you can disable this " *
+                "warning with `SDDP.Statistical(; disable_warning = true)`",
+            )
+        end
         return new(num_replications, iteration_period, z_score, verbose)
     end
 end
