@@ -74,6 +74,27 @@ function test_MarkovianGraph()
     return
 end
 
+function test_duplicate_nodes()
+    function simulator()
+        inflow = zeros(3)
+        current = 50.0
+        Ω = [-10.0, 0.1, 9.6]
+        for t in 1:3
+            current += rand(Ω)
+            inflow[t] = current
+        end
+        return inflow
+    end
+    num_nodes = Int[]
+    for _ in 1:100
+        g = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)
+        push!(num_nodes, length(g.nodes))
+    end
+    @test minimum(num_nodes) < 9
+    @test maximum(num_nodes) == 9
+    return
+end
+
 end  # module
 
 TestModelingAids.runtests()
