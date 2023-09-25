@@ -51,6 +51,28 @@ function add_binder_links(filename, content)
     return replace(content, m[1] => m[1] * links)
 end
 
+function _link_example(content)
+    jl_url = match(r"EditURL = \"(.+?)\"", content)[1]
+    if !_IS_GITHUB_ACTIONS
+        # The link won't work locally. So hard-code in a URL.
+        jl_url = replace(
+            jl_url,
+            "<unknown>" => "https://github.com/odow/SDDP.jl/tree/master",
+        )
+    end
+    title_line = findfirst(r"\n# .+?\n", content)
+    line = content[title_line]
+    ipynb_url = replace(jl_url, ".jl" => ".ipynb")
+    new_title = string(
+        line,
+        "\n",
+        "_This tutorial was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl)._\n",
+        "[_Download the source as a `.jl` file_]($jl_url).\n",
+        "[_Download the source as a `.ipynb` file_]($ipynb_url).\n",
+    )
+    return replace(content, line => new_title)
+end
+
 for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
     for jl_filename in list_of_sorted_files(dir, dir, ".jl")
         Random.seed!(12345)
@@ -64,13 +86,12 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
             jl_filename,
             dir;
             documenter = true,
-            preprocess = content -> add_binder_links(
-                replace(jl_filename, joinpath(@__DIR__, "src", "") => ""),
-                content,
-            ),
+            preprocess = _link_example,
             postprocess = content -> replace(content, "nothing #hide" => ""),
+            # Turn off the footer. We manually add a modified one.
+            credit = false,
         )
-        Literate.notebook(jl_filename, dir; execute = false)
+        Literate.notebook(jl_filename, dir; execute = false, credit = false)
     end
 end
 
