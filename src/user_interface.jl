@@ -259,7 +259,6 @@ function _add_to_or_create_edge(
     return add_edge(graph, edge, probability)
 end
 
-
 """
     add_ambiguity_set(
         graph::Graph{T},
