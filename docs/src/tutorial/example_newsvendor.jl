@@ -3,7 +3,7 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # Example: Two-stage Newsvendor
+# # Example: two-stage newsvendor
 
 # The purpose of this tutorial is to demonstrate how to model and solve a
 # two-stage stochastic program.
@@ -32,79 +32,109 @@ d = sort!(rand(D, N));
 P = fill(1 / N, N);
 StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
+# ## The L-Shaped method
+
+# The L-Shaped method is a way of solving two-stage stochastic programs by
+# Benders' decomposition. It takes the problem:
+
+# ```math
+# \begin{aligned}
+# \max\limits_{x,y_\omega} \;\; & -2x + \mathbb{E}_\omega[5y_\omega - 0.1(x - y_\omega)] \\
+#   & y_\omega \le x              & \quad \forall \omega \in \Omega \\
+#   & 0 \le y_\omega \le d_\omega & \quad \forall \omega \in \Omega \\
+#   & x \ge 0.
+# \end{aligned}
+# ```
+
+# and decomposes it into a second-stage problem:
+
+# ```math
+# \begin{aligned}
+# V_2(\bar{x}, d_\omega) = \max\limits_{x,x^\prime,y_\omega} \;\; & 5y_\omega - x^\prime \\
+#   & y_\omega \le x \\
+#   & x^\prime = x - y_\omega \\
+#   & 0 \le y_\omega \le d_\omega \\
+#   & x = \bar{x} & [\lambda]
+# \end{aligned}
+# ```
+
+# and a first-stage problem:
+
+# ```math
+# \begin{aligned}
+# V^K = \max\limits_{x,\theta} \;\; & -2x + \theta \\
+#   & \theta \le \mathbb{E}_\omega[V_2(x^k, \omega) + \lambda^k(x - x^k)] & \quad k = 1,\ldots,K\\
+#   & x \ge 0,
+# \end{aligned}
+# ```
+
+# Here's a function to compute the second-stage problem;
+
+function solve_second_stage(x̅, d_ω)
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+    @variable(model, x_in)
+    @variable(model, x_out >= 0)
+    fix(x_in, x̅)
+    @variable(model, 0 <= u_sell <= d_ω)
+    @constraint(model, x_out == x_in - u_sell)
+    @constraint(model, u_sell <= x_in)
+    @objective(model, Max, 5 * u_sell - 0.1 * x_out)
+    optimize!(model)
+    return (
+        V = objective_value(model),
+        λ = reduced_cost(x_in),
+        x = value(x_out),
+        u = value(u_sell),
+    )
+end
+
+solve_second_stage(200, 170)
+
+# Here's the first-stage subproblem:
+
+model = Model(HiGHS.Optimizer)
+set_silent(model)
+@variable(model, x_in == 0)
+@variable(model, x_out >= 0)
+@variable(model, u_make >= 0)
+@constraint(model, x_out == x_in + u_make)
+@variable(model, θ <= 10_000)
+@objective(model, Max, -2 * u_make + θ)
+
+# Importantly, to ensure we have a bounded solution, we need to add an upper
+# bound to the variable `θ`.
+
+kIterationLimit = 100
+for k in 1:kIterationLimit
+    println("Solving iteration k = $k")
+    optimize!(model)
+    xᵏ = value(x_out)
+    println("  xᵏ = $xᵏ")
+    ub = objective_value(model)
+    println("  V̅ = $ub")
+    ret = [solve_second_stage(xᵏ, d[ω]) for ω in Ω]
+    lb = value(-2 * u_make) + sum(p * r.V for (p, r) in zip(P, ret))
+    println("  V̲ = $lb")
+    if ub - lb < 1e-6
+        println("Terminating with near-optimal solution")
+        break
+    end
+    c = @constraint(
+        model,
+        θ <= sum(p * (r.V + r.λ * (x_out - xᵏ)) for (p, r) in zip(P, ret)),
+    )
+    println("  Added cut: $c")
+end
+
 # ## Policy Graph
 
 # Now we can formulate and train a policy for the two-stage newsvendor problem.
 
-# First, we need to construct the graph:
-
-graph = SDDP.LinearGraph(2)
-
-# Then, we need to write a function which builds a JuMP model for each node in
-# the graph:
-
-function build_subproblem(subproblem::JuMP.Model, stage::Int)
-    @variable(subproblem, x >= 0, SDDP.State, initial_value = 0)
-    if stage == 1
-        @variable(subproblem, u_make >= 0)
-        @constraint(subproblem, x.out == x.in + u_make)
-        @stageobjective(subproblem, -2 * u_make)
-    else
-        @variable(subproblem, u_sell >= 0)
-        @constraint(subproblem, u_sell <= x.in)
-        @constraint(subproblem, x.out == x.in - u_sell)
-        SDDP.parameterize(subproblem, d, P) do ω
-            set_upper_bound(u_sell, ω)
-            return
-        end
-        @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out)
-    end
-    return
-end
-
-# Then, we can combine the graph and the subproblem builder into a policy graph:
-
-model = SDDP.PolicyGraph(
-    build_subproblem,
-    graph;
-    sense = :Max,
-    upper_bound = 5 * maximum(d), #= some large upper bound =#
-    optimizer = HiGHS.Optimizer,
-)
-
-# Use [`SDDP.train`](@ref) to construct the policy:
-
-SDDP.train(model)
-
-# To check the first-stage buy decision, we need to obtain a decision rule for
-# the first-stage node `1`:
-
-first_stage_rule = SDDP.DecisionRule(model, node = 1)
-
-# Then we can evaluate it, passing in a starting point for the incoming state:
-
-solution = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x => 0.0))
-
-# The optimal value of the state variable is stored here:
-
-solution.outgoing_state[:x]
-
-# We can simplify the model construction by using [`SDDP.LinearPolicyGraph`](@ref):
-
-model = SDDP.LinearPolicyGraph(
-    build_subproblem;
-    stages = 2,
-    sense = :Max,
-    upper_bound = 5 * maximum(d),
-    optimizer = HiGHS.Optimizer,
-)
-
-# and we can use Julia's `do` syntax to avoid writing a separate function:
-
 model = SDDP.LinearPolicyGraph(;
     stages = 2,
     sense = :Max,
-    upper_bound = 5 * maximum(d),
+    upper_bound = 5 * maximum(d),  # The `M` in θ <= M
     optimizer = HiGHS.Optimizer,
 ) do subproblem::JuMP.Model, stage::Int
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 0)
@@ -125,14 +155,30 @@ model = SDDP.LinearPolicyGraph(;
     return
 end
 
+SDDP.train(model)
+
+# One way to query the optimal policy is with [`SDDP.DecisionRule`](@ref):
+
+first_stage_rule = SDDP.DecisionRule(model; node = 1)
+
+#-
+
+solution_1 = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x => 0.0))
+
+# Here's the second stage:
+
+second_stage_rule = SDDP.DecisionRule(model; node = 2)
+solution = SDDP.evaluate(
+    second_stage_rule;
+    incoming_state = Dict(:x => solution_1.outgoing_state[:x]),
+    noise = 170.0,  # A value of d[ω], can be out-of-sample.
+    controls_to_record = [:u_sell],
+)
+
 # ## Simulation
 
 # Querying the decision rules is tedious. It's often more useful to simulate the
 # policy:
-
-SDDP.train(model)
-
-#-
 
 simulations = SDDP.simulate(
     model,
@@ -245,76 +291,3 @@ Plots.plot(
 #    `@variable(subproblem, buy >= 0, Int)`
 #  * What happens if you use a different upper bound? Try an invalid one like
 #    `-100`, and a very large one like `1e12`.
-
-# ## Other graphs
-
-# The two-stage newsvendor problem can be extended to other graphs. For example,
-# here is a three-stage graph:
-
-graph = SDDP.Graph(:root)
-SDDP.add_node(graph, :make_only)
-SDDP.add_node(graph, :sell_only)
-SDDP.add_node(graph, :make_and_sell)
-SDDP.add_edge(graph, :root => :make_only, 1.0)
-SDDP.add_edge(graph, :make_only => :make_and_sell, 1.0)
-SDDP.add_edge(graph, :make_and_sell => :sell_only, 1.0)
-graph
-
-# with the model formulation:
-
-model = SDDP.PolicyGraph(
-    graph;
-    sense = :Max,
-    upper_bound = 2 * 5 * maximum(d),
-    optimizer = HiGHS.Optimizer,
-) do subproblem::JuMP.Model, node::Symbol
-    @variable(subproblem, x >= 0, SDDP.State, initial_value = 0)
-    if node == :make_only
-        @variable(subproblem, u_make >= 0)
-        @constraint(subproblem, x.out == x.in + u_make)
-        @stageobjective(subproblem, -2 * u_make)
-    elseif node == :sell_only
-        @variable(subproblem, u_sell >= 0)
-        @constraint(subproblem, u_sell <= x.in)
-        @constraint(subproblem, x.out == x.in - u_sell)
-        SDDP.parameterize(subproblem, d, P) do ω
-            set_upper_bound(u_sell, ω)
-            return
-        end
-        @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out)
-    else
-        @assert node == :make_and_sell
-        @variable(subproblem, u_sell >= 0)
-        @variable(subproblem, u_make >= 0)
-        @constraint(subproblem, u_sell <= x.in)
-        @constraint(subproblem, x.out == x.in - u_sell + u_make)
-        SDDP.parameterize(subproblem, d, P) do ω
-            set_upper_bound(u_sell, ω)
-            return
-        end
-        @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out - 2 * u_make)
-    end
-    return
-end
-
-SDDP.train(model)
-simulations = SDDP.simulate(
-    model,
-    10,  #= number of replications =#
-    [:x, :u_sell, :u_make];  #= variables to record =#
-    skip_undefined_variables = true,
-);
-
-#-
-
-simulations[1][1]
-
-#-
-
-simulations[1][2]
-
-#-
-
-simulations[1][3]
-
-# Try changing the graph. What happens if you add a cycle?
