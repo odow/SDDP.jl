@@ -22,6 +22,9 @@ import Test
 # The formulation of our optimal power flow problem depends on `model_type`,
 # which must be one of the `PowerModels` formulations.
 
+# (To run locally, download [`pglib_opf_case5_pjm.m`](pglib_opf_case5_pjm.m) and
+# update `filename` appropriately.)
+
 function build_model(model_type)
     filename = joinpath(@__DIR__, "pglib_opf_case5_pjm.m")
     data = PowerModels.parse_file(filename)
