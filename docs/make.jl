@@ -62,6 +62,7 @@ function _link_example(content, filename)
         "[_Download the source as a `.jl` file_]($filename).\n",
         "[_Download the source as a `.ipynb` file_]($ipynb).\n",
     )
+    contennt = replace(content, "nothing #hide" => ""),
     return replace(content, line => new_title)
 end
 
@@ -79,8 +80,7 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
             jl_filename,
             dir;
             documenter = true,
-            preprocess = content -> _link_example(content, filename),
-            postprocess = content -> replace(content, "nothing #hide" => ""),
+            postprocess = content -> _link_example(content, filename),
             # Turn off the footer. We manually add a modified one.
             credit = false,
         )
