@@ -51,24 +51,16 @@ function add_binder_links(filename, content)
     return replace(content, m[1] => m[1] * links)
 end
 
-function _link_example(content)
-    jl_url = match(r"EditURL = \"(.+?)\"", content)[1]
-    if !_IS_GITHUB_ACTIONS
-        # The link won't work locally. So hard-code in a URL.
-        jl_url = replace(
-            jl_url,
-            "<unknown>" => "https://github.com/odow/SDDP.jl/tree/master",
-        )
-    end
+function _link_example(content, filename)
     title_line = findfirst(r"\n# .+?\n", content)
     line = content[title_line]
-    ipynb_url = replace(jl_url, ".jl" => ".ipynb")
+    ipynb = replace(filename, ".jl" => ".ipynb")
     new_title = string(
         line,
         "\n",
         "_This tutorial was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl)._\n",
-        "[_Download the source as a `.jl` file_]($jl_url).\n",
-        "[_Download the source as a `.ipynb` file_]($ipynb_url).\n",
+        "[_Download the source as a `.jl` file_]($filename).\n",
+        "[_Download the source as a `.ipynb` file_]($ipynb).\n",
     )
     return replace(content, line => new_title)
 end
@@ -82,11 +74,12 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
             _include_sandbox(jl_filename)
         end
         Random.seed!(12345)
+        filename = replace(jl_filename, dirname(jl_filename) => "")
         Literate.markdown(
             jl_filename,
             dir;
             documenter = true,
-            preprocess = _link_example,
+            preprocess = content -> _link_example(content, filename),
             postprocess = content -> replace(content, "nothing #hide" => ""),
             # Turn off the footer. We manually add a modified one.
             credit = false,
