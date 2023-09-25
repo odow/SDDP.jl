@@ -7,6 +7,17 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.6.5 (September 25, 2023)
+
+### Fixed
+
+ - Fixed duplicate nodes in [`MarkovianGraph`](@ref) (#681)
+
+### Other
+
+ - Updated tutorials (#677) (#678) (#682) (#683)
+ - Fixed documentation preview (#679)
+
 ## v1.6.4 (September 23, 2023)
 
 ### Fixed
