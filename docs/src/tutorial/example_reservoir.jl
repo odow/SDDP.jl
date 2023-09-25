@@ -6,21 +6,10 @@
 
 # # Example: deterministic to stochastic
 
-# _This tutorial was written by Oscar Dowson and Andy Philpott for the 2023
-# Winter School "Planning under Uncertainty in Energy Markets," held March 26 to
-# 31 in Geilo, Norway._
-
 # The purpose of this tutorial is to explain how we can go from a deterministic
 # time-staged optimal control model in JuMP to a multistage stochastic
 # optimization model in `SDDP.jl`. As a motivating problem, we consider the
 # hydro-thermal problem with a single reservoir.
-
-# For variations on this problem, see the examples and tutorials:
-#
-#  * [An introduction to SDDP.jl](@ref)
-#  * [Hydro-thermal scheduling](@ref)
-#  * [Hydro valleys](@ref)
-#  * [Infinite horizon hydro-thermal](@ref)
 
 # ## Packages
 
@@ -346,53 +335,95 @@ SDDP.plot(
 #     If you have trouble viewing the plot, you can
 #     [open it in a new window](spaghetti_plot.html).
 
+# ## Cyclic graphs
+
+# One major problem with our model is that the reservoir is empty at the end of
+# the time horizon. This is because our model does not consider the cost of
+# future years after the `T` weeks.
+
+# We can fix this using a cyclic policy graph. One way to construct a graph is
+# with the [`SDDP.UnicyclicGraph`](@ref) constructor:
+
+SDDP.UnicyclicGraph(0.7; num_nodes = 2)
+
+# This graph has two nodes, and a loop from node 2 back to node 1 with
+# probability 0.7.
+
+# We can construct a cyclic policy graph as follows:
+
+graph = SDDP.UnicyclicGraph(0.95; num_nodes = T)
+model = SDDP.PolicyGraph(
+    graph;
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, t
+    @variable(
+        sp,
+        0 <= x_storage <= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, 0 <= u_flow <= flow_max)
+    @variable(sp, 0 <= u_thermal)
+    @variable(sp, 0 <= u_spill)
+    @variable(sp, ω_inflow)
+    Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
+    SDDP.parameterize(sp, Ω, P) do ω
+        fix(ω_inflow, data[t, :inflow] + ω)
+        return
+    end
+    @constraint(sp, x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow)
+    @constraint(sp, u_flow + u_thermal == data[t, :demand])
+    @stageobjective(sp, data[t, :cost] * u_thermal)
+    return
+end
+
+# Notice how the only thing that has changed is our graph; the subproblems
+# remain the same.
+
+# Let's train a policy:
+
+SDDP.train(model; iteration_limit = 100)
+
+# When we simulate now, each trajectory will be a different length, because
+# each cycle has a 95% probability of continuing and a 5% probability of
+# stopping.
+
+simulations = SDDP.simulate(model, 3);
+length.(simulations)
+
+# We can simulate a fixed number of cycles by passing a `sampling_scheme`:
+
+simulations = SDDP.simulate(
+    model,
+    100,
+    [:x_storage, :u_flow];
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        max_depth = 5 * T,
+        terminate_on_dummy_leaf = false,
+    ),
+);
+length.(simulations)
+
+# Let's visualize the policy:
+
+Plots.plot(
+    SDDP.publication_plot(simulations; ylabel = "Storage") do sim
+        return sim[:x_storage].out
+    end,
+    SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
+        return sim[:u_flow]
+    end;
+    layout = (2, 1),
+)
+
 # ## Next steps
 
-# Take this model and modify it following the suggestions below. The SDDP.jl
-# documentation has a range of similar examples and hints for how to achieve
-# them.
-
-# ### Terminal value functions
-
-# The model ends with an empty reservoir. That isn't ideal for the following
-# year. Can you modify the objective in the final stage to encourage ending the
-# year with a full reservoir?
-
-# You might write some variation of:
-#
-# ```julia
-# if t == 52
-#     @variable(sp, terminal_cost_function >= 0)
-#     @constraint(sp, terminal_cost_function >= reservoir_initial - x_storage.out)
-#     @stageobjective(sp, data[t, :cost] * u_thermal + terminal_cost_function)
-# else
-#     @stageobjective(sp, data[t, :cost] * u_thermal)
-# end
-# ```
-
-# ### Higher fidelity modeling
-
 # Our model is very basic. There are many aspects that we could improve:
-#
-# * Instead of hard-coding a terminal value function, can you solve an infinite
-#   horizon model? What are the differences?
 #
 # * Can you add a second reservoir to make a river chain?
 #
 # * Can you modify the problem and data to use proper units, including a
 #   conversion between the volume of water flowing through the turbine and the
 #   electrical power output?
-#
-# * Can you add random demand or cost data as well as inflows?
-
-# ### Algorithmic considerations
-
-# The algorithm implemented by SDDP.jl has a number of tuneable parameters:
-#
-# * Try using a different lower bound. What happens if it is too low, or too
-#   high?
-#
-# * Was our stopping rule correct? What happens if we use fewer or more
-#   iterations? What other stopping rules could you try?
-#
-# * Can you add a risk measure to make the policy risk-averse?
