@@ -51,6 +51,21 @@ function add_binder_links(filename, content)
     return replace(content, m[1] => m[1] * links)
 end
 
+function _link_example(content, filename)
+    title_line = findfirst(r"\n# .+?\n", content)
+    line = content[title_line]
+    ipynb = filename[1:end-3] * ".ipynb"
+    new_title = string(
+        line,
+        "\n",
+        "_This tutorial was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl)._\n",
+        "[_Download the source as a `.jl` file_]($filename).\n",
+        "[_Download the source as a `.ipynb` file_]($ipynb).\n",
+    )
+    contennt = replace(content, "nothing #hide" => ""),
+    return replace(content, line => new_title)
+end
+
 for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
     for jl_filename in list_of_sorted_files(dir, dir, ".jl")
         Random.seed!(12345)
@@ -60,17 +75,16 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
             _include_sandbox(jl_filename)
         end
         Random.seed!(12345)
+        filename = replace(jl_filename, dirname(jl_filename) * "/" => "")
         Literate.markdown(
             jl_filename,
             dir;
             documenter = true,
-            preprocess = content -> add_binder_links(
-                replace(jl_filename, joinpath(@__DIR__, "src", "") => ""),
-                content,
-            ),
-            postprocess = content -> replace(content, "nothing #hide" => ""),
+            postprocess = content -> _link_example(content, filename),
+            # Turn off the footer. We manually add a modified one.
+            credit = false,
         )
-        Literate.notebook(jl_filename, dir; execute = false)
+        Literate.notebook(jl_filename, dir; execute = false, credit = false)
     end
 end
 
