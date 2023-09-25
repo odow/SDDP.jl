@@ -75,7 +75,7 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
             _include_sandbox(jl_filename)
         end
         Random.seed!(12345)
-        filename = replace(jl_filename, joinpath(@__DIR__, "src", "") => "")
+        filename = replace(jl_filename, dirname(jl_filename) * "/" => "")
         Literate.markdown(
             jl_filename,
             dir;
