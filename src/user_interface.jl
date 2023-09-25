@@ -181,6 +181,13 @@ function add_node(graph::Graph{T}, node) where {T}
     return error("Unable to add node $(node). Nodes must be of type $(T).")
 end
 
+function _add_node_if_missing(graph::Graph{T}, node::T) where {T}
+    if haskey(graph.nodes, node) || node == graph.root_node
+        return
+    end
+    return add_node(graph, node)
+end
+
 """
     add_edge(graph::Graph{T}, edge::Pair{T, T}, probability::Float64) where {T}
 
@@ -237,6 +244,21 @@ function add_edge(
     end
     return
 end
+
+function _add_to_or_create_edge(
+    graph::Graph{T},
+    edge::Pair{T,T},
+    probability::Float64,
+) where {T}
+    for (i, (child, p)) in enumerate(graph.nodes[edge[1]])
+        if child == edge[2]
+            graph.nodes[edge[1]][i] = (edge[2], p + probability)
+            return
+        end
+    end
+    return add_edge(graph, edge, probability)
+end
+
 
 """
     add_ambiguity_set(

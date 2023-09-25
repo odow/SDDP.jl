@@ -178,14 +178,18 @@ function MarkovianGraph(
         _lattice_approximation(simulator, states, scenarios, simulations)
     g = Graph((0, 0.0))
     for (i, si) in enumerate(support[1])
-        add_node(g, (1, si))
-        add_edge(g, (0, 0.0) => (1, si), probability[1][1, i])
+        _add_node_if_missing(g, (1, si))
+        _add_to_or_create_edge(g, (0, 0.0) => (1, si), probability[1][1, i])
     end
     for t in 2:length(support)
         for (j, sj) in enumerate(support[t])
-            add_node(g, (t, sj))
+            _add_node_if_missing(g, (t, sj))
             for (i, si) in enumerate(support[t-1])
-                add_edge(g, (t - 1, si) => (t, sj), probability[t][i, j])
+                _add_to_or_create_edge(
+                    g,
+                    (t - 1, si) => (t, sj),
+                    probability[t][i, j],
+                )
             end
         end
     end
