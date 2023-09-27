@@ -80,10 +80,26 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # ```
 # where $M$ is an upper bound on possible values of $V_2$.
 
+# It is also useful to see that because $\bar{x}$ appears only on the right-hand
+# side of a linear program, $\nabla V_2(x^k, \omega) = \lambda^k$.
+
 # Ignoring how we choose $x^k$ for now, we can construct a lower and upper bound
 # on the optimal solution:
 
 # $$\max_{k=1,\ldots,K} -2x^k + \mathbb{E}_\omega[V_2(x^k, \omega)] \le V \le V^K$$
+
+# Thus, we need some way of cleverly choosign a sequence of $x^k$ so that the
+# lower bound converges to the upper bound.
+
+# 1. Start with $K=0$
+# 2. Solve $V^K$ to get $x^{K+1}$
+# 3. Set $\overbar{V} = V^k
+# 4. Solve $V_2(x^K, \omega)$ for all $\omega$ and store the optimal objective
+#   value and dual solution $\lambda^{K+1}$
+# 5. Set $\underbar{V} = -2x^K + \mathbb{E}_\omega[V_2(x^k, \omega)]$
+# 6. If $\underbar{V} \approx \overbar{V}$, STOP
+# 7. Add nnew constraint $\theta \le \mathbb{E}_\omega[V_2(x^K, \omega) +\lambda^K (x - x^K)]$
+# 8. Set $K += 1$, GOTO 2
 
 # ## L-Shaped implementation
 
@@ -127,18 +143,24 @@ set_silent(model)
 kIterationLimit = 100
 for k in 1:kIterationLimit
     println("Solving iteration k = $k")
+    ## Step 2
     optimize!(model)
     xᵏ = value(x_out)
     println("  xᵏ = $xᵏ")
+    ## Step 3
     ub = objective_value(model)
     println("  V̅ = $ub")
+    ## Step 4
     ret = [solve_second_stage(xᵏ, d[ω]) for ω in Ω]
+    ## Step 5
     lb = value(-2 * u_make) + sum(p * r.V for (p, r) in zip(P, ret))
     println("  V̲ = $lb")
+    ## Step 6
     if ub - lb < 1e-6
         println("Terminating with near-optimal solution")
         break
     end
+    ## Step 7
     c = @constraint(
         model,
         θ <= sum(p * (r.V + r.λ * (x_out - xᵏ)) for (p, r) in zip(P, ret)),
@@ -146,9 +168,20 @@ for k in 1:kIterationLimit
     println("  Added cut: $c")
 end
 
+# To get the first-stage solution, we do:
+
+optimize!(model)
+xᵏ = value(x_out)
+
+# To compute a second-stage solution, we do:
+
+solve_second_stage(xᵏ, 170.0)
+
 # ## Policy Graph
 
-# Now we can formulate and train a policy for the two-stage newsvendor problem.
+# Now let's see how we can formulate and train a policy for the two-stage
+# newsvendor problem using `SDDP.jl`. Under the hood, `SDDP.jl` implements the
+# exact algorithm that we just wrote by hand.
 
 model = SDDP.LinearPolicyGraph(;
     stages = 2,
