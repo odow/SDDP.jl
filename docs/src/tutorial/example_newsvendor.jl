@@ -210,7 +210,7 @@ model = SDDP.LinearPolicyGraph(;
     return
 end
 
-SDDP.train(model)
+SDDP.train(model; log_every_iteration = true)
 
 # One way to query the optimal policy is with [`SDDP.DecisionRule`](@ref):
 
