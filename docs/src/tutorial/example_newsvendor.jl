@@ -87,7 +87,7 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # Ignoring how we choose $x^k$ for now, we can construct a lower and upper bound
 # on the optimal solution:
 
-# $$-2x^K + \mathbb{E}_\omega[V_2(x^K, \omega)] \le V \le V^K$$
+# $$-2x^K + \mathbb{E}_\omega[V_2(x^K, \omega)] \underbar{V} \le V \le \overline{V} V^K$$
 
 # Thus, we need some way of cleverly choosing a sequence of $x^k$ so that the
 # lower bound converges to the upper bound.
@@ -100,7 +100,7 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # 5. Set $\underbar{V} = -2x^K + \mathbb{E}_\omega[V_2(x^k, \omega)]$
 # 6. If $\underbar{V} \approx \overline{V}$, STOP
 # 7. Add new constraint $\theta \le \mathbb{E}_\omega[V_2(x^K, \omega) +\lambda^K (x - x^K)]$
-# 8. Set $K++$, GOTO 2
+# 8. Increment $K$, GOTO 2
 
 # The next section implements this algorithm in Julia.
 
@@ -137,7 +137,8 @@ set_silent(model)
 @variable(model, x_out >= 0)
 @variable(model, u_make >= 0)
 @constraint(model, x_out == x_in + u_make)
-@variable(model, θ <= 10_000)
+M = 5 * maximum(d)
+@variable(model, θ <= M)
 @objective(model, Max, -2 * u_make + θ)
 
 # Importantly, to ensure we have a bounded solution, we need to add an upper
