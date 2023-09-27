@@ -32,14 +32,14 @@ d = sort!(rand(D, N));
 P = fill(1 / N, N);
 StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
-# ## The L-Shaped method
+# ## L-Shaped theory
 
 # The L-Shaped method is a way of solving two-stage stochastic programs by
 # Benders' decomposition. It takes the problem:
 
 # ```math
 # \begin{aligned}
-# \max\limits_{x,y_\omega} \;\; & -2x + \mathbb{E}_\omega[5y_\omega - 0.1(x - y_\omega)] \\
+# V = \max\limits_{x,y_\omega} \;\; & -2x + \mathbb{E}_\omega[5y_\omega - 0.1(x - y_\omega)] \\
 #   & y_\omega \le x              & \quad \forall \omega \in \Omega \\
 #   & 0 \le y_\omega \le d_\omega & \quad \forall \omega \in \Omega \\
 #   & x \ge 0.
@@ -62,11 +62,30 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
 # ```math
 # \begin{aligned}
-# V^K = \max\limits_{x,\theta} \;\; & -2x + \theta \\
-#   & \theta \le \mathbb{E}_\omega[V_2(x^k, \omega) + \lambda^k(x - x^k)] & \quad k = 1,\ldots,K\\
+# V = \max\limits_{x,\theta} \;\; & -2x + \theta \\
+#   & \theta \le \mathbb{E}_\omega[V_2(x, \omega)] \\
 #   & x \ge 0,
 # \end{aligned}
 # ```
+
+# Then, because $V_2$ is convex with respect to $\bar{x}$ for fixed $\omega$,
+# we can use a set of feasible points $\{x^k\}$ construct an outer approximation:
+# ```math
+# \begin{aligned}
+# V^K = \max\limits_{x,\theta} \;\; & -2x + \theta \\
+#   & \theta \le \mathbb{E}_\omega[V_2(x^k, \omega) + \nabla V_2(x^k, \omega)^\top(x - x^k)] & \quad k = 1,\ldots,K\\
+#   & x \ge 0
+#   & \theta \le M,
+# \end{aligned}
+# ```
+# where $M$ is an upper bound on possible values of $V_2$.
+
+# Ignoring how we choose $x^k$ for now, we can construct a lower and upper bound
+# on the optimal solution:
+
+# $$\max_{k=1,\ldots,K} -2x^k + \mathbb{E}_\omega[V_2(x^k, \omega)] \le V \le V^K$$
+
+# ## L-Shaped implementation
 
 # Here's a function to compute the second-stage problem;
 
