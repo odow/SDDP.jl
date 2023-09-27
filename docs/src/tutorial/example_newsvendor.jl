@@ -74,11 +74,12 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # \begin{aligned}
 # V^K = \max\limits_{x,\theta} \;\; & -2x + \theta \\
 #   & \theta \le \mathbb{E}_\omega[V_2(x^k, \omega) + \nabla V_2(x^k, \omega)^\top(x - x^k)] & \quad k = 1,\ldots,K\\
-#   & x \ge 0
+#   & x \ge 0 \\
 #   & \theta \le M,
 # \end{aligned}
 # ```
-# where $M$ is an upper bound on possible values of $V_2$.
+# where $M$ is an upper bound on possible values of $V_2$ so that the problem
+# has a bounded solution.
 
 # It is also useful to see that because $\bar{x}$ appears only on the right-hand
 # side of a linear program, $\nabla V_2(x^k, \omega) = \lambda^k$.
@@ -86,20 +87,22 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # Ignoring how we choose $x^k$ for now, we can construct a lower and upper bound
 # on the optimal solution:
 
-# $$\max_{k=1,\ldots,K} -2x^k + \mathbb{E}_\omega[V_2(x^k, \omega)] \le V \le V^K$$
+# $$-2x^K + \mathbb{E}_\omega[V_2(x^K, \omega)] \le V \le V^K$$
 
-# Thus, we need some way of cleverly choosign a sequence of $x^k$ so that the
+# Thus, we need some way of cleverly choosing a sequence of $x^k$ so that the
 # lower bound converges to the upper bound.
 
-# 1. Start with $K=0$
-# 2. Solve $V^K$ to get $x^{K+1}$
+# 1. Start with $K=1$
+# 2. Solve $V^{K-1}$ to get $x^K$
 # 3. Set $\overbar{V} = V^k
 # 4. Solve $V_2(x^K, \omega)$ for all $\omega$ and store the optimal objective
-#   value and dual solution $\lambda^{K+1}$
+#   value and dual solution $\lambda^K$
 # 5. Set $\underbar{V} = -2x^K + \mathbb{E}_\omega[V_2(x^k, \omega)]$
 # 6. If $\underbar{V} \approx \overbar{V}$, STOP
-# 7. Add nnew constraint $\theta \le \mathbb{E}_\omega[V_2(x^K, \omega) +\lambda^K (x - x^K)]$
+# 7. Add new constraint $\theta \le \mathbb{E}_\omega[V_2(x^K, \omega) +\lambda^K (x - x^K)]$
 # 8. Set $K += 1$, GOTO 2
+
+# The next section implements this algorithm in Julia.
 
 # ## L-Shaped implementation
 
