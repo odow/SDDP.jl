@@ -64,7 +64,7 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # \begin{aligned}
 # V = \max\limits_{x,\theta} \;\; & -2x + \theta \\
 #   & \theta \le \mathbb{E}_\omega[V_2(x, \omega)] \\
-#   & x \ge 0,
+#   & x \ge 0
 # \end{aligned}
 # ```
 
@@ -75,7 +75,7 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # V^K = \max\limits_{x,\theta} \;\; & -2x + \theta \\
 #   & \theta \le \mathbb{E}_\omega[V_2(x^k, \omega) + \nabla V_2(x^k, \omega)^\top(x - x^k)] & \quad k = 1,\ldots,K\\
 #   & x \ge 0 \\
-#   & \theta \le M,
+#   & \theta \le M
 # \end{aligned}
 # ```
 # where $M$ is an upper bound on possible values of $V_2$ so that the problem
@@ -94,13 +94,13 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
 # 1. Start with $K=1$
 # 2. Solve $V^{K-1}$ to get $x^K$
-# 3. Set $\overbar{V} = V^k
+# 3. Set $\overline{V} = V^k$
 # 4. Solve $V_2(x^K, \omega)$ for all $\omega$ and store the optimal objective
-#   value and dual solution $\lambda^K$
+#    value and dual solution $\lambda^K$
 # 5. Set $\underbar{V} = -2x^K + \mathbb{E}_\omega[V_2(x^k, \omega)]$
-# 6. If $\underbar{V} \approx \overbar{V}$, STOP
+# 6. If $\underbar{V} \approx \overline{V}$, STOP
 # 7. Add new constraint $\theta \le \mathbb{E}_\omega[V_2(x^K, \omega) +\lambda^K (x - x^K)]$
-# 8. Set $K += 1$, GOTO 2
+# 8. Set $K++$, GOTO 2
 
 # The next section implements this algorithm in Julia.
 
