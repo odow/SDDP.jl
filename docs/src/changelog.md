@@ -7,6 +7,13 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.6.6 (September 29, 2023)
+
+### Other
+
+ - Updated [Example: two-stage newsvendor](@ref) tutorial (#689)
+ - Added a warning for people using [`SDDP.Statistical`](@ref) (#687)
+
 ## v1.6.5 (September 25, 2023)
 
 ### Fixed
