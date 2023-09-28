@@ -32,14 +32,14 @@ d = sort!(rand(D, N));
 P = fill(1 / N, N);
 StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
-# ## The L-Shaped method
+# ## L-Shaped theory
 
 # The L-Shaped method is a way of solving two-stage stochastic programs by
 # Benders' decomposition. It takes the problem:
 
 # ```math
 # \begin{aligned}
-# \max\limits_{x,y_\omega} \;\; & -2x + \mathbb{E}_\omega[5y_\omega - 0.1(x - y_\omega)] \\
+# V = \max\limits_{x,y_\omega} \;\; & -2x + \mathbb{E}_\omega[5y_\omega - 0.1(x - y_\omega)] \\
 #   & y_\omega \le x              & \quad \forall \omega \in \Omega \\
 #   & 0 \le y_\omega \le d_\omega & \quad \forall \omega \in \Omega \\
 #   & x \ge 0.
@@ -62,11 +62,49 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
 # ```math
 # \begin{aligned}
-# V^K = \max\limits_{x,\theta} \;\; & -2x + \theta \\
-#   & \theta \le \mathbb{E}_\omega[V_2(x^k, \omega) + \lambda^k(x - x^k)] & \quad k = 1,\ldots,K\\
-#   & x \ge 0,
+# V = \max\limits_{x,\theta} \;\; & -2x + \theta \\
+#   & \theta \le \mathbb{E}_\omega[V_2(x, \omega)] \\
+#   & x \ge 0
 # \end{aligned}
 # ```
+
+# Then, because $V_2$ is convex with respect to $\bar{x}$ for fixed $\omega$,
+# we can use a set of feasible points $\{x^k\}$ construct an outer approximation:
+# ```math
+# \begin{aligned}
+# V^K = \max\limits_{x,\theta} \;\; & -2x + \theta \\
+#   & \theta \le \mathbb{E}_\omega[V_2(x^k, \omega) + \nabla V_2(x^k, \omega)^\top(x - x^k)] & \quad k = 1,\ldots,K\\
+#   & x \ge 0 \\
+#   & \theta \le M
+# \end{aligned}
+# ```
+# where $M$ is an upper bound on possible values of $V_2$ so that the problem
+# has a bounded solution.
+
+# It is also useful to see that because $\bar{x}$ appears only on the right-hand
+# side of a linear program, $\nabla V_2(x^k, \omega) = \lambda^k$.
+
+# Ignoring how we choose $x^k$ for now, we can construct a lower and upper bound
+# on the optimal solution:
+
+# $$-2x^K + \mathbb{E}_\omega[V_2(x^K, \omega)] = \underbar{V} \le V \le \overline{V} = V^K$$
+
+# Thus, we need some way of cleverly choosing a sequence of $x^k$ so that the
+# lower bound converges to the upper bound.
+
+# 1. Start with $K=1$
+# 2. Solve $V^{K-1}$ to get $x^K$
+# 3. Set $\overline{V} = V^k$
+# 4. Solve $V_2(x^K, \omega)$ for all $\omega$ and store the optimal objective
+#    value and dual solution $\lambda^K$
+# 5. Set $\underbar{V} = -2x^K + \mathbb{E}_\omega[V_2(x^k, \omega)]$
+# 6. If $\underbar{V} \approx \overline{V}$, STOP
+# 7. Add new constraint $\theta \le \mathbb{E}_\omega[V_2(x^K, \omega) +\lambda^K (x - x^K)]$
+# 8. Increment $K$, GOTO 2
+
+# The next section implements this algorithm in Julia.
+
+# ## L-Shaped implementation
 
 # Here's a function to compute the second-stage problem;
 
@@ -99,7 +137,8 @@ set_silent(model)
 @variable(model, x_out >= 0)
 @variable(model, u_make >= 0)
 @constraint(model, x_out == x_in + u_make)
-@variable(model, θ <= 10_000)
+M = 5 * maximum(d)
+@variable(model, θ <= M)
 @objective(model, Max, -2 * u_make + θ)
 
 # Importantly, to ensure we have a bounded solution, we need to add an upper
@@ -108,18 +147,24 @@ set_silent(model)
 kIterationLimit = 100
 for k in 1:kIterationLimit
     println("Solving iteration k = $k")
+    ## Step 2
     optimize!(model)
     xᵏ = value(x_out)
     println("  xᵏ = $xᵏ")
+    ## Step 3
     ub = objective_value(model)
     println("  V̅ = $ub")
+    ## Step 4
     ret = [solve_second_stage(xᵏ, d[ω]) for ω in Ω]
+    ## Step 5
     lb = value(-2 * u_make) + sum(p * r.V for (p, r) in zip(P, ret))
     println("  V̲ = $lb")
+    ## Step 6
     if ub - lb < 1e-6
         println("Terminating with near-optimal solution")
         break
     end
+    ## Step 7
     c = @constraint(
         model,
         θ <= sum(p * (r.V + r.λ * (x_out - xᵏ)) for (p, r) in zip(P, ret)),
@@ -127,9 +172,20 @@ for k in 1:kIterationLimit
     println("  Added cut: $c")
 end
 
+# To get the first-stage solution, we do:
+
+optimize!(model)
+xᵏ = value(x_out)
+
+# To compute a second-stage solution, we do:
+
+solve_second_stage(xᵏ, 170.0)
+
 # ## Policy Graph
 
-# Now we can formulate and train a policy for the two-stage newsvendor problem.
+# Now let's see how we can formulate and train a policy for the two-stage
+# newsvendor problem using `SDDP.jl`. Under the hood, `SDDP.jl` implements the
+# exact algorithm that we just wrote by hand.
 
 model = SDDP.LinearPolicyGraph(;
     stages = 2,
@@ -155,7 +211,7 @@ model = SDDP.LinearPolicyGraph(;
     return
 end
 
-SDDP.train(model)
+SDDP.train(model; log_every_iteration = true)
 
 # One way to query the optimal policy is with [`SDDP.DecisionRule`](@ref):
 

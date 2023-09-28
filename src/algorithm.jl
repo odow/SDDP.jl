@@ -885,6 +885,9 @@ Train the policy for `model`.
  - `log_every_seconds::Float64`: control the frequency with which the logging is
    outputted (seconds/log). Defaults to `0.0`.
 
+ - `log_every_iteration::Bool`; over-rides `log_frequency` and `log_every_seconds`
+   to force every iteration to be printed. Defaults to `false`.
+
  - `run_numerical_stability_report::Bool`: generate (and print) a numerical
    stability report prior to solve. Defaults to `true`.
 
@@ -947,6 +950,7 @@ function train(
     log_file::String = "SDDP.log",
     log_frequency::Int = 1,
     log_every_seconds::Float64 = log_frequency == 1 ? -1.0 : 0.0,
+    log_every_iteration::Bool = false,
     run_numerical_stability_report::Bool = true,
     stopping_rules = AbstractStoppingRule[],
     risk_measure = SDDP.Expectation(),
@@ -968,6 +972,10 @@ function train(
     if log_frequency <= 0
         msg = "`log_frequency` must be at least `1`. Got $log_frequency."
         throw(ArgumentError(msg))
+    end
+    if log_every_iteration
+        log_frequency = 1
+        log_every_seconds = 0.0
     end
     function log_frequency_f(log::Vector{Log})
         if mod(length(log), log_frequency) != 0

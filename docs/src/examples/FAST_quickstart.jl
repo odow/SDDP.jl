@@ -33,7 +33,7 @@ function fast_quickstart()
     JuMP.optimize!(det)
     @test JuMP.objective_value(det) == -2
 
-    SDDP.train(model)
+    SDDP.train(model; log_every_iteration = true)
     @test SDDP.calculate_bound(model) == -2
 end
 
