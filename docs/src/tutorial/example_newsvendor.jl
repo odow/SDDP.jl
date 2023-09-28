@@ -87,7 +87,7 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # Ignoring how we choose $x^k$ for now, we can construct a lower and upper bound
 # on the optimal solution:
 
-# $$-2x^K + \mathbb{E}_\omega[V_2(x^K, \omega)] \underbar{V} \le V \le \overline{V} V^K$$
+# $$-2x^K + \mathbb{E}_\omega[V_2(x^K, \omega)] = \underbar{V} \le V \le \overline{V} = V^K$$
 
 # Thus, we need some way of cleverly choosing a sequence of $x^k$ so that the
 # lower bound converges to the upper bound.
