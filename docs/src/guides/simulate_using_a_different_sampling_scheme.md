@@ -17,63 +17,66 @@ To demonstrate the different ways of simulating the policy, we're going to use
 the model from the tutorial [Markovian policy graphs](@ref).
 
 ```jldoctest sampling_schemes
-using SDDP, HiGHS
+julia> using SDDP, HiGHS
 
-Ω = [
-    (inflow = 0.0, fuel_multiplier = 1.5),
-    (inflow = 50.0, fuel_multiplier = 1.0),
-    (inflow = 100.0, fuel_multiplier = 0.75)
-]
+julia> Ω = [
+           (inflow = 0.0, fuel_multiplier = 1.5),
+           (inflow = 50.0, fuel_multiplier = 1.0),
+           (inflow = 100.0, fuel_multiplier = 0.75),
+       ]
+3-element Vector{NamedTuple{(:inflow, :fuel_multiplier), Tuple{Float64, Float64}}}:
+ (inflow = 0.0, fuel_multiplier = 1.5)
+ (inflow = 50.0, fuel_multiplier = 1.0)
+ (inflow = 100.0, fuel_multiplier = 0.75)
 
-model = SDDP.MarkovianPolicyGraph(
-    transition_matrices = Array{Float64, 2}[
-        [ 1.0 ]',
-        [ 0.75 0.25 ],
-        [ 0.75 0.25 ; 0.25 0.75 ]
-    ],
-    sense = :Min,
-    lower_bound = 0.0,
-    optimizer = HiGHS.Optimizer
-) do subproblem, node
-    # Unpack the stage and Markov index.
-    t, markov_state = node
-    # Define the state variable.
-    @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
-    # Define the control variables.
-    @variables(subproblem, begin
-        thermal_generation >= 0
-        hydro_generation   >= 0
-        hydro_spill        >= 0
-        inflow
-    end)
-    # Define the constraints
-    @constraints(subproblem, begin
-        volume.out == volume.in + inflow - hydro_generation - hydro_spill
-        thermal_generation + hydro_generation == 150.0
-    end)
-    # Note how we can use `markov_state` to dispatch an `if` statement.
-    probability = if markov_state == 1  # wet climate state
-        [1/6, 1/3, 1/2]
-    else  # dry climate state
-        [1/2, 1/3, 1/6]
-    end
-
-    fuel_cost = [50.0, 100.0, 150.0]
-    SDDP.parameterize(subproblem, Ω, probability) do ω
-        JuMP.fix(inflow, ω.inflow)
-        @stageobjective(subproblem,
-            ω.fuel_multiplier * fuel_cost[t] * thermal_generation)
-    end
-end
-
-SDDP.train(model; iteration_limit = 10, print_level = 0);
-
-model
-
-# output
-
+julia> model = SDDP.MarkovianPolicyGraph(
+           transition_matrices = Array{Float64, 2}[
+               [1.0]',
+               [0.75 0.25],
+               [0.75 0.25; 0.25 0.75],
+           ],
+           sense = :Min,
+           lower_bound = 0.0,
+           optimizer = HiGHS.Optimizer,
+       ) do subproblem, node
+           # Unpack the stage and Markov index.
+           t, markov_state = node
+           # Define the state variable.
+           @variable(subproblem, 0 <= volume <= 200, SDDP.State, initial_value = 200)
+           # Define the control variables.
+           @variables(subproblem, begin
+               thermal_generation >= 0
+               hydro_generation >= 0
+               hydro_spill >= 0
+               inflow
+           end)
+           # Define the constraints
+           @constraints(subproblem, begin
+               volume.out == volume.in + inflow - hydro_generation - hydro_spill
+               thermal_generation + hydro_generation == 150.0
+           end)
+           # Note how we can use `markov_state` to dispatch an `if` statement.
+           probability = if markov_state == 1  # wet climate state
+               [1 / 6, 1 / 3, 1 / 2]
+           else  # dry climate state
+               [1 / 2, 1 / 3, 1 / 6]
+           end
+           fuel_cost = [50.0, 100.0, 150.0]
+           SDDP.parameterize(subproblem, Ω, probability) do ω
+               JuMP.fix(inflow, ω.inflow)
+               @stageobjective(
+                   subproblem,
+                   ω.fuel_multiplier * fuel_cost[t] * thermal_generation,
+               )
+               return
+           end
+           return
+       end
 A policy graph with 5 nodes.
  Node indices: (1, 1), (2, 1), (2, 2), (3, 1), (3, 2)
+
+
+julia> SDDP.train(model; iteration_limit = 10, print_level = 0);
 ```
 
 ## In-sample Monte Carlo simulation
@@ -82,16 +85,13 @@ To simulate the policy using the data defined when `model` was created, use
 [`SDDP.InSampleMonteCarlo`](@ref).
 
 ```julia sampling_schemes
-simulations = SDDP.simulate(
-    model, 20, sampling_scheme = SDDP.InSampleMonteCarlo()
-)
+julia> simulations = SDDP.simulate(
+           model,
+           20;
+           sampling_scheme = SDDP.InSampleMonteCarlo(),
+       );
 
-sort(unique(
-    [node[:noise_term] for simulation in simulations for node in simulation]
-))
-
-# output
-
+julia> sort(unique([data[:noise_term] for sim in simulations for data in sim]))
 3-element Array{NamedTuple{(:inflow, :fuel_multiplier),Tuple{Float64,Float64}},1}:
  (inflow = 0.0, fuel_multiplier = 1.5)
  (inflow = 50.0, fuel_multiplier = 1.0)
@@ -113,37 +113,35 @@ and a new distribution for the stagewise independent noise terms.
     does not have to be the same as the in-sample distributions.
 
 ```jldoctest sampling_schemes
-sampling_scheme = SDDP.OutOfSampleMonteCarlo(model) do node
-    stage, markov_state = node
-    if stage == 0
-        # Called from the root node. Transition to (1, 1) with probability 1.0.
-        # Only return the list of children, _not_ a list of noise terms.
-        return [SDDP.Noise((1, 1), 1.0)]
-    elseif stage == 3
-        # Called from the final node. Return an empty list for the children,
-        # and a single, deterministic realization for the noise terms.
-        children = SDDP.Noise[]
-        noise_terms = [SDDP.Noise((inflow = 75.0, fuel_multiplier = 1.2), 1.0)]
-        return children, noise_terms
-    else
-        # Called from a normal node. Return the in-sample distribution for the
-        # noise terms, but modify the transition probabilities so that the
-        # Markov switching probability is now 50%.
-        probability = markov_state == 1 ? [1/6, 1/3, 1/2] : [1/2, 1/3, 1/6]
-        noise_terms = [SDDP.Noise(ω, p) for (ω, p) in zip(Ω, probability)]
-        children = [
-            SDDP.Noise((stage + 1, 1), 0.5), SDDP.Noise((stage + 1, 2), 0.5)
-        ]
-        return children, noise_terms
-    end
-end
+julia> sampling_scheme = SDDP.OutOfSampleMonteCarlo(model) do node
+           stage, markov_state = node
+           if stage == 0
+               # Called from the root node. Transition to (1, 1) with probability 1.0.
+               # Only return the list of children, _not_ a list of noise terms.
+               return [SDDP.Noise((1, 1), 1.0)]
+           elseif stage == 3
+               # Called from the final node. Return an empty list for the children,
+               # and a single, deterministic realization for the noise terms.
+               children = SDDP.Noise[]
+               noise_terms = [SDDP.Noise((inflow = 75.0, fuel_multiplier = 1.2), 1.0)]
+               return children, noise_terms
+           else
+               # Called from a normal node. Return the in-sample distribution for the
+               # noise terms, but modify the transition probabilities so that the
+               # Markov switching probability is now 50%.
+               probability = markov_state == 1 ? [1/6, 1/3, 1/2] : [1/2, 1/3, 1/6]
+               # Note: `Ω` is defined at the top of this page of documentation
+               noise_terms = [SDDP.Noise(ω, p) for (ω, p) in zip(Ω, probability)]
+               children = [
+                   SDDP.Noise((stage + 1, 1), 0.5), SDDP.Noise((stage + 1, 2), 0.5)
+               ]
+               return children, noise_terms
+           end
+       end;
 
-simulations = SDDP.simulate(model, 1, sampling_scheme = sampling_scheme)
+julia> simulations = SDDP.simulate(model, 1; sampling_scheme = sampling_scheme);
 
-simulations[1][3][:noise_term]
-
-# output
-
+julia> simulations[1][3][:noise_term]
 (inflow = 75.0, fuel_multiplier = 1.2)
 ```
 
@@ -151,30 +149,29 @@ Alternatively, if you only want to modify the stagewise independent noise terms,
 pass `use_insample_transition = true`.
 
 ```jldoctest sampling_schemes
-sampling_scheme = SDDP.OutOfSampleMonteCarlo(
-    model, use_insample_transition = true
-) do node
-stage, markov_state = node
-    if stage == 3
-        # Called from the final node. Return a single, deterministic
-        # realization for the noise terms. Don't return the children because we
-        # use the in-sample data.
-        return [SDDP.Noise((inflow = 65.0, fuel_multiplier = 1.1), 1.0)]
-    else
-        # Called from a normal node. Return the in-sample distribution for the
-        # noise terms. Don't return the children because we use the in-sample
-        # data.
-        probability = markov_state == 1 ? [1/6, 1/3, 1/2] : [1/2, 1/3, 1/6]
-        return [SDDP.Noise(ω, p) for (ω, p) in zip(Ω, probability)]
-    end
-end
+julia> sampling_scheme = SDDP.OutOfSampleMonteCarlo(
+           model;
+           use_insample_transition = true
+       ) do node
+       stage, markov_state = node
+           if stage == 3
+               # Called from the final node. Return a single, deterministic
+               # realization for the noise terms. Don't return the children because we
+               # use the in-sample data.
+               return [SDDP.Noise((inflow = 65.0, fuel_multiplier = 1.1), 1.0)]
+           else
+               # Called from a normal node. Return the in-sample distribution for the
+               # noise terms. Don't return the children because we use the in-sample
+               # data.
+               probability = markov_state == 1 ? [1/6, 1/3, 1/2] : [1/2, 1/3, 1/6]
+               # Note: `Ω` is defined at the top of this page of documentation
+               return [SDDP.Noise(ω, p) for (ω, p) in zip(Ω, probability)]
+           end
+       end;
 
-simulations = SDDP.simulate(model, 1, sampling_scheme = sampling_scheme)
+julia> simulations = SDDP.simulate(model, 1; sampling_scheme = sampling_scheme);
 
-simulations[1][3][:noise_term]
-
-# output
-
+julia> simulations[1][3][:noise_term]
 (inflow = 65.0, fuel_multiplier = 1.1)
 ```
 
@@ -190,17 +187,15 @@ We can confirm that the historical sequence of nodes was visited by querying
 the `:node_index` key of the simulation results.
 
 ```jldoctest sampling_schemes
-simulations = SDDP.simulate(
-    model,
-    sampling_scheme = SDDP.Historical(
-        [((1, 1), Ω[1]), ((2, 2), Ω[3]), ((3, 1), Ω[2])],
-    ),
-)
+julia> simulations = SDDP.simulate(
+           model;
+           sampling_scheme = SDDP.Historical(
+               # Note: `Ω` is defined at the top of this page of documentation
+               [((1, 1), Ω[1]), ((2, 2), Ω[3]), ((3, 1), Ω[2])],
+           ),
+       );
 
-[stage[:node_index] for stage in simulations[1]]
-
-# output
-
+julia> [stage[:node_index] for stage in simulations[1]]
 3-element Vector{Tuple{Int64, Int64}}:
  (1, 1)
  (2, 2)
@@ -209,7 +204,7 @@ simulations = SDDP.simulate(
 
 You can also pass a vector of scenarios, which are sampled sequentially:
 ```jldoctest
-julia> SDDP.Historical(
+julia> sampling_scheme = SDDP.Historical(
            [
                [
                    (1, (inflow = 65.0, fuel_multiplier = 1.1)),
@@ -229,7 +224,7 @@ A Historical sampler with 2 scenarios sampled sequentially.
 Or a vector of scenarios and a corresponding vector of probabilities so that the
 historical scenarios are sampled probabilistically:
 ```jldoctest
-julia> SDDP.Historical(
+julia> sampling_scheme = SDDP.Historical(
            [
                [
                    (1, (inflow = 65.0, fuel_multiplier = 1.1)),
