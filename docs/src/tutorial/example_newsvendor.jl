@@ -16,6 +16,7 @@
 using JuMP
 using SDDP
 import Distributions
+import ForwardDiff
 import HiGHS
 import Plots
 import StatsPlots
@@ -31,6 +32,120 @@ d = sort!(rand(D, N));
 Ω = 1:N
 P = fill(1 / N, N);
 StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
+
+# ## Kelley's cuttinng plane algorithm
+
+# ## Preliminaries: Kelley's cutting plane algorithm
+
+# Kelley's cutting plane algorithm is an iterative method for maximizing concave
+# functions. Given a concave function $f(x)$, Kelley's constructs an
+# outer-approximation of the function at the minimum by a set of first-order
+# Taylor series approximations (called **cuts**) constructed at a set of points
+# $k = 1,\ldots,K$:
+# ```math
+# \begin{aligned}
+# f^K = \max\limits_{\theta \in \mathbb{R}, x \in \mathbb{R}^N} \;\; & \theta\\
+# & \theta \le f(x_k) + \frac{d}{dx}f(x_k)^\top (x - x_k),\quad k=1,\ldots,K\\
+# & \theta \le M,
+# \end{aligned}
+# ```
+# where $M$ is a sufficiently large number that is an upper bound for $f$ over
+# the domain of $x$.
+
+# Kelley's cutting plane algorithm is a structured way of choosing points $x_k$
+# to visit, so that as more cuts are added:
+# ```math
+# \lim_{K \rightarrow \infty} f^K = \max\limits_{x \in \mathbb{R}^N} f(x)
+# ```
+# However, before we introduce the algorithm, we need to introduce some bounds.
+
+# ### Bounds
+
+# By convexity, $f(x) \le f^K$ for all $x$. Thus, if $x^*$ is a maximizer of
+# $f$, then at any point in time we can construct an upper bound for $f(x^*)$ by
+# solving $f^K$.
+
+# Moreover, we can use the primal solutions $x_k^*$ returned by solving $f^k$ to
+# evaluate $f(x_k^*)$ to generate a lower bound.
+
+# Therefore, $\max\limits_{k=1,\ldots,K} f(x_k^*) \le f(x^*) \le f^K$.
+
+# When the lower bound is sufficiently close to the upper bound, we can
+# terminate the algorithm and declare that we have found an solution that is
+# close to optimal.
+
+# ### Implementation
+
+# Here is pseudo-code fo the Kelley algorithm:
+
+# 1. Take as input a convex function $f(x)$ and a iteration limit $K_{max}$.
+#    Set $K = 0$, and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$.
+# 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
+# 3. Update $ub = f^K$ and $lb = \max\{lb, f(x_{K+1})\}$.
+# 4. Add a cut $\theta \ge f(x_{K+1}) + \frac{d}{dx}f\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
+# 5. Increment $K$.
+# 6. If $K = K_{max}$ or $|ub - lb| < \epsilon$, STOP, otherwise, go to step 2.
+
+# And here's a complete implementation:
+
+function kelleys_cutting_plane(
+    ## The function to be minimized.
+    f::Function,
+    ## The gradient of `f`. By default, we use automatic differentiation to
+    ## compute the gradient of f so the user doesn't have to!
+    dfdx::Function = x -> ForwardDiff.gradient(f, x);
+    ## The number of arguments to `f`.
+    input_dimension::Int,
+    ## An upper bound for the function `f` over its domain.
+    upper_bound::Float64,
+    ## The number of iterations to run Kelley's algorithm for before stopping.
+    iteration_limit::Int,
+    ## The absolute tolerance ϵ to use for convergence.
+    tolerance::Float64 = 1e-6,
+)
+    ## Step (1):
+    K = 0
+    model = JuMP.Model(HiGHS.Optimizer)
+    JuMP.set_silent(model)
+    JuMP.@variable(model, θ <= upper_bound)
+    JuMP.@variable(model, x[1:input_dimension])
+    JuMP.@objective(model, Min, θ)
+    x_k = fill(NaN, input_dimension)
+    lower_bound, upper_bound = -Inf, Inf
+    while true
+        ## Step (2):
+        JuMP.optimize!(model)
+        x_k .= JuMP.value.(x)
+        ## Step (3):
+        upper_bound = JuMP.objective_value(model)
+        lower_bound = min(upper_bound, f(x_k))
+        println("K = $K : $(lower_bound) <= f(x*) <= $(upper_bound)")
+        ## Step (4):
+        JuMP.@constraint(model, θ <= f(x_k) + dfdx(x_k)' * (x .- x_k))
+        ## Step (5):
+        K = K + 1
+        ## Step (6):
+        if K == iteration_limit
+            println("-- Termination status: iteration limit --")
+            break
+        elseif abs(upper_bound - lower_bound) < tolerance
+            println("-- Termination status: converged --")
+            break
+        end
+    end
+    println("Found solution: x_K = ", x_k)
+    return
+end
+
+# Let's run our algorithm to see what happens:
+
+kelleys_cutting_plane(
+    input_dimension = 2,
+    lower_bound = 0.0,
+    iteration_limit = 20,
+) do x
+    return -(x[1] - 1)^2 + -(x[2] + 2)^2 + 1.0
+end
 
 # ## L-Shaped theory
 
