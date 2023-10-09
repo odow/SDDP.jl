@@ -35,8 +35,6 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
 # ## Kelley's cutting plane algorithm
 
-# ## Preliminaries: Kelley's cutting plane algorithm
-
 # Kelley's cutting plane algorithm is an iterative method for maximizing concave
 # functions. Given a concave function $f(x)$, Kelley's constructs an
 # outer-approximation of the function at the minimum by a set of first-order
