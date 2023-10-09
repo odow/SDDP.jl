@@ -33,7 +33,7 @@ d = sort!(rand(D, N));
 P = fill(1 / N, N);
 StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 
-# ## Kelley's cuttinng plane algorithm
+# ## Kelley's cutting plane algorithm
 
 # ## Preliminaries: Kelley's cutting plane algorithm
 
