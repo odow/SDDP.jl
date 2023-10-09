@@ -77,12 +77,12 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # Here is pseudo-code fo the Kelley algorithm:
 
 # 1. Take as input a convex function $f(x)$ and a iteration limit $K_{max}$.
-#    Set $K = 0$, and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$.
-# 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
-# 3. Update $ub = f^K$ and $lb = \max\{lb, f(x_{K+1})\}$.
-# 4. Add a cut $\theta \ge f(x_{K+1}) + \nabla f\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
+#    Set $K = 1$, and initialize $f^{K-1}$. Set $lb = -\infty$ and $ub = \infty$.
+# 2. Solve $f^{K-1}$ to obtain a candidate solution $x_{K}$.
+# 3. Update $ub = f^{K-1}$ and $lb = \max\{lb, f(x_{K})\}$.
+# 4. Add a cut $\theta \ge f(x_{K}) + \nabla f\left(x_{K}\right)^\top (x - x_{K})$ to form $f^{K}$.
 # 5. Increment $K$.
-# 6. If $K = K_{max}$ or $|ub - lb| < \epsilon$, STOP, otherwise, go to step 2.
+# 6. If $K > K_{max}$ or $|ub - lb| < \epsilon$, STOP, otherwise, go to step 2.
 
 # And here's a complete implementation:
 
@@ -102,7 +102,7 @@ function kelleys_cutting_plane(
     tolerance::Float64 = 1e-6,
 )
     ## Step (1):
-    K = 0
+    K = 1
     model = JuMP.Model(HiGHS.Optimizer)
     JuMP.set_silent(model)
     JuMP.@variable(model, θ <= upper_bound)
@@ -123,7 +123,7 @@ function kelleys_cutting_plane(
         ## Step (5):
         K = K + 1
         ## Step (6):
-        if K == iteration_limit
+        if K > iteration_limit
             println("-- Termination status: iteration limit --")
             break
         elseif abs(upper_bound - lower_bound) < tolerance
@@ -139,7 +139,7 @@ end
 
 kelleys_cutting_plane(
     input_dimension = 2,
-    upper_bound = 1.0,
+    upper_bound = 10.0,
     iteration_limit = 20,
 ) do x
     return -(x[1] - 1)^2 + -(x[2] + 2)^2 + 1.0
