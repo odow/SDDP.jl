@@ -141,7 +141,7 @@ end
 
 kelleys_cutting_plane(
     input_dimension = 2,
-    lower_bound = 0.0,
+    upper_bound = 1.0,
     iteration_limit = 20,
 ) do x
     return -(x[1] - 1)^2 + -(x[2] + 2)^2 + 1.0
