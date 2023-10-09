@@ -43,7 +43,7 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 # ```math
 # \begin{aligned}
 # f^K = \max\limits_{\theta \in \mathbb{R}, x \in \mathbb{R}^N} \;\; & \theta\\
-# & \theta \le f(x_k) + \frac{d}{dx}f(x_k)^\top (x - x_k),\quad k=1,\ldots,K\\
+# & \theta \le f(x_k) + \nabla f(x_k)^\top (x - x_k),\quad k=1,\ldots,K\\
 # & \theta \le M,
 # \end{aligned}
 # ```
@@ -80,7 +80,7 @@ StatsPlots.histogram(d; bins = 20, label = "", xlabel = "Demand")
 #    Set $K = 0$, and initialize $f^K$. Set $lb = -\infty$ and $ub = \infty$.
 # 2. Solve $f^K$ to obtain a candidate solution $x_{K+1}$.
 # 3. Update $ub = f^K$ and $lb = \max\{lb, f(x_{K+1})\}$.
-# 4. Add a cut $\theta \ge f(x_{K+1}) + \frac{d}{dx}f\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
+# 4. Add a cut $\theta \ge f(x_{K+1}) + \nabla f\left(x_{K+1}\right)^\top (x - x_{K+1})$ to form $f^{K+1}$.
 # 5. Increment $K$.
 # 6. If $K = K_{max}$ or $|ub - lb| < \epsilon$, STOP, otherwise, go to step 2.
 
@@ -91,7 +91,7 @@ function kelleys_cutting_plane(
     f::Function,
     ## The gradient of `f`. By default, we use automatic differentiation to
     ## compute the gradient of f so the user doesn't have to!
-    dfdx::Function = x -> ForwardDiff.gradient(f, x);
+    ∇f::Function = x -> ForwardDiff.gradient(f, x);
     ## The number of arguments to `f`.
     input_dimension::Int,
     ## An upper bound for the function `f` over its domain.
@@ -119,7 +119,7 @@ function kelleys_cutting_plane(
         lower_bound = min(upper_bound, f(x_k))
         println("K = $K : $(lower_bound) <= f(x*) <= $(upper_bound)")
         ## Step (4):
-        JuMP.@constraint(model, θ <= f(x_k) + dfdx(x_k)' * (x .- x_k))
+        JuMP.@constraint(model, θ <= f(x_k) + ∇f(x_k)' * (x .- x_k))
         ## Step (5):
         K = K + 1
         ## Step (6):
