@@ -305,6 +305,17 @@ function read_from_file(
                 ω_objective[x] = objective
             end
         end
+        for str_name in state_variables
+            sym_name = Symbol(str_name)
+            if !haskey(JuMP.object_dictionary(sp), sym_name)
+                sp[sym_name] = JuMP.@variable(
+                    sp,
+                    variable_type = SDDP.State,
+                    initial_value = 0.0,
+                    base_name = "$sym_name",
+                )
+            end
+        end
         for constraint in problem["constraints"]
             lhs, lhs_data = _build_lhs(stage, sp, constraint["lhs"])
             if lhs === nothing
