@@ -3,7 +3,11 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-using SDDP, Gurobi, Ipopt
+using SDDP
+import Distributions
+import Gurobi
+import HiGHS
+import Ipopt
 
 function example_putterman(; M = 5, N = 10)
     model = SDDP.LinearPolicyGraph(;
@@ -33,9 +37,7 @@ function example_putterman(; M = 5, N = 10)
         ),
     )
     plt = SDDP.SpaghettiPlot(simulations)
-    SDDP.add_spaghetti(plt, title = "u", ymin = 0, ymax = M) do data
-        return data[:u]
-    end
+    SDDP.add_spaghetti(data -> data[:u], title = "u", ymin = 0)
     SDDP.save(plt)
     return
 end
@@ -64,9 +66,37 @@ function example_putterman_cyclic(; M = 5, ρ = 0.8)
         ),
     )
     plt = SDDP.SpaghettiPlot(simulations)
-    SDDP.add_spaghetti(plt, title = "u", ymin = 0, ymax = M) do data
-        return data[:u]
+    SDDP.add_spaghetti(data -> data[:u], title = "u", ymin = 0)
+    SDDP.save(plt)
+    return
+end
+
+function example_newsvendor()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        sense = :Max,
+        upper_bound = 5 * 250,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0)
+        @variable(sp, u >= 0, Int)
+        if t == 1
+            @constraint(sp, x.out == x.in + u)
+            @stageobjective(sp, -2 * u_make)
+        else
+            @constraint(sp, u <= x.in)
+            @constraint(sp, x.out == x.in - u)
+            D = Distributions.TriangularDist(150.0, 250.0, 200.0)
+            Ω = sort!(rand(D, 100))
+            SDDP.parameterize(ω -> set_upper_bound(u, ω), sp, Ω)
+            @stageobjective(sp, 5u - 0.1x.out)
+        end
     end
+    SDDP.train(model)
+    simulations = SDDP.simulate(model, 100, [:x, :u])
+    plt = SDDP.SpaghettiPlot(simulations)
+    SDDP.add_spaghetti(data -> data[:x].out, plt, title = "x")
+    SDDP.add_spaghetti(data -> data[:u], plt, title = "u")
     SDDP.save(plt)
     return
 end
@@ -135,8 +165,10 @@ function example_tiger_problem()
         return data[:belief][:l]
     end
     SDDP.save(plt)
+    return
 end
 
 example_putterman()
 example_putterman_cyclic()
+example_newsvendor()
 example_tiger_problem()
