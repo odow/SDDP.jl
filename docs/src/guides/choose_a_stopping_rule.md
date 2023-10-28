@@ -12,24 +12,44 @@ The training of an SDDP policy can be terminated after a fixed number of
 iterations using the `iteration_limit` keyword.
 
 ```julia
-SDDP.train(model, iteration_limit = 10)
+SDDP.train(model; iteration_limit = 10)
 ```
 
 The training of an SDDP policy can be terminated after a fixed number of
 seconds using the `time_limit` keyword.
 
 ```julia
-SDDP.train(model, time_limit = 2.0)
+SDDP.train(model; time_limit = 2.0)
 ```
 
 ## Stopping rules
 
 In addition to the limits provided as keyword arguments, a variety of other
 stopping rules are available. These can be passed to [`SDDP.train`](@ref)
-as a vector to the `stopping_rules` keyword. For example:
+as a vector to the `stopping_rules` keyword.  Training stops if any of the rules
+becomes active. To stop when all of the rules become active, use
+[`SDDP.StoppingChain`](@ref). For example:
 
 ```julia
-SDDP.train(model, stopping_rules = [SDDP.BoundStalling(10, 1e-4)])
+# Terminate if BoundStalling becomes true
+SDDP.train(
+    model;
+    stopping_rules = [SDDP.BoundStalling(10, 1e-4)],
+)
+
+# Terminate if BoundStalling OR TimeLimit becomes true
+SDDP.train(
+    model; 
+    stopping_rules = [SDDP.BoundStalling(10, 1e-4), SDDP.TimeLimit(100.0)],
+)
+
+# Terminate if BoundStalling AND TimeLimit becomes true
+SDDP.train(
+    model; 
+    stopping_rules = [
+        SDDP.StoppingChain(SDDP.BoundStalling(10, 1e-4), SDDP.TimeLimit(100.0)),
+    ],
+)
 ```
 
 See [Stopping rules](@ref api_stopping_rules) for a list of stopping rules
