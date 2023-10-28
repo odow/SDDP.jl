@@ -1,7 +1,7 @@
 {
     "author": "Oscar Dowson",
-    "name": "electric.sof.jsonn",
-    "version": {"major": 0, "minor": 3},
+    "name": "electric.sof.json",
+    "version": {"major": 1, "minor": 0},
     "root": {
         "state_variables": {
             "1": 0.0,
