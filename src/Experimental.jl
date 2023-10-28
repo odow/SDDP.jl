@@ -178,7 +178,7 @@ function Base.write(
         _add_node_to_dict(node, node_name, nodes, subproblems, scenario_map)
     end
     sof = Dict{String,Any}(
-        "version" => Dict("major" => 0, "minor" => 3),
+        "version" => Dict("major" => 1, "minor" => 0),
         "root" => Dict{String,Any}(
             "name" => "$(model.root_node)",
             "state_variables" => Dict{String,Any}(
