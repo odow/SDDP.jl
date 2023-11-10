@@ -82,7 +82,8 @@ function minimize(
         # more of a bottleneck.)
         pₖ = B \ -∇fₖ
         # Run line search in direction `pₖ`
-        αₖ, fₖ₊₁, ∇fₖ₊₁ = _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals)
+        αₖ, fₖ₊₁, ∇fₖ₊₁ =
+            _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals, bfgs.evaluation_limit)
         if _norm(αₖ * pₖ) / max(1.0, _norm(xₖ)) < 1e-3
             # Small steps! Probably at the edge of the feasible region.
             # Return the current iterate.
@@ -126,6 +127,7 @@ function _line_search(
     p::Vector{Float64},
     α::Float64,
     evals::Ref{Int},
+    evaluation_limit::Int,
 ) where {F<:Function}
     while _norm(α * p) > 1e-3 * max(1.0, _norm(x))
         xₖ = x + α * p
@@ -144,7 +146,11 @@ function _line_search(
             return α, fₖ₊₁, ∇fₖ₊₁
         end
         #  Step is an ascent, so use Newton's method to find the intersection
-        α = (fₖ₊₁ - fₖ - p' * ∇fₖ₊₁ * α) / (p' * ∇fₖ - p' * ∇fₖ₊₁)
+        αₖ = (fₖ₊₁ - fₖ - p' * ∇fₖ₊₁ * α) / (p' * ∇fₖ - p' * ∇fₖ₊₁)
+        if abs(α - αₖ) < 1e-4
+            break # No change in α
+        end
+        α = αₖ
     end
     return 0.0, fₖ, ∇fₖ
 end

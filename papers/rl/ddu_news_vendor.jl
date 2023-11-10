@@ -8,6 +8,7 @@ using Revise
 using SDDP
 import Distributions
 import HiGHS
+import Random
 
 function _add_ddu_constraints(model::SDDP.PolicyGraph{Int}, i::Int)
     node = model[i]
@@ -24,17 +25,17 @@ function _add_ddu_constraints(model::SDDP.PolicyGraph{Int}, i::Int)
     θʲʷ = [node.bellman_function.local_thetas[i].theta for i in 1:N]
     Θ = node.bellman_function.global_theta.theta
     ddu = node.subproblem.ext[:__ddu__]
-    M, y, Φ = ddu.M, ddu.y, ddu.matrices
-    for d in 1:length(y)
+    for (d, y_d) in enumerate(ddu.y)
         P_d = [
-            Φ[d][i, child.term] * noise.probability
+            ddu.matrices[d][i+1, child.term] * noise.probability
             for child in node.children
             for noise in model[child.term].noise_terms
         ]
+        slack = ddu.M * (1 - y_d)
         if JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE
-            JuMP.@constraint(node.subproblem, Θ >= P_d' * θʲʷ - M * (1 - y[d]))
+            JuMP.@constraint(node.subproblem, Θ >= P_d' * θʲʷ - slack)
         else
-            JuMP.@constraint(node.subproblem, Θ <= P_d' * θʲʷ + M * (1 - y[d]))
+            JuMP.@constraint(node.subproblem, Θ <= P_d' * θʲʷ + slack)
         end
     end
     node.ext[:_ddu_is_set] = true
@@ -49,23 +50,21 @@ function add_ddu_matrices(sp, matrices::Vector{<:Matrix}; M)
     return __ddu__
 end
 
-struct DecisionDependentForwardPass <: SDDP.AbstractForwardPass end
-
-function solve_trajectory(
+function solve_decision_dependent_trajectory(
     model::SDDP.PolicyGraph{Int},
-    ::DecisionDependentForwardPass,
     incoming_state_value,
-    variables::Vector{Symbol} = Symbol[],
+    variables::Vector{Symbol} = Symbol[];
+    explore::Bool = true,
 )
     for i in keys(model.nodes)
         _add_ddu_constraints(model, i)
     end
     function sample_node(Φ::Matrix{Float64}, y::Int)
         r = rand()
-        for j in 1:size(Φ, 1)
+        for j in 1:size(Φ, 2)
             r -= Φ[y, j]
             if r <= 0
-                return j - 1
+                return j
             end
         end
         return nothing
@@ -94,6 +93,9 @@ function solve_trajectory(
         )
         __ddu__ = node.subproblem.ext[:__ddu__]
         y = findfirst([round(Bool, value(y)) for y in __ddu__.y])
+        if explore && rand() < 0.8
+            y = rand(1:length(__ddu__.y))
+        end
         cumulative_value += subproblem_results.stage_objective
         incoming_state_value = copy(subproblem_results.state)
         push!(sampled_states, incoming_state_value)
@@ -145,67 +147,172 @@ function solve_trajectory(
     )
 end
 
+struct DecisionDependentForwardPass <: SDDP.AbstractForwardPass end
+
 function SDDP.forward_pass(
     model::SDDP.PolicyGraph{Int},
     options::SDDP.Options,
-    pass::DecisionDependentForwardPass,
+    ::DecisionDependentForwardPass,
 )
     incoming_state_value = copy(options.initial_state)
-    return solve_trajectory(model, pass, incoming_state_value)
+    return solve_decision_dependent_trajectory(model, incoming_state_value)
 end
 
-function Φ(z, ρ)
-    return [
-        0.0 0.5 0.5
-        0.0 ρ * (0.5 - 0.3z) ρ * (0.5 + 0.3z)
-        0.0 ρ * (0.5 - 0.2z) ρ * (0.5 + 0.2z)
-    ]
-end
-
-ρ = 0.7
-graph = SDDP.Graph(0)
-SDDP.add_node.((graph,), 1:2)
-for j in 1:2
-    SDDP.add_edge(graph, 0 => j, 0.5)
-    for i in 1:2
-        SDDP.add_edge(graph, i => j, ρ * 0.5)
+function build_and_cheese_model(seed::Int)
+    Φ(z, ρ) = [1 0; ρ * (1 - z) z; ρ 0]
+    ρ = 0.96
+    graph = SDDP.Graph(0)
+    SDDP.add_node.((graph,), 1:2)
+    Φ̅ = Φ(0.5, ρ)
+    for i in 1:3, j in 1:2
+        Φ̅[i, j] > 0 && SDDP.add_edge(graph, (i-1) => j, Φ̅[i, j])
+    end
+    Random.seed!(seed)
+    # Ω_q = sort!(rand(Distributions.Uniform(0, 20), 2))
+    # Ω_d = sort!(rand(Distributions.Uniform(10, 50), 3))
+    return SDDP.PolicyGraph(
+        graph;
+        sense = :Max,
+        upper_bound = 1e3, # 50 * 2 / (1 - ρ),
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, 0 <= x <= 20, SDDP.State, initial_value = 0)
+        @variable(sp, u_sell >= 0)
+        z = add_ddu_matrices(sp, [Φ(0, ρ), Φ(1, ρ)]; M = 1e4)
+        if t == 1
+            c_q = @constraint(sp, x.out <= x.in + 5)
+            # SDDP.parameterize(ω -> set_normalized_rhs(c_q, ω), sp, Ω_q)
+            @stageobjective(sp, -10 * z[2])
+        else
+            @constraint(sp, u_sell <= x.in)
+            @constraint(sp, x.out == x.in - u_sell)
+            set_upper_bound(u_sell, 10)
+            # SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, Ω_d)
+            @stageobjective(sp, 2u_sell)
+        end
+        return
     end
 end
-D = [
-    Distributions.TriangularDist(150.0, 250.0, 180.0),
-    Distributions.TriangularDist(150.0, 250.0, 220.0),
-]
-Ω = [round.(Int, sort!(rand(d, 30))) for d in D]
-model = SDDP.PolicyGraph(
-    graph;
-    sense = :Max,
-    upper_bound = 5 * 250 / (1 - 0.6),
-    optimizer = HiGHS.Optimizer,
-) do sp, t
-    @variable(sp, x >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, u_buy >= 0)
-    @variable(sp, u_sell >= 0)
-    @constraint(sp, u_sell <= x.in)
-    @constraint(sp, x.out == x.in - u_sell + u_buy)
-    SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, Ω[t])
-    @stageobjective(sp, 5u_sell - 2u_buy - 0.1x.out)
-    _ = add_ddu_matrices(sp, [Φ(0, 0.6), Φ(1, 0.6)]; M = 1e-4)
-end
+
+model = build_and_cheese_model(1234)
 
 SDDP.train(
     model;
     forward_pass = DecisionDependentForwardPass(),
-    duality_handler = SDDP.BanditDuality(
-        SDDP.ContinuousConicDuality(),
-        SDDP.StrengthenedConicDuality(),
+    duality_handler = # SDDP.BanditDuality(
+        # SDDP.ContinuousConicDuality(),
+        # SDDP.StrengthenedConicDuality(),
         SDDP.LagrangianDuality(),
-    ),
+    # ),
+    cut_type = SDDP.MULTI_CUT,
     log_every_iteration = true,
+    iteration_limit = 100,
+)
+ret = solve_decision_dependent_trajectory(
+    model,
+    model.initial_root_state,
+    [:x, :u_sell];
+    explore = false,
 )
 
-ret = solve_trajectory(
-    model,
-    DecisionDependentForwardPass(),
-    model.initial_root_state,
-    [:x, :u_buy, :u_sell],
-)
+
+# # Lagrangian
+# model = build_and_train_model(; Ω = Ω, Φ = Φ, z = [0, 1], ρ = 0.9)
+# SDDP.train(model; forward_pass = SDDP.LagrangianDuality())
+
+# # Lagrangian
+# model = build_and_train_model(; Ω = Ω, Φ = Φ, z = [0, 1], ρ = 0.9)
+# SDDP.train(model; forward_pass = SDDP.LagrangianDuality())
+
+
+# model = build_and_train_model(;
+#     Ω = Ω,
+#     Φ = Φ,
+#     z = [0, 1],
+#     ρ = 0.9,
+#     forward_pass =
+# )
+
+# ret = solve_decision_dependent_trajectory(
+#     model,
+#     model.initial_root_state,
+#     [:x, :u_buy, :u_sell],
+# )
+
+
+# function build_and_train_model(;
+#     Ω::Vector,
+#     Φ::Function,
+#     z::Union{Number,Vector},
+#     ρ::Float64;,
+# )
+#     N = length(Ω)
+#     graph = SDDP.Graph(0)
+#     SDDP.add_node.((graph,), 1:N)
+#     Φ̅ = Φ(sum(z) / length(z), ρ)
+#     for j in 1:N
+#         SDDP.add_edge(graph, 0 => j, Φ̅[1, j+1])
+#         for i in 1:N
+#             SDDP.add_edge(graph, i => j, Φ̅[i+1, j+1])
+#         end
+#     end
+#     return SDDP.PolicyGraph(
+#         graph;
+#         sense = :Max,
+#         upper_bound = 5 * maximum(maximum.(Ω)) / (1 - ρ),
+#         optimizer = HiGHS.Optimizer,
+#     ) do sp, t
+#         @variable(sp, x >= 0, SDDP.State, initial_value = 0)
+#         @variable(sp, u_buy >= 0)
+#         @variable(sp, u_sell >= 0)
+#         @constraint(sp, u_sell <= x.in)
+#         @constraint(sp, x.out == x.in - u_sell + u_buy)
+#         SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, Ω[t])
+#         @stageobjective(sp, 5u_sell - 2u_buy - 0.1x.out)
+#         if z isa Vector
+#             _ = add_ddu_matrices(sp, Φ.(z, ρ); M = 1e-4)
+#         end
+#         return
+#     end
+# end
+
+# function Φ(z, ρ)
+#     return [
+#         0.0 0.5 0.5
+#         0.0 ρ * (0.5 - 0.3z) ρ * (0.5 + 0.3z)
+#         0.0 ρ * (0.5 - 0.2z) ρ * (0.5 + 0.2z)
+#     ]
+# end
+
+# D = [
+#     Distributions.TriangularDist(150.0, 250.0, 180.0),
+#     Distributions.TriangularDist(150.0, 250.0, 220.0),
+# ]
+# Ω = [round.(Int, sort!(rand(d, 30))) for d in D]
+
+# # Convex relaxation
+# model = build_and_train_model(; Ω = Ω, Φ = Φ, z = [0, 1], ρ = 0.9)
+# SDDP.train(model; forward_pass = DecisionDependentForwardPass())
+
+# # Lagrangian
+# model = build_and_train_model(; Ω = Ω, Φ = Φ, z = [0, 1], ρ = 0.9)
+# SDDP.train(model; forward_pass = SDDP.LagrangianDuality())
+
+# # Lagrangian
+# model = build_and_train_model(; Ω = Ω, Φ = Φ, z = [0, 1], ρ = 0.9)
+# SDDP.train(model; forward_pass = SDDP.LagrangianDuality())
+
+
+# model = build_and_train_model(;
+#     Ω = Ω,
+#     Φ = Φ,
+#     z = [0, 1],
+#     ρ = 0.9,
+#     forward_pass =
+# )
+
+# ret = solve_decision_dependent_trajectory(
+#     model,
+#     model.initial_root_state,
+#     [:x, :u_buy, :u_sell],
+# )
