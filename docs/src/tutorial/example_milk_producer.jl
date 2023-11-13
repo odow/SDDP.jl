@@ -161,8 +161,13 @@ model = SDDP.PolicyGraph(
         x_stock.in + ω_production + u_spot_buy - x_forward[1].in - u_spot_sell
     )
     ## The random variables. `price` comes from the Markov node
+    ##
+    ## !!! warning
+    ##     The elements in Ω MUST be a tuple with 1 or 2 values, where the first
+    ##     value is `price` and the second value is the random variable for the
+    ##     current node. If the node is deterministic, use Ω = [(price,)].
     Ω = [(price, p) for p in Ω_production]
-    SDDP.parameterize(sp, Ω) do ω::Tuple{Float64,Float64}
+    SDDP.parameterize(sp, Ω) do ω
         ## Fix the ω_production variable
         fix(ω_production, ω[2])
         @stageobjective(
