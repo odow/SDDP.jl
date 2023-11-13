@@ -5,28 +5,21 @@
 
 module LocalImprovementSearch
 
+import JuMP
+
 _norm(x) = sqrt(sum(xi^2 for xi in x))
 
 abstract type AbstractSearchMethod end
 
-function minimize(f::Function, x₀::Vector{Float64})
-    return minimize(f, BFGS(100), x₀)
-end
-
-###
-### BFGS
-###
-struct BFGS <: AbstractSearchMethod
-    evaluation_limit::Int
-end
-
 """
-    minimize(f::Function, x₀::Vector{Float64})
+    minimize(
+        f::Function,
+        [method::AbstractSearchMethod = BFGS(100)],
+        x₀::Vector{Float64},
+        lower_bound::Float64 = -Inf,
+    )
 
 Minimizes a convex function `f` using first-order information.
-
-The algorithm is a modified version of BFGS, with a specialized back-tracking
-inexact line-search.
 
 Compared to off-the-shelf implementations, it has a number of features tailored
 to this purpose:
@@ -44,8 +37,32 @@ to this purpose:
    * `(f, Δf)::Tuple{Float64,Vector{Float64}`:  a tuple of the function
      evaluation and first-order gradient information.
  * `x₀::Vector{Float64}`: a feasible starting point.
+
+## Default method
+
+The default algorithm is a modified version of BFGS, with a specialized
+back-tracking inexact line-search.
 """
-function minimize(f::F, bfgs::BFGS, x₀::Vector{Float64}) where {F<:Function}
+function minnimize end
+
+function minimize(f::Function, x₀::Vector{Float64}, lower_bound::Float64 = -Inf)
+    return minimize(f, BFGS(100), x₀, lower_bound)
+end
+
+###
+### BFGS
+###
+
+struct BFGS <: AbstractSearchMethod
+    evaluation_limit::Int
+end
+
+function minimize(
+    f::F,
+    bfgs::BFGS,
+    x₀::Vector{Float64},
+    lower_bound::Float64 = -Inf,
+) where {F<:Function}
     # Initial estimte for the Hessian matrix in BFGS
     B = zeros(length(x₀), length(x₀))
     for i in 1:size(B, 1)
@@ -127,6 +144,61 @@ function _line_search(
         α = (fₖ₊₁ - fₖ - p' * ∇fₖ₊₁ * α) / (p' * ∇fₖ - p' * ∇fₖ₊₁)
     end
     return 0.0, fₖ, ∇fₖ
+end
+
+###
+### Cutting plane
+###
+
+struct OuterApproximation{O} <: AbstractSearchMethod
+    optimizer::O
+end
+
+function minimize(
+    f::F,
+    method::OuterApproximation,
+    x₀::Vector{Float64},
+    lower_bound::Float64,
+) where {F<:Function}
+    model = JuMP.Model(method.optimizer)
+    JuMP.set_silent(model)
+    n = length(x₀)
+    JuMP.@variable(model, x[i in 1:n], start = x₀[i])
+    JuMP.@variable(model, θ >= lower_bound)
+    JuMP.@objective(model, Min, θ)
+    xₖ = x₀
+    fₖ, ∇fₖ = f(xₖ)::Tuple{Float64,Vector{Float64}}
+    upper_bound = fₖ
+    JuMP.@constraint(model, θ >= fₖ + ∇fₖ' * (x - xₖ))
+    evals = Ref(0)
+    d_step = Inf
+    while d_step > 1e-8 && evals[] < 20
+        JuMP.optimize!(model)
+        lower_bound, xₖ₊₁ = JuMP.value(θ), JuMP.value.(x)
+        ret = f(xₖ₊₁)
+        while ret === nothing
+            # point is infeasible
+            xₖ₊₁ = 0.5 * (xₖ + xₖ₊₁)
+            ret = f(xₖ₊₁)
+        end
+        fₖ₊₁, ∇fₖ₊₁ = ret::Tuple{Float64,Vector{Float64}}
+        evals[] += 1
+        upper_bound = fₖ₊₁
+        JuMP.@constraint(model, θ >= fₖ₊₁ + ∇fₖ₊₁' * (x - xₖ₊₁))
+        d = xₖ₊₁ - xₖ
+        d_step = _norm(d)
+        if sign(∇fₖ' * d) != sign(∇fₖ₊₁' * d)
+            # There is a kink between the x
+            xₖ₊₂ = 0.5 * (xₖ + xₖ₊₁)
+            fₖ₊₂, ∇fₖ₊₂ = f(xₖ₊₂)::Tuple{Float64,Vector{Float64}}
+            evals[] += 1
+            JuMP.@constraint(model, θ >= fₖ₊₂ + ∇fₖ₊₂' * (x - xₖ₊₂))
+            fₖ, xₖ = fₖ₊₂, xₖ₊₂
+        else
+            fₖ, xₖ = fₖ₊₁, xₖ₊₁
+        end
+    end
+    return fₖ, xₖ
 end
 
 end

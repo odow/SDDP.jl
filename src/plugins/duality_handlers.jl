@@ -217,7 +217,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         return conic_obj, conic_dual
     end
     L_star, λ_star =
-        LocalImprovementSearch.minimize(lagrange.method, λ_star) do x
+        LocalImprovementSearch.minimize(lagrange.method, λ_star, conic_obj) do x
             L_k = _solve_primal_problem(node.subproblem, x, h_expr, h_k)
             return L_k === nothing ? nothing : (s * L_k, s * h_k)
         end
