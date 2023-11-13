@@ -481,8 +481,9 @@ which returns a `Vector{Float64}` when called with no arguments like
 This sampling scheme must be used with a Markovian graph constructed from the
 same `simulator`.
 
-The sample space for [`SDDP.parameterize`](@ref) must be a tuple in which the
-first element is the Markov state.
+The sample space for [`SDDP.parameterize`](@ref) must be a tuple with 1 or 2
+values, value is the Markov state and the second value is the random variable
+for the current node. If the node is deterministic, use `Ω = [(markov_state,)]`.
 
 This sampling scheme generates a new scenario by calling `simulator()`, and then
 picking the sequence of nodes in the Markovian graph that is closest to the new
@@ -508,7 +509,7 @@ julia> model = SDDP.PolicyGraph(
            @variable(sp, x >= 0, SDDP.State, initial_value = 1)
            @variable(sp, u >= 0)
            @constraint(sp, x.out == x.in - u)
-           # Elements of Ω must be a tuple in which `markov_state` is the first
+           # Elements of Ω MUST be a tuple in which `markov_state` is the first
            # element.
            Ω = [(markov_state, (u = u_max,)) for u_max in (0.0, 0.5)]
            SDDP.parameterize(sp, Ω) do (markov_state, ω)
@@ -559,7 +560,8 @@ function sample_scenario(
         noise_terms = get_noise_terms(InSampleMonteCarlo(), node, node_index)
         noise = sample_noise(noise_terms)
         @assert noise[1] == node_index[2]
-        push!(scenario_path, (node_index, (value, noise[2])))
+        ω = length(noise) == 1 ? (value,) : (value, noise[2])
+        push!(scenario_path, (node_index, ω))
     end
     return scenario_path, false
 end

@@ -318,6 +318,70 @@ function test_OutOfSampleMonteCarlo_initial_node()
     end
 end
 
+function test_SimulatorSamplingScheme()
+    function simulator()
+        inflow = zeros(3)
+        current = 50.0
+        Ω = [-10.0, 0.1, 9.6]
+        for t in 1:3
+            current += rand(Ω)
+            inflow[t] = current
+        end
+        return inflow
+    end
+    graph = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)
+    model = SDDP.PolicyGraph(
+        graph,
+        lower_bound = 0.0,
+        direct_mode = false,
+    ) do sp, node
+        t, price = node
+        @variable(sp, 0 <= x <= 1, SDDP.State, initial_value = 0)
+        SDDP.parameterize(sp, [(price,)]) do ω
+            return SDDP.@stageobjective(sp, price * x.out)
+        end
+    end
+    sampler = SDDP.SimulatorSamplingScheme(simulator)
+    scenario, _ = SDDP.sample_scenario(model, sampler)
+    @test length(scenario) == 3
+    @test haskey(graph.nodes, scenario[1][1])
+    @test scenario[1][2] in ((40.0,), (50.1,), (59.6,))
+    return
+end
+
+function test_SimulatorSamplingScheme_with_noise()
+    function simulator()
+        inflow = zeros(3)
+        current = 50.0
+        Ω = [-10.0, 0.1, 9.6]
+        for t in 1:3
+            current += rand(Ω)
+            inflow[t] = current
+        end
+        return inflow
+    end
+    graph = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)
+    model = SDDP.PolicyGraph(
+        graph,
+        lower_bound = 0.0,
+        direct_mode = false,
+    ) do sp, node
+        t, price = node
+        @variable(sp, 0 <= x <= 1, SDDP.State, initial_value = 0)
+        SDDP.parameterize(sp, [(price, i) for i in 1:2]) do ω
+            return SDDP.@stageobjective(sp, price * x.out + i)
+        end
+    end
+    sampler = SDDP.SimulatorSamplingScheme(simulator)
+    scenario, _ = SDDP.sample_scenario(model, sampler)
+    @test length(scenario) == 3
+    @test haskey(graph.nodes, scenario[1][1])
+    @test scenario[1][2] isa Tuple{Float64,Int}
+    @test scenario[1][2][1] in (40.0, 50.1, 59.6)
+    @test scenario[1][2][2] in 1:3
+    return
+end
+
 end  # module
 
 TestSamplingSchemes.runtests()
