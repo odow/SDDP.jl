@@ -74,7 +74,7 @@ function minimize(
     # Initial step-length
     αₖ = 1.0
     # Evaluation counter
-    evals = Ref(0)
+    evals = Ref(bfgs.evaluation_limit)
     while true
         # Search direction. We could be clever here and maintain B⁻¹, but we're
         # only ever going to be solving this for very small |x| << 100 problems,
@@ -98,7 +98,7 @@ function minimize(
         elseif _norm(∇fₖ₊₁) < 1e-6
             # Zero(ish) gradient. Return what must be a local maxima.
             return fₖ₊₁, xₖ + αₖ * pₖ
-        elseif evals[] > bfgs.evaluation_limit
+        elseif evals[] <= 0
             # We have evaluated the function too many times. Return our current
             # best.
             return fₖ₊₁, xₖ + αₖ * pₖ
@@ -127,17 +127,20 @@ function _line_search(
     α::Float64,
     evals::Ref{Int},
 ) where {F<:Function}
-    while _norm(α * p) / max(1.0, _norm(x)) > 1e-3
+    while _norm(α * p) > 1e-3 * max(1.0, _norm(x))
         xₖ = x + α * p
         ret = f(xₖ)
-        evals[] += 1
-        if ret === nothing
-            α /= 2  # Infeasible. So take a smaller step
+        evals[] -= 1
+        if ret === nothing  # Infeasible. So take a smaller step
+            α /= 2
             continue
         end
         fₖ₊₁, ∇fₖ₊₁ = ret
         if p' * ∇fₖ₊₁ < 1e-6
             # Still a descent direction, so take a step.
+            return α, fₖ₊₁, ∇fₖ₊₁
+        elseif isapprox(fₖ + α * p' * ∇fₖ, fₖ₊₁; atol = 1e-8)
+            # Step is onto a kink
             return α, fₖ₊₁, ∇fₖ₊₁
         end
         #  Step is an ascent, so use Newton's method to find the intersection
