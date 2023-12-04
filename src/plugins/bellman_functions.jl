@@ -493,6 +493,33 @@ function _add_average_cut(
     )
 end
 
+function _add_ddu_linking_constraints(node)
+    model = node.subproblem.ext[:sddp_policy_graph]
+    N = length(node.bellman_function.local_thetas)
+    μᵀy = get_belief_state_component(node)
+    θʲʷ = JuMP.VariableRef[
+        node.bellman_function.local_thetas[i].theta for i in 1:N
+    ]
+    Θ = node.bellman_function.global_theta.theta
+    partition_index = findfirst(s -> node.index in s, model.belief_partition)
+    A = model.belief_partition[partition_index]
+    ddu = node.subproblem.ext[:__ddu__]
+    for (d, y_d) in enumerate(ddu.y)
+        P_d = Float64[
+            ddu.matrices[d][j+1, child.term] * noise.probability
+            for j in A
+            for child in model[j].children
+            for noise in model[child.term].noise_terms
+        ]
+        slack = ddu.M * (1 - y_d)
+        if JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE
+            JuMP.@constraint(node.subproblem, Θ >= P_d' * θʲʷ - slack - (1 - sum(P_d)) * μᵀy)
+        else
+            JuMP.@constraint(node.subproblem, Θ <= P_d' * θʲʷ + slack - (1 - sum(P_d)) * μᵀy)
+        end
+    end
+end
+
 function _add_multi_cut(
     node::Node,
     outgoing_state::Dict{Symbol,Float64},
@@ -518,6 +545,10 @@ function _add_multi_cut(
         )
     end
     model = JuMP.owner_model(bellman_function.global_theta.theta)
+    if haskey(node.ext, :_ddu_is_set)
+        _add_ddu_linking_constraints(node)
+        return # Don't muck with the global cuts
+    end
     cut_expr = @expression(
         model,
         sum(
@@ -528,6 +559,7 @@ function _add_multi_cut(
     # TODO(odow): should we use `cut_expr` instead?
     ξ = copy(risk_adjusted_probability)
     if !(ξ in bellman_function.risk_set_cuts) || μᵀy != JuMP.AffExpr(0.0)
+        @show ξ
         push!(bellman_function.risk_set_cuts, ξ)
         if JuMP.objective_sense(model) == MOI.MIN_SENSE
             @constraint(model, bellman_function.global_theta.theta >= cut_expr)
@@ -550,6 +582,7 @@ function _add_locals_if_necessary(
     if num_local_thetas == N
         return # Do nothing. Already initialized.
     elseif num_local_thetas > 0
+        @show node.index
         error(
             "Expected $(N) local θ variables but there were " *
             "$(num_local_thetas).",

@@ -82,9 +82,8 @@ function minimize(
         # more of a bottleneck.)
         pₖ = B \ -∇fₖ
         # Run line search in direction `pₖ`
-        αₖ, fₖ₊₁, ∇fₖ₊₁ =
-            _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals, bfgs.evaluation_limit)
-        if _norm(αₖ * pₖ) / max(1.0, _norm(xₖ)) < 1e-3
+        αₖ, fₖ₊₁, ∇fₖ₊₁ = _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals)
+        if _norm(αₖ * pₖ) < 1e-3 * max(1.0, _norm(xₖ))
             # Small steps! Probably at the edge of the feasible region.
             # Return the current iterate.
             #
@@ -96,7 +95,7 @@ function minimize(
             # returning a solution that is on the edge of numerical dual
             # feasibility.
             return fₖ, xₖ
-        elseif _norm(∇fₖ₊₁) < 1e-6
+        elseif _norm(∇fₖ₊₁) <= 1e-6
             # Zero(ish) gradient. Return what must be a local maxima.
             return fₖ₊₁, xₖ + αₖ * pₖ
         elseif evals[] <= 0
@@ -127,7 +126,6 @@ function _line_search(
     p::Vector{Float64},
     α::Float64,
     evals::Ref{Int},
-    evaluation_limit::Int,
 ) where {F<:Function}
     while _norm(α * p) > 1e-3 * max(1.0, _norm(x))
         xₖ = x + α * p
@@ -138,7 +136,7 @@ function _line_search(
             continue
         end
         fₖ₊₁, ∇fₖ₊₁ = ret
-        if p' * ∇fₖ₊₁ < 1e-6
+        if p' * ∇fₖ₊₁ <= 0
             # Still a descent direction, so take a step.
             return α, fₖ₊₁, ∇fₖ₊₁
         elseif isapprox(fₖ + α * p' * ∇fₖ, fₖ₊₁; atol = 1e-8)
@@ -146,11 +144,7 @@ function _line_search(
             return α, fₖ₊₁, ∇fₖ₊₁
         end
         #  Step is an ascent, so use Newton's method to find the intersection
-        αₖ = (fₖ₊₁ - fₖ - p' * ∇fₖ₊₁ * α) / (p' * ∇fₖ - p' * ∇fₖ₊₁)
-        if abs(α - αₖ) < 1e-4
-            break # No change in α
-        end
-        α = αₖ
+        α = (fₖ₊₁ - fₖ - p' * ∇fₖ₊₁ * α) / (p' * ∇fₖ - p' * ∇fₖ₊₁)
     end
     return 0.0, fₖ, ∇fₖ
 end
@@ -181,7 +175,7 @@ function minimize(
     JuMP.@constraint(model, θ >= fₖ + ∇fₖ' * (x - xₖ))
     evals = Ref(0)
     d_step = Inf
-    while d_step > 1e-8 && evals[] < 20
+    while d_step > 1e-8 && evals[] < 30
         JuMP.optimize!(model)
         lower_bound, xₖ₊₁ = JuMP.value(θ), JuMP.value.(x)
         ret = f(xₖ₊₁)
