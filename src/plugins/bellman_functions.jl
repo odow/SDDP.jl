@@ -502,7 +502,11 @@ function _add_ddu_linking_constraints(node)
     ]
     Θ = node.bellman_function.global_theta.theta
     partition_index = findfirst(s -> node.index in s, model.belief_partition)
-    A = model.belief_partition[partition_index]
+    A = if partition_index === nothing
+        [node.index]
+    else
+        model.belief_partition[partition_index]
+    end
     ddu = node.subproblem.ext[:__ddu__]
     for (d, y_d) in enumerate(ddu.y)
         P_d = Float64[

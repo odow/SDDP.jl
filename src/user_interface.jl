@@ -1359,7 +1359,7 @@ the probability of being in node i given the observation of ω. In addition
  - P(Y) = ∑ᵢ P(Xᵢ′) × P(ω ∈ Ωᵢ)
 """
 function construct_belief_update(
-    graph::SDDP.PolicyGraph{T},
+    graph::PolicyGraph{T},
     partition::Vector{Set{T}},
 ) where {T}
     # TODO: check that partition is proper.
@@ -1372,6 +1372,7 @@ function construct_belief_update(
         end
     end
     function belief_updater(
+        node::Node{T},
         outgoing_belief::Dict{T,Float64},
         incoming_belief::Dict{T,Float64},
         observed_partition::Int,

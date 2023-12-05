@@ -65,6 +65,7 @@ function forward_pass(
             belief = node.belief_state::BeliefState{T}
             partition_index = belief.partition_index
             current_belief = belief.updater(
+                node,
                 belief.belief,
                 current_belief,
                 partition_index,

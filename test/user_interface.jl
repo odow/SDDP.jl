@@ -534,18 +534,22 @@ function test_belief_updater()
     belief_updater = SDDP.construct_belief_update(model, [Set([1]), Set([2])])
     belief = Dict(1 => 1.0, 2 => 0.0)
     belief′ = copy(belief)
-    @test belief_updater(belief′, belief, 2, :A) == Dict(1 => 0.0, 2 => 1.0)
+    @test belief_updater(model[2], belief′, belief, 2, :A) ==
+          Dict(1 => 0.0, 2 => 1.0)
     @test belief′ == Dict(1 => 0.0, 2 => 1.0)
     belief = Dict(1 => 0.0, 2 => 1.0)
-    @test belief_updater(belief′, belief, 1, :B) == Dict(1 => 1.0, 2 => 0.0)
+    @test belief_updater(model[1], belief′, belief, 1, :B) ==
+          Dict(1 => 1.0, 2 => 0.0)
     @test belief′ == Dict(1 => 1.0, 2 => 0.0)
 
     belief_updater = SDDP.construct_belief_update(model, [Set([1, 2])])
 
     belief = Dict(1 => 1.0, 2 => 0.0)
-    @test belief_updater(belief′, belief, 1, :A) == Dict(1 => 0.0, 2 => 1.0)
+    @test belief_updater(model[1], belief′, belief, 1, :A) ==
+          Dict(1 => 0.0, 2 => 1.0)
     belief = Dict(1 => 0.0, 2 => 1.0)
-    @test belief_updater(belief′, belief, 1, :B) == Dict(1 => 1.0, 2 => 0.0)
+    @test belief_updater(model[1], belief′, belief, 1, :B) ==
+          Dict(1 => 1.0, 2 => 0.0)
 
     function is_approx(x::Dict{T,Float64}, y::Dict{T,Float64}) where {T}
         if length(x) != length(y)
@@ -560,7 +564,7 @@ function test_belief_updater()
     end
     belief = Dict(1 => 0.6, 2 => 0.4)
     @test is_approx(
-        belief_updater(belief′, belief, 1, :A),
+        belief_updater(model[1], belief′, belief, 1, :A),
         Dict(1 => 6 / 41, 2 => 35 / 41),
     )
     return

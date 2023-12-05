@@ -12,25 +12,6 @@ import Gurobi
 import Random
 import Plots
 
-# function _add_ddu_constraints(model::SDDP.PolicyGraph{Int}, i::Int)
-#     node = model[i]
-#     if get(node.ext, :_ddu_is_set, false)
-#         return
-#     end
-    # partition_index = findfirst(s -> i in s, model.belief_partition)
-    # A = model.belief_partition[partition_index]
-#     nominal_P = [
-#         child.probability * noise.probability
-#         for j in A for child in model[j].children for noise in model[child.term].noise_terms
-#     ]
-#     push!(node.bellman_function.risk_set_cuts, nominal_P)
-#     N = length(nominal_P)
-#     SDDP._add_locals_if_necessary(node, node.bellman_function, N)
-
-#     node.ext[:_ddu_is_set] = true
-#     return
-# end
-
 function add_ddu_matrices(sp, matrices::Vector{<:Matrix}; M)
     N = length(matrices)
     @variable(sp, __ddu__[1:N], Bin)
@@ -48,7 +29,6 @@ function solve_decision_dependent_trajectory(
 )
     for i in keys(model.nodes)
         model[i].ext[:_ddu_is_set] = true
-        # _add_ddu_constraints(model, i)
     end
     function sample_node(Φ::Matrix{<:Real}, y::Int)
         r = rand()
@@ -87,6 +67,7 @@ function solve_decision_dependent_trajectory(
         if node.belief_state !== nothing
             belief = node.belief_state::SDDP.BeliefState{Int}
             current_belief = belief.updater(
+                node,
                 belief.belief,
                 current_belief,
                 belief.partition_index,
@@ -144,7 +125,8 @@ function solve_decision_dependent_trajectory(
             end
         end
         push!(simulation, store)
-        if rand() >= sum(child.probability for child in node.children; init = 0)
+        if depth === nothing &&
+           rand() >= sum(child.probability for child in node.children; init = 0)
             break
         end
     end

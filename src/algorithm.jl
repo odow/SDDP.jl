@@ -674,6 +674,7 @@ function solve_all_children(
                 if belief_state !== nothing
                     current_belief = child_node.belief_state::BeliefState{T}
                     current_belief.updater(
+                        node,
                         current_belief.belief,
                         belief_state,
                         current_belief.partition_index,
@@ -757,6 +758,7 @@ function calculate_bound(
                 belief = node.belief_state::BeliefState{T}
                 partition_index = belief.partition_index
                 belief.updater(
+                    node,
                     belief.belief,
                     current_belief,
                     partition_index,
@@ -1182,6 +1184,7 @@ function _simulate(
             belief = node.belief_state::BeliefState{T}
             partition_index = belief.partition_index
             current_belief = belief.updater(
+                node,
                 belief.belief,
                 current_belief,
                 partition_index,
