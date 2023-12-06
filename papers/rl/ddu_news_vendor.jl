@@ -65,6 +65,7 @@ function solve_decision_dependent_trajectory(
         ω = SDDP.sample_noise(node.noise_terms)
         push!(scenario_path, (i, ω))
         if node.belief_state !== nothing
+            node.subproblem.ext[:__ddu_last_y__] = y
             belief = node.belief_state::SDDP.BeliefState{Int}
             current_belief = belief.updater(
                 node,
@@ -151,145 +152,233 @@ function SDDP.forward_pass(
     return solve_decision_dependent_trajectory(model, incoming_state_value)
 end
 
-
-Φ(ρ, ε, z) = [
-    #= R   =# 0.5 0.5 0 0
-    #= q_L =# ρ*(1-ε)*(1-z) ρ*ε*(1-z) z 0
-    #= q_H =# ρ*ε*(1-z) ρ*(1-ε)*(1-z) 0 z
-    #= d_L =# ρ*(1-ε) ρ*ε 0 0
-    #= d_H =# ρ*ε ρ*(1-ε) 0 0
-]
-
-ρ, ε = 0.9, 0.0
-c_market, c_price = 3, 1.0
-Ω = [
-    [0, 2, 4, 6, 8, 10],
-    [0, 2, 4, 6, 8, 10],
-    [5, 10],
-    [5, 10],
-]
-P = [
-    fill(1 / length(Ω[1]), length(Ω[1])),
-    fill(1 / length(Ω[2]), length(Ω[2])),
-    [0.8, 0.2],
-    [0.2, 0.8]
-]
-graph = SDDP.Graph(0)
-SDDP.add_node.((graph,), 1:4)
-SDDP.add_ambiguity_set(graph, [1, 2], 1e3)
-SDDP.add_ambiguity_set(graph, [3, 4], 1e3)
-Φ̅ = Φ(ρ, ε, 0.5)
-for i in 1:5, j in 1:4
-    Φ̅[i, j] > 0 && SDDP.add_edge(graph, (i-1) => j, Φ̅[i, j])
-end
-model = SDDP.PolicyGraph(
-    graph;
-    sense = :Max,
-    optimizer = Gurobi.Optimizer,
-    upper_bound = c_price * maximum(Ω[4]) / (1 - ρ),
-) do sp, node
-    @variable(sp, x >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, u_sell >= 0)
-    z = add_ddu_matrices(sp, [Φ(ρ, ε, 0), Φ(ρ, ε, 1)]; M = 1e4)
-    sp[:z] = z
-    @constraint(sp, con_balance, x.out == x.in - u_sell + 0.0)
-    if node in (1, 2)  # farm
-        @stageobjective(sp, -c_market * z[2])
-        SDDP.parameterize(sp, Ω[node], P[node]) do ω
-            return set_normalized_rhs(con_balance, ω)
-        end
-    else  # market
-        @stageobjective(sp, c_price * u_sell)
-        SDDP.parameterize(sp, Ω[node], P[node]) do ω
-            return set_upper_bound(u_sell, ω)
+function run_cheese_producer_example()
+    Φ(ρ, z) = [0.5 0.5; ρ*(1-z) z; ρ 0]
+    ρ = 0.9
+    graph = SDDP.Graph(0)
+    SDDP.add_node.((graph,), 1:2)
+    Φ̅ = Φ(ρ, 0.5)
+    for i in 1:3, j in 1:2
+        Φ̅[i, j] > 0 && SDDP.add_edge(graph, (i-1) => j, Φ̅[i, j])
+    end
+    model = SDDP.PolicyGraph(
+        graph;
+        sense = :Max,
+        optimizer = Gurobi.Optimizer,
+        upper_bound = 10 / (1 - ρ),
+    ) do sp, node
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0)
+        @variable(sp, u_sell >= 0)
+        sp[:z] = z = add_ddu_matrices(sp, [Φ(ρ, 0), Φ(ρ, 1)]; M = 1e4)
+        @constraint(sp, con_balance, x.out == x.in - u_sell + 0.0)
+        if node == 1  # farm
+            @stageobjective(sp, -3 * z[2])
+            SDDP.parameterize(sp, 0:2:8) do ω
+                return set_normalized_rhs(con_balance, ω)
+            end
+        else         # market
+            @stageobjective(sp, 1 * u_sell)
+            SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, [5, 10])
         end
     end
-end
-SDDP.train(
-    model;
-    duality_handler = SDDP.LagrangianDuality(),
-    cut_type = SDDP.MULTI_CUT,
-    forward_pass = DecisionDependentForwardPass(),
-    iteration_limit = 10,
-    log_every_iteration = true,
-)
-
-ret = solve_decision_dependent_trajectory(
-    model,
-    model.initial_root_state,
-    [:x, :u_sell, :z];
-    explore = false,
-    depth = 50,
-)
-
-Plots.plot(
-    Plots.plot(
-        map(d -> d[:node_index], ret.simulation);
-        ylabel = "Node",
-        linetype = :step,
-    ),
-    Plots.plot(
-        map(d -> (d[:belief][1] + d[:belief][3]), ret.simulation);
-        ylabel = "Belief(low)",
-        linetype = :step,
-        ylims = (0, 1),
-    ),
-    Plots.plot(
-        map(d -> d[:x].out, ret.simulation);
-        ylabel = "x",
-        ylims = (0, maximum(d -> d[:x].out, ret.simulation)),
-        linetype = :step,
-    ),
-    Plots.plot(
-        map(d -> d[:z][2], ret.simulation),
-        ylims = (0, 1),
-        ylabel = "z",
-        linetype = :step,
-    ),
-    Plots.plot(
-        map(d -> d[:u_sell], ret.simulation);
-        ylabel = "u_sell",
-        linetype = :step,
-    ),
-    xlims = (0, length(ret.simulation) + 1),
-    legend = false,
-    xlabel = "Simulation step",
-)
-
-args = NTuple{3,Float64}[
-    (data[:x].out, data[:belief][1] + data[:belief][3], data[:z][2])
-    for data in ret.simulation if data[:node_index] in (1, 2)
-]
-Plots.scatter(args; xlabel = "x", ylabel = "z", legend = false)
-
-function plot_simulation(ret)
-    x = Tuple{Float64,Float64}[]
-    u = Tuple{Float64,Float64}[]
-    q = Tuple{Float64,Float64}[]
-    d = Tuple{Float64,Float64}[]
-    t_index = 1.0
-    for data in ret.simulation
-        if data[:node_index] in (1, 2)
-            t_index += 1.0
-            push!(x, (t_index, data[:x].out))
-            push!(q, (t_index, data[:noise_term]))
-        else
-            push!(u, (t_index+0.1, -data[:u_sell]))
-            push!(d, (t_index-0.1, -data[:noise_term]))
-        end
-    end
-    plot_x = Plots.plot(x)
-    plot_u = Plots.bar(
-        u;
-        xlabel = "Week",
-        ylabel = "Quantity [kg]",
-        ylims = (-maximum(Ω[3]) - 1, maximum(Ω[1]) + 1),
-        bar_width = 0.2,
-        label = "u_sell",
+    SDDP.train(
+        model;
+        duality_handler = SDDP.LagrangianDuality(),
+        cut_type = SDDP.MULTI_CUT,
+        forward_pass = DecisionDependentForwardPass(),
+        iteration_limit = 10,
+        log_every_iteration = true,
     )
-    Plots.bar!(plot_u, q; bar_width = 0.4, label = "Supply")
-    Plots.bar!(plot_u, d; bar_width = 0.2, label = "Demand")
-    return Plots.plot(plot_x, plot_u)
+    ret = solve_decision_dependent_trajectory(
+        model,
+        model.initial_root_state,
+        [:x, :u_sell, :z];
+        explore = false,
+        depth = 50,
+    )
+    stock_plot = Plots.plot(
+        map(d -> d[:x].out, ret.simulation);
+        ylabel = "Quantity in stock (\$x^\\prime\$)\n",
+        ylims = (0, maximum(d -> d[:x].out, ret.simulation) + 1),
+        color = :slategray,
+        legend = false,
+        linewidth = 3,
+    )
+    Plots.scatter!(
+        stock_plot,
+        [
+            (i, data[:x].out)
+            for (i, data) in enumerate(ret.simulation) if data[:node_index] == 1 && data[:z][2] > 0.5
+        ],
+        color = "#43a047",
+    )
+    Plots.scatter!(
+        stock_plot,
+        [
+            (i, data[:x].out)
+            for (i, data) in enumerate(ret.simulation) if data[:node_index] == 1 && data[:z][2] < 0.5
+        ],
+        marker = :x,
+        markerstrokewidth = 3,
+        color = "#e53935",
+    )
+    plt = Plots.plot(
+        stock_plot,
+        Plots.plot(
+            map(d -> d[:u_sell], ret.simulation);
+            ylabel = "Sales decision (\$u_{sell}\$)",
+            seriestype = :steppre,
+            linewidth = 3,
+            color = :slategray,
+            xlabel = "Simulation step",
+        ),
+        xlims = (0, length(ret.simulation) + 1),
+        legend = false,
+        layout = (2, 1),
+        dpi = 400,
+    )
+    Plots.savefig("cheese_producer.pdf")
+    return plt
 end
 
-# plot_simulation(ret)
+# Φ(ρ, ε, z) = [
+#     #= R   =# 0.5 0.5 0 0
+#     #= q_L =# ρ*(1-ε)*(1-z) ρ*ε*(1-z) z 0
+#     #= q_H =# ρ*ε*(1-z) ρ*(1-ε)*(1-z) 0 z
+#     #= d_L =# ρ*(1-ε) ρ*ε 0 0
+#     #= d_H =# ρ*ε ρ*(1-ε) 0 0
+# ]
+
+# ρ, ε = 0.9, 0.0
+# c_market, c_price = 3, 1.0
+# Ω = [
+#     [0, 2, 4, 6, 8, 10],
+#     [0, 2, 4, 6, 8, 10],
+#     [5, 10],
+#     [5, 10],
+# ]
+# P = [
+#     fill(1 / length(Ω[1]), length(Ω[1])),
+#     fill(1 / length(Ω[2]), length(Ω[2])),
+#     [0.8, 0.2],
+#     [0.2, 0.8]
+# ]
+# graph = SDDP.Graph(0)
+# SDDP.add_node.((graph,), 1:4)
+# SDDP.add_ambiguity_set(graph, [1, 2], 1e3)
+# SDDP.add_ambiguity_set(graph, [3, 4], 1e3)
+# Φ̅ = Φ(ρ, ε, 0.5)
+# for i in 1:5, j in 1:4
+#     Φ̅[i, j] > 0 && SDDP.add_edge(graph, (i-1) => j, Φ̅[i, j])
+# end
+# model = SDDP.PolicyGraph(
+#     graph;
+#     sense = :Max,
+#     optimizer = Gurobi.Optimizer,
+#     upper_bound = c_price * maximum(Ω[4]) / (1 - ρ),
+# ) do sp, node
+#     @variable(sp, x >= 0, SDDP.State, initial_value = 0)
+#     @variable(sp, u_sell >= 0)
+#     z = add_ddu_matrices(sp, [Φ(ρ, ε, 0), Φ(ρ, ε, 1)]; M = 1e4)
+#     sp[:z] = z
+#     @constraint(sp, con_balance, x.out == x.in - u_sell + 0.0)
+#     if node in (1, 2)  # farm
+#         @stageobjective(sp, -c_market * z[2])
+#         SDDP.parameterize(sp, Ω[node], P[node]) do ω
+#             return set_normalized_rhs(con_balance, ω)
+#         end
+#     else  # market
+#         @stageobjective(sp, c_price * u_sell)
+#         SDDP.parameterize(sp, Ω[node], P[node]) do ω
+#             return set_upper_bound(u_sell, ω)
+#         end
+#     end
+# end
+# SDDP.train(
+#     model;
+#     duality_handler = SDDP.LagrangianDuality(),
+#     cut_type = SDDP.MULTI_CUT,
+#     forward_pass = DecisionDependentForwardPass(),
+#     iteration_limit = 10,
+#     log_every_iteration = true,
+# )
+
+# ret = solve_decision_dependent_trajectory(
+#     model,
+#     model.initial_root_state,
+#     [:x, :u_sell, :z];
+#     explore = false,
+#     depth = 50,
+# )
+
+# Plots.plot(
+#     Plots.plot(
+#         map(d -> d[:node_index], ret.simulation);
+#         ylabel = "Node",
+#         linetype = :step,
+#     ),
+#     Plots.plot(
+#         map(d -> (d[:belief][1] + d[:belief][3]), ret.simulation);
+#         ylabel = "Belief(low)",
+#         linetype = :step,
+#         ylims = (0, 1),
+#     ),
+#     Plots.plot(
+#         map(d -> d[:x].out, ret.simulation);
+#         ylabel = "x",
+#         ylims = (0, maximum(d -> d[:x].out, ret.simulation)),
+#         linetype = :step,
+#     ),
+#     Plots.plot(
+#         map(d -> d[:z][2], ret.simulation),
+#         ylims = (0, 1),
+#         ylabel = "z",
+#         linetype = :step,
+#     ),
+#     Plots.plot(
+#         map(d -> d[:u_sell], ret.simulation);
+#         ylabel = "u_sell",
+#         linetype = :step,
+#     ),
+#     xlims = (0, length(ret.simulation) + 1),
+#     legend = false,
+#     xlabel = "Simulation step",
+# )
+
+# args = NTuple{3,Float64}[
+#     (data[:x].out, data[:belief][1] + data[:belief][3], data[:z][2])
+#     for data in ret.simulation if data[:node_index] in (1, 2)
+# ]
+# Plots.scatter(args; xlabel = "x", ylabel = "z", legend = false)
+
+# function plot_simulation(ret)
+#     x = Tuple{Float64,Float64}[]
+#     u = Tuple{Float64,Float64}[]
+#     q = Tuple{Float64,Float64}[]
+#     d = Tuple{Float64,Float64}[]
+#     t_index = 1.0
+#     for data in ret.simulation
+#         if data[:node_index] in (1, 2)
+#             t_index += 1.0
+#             push!(x, (t_index, data[:x].out))
+#             push!(q, (t_index, data[:noise_term]))
+#         else
+#             push!(u, (t_index+0.1, -data[:u_sell]))
+#             push!(d, (t_index-0.1, -data[:noise_term]))
+#         end
+#     end
+#     plot_x = Plots.plot(x)
+#     plot_u = Plots.bar(
+#         u;
+#         xlabel = "Week",
+#         ylabel = "Quantity [kg]",
+#         ylims = (-maximum(Ω[3]) - 1, maximum(Ω[1]) + 1),
+#         bar_width = 0.2,
+#         label = "u_sell",
+#     )
+#     Plots.bar!(plot_u, q; bar_width = 0.4, label = "Supply")
+#     Plots.bar!(plot_u, d; bar_width = 0.2, label = "Demand")
+#     return Plots.plot(plot_x, plot_u)
+# end
+
+# # plot_simulation(ret)
