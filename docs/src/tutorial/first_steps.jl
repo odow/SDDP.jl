@@ -894,7 +894,7 @@ end
 
 # !!! note
 #     By "value function" we mean $\mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$,
-#     note the function $V_i(x, \omega)$.
+#     not the function $V_i(x, \omega)$.
 
 # First, we construct a value function from the first subproblem:
 
