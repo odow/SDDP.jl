@@ -538,6 +538,13 @@ function _add_multi_cut(
     μᵀy = get_objective_state_component(node)
     JuMP.add_to_expression!(μᵀy, get_belief_state_component(node))
     for i in 1:length(dual_variables)
+        # if abs(dual_variables[i][:x]) > 1
+        #     @show i
+        #     @show objective_realizations[i]
+        #     @show dual_variables[i]
+        #     @show outgoing_state
+        #     @show bellman_function.local_thetas[i].theta
+        # end
         _add_cut(
             bellman_function.local_thetas[i],
             objective_realizations[i],
@@ -550,7 +557,11 @@ function _add_multi_cut(
     end
     model = JuMP.owner_model(bellman_function.global_theta.theta)
     if haskey(node.ext, :_ddu_is_set)
-        _add_ddu_linking_constraints(node)
+        ξ = copy(risk_adjusted_probability)
+        if !(ξ in bellman_function.risk_set_cuts) || μᵀy != JuMP.AffExpr(0.0)
+            push!(bellman_function.risk_set_cuts, ξ)
+           _add_ddu_linking_constraints(node)
+        end
         return # Don't muck with the global cuts
     end
     cut_expr = @expression(
@@ -563,7 +574,6 @@ function _add_multi_cut(
     # TODO(odow): should we use `cut_expr` instead?
     ξ = copy(risk_adjusted_probability)
     if !(ξ in bellman_function.risk_set_cuts) || μᵀy != JuMP.AffExpr(0.0)
-        @show ξ
         push!(bellman_function.risk_set_cuts, ξ)
         if JuMP.objective_sense(model) == MOI.MIN_SENSE
             @constraint(model, bellman_function.global_theta.theta >= cut_expr)
