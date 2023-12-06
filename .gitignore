@@ -12,3 +12,5 @@ docs/src/tutorial/*.json
 docs/src/*/*.ipynb
 docs/src/tutorial/spaghetti_plot.html
 convex.cuts.json
+papers/other/lara_2022.pdf
+papers/other/rosemberg_2022.pdf
