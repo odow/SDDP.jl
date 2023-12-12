@@ -153,140 +153,35 @@ function SDDP.forward_pass(
     return solve_decision_dependent_trajectory(model, incoming_state_value)
 end
 
-# function run_cheese_producer_example()
-#     Φ(ρ, z) = [1 0; ρ*(1-z) z; ρ 0]
-#     ρ = 0.9
-#     graph = SDDP.Graph(0)
-#     SDDP.add_node.((graph,), 1:2)
-#     Φ̅ = Φ(ρ, 0.5)
-#     for i in 1:3, j in 1:2
-#         Φ̅[i, j] > 0 && SDDP.add_edge(graph, (i-1) => j, Φ̅[i, j])
-#     end
-#     model = SDDP.PolicyGraph(
-#         graph;
-#         sense = :Max,
-#         optimizer = Gurobi.Optimizer,
-#         upper_bound = 7 / (1 - ρ),
-#     ) do sp, node
-#         @variable(sp, x >= 0, SDDP.State, initial_value = 0)
-#         @variable(sp, u_sell >= 0)
-#         sp[:z] = z = add_ddu_matrices(sp, [Φ(ρ, 0), Φ(ρ, 1)]; M = 100)
-#         @constraint(sp, con_balance, x.out == x.in - u_sell + 0.0)
-#         if node == 1  # farm
-#             fix.(u_sell, 0; force = true)
-#             @stageobjective(sp, -3 * z[2])
-#             SDDP.parameterize(sp, 0:2:8) do ω
-#                 return set_normalized_rhs(con_balance, ω)
-#             end
-#         else         # market
-#             @stageobjective(sp, 1 * u_sell)
-#             @constraint(sp, u_sell <= x.in)
-#             SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, [5, 10])
-#         end
-#     end
-#     Random.seed!(12345)
-#     SDDP.train(
-#         model;
-#         duality_handler = SDDP.LagrangianDuality(),
-#         cut_type = SDDP.MULTI_CUT,
-#         forward_pass = DecisionDependentForwardPass(),
-#         iteration_limit = 1000,
-#         log_every_iteration = true,
-#         cut_deletion_minimum = 100,
-#     )
-#     Random.seed!(5678)
-#     ret = solve_decision_dependent_trajectory(
-#         model,
-#         model.initial_root_state,
-#         [:x, :u_sell, :z];
-#         explore = false,
-#         depth = 50,
-#     )
-#     stock_plot = Plots.plot(
-#         map(d -> d[:x].out, ret.simulation);
-#         ylabel = "Quantity in stock (\$x^\\prime\$)\n",
-#         ylims = (0, maximum(d -> d[:x].out, ret.simulation) + 1),
-#         color = :slategray,
-#         legend = false,
-#         linewidth = 3,
-#     )
-#     Plots.scatter!(
-#         stock_plot,
-#         [
-#             (i, data[:x].out)
-#             for (i, data) in enumerate(ret.simulation) if data[:node_index] == 1 && data[:z][2] > 0.5
-#         ],
-#         color = "#43a047",
-#     )
-#     Plots.scatter!(
-#         stock_plot,
-#         [
-#             (i, data[:x].out)
-#             for (i, data) in enumerate(ret.simulation) if data[:node_index] == 1 && data[:z][2] < 0.5
-#         ],
-#         marker = :x,
-#         markerstrokewidth = 3,
-#         color = "#e53935",
-#     )
-#     plt = Plots.plot(
-#         stock_plot,
-#         Plots.plot(
-#             map(d -> d[:u_sell], ret.simulation);
-#             ylabel = "Sales decision (\$u_{sell}\$)",
-#             seriestype = :steppre,
-#             linewidth = 3,
-#             color = :slategray,
-#             xlabel = "Simulation step",
-#         ),
-#         xlims = (0, length(ret.simulation) + 1),
-#         legend = false,
-#         layout = (2, 1),
-#         dpi = 400,
-#     )
-#     Plots.savefig("cheese_producer.pdf")
-#     return model, plt
-# end
-
 function run_cheese_producer_example()
-    T = 20
-    function Φ(z)
-        p = zeros(1+2T, 2T)
-        p[1, 1] = 1.0
-        for t in 1:(T-1)
-            p[2t, 2t] = z
-            p[2t, 2t+1] = 1 - z
-            p[2t+1, 2t+1] = 1
-        end
-        p[2T, 2T] = z
-        return p
-    end
-    Φ̅ = Φ(0.5)
-    I, J = size(Φ̅)
+    Φ(ρ, z) = [1 0; ρ*(1-z) z; ρ 0]
+    ρ = 0.9
     graph = SDDP.Graph(0)
-    SDDP.add_node.((graph,), 1:J)
-    for i in 1:I, j in 1:J
+    SDDP.add_node.((graph,), 1:2)
+    Φ̅ = Φ(ρ, 0.5)
+    for i in 1:3, j in 1:2
         Φ̅[i, j] > 0 && SDDP.add_edge(graph, (i-1) => j, Φ̅[i, j])
     end
     model = SDDP.PolicyGraph(
         graph;
         sense = :Max,
         optimizer = Gurobi.Optimizer,
-        upper_bound = T * 7,
+        upper_bound = 7 / (1 - ρ),
     ) do sp, node
-        @variable(sp, 0 <= x <= 20, SDDP.State, initial_value = 0)
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0)
         @variable(sp, u_sell >= 0)
-        sp[:z] = z = add_ddu_matrices(sp, [Φ(0), Φ(1)]; M = 200)
-        @constraint(sp, con_balance, x.out <= x.in - u_sell + 0.0)
-        if isodd(node)  # farm
+        sp[:z] = z = add_ddu_matrices(sp, [Φ(ρ, 0), Φ(ρ, 1)]; M = 100)
+        @constraint(sp, con_balance, x.out == x.in - u_sell + 0.0)
+        if node == 1  # farm
             fix.(u_sell, 0; force = true)
             @stageobjective(sp, -3 * z[2])
-            SDDP.parameterize(sp, 0:2:8) do ω
+            SDDP.parameterize(sp, [2, 4]) do ω
                 return set_normalized_rhs(con_balance, ω)
             end
         else         # market
             @stageobjective(sp, 1 * u_sell)
             @constraint(sp, u_sell <= x.in)
-            SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, [5, 10])
+            SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, [4, 8])
         end
     end
     Random.seed!(12345)
@@ -295,9 +190,9 @@ function run_cheese_producer_example()
         duality_handler = SDDP.LagrangianDuality(),
         cut_type = SDDP.MULTI_CUT,
         forward_pass = DecisionDependentForwardPass(),
-        iteration_limit = 60,
+        iteration_limit = 100,
         log_every_iteration = true,
-        # cut_deletion_minimum = 100,
+        cut_deletion_minimum = 100,
     )
     Random.seed!(5678)
     ret = solve_decision_dependent_trajectory(
@@ -305,7 +200,7 @@ function run_cheese_producer_example()
         model.initial_root_state,
         [:x, :u_sell, :z];
         explore = false,
-        # depth = 50,
+        depth = 50,
     )
     stock_plot = Plots.plot(
         map(d -> d[:x].out, ret.simulation);
@@ -319,7 +214,7 @@ function run_cheese_producer_example()
         stock_plot,
         [
             (i, data[:x].out)
-            for (i, data) in enumerate(ret.simulation) if isodd(data[:node_index]) && data[:z][2] > 0.5
+            for (i, data) in enumerate(ret.simulation) if data[:node_index] == 1 && data[:z][2] > 0.5
         ],
         color = "#43a047",
     )
@@ -327,7 +222,7 @@ function run_cheese_producer_example()
         stock_plot,
         [
             (i, data[:x].out)
-            for (i, data) in enumerate(ret.simulation) if isodd(data[:node_index]) && data[:z][2] < 0.5
+            for (i, data) in enumerate(ret.simulation) if data[:node_index] == 1 && data[:z][2] < 0.5
         ],
         marker = :x,
         markerstrokewidth = 3,
@@ -351,6 +246,111 @@ function run_cheese_producer_example()
     Plots.savefig("cheese_producer.pdf")
     return model, plt
 end
+
+# function run_cheese_producer_example()
+#     T = 20
+#     function Φ(z)
+#         p = zeros(1+2T, 2T)
+#         p[1, 1] = 1.0
+#         for t in 1:(T-1)
+#             p[2t, 2t] = z
+#             p[2t, 2t+1] = 1 - z
+#             p[2t+1, 2t+1] = 1
+#         end
+#         p[2T, 2T] = z
+#         return p
+#     end
+#     Φ̅ = Φ(0.5)
+#     I, J = size(Φ̅)
+#     graph = SDDP.Graph(0)
+#     SDDP.add_node.((graph,), 1:J)
+#     for i in 1:I, j in 1:J
+#         Φ̅[i, j] > 0 && SDDP.add_edge(graph, (i-1) => j, Φ̅[i, j])
+#     end
+#     model = SDDP.PolicyGraph(
+#         graph;
+#         sense = :Max,
+#         optimizer = Gurobi.Optimizer,
+#         upper_bound = T * 7,
+#     ) do sp, node
+#         @variable(sp, 0 <= x <= 20, SDDP.State, initial_value = 0)
+#         @variable(sp, u_sell >= 0)
+#         sp[:z] = z = add_ddu_matrices(sp, [Φ(0), Φ(1)]; M = 200)
+#         @constraint(sp, con_balance, x.out <= x.in - u_sell + 0.0)
+#         if isodd(node)  # farm
+#             fix.(u_sell, 0; force = true)
+#             @stageobjective(sp, -3 * z[2])
+#             SDDP.parameterize(sp, 0:2:8) do ω
+#                 return set_normalized_rhs(con_balance, ω)
+#             end
+#         else         # market
+#             @stageobjective(sp, 1 * u_sell)
+#             @constraint(sp, u_sell <= x.in)
+#             SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, [5, 10])
+#         end
+#     end
+#     Random.seed!(12345)
+#     SDDP.train(
+#         model;
+#         duality_handler = SDDP.LagrangianDuality(),
+#         cut_type = SDDP.MULTI_CUT,
+#         forward_pass = DecisionDependentForwardPass(),
+#         iteration_limit = 60,
+#         log_every_iteration = true,
+#         # cut_deletion_minimum = 100,
+#     )
+#     Random.seed!(5678)
+#     ret = solve_decision_dependent_trajectory(
+#         model,
+#         model.initial_root_state,
+#         [:x, :u_sell, :z];
+#         explore = false,
+#         # depth = 50,
+#     )
+#     stock_plot = Plots.plot(
+#         map(d -> d[:x].out, ret.simulation);
+#         ylabel = "Quantity in stock (\$x^\\prime\$)\n",
+#         ylims = (0, maximum(d -> d[:x].out, ret.simulation) + 1),
+#         color = :slategray,
+#         legend = false,
+#         linewidth = 3,
+#     )
+#     Plots.scatter!(
+#         stock_plot,
+#         [
+#             (i, data[:x].out)
+#             for (i, data) in enumerate(ret.simulation) if isodd(data[:node_index]) && data[:z][2] > 0.5
+#         ],
+#         color = "#43a047",
+#     )
+#     Plots.scatter!(
+#         stock_plot,
+#         [
+#             (i, data[:x].out)
+#             for (i, data) in enumerate(ret.simulation) if isodd(data[:node_index]) && data[:z][2] < 0.5
+#         ],
+#         marker = :x,
+#         markerstrokewidth = 3,
+#         color = "#e53935",
+#     )
+#     plt = Plots.plot(
+#         stock_plot,
+#         Plots.plot(
+#             map(d -> d[:u_sell], ret.simulation);
+#             ylabel = "Sales decision (\$u_{sell}\$)",
+#             seriestype = :steppre,
+#             linewidth = 3,
+#             color = :slategray,
+#             xlabel = "Simulation step",
+#         ),
+#         xlims = (0, length(ret.simulation) + 1),
+#         legend = false,
+#         layout = (2, 1),
+#         dpi = 400,
+#     )
+#     Plots.savefig("cheese_producer.pdf")
+#     return model, plt
+# end
 
 function run_cheese_producer_example_reformulation()
     T = 20
@@ -431,7 +431,96 @@ function run_cheese_producer_example_reformulation()
     return model, plt
 end
 
-model, plt = run_cheese_producer_example_reformulation()
+function run_cheese_producer_example_cyclic_reformulation()
+    ρ = 0.9
+    graph = SDDP.UnicyclicGraph(ρ; num_nodes = 2)
+    model = SDDP.PolicyGraph(
+        graph;
+        sense = :Max,
+        optimizer = Gurobi.Optimizer,
+        upper_bound = 7 / (1 - ρ),
+    ) do sp, node
+        @variable(sp, 0 <= x <= 20, SDDP.State, initial_value = 0)
+        @variable(sp, u_sell >= 0)
+        @variable(sp, z, Bin, SDDP.State, initial_value = 0)
+        @constraint(sp, con_balance, x.out <= x.in - u_sell + 0.0)
+        if isodd(node)  # farm
+            fix.(u_sell, 0; force = true)
+            @stageobjective(sp, -3 * z.out)
+            SDDP.parameterize(sp, [2, 4]) do ω
+                return set_normalized_rhs(con_balance, ω)
+            end
+        else            # market
+            @stageobjective(sp, 1 * u_sell)
+            @constraint(sp, u_sell <= x.in)
+            @constraint(sp, u_sell <= 20 * z.in)
+            SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, [4, 8])
+        end
+    end
+    Random.seed!(12345)
+    SDDP.train(
+        model;
+        duality_handler = SDDP.LagrangianDuality(),
+        iteration_limit = 60,
+        log_every_iteration = true,
+    )
+    Random.seed!(5678)
+    ret = SDDP.simulate(
+        model,
+        1,
+        [:x, :u_sell, :z];
+        sampling_scheme = SDDP.InSampleMonteCarlo(;
+            max_depth = 40,
+            terminate_on_dummy_leaf = false,
+        ),
+    )
+    stock_plot = Plots.plot(
+        map(d -> d[:x].out, ret[1]);
+        ylabel = "Quantity in stock (\$x^\\prime\$)\n",
+        ylims = (0, maximum(d -> d[:x].out, ret[1]) + 1),
+        color = :slategray,
+        legend = false,
+        linewidth = 3,
+    )
+    Plots.scatter!(
+        stock_plot,
+        [
+            (i, data[:x].out)
+            for (i, data) in enumerate(ret[1]) if isodd(data[:node_index]) && data[:z].out > 0.5
+        ],
+        color = "#43a047",
+    )
+    Plots.scatter!(
+        stock_plot,
+        [
+            (i, data[:x].out)
+            for (i, data) in enumerate(ret[1]) if isodd(data[:node_index]) && data[:z].out < 0.5
+        ],
+        marker = :x,
+        markerstrokewidth = 3,
+        color = "#e53935",
+    )
+    plt = Plots.plot(
+        stock_plot,
+        Plots.plot(
+            map(d -> d[:u_sell], ret[1]);
+            ylabel = "Sales decision (\$u_{sell}\$)",
+            seriestype = :steppre,
+            linewidth = 3,
+            color = :slategray,
+            xlabel = "Simulation step",
+        ),
+        xlims = (0, length(ret[1]) + 1),
+        legend = false,
+        layout = (2, 1),
+        dpi = 400,
+    )
+    Plots.savefig("cheese_producer.pdf")
+    return model, plt
+end
+
+# model, plt = run_cheese_producer_example_cyclic_reformulation()
+model, plt = run_cheese_producer_example()
 
 # Φ(ρ, ε, z) = [
 #     #= R   =# 0.5 0.5 0 0

@@ -4,104 +4,9 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 using SDDP
-import Distributions
 import Gurobi
-import HiGHS
-import Ipopt
 import Plots
 import Random
-
-function example_putterman(; M = 5, N = 10)
-    model = SDDP.LinearPolicyGraph(;
-        stages = N,
-        sense = :Min,
-        lower_bound = 0,
-        optimizer = Gurobi.Optimizer,
-    ) do sp, node
-        @variable(sp, x >= 0, SDDP.State, initial_value = M)
-        @variable(sp, u >= 0)
-        @constraint(sp, x.out == x.in - u)
-        @stageobjective(sp, u^2)
-        if node == N
-            fix(x.out, 0; force = true)
-        end
-        return
-    end
-    SDDP.train(model)
-    @assert ≈(SDDP.calculate_bound(model), M^2 / N; atol = 1e-6)
-    simulations = SDDP.simulate(
-        model,
-        1,
-        [:u],
-        sampling_scheme = SDDP.InSampleMonteCarlo(
-            max_depth = 10,
-            terminate_on_dummy_leaf = false,
-        ),
-    )
-    plt = SDDP.SpaghettiPlot(simulations)
-    SDDP.add_spaghetti(data -> data[:u], title = "u", ymin = 0)
-    SDDP.save(plt)
-    return
-end
-
-function example_putterman_cyclic(; M = 5, ρ = 0.8)
-    model = SDDP.PolicyGraph(
-        SDDP.UnicyclicGraph(ρ);
-        sense = :Max,
-        upper_bound = M / (1 - ρ),
-        optimizer = Ipopt.Optimizer,
-    ) do sp, node
-        @variable(sp, 0 <= x <= M, SDDP.State, initial_value = 0)
-        @variable(sp, u >= 0)
-        @constraint(sp, x.out == x.in + u)
-        @stageobjective(sp, sqrt(1 + u))
-        return
-    end
-    SDDP.train(model)
-    simulations = SDDP.simulate(
-        model,
-        1,
-        [:u],
-        sampling_scheme = SDDP.InSampleMonteCarlo(
-            max_depth = 10,
-            terminate_on_dummy_leaf = false,
-        ),
-    )
-    plt = SDDP.SpaghettiPlot(simulations)
-    SDDP.add_spaghetti(data -> data[:u], title = "u", ymin = 0)
-    SDDP.save(plt)
-    return
-end
-
-function example_newsvendor()
-    model = SDDP.LinearPolicyGraph(;
-        stages = 2,
-        sense = :Max,
-        upper_bound = 5 * 250,
-        optimizer = HiGHS.Optimizer,
-    ) do sp, t
-        @variable(sp, x >= 0, SDDP.State, initial_value = 0)
-        @variable(sp, u >= 0, Int)
-        if t == 1
-            @constraint(sp, x.out == x.in + u)
-            @stageobjective(sp, -2 * u_make)
-        else
-            @constraint(sp, u <= x.in)
-            @constraint(sp, x.out == x.in - u)
-            D = Distributions.TriangularDist(150.0, 250.0, 200.0)
-            Ω = sort!(rand(D, 100))
-            SDDP.parameterize(ω -> set_upper_bound(u, ω), sp, Ω)
-            @stageobjective(sp, 5u - 0.1x.out)
-        end
-    end
-    SDDP.train(model)
-    simulations = SDDP.simulate(model, 100, [:x, :u])
-    plt = SDDP.SpaghettiPlot(simulations)
-    SDDP.add_spaghetti(data -> data[:x].out, plt, title = "x")
-    SDDP.add_spaghetti(data -> data[:u], plt, title = "u")
-    SDDP.save(plt)
-    return
-end
 
 function example_tiger_problem(ε::Float64 = 0.35; create_plot::Bool = true)
     ρ = 0.98
@@ -110,13 +15,14 @@ function example_tiger_problem(ε::Float64 = 0.35; create_plot::Bool = true)
         [:l, :r],
         [(:R => :l, 0.5), (:R => :r, 0.5), (:l => :l, ρ), (:r => :r, ρ)],
     )
-    SDDP.add_ambiguity_set(graph, [:l, :r], 1e3)
+    SDDP.add_ambiguity_set(graph, [:l, :r], 1e4)
     model = SDDP.PolicyGraph(
         graph;
         sense = :Min,
-        lower_bound = -1000.0,
+        lower_bound = -10.0,
         optimizer = Gurobi.Optimizer,
     ) do sp, node
+        set_attribute(sp, "IntegralityFocus", 1)
         # s: stay, l: open left, r: open right
         @variable(sp, x_s, Bin, SDDP.State, initial_value = 1)
         @variable(sp, x_l, Bin, SDDP.State, initial_value = 0)
@@ -135,18 +41,26 @@ function example_tiger_problem(ε::Float64 = 0.35; create_plot::Bool = true)
             end
         end
     end
+    Random.seed!(123)
     SDDP.train(
         model;
         iteration_limit = 100,
         log_every_iteration = true,
-        cut_deletion_minimum = 10_000,
+        # cut_deletion_minimum = 1_000,
+        duality_handler = SDDP.LagrangianDuality(),
+        # duality_handler = SDDP.BanditDuality(
+        #     SDDP.ContinuousConicDuality(),
+        #     SDDP.LagrangianDuality(),
+        # ),
     )
     lower_bound = SDDP.calculate_bound(model)
+    Random.seed!(456)
     sampling_scheme = SDDP.InSampleMonteCarlo(
         max_depth = 30,
         terminate_on_dummy_leaf = false,
     )
-    objectives = map(SDDP.simulate(model, 1_000; sampling_scheme)) do simulation
+    simulations = SDDP.simulate(model, 100, [:x_l, :x_r]; sampling_scheme);
+    objectives = map(simulations) do simulation
         return sum(d[:stage_objective] for d in simulation)
     end
     μ, σ = SDDP.confidence_interval(objectives)
@@ -155,15 +69,7 @@ function example_tiger_problem(ε::Float64 = 0.35; create_plot::Bool = true)
         println("upper_bound = $μ ± $σ")
         return lower_bound, μ, σ
     end
-    simulations = SDDP.simulate(
-        model,
-        100,
-        [:x_l, :x_r, :x_s],
-        sampling_scheme = SDDP.InSampleMonteCarlo(
-            max_depth = 30,
-            terminate_on_dummy_leaf = false,
-        ),
-    )
+    simulations = simulations[1:100]
     belief_plot = Plots.plot(;
         xlabel = "Time step",
         ylabel = "Belief(Left)",
@@ -222,9 +128,11 @@ function example_tiger_problem(ε::Float64 = 0.35; create_plot::Bool = true)
     end
     Plots.plot(belief_plot, plot, layout = (2, 1), dpi = 400)
     Plots.savefig("tiger_problem_$ε.pdf")
-    return
+    return lower_bound, μ, σ
 end
 
-# example_tiger_problem();
+# data = [
+#     example_tiger_problem(ε; create_plot = false) for ε in [0.35, 0.4, 0.45]
+# ]
 
-[example_tiger_problem(ε; create_plot = false) for ε in 0.0:0.05:0.5]
+d_35 = example_tiger_problem(0.35; create_plot = true)
