@@ -307,7 +307,7 @@ function _solve_finite_cheese_producer(T::Int; create_plot::Bool = false)
             SDDP.parameterize(ω -> set_upper_bound(u_sell, ω), sp, [5, 10])
         end
     end
-    Random.seed!(12345)
+    Random.seed!(123456)
     SDDP.train(
         model;
         duality_handler = SDDP.LagrangianDuality(),
@@ -315,7 +315,7 @@ function _solve_finite_cheese_producer(T::Int; create_plot::Bool = false)
         forward_pass = DecisionDependentForwardPass(),
         iteration_limit = 200,
         log_every_iteration = true,
-        cut_deletion_minimum = 100,
+        cut_deletion_minimum = 500,
         stopping_rules = [SDDP.SimulationStoppingRule()],
     )
     Random.seed!(56789)
@@ -480,21 +480,21 @@ function _solve_tiger_problem(ε::Float64; create_plot::Bool = false)
             end
         end
     end
-    Random.seed!(1234)
+    Random.seed!(12345)
     SDDP.train(
         model;
-        iteration_limit = 200,
+        iteration_limit = 100,
         log_every_iteration = true,
         cut_deletion_minimum = 1_000,
         duality_handler = SDDP.LagrangianDuality(),
         forward_pass = StoppingForwardPass(:x_s),
     )
     lower_bound = SDDP.calculate_bound(model)
-    Random.seed!(456)
+    Random.seed!(4567)
     sampling_scheme =
         SDDP.InSampleMonteCarlo(max_depth = 50, terminate_on_dummy_leaf = false)
     simulations =
-        SDDP.simulate(model, 1_000, [:x_s, :x_l, :x_r]; sampling_scheme)
+        SDDP.simulate(model, 100, [:x_s, :x_l, :x_r]; sampling_scheme)
     objectives = map(simulations) do simulation
         return sum(
             ρ^(t - 1) * d[:stage_objective] for (t, d) in enumerate(simulation)
@@ -572,25 +572,21 @@ create_figure_12() = _solve_tiger_problem(0.35; create_plot = true)
 
 function create_figure_13()
     data = Dict()
-    for ε in [0.1, 0.2, 0.3, 0.4, 0.5]
+    for ε in [0.2, 0.3, 0.4, 0.5]
         data[ε] = _solve_tiger_problem(ε)
     end
 
     x = sort(collect(keys(data)))
     lb = [data[xi][1] for xi in x]
     μ = [data[xi][2] for xi in x]
-    for i in 1:length(μ)
-        # Filter outliers. Something wennt wrong here.
-        μ[i] = μ[i][μ[i].<=60]
-    end
     box_y = reduce(vcat, μ)
     box_x = reduce(vcat, [fill(0.5 - x[i], length(μ[i])) for i in 1:length(x)])
     StatsPlots.violin(
         box_x,
         # Apply small perturbationn for the violin to show up when constant.
-        box_y .+ 0.1 * rand(length(box_y));
+        box_y .+ 0.15 * rand(length(box_y));
         bar_width = 0.05,
-        ylims = (-10, 25),
+        # ylims = (-10, 25),
         xlabel = "False positive rate",
         ylabel = "Objective value",
         label = false,
