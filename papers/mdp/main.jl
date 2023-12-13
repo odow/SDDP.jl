@@ -190,7 +190,7 @@ function create_figure_10()
     ) do sp, node
         @variable(sp, x >= 0, SDDP.State, initial_value = 0)
         @variable(sp, u_sell >= 0)
-        sp[:z] = z = add_ddu_matrices(sp, [Φ(ρ, 0), Φ(ρ, 1)]; M = 100)
+        sp[:z] = z = add_ddu_matrices(sp, [Φ(ρ, 0), Φ(ρ, 1)]; M = 1e3)
         @constraint(sp, con_balance, x.out == x.in - u_sell + 0.0)
         if node == 1  # farm
             fix.(u_sell, 0; force = true)
@@ -293,7 +293,7 @@ function _solve_finite_cheese_producer(T::Int; create_plot::Bool = false)
     ) do sp, node
         @variable(sp, x >= 0, SDDP.State, initial_value = 0)
         @variable(sp, u_sell >= 0)
-        sp[:z] = z = add_ddu_matrices(sp, [Φ(0), Φ(1)]; M = 100)
+        sp[:z] = z = add_ddu_matrices(sp, [Φ(0), Φ(1)]; M = 200)
         @constraint(sp, con_balance, x.out == x.in - u_sell + 0.0)
         if isodd(node)  # farm
             fix.(u_sell, 0; force = true)
@@ -313,7 +313,7 @@ function _solve_finite_cheese_producer(T::Int; create_plot::Bool = false)
         duality_handler = SDDP.LagrangianDuality(),
         cut_type = SDDP.MULTI_CUT,
         forward_pass = DecisionDependentForwardPass(),
-        iteration_limit = 200,
+        iteration_limit = 100,
         log_every_iteration = true,
         cut_deletion_minimum = 500,
         stopping_rules = [SDDP.SimulationStoppingRule()],
@@ -612,6 +612,6 @@ function create_figure_13()
 end
 
 # create_figure_10()
-# create_figure_11()
+create_figure_11()
 # create_figure_12()
 # create_figure_13()
