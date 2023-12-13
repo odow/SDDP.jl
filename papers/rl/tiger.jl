@@ -8,6 +8,7 @@ import Gurobi
 import HiGHS
 import Plots
 import Random
+import StatsPlots
 
 mutable struct StoppingForwardPass <: SDDP.AbstractForwardPass
     name::Symbol
