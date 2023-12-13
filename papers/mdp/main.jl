@@ -7,6 +7,7 @@ using SDDP
 import Gurobi
 import Plots
 import Random
+import Statistics
 import StatsPlots
 
 ###
@@ -394,10 +395,8 @@ function create_figure_11()
     StatsPlots.violin(
         box_x,
         box_y;
-        # bar_width = 0.05,
         xlims = (1, 13),
         xticks = (2:2:12),
-        # ylims = (-10, 25),
         xlabel = "Time horizon",
         ylabel = "Objective value",
         label = false,
@@ -409,7 +408,6 @@ function create_figure_11()
         ub;
         label = "Upper bound",
         color = :black,
-        # linewidth = 3,
     )
     Plots.scatter!(
         x,
