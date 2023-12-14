@@ -106,7 +106,7 @@ function solve_decision_dependent_trajectory(
         )
         __ddu__ = node.subproblem.ext[:__ddu__]
         y = findfirst([round(Bool, value(y)) for y in __ddu__.y])
-        if explore && rand() < 0.8
+        if explore && rand() < 0.05
             y = rand(1:length(__ddu__.y))
         end
         cumulative_value += subproblem_results.stage_objective
@@ -310,13 +310,18 @@ function _solve_finite_cheese_producer(T::Int; create_plot::Bool = false)
     Random.seed!(123456)
     SDDP.train(
         model;
-        duality_handler = SDDP.LagrangianDuality(),
+        duality_handler = SDDP.BanditDuality(
+        #     SDDP.ContinuousConicDuality(),
+            SDDP.StrengthenedConicDuality(),
+            SDDP.LagrangianDuality(),
+        ),
+        # duality_handler = SDDP.LagrangianDuality(),
         cut_type = SDDP.MULTI_CUT,
         forward_pass = DecisionDependentForwardPass(),
-        iteration_limit = 100,
+        iteration_limit = 200,
         log_every_iteration = true,
         cut_deletion_minimum = 500,
-        stopping_rules = [SDDP.SimulationStoppingRule()],
+        # stopping_rules = [SDDP.SimulationStoppingRule()],
     )
     Random.seed!(56789)
     if create_plot
@@ -384,7 +389,7 @@ end
 
 function create_figure_11()
     data = Dict()
-    for t in 2:2:12
+    for t in 2:2:10
         data[t] = _solve_finite_cheese_producer(t)
     end
     x = sort(collect(keys(data)))
@@ -395,8 +400,9 @@ function create_figure_11()
     StatsPlots.violin(
         box_x,
         box_y;
-        xlims = (1, 13),
-        xticks = (2:2:12),
+        xlims = (1, 11),
+        xticks = (2:2:10),
+        bar_width = 1,
         xlabel = "Time horizon",
         ylabel = "Objective value",
         label = false,
@@ -511,6 +517,7 @@ function _solve_tiger_problem(ε::Float64; create_plot::Bool = false)
         xlabel = "Time step",
         ylabel = "Belief(Left)",
         legend = false,
+        xlims = (0, 12),
         ymajorgrid = true,
     )
     plot = Plots.plot(;
@@ -518,6 +525,7 @@ function _solve_tiger_problem(ε::Float64; create_plot::Bool = false)
         ylabel = "# hear left - hear right",
         legend = false,
         ylims = (-4, 4),
+        xlims = (0, 12),
         ymajorgrid = true,
     )
     for simulation in simulations
@@ -559,7 +567,7 @@ function _solve_tiger_problem(ε::Float64; create_plot::Bool = false)
                    (d[:x_r].out > 0.5 && d[:node_index] == :r)
         end
         if (i = findfirst(correct_door, simulation)) !== nothing
-            Plots.scatter!([i], [y[i+1]], color = "#43a047", markersize = 6)
+            Plots.scatter!([i], [y[i+1]], color = "#43a047", markersize = 6, alpha = 0.1)
         end
         if (i = findfirst(incorrect_door, simulation)) !== nothing
             @show i
@@ -567,7 +575,7 @@ function _solve_tiger_problem(ε::Float64; create_plot::Bool = false)
                 [i],
                 [y[i+1]];
                 marker = :x,
-                markersize = 6,
+                markersize = 8,
                 markerstrokewidth = 3,
                 color = "#e53935",
             )
@@ -622,6 +630,10 @@ function create_figure_13()
 end
 
 # create_figure_10()
-# create_figure_11()
+create_figure_11()
 # create_figure_12()
 # create_figure_13()
+
+# d_5 = _solve_finite_cheese_producer(5)
+# d_7 = _solve_finite_cheese_producer(7)
+# d_9 = _solve_finite_cheese_producer(9)
