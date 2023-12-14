@@ -1411,6 +1411,15 @@ function construct_belief_update(
             end
             outgoing_belief[node_i] = PY_X * PX / PY
         end
+        if length(outgoing_belief) == 2
+            for (node_i, belief) in incoming_belief
+                if belief < 1e-6
+                    incoming_belief[node_i] = 0.0
+                elseif belief > 1 - 1e-6
+                    incoming_belief[node_i] = 1.0
+                end
+            end
+        end
         return outgoing_belief
     end
     return belief_updater
