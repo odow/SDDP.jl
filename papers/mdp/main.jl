@@ -517,6 +517,7 @@ function _solve_tiger_problem(ε::Float64; create_plot::Bool = false)
         xlabel = "Time step",
         ylabel = "# hear left - hear right",
         legend = false,
+        ylims = (-4, 4),
         ymajorgrid = true,
     )
     for simulation in simulations
@@ -549,10 +550,19 @@ function _solve_tiger_problem(ε::Float64; create_plot::Bool = false)
             linewidth = 3,
             alpha = 0.2,
         )
-        if (i = findfirst(d -> d[:x_l].out > 0.5, simulation)) !== nothing
+        function correct_door(d)
+            return (d[:x_l].out > 0.5 && d[:node_index] == :r) ||
+                   (d[:x_r].out > 0.5 && d[:node_index] == :l)
+        end
+        function incorrect_door(d)
+            return (d[:x_l].out > 0.5 && d[:node_index] == :l) ||
+                   (d[:x_r].out > 0.5 && d[:node_index] == :r)
+        end
+        if (i = findfirst(correct_door, simulation)) !== nothing
             Plots.scatter!([i], [y[i+1]], color = "#43a047", markersize = 6)
         end
-        if (i = findfirst(d -> d[:x_r].out > 0.5, simulation)) !== nothing
+        if (i = findfirst(incorrect_door, simulation)) !== nothing
+            @show i
             Plots.scatter!(
                 [i],
                 [y[i+1]];
@@ -612,6 +622,6 @@ function create_figure_13()
 end
 
 # create_figure_10()
-create_figure_11()
+# create_figure_11()
 # create_figure_12()
 # create_figure_13()
