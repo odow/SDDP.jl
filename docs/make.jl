@@ -129,6 +129,7 @@ Documenter.makedocs(
     sitename = "SDDP.jl",
     authors = "Oscar Dowson",
     format = Documenter.HTML(
+        analytics = "G-HZQQDVMPZW",
         # See  https://github.com/JuliaDocs/Documenter.jl/issues/868
         prettyurls = get(ENV, "CI", nothing) == "true",
         collapselevel = 1,
