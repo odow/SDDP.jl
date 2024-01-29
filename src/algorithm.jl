@@ -271,6 +271,11 @@ function parameterize(node::Node, noise)
     return
 end
 
+function _has_primal_solution(node::Node)
+    status = JuMP.primal_status(node.subproblem)
+    return status in (JuMP.FEASIBLE_POINT, JuMP.NEARLY_FEASIBLE_POINT)
+end
+
 function attempt_numerical_recovery(model::PolicyGraph, node::Node)
     if JuMP.mode(node.subproblem) == JuMP.DIRECT
         @warn(
@@ -282,7 +287,7 @@ function attempt_numerical_recovery(model::PolicyGraph, node::Node)
         MOI.Utilities.reset_optimizer(node.subproblem)
         optimize!(node.subproblem)
     end
-    if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+    if !_has_primal_solution(node)
         model.ext[:numerical_issue] = true
         @info "Writing cuts to the file `model.cuts.json`"
         write_cuts_to_file(model, "model.cuts.json")
