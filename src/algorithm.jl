@@ -418,7 +418,7 @@ function solve_subproblem(
         # interrupt percolating up to the user.
         throw(InterruptException())
     end
-    if JuMP.primal_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+    if !_has_primal_solution(node)
         attempt_numerical_recovery(model, node)
     end
     state = get_outgoing_state(node)
