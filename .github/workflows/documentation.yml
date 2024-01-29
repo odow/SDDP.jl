@@ -24,6 +24,7 @@ jobs:
         run: julia --color=yes --project=docs/ docs/make.jl
       - uses: errata-ai/vale-action@reviewdog
         with:
+          version: 2.30.0
           files: docs/src
           fail_on_error: true
           filter_mode: nofilter
