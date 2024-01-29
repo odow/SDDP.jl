@@ -24,7 +24,7 @@ julia> Ω = [
            (inflow = 50.0, fuel_multiplier = 1.0),
            (inflow = 100.0, fuel_multiplier = 0.75),
        ]
-3-element Vector{NamedTuple{(:inflow, :fuel_multiplier), Tuple{Float64, Float64}}}:
+3-element Vector{@NamedTuple{inflow::Float64, fuel_multiplier::Float64}}:
  (inflow = 0.0, fuel_multiplier = 1.5)
  (inflow = 50.0, fuel_multiplier = 1.0)
  (inflow = 100.0, fuel_multiplier = 0.75)
@@ -92,7 +92,7 @@ julia> simulations = SDDP.simulate(
        );
 
 julia> sort(unique([data[:noise_term] for sim in simulations for data in sim]))
-3-element Array{NamedTuple{(:inflow, :fuel_multiplier),Tuple{Float64,Float64}},1}:
+3-element Vector{@NamedTuple{inflow::Float64, fuel_multiplier::Float64}}:
  (inflow = 0.0, fuel_multiplier = 1.5)
  (inflow = 50.0, fuel_multiplier = 1.0)
  (inflow = 100.0, fuel_multiplier = 0.75)
