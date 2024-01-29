@@ -109,15 +109,20 @@ min Cᵢ(x̄, u, w) + θᵢ
 """
 struct ContinuousConicDuality <: AbstractDualityHandler end
 
+function _has_dual_solution(node::Node)
+    status = JuMP.dual_status(node.subproblem)
+    return status in (JuMP.FEASIBLE_POINT, JuMP.NEARLY_FEASIBLE_POINT)
+end
+
 function get_dual_solution(node::Node, ::ContinuousConicDuality)
-    if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+    if !_has_dual_solution(node)
         # Attempt to recover by resetting the optimizer and re-solving.
         if JuMP.mode(node.subproblem) != JuMP.DIRECT
             MOI.Utilities.reset_optimizer(node.subproblem)
             optimize!(node.subproblem)
         end
     end
-    if JuMP.dual_status(node.subproblem) != JuMP.MOI.FEASIBLE_POINT
+    if !_has_dual_solution(node)
         write_subproblem_to_file(
             node,
             "subproblem.mof.json",
