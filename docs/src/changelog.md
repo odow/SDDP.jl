@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
- - Fixed non-constant state dimension in MSPFormat reader (#695)
+ - Fixed non-constant state dimension in the `MSPFormat` reader (#695)
  - Fixed SimulatorSamplingScheme for deterministic nodes (#710)
  - Fixed line search in BFGS (#711)
  - Fixed handling of `NEARLY_FEASIBLE_POINT` status (#726)
