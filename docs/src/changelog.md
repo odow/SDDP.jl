@@ -7,6 +7,24 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.6.7 (February 1, 2024)
+
+### Fixed
+
+ - Fixed non-constant state dimension in the `MSPFormat` reader (#695)
+ - Fixed SimulatorSamplingScheme for deterministic nodes (#710)
+ - Fixed line search in BFGS (#711)
+ - Fixed handling of `NEARLY_FEASIBLE_POINT` status (#726)
+
+### Other
+
+ - Documentation improvements (#692) (#694) (#706) (#716) (#727)
+ - Updated to StochOptFormat v1.0 (#705)
+ - Added an experimental `OuterApproximation` algorithm (#709)
+ - Updated `.gitignore` (#717)
+ - Added code for MDP paper (#720) (#721)
+ - Added Google analytics (#723)
+
 ## v1.6.6 (September 29, 2023)
 
 ### Other
