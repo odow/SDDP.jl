@@ -1,7 +1,7 @@
 using Luxor
 
 function logo_with_text()
-    P = 10
+    P = 20
     R = 100
     H = 10
     Drawing(2R+2P, 2R+H+2P, joinpath(@__DIR__, "logo.svg"))
