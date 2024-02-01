@@ -3,7 +3,7 @@ CurrentModule = SDDP
 ```
 
 ```@raw html
-<img src="assets/logo.png" alt="logo" width="150px"/>
+<img src="assets/logo_without_text.svg" alt="logo" width="150px"/>
 ```
 
 # Introduction

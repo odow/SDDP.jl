@@ -133,6 +133,7 @@ Documenter.makedocs(
         # See  https://github.com/JuliaDocs/Documenter.jl/issues/868
         prettyurls = get(ENV, "CI", nothing) == "true",
         collapselevel = 1,
+        sidebar_sitename = false,
         size_threshold_ignore = [
             "apireference.md",
             "examples/objective_state_newsvendor.md",
