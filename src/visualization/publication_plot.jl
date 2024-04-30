@@ -20,7 +20,7 @@ function publication_data(
                     "Unable to plot `publication_plot` because stage $stage " *
                     "of replication $i contains data that is not finite. " *
                     "The data function must return a finite real-valued " *
-                    "scalar. Got: $s"
+                    "scalar. Got: $s",
                 )
             end
         end
