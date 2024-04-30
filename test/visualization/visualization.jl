@@ -57,16 +57,24 @@ function test_SpaghettiPlot()
 end
 
 function test_PublicationPlot()
-    data = SDDP.publication_data(
-        [
-            [Dict{Symbol,Any}(:x => 1), Dict{Symbol,Any}(:x => 5)],
-            [Dict{Symbol,Any}(:x => 2), Dict{Symbol,Any}(:x => 6)],
-            [Dict{Symbol,Any}(:x => 3), Dict{Symbol,Any}(:x => 4)],
-        ],
-        [0.0, 1.0],
-        (d) -> d[:x],
-    )
-    @test data == [1 4; 3 6]
+    simulations = [
+        [Dict{Symbol,Any}(:x => 1), Dict{Symbol,Any}(:x => 5)],
+        [Dict{Symbol,Any}(:x => 2), Dict{Symbol,Any}(:x => 6)],
+        [Dict{Symbol,Any}(:x => 3), Dict{Symbol,Any}(:x => 4)],
+    ]
+    data = SDDP.publication_data(simulations, [0.0, 0.25, 0.5, 1.0], d -> d[:x])
+    @test data == [1 4; 1.5 4.5; 2 5; 3 6]
+    for val in (-Inf, Inf, NaN)
+        simulations[2][2] = Dict{Symbol,Any}(:x => val)
+        @test_throws(
+            ErrorException(
+                "Unable to plot `publication_plot` because stage 2 of " *
+                "replication 2 contains data that is not finite. The data " *
+                "function must return a finite real-valued scalar. Got: $val",
+            ),
+            SDDP.publication_data(simulations, [0.5], d -> d[:x]),
+        )
+    end
     return
 end
 
