@@ -112,6 +112,7 @@ abstract type AbstractBackwardSamplingScheme end
     sample_backward_noise_terms(
         backward_sampling_scheme::AbstractBackwardSamplingScheme,
         node::Node{T},
+        state::Dict{Symbol,Float64},
     )::Vector{Noise}
 
 Returns a `Vector{Noise}` of noises sampled from `node.noise_terms` using
