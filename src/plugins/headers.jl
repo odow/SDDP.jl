@@ -126,7 +126,7 @@ function sample_backward_noise_terms end
         state::Dict{Symbol,Float64},
     )::Vector{Noise}
 
-Returns a `Vector{Noise}` of noises sampled conditionally on the sate `state` using
+Returns a `Vector{Noise}` of noises sampled conditionally on the `state` using
 `backward_sampling_scheme`.
 """
 function sample_backward_noise_terms_with_state(
