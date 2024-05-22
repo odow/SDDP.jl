@@ -7,6 +7,7 @@ module TestBackwardPassSamplingSchemes
 
 using SDDP
 using Test
+using HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -86,6 +87,65 @@ function test_MonteCarloSampler_100()
         end
     end
     @test term_count > 20
+    return
+end
+
+mutable struct WithStateSampler <: SDDP.AbstractBackwardSamplingScheme
+    number_of_samples::Int
+end
+function test_WithStateSampler()
+    function sample_backward_noise_terms_with_state(
+        sampler::WithStateSampler,
+        node::SDDP.Node,
+        state::Dict{Symbol,Float64},
+    )
+        if state[:x] / node.index == 0.0
+            return [
+                SDDP.Noise((ϵ = 1.0,), 1 / sampler.number_of_samples) for
+                i in 1:sampler.number_of_samples
+            ]
+        elseif state[:x] / node.index == 1.0
+            return [
+                SDDP.Noise((ϵ = 0.0,), 1 / sampler.number_of_samples) for
+                i in 1:sampler.number_of_samples
+            ]
+        end
+    end
+    model = SDDP.LinearPolicyGraph(
+        stages = 5,
+        lower_bound = 0.0,
+        direct_mode = false,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x, SDDP.State, initial_value = 0.0)
+        @variable(node, ϵ)
+        SDDP.parameterize(node, stage * [1, 3], [0.9, 0.1]) do ω
+            return JuMP.fix(ϵ, ω)
+        end
+        @constraint(node, x.out == ϵ)
+    end
+    forward_trajectory = SDDP.forward_pass(
+        model,
+        SDDP.Options(model, Dict(:x => 1.0)),
+        SDDP.DefaultForwardPass(),
+    )
+    for node_index in 1:length(forward_trajectory.scenario_path)
+        state = forward_trajectory.sampled_states[node_index]
+        terms = sample_backward_noise_terms_with_state(
+            WithStateSampler(100),
+            model[node_index],
+            state,
+        )
+        for term in terms
+            @test term.probability == 0.01
+            if state == 0.0
+                @test backward_noise.term.ϵ == 1.0
+            elseif state == 1.0
+                @test backward_noise.term.ϵ == 0.0
+            end
+        end
+    end
+
     return
 end
 
