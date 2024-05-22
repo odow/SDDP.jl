@@ -99,14 +99,14 @@ function test_WithStateSampler()
         node::SDDP.Node,
         state::Dict{Symbol,Float64},
     )
-        if state[:x] / node.index == 0.0
+        if state[:x] / node.index == 1.0
             return [
-                SDDP.Noise((ϵ = 1.0,), 1 / sampler.number_of_samples) for
+                SDDP.Noise((ϵ = 3.0,), 1 / sampler.number_of_samples) for
                 i in 1:sampler.number_of_samples
             ]
-        elseif state[:x] / node.index == 1.0
+        elseif state[:x] / node.index == 3.0
             return [
-                SDDP.Noise((ϵ = 0.0,), 1 / sampler.number_of_samples) for
+                SDDP.Noise((ϵ = 1.0,), 1 / sampler.number_of_samples) for
                 i in 1:sampler.number_of_samples
             ]
         end
@@ -138,10 +138,10 @@ function test_WithStateSampler()
         )
         for term in terms
             @test term.probability == 0.01
-            if state == 0.0
-                @test backward_noise.term.ϵ == 1.0
-            elseif state == 1.0
-                @test backward_noise.term.ϵ == 0.0
+            if state[:x] / node_index == 1.0
+                @test term.term.ϵ == 3.0
+            elseif state[:x] / node_index == 3.0
+                @test term.term.ϵ == 1.0
             end
         end
     end
