@@ -659,12 +659,11 @@ function solve_all_children(
             continue
         end
         child_node = model[child.term]
-        for noise in
-            sample_backward_noise_terms_with_state(
-                backward_sampling_scheme,
-                child_node,
-                outgoing_state,
-            )
+        for noise in sample_backward_noise_terms_with_state(
+            backward_sampling_scheme,
+            child_node,
+            outgoing_state,
+        )
             if length(scenario_path) == length_scenario_path
                 push!(scenario_path, (child.term, noise.term))
             else
