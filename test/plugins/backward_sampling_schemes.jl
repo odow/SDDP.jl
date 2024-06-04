@@ -93,6 +93,7 @@ end
 mutable struct WithStateSampler <: SDDP.AbstractBackwardSamplingScheme
     number_of_samples::Int
 end
+
 function test_WithStateSampler()
     function sample_backward_noise_terms_with_state(
         sampler::WithStateSampler,
@@ -145,7 +146,6 @@ function test_WithStateSampler()
             end
         end
     end
-
     return
 end
 
