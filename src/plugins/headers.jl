@@ -115,9 +115,27 @@ abstract type AbstractBackwardSamplingScheme end
     )::Vector{Noise}
 
 Returns a `Vector{Noise}` of noises sampled from `node.noise_terms` using
-`backward_sampling_scheme`
+`backward_sampling_scheme`.
 """
 function sample_backward_noise_terms end
+
+"""
+    sample_backward_noise_terms_with_state(
+        sampler::AbstractBackwardSamplingScheme,
+        node::Node,
+        state::Dict{Symbol,Float64},
+    )::Vector{Noise}
+
+Returns a `Vector{Noise}` of noises sampled conditionally on the `state` using
+`sampler`.
+"""
+function sample_backward_noise_terms_with_state(
+    sampler::AbstractBackwardSamplingScheme,
+    node::Node,
+    ::Dict{Symbol,Float64},
+)
+    return sample_backward_noise_terms(sampler, node)
+end
 
 # =========================== duality_handlers =========================== #
 
