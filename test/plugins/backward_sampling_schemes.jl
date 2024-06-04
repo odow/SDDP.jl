@@ -7,7 +7,7 @@ module TestBackwardPassSamplingSchemes
 
 using SDDP
 using Test
-using HiGHS
+import HiGHS
 
 function runtests()
     for name in names(@__MODULE__; all = true)
