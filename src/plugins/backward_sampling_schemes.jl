@@ -10,7 +10,7 @@ Backward sampler that returns all noises of the corresponding node.
 """
 struct CompleteSampler <: AbstractBackwardSamplingScheme end
 
-sample_backward_noise_terms(::CompleteSampler, node::Node) = node.noise_terms
+sample_backward_noise_terms(::CompleteSampler, node) = node.noise_terms
 
 """
      MonteCarloSampler(number_of_samples::Int)
