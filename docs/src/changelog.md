@@ -7,6 +7,22 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.7.0 (June 4, 2024)
+
+### Added
+
+ - Added `sample_backward_noise_terms_with_state` for creating backward pass
+   sampling schemes that depend on the current primal state. (#742) (Thanks
+   @arthur-brigatto)
+
+### Fixed
+
+ - Fixed error message when `publication_plot` has non-finite data (#738)
+
+### Other
+
+ - Updated the logo constructor (#730)
+
 ## v1.6.7 (February 1, 2024)
 
 ### Fixed
