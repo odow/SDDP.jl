@@ -132,7 +132,7 @@ Returns a `Vector{Noise}` of noises sampled conditionally on the `state` using
 function sample_backward_noise_terms_with_state(
     sampler::AbstractBackwardSamplingScheme,
     node::Node,
-    state::Dict{Symbol,Float64},
+   ::Dict{Symbol,Float64},
 )
     return sample_backward_noise_terms(sampler, node)
 end
