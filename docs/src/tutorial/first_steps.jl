@@ -760,8 +760,10 @@ SDDP.train(model; iteration_limit = 10)
 #    it is not deterministic if you intended for the problem to be stochastic,
 #    etc.
 #  - `bound`: this is a lower bound (upper if maximizing) for the value of the
-#    optimal policy. This should be monotonically improving (increasing if
-#    minimizing, decreasing if maximizing).
+#    optimal policy. This bound should be monotonically improving (increasing if
+#    minimizing, decreasing if maximizing), but in some cases it can temporarily
+#    worsen due to cut selection, especially in the early iterations of the
+#    algorithm.
 #  - `time (s)`: the total number of seconds spent solving so far
 #  - `solves`: the total number of subproblem solves to date. This can be very
 #    large!
