@@ -345,18 +345,23 @@ function master_loop(
     options::Options,
 ) where {T}
     _initialize_solver(model; throw_error = false)
-    while true
-        result = iteration(model, options)
-        lock(options.lock) do
+    convergence_lock = ReentrantLock()
+    keep_iterating, status = true, nothing
+    @sync for _ in 1:Threads.nthreads()
+        Threads.@spawn while keep_iterating
+            result = iteration(model, options)
             options.post_iteration_callback(result)
-            log_iteration(options)
-            return
-        end
-        if result.has_converged
-            return result.status
+            lock(() -> log_iteration(options), options.lock)
+            if result.has_converged
+                lock(convergence_lock) do
+                    keep_iterating = false
+                    status = result.status
+                    return
+                end
+            end
         end
     end
-    return
+    return status
 end
 
 function _simulate(
@@ -367,14 +372,9 @@ function _simulate(
     kwargs...,
 )
     _initialize_solver(model; throw_error = false)
-    ret = Vector{Dict{Symbol,Any}}[]
-    ret_lock = ReentrantLock()
-    Threads.@threads for _ in 1:number_replications
-        simulation = _simulate(model, variables; kwargs...)
-        lock(ret_lock) do
-            push!(ret, simulation)
-            return
-        end
+    ret = Vector{Vector{Dict{Symbol,Any}}}(undef, number_replications)
+    @sync for i in 1:number_replications
+        Threads.@spawn ret[i] = _simulate(model, variables; kwargs...)
     end
     return ret
 end

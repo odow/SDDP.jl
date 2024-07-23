@@ -400,6 +400,7 @@ function solve_subproblem(
     scenario_path::Vector{Tuple{T,S}};
     duality_handler::Union{Nothing,AbstractDualityHandler},
 ) where {T,S}
+    lock(node.lock)  # LOCK-ID-005
     _initialize_solver(node; throw_error = false)
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
@@ -442,6 +443,7 @@ function solve_subproblem(
     if node.post_optimize_hook !== nothing
         node.post_optimize_hook(pre_optimize_ret)
     end
+    unlock(node.lock)  # LOCK-ID-005
     return (
         state = state,
         duals = dual_values,
@@ -672,6 +674,7 @@ function solve_all_children(
             continue
         end
         child_node = model[child.term]
+        lock(child_node.lock)  # LOCK-ID-004
         for noise in sample_backward_noise_terms_with_state(
             backward_sampling_scheme,
             child_node,
@@ -728,6 +731,7 @@ function solve_all_children(
                     length(items.duals)
             end
         end
+        unlock(child_node.lock)  # LOCK-ID-004
     end
     if length(scenario_path) == length_scenario_path
         # No-op. There weren't any children to solve.
@@ -765,6 +769,7 @@ function calculate_bound(
             continue
         end
         node = model[child.term]
+        lock(node.lock)  # LOCK-ID-006
         for noise in node.noise_terms
             if node.objective_state !== nothing
                 update_objective_state(
@@ -796,6 +801,7 @@ function calculate_bound(
             push!(probabilities, child.probability * noise.probability)
             push!(noise_supports, noise.term)
         end
+        unlock(node.lock)  # LOCK-ID-006
     end
     # Now compute the risk-adjusted probability measure:
     risk_adjusted_probability = similar(probabilities)
