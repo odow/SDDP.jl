@@ -56,14 +56,14 @@ julia> SDDP.write_subproblem_to_file(model[1], "subproblem.lp")
 
 julia> read("subproblem.lp") |> String |> print
 minimize
-obj: 1.1 x_out + 1 x2
+obj: 1.1 x_out + 1 x4
 subject to
-balance: -1 y + 1 x_in - 1 x_out = 0
+balance: 1 x_in - 1 x_out -1 y = 0
 Bounds
-y = 1.1
-x2 >= 0
 x_in free
 x_out free
+y = 1.1
+x4 >= 0
 End
 ```
 
@@ -80,14 +80,14 @@ julia> SDDP.write_subproblem_to_file(model[1], "subproblem.lp")
 
 julia> read("subproblem.lp") |> String |> print
 minimize
-obj: 3.3 x_out + 1 x2
+obj: 3.3 x_out + 1 x4
 subject to
-balance: -1 y + 1 x_in - 1 x_out = 0
+balance: 1 x_in - 1 x_out -1 y = 0
 Bounds
-y = 3.3
-x2 >= 0
 x_in free
 x_out free
+y = 3.3
+x4 >= 0
 End
 
 julia> rm("subproblem.lp")  # Clean up.
