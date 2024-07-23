@@ -851,7 +851,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
                 bound,
                 forward_trajectory.cumulative_value,
                 time() - options.start_time,
-                Distributed.myid(),
+                max(Threads.threadid(), Distributed.myid()),
                 model.ext[:total_solves],
                 duality_log_key(options.duality_handler),
                 model.ext[:numerical_issue],
@@ -863,7 +863,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
     has_converged, status =
         convergence_test(model, options.log, options.stopping_rules)
     return IterationResult(
-        Distributed.myid(),
+        max(Threads.threadid(), Distributed.myid()),
         bound,
         forward_trajectory.cumulative_value,
         has_converged,

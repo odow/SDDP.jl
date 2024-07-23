@@ -350,6 +350,7 @@ function master_loop(
         lock(options.lock) do
             options.post_iteration_callback(result)
             log_iteration(options)
+            return
         end
         if result.has_converged
             return result.status
@@ -372,6 +373,7 @@ function _simulate(
         simulation = _simulate(model, variables; kwargs...)
         lock(ret_lock) do
             push!(ret, simulation)
+            return
         end
     end
     return ret
