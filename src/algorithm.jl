@@ -3,6 +3,16 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+macro _timeit_threadsafe(timer, label, block)
+    return esc(quote
+        if Threads.threadid() == 1
+            TimerOutputs.@timeit $timer $label $block
+        else
+            $block
+        end
+    end)
+end
+
 # to_nodal_form is an internal helper function so users can pass arguments like:
 # risk_measure = SDDP.Expectation(),
 # risk_measure = Dict(1=>Expectation(), 2=>WorstCase())
@@ -101,6 +111,8 @@ struct Options{T}
     forward_pass_callback::Any
     post_iteration_callback::Any
     last_log_iteration::Ref{Int}
+    # For threading
+    lock::ReentrantLock
     # Internal function: users should never construct this themselves.
     function Options(
         model::PolicyGraph{T},
@@ -144,6 +156,7 @@ struct Options{T}
             forward_pass_callback,
             post_iteration_callback,
             Ref{Int}(0),  # last_log_iteration
+            ReentrantLock(),
         )
     end
 end
@@ -423,7 +436,7 @@ function solve_subproblem(
     end
     state = get_outgoing_state(node)
     stage_objective = stage_objective_value(node.stage_objective)
-    TimerOutputs.@timeit model.timer_output "get_dual_solution" begin
+    @_timeit_threadsafe model.timer_output "get_dual_solution" begin
         objective, dual_values = get_dual_solution(node, duality_handler)
     end
     if node.post_optimize_hook !== nothing
@@ -505,7 +518,7 @@ function backward_pass(
     objective_states::Vector{NTuple{N,Float64}},
     belief_states::Vector{Tuple{Int,Dict{T,Float64}}},
 ) where {T,NoiseType,N}
-    TimerOutputs.@timeit model.timer_output "prepare_backward_pass" begin
+    @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
         restore_duality =
             prepare_backward_pass(model, options.duality_handler, options)
     end
@@ -613,7 +626,7 @@ function backward_pass(
             end
         end
     end
-    TimerOutputs.@timeit model.timer_output "prepare_backward_pass" begin
+    @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
         restore_duality()
     end
     return cuts
@@ -695,7 +708,7 @@ function solve_all_children(
                         noise.term,
                     )
                 end
-                TimerOutputs.@timeit model.timer_output "solve_subproblem" begin
+                @_timeit_threadsafe model.timer_output "solve_subproblem" begin
                     subproblem_results = solve_subproblem(
                         model,
                         child_node,
@@ -812,11 +825,11 @@ end
 
 function iteration(model::PolicyGraph{T}, options::Options) where {T}
     model.ext[:numerical_issue] = false
-    TimerOutputs.@timeit model.timer_output "forward_pass" begin
+    @_timeit_threadsafe model.timer_output "forward_pass" begin
         forward_trajectory = forward_pass(model, options, options.forward_pass)
         options.forward_pass_callback(forward_trajectory)
     end
-    TimerOutputs.@timeit model.timer_output "backward_pass" begin
+    @_timeit_threadsafe model.timer_output "backward_pass" begin
         cuts = backward_pass(
             model,
             options,
@@ -826,22 +839,27 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             forward_trajectory.belief_states,
         )
     end
-    TimerOutputs.@timeit model.timer_output "calculate_bound" begin
+    @_timeit_threadsafe model.timer_output "calculate_bound" begin
         bound = calculate_bound(model)
     end
-    push!(
-        options.log,
-        Log(
-            length(options.log) + 1,
-            bound,
-            forward_trajectory.cumulative_value,
-            time() - options.start_time,
-            Distributed.myid(),
-            model.ext[:total_solves],
-            duality_log_key(options.duality_handler),
-            model.ext[:numerical_issue],
-        ),
-    )
+    lock(options.lock)
+    try
+        push!(
+            options.log,
+            Log(
+                length(options.log) + 1,
+                bound,
+                forward_trajectory.cumulative_value,
+                time() - options.start_time,
+                Distributed.myid(),
+                model.ext[:total_solves],
+                duality_log_key(options.duality_handler),
+                model.ext[:numerical_issue],
+            ),
+        )
+    finally
+        unlock(options.lock)
+    end
     has_converged, status =
         convergence_test(model, options.log, options.stopping_rules)
     return IterationResult(
@@ -1130,6 +1148,11 @@ function train(
     finally
         # And close the dashboard callback if necessary.
         dashboard_callback(nothing, true)
+        for node in values(model.nodes)
+            if islocked(node.lock)
+                unlock(node.lock)
+            end
+        end
     end
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
@@ -1177,6 +1200,7 @@ function _simulate(
     objective_states = NTuple{N,Float64}[]
     for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
+        lock(node.lock)  # LOCK-ID-002
         # Objective state interpolation.
         objective_state_vector = update_objective_state(
             node.objective_state,
@@ -1253,6 +1277,7 @@ function _simulate(
         push!(simulation, store)
         # Set outgoing state as the incoming state for the next node.
         incoming_state = copy(subproblem_results.state)
+        unlock(node.lock)  # LOCK-ID-002
     end
     return simulation
 end

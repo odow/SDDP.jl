@@ -327,3 +327,52 @@ function _simulate(
     end
     return
 end
+
+"""
+    Threaded()
+
+Run SDDP in threaded mode.
+"""
+struct Threaded <: AbstractParallelScheme end
+
+Base.show(io::IO, ::Threaded) = print(io, "Threaded()")
+
+interrupt(::Threaded) = nothing
+
+function master_loop(
+    ::Threaded,
+    model::PolicyGraph{T},
+    options::Options,
+) where {T}
+    _initialize_solver(model; throw_error = false)
+    while true
+        result = iteration(model, options)
+        lock(options.lock) do
+            options.post_iteration_callback(result)
+            log_iteration(options)
+        end
+        if result.has_converged
+            return result.status
+        end
+    end
+    return
+end
+
+function _simulate(
+    model::PolicyGraph,
+    ::Threaded,
+    number_replications::Int,
+    variables::Vector{Symbol};
+    kwargs...,
+)
+    _initialize_solver(model; throw_error = false)
+    ret = Vector{Dict{Symbol,Any}}[]
+    ret_lock = ReentrantLock()
+    Threads.@threads for _ in 1:number_replications
+        simulation = _simulate(model, variables; kwargs...)
+        lock(ret_lock) do
+            push!(ret, simulation)
+        end
+    end
+    return ret
+end
