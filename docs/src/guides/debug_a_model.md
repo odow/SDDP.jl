@@ -58,7 +58,7 @@ julia> read("subproblem.lp") |> String |> print
 minimize
 obj: 1.1 x_out + 1 x4
 subject to
-balance: 1 x_in - 1 x_out -1 y = 0
+balance: 1 x_in - 1 x_out - 1 y = 0
 Bounds
 x_in free
 x_out free
@@ -82,7 +82,7 @@ julia> read("subproblem.lp") |> String |> print
 minimize
 obj: 3.3 x_out + 1 x4
 subject to
-balance: 1 x_in - 1 x_out -1 y = 0
+balance: 1 x_in - 1 x_out - 1 y = 0
 Bounds
 x_in free
 x_out free
