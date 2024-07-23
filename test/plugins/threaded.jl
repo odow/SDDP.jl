@@ -41,7 +41,7 @@ function test_threaded()
     SDDP.train(model; iteration_limit = 100, parallel_scheme = SDDP.Threaded())
     thread_ids_seen =
         Set{Int}(log.pid for log in model.most_recent_training_results.log)
-    min_threads = Threads.nthreads() > 1 ? 1 : 2
+    min_threads = Threads.nthreads() == 1 ? 1 : 2
     @test min_threads <= length(thread_ids_seen) <= Threads.nthreads()
     recorder = Dict{Symbol,Function}(:thread_id => sp -> Threads.threadid())
     simulations = SDDP.simulate(
