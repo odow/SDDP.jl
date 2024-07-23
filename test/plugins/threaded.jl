@@ -51,7 +51,7 @@ function test_threaded()
         custom_recorders = recorder,
     )
     thread_ids_seen =
-        Set{Int}(data[:thread_id] for sim in simulations, data in sim)
+        Set{Int}(data[:thread_id] for sim in simulations for data in sim)
     min_threads = Threads.nthreads() > 1 ? 1 : 2
     @test min_threads <= length(thread_ids_seen) <= Threads.nthreads()
     return
