@@ -331,7 +331,21 @@ end
 """
     Threaded()
 
-Run SDDP in threaded mode.
+Run SDDP in multi-threaded mode.
+
+Use `julia --threads N` to start Julia with `N` threads. In most cases, you
+should pick `N` to be the number of physical cores on your machine.
+
+!!! danger
+    This plug-in is experimental, and parts of SDDP.jl may not be threadsafe. If
+    you encounter any problems or crashes, please open a GitHub issue.
+
+## Example
+
+```julia
+SDDP.train(model; parallel_scheme = SDDP.Threaded())
+SDDP.simulate(model; parallel_scheme = SDDP.Threaded())
+```
 """
 struct Threaded <: AbstractParallelScheme end
 
