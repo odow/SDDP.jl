@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
  - Added `SDDP.Threaded()`, which is an experimental parallel scheme that
    supports solving problems using multiple threads. Some parts of SDDP.jl may
-   not be threadsafe, and this can cause incorrect results, segfaults, or other
+   not be thread-safe, and this can cause incorrect results, segfaults, or other
    errors. Please use with care and report any issues by opening a GitHub issue.
    (#758)
 
