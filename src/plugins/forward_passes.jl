@@ -27,7 +27,7 @@ function forward_pass(
 ) where {T}
     # First up, sample a scenario. Note that if a cycle is detected, this will
     # return the cycle node as well.
-    TimerOutputs.@timeit model.timer_output "sample_scenario" begin
+    @_timeit_threadsafe model.timer_output "sample_scenario" begin
         scenario_path, terminated_due_to_cycle =
             sample_scenario(model, options.sampling_scheme)
     end
@@ -51,6 +51,7 @@ function forward_pass(
     # Iterate down the scenario.
     for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
+        lock(node.lock)  # LOCK-ID-001
         # Objective state interpolation.
         objective_state_vector = update_objective_state(
             node.objective_state,
@@ -94,7 +95,7 @@ function forward_pass(
         end
         # ===== End: starting state for infinite horizon =====
         # Solve the subproblem, note that `duality_handler = nothing`.
-        TimerOutputs.@timeit model.timer_output "solve_subproblem" begin
+        @_timeit_threadsafe model.timer_output "solve_subproblem" begin
             subproblem_results = solve_subproblem(
                 model,
                 node,
@@ -112,6 +113,7 @@ function forward_pass(
         # Add the outgoing state variable to the list of states we have sampled
         # on this forward pass.
         push!(sampled_states, incoming_state_value)
+        unlock(node.lock)  # LOCK-ID-001
     end
     if terminated_due_to_cycle
         # We terminated due to a cycle. Here is the list of possible starting

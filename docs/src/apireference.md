@@ -68,6 +68,7 @@ SDDP.SimulatorSamplingScheme
 ```@docs
 SDDP.AbstractParallelScheme
 SDDP.Serial
+SDDP.Threaded
 SDDP.Asynchronous
 ```
 

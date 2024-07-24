@@ -410,6 +410,7 @@ function refine_bellman_function(
     nominal_probability::Vector{Float64},
     objective_realizations::Vector{Float64},
 ) where {T}
+    lock(node.lock)  # LOCK-ID-003
     # Sanity checks.
     @assert length(dual_variables) ==
             length(noise_supports) ==
@@ -426,8 +427,8 @@ function refine_bellman_function(
         model.objective_sense == MOI.MIN_SENSE,
     )
     # The meat of the function.
-    if bellman_function.cut_type == SINGLE_CUT
-        return _add_average_cut(
+    ret = if bellman_function.cut_type == SINGLE_CUT
+        _add_average_cut(
             node,
             outgoing_state,
             risk_adjusted_probability,
@@ -438,7 +439,7 @@ function refine_bellman_function(
     else  # Add a multi-cut
         @assert bellman_function.cut_type == MULTI_CUT
         _add_locals_if_necessary(node, bellman_function, length(dual_variables))
-        return _add_multi_cut(
+        _add_multi_cut(
             node,
             outgoing_state,
             risk_adjusted_probability,
@@ -447,6 +448,8 @@ function refine_bellman_function(
             offset,
         )
     end
+    unlock(node.lock)  # LOCK-ID-003
+    return ret
 end
 
 function _add_average_cut(

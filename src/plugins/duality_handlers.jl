@@ -61,24 +61,6 @@ SDDiP(args...; kwargs...) = _deprecate_integrality_handler()
 
 ContinuousRelaxation(args...; kwargs...) = _deprecate_integrality_handler()
 
-function prepare_backward_pass(
-    model::PolicyGraph,
-    duality_handler::AbstractDualityHandler,
-    options::Options,
-)
-    undo = Function[]
-    for (_, node) in model.nodes
-        push!(undo, prepare_backward_pass(node, duality_handler, options))
-    end
-    function undo_relax()
-        for f in undo
-            f()
-        end
-        return
-    end
-    return undo_relax
-end
-
 function get_dual_solution(node::Node, ::Nothing)
     return JuMP.objective_value(node.subproblem), Dict{Symbol,Float64}()
 end
@@ -351,8 +333,10 @@ focus more on the more-recent rewards.
 mutable struct BanditDuality <: AbstractDualityHandler
     arms::Vector{_BanditArm}
     last_arm_index::Int
+    logs_seen::Int
+
     function BanditDuality(args::AbstractDualityHandler...)
-        return new(_BanditArm[_BanditArm(arg, Float64[]) for arg in args], 1)
+        return new(_BanditArm[_BanditArm(arg, Float64[]) for arg in args], 1, 1)
     end
 end
 
@@ -404,15 +388,16 @@ function _update_rewards(handler::BanditDuality, log::Vector{Log})
 end
 
 function prepare_backward_pass(
-    model::PolicyGraph,
+    node::Node,
     handler::BanditDuality,
     options::Options,
 )
-    if length(options.log) > 1
+    if length(options.log) > handler.logs_seen
         _update_rewards(handler, options.log)
+        handler.logs_seen = length(options.log)
     end
     arm = _choose_best_arm(handler)
-    return prepare_backward_pass(model, arm.handler, options)
+    return prepare_backward_pass(node, arm.handler, options)
 end
 
 function get_dual_solution(node::Node, handler::BanditDuality)

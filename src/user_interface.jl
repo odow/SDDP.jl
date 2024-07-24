@@ -661,6 +661,8 @@ mutable struct Node{T}
     # An extension dictionary. This is a useful place for packages that extend
     # SDDP.jl to stash things.
     ext::Dict{Symbol,Any}
+    # Lock for threading
+    lock::ReentrantLock
 end
 
 function Base.show(io::IO, node::Node)
@@ -990,6 +992,7 @@ function PolicyGraph(
             direct_mode ? nothing : optimizer,
             # The extension dictionary.
             Dict{Symbol,Any}(),
+            ReentrantLock(),
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node

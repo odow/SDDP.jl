@@ -327,3 +327,68 @@ function _simulate(
     end
     return
 end
+
+"""
+    Threaded()
+
+Run SDDP in multi-threaded mode.
+
+Use `julia --threads N` to start Julia with `N` threads. In most cases, you
+should pick `N` to be the number of physical cores on your machine.
+
+!!! danger
+    This plug-in is experimental, and parts of SDDP.jl may not be threadsafe. If
+    you encounter any problems or crashes, please open a GitHub issue.
+
+## Example
+
+```julia
+SDDP.train(model; parallel_scheme = SDDP.Threaded())
+SDDP.simulate(model; parallel_scheme = SDDP.Threaded())
+```
+"""
+struct Threaded <: AbstractParallelScheme end
+
+Base.show(io::IO, ::Threaded) = print(io, "Threaded()")
+
+interrupt(::Threaded) = nothing
+
+function master_loop(
+    ::Threaded,
+    model::PolicyGraph{T},
+    options::Options,
+) where {T}
+    _initialize_solver(model; throw_error = false)
+    convergence_lock = ReentrantLock()
+    keep_iterating, status = true, nothing
+    @sync for _ in 1:Threads.nthreads()
+        Threads.@spawn while keep_iterating
+            result = iteration(model, options)
+            options.post_iteration_callback(result)
+            lock(() -> log_iteration(options), options.lock)
+            if result.has_converged
+                lock(convergence_lock) do
+                    keep_iterating = false
+                    status = result.status
+                    return
+                end
+            end
+        end
+    end
+    return status
+end
+
+function _simulate(
+    model::PolicyGraph,
+    ::Threaded,
+    number_replications::Int,
+    variables::Vector{Symbol};
+    kwargs...,
+)
+    _initialize_solver(model; throw_error = false)
+    ret = Vector{Vector{Dict{Symbol,Any}}}(undef, number_replications)
+    @sync for i in 1:number_replications
+        Threads.@spawn ret[i] = _simulate(model, variables; kwargs...)
+    end
+    return ret
+end
