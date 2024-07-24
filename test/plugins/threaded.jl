@@ -6,7 +6,8 @@
 function test_threaded()
     # We should test that JULIA_NUM_THREADS is set in CI jobs
     if get(ENV, "CI", "false") == "true"
-        @test get(ENV, "JULIA_NUM_THREADS", 0) == Threads.nthreads()
+        num_threads = get(ENV, "JULIA_NUM_THREADS", "0")
+        @test parse(Int, num_threads) == Threads.nthreads()
         @test Threads.nthreads() > 1
     end
     c_eta, c_pt = [0.8, 0.5], [2, 5, 8, 11, 14]
