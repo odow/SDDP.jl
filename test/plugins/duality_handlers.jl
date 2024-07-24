@@ -20,6 +20,24 @@ function runtests()
     return
 end
 
+function SDDP.prepare_backward_pass(
+    model::SDDP.PolicyGraph,
+    duality_handler::SDDP.AbstractDualityHandler,
+    options::SDDP.Options,
+)
+    undo = Function[]
+    for (_, node) in model.nodes
+        push!(undo, SDDP.prepare_backward_pass(node, duality_handler, options))
+    end
+    function undo_relax()
+        for f in undo
+            f()
+        end
+        return
+    end
+    return undo_relax
+end
+
 # Single-stage model helps set up a node and subproblem to test dual
 # calculations
 function easy_single_stage(duality_handler)
