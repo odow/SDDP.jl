@@ -25,7 +25,7 @@ function test_threaded()
         )
         @variable(subproblem, u_u[1:2] >= 0)
         @variable(subproblem, u_v[1:2] >= 0)
-        @variable(subproblem, 0 <= u_x[1:5] <= 5)
+        @variable(subproblem, 0 <= u_x[1:5] <= 5, Int)
         @variable(subproblem, u_slack >= 0)
         @variable(subproblem, w_noise)
         @constraint(

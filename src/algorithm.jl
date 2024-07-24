@@ -672,8 +672,11 @@ function solve_all_children(
         child_node = model[child.term]
         lock(child_node.lock)  # LOCK-ID-004
         @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
-            restore_duality =
-                prepare_backward_pass(node, options.duality_handler, options)
+            restore_duality = prepare_backward_pass(
+                child_node,
+                options.duality_handler,
+                options,
+            )
         end
         for noise in sample_backward_noise_terms_with_state(
             backward_sampling_scheme,
