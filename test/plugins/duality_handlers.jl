@@ -428,7 +428,7 @@ function test_BanditDuality_show()
     return
 end
 
-function test_BanditDuality_show()
+function test_BanditDuality_eval()
     model = SDDP.LinearPolicyGraph(
         stages = 2,
         lower_bound = -100.0,

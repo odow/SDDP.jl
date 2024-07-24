@@ -336,7 +336,7 @@ mutable struct BanditDuality <: AbstractDualityHandler
     logs_seen::Int
 
     function BanditDuality(args::AbstractDualityHandler...)
-        return new(_BanditArm[_BanditArm(arg, Float64[]) for arg in args], 1, 0)
+        return new(_BanditArm[_BanditArm(arg, Float64[]) for arg in args], 1, 1)
     end
 end
 
