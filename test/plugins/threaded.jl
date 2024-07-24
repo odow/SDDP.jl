@@ -4,6 +4,11 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 function test_threaded()
+    # We should test that JULIA_NUM_THREADS is set in CI jobs
+    if get(ENV, "CI", "false") == "true"
+        @test get(ENV, "JULIA_NUM_THREADS", 0) == Threads.nthreads()
+        @test Threads.nthreads() > 1
+    end
     c_eta, c_pt = [0.8, 0.5], [2, 5, 8, 11, 14]
     df_demand = rand(10:10:60, 24)
     model = SDDP.LinearPolicyGraph(;

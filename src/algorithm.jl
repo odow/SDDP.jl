@@ -520,10 +520,6 @@ function backward_pass(
     objective_states::Vector{NTuple{N,Float64}},
     belief_states::Vector{Tuple{Int,Dict{T,Float64}}},
 ) where {T,NoiseType,N}
-    @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
-        restore_duality =
-            prepare_backward_pass(model, options.duality_handler, options)
-    end
     # TODO(odow): improve storage type.
     cuts = Dict{T,Vector{Any}}(index => Any[] for index in keys(model.nodes))
     for index in length(scenario_path):-1:1
@@ -548,6 +544,7 @@ function backward_pass(
                     options.backward_sampling_scheme,
                     scenario_path[1:index],
                     options.duality_handler,
+                    options,
                 )
             end
             # We need to refine our estimate at all nodes in the partition.
@@ -588,6 +585,7 @@ function backward_pass(
                 options.backward_sampling_scheme,
                 scenario_path[1:index],
                 options.duality_handler,
+                options,
             )
             new_cuts = refine_bellman_function(
                 model,
@@ -628,9 +626,6 @@ function backward_pass(
             end
         end
     end
-    @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
-        restore_duality()
-    end
     return cuts
 end
 
@@ -667,6 +662,7 @@ function solve_all_children(
     backward_sampling_scheme::AbstractBackwardSamplingScheme,
     scenario_path,
     duality_handler::Union{Nothing,AbstractDualityHandler},
+    options,
 ) where {T}
     length_scenario_path = length(scenario_path)
     for child in node.children
@@ -675,6 +671,10 @@ function solve_all_children(
         end
         child_node = model[child.term]
         lock(child_node.lock)  # LOCK-ID-004
+        @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
+            restore_duality =
+                prepare_backward_pass(node, options.duality_handler, options)
+        end
         for noise in sample_backward_noise_terms_with_state(
             backward_sampling_scheme,
             child_node,
@@ -730,6 +730,9 @@ function solve_all_children(
                 items.cached_solutions[(child.term, noise.term)] =
                     length(items.duals)
             end
+        end
+        @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
+            restore_duality()
         end
         unlock(child_node.lock)  # LOCK-ID-004
     end
