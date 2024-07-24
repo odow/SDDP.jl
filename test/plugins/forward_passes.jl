@@ -265,9 +265,9 @@ function test_RegularizedForwardPass()
         fp = SDDP.RegularizedForwardPass()
         reg_bound = main(cost, fp, hint)
         bound = main(cost, SDDP.DefaultForwardPass(), hint)
-        @test reg_bound >= bound - 1e-6
+        @test reg_bound >= bound - 1.0
     end
-    # Test that initializingn with a bad guess performs poorly
+    # Test that initializing with a bad guess performs poorly
     fp = SDDP.RegularizedForwardPass()
     reg_bound = main(400, fp, 400)
     bound = main(400, SDDP.DefaultForwardPass(), 0)

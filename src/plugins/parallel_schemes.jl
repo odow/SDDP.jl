@@ -141,7 +141,7 @@ function slave_update(model::PolicyGraph, result::IterationResult)
             if cut === nothing
                 error(
                     "This model uses features that are not suppored in async " *
-                    "mode. Use `parallel_scheme = Serial()` instead.",
+                    "mode. Use `parallel_scheme = Threaded()` instead.",
                 )
             end
             _add_cut(
@@ -362,14 +362,23 @@ function master_loop(
     convergence_lock = ReentrantLock()
     keep_iterating, status = true, nothing
     @sync for _ in 1:Threads.nthreads()
-        Threads.@spawn while keep_iterating
-            result = iteration(model, options)
-            options.post_iteration_callback(result)
-            lock(() -> log_iteration(options), options.lock)
-            if result.has_converged
+        Threads.@spawn begin
+            try
+                while keep_iterating
+                    result = iteration(model, options)
+                    options.post_iteration_callback(result)
+                    lock(() -> log_iteration(options), options.lock)
+                    if result.has_converged
+                        lock(convergence_lock) do
+                            keep_iterating = false
+                            status = result.status
+                            return
+                        end
+                    end
+                end
+            finally
                 lock(convergence_lock) do
                     keep_iterating = false
-                    status = result.status
                     return
                 end
             end

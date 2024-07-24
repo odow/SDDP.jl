@@ -4,13 +4,15 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 macro _timeit_threadsafe(timer, label, block)
-    return esc(quote
-        if Threads.threadid() == 1
+    code = quote
+        first_thread = first(Threads.threadpooltids(Threads.threadpool()))
+        if Threads.threadid() == first_thread
             TimerOutputs.@timeit $timer $label $block
         else
             $block
         end
-    end)
+    end
+    return esc(code)
 end
 
 # to_nodal_form is an internal helper function so users can pass arguments like:
@@ -302,11 +304,13 @@ function attempt_numerical_recovery(model::PolicyGraph, node::Node)
     end
     if !_has_primal_solution(node)
         model.ext[:numerical_issue] = true
-        @info "Writing cuts to the file `model.cuts.json`"
-        write_cuts_to_file(model, "model.cuts.json")
+        suffix = Threads.threadid() == 1 ? "" : "_pid=$(Threads.threadid())"
+        filename = "model$suffix.cuts.json"
+        @info "Writing cuts to the file `$filename`"
+        write_cuts_to_file(model, filename)
         write_subproblem_to_file(
             node,
-            "subproblem_$(node.index).mof.json";
+            "subproblem_$(node.index)$suffix.mof.json";
             throw_error = true,
         )
     end
@@ -400,7 +404,6 @@ function solve_subproblem(
     scenario_path::Vector{Tuple{T,S}};
     duality_handler::Union{Nothing,AbstractDualityHandler},
 ) where {T,S}
-    lock(node.lock)  # LOCK-ID-005
     _initialize_solver(node; throw_error = false)
     # Parameterize the model. First, fix the value of the incoming state
     # variables. Then parameterize the model depending on `noise`. Finally,
@@ -443,7 +446,6 @@ function solve_subproblem(
     if node.post_optimize_hook !== nothing
         node.post_optimize_hook(pre_optimize_ret)
     end
-    unlock(node.lock)  # LOCK-ID-005
     return (
         state = state,
         duals = dual_values,
@@ -670,74 +672,80 @@ function solve_all_children(
             continue
         end
         child_node = model[child.term]
-        lock(child_node.lock)  # LOCK-ID-004
-        @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
-            restore_duality = prepare_backward_pass(
+        lock(child_node.lock)
+        try
+            @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
+                restore_duality = prepare_backward_pass(
+                    child_node,
+                    options.duality_handler,
+                    options,
+                )
+            end
+            for noise in sample_backward_noise_terms_with_state(
+                backward_sampling_scheme,
                 child_node,
-                options.duality_handler,
-                options,
+                outgoing_state,
             )
-        end
-        for noise in sample_backward_noise_terms_with_state(
-            backward_sampling_scheme,
-            child_node,
-            outgoing_state,
-        )
-            if length(scenario_path) == length_scenario_path
-                push!(scenario_path, (child.term, noise.term))
-            else
-                scenario_path[end] = (child.term, noise.term)
+                if length(scenario_path) == length_scenario_path
+                    push!(scenario_path, (child.term, noise.term))
+                else
+                    scenario_path[end] = (child.term, noise.term)
+                end
+                if haskey(items.cached_solutions, (child.term, noise.term))
+                    sol_index = items.cached_solutions[(child.term, noise.term)]
+                    push!(items.duals, items.duals[sol_index])
+                    push!(items.supports, items.supports[sol_index])
+                    push!(items.nodes, child_node.index)
+                    push!(items.probability, items.probability[sol_index])
+                    push!(items.objectives, items.objectives[sol_index])
+                    push!(items.belief, belief)
+                else
+                    # Update belief state, etc.
+                    if belief_state !== nothing
+                        current_belief = child_node.belief_state::BeliefState{T}
+                        current_belief.updater(
+                            current_belief.belief,
+                            belief_state,
+                            current_belief.partition_index,
+                            noise.term,
+                        )
+                    end
+                    if objective_state !== nothing
+                        update_objective_state(
+                            child_node.objective_state,
+                            objective_state,
+                            noise.term,
+                        )
+                    end
+                    @_timeit_threadsafe model.timer_output "solve_subproblem" begin
+                        subproblem_results = solve_subproblem(
+                            model,
+                            child_node,
+                            outgoing_state,
+                            noise.term,
+                            scenario_path;
+                            duality_handler = duality_handler,
+                        )
+                    end
+                    push!(items.duals, subproblem_results.duals)
+                    push!(items.supports, noise)
+                    push!(items.nodes, child_node.index)
+                    push!(
+                        items.probability,
+                        child.probability * noise.probability,
+                    )
+                    push!(items.objectives, subproblem_results.objective)
+                    push!(items.belief, belief)
+                    items.cached_solutions[(child.term, noise.term)] =
+                        length(items.duals)
+                end
             end
-            if haskey(items.cached_solutions, (child.term, noise.term))
-                sol_index = items.cached_solutions[(child.term, noise.term)]
-                push!(items.duals, items.duals[sol_index])
-                push!(items.supports, items.supports[sol_index])
-                push!(items.nodes, child_node.index)
-                push!(items.probability, items.probability[sol_index])
-                push!(items.objectives, items.objectives[sol_index])
-                push!(items.belief, belief)
-            else
-                # Update belief state, etc.
-                if belief_state !== nothing
-                    current_belief = child_node.belief_state::BeliefState{T}
-                    current_belief.updater(
-                        current_belief.belief,
-                        belief_state,
-                        current_belief.partition_index,
-                        noise.term,
-                    )
-                end
-                if objective_state !== nothing
-                    update_objective_state(
-                        child_node.objective_state,
-                        objective_state,
-                        noise.term,
-                    )
-                end
-                @_timeit_threadsafe model.timer_output "solve_subproblem" begin
-                    subproblem_results = solve_subproblem(
-                        model,
-                        child_node,
-                        outgoing_state,
-                        noise.term,
-                        scenario_path;
-                        duality_handler = duality_handler,
-                    )
-                end
-                push!(items.duals, subproblem_results.duals)
-                push!(items.supports, noise)
-                push!(items.nodes, child_node.index)
-                push!(items.probability, child.probability * noise.probability)
-                push!(items.objectives, subproblem_results.objective)
-                push!(items.belief, belief)
-                items.cached_solutions[(child.term, noise.term)] =
-                    length(items.duals)
+            @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
+                restore_duality()
             end
+        finally
+            unlock(child_node.lock)
         end
-        @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
-            restore_duality()
-        end
-        unlock(child_node.lock)  # LOCK-ID-004
     end
     if length(scenario_path) == length_scenario_path
         # No-op. There weren't any children to solve.
@@ -775,39 +783,42 @@ function calculate_bound(
             continue
         end
         node = model[child.term]
-        lock(node.lock)  # LOCK-ID-006
-        for noise in node.noise_terms
-            if node.objective_state !== nothing
-                update_objective_state(
-                    node.objective_state,
-                    node.objective_state.initial_value,
+        lock(node.lock)
+        try
+            for noise in node.noise_terms
+                if node.objective_state !== nothing
+                    update_objective_state(
+                        node.objective_state,
+                        node.objective_state.initial_value,
+                        noise.term,
+                    )
+                end
+                # Update belief state, etc.
+                if node.belief_state !== nothing
+                    belief = node.belief_state::BeliefState{T}
+                    partition_index = belief.partition_index
+                    belief.updater(
+                        belief.belief,
+                        current_belief,
+                        partition_index,
+                        noise.term,
+                    )
+                end
+                subproblem_results = solve_subproblem(
+                    model,
+                    node,
+                    root_state,
                     noise.term,
+                    Tuple{T,Any}[(child.term, noise.term)];
+                    duality_handler = nothing,
                 )
+                push!(objectives, subproblem_results.objective)
+                push!(probabilities, child.probability * noise.probability)
+                push!(noise_supports, noise.term)
             end
-            # Update belief state, etc.
-            if node.belief_state !== nothing
-                belief = node.belief_state::BeliefState{T}
-                partition_index = belief.partition_index
-                belief.updater(
-                    belief.belief,
-                    current_belief,
-                    partition_index,
-                    noise.term,
-                )
-            end
-            subproblem_results = solve_subproblem(
-                model,
-                node,
-                root_state,
-                noise.term,
-                Tuple{T,Any}[(child.term, noise.term)];
-                duality_handler = nothing,
-            )
-            push!(objectives, subproblem_results.objective)
-            push!(probabilities, child.probability * noise.probability)
-            push!(noise_supports, noise.term)
+        finally
+            unlock(node.lock)
         end
-        unlock(node.lock)  # LOCK-ID-006
     end
     # Now compute the risk-adjusted probability measure:
     risk_adjusted_probability = similar(probabilities)
@@ -869,20 +880,20 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
                 model.ext[:numerical_issue],
             ),
         )
+        has_converged, status =
+            convergence_test(model, options.log, options.stopping_rules)
+        return IterationResult(
+            max(Threads.threadid(), Distributed.myid()),
+            bound,
+            forward_trajectory.cumulative_value,
+            has_converged,
+            status,
+            cuts,
+            model.ext[:numerical_issue],
+        )
     finally
         unlock(options.lock)
     end
-    has_converged, status =
-        convergence_test(model, options.log, options.stopping_rules)
-    return IterationResult(
-        max(Threads.threadid(), Distributed.myid()),
-        bound,
-        forward_trajectory.cumulative_value,
-        has_converged,
-        status,
-        cuts,
-        model.ext[:numerical_issue],
-    )
 end
 
 """
@@ -955,7 +966,7 @@ Train the policy for `model`.
     to `false`.
 
  - `parallel_scheme::AbstractParallelScheme`: specify a scheme for solving in
-   parallel. Defaults to `Serial()`.
+   parallel. Defaults to `Threaded()`.
 
  - `forward_pass::AbstractForwardPass`: specify a scheme to use for the forward
    passes.
@@ -999,7 +1010,7 @@ function train(
     cut_deletion_minimum::Int = 1,
     backward_sampling_scheme::AbstractBackwardSamplingScheme = SDDP.CompleteSampler(),
     dashboard::Bool = false,
-    parallel_scheme::AbstractParallelScheme = Serial(),
+    parallel_scheme::AbstractParallelScheme = Threaded(),
     forward_pass::AbstractForwardPass = DefaultForwardPass(),
     forward_pass_resampling_probability::Union{Nothing,Float64} = nothing,
     add_to_existing_cuts::Bool = false,
@@ -1150,7 +1161,15 @@ function train(
     try
         status = master_loop(parallel_scheme, model, options)
     catch ex
-        if isa(ex, InterruptException)
+        # Unwrap exceptions from tasks. If there are multiple exceptions,
+        # rethrow only the first one.
+        if ex isa CompositeException
+            ex = first(ex.exceptions)
+        end
+        if ex isa TaskFailedException
+            ex = ex.task.exception
+        end
+        if ex isa InterruptException
             status = :interrupted
             interrupt(parallel_scheme)
         else
@@ -1160,11 +1179,6 @@ function train(
     finally
         # And close the dashboard callback if necessary.
         dashboard_callback(nothing, true)
-        for node in values(model.nodes)
-            if islocked(node.lock)
-                unlock(node.lock)
-            end
-        end
     end
     training_results = TrainingResults(status, log)
     model.most_recent_training_results = training_results
@@ -1212,84 +1226,87 @@ function _simulate(
     objective_states = NTuple{N,Float64}[]
     for (depth, (node_index, noise)) in enumerate(scenario_path)
         node = model[node_index]
-        lock(node.lock)  # LOCK-ID-002
-        # Objective state interpolation.
-        objective_state_vector = update_objective_state(
-            node.objective_state,
-            objective_state_vector,
-            noise,
-        )
-        if objective_state_vector !== nothing
-            push!(objective_states, objective_state_vector)
-        end
-        if node.belief_state !== nothing
-            belief = node.belief_state::BeliefState{T}
-            partition_index = belief.partition_index
-            current_belief = belief.updater(
-                belief.belief,
-                current_belief,
-                partition_index,
+        lock(node.lock)
+        try
+            # Objective state interpolation.
+            objective_state_vector = update_objective_state(
+                node.objective_state,
+                objective_state_vector,
                 noise,
             )
-        else
-            current_belief = Dict(node_index => 1.0)
-        end
-        # Solve the subproblem.
-        subproblem_results = solve_subproblem(
-            model,
-            node,
-            incoming_state,
-            noise,
-            scenario_path[1:depth];
-            duality_handler = duality_handler,
-        )
-        # Add the stage-objective
-        cumulative_value += subproblem_results.stage_objective
-        # Record useful variables from the solve.
-        store = Dict{Symbol,Any}(
-            :node_index => node_index,
-            :noise_term => noise,
-            :stage_objective => subproblem_results.stage_objective,
-            :bellman_term =>
-                subproblem_results.objective -
-                subproblem_results.stage_objective,
-            :objective_state => objective_state_vector,
-            :belief => copy(current_belief),
-        )
-        if objective_state_vector !== nothing && N == 1
-            store[:objective_state] = store[:objective_state][1]
-        end
-        # Loop through the primal variable values that the user wants.
-        for variable in variables
-            if haskey(node.subproblem.obj_dict, variable)
-                # Note: we broadcast the call to value for variables which are
-                # containers (like Array, Containers.DenseAxisArray, etc). If
-                # the variable is a scalar (e.g. just a plain VariableRef), the
-                # broadcast preseves the scalar shape.
-                # TODO: what if the variable container is a dictionary? They
-                # should be using Containers.SparseAxisArray, but this might not
-                # always be the case...
-                store[variable] = JuMP.value.(node.subproblem[variable])
-            elseif skip_undefined_variables
-                store[variable] = NaN
-            else
-                error(
-                    "No variable named $(variable) exists in the subproblem.",
-                    " If you want to simulate the value of a variable, make ",
-                    "sure it is defined in _all_ subproblems, or pass ",
-                    "`skip_undefined_variables=true` to `simulate`.",
-                )
+            if objective_state_vector !== nothing
+                push!(objective_states, objective_state_vector)
             end
+            if node.belief_state !== nothing
+                belief = node.belief_state::BeliefState{T}
+                partition_index = belief.partition_index
+                current_belief = belief.updater(
+                    belief.belief,
+                    current_belief,
+                    partition_index,
+                    noise,
+                )
+            else
+                current_belief = Dict(node_index => 1.0)
+            end
+            # Solve the subproblem.
+            subproblem_results = solve_subproblem(
+                model,
+                node,
+                incoming_state,
+                noise,
+                scenario_path[1:depth];
+                duality_handler = duality_handler,
+            )
+            # Add the stage-objective
+            cumulative_value += subproblem_results.stage_objective
+            # Record useful variables from the solve.
+            store = Dict{Symbol,Any}(
+                :node_index => node_index,
+                :noise_term => noise,
+                :stage_objective => subproblem_results.stage_objective,
+                :bellman_term =>
+                    subproblem_results.objective -
+                    subproblem_results.stage_objective,
+                :objective_state => objective_state_vector,
+                :belief => copy(current_belief),
+            )
+            if objective_state_vector !== nothing && N == 1
+                store[:objective_state] = store[:objective_state][1]
+            end
+            # Loop through the primal variable values that the user wants.
+            for variable in variables
+                if haskey(node.subproblem.obj_dict, variable)
+                    # Note: we broadcast the call to value for variables which are
+                    # containers (like Array, Containers.DenseAxisArray, etc). If
+                    # the variable is a scalar (e.g. just a plain VariableRef), the
+                    # broadcast preseves the scalar shape.
+                    # TODO: what if the variable container is a dictionary? They
+                    # should be using Containers.SparseAxisArray, but this might not
+                    # always be the case...
+                    store[variable] = JuMP.value.(node.subproblem[variable])
+                elseif skip_undefined_variables
+                    store[variable] = NaN
+                else
+                    error(
+                        "No variable named $(variable) exists in the subproblem.",
+                        " If you want to simulate the value of a variable, make ",
+                        "sure it is defined in _all_ subproblems, or pass ",
+                        "`skip_undefined_variables=true` to `simulate`.",
+                    )
+                end
+            end
+            # Loop through any custom recorders that the user provided.
+            for (sym, recorder) in custom_recorders
+                store[sym] = recorder(node.subproblem)
+            end
+            # Add the store to our list.
+            push!(simulation, store)
+            # Set outgoing state as the incoming state for the next node.
+            incoming_state = copy(subproblem_results.state)
+        finally
+            unlock(node.lock)
         end
-        # Loop through any custom recorders that the user provided.
-        for (sym, recorder) in custom_recorders
-            store[sym] = recorder(node.subproblem)
-        end
-        # Add the store to our list.
-        push!(simulation, store)
-        # Set outgoing state as the incoming state for the next node.
-        incoming_state = copy(subproblem_results.state)
-        unlock(node.lock)  # LOCK-ID-002
     end
     return simulation
 end
@@ -1308,7 +1325,7 @@ end
         custom_recorders = Dict{Symbol, Function}(),
         duality_handler::Union{Nothing,AbstractDualityHandler} = nothing,
         skip_undefined_variables::Bool = false,
-        parallel_scheme::AbstractParallelScheme = Serial(),
+        parallel_scheme::AbstractParallelScheme = Threaded(),
         incoming_state::Dict{String,Float64} = _initial_state(model),
      )::Vector{Vector{Dict{Symbol,Any}}}
 
@@ -1399,7 +1416,7 @@ function simulate(
     custom_recorders = Dict{Symbol,Function}(),
     duality_handler::Union{Nothing,AbstractDualityHandler} = nothing,
     skip_undefined_variables::Bool = false,
-    parallel_scheme::AbstractParallelScheme = Serial(),
+    parallel_scheme::AbstractParallelScheme = Threaded(),
     incoming_state::Dict{String,Float64} = _initial_state(model),
 )
     return _simulate(
