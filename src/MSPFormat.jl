@@ -21,8 +21,8 @@ function _parse_lattice(filename::String)
         SDDP.add_node(graph, key)
     end
     for (key, value) in data
-        for (child, probability) in sort(value["successors"])
-            SDDP.add_edge(graph, key => child, probability)
+        for child in sort(collect(keys(value["successors"])))
+            SDDP.add_edge(graph, key => child, value["successors"][child])
         end
     end
     # MSPFormat doesn't have explicit root -> stage 1 arcs. Assume uniform.
