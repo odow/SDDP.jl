@@ -7,6 +7,20 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.8.0 (July 24, 2024)
+
+### Added
+
+ - Added `SDDP.Threaded()`, which is an experimental parallel scheme that
+   supports solving problems using multiple threads. Some parts of SDDP.jl may
+   not be threadsafe, and this can cause incorrect results, segfaults, or other
+   errors. Please use with care and report any issues by opening a GitHub issue.
+   (#758)
+
+### Other
+
+ - Documentation improvements and fixes (#747) (#759)
+
 ## v1.7.0 (June 4, 2024)
 
 ### Added
