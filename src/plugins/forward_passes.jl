@@ -81,7 +81,7 @@ function forward_pass(
                 # incoming state is more than δ away from the other states, add it
                 # as a possible starting state.
                 if distance(starting_states, incoming_state_value) >
-                   options.cycle_discretization_delta
+                options.cycle_discretization_delta
                     push!(starting_states, incoming_state_value)
                 end
                 # TODO(odow):

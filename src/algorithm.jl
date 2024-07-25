@@ -498,7 +498,7 @@ function distance(
     if length(starting_states) == 0
         return Inf
     end
-    return minimum(norm.(starting_states, Ref(state)))
+    return minimum(norm.(starting_states, Ref(state)); init = Inf)
 end
 
 # Internal function: the norm to use when checking the distance between two
@@ -1170,9 +1170,9 @@ function train(
         status = master_loop(parallel_scheme, model, options)
     catch ex
         # Unwrap exceptions from tasks. If there are multiple exceptions,
-        # rethrow only the first one.
+        # rethrow only the last one.
         if ex isa CompositeException
-            ex = first(ex.exceptions)
+            ex = last(ex.exceptions)
         end
         if ex isa TaskFailedException
             ex = ex.task.exception
@@ -1182,7 +1182,7 @@ function train(
             interrupt(parallel_scheme)
         else
             close(log_file_handle)
-            rethrow(ex)
+            throw(ex)
         end
     finally
         # And close the dashboard callback if necessary.
