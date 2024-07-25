@@ -258,6 +258,7 @@ function test_RegularizedForwardPass()
             print_level = 0,
             forward_pass = forward_pass,
             iteration_limit = 10,
+            parallel_scheme = SDDP.Serial(),
         )
         return SDDP.calculate_bound(model)
     end
