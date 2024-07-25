@@ -35,7 +35,7 @@ This must be called outside [`SDDP.parameterize`](@ref).
 """
 function initialize_biobjective_subproblem(subproblem)
     SDDP.add_objective_state(
-        subproblem,
+        subproblem;
         initial_value = 0.0,
         lower_bound = 0.0,
         upper_bound = 1.0,

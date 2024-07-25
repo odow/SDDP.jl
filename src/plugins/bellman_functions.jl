@@ -281,7 +281,7 @@ function BellmanFunction(;
     deletion_minimum::Int = 1,
     cut_type::CutType = MULTI_CUT,
 )
-    return InstanceFactory{BellmanFunction}(
+    return InstanceFactory{BellmanFunction}(;
         lower_bound = lower_bound,
         upper_bound = upper_bound,
         deletion_minimum = deletion_minimum,
@@ -710,7 +710,7 @@ function read_cuts_from_file(
     filename::String;
     node_name_parser::Function = _node_name_parser,
 ) where {T}
-    cuts = JSON.parsefile(filename, use_mmap = false)
+    cuts = JSON.parsefile(filename; use_mmap = false)
     for node_cuts in cuts
         node_name = node_name_parser(T, node_cuts["node"])::Union{Nothing,T}
         if node_name === nothing

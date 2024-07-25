@@ -33,20 +33,20 @@ function test_SpaghettiPlot()
         ],
     ]
     plt = SDDP.SpaghettiPlot(simulations)
-    SDDP.add_spaghetti(plt, cumulative = true) do data
+    SDDP.add_spaghetti(plt; cumulative = true) do data
         return data[:x]
     end
-    SDDP.add_spaghetti(plt, title = "y") do data
+    SDDP.add_spaghetti(plt; title = "y") do data
         return 2 * data[:y]
     end
-    SDDP.plot(plt, "test.html", open = false)
+    SDDP.plot(plt, "test.html"; open = false)
     @test sprint(show, plt) == "A spaghetti plot with 2 scenarios and 3 stages."
     control = joinpath(@__DIR__, "control.html")
     if Sys.WORD_SIZE == 64
         # This fails on 32-bit machines.
         @test read("test.html", String) == read(control, String)
     end
-    SDDP.save(plt, "test.html", open = false)
+    SDDP.save(plt, "test.html"; open = false)
     @test sprint(show, plt) == "A spaghetti plot with 2 scenarios and 3 stages."
     if Sys.WORD_SIZE == 64
         # This fails on 32-bit machines.

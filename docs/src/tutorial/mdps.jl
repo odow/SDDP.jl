@@ -60,7 +60,7 @@ import Ipopt
 
 M, N = 5, 3
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = N,
     lower_bound = 0.0,
     optimizer = Ipopt.Optimizer,
@@ -189,7 +189,7 @@ simulations = SDDP.simulate(
     model,
     1,
     [:x];
-    sampling_scheme = SDDP.InSampleMonteCarlo(
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
         max_depth = 5,
         terminate_on_dummy_leaf = false,
     ),

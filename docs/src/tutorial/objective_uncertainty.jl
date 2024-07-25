@@ -33,7 +33,7 @@
 
 using SDDP, HiGHS
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
@@ -85,8 +85,8 @@ objective_values =
 
 using Statistics
 
-μ = round(mean(objective_values), digits = 2)
-ci = round(1.96 * std(objective_values) / sqrt(500), digits = 2)
+μ = round(mean(objective_values); digits = 2)
+ci = round(1.96 * std(objective_values) / sqrt(500); digits = 2)
 
 println("Confidence interval: ", μ, " ± ", ci)
-println("Lower bound: ", round(SDDP.calculate_bound(model), digits = 2))
+println("Lower bound: ", round(SDDP.calculate_bound(model); digits = 2))

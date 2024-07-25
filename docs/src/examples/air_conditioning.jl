@@ -21,7 +21,7 @@
 using SDDP, HiGHS, Test
 
 function air_conditioning_model(duality_handler)
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 3,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,

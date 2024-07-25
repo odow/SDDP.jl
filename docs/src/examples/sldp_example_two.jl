@@ -14,7 +14,7 @@ import HiGHS
 import Test
 
 function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = -100.0,
         optimizer = HiGHS.Optimizer,
@@ -38,7 +38,7 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
                 sp,
                 6 * y[1] + 1 * y[2] + 3 * y[3] + 2 * y[4] <= ω[2] - x[2].in
             )
-            steps = range(5, stop = 15, length = N)
+            steps = range(5; stop = 15, length = N)
             SDDP.parameterize(sp, [[i, j] for i in steps for j in steps]) do φ
                 return JuMP.fix.(ω, φ)
             end
@@ -68,6 +68,6 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
     return
 end
 
-sldp_example_two(N = 2)
-sldp_example_two(N = 3)
-sldp_example_two(N = 6)
+sldp_example_two(; N = 2)
+sldp_example_two(; N = 3)
+sldp_example_two(; N = 6)

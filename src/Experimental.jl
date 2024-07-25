@@ -632,7 +632,7 @@ function _dict_diff_keys(x::AbstractDict{K,V}, y::AbstractDict{K,V}) where {K,V}
 end
 
 function _subproblem_to_dict(subproblem::JuMP.Model)
-    dest_model = MOI.FileFormats.Model(format = MOI.FileFormats.FORMAT_MOF)
+    dest_model = MOI.FileFormats.Model(; format = MOI.FileFormats.FORMAT_MOF)
     MOI.copy_to(dest_model, backend(subproblem))
     io = IOBuffer()
     Base.write(io, dest_model)
@@ -641,7 +641,7 @@ function _subproblem_to_dict(subproblem::JuMP.Model)
 end
 
 function _load_mof_model(sp::JuMP.Model, data::Dict, subproblem_name::String)
-    model = MOI.FileFormats.Model(format = MOI.FileFormats.FORMAT_MOF)
+    model = MOI.FileFormats.Model(; format = MOI.FileFormats.FORMAT_MOF)
     io = IOBuffer()
     subproblem = JSON.json(data["subproblems"][subproblem_name]["subproblem"])
     Base.write(io, subproblem)

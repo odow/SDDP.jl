@@ -35,7 +35,7 @@ import HiGHS
 # `u_hydro` to meet a demand of `9` units, where unmet demand is penalized at a
 # rate of \$500/unit.
 
-hazard_decision = SDDP.LinearPolicyGraph(
+hazard_decision = SDDP.LinearPolicyGraph(;
     stages = 4,
     sense = :Min,
     lower_bound = 0.0,
@@ -69,7 +69,7 @@ end
 # variable that is decided in stage `t`, to a state variable that is decided in
 # stage `t-1`. Here's our new model, with the three lines that have changed:
 
-decision_hazard = SDDP.LinearPolicyGraph(
+decision_hazard = SDDP.LinearPolicyGraph(;
     stages = 4,
     sense = :Min,
     lower_bound = 0.0,
@@ -131,7 +131,7 @@ train_and_compute_cost(decision_hazard)
 # node. Note that we need to add an `x_storage.out == x_storage.in` constraint
 # because the storage can't change in this new first-stage.
 
-decision_hazard_2 = SDDP.LinearPolicyGraph(
+decision_hazard_2 = SDDP.LinearPolicyGraph(;
     stages = 5,  # <-- changed
     sense = :Min,
     lower_bound = 0.0,

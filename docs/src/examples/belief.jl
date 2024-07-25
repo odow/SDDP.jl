@@ -28,7 +28,7 @@ function inventory_management_problem()
     SDDP.add_ambiguity_set(graph, [:Ah, :Bh], 1e2)
 
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, node

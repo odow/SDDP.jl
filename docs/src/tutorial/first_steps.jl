@@ -664,7 +664,7 @@ model = SDDP.LinearPolicyGraph(
 # There is also the option is to use Julia's `do` syntax to avoid needing to
 # define a `subproblem_builder` function separately:
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
@@ -878,7 +878,7 @@ println("Lower bound: ", SDDP.calculate_bound(model))
 
 simulations = SDDP.simulate(
     model,
-    1,  ## Perform a single simulation
+    1;  ## Perform a single simulation
     custom_recorders = Dict{Symbol,Function}(
         :price => (sp::JuMP.Model) -> JuMP.dual(sp[:demand_constraint]),
     ),

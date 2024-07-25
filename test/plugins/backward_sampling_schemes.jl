@@ -21,7 +21,7 @@ function runtests()
 end
 
 function test_CompleteSampler()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         direct_mode = false,
@@ -37,7 +37,7 @@ function test_CompleteSampler()
 end
 
 function test_MonteCarloSampler_1()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 1,
         lower_bound = 0.0,
         direct_mode = false,
@@ -65,7 +65,7 @@ function test_MonteCarloSampler_1()
 end
 
 function test_MonteCarloSampler_100()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 1,
         lower_bound = 0.0,
         direct_mode = false,
@@ -112,7 +112,7 @@ function test_WithStateSampler()
             ]
         end
     end
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 5,
         lower_bound = 0.0,
         direct_mode = false,

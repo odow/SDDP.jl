@@ -84,7 +84,7 @@
 
 using SDDP, HiGHS
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
@@ -109,7 +109,7 @@ model = SDDP.LinearPolicyGraph(
     ## `SDDP.parameterize`.
 
     SDDP.add_objective_state(
-        subproblem,
+        subproblem;
         initial_value = 50.0,
         lipschitz = 10_000.0,
         lower_bound = 50.0,
@@ -163,7 +163,7 @@ print("Finished training and simulating.")
 
 # Here is an example:
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
@@ -185,7 +185,7 @@ model = SDDP.LinearPolicyGraph(
     )
 
     SDDP.add_objective_state(
-        subproblem,
+        subproblem;
         initial_value = (50.0, 50.0),
         lipschitz = (10_000.0, 10_000.0),
         lower_bound = (50.0, 50.0),

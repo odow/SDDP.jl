@@ -137,7 +137,7 @@ end
 
 # Let's run our algorithm to see what happens:
 
-kelleys_cutting_plane(
+kelleys_cutting_plane(;
     input_dimension = 2,
     upper_bound = 10.0,
     iteration_limit = 20,
@@ -393,7 +393,7 @@ println("Simulation ci : $μ ± $t")
 # function:
 
 function solve_newsvendor(risk_measure::SDDP.AbstractRiskMeasure)
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Max,
         upper_bound = 5 * maximum(d),

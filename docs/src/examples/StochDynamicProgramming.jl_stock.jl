@@ -11,7 +11,7 @@ using SDDP, HiGHS, Test
 
 function stock_example()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(5),
+        SDDP.LinearGraph(5);
         lower_bound = -2,
         optimizer = HiGHS.Optimizer,
     ) do sp, stage

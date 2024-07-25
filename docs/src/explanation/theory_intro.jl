@@ -151,7 +151,7 @@ end
 
 # Let's run our algorithm to see what happens:
 
-kelleys_cutting_plane(
+kelleys_cutting_plane(;
     input_dimension = 2,
     lower_bound = 0.0,
     iteration_limit = 20,

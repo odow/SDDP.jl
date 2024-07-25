@@ -80,7 +80,7 @@ function test_Constructors()
     @test d.measures[2] == (0.3, b)
     @test d.measures[3] == (0.2, c)
 
-    aa = SDDP.EAVaR(lambda = 0.5, beta = 0.25)
+    aa = SDDP.EAVaR(; lambda = 0.5, beta = 0.25)
     @test aa.measures[1] == (0.5, SDDP.Expectation())
     @test aa.measures[2] == (0.5, SDDP.AVaR(0.25))
     return
@@ -134,7 +134,7 @@ function test_AVaR_1()
 end
 
 function test_EAVaR()
-    @test sprint(show, SDDP.EAVaR(lambda = 0.2, beta = 0.3)) ==
+    @test sprint(show, SDDP.EAVaR(; lambda = 0.2, beta = 0.3)) ==
           "A convex combination of 0.2 * SDDP.Expectation() + 0.8 * SDDP.AVaR(0.3)"
     @test_throws Exception SDDP.EAVaR(lambda = 1.1)
     @test_throws Exception SDDP.EAVaR(lambda = -0.1)
@@ -147,7 +147,7 @@ function test_EAVaR_max_25_2()
     nominal_probability = [0.1, 0.2, 0.3, 0.4]
     risk_adjusted_probability = Vector{Float64}(undef, 4)
     SDDP.adjust_probability(
-        SDDP.EAVaR(lambda = 0.25, beta = 0.2),
+        SDDP.EAVaR(; lambda = 0.25, beta = 0.2),
         risk_adjusted_probability,
         nominal_probability,
         [:a, :b, :c, :d],
@@ -163,7 +163,7 @@ function test_EAVaR_min_25_2()
     nominal_probability = [0.1, 0.2, 0.3, 0.4]
     risk_adjusted_probability = Vector{Float64}(undef, 4)
     SDDP.adjust_probability(
-        SDDP.EAVaR(lambda = 0.25, beta = 0.2),
+        SDDP.EAVaR(; lambda = 0.25, beta = 0.2),
         risk_adjusted_probability,
         nominal_probability,
         [:a, :b, :c, :d],
@@ -179,7 +179,7 @@ function test_EAVaR_max_50_0()
     nominal_probability = [0.1, 0.2, 0.3, 0.4]
     risk_adjusted_probability = Vector{Float64}(undef, 4)
     SDDP.adjust_probability(
-        SDDP.EAVaR(lambda = 0.5, beta = 0.0),
+        SDDP.EAVaR(; lambda = 0.5, beta = 0.0),
         risk_adjusted_probability,
         nominal_probability,
         [:a, :b, :c, :d],
@@ -195,7 +195,7 @@ function test_EAVaR_max_50_0_ii()
     nominal_probability = [0.0, 0.2, 0.4, 0.4]
     risk_adjusted_probability = Vector{Float64}(undef, 4)
     SDDP.adjust_probability(
-        SDDP.EAVaR(lambda = 0.5, beta = 0.0),
+        SDDP.EAVaR(; lambda = 0.5, beta = 0.0),
         risk_adjusted_probability,
         nominal_probability,
         [:a, :b, :c, :d],

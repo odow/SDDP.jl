@@ -14,7 +14,7 @@ function infinite_trivial()
         [(:root_node => :week, 1.0), (:week => :week, 0.9)],
     )
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, node

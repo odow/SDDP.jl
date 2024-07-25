@@ -49,7 +49,7 @@ function test_Asynchronous_optimizer()
 end
 
 function test_slave_update()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Min,
         lower_bound = 0.0,
@@ -114,7 +114,7 @@ function test_slave_update()
 end
 
 function test_async_solve()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Min,
         lower_bound = 0.0,
@@ -129,7 +129,7 @@ function test_async_solve()
     solver =
         JuMP.optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
     SDDP.train(
-        model,
+        model;
         stopping_rules = [SDDP.IterationLimit(20)],
         parallel_scheme = SDDP.Asynchronous(solver; use_master = false),
     )
@@ -137,7 +137,7 @@ function test_async_solve()
     @test all(l -> l.pid != 1, model.most_recent_training_results.log)
     @test SDDP.calculate_bound(model) == 6.0
     SDDP.train(
-        model,
+        model;
         stopping_rules = [SDDP.IterationLimit(20)],
         parallel_scheme = SDDP.Asynchronous(; use_master = true) do m
             for (key, node) in m.nodes
@@ -153,7 +153,7 @@ function test_async_solve()
 end
 
 function test_simulate_parallel()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         sense = :Min,
@@ -168,7 +168,7 @@ function test_simulate_parallel()
         custom_recorders = Dict{Symbol,Function}(
             :myid => (args...) -> Distributed.myid(),
         ),
-        parallel_scheme = SDDP.Asynchronous(use_master = false),
+        parallel_scheme = SDDP.Asynchronous(; use_master = false),
     )
     @test all([s[1][:myid] != 1 for s in simulations])
     return

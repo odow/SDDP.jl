@@ -10,7 +10,7 @@ using Test
 import HiGHS
 
 function runtests()
-    for name in names(@__MODULE__, all = true)
+    for name in names(@__MODULE__; all = true)
         if startswith("$(name)", "test_")
             @testset "$(name)" begin
                 getfield(@__MODULE__, name)()
@@ -41,7 +41,7 @@ end
 # Single-stage model helps set up a node and subproblem to test dual
 # calculations
 function easy_single_stage(duality_handler)
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Min,
         lower_bound = 0,
@@ -76,7 +76,7 @@ end
 
 # 'Exclusive or' function, no obvious choice of "tightest" dual
 function xor_single_stage(duality_handler)
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Min,
         lower_bound = 0,
@@ -134,7 +134,7 @@ function test_xor_LagrangianDuality()
 end
 
 function test_prepare_backward_pass()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         direct_mode = false,
@@ -238,7 +238,7 @@ function test_prepare_backward_pass()
 end
 
 function test_kelleys_min()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 10,
         sense = :Min,
         lower_bound = -1000,
@@ -271,7 +271,7 @@ function test_kelleys_min()
 end
 
 function test_kelleys_max()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 10,
         sense = :Max,
         upper_bound = 1000,
@@ -304,7 +304,7 @@ function test_kelleys_max()
 end
 
 function test_kelleys_abs_function()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Min,
         lower_bound = -10.0,
@@ -332,7 +332,7 @@ function test_kelleys_abs_function()
 end
 
 function test_kelleys_abs_function_max()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Max,
         upper_bound = 10.0,
@@ -362,7 +362,7 @@ end
 Test duality in a naturally integer problem
 """
 function test_kelleys_ip_min()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 10,
         sense = :Min,
         lower_bound = -1000,
@@ -390,7 +390,7 @@ function test_kelleys_ip_min()
 end
 
 function test_kelleys_ip_max()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 10,
         sense = :Max,
         upper_bound = 1000,
@@ -429,7 +429,7 @@ function test_BanditDuality_show()
 end
 
 function test_BanditDuality_eval()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = -100.0,
         optimizer = HiGHS.Optimizer,
@@ -449,14 +449,14 @@ function test_BanditDuality_eval()
                 sp,
                 6 * y[1] + 1 * y[2] + 3 * y[3] + 2 * y[4] <= ω[2] - x[2].in
             )
-            steps = range(5, stop = 15, length = 10)
+            steps = range(5; stop = 15, length = 10)
             SDDP.parameterize(sp, [[i, j] for i in steps for j in steps]) do φ
                 return JuMP.fix.(ω, φ)
             end
         end
     end
     handler = SDDP.BanditDuality()
-    SDDP.train(model, duality_handler = handler, iteration_limit = 20)
+    SDDP.train(model; duality_handler = handler, iteration_limit = 20)
     @test sum(
         l.duality_key == " " for l in model.most_recent_training_results.log
     ) > 10

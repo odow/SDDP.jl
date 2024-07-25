@@ -55,13 +55,13 @@ function test__lattice_approximation()
         @test length(s) == t
         @test all(x -> 0 <= x <= 1, s)
         @test !any(isnan, probability[t])
-        @test all(isapprox.(sum(probability[t], dims = 2), 1.0))
+        @test all(isapprox.(sum(probability[t]; dims = 2), 1.0))
     end
     return
 end
 
 function test_MarkovianGraph()
-    g = SDDP.MarkovianGraph(() -> rand(5), budget = 10, scenarios = 100)
+    g = SDDP.MarkovianGraph(() -> rand(5); budget = 10, scenarios = 100)
     @test g.root_node == (0, 0.0)
     @test length(g.nodes) == 11
     for (k, node) in g.nodes

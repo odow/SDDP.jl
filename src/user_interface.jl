@@ -956,7 +956,7 @@ function PolicyGraph(
                 " using the `upper_bound = value` keyword argument.",
             )
         else
-            bellman_function = BellmanFunction(
+            bellman_function = BellmanFunction(;
                 lower_bound = lower_bound,
                 upper_bound = upper_bound,
             )

@@ -88,9 +88,9 @@ function _lattice_approximation(
         distance = (distance * (n - 1) + dist) / n
     end
     for p in probability
-        p ./= sum(p, dims = 2)
+        p ./= sum(p; dims = 2)
         if any(isnan, p)
-            p[vec(isnan.(sum(p, dims = 2))), :] .= 0.0
+            p[vec(isnan.(sum(p; dims = 2))), :] .= 0.0
         end
     end
     return support, probability

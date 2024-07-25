@@ -221,7 +221,7 @@ function evaluate(
     belief_state = nothing,
 )
     for (state, val) in point
-        fix(V.states[state], val, force = true)
+        fix(V.states[state], val; force = true)
     end
     saddle = AffExpr(0.0)
     if V.objective_state !== nothing

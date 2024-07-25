@@ -10,7 +10,7 @@ import HiGHS
 import Test
 
 function create_air_conditioning_model(; convex::Bool)
-    return SDDP.LinearPolicyGraph(
+    return SDDP.LinearPolicyGraph(;
         stages = 3,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,

@@ -18,7 +18,7 @@ function asset_management_stagewise(; cut_type)
     Phi = [-1, 5]
     Psi = [0.02, 0.0]
 
-    model = SDDP.MarkovianPolicyGraph(
+    model = SDDP.MarkovianPolicyGraph(;
         sense = :Max,
         transition_matrices = Array{Float64,2}[
             [1.0]',
@@ -63,7 +63,7 @@ function asset_management_stagewise(; cut_type)
             if node[1] != 3
                 SDDP.Expectation()
             else
-                SDDP.EAVaR(lambda = 0.5, beta = 0.5)
+                SDDP.EAVaR(; lambda = 0.5, beta = 0.5)
             end
         end,
     )
@@ -71,6 +71,6 @@ function asset_management_stagewise(; cut_type)
     return
 end
 
-asset_management_stagewise(cut_type = SDDP.SINGLE_CUT)
+asset_management_stagewise(; cut_type = SDDP.SINGLE_CUT)
 
-asset_management_stagewise(cut_type = SDDP.MULTI_CUT)
+asset_management_stagewise(; cut_type = SDDP.MULTI_CUT)

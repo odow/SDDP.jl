@@ -49,7 +49,7 @@ import HiGHS
 #     need the value of a variable from a previous stage to compute something in
 #     stage ``t``, then that variable is a state variable.
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
@@ -137,7 +137,7 @@ graph = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)
 # Create a [`SDDP.PolicyGraph`](@ref) using `graph` as follows:
 
 model = SDDP.PolicyGraph(
-    graph,  # <--- New stuff
+    graph;  # <--- New stuff
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
@@ -177,7 +177,7 @@ end
 # ```
 # Here `A` is a 2-by-2 matrix, and `b` and ``\varepsilon`` are 2-by-1 vectors.
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,

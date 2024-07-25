@@ -106,13 +106,13 @@ function report(io::IO, filename_A::String, filename_B::String)
     return
 end
 
-filename_A = benchmark(
+filename_A = benchmark(;
     time_limit = 60,
     stopping_rules = [SDDP.BoundStalling(10, 1e-6)],
     duality_handler = SDDP.ContinuousConicDuality(),
 )
 
-filename_B = benchmark(
+filename_B = benchmark(;
     time_limit = 60,
     stopping_rules = [SDDP.BoundStalling(10, 1e-6)],
     duality_handler = SDDP.LagrangianDuality(),

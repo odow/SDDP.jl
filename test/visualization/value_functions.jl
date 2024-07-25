@@ -21,7 +21,7 @@ function runtests()
 end
 
 function test_ValueFunction_Min()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -32,7 +32,7 @@ function test_ValueFunction_Min()
     end
     V1 = SDDP.ValueFunction(model[1])
     @test SDDP.evaluate(V1, Dict(:x => 1.0)) == (0.0, Dict(:x => 0.0))
-    SDDP.train(model, iteration_limit = 2, print_level = 0)
+    SDDP.train(model; iteration_limit = 2, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
     for (xhat, yhat, pihat) in
         [(0.0, 0.0, 0.0), (1.0, 2.0, 2.0), (2.0, 4.0, 2.0)]
@@ -42,7 +42,7 @@ function test_ValueFunction_Min()
 end
 
 function test_ValueFunction_Max()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Max,
         upper_bound = 0.0,
@@ -52,7 +52,7 @@ function test_ValueFunction_Max()
         @constraint(sp, x.out == x.in)
         @stageobjective(sp, -2 * x.out)
     end
-    SDDP.train(model, iteration_limit = 2, print_level = 0)
+    SDDP.train(model; iteration_limit = 2, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
     for (xhat, yhat, pihat) in
         [(0.0, 0.0, 0.0), (1.0, 2.0, 2.0), (2.0, 4.0, 2.0)]
@@ -64,7 +64,7 @@ function test_ValueFunction_Max()
 end
 
 function test_ValueFunction_optimizer()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -74,7 +74,7 @@ function test_ValueFunction_optimizer()
         @constraint(sp, x.out == x.in)
         @stageobjective(sp, 2 * x.out)
     end
-    SDDP.train(model, iteration_limit = 2, print_level = 0)
+    SDDP.train(model; iteration_limit = 2, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
     @test_throws JuMP.NoOptimizer() SDDP.evaluate(V1, Dict(:x => 1.0))
     JuMP.set_optimizer(V1, HiGHS.Optimizer)
@@ -84,7 +84,7 @@ function test_ValueFunction_optimizer()
 end
 
 function test_ValueFunction_objective_state()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -103,7 +103,7 @@ function test_ValueFunction_objective_state()
             @stageobjective(sp, price * x.out)
         end
     end
-    SDDP.train(model, iteration_limit = 10, print_level = 0)
+    SDDP.train(model; iteration_limit = 10, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
     @test_throws AssertionError SDDP.evaluate(V1, Dict(:x => 1.0))
     @test SDDP.evaluate(V1, Dict(:x => 1.0); objective_state = 1) ==
@@ -118,7 +118,7 @@ function test_ValueFunction_belief_state()
     SDDP.add_ambiguity_set(graph, [(1, 1), (1, 2)])
     SDDP.add_ambiguity_set(graph, [(2, 1), (2, 2)])
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, node
@@ -130,7 +130,7 @@ function test_ValueFunction_belief_state()
             @stageobjective(sp, ω * x.out)
         end
     end
-    SDDP.train(model, iteration_limit = 10, print_level = 0)
+    SDDP.train(model; iteration_limit = 10, print_level = 0)
     V11 = SDDP.ValueFunction(model[(1, 1)])
     @test_throws AssertionError SDDP.evaluate(V11, Dict(:x => 1.0))
     b = Dict((1, 1) => 0.8, (1, 2) => 0.2)
@@ -144,7 +144,7 @@ function test_ValueFunction_belief_state()
 end
 
 function test_ValuaeFunction_plot()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Min,
         lower_bound = 0.0,
@@ -157,7 +157,7 @@ function test_ValuaeFunction_plot()
         @constraint(sp, y.out == y.in)
         @stageobjective(sp, x.out + y.out)
     end
-    SDDP.train(model, iteration_limit = 3, print_level = 0)
+    SDDP.train(model; iteration_limit = 3, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
     SDDP.plot(V1; x = 0:0.1:2, y = 0, open = false)
     SDDP.plot(V1; x = 0:0.1:2, y = 0:0.1:2, open = false)

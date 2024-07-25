@@ -10,7 +10,7 @@
 using SDDP, HiGHS, Test
 
 function test_prob52_2stages()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,

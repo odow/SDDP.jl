@@ -11,7 +11,7 @@ import HiGHS
 import Random
 
 function runtests()
-    for name in names(@__MODULE__, all = true)
+    for name in names(@__MODULE__; all = true)
         if startswith("$(name)", "test_")
             @testset "$(name)" begin
                 getfield(@__MODULE__, name)()
@@ -22,7 +22,7 @@ function runtests()
 end
 
 function test_DefaultForwardPass()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Max,
         upper_bound = 100.0,
@@ -50,7 +50,7 @@ function test_DefaultForwardPass()
 end
 
 function test_RevisitingForwardPass()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Max,
         upper_bound = 100.0,
@@ -86,7 +86,7 @@ function test_RevisitingForwardPass()
 end
 
 function test_RiskAdjustedForwardPass()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Max,
         upper_bound = 100.0,
@@ -109,7 +109,7 @@ function test_RiskAdjustedForwardPass()
         forward_pass_resampling_probability = 1.0,
     )
 
-    forward_pass = SDDP.RiskAdjustedForwardPass(
+    forward_pass = SDDP.RiskAdjustedForwardPass(;
         forward_pass = SDDP.DefaultForwardPass(),
         risk_measure = SDDP.WorstCase(),
         resampling_probability = 0.9,
@@ -150,7 +150,7 @@ function test_DefaultForwardPass_cyclic()
     options = SDDP.Options(
         model,
         Dict(:x => 1.0);
-        sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
+        sampling_scheme = SDDP.InSampleMonteCarlo(; terminate_on_cycle = true),
         forward_pass = pass,
     )
     forward_trajectory = SDDP.forward_pass(model, options, pass)
@@ -177,11 +177,11 @@ function test_DefaultForwardPass_cyclic_include_last_node()
             return JuMP.set_upper_bound(x.out, ω)
         end
     end
-    pass = SDDP.DefaultForwardPass(include_last_node = false)
+    pass = SDDP.DefaultForwardPass(; include_last_node = false)
     options = SDDP.Options(
         model,
         Dict(:x => 1.0);
-        sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
+        sampling_scheme = SDDP.InSampleMonteCarlo(; terminate_on_cycle = true),
         forward_pass = pass,
     )
     forward_trajectory = SDDP.forward_pass(model, options, pass)
@@ -207,11 +207,11 @@ function test_DefaultForwardPass_acyclic_include_last_node()
             return JuMP.set_upper_bound(x.out, ω)
         end
     end
-    pass = SDDP.DefaultForwardPass(include_last_node = false)
+    pass = SDDP.DefaultForwardPass(; include_last_node = false)
     options = SDDP.Options(
         model,
         Dict(:x => 1.0);
-        sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
+        sampling_scheme = SDDP.InSampleMonteCarlo(; terminate_on_cycle = true),
         forward_pass = pass,
     )
     forward_trajectory = SDDP.forward_pass(model, options, pass)

@@ -225,7 +225,7 @@ end
 
 # Here is the full model.
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 2,
     sense = :Max,
     upper_bound = 500_000.0,

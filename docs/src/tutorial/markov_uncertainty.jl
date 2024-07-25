@@ -58,7 +58,7 @@ using SDDP, HiGHS
     (inflow = 100.0, fuel_multiplier = 0.75),
 ]
 
-model = SDDP.MarkovianPolicyGraph(
+model = SDDP.MarkovianPolicyGraph(;
     transition_matrices = Array{Float64,2}[
         [1.0]',
         [0.75 0.25],
@@ -124,7 +124,7 @@ SDDP.train(model)
 # the `:node_index` key of the simulation results.
 
 simulations = SDDP.simulate(
-    model,
+    model;
     sampling_scheme = SDDP.Historical([
         ((1, 1), Ω[1]),
         ((2, 2), Ω[3]),
