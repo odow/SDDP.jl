@@ -1026,6 +1026,14 @@ function train(
     forward_pass_callback::Function = (x) -> nothing,
     post_iteration_callback = result -> nothing,
 )
+    if any(node -> node.objective_state !== nothing, values(model.nodes))
+        # FIXME(odow): Threaded is broken for objective states
+        parallel_scheme = Serial()
+    end
+    if forward_pass isa AlternativeForwardPass
+        # FIXME(odow): Threaded is broken for AlternativeForwardPass
+        parallel_scheme = Serial()
+    end
     if log_frequency <= 0
         msg = "`log_frequency` must be at least `1`. Got $log_frequency."
         throw(ArgumentError(msg))

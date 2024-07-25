@@ -316,7 +316,6 @@ function test_FirstStageStoppingRule()
             model;
             print_level = 0,
             stopping_rules = [SDDP.FirstStageStoppingRule()],
-            parallel_scheme = SDDP.Serial(),
         ),
     )
     graph = SDDP.Graph(0, [1, 2], [(0 => 1, 0.5), (0 => 2, 0.5)])
@@ -338,7 +337,6 @@ function test_FirstStageStoppingRule()
             model;
             print_level = 0,
             stopping_rules = [SDDP.FirstStageStoppingRule()],
-            parallel_scheme = SDDP.Serial(),
         ),
     )
     return
