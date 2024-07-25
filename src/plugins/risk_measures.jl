@@ -130,7 +130,7 @@ function adjust_probability(
     end
     risk_adjusted_probability .= 0.0
     quantile_collected = 0.0
-    for i in sortperm(objective_realizations, rev = is_minimization)
+    for i in sortperm(objective_realizations; rev = is_minimization)
         quantile_collected >= measure.β && break
         avar_prob =
             min(original_probability[i], measure.β - quantile_collected) /
@@ -319,7 +319,7 @@ function adjust_probability(
     objective_realizations::Vector{Float64},
     is_minimization::Bool,
 )
-    if Statistics.std(objective_realizations, corrected = false) <
+    if Statistics.std(objective_realizations; corrected = false) <
        measure.minimum_std
         return adjust_probability(
             Expectation(),
@@ -374,7 +374,7 @@ function _non_uniform_dro(
     K = collect(1:m)
     # check if nomial probability is 0
     for i in K
-        if isapprox(q[i], 0.0, atol = 1e-10)
+        if isapprox(q[i], 0.0; atol = 1e-10)
             p[i] = 0
             splice!(K, i)
         end
@@ -388,7 +388,7 @@ function _non_uniform_dro(
         # step 2(a)
         z_bar = sum(z[i] for i in K) / length(K)
         s = sqrt(sum(z[i]^2 - z_bar^2 for i in K) / length(K))
-        if isapprox(s, 0.0, atol = 1e-10)
+        if isapprox(s, 0.0; atol = 1e-10)
             error("s is too small")
         end
         # step 2(b)
@@ -458,7 +458,7 @@ function _uniform_dro(
     m = length(objective_realizations)
     # Take a permuted view of `risk_adjusted_probability` so we can refer to
     # `p[i]` instead of `risk_adjusted_probability[perm[i]]`.
-    perm = sortperm(objective_realizations, rev = !is_minimization)
+    perm = sortperm(objective_realizations; rev = !is_minimization)
     p = view(risk_adjusted_probability, perm)
     z = view(objective_realizations, perm)
     # Compute the new probabilities according to Algorithm (2) of the Philpott

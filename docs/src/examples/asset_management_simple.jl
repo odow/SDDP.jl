@@ -21,7 +21,7 @@ function asset_management_simple()
                 [0.5 0.5; 0.5 0.5],
                 [0.5 0.5; 0.5 0.5],
             ],
-        ),
+        );
         lower_bound = -1_000.0,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, index

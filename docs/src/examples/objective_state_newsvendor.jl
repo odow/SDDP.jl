@@ -33,7 +33,7 @@ end
 
 function newsvendor_example(; cut_type)
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(3),
+        SDDP.LinearGraph(3);
         sense = :Max,
         upper_bound = 50.0,
         optimizer = HiGHS.Optimizer,
@@ -45,7 +45,7 @@ function newsvendor_example(; cut_type)
         end)
         @constraint(subproblem, x.out == x.in - u + w)
         SDDP.add_objective_state(
-            subproblem,
+            subproblem;
             initial_value = 1.5,
             lower_bound = 0.75,
             upper_bound = 2.25,
@@ -53,7 +53,7 @@ function newsvendor_example(; cut_type)
         ) do y, ω
             return y + ω.price_noise
         end
-        noise_terms = joint_distribution(
+        noise_terms = joint_distribution(;
             demand = 0:0.05:0.5,
             price_noise = [-0.25, -0.125, 0.125, 0.25],
         )
@@ -77,5 +77,5 @@ function newsvendor_example(; cut_type)
     return
 end
 
-newsvendor_example(cut_type = SDDP.SINGLE_CUT)
-newsvendor_example(cut_type = SDDP.MULTI_CUT)
+newsvendor_example(; cut_type = SDDP.SINGLE_CUT)
+newsvendor_example(; cut_type = SDDP.MULTI_CUT)

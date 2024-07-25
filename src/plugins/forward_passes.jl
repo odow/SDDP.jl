@@ -101,7 +101,7 @@ function forward_pass(
                 node,
                 incoming_state_value,
                 noise,
-                scenario_path[1:depth],
+                scenario_path[1:depth];
                 duality_handler = nothing,
             )
         end

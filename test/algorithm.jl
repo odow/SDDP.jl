@@ -22,8 +22,8 @@ end
 
 function test_to_nodal_forms()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
-        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        SDDP.LinearGraph(2);
+        bellman_function = SDDP.BellmanFunction(; lower_bound = 0.0),
         optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
@@ -58,8 +58,8 @@ end
 
 function test_solve()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
-        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        SDDP.LinearGraph(2);
+        bellman_function = SDDP.BellmanFunction(; lower_bound = 0.0),
         optimizer = HiGHS.Optimizer,
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
@@ -90,7 +90,7 @@ function test_solve()
 end
 
 function test_simulate()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -104,7 +104,7 @@ function test_simulate()
 end
 
 function test_simulate_incoming_state()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -126,7 +126,7 @@ function test_simulate_incoming_state()
 end
 
 function test_simulate_missing()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -138,14 +138,14 @@ function test_simulate_missing()
         @stageobjective(sp, x[1].out + x[2].out)
     end
     @test_throws ErrorException SDDP.simulate(model, 1, [:y])
-    sims = SDDP.simulate(model, 1, [:y], skip_undefined_variables = true)
+    sims = SDDP.simulate(model, 1, [:y]; skip_undefined_variables = true)
     @test sims[1][1][:y] == 0.0
     @test isnan(sims[1][2][:y])
     return
 end
 
 function test_infeasible_model()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -178,7 +178,7 @@ See https://odow.github.io/SDDP.jl/stable/tutorial/warnings/ for more informatio
 end
 
 function test_infeasible_direct_model()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -212,7 +212,7 @@ See https://odow.github.io/SDDP.jl/stable/tutorial/warnings/ for more informatio
 end
 
 function test_refine_at_similar_nodes()
-    model = SDDP.MarkovianPolicyGraph(
+    model = SDDP.MarkovianPolicyGraph(;
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
         optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
@@ -223,7 +223,7 @@ function test_refine_at_similar_nodes()
         @stageobjective(sp, (stage + markov_state) * x.out)
     end
     SDDP.train(
-        model,
+        model;
         iteration_limit = 1,
         refine_at_similar_nodes = false,
         print_level = 0,
@@ -233,7 +233,7 @@ function test_refine_at_similar_nodes()
     mi2 = length(model[(1, 2)].bellman_function.global_theta.cuts)
     @test mi1 + mi2 == 1
 
-    model = SDDP.MarkovianPolicyGraph(
+    model = SDDP.MarkovianPolicyGraph(;
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
         optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
@@ -244,7 +244,7 @@ function test_refine_at_similar_nodes()
         @stageobjective(sp, (stage + markov_state) * x.out)
     end
     SDDP.train(
-        model,
+        model;
         iteration_limit = 1,
         refine_at_similar_nodes = true,
         print_level = 0,
@@ -256,7 +256,7 @@ function test_refine_at_similar_nodes()
 end
 
 function test_optimize_hook()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
@@ -291,7 +291,7 @@ function test_optimize_hook()
 end
 
 function test_write_log_to_csv()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -303,7 +303,7 @@ function test_write_log_to_csv()
         end
     end
     @test_throws ErrorException SDDP.write_log_to_csv(model, "sddp.csv")
-    SDDP.train(model, iteration_limit = 2, print_level = 0)
+    SDDP.train(model; iteration_limit = 2, print_level = 0)
     SDDP.write_log_to_csv(model, "sddp.csv")
     log = read("sddp.csv", String)
     saved_log = """
@@ -328,7 +328,7 @@ function test_print_log()
 end
 
 function test_log_frequency_argument_error()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,

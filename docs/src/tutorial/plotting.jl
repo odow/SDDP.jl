@@ -26,7 +26,7 @@ using SDDP, HiGHS
     (inflow = 100.0, fuel_multiplier = 0.75),
 ]
 
-model = SDDP.MarkovianPolicyGraph(
+model = SDDP.MarkovianPolicyGraph(;
     transition_matrices = Array{Float64,2}[
         [1.0]',
         [0.75 0.25],
@@ -63,7 +63,7 @@ model = SDDP.MarkovianPolicyGraph(
     end
 end
 
-SDDP.train(model, iteration_limit = 20, run_numerical_stability_report = false)
+SDDP.train(model; iteration_limit = 20, run_numerical_stability_report = false)
 
 simulations = SDDP.simulate(
     model,
@@ -145,10 +145,10 @@ end
 
 import Plots
 Plots.plot(
-    SDDP.publication_plot(simulations, title = "Outgoing volume") do data
+    SDDP.publication_plot(simulations; title = "Outgoing volume") do data
         return data[:volume].out
     end,
-    SDDP.publication_plot(simulations, title = "Thermal generation") do data
+    SDDP.publication_plot(simulations; title = "Thermal generation") do data
         return data[:thermal_generation]
     end;
     xlabel = "Stage",

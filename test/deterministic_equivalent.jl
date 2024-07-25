@@ -23,7 +23,7 @@ end
 function test_acyclic_linear()
     graph = SDDP.LinearGraph(2)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
@@ -41,7 +41,7 @@ function test_cyclic_linear()
     graph = SDDP.LinearGraph(2)
     SDDP.add_edge(graph, 2 => 1, 0.9)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
@@ -66,7 +66,7 @@ function test_cyclic_single_node()
         [(:root => :node, 1.0), (:node => :node, 0.9)],
     )
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
@@ -85,7 +85,7 @@ function test_cyclic_single_node()
 end
 
 function test_acyclic_Markovian()
-    model = SDDP.MarkovianPolicyGraph(
+    model = SDDP.MarkovianPolicyGraph(;
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
         lower_bound = 0,
         optimizer = HiGHS.Optimizer,
@@ -102,7 +102,7 @@ function test_cyclic_Markovian()
     graph = SDDP.MarkovianGraph([[0.5 0.5], [0.2 0.8; 0.8 0.2]])
     SDDP.add_edge(graph, (2, 1) => (1, 1), 0.9)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
@@ -121,7 +121,7 @@ function test_cyclic_Markovian()
 end
 
 function test_time_limit()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0,
         optimizer = HiGHS.Optimizer,
@@ -140,14 +140,14 @@ function test_time_limit()
 end
 
 function test_objective_states()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         SDDP.add_objective_state(
-            sp,
+            sp;
             initial_value = 0.0,
             lower_bound = 0.0,
             upper_bound = 10.0,
@@ -174,7 +174,7 @@ function test_belief_states()
     SDDP.add_ambiguity_set(graph, [(1, 1), (1, 2)])
     SDDP.add_ambiguity_set(graph, [(2, 1), (2, 2)])
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
@@ -190,7 +190,7 @@ function test_belief_states()
 end
 
 function test_existing_policy()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0,
         optimizer = HiGHS.Optimizer,
@@ -210,7 +210,7 @@ function test_existing_policy()
 end
 
 function test_constant_objective()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -226,7 +226,7 @@ function test_constant_objective()
 end
 
 function test_constraint_with_no_terms()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -243,7 +243,7 @@ function test_constraint_with_no_terms()
 end
 
 function test_quadratic_expr()
-    model = SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
+    model = SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @constraint(sp, x.in^2 <= x.out)
         @stageobjective(sp, x.out)
@@ -257,7 +257,7 @@ function test_quadratic_expr()
 end
 
 function test_quadratic_expr_no_quad_terms()
-    model = SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
+    model = SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @constraint(sp, x.in^2 <= x.out + x.in^2)
         @stageobjective(sp, x.out)
@@ -271,7 +271,7 @@ function test_quadratic_expr_no_quad_terms()
 end
 
 function test_vector_valued_functions()
-    model = SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
+    model = SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
         @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
         @constraint(sp, [x.in, x.out] in MOI.SOS1([1.0, 2.0]))
         @stageobjective(sp, x.out)

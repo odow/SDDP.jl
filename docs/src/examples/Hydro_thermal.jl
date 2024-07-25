@@ -66,7 +66,7 @@ graph = SDDP.UnicyclicGraph(0.95; num_nodes = 3)
 # probability mass vector can also be provided.
 
 model = SDDP.PolicyGraph(
-    graph,
+    graph;
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
@@ -90,14 +90,14 @@ end
 # achieved using [`SDDP.train`](@ref). There are many options that can be passed, but
 # `iteration_limit` terminates the training after the prescribed number of SDDP iterations.
 
-SDDP.train(model, iteration_limit = 100)
+SDDP.train(model; iteration_limit = 100)
 
 # ## Simulating the policy
 
 # After training, we can simulate the policy using [`SDDP.simulate`](@ref).
 
 sims = SDDP.simulate(model, 100, [:g_t])
-mu = round(mean([s[1][:g_t] for s in sims]), digits = 2)
+mu = round(mean([s[1][:g_t] for s in sims]); digits = 2)
 println("On average, $(mu) units of thermal are used in the first stage.")
 
 # ## Extracting the water values
@@ -108,4 +108,4 @@ println("On average, $(mu) units of thermal are used in the first stage.")
 # decrease in the expected long-run cost.
 
 V = SDDP.ValueFunction(model[1])
-cost, price = SDDP.evaluate(V, x = 10)
+cost, price = SDDP.evaluate(V; x = 10)

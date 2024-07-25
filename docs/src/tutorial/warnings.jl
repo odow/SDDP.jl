@@ -23,7 +23,7 @@
 
 using SDDP, HiGHS
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 2,
     lower_bound = 0,
     optimizer = HiGHS.Optimizer,
@@ -36,7 +36,7 @@ model = SDDP.LinearPolicyGraph(
 end
 
 try                         #hide
-    SDDP.train(model, iteration_limit = 1, print_level = 0)
+    SDDP.train(model; iteration_limit = 1, print_level = 0)
 catch err                   #hide
     showerror(stderr, err)  #hide
 end                         #hide
@@ -93,11 +93,12 @@ end                         #hide
 
 using SDDP
 
-model = SDDP.LinearPolicyGraph(stages = 2, lower_bound = -1e10) do subproblem, t
-    @variable(subproblem, x >= -1e7, SDDP.State, initial_value = 1e-5)
-    @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 1e-8)
-    @stageobjective(subproblem, 1e9 * x.out)
-end
+model =
+    SDDP.LinearPolicyGraph(; stages = 2, lower_bound = -1e10) do subproblem, t
+        @variable(subproblem, x >= -1e7, SDDP.State, initial_value = 1e-5)
+        @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 1e-8)
+        @stageobjective(subproblem, 1e9 * x.out)
+    end
 
 SDDP.numerical_stability_report(model)
 
@@ -133,7 +134,7 @@ SDDP.numerical_stability_report(model)
 
 using SDDP, HiGHS
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
@@ -147,13 +148,13 @@ model = SDDP.LinearPolicyGraph(
     @stageobjective(subproblem, t * v)
 end
 
-SDDP.train(model, iteration_limit = 5, run_numerical_stability_report = false)
+SDDP.train(model; iteration_limit = 5, run_numerical_stability_report = false)
 
 # Now consider the case when we set the `lower_bound` to `10.0`:
 
 using SDDP, HiGHS
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 10.0,
@@ -167,7 +168,7 @@ model = SDDP.LinearPolicyGraph(
     @stageobjective(subproblem, t * v)
 end
 
-SDDP.train(model, iteration_limit = 5, run_numerical_stability_report = false)
+SDDP.train(model; iteration_limit = 5, run_numerical_stability_report = false)
 
 # How do we tell which is more appropriate? There are a few clues that you
 # should look out for.

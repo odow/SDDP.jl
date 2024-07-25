@@ -11,7 +11,7 @@ function all_blacks()
     ## Number of time periods, number of seats, R_ij = revenue from selling seat
     ## i at time j, offer_ij = whether an offer for seat i will come at time j
     (T, N, R, offer) = (3, 2, [3 3 6; 3 3 6], [1 1 0; 1 0 1])
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = T,
         sense = :Max,
         upper_bound = 100.0,

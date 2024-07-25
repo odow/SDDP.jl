@@ -31,7 +31,7 @@ function booking_management_model(num_days, num_rooms, num_requests)
         end
     end
 
-    return model = SDDP.LinearPolicyGraph(
+    return model = SDDP.LinearPolicyGraph(;
         stages = num_requests,
         upper_bound = max_revenue,
         sense = :Max,

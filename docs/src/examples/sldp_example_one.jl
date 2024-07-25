@@ -12,7 +12,7 @@
 using SDDP, HiGHS, Test
 
 function sldp_example_one()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 8,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,

@@ -56,9 +56,9 @@ data = CSV.read(filename, DataFrames.DataFrame)
 # It's easier to visualize the data if we plot it:
 
 Plots.plot(
-    Plots.plot(data[!, :inflow], ylabel = "Inflow"),
-    Plots.plot(data[!, :demand], ylabel = "Demand"),
-    Plots.plot(data[!, :cost], ylabel = "Cost", xlabel = "Week");
+    Plots.plot(data[!, :inflow]; ylabel = "Inflow"),
+    Plots.plot(data[!, :demand]; ylabel = "Demand"),
+    Plots.plot(data[!, :cost]; ylabel = "Cost", xlabel = "Week");
     layout = (3, 1),
     legend = false,
 )
@@ -145,8 +145,8 @@ objective_value(model)
 # Here's a plot of demand and generation:
 
 Plots.plot(data[!, :demand]; label = "Demand", xlabel = "Week")
-Plots.plot!(value.(u_thermal), label = "Thermal")
-Plots.plot!(value.(u_flow), label = "Hydro")
+Plots.plot!(value.(u_thermal); label = "Thermal")
+Plots.plot!(value.(u_flow); label = "Hydro")
 
 # And here's the storage over time:
 
@@ -157,7 +157,7 @@ Plots.plot(value.(x_storage); label = "Storage", xlabel = "Week")
 # For the next step, we show how to decompose our JuMP model into SDDP.jl. It
 # should obtain the same solution.
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = T,
     sense = :Min,
     lower_bound = 0.0,
@@ -238,8 +238,8 @@ r_sim = [sim[:u_thermal] for sim in simulations[1]]
 u_sim = [sim[:u_flow] for sim in simulations[1]]
 
 Plots.plot(data[!, :demand]; label = "Demand", xlabel = "Week")
-Plots.plot!(r_sim, label = "Thermal")
-Plots.plot!(u_sim, label = "Hydro")
+Plots.plot!(r_sim; label = "Thermal")
+Plots.plot!(u_sim; label = "Hydro")
 
 # Perfect. That's the same as we got before.
 
@@ -256,7 +256,7 @@ Plots.plot(x_sim; label = "Storage", xlabel = "Week")
 # inflow could be: 2 units lower, with 30% probability; the same as before, with
 # 40% probability; or 5 units higher, with 30% probability.
 
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = T,
     sense = :Min,
     lower_bound = 0.0,
@@ -302,7 +302,7 @@ simulations =
 
 plot = Plots.plot(data[!, :demand]; label = "Demand", xlabel = "Week")
 for simulation in simulations
-    Plots.plot!(plot, [sim[:u_thermal] for sim in simulation], label = "")
+    Plots.plot!(plot, [sim[:u_thermal] for sim in simulation]; label = "")
 end
 plot
 

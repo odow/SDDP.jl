@@ -38,7 +38,7 @@ function vehicle_location_model(duality_handler)
     ## Initial state of emergency vehicles at bases. All ambulances start at the
     ## hospital.
     initial_state(b, v) = b == hospital_location ? 1.0 : 0.0
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 10,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,

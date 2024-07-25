@@ -56,7 +56,7 @@ function test_mccardle_farm_model()
     ])
 
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, index

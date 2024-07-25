@@ -22,7 +22,7 @@ end
 
 function _create_model(graph)
     return SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, _
@@ -118,7 +118,7 @@ function test_read_write_cuts_to_file_String()
     @test_throws Exception SDDP.read_cuts_from_file(model_2, "model.cuts.json")
     SDDP.read_cuts_from_file(
         model_2,
-        "model.cuts.json",
+        "model.cuts.json";
         node_name_parser = (::Type{String}, x::String) -> x,
     )
     @test SDDP.calculate_bound(model_2) ≈ 119.167 atol = 0.1
@@ -135,18 +135,18 @@ function test_read_write_cuts_to_file_ValueFunction()
     model = _create_model(graph)
     SDDP.train(model; iteration_limit = 50, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
-    V = SDDP.ValueFunction(model, node = "week")
-    value_f = SDDP.evaluate(V, reservoir = 10)
+    V = SDDP.ValueFunction(model; node = "week")
+    value_f = SDDP.evaluate(V; reservoir = 10)
     SDDP.write_cuts_to_file(model, "model.cuts.json")
     model_2 = _create_model(graph)
     @test SDDP.calculate_bound(model_2) ≈ 9.17 atol = 0.1
     SDDP.read_cuts_from_file(
         model_2,
-        "model.cuts.json",
+        "model.cuts.json";
         node_name_parser = (::Type{String}, x::String) -> x,
     )
-    V2 = SDDP.ValueFunction(model_2, node = "week")
-    @test value_f == SDDP.evaluate(V2, reservoir = 10)
+    V2 = SDDP.ValueFunction(model_2; node = "week")
+    @test value_f == SDDP.evaluate(V2; reservoir = 10)
     rm("model.cuts.json")
     return
 end
@@ -160,8 +160,8 @@ function test_read_read_cuts_from_file_nothing()
     model = _create_model(graph)
     SDDP.train(model; iteration_limit = 50, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
-    V = SDDP.ValueFunction(model, node = "week")
-    value_f = SDDP.evaluate(V, reservoir = 10)
+    V = SDDP.ValueFunction(model; node = "week")
+    value_f = SDDP.evaluate(V; reservoir = 10)
     SDDP.write_cuts_to_file(
         model,
         "model.cuts.json";
@@ -175,7 +175,7 @@ function test_read_read_cuts_from_file_nothing()
     end
     SDDP.read_cuts_from_file(
         model_2,
-        "model.cuts.json",
+        "model.cuts.json";
         node_name_parser = parser,
     )
     N = num_constraints(
@@ -184,7 +184,7 @@ function test_read_read_cuts_from_file_nothing()
     )
     SDDP.read_cuts_from_file(
         model_2,
-        "model.cuts.json",
+        "model.cuts.json";
         node_name_parser = (::Any, s) -> nothing,
     )
     N2 = num_constraints(
@@ -197,7 +197,7 @@ function test_read_read_cuts_from_file_nothing()
 end
 
 function test_add_all_cuts_SINGLE_CUT()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 3,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -232,7 +232,7 @@ function test_add_all_cuts_SINGLE_CUT()
 end
 
 function test_add_all_cuts_MULTI_CUT()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 3,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -282,7 +282,7 @@ function test_belief_state_cut_selection()
     SDDP.add_ambiguity_set(graph, [:Ad, :Bd], 1e2)
     SDDP.add_ambiguity_set(graph, [:Ah, :Bh], 1e2)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do subproblem, node
@@ -306,7 +306,7 @@ function test_belief_state_cut_selection()
         end
     end
     SDDP.train(
-        model,
+        model;
         iteration_limit = 20,
         cut_deletion_minimum = 20,
         print_level = 0,
@@ -316,7 +316,7 @@ function test_belief_state_cut_selection()
     end
     @test n_cuts == 20
     SDDP.train(
-        model,
+        model;
         iteration_limit = 1,
         add_to_existing_cuts = true,
         print_level = 0,
@@ -329,7 +329,7 @@ function test_belief_state_cut_selection()
 end
 
 function test_biobjective_cut_selection()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 3,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -366,7 +366,7 @@ function test_biobjective_cut_selection()
         end
     end
     SDDP.train_biobjective(
-        model,
+        model;
         solution_limit = 10,
         iteration_limit = 10,
         print_level = 0,

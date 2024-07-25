@@ -107,7 +107,7 @@ function get_dual_solution(node::Node, ::ContinuousConicDuality)
     if !_has_dual_solution(node)
         write_subproblem_to_file(
             node,
-            "subproblem.mof.json",
+            "subproblem.mof.json";
             throw_error = true,
         )
     end
@@ -209,7 +209,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
             return L_k === nothing ? nothing : (s * L_k, s * h_k)
         end
     for (i, (_, state)) in enumerate(node.states)
-        JuMP.fix(state.in, x_in_value[i], force = true)
+        JuMP.fix(state.in, x_in_value[i]; force = true)
     end
     λ_solution = Dict{Symbol,Float64}(
         name => λ_star[i] for (i, name) in enumerate(keys(node.states))
@@ -286,7 +286,7 @@ function get_dual_solution(node::Node, ::StrengthenedConicDuality)
     end
     lagrangian_obj = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
     for (i, (_, state)) in enumerate(node.states)
-        JuMP.fix(state.in, x[i], force = true)
+        JuMP.fix(state.in, x[i]; force = true)
     end
     # If lagrangian_obj is `nothing`, then the primal problem didn't solve
     # correctly, probably because it was unbounded (i.e., the dual was

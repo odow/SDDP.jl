@@ -253,7 +253,7 @@ function write_subproblem_to_file(
     filename::String;
     throw_error::Bool = false,
 )
-    model = MOI.FileFormats.Model(filename = filename)
+    model = MOI.FileFormats.Model(; filename = filename)
     MOI.copy_to(model, JuMP.backend(node.subproblem))
     MOI.write_to_file(model, filename)
     if throw_error
@@ -306,7 +306,7 @@ function attempt_numerical_recovery(model::PolicyGraph, node::Node)
         write_cuts_to_file(model, "model.cuts.json")
         write_subproblem_to_file(
             node,
-            "subproblem_$(node.index).mof.json",
+            "subproblem_$(node.index).mof.json";
             throw_error = true,
         )
     end
@@ -666,7 +666,7 @@ function solve_all_children(
 ) where {T}
     length_scenario_path = length(scenario_path)
     for child in node.children
-        if isapprox(child.probability, 0.0, atol = 1e-6)
+        if isapprox(child.probability, 0.0; atol = 1e-6)
             continue
         end
         child_node = model[child.term]
@@ -720,7 +720,7 @@ function solve_all_children(
                         child_node,
                         outgoing_state,
                         noise.term,
-                        scenario_path,
+                        scenario_path;
                         duality_handler = duality_handler,
                     )
                 end
@@ -771,7 +771,7 @@ function calculate_bound(
     current_belief = initialize_belief(model)
     # Solve all problems that are children of the root node.
     for child in model.root_children
-        if isapprox(child.probability, 0.0, atol = 1e-6)
+        if isapprox(child.probability, 0.0; atol = 1e-6)
             continue
         end
         node = model[child.term]
@@ -800,7 +800,7 @@ function calculate_bound(
                 node,
                 root_state,
                 noise.term,
-                Tuple{T,Any}[(child.term, noise.term)],
+                Tuple{T,Any}[(child.term, noise.term)];
                 duality_handler = nothing,
             )
             push!(objectives, subproblem_results.objective)
@@ -1056,7 +1056,7 @@ function train(
         """)
     end
     if forward_pass_resampling_probability !== nothing
-        forward_pass = RiskAdjustedForwardPass(
+        forward_pass = RiskAdjustedForwardPass(;
             forward_pass = forward_pass,
             risk_measure = risk_measure,
             resampling_probability = forward_pass_resampling_probability,
@@ -1083,7 +1083,7 @@ function train(
         report = sprint(
             io -> numerical_stability_report(
                 io,
-                model,
+                model;
                 print = print_level > 0,
             ),
         )
@@ -1240,7 +1240,7 @@ function _simulate(
             node,
             incoming_state,
             noise,
-            scenario_path[1:depth],
+            scenario_path[1:depth];
             duality_handler = duality_handler,
         )
         # Add the stage-objective

@@ -884,7 +884,7 @@ end
 # Now it's time for an example. We create the same problem as
 # [Introductory theory](@ref):
 
-model = PolicyGraph(
+model = PolicyGraph(;
     graph = [Dict(2 => 1.0), Dict(3 => 1.0), Dict{Int,Float64}()],
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,

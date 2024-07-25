@@ -23,7 +23,7 @@ end
 
 function test_TimeLimit()
     graph = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -46,7 +46,7 @@ end
 
 function test_IterationLimit()
     graph = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -72,8 +72,8 @@ end
 
 function test_Statistical()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
-        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        SDDP.LinearGraph(2);
+        bellman_function = SDDP.BellmanFunction(; lower_bound = 0.0),
         optimizer = HiGHS.Optimizer,
         sense = :Min,
     ) do node, stage
@@ -83,8 +83,8 @@ function test_Statistical()
         end
         @stageobjective(node, x.out)
     end
-    SDDP.train(model, iteration_limit = 1, print_level = 0)
-    rule = SDDP.Statistical(num_replications = 20)
+    SDDP.train(model; iteration_limit = 1, print_level = 0)
+    rule = SDDP.Statistical(; num_replications = 20)
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)
     @test SDDP.convergence_test(
@@ -104,8 +104,8 @@ function test_Statistical()
     )
 
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
-        bellman_function = SDDP.BellmanFunction(upper_bound = 6.0),
+        SDDP.LinearGraph(2);
+        bellman_function = SDDP.BellmanFunction(; upper_bound = 6.0),
         optimizer = HiGHS.Optimizer,
         sense = :Max,
     ) do node, stage
@@ -115,8 +115,8 @@ function test_Statistical()
         end
         @stageobjective(node, x.out)
     end
-    SDDP.train(model, iteration_limit = 1, print_level = 0)
-    rule = SDDP.Statistical(num_replications = 20)
+    SDDP.train(model; iteration_limit = 1, print_level = 0)
+    rule = SDDP.Statistical(; num_replications = 20)
     @test SDDP.stopping_rule_status(rule) == :statistical
     Random.seed!(123)
     @test SDDP.convergence_test(
@@ -139,7 +139,7 @@ end
 
 function test_BoundStalling()
     graph = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -199,7 +199,7 @@ end
 
 function test_StoppingChain()
     graph = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -237,7 +237,7 @@ function test_StoppingChain()
 end
 
 function test_SimulationStoppingRule()
-    graph = SDDP.LinearPolicyGraph(
+    graph = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -280,7 +280,7 @@ function test_SimulationStoppingRule()
 end
 
 function test_FirstStageStoppingRule()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -295,7 +295,7 @@ function test_FirstStageStoppingRule()
     set_lower_bound(model[1].subproblem[:x].out, 1.0)
     @test !SDDP.convergence_test(model, log, rule)
     @test length(rule.data) == 51
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,

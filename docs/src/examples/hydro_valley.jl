@@ -90,7 +90,7 @@ function hydro_valley_model(;
     N = length(valley_chain)
 
     ## Initialise SDDP Model
-    return m = SDDP.MarkovianPolicyGraph(
+    return m = SDDP.MarkovianPolicyGraph(;
         sense = sense,
         lower_bound = lower,
         upper_bound = upper,
@@ -215,10 +215,12 @@ function test_hydro_valley_model()
     Random.seed!(11111)
 
     ## deterministic
-    deterministic_model =
-        hydro_valley_model(hasmarkovprice = false, hasstagewiseinflows = false)
+    deterministic_model = hydro_valley_model(;
+        hasmarkovprice = false,
+        hasstagewiseinflows = false,
+    )
     SDDP.train(
-        deterministic_model,
+        deterministic_model;
         iteration_limit = 10,
         cut_deletion_minimum = 1,
         print_level = 0,
@@ -226,36 +228,36 @@ function test_hydro_valley_model()
     @test SDDP.calculate_bound(deterministic_model) ≈ 835.0 atol = 1e-3
 
     ## stagewise inflows
-    stagewise_model = hydro_valley_model(hasmarkovprice = false)
-    SDDP.train(stagewise_model, iteration_limit = 20, print_level = 0)
+    stagewise_model = hydro_valley_model(; hasmarkovprice = false)
+    SDDP.train(stagewise_model; iteration_limit = 20, print_level = 0)
     @test SDDP.calculate_bound(stagewise_model) ≈ 838.33 atol = 1e-2
 
     ## Markov prices
-    markov_model = hydro_valley_model(hasstagewiseinflows = false)
-    SDDP.train(markov_model, iteration_limit = 10, print_level = 0)
+    markov_model = hydro_valley_model(; hasstagewiseinflows = false)
+    SDDP.train(markov_model; iteration_limit = 10, print_level = 0)
     @test SDDP.calculate_bound(markov_model) ≈ 851.8 atol = 1e-2
 
     ## stagewise inflows and Markov prices
     markov_stagewise_model =
-        hydro_valley_model(hasstagewiseinflows = true, hasmarkovprice = true)
-    SDDP.train(markov_stagewise_model, iteration_limit = 10, print_level = 0)
+        hydro_valley_model(; hasstagewiseinflows = true, hasmarkovprice = true)
+    SDDP.train(markov_stagewise_model; iteration_limit = 10, print_level = 0)
     @test SDDP.calculate_bound(markov_stagewise_model) ≈ 855.0 atol = 1.0
 
     ## risk averse stagewise inflows and Markov prices
     riskaverse_model = hydro_valley_model()
     SDDP.train(
-        riskaverse_model,
-        risk_measure = SDDP.EAVaR(lambda = 0.5, beta = 0.66),
+        riskaverse_model;
+        risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.66),
         iteration_limit = 10,
         print_level = 0,
     )
     @test SDDP.calculate_bound(riskaverse_model) ≈ 828.157 atol = 1.0
 
     ## stagewise inflows and Markov prices
-    worst_case_model = hydro_valley_model(sense = :Min)
+    worst_case_model = hydro_valley_model(; sense = :Min)
     SDDP.train(
-        worst_case_model,
-        risk_measure = SDDP.EAVaR(lambda = 0.5, beta = 0.0),
+        worst_case_model;
+        risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.0),
         iteration_limit = 10,
         print_level = 0,
     )
@@ -264,7 +266,7 @@ function test_hydro_valley_model()
     ## stagewise inflows and Markov prices
     cutselection_model = hydro_valley_model()
     SDDP.train(
-        cutselection_model,
+        cutselection_model;
         iteration_limit = 10,
         print_level = 0,
         cut_deletion_minimum = 2,
@@ -272,18 +274,18 @@ function test_hydro_valley_model()
     @test SDDP.calculate_bound(cutselection_model) ≈ 855.0 atol = 1.0
 
     ## Distributionally robust Optimization
-    dro_model = hydro_valley_model(hasmarkovprice = false)
+    dro_model = hydro_valley_model(; hasmarkovprice = false)
     SDDP.train(
-        dro_model,
+        dro_model;
         risk_measure = SDDP.ModifiedChiSquared(sqrt(2 / 3) - 1e-6),
         iteration_limit = 10,
         print_level = 0,
     )
     @test SDDP.calculate_bound(dro_model) ≈ 835.0 atol = 1.0
 
-    dro_model = hydro_valley_model(hasmarkovprice = false)
+    dro_model = hydro_valley_model(; hasmarkovprice = false)
     SDDP.train(
-        dro_model,
+        dro_model;
         risk_measure = SDDP.ModifiedChiSquared(1 / 6),
         iteration_limit = 20,
         print_level = 0,

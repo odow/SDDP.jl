@@ -47,7 +47,7 @@ function _create_model(
         SDDP.add_ambiguity_set(graph, [2, 3])
     end
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         sense = minimization ? :Min : :Max,
         lower_bound = -50.0,
         upper_bound = 50.0,
@@ -59,7 +59,7 @@ function _create_model(
         if objective_state
             SDDP.add_objective_state(
                 (y, w) -> y + ω,
-                sp,
+                sp;
                 initial_value = 0.0,
                 lower_bound = 0.0,
                 upper_bound = 1.0,
@@ -187,7 +187,7 @@ function test_write_kwarg()
         author = "Oscar Dowson",
         date = "1234-56-78",
     )
-    data = JSON.parsefile("experimental.sof.json", use_mmap = false)
+    data = JSON.parsefile("experimental.sof.json"; use_mmap = false)
     @test data["description"] == "Experimental model"
     @test data["author"] == "Oscar Dowson"
     @test data["date"] == "1234-56-78"

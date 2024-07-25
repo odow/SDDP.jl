@@ -125,10 +125,10 @@ open(joinpath(@__DIR__, "src", "changelog.md"), "r") do in_io
     end
 end
 
-Documenter.makedocs(
+Documenter.makedocs(;
     sitename = "SDDP.jl",
     authors = "Oscar Dowson",
-    format = Documenter.HTML(
+    format = Documenter.HTML(;
         analytics = "G-HZQQDVMPZW",
         # See  https://github.com/JuliaDocs/Documenter.jl/issues/868
         prettyurls = get(ENV, "CI", nothing) == "true",
@@ -180,4 +180,7 @@ Documenter.makedocs(
     doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"],
 )
 
-Documenter.deploydocs(repo = "github.com/odow/SDDP.jl.git", push_preview = true)
+Documenter.deploydocs(;
+    repo = "github.com/odow/SDDP.jl.git",
+    push_preview = true,
+)

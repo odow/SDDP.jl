@@ -22,7 +22,7 @@ function stochastic_all_blacks()
         [[0, 1], [1, 0], [1, 1]],
     ]
 
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = T,
         sense = :Max,
         upper_bound = 100.0,

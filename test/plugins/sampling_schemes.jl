@@ -20,7 +20,7 @@ function runtests()
 end
 
 function test_InSampleMonteCarlo_Acyclic()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         direct_mode = false,
@@ -50,7 +50,7 @@ function test_InSampleMonteCarlo_Cyclic()
     graph = SDDP.LinearGraph(2)
     SDDP.add_edge(graph, 2 => 1, 0.9)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -61,7 +61,10 @@ function test_InSampleMonteCarlo_Cyclic()
     end
     scenario, terminated_due_to_cycle = SDDP.sample_scenario(
         model,
-        SDDP.InSampleMonteCarlo(terminate_on_dummy_leaf = false, max_depth = 4),
+        SDDP.InSampleMonteCarlo(;
+            terminate_on_dummy_leaf = false,
+            max_depth = 4,
+        ),
     )
     @test length(scenario) == 4
     @test !terminated_due_to_cycle  # Terminated due to max depth.
@@ -74,7 +77,7 @@ function test_InSampleMonteCarlo_Cyclic()
 end
 
 function test_OutOfSampleMonteCarlo_Acyclic()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         direct_mode = false,
@@ -92,7 +95,7 @@ function test_OutOfSampleMonteCarlo_Acyclic()
         terminate_on_cycle = false,
     )
     sampler = SDDP.OutOfSampleMonteCarlo(
-        model,
+        model;
         use_insample_transition = true,
     ) do stage
         return [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
@@ -105,7 +108,7 @@ function test_OutOfSampleMonteCarlo_Acyclic()
         @test noise in stage * [2, 4]
     end
     sampler = SDDP.OutOfSampleMonteCarlo(
-        model,
+        model;
         use_insample_transition = false,
     ) do stage
         if stage == 0
@@ -128,7 +131,7 @@ function test_OutOfSampleMonteCarlo_Cyclic()
     graph = SDDP.LinearGraph(2)
     SDDP.add_edge(graph, 2 => 1, 0.9)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -138,7 +141,7 @@ function test_OutOfSampleMonteCarlo_Cyclic()
         end
     end
     sampler = SDDP.OutOfSampleMonteCarlo(
-        model,
+        model;
         use_insample_transition = true,
         terminate_on_dummy_leaf = false,
         max_depth = 4,
@@ -161,7 +164,7 @@ function test_Historical()
 end
 
 function test_Historical_SingleTrajectory()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         direct_mode = false,
@@ -182,7 +185,7 @@ function test_Historical_SingleTrajectory()
 end
 
 function test_Historical_SingleTrajectory_terminate_on_cycle()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         direct_mode = false,
@@ -206,7 +209,7 @@ function test_Historical_SingleTrajectory_terminate_on_cycle()
 end
 
 function test_Historical_multiple()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         direct_mode = false,
@@ -235,7 +238,7 @@ function test_Historical_multiple()
 end
 
 function test_PSR()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
         direct_mode = false,
@@ -267,7 +270,7 @@ function test_InSampleMonteCarlo_initial_node()
     graph = SDDP.LinearGraph(2)
     SDDP.add_edge(graph, 2 => 1, 0.9)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -280,7 +283,7 @@ function test_InSampleMonteCarlo_initial_node()
         for _ in 1:10
             scenario, _ = SDDP.sample_scenario(
                 model,
-                SDDP.InSampleMonteCarlo(initial_node = start),
+                SDDP.InSampleMonteCarlo(; initial_node = start),
             )
             @test scenario[1][1] == node
         end
@@ -292,7 +295,7 @@ function test_OutOfSampleMonteCarlo_initial_node()
     graph = SDDP.LinearGraph(2)
     SDDP.add_edge(graph, 2 => 1, 0.9)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -331,7 +334,7 @@ function test_SimulatorSamplingScheme()
     end
     graph = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         direct_mode = false,
     ) do sp, node
@@ -362,7 +365,7 @@ function test_SimulatorSamplingScheme_with_noise()
     end
     graph = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         direct_mode = false,
     ) do sp, node

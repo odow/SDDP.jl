@@ -8,7 +8,7 @@
 using SDDP, HiGHS, Statistics, Test
 
 function biobjective_example()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 3,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -45,7 +45,7 @@ function biobjective_example()
         end
     end
     pareto_weights =
-        SDDP.train_biobjective(model, solution_limit = 10, iteration_limit = 10)
+        SDDP.train_biobjective(model; solution_limit = 10, iteration_limit = 10)
     solutions = [(k, v) for (k, v) in pareto_weights]
     sort!(solutions; by = x -> x[1])
     @test length(solutions) == 10

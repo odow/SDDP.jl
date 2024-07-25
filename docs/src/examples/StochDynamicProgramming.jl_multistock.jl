@@ -10,7 +10,7 @@
 using SDDP, HiGHS, Test
 
 function test_multistock_example()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 5,
         lower_bound = -5.0,
         optimizer = HiGHS.Optimizer,

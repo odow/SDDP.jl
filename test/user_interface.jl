@@ -62,7 +62,7 @@ function test_Markovian_Error()
 end
 
 function test_Markovian_keyword_vs_list()
-    graph_1 = SDDP.MarkovianGraph(
+    graph_1 = SDDP.MarkovianGraph(;
         stages = 2,
         transition_matrix = [0.4 0.6; 0.25 0.75],
         root_node_transition = [0.7, 0.3],
@@ -143,7 +143,7 @@ function test_belief_partition()
     graph = SDDP.Graph(
         :root,
         [:x, :y],
-        [(:root => :x, 0.5), (:root => :y, 0.5)],
+        [(:root => :x, 0.5), (:root => :y, 0.5)];
         belief_partition = [[:x, :y]],
         belief_lipschitz = [[1.0, 1.0]],
     )
@@ -172,7 +172,7 @@ end
 
 function test_PolicyGraph_LinearGraph()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -180,7 +180,7 @@ function test_PolicyGraph_LinearGraph()
     end
 
     @test_throws Exception SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         direct_mode = true,
     ) do node, stage
@@ -188,7 +188,7 @@ function test_PolicyGraph_LinearGraph()
     end
     nodes = Set{Int}()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do node, stage
@@ -209,7 +209,7 @@ function test_PolicyGraph_MarkovianGraph()
         [0.5 0.5; 0.3 0.4],
     ])
     nodes = Set{Tuple{Int,Int}}()
-    SDDP.PolicyGraph(graph, lower_bound = 0.0, direct_mode = false) do _, stage
+    SDDP.PolicyGraph(graph; lower_bound = 0.0, direct_mode = false) do _, stage
         return push!(nodes, stage)
     end
     @test nodes == Set([
@@ -228,7 +228,7 @@ end
 
 function test_MarkovianPolicyGraph()
     nodes = Set{Tuple{Int,Int}}()
-    SDDP.MarkovianPolicyGraph(
+    SDDP.MarkovianPolicyGraph(;
         transition_matrices = [
             ones(Float64, (1, 1)),
             [0.5 0.5],
@@ -267,7 +267,7 @@ function test_PolicyGraph_Graph()
         ],
     )
     nodes = Set{Symbol}()
-    SDDP.PolicyGraph(graph, lower_bound = 0.0, direct_mode = false) do _, node
+    SDDP.PolicyGraph(graph; lower_bound = 0.0, direct_mode = false) do _, node
         return push!(nodes, node)
     end
     @test nodes == Set([:stage_1, :stage_2, :stage_3])
@@ -276,7 +276,7 @@ end
 
 function test_State()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -293,7 +293,7 @@ end
 
 function test_parameterize()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = 0.0,
         direct_mode = false,
     ) do node, stage
@@ -313,7 +313,7 @@ end
 
 function test_set_stage_objective_Min()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         sense = :Min,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
@@ -325,7 +325,7 @@ function test_set_stage_objective_Min()
     @test node.stage_objective == 2 * node.subproblem[:x]
     @test model.objective_sense == SDDP.MOI.MIN_SENSE
 
-    @test_throws Exception SDDP.LinearPolicyGraph(
+    @test_throws Exception SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Min,
         upper_bound = 0.0,
@@ -338,7 +338,7 @@ end
 
 function test_set_stage_objective_Max()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         upper_bound = 0.0,
         sense = :Max,
         optimizer = HiGHS.Optimizer,
@@ -350,7 +350,7 @@ function test_set_stage_objective_Max()
     @test node.stage_objective == 2 * node.subproblem[:x]
     @test model.objective_sense == SDDP.MOI.MAX_SENSE
 
-    @test_throws Exception SDDP.LinearPolicyGraph(
+    @test_throws Exception SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Max,
         lower_bound = 0.0,
@@ -366,7 +366,7 @@ function test_0_stages()
         ErrorException(
             "You must create a LinearPolicyGraph with `stages >= 1`.",
         ),
-        SDDP.LinearPolicyGraph(stages = 0) do sp, t
+        SDDP.LinearPolicyGraph(; stages = 0) do sp, t
             @variable(sp, x, SDDP.State, initial_value = 0)
         end,
     )
@@ -379,7 +379,7 @@ function test_missing_bounds()
             "You must specify a finite lower bound on the objective value" *
             " using the `lower_bound = value` keyword argument.",
         ),
-        SDDP.LinearPolicyGraph(stages = 1, sense = :Min) do sp, t
+        SDDP.LinearPolicyGraph(; stages = 1, sense = :Min) do sp, t
             @variable(sp, x, SDDP.State, initial_value = 0)
         end,
     )
@@ -388,7 +388,7 @@ function test_missing_bounds()
             "You must specify a finite upper bound on the objective value" *
             " using the `upper_bound = value` keyword argument.",
         ),
-        SDDP.LinearPolicyGraph(stages = 1, sense = :Max) do sp, t
+        SDDP.LinearPolicyGraph(; stages = 1, sense = :Max) do sp, t
             @variable(sp, x, SDDP.State, initial_value = 0)
         end,
     )
@@ -397,7 +397,7 @@ end
 
 function test_parameterize_duplicate()
     exception = ErrorException("Duplicate calls to SDDP.parameterize detected.")
-    @test_throws exception SDDP.LinearPolicyGraph(
+    @test_throws exception SDDP.LinearPolicyGraph(;
         stages = 2,
         upper_bound = 0.0,
         sense = :Max,
@@ -416,7 +416,7 @@ end
 
 function test_no_initial_value()
     try
-        SDDP.LinearPolicyGraph(
+        SDDP.LinearPolicyGraph(;
             stages = 2,
             upper_bound = 0.0,
             sense = :Max,
@@ -433,7 +433,7 @@ function test_no_initial_value()
 end
 
 function test_termination_status()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         upper_bound = 0.0,
         sense = :Max,
@@ -447,7 +447,7 @@ function test_termination_status()
 end
 
 function test_numerical_stability_report()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = -1e10,
         direct_mode = false,
@@ -460,14 +460,14 @@ function test_numerical_stability_report()
     report = sprint(SDDP.numerical_stability_report, model)
     @test occursin("WARNING", report)
     report_2 =
-        sprint(io -> SDDP.numerical_stability_report(io, model, by_node = true))
+        sprint(io -> SDDP.numerical_stability_report(io, model; by_node = true))
     @test occursin("numerical stability report for node: 1", report_2)
     @test occursin("numerical stability report for node: 2", report_2)
     return
 end
 
 function test_objective_state()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0,
         optimizer = HiGHS.Optimizer,
@@ -485,14 +485,14 @@ function test_objective_state()
 
     @test_throws(
         ErrorException("add_objective_state can only be called once."),
-        SDDP.LinearPolicyGraph(
+        SDDP.LinearPolicyGraph(;
             stages = 2,
             lower_bound = 0,
             optimizer = HiGHS.Optimizer,
         ) do subproblem, t
             @variable(subproblem, x, SDDP.State, initial_value = 0)
             SDDP.add_objective_state(
-                subproblem,
+                subproblem;
                 initial_value = 1.5,
                 lower_bound = 0.75,
                 upper_bound = 2.25,
@@ -501,7 +501,7 @@ function test_objective_state()
                 return y + ω
             end
             SDDP.add_objective_state(
-                subproblem,
+                subproblem;
                 initial_value = 1.5,
                 lower_bound = 0.75,
                 upper_bound = 2.25,
@@ -522,7 +522,7 @@ function test_belief_updater()
     graph = SDDP.LinearGraph(2)
     SDDP.add_edge(graph, 2 => 1, 0.9)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         direct_mode = false,
     ) do subproblem, node
@@ -619,7 +619,7 @@ function test_stageobjective_sanitization()
             "Unable to set the stage-objective of type $(Vector{SDDP.State{JuMP.VariableRef}}). " *
             "It must be a scalar function.",
         ),
-        SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
+        SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
             @variable(sp, x, SDDP.State, initial_value = 0)
             @stageobjective(sp, [x, x])
         end,
@@ -629,7 +629,7 @@ function test_stageobjective_sanitization()
             "Unable to set the stage-objective of type $(SDDP.State{JuMP.VariableRef}). " *
             "It must be a scalar function.",
         ),
-        SDDP.LinearPolicyGraph(stages = 2, lower_bound = 0.0) do sp, t
+        SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
             @variable(sp, x, SDDP.State, initial_value = 0)
             @stageobjective(sp, x)
         end,
@@ -642,7 +642,7 @@ function test_initial_feasibility()
         ErrorException(
             "Initial point $(prevfloat(0.0)) violates lower bound on state x",
         ),
-        SDDP.LinearPolicyGraph(
+        SDDP.LinearPolicyGraph(;
             stages = 2,
             lower_bound = 0.0,
             direct_mode = false,
@@ -654,7 +654,7 @@ function test_initial_feasibility()
         ErrorException(
             "Initial point $(nextfloat(0.0)) violates upper bound on state x",
         ),
-        SDDP.LinearPolicyGraph(
+        SDDP.LinearPolicyGraph(;
             stages = 2,
             lower_bound = 0.0,
             direct_mode = false,
@@ -666,7 +666,7 @@ function test_initial_feasibility()
 end
 
 function test_objective_state_error_missing_upper_bound()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 3,
         sense = :Max,
         upper_bound = 50.0,
@@ -675,7 +675,7 @@ function test_objective_state_error_missing_upper_bound()
         @variable(sp, x >= 0, SDDP.State, initial_value = 2)
         @constraint(sp, x.out <= x.in)
         SDDP.add_objective_state(
-            sp,
+            sp;
             initial_value = (1.5,),
             lower_bound = (0.75,),
             lipschitz = (100.0,),
@@ -697,7 +697,7 @@ function test_objective_state_error_missing_upper_bound()
 end
 
 function test_objective_state_error_missing_lower_bound()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 3,
         sense = :Max,
         upper_bound = 50.0,
@@ -706,7 +706,7 @@ function test_objective_state_error_missing_lower_bound()
         @variable(sp, x >= 0, SDDP.State, initial_value = 2)
         @constraint(sp, x.out <= x.in)
         SDDP.add_objective_state(
-            sp,
+            sp;
             initial_value = (1,),
             lipschitz = (100,),
         ) do y, ω
@@ -731,7 +731,7 @@ function test_objective_state_error_dimension_two_missing_lower_bound()
         "Invalid dimension in the input to `add_objective_state`. Got: " *
         "`(100,)`, but expected it to have length `2`.",
     )
-    @test_throws err SDDP.LinearPolicyGraph(
+    @test_throws err SDDP.LinearPolicyGraph(;
         stages = 3,
         sense = :Max,
         upper_bound = 50.0,
@@ -740,7 +740,7 @@ function test_objective_state_error_dimension_two_missing_lower_bound()
         @variable(sp, x >= 0, SDDP.State, initial_value = 2)
         @constraint(sp, x.out <= x.in)
         SDDP.add_objective_state(
-            sp,
+            sp;
             initial_value = (1, 0),
             lipschitz = (100,),
             upper_bound = (1, Inf),
@@ -756,7 +756,7 @@ function test_objective_state_error_dimension_two_missing_lower_bound()
 end
 
 function test_no_stage_objective()
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 2,
         optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,

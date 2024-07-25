@@ -11,7 +11,7 @@ using SDDP, HiGHS, Test
 
 function fast_quickstart()
     model = SDDP.PolicyGraph(
-        SDDP.LinearGraph(2),
+        SDDP.LinearGraph(2);
         lower_bound = -5,
         optimizer = HiGHS.Optimizer,
     ) do sp, t

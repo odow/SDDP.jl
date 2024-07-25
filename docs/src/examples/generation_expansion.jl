@@ -26,7 +26,7 @@ function generation_expansion(duality_handler)
     penalty = 5e5
     ## Discounting rate
     rho = 0.99
-    model = SDDP.LinearPolicyGraph(
+    model = SDDP.LinearPolicyGraph(;
         stages = 5,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
