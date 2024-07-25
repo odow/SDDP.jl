@@ -5,7 +5,10 @@
 
 macro _timeit_threadsafe(timer, label, block)
     code = quote
-        first_thread = first(Threads.threadpooltids(Threads.threadpool()))
+        first_thread = 1
+        if VERSION >= v"1.7"
+            first_thread = first(Threads.threadpooltids(Threads.threadpool()))
+        end
         if Threads.threadid() == first_thread
             TimerOutputs.@timeit $timer $label $block
         else
@@ -552,23 +555,28 @@ function backward_pass(
             # We need to refine our estimate at all nodes in the partition.
             for node_index in model.belief_partition[partition_index]
                 node = model[node_index]
-                # Update belief state, etc.
-                current_belief = node.belief_state::BeliefState{T}
-                for (idx, belief) in belief_state
-                    current_belief.belief[idx] = belief
+                lock(node.lock)
+                try
+                    # Update belief state, etc.
+                    current_belief = node.belief_state::BeliefState{T}
+                    for (idx, belief) in belief_state
+                        current_belief.belief[idx] = belief
+                    end
+                    new_cuts = refine_bellman_function(
+                        model,
+                        node,
+                        node.bellman_function,
+                        options.risk_measures[node_index],
+                        outgoing_state,
+                        items.duals,
+                        items.supports,
+                        items.probability .* items.belief,
+                        items.objectives,
+                    )
+                    push!(cuts[node_index], new_cuts)
+                finally
+                    unlock(node.lock)
                 end
-                new_cuts = refine_bellman_function(
-                    model,
-                    node,
-                    node.bellman_function,
-                    options.risk_measures[node_index],
-                    outgoing_state,
-                    items.duals,
-                    items.supports,
-                    items.probability .* items.belief,
-                    items.objectives,
-                )
-                push!(cuts[node_index], new_cuts)
             end
         else
             node_index, _ = scenario_path[index]

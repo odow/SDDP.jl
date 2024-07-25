@@ -37,6 +37,8 @@ SDDP.train(
     forward_pass = SDDP.AlternativeForwardPass(non_convex),
     post_iteration_callback = SDDP.AlternativePostIterationCallback(non_convex),
     iteration_limit = 10,
+    # TODO(odow): bug with Threaded?
+    parallel_scheme = SDDP.Serial(),
 )
 Test.@test isapprox(SDDP.calculate_bound(non_convex), 62_500.0, atol = 0.1)
 Test.@test isapprox(SDDP.calculate_bound(convex), 62_500.0, atol = 0.1)

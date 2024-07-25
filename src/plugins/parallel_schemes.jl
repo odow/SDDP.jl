@@ -366,8 +366,11 @@ function master_loop(
             try
                 while keep_iterating
                     result = iteration(model, options)
-                    options.post_iteration_callback(result)
-                    lock(() -> log_iteration(options), options.lock)
+                    lock(options.lock) do
+                        options.post_iteration_callback(result)
+                        log_iteration(options)
+                        return
+                    end
                     if result.has_converged
                         lock(convergence_lock) do
                             keep_iterating = false
