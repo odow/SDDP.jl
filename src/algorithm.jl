@@ -5,11 +5,9 @@
 
 macro _timeit_threadsafe(timer, label, block)
     code = quote
-        first_thread = 1
-        if VERSION >= v"1.7"
-            first_thread = first(Threads.threadpooltids(Threads.threadpool()))
-        end
-        if Threads.threadid() == first_thread
+        # TimerOutputs is not thread-safe, so run it only if there is a single
+        # thread.
+        if Threads.nthreads() == 1
             TimerOutputs.@timeit $timer $label $block
         else
             $block
@@ -307,13 +305,16 @@ function attempt_numerical_recovery(model::PolicyGraph, node::Node)
     end
     if !_has_primal_solution(node)
         model.ext[:numerical_issue] = true
-        suffix = Threads.threadid() == 1 ? "" : "_pid=$(Threads.threadid())"
-        filename = "model$suffix.cuts.json"
+        # We use the `node.index` in the filename because two threads could both
+        # try to write the cuts to file at the same time. If, after writing this
+        # file, a second thread finds an infeasibility of the same node, it
+        # doesn't matter if we over-write this file.
+        filename = "model_infeasible_node_$(node.index).cuts.json"
         @info "Writing cuts to the file `$filename`"
         write_cuts_to_file(model, filename)
         write_subproblem_to_file(
             node,
-            "subproblem_$(node.index)$suffix.mof.json";
+            "subproblem_$(node.index).mof.json";
             throw_error = true,
         )
     end
@@ -426,10 +427,9 @@ function solve_subproblem(
         nothing
     end
     JuMP.optimize!(node.subproblem)
-    if haskey(model.ext, :total_solves)
-        model.ext[:total_solves] += 1
-    else
-        model.ext[:total_solves] = 1
+    lock(model.lock) do
+        model.ext[:total_solves] = get(model.ext, :total_solves, 0) + 1
+        return
     end
     if JuMP.primal_status(node.subproblem) == JuMP.MOI.INTERRUPTED
         # If the solver was interrupted, the user probably hit CTRL+C but the
@@ -883,9 +883,9 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
                 forward_trajectory.cumulative_value,
                 time() - options.start_time,
                 max(Threads.threadid(), Distributed.myid()),
-                model.ext[:total_solves],
+                lock(() -> model.ext[:total_solves], model.lock),
                 duality_log_key(options.duality_handler),
-                model.ext[:numerical_issue],
+                lock(() -> model.ext[:numerical_issue], model.lock),
             ),
         )
         has_converged, status =
@@ -897,7 +897,7 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
             has_converged,
             status,
             cuts,
-            model.ext[:numerical_issue],
+            lock(() -> model.ext[:numerical_issue], model.lock),
         )
     finally
         unlock(options.lock)

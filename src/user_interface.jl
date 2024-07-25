@@ -718,6 +718,7 @@ mutable struct PolicyGraph{T}
     # SDDP.jl to stash things.
     ext::Dict{Symbol,Any}
     timer_output::TimerOutputs.TimerOutput
+    lock::ReentrantLock
 
     function PolicyGraph(sense::Symbol, root_node::T) where {T}
         if sense != :Min && sense != :Max
@@ -736,6 +737,7 @@ mutable struct PolicyGraph{T}
             nothing,
             Dict{Symbol,Any}(),
             TimerOutputs.TimerOutput(),
+            ReentrantLock(),
         )
     end
 end
