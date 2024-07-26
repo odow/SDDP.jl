@@ -141,7 +141,7 @@ function slave_update(model::PolicyGraph, result::IterationResult)
             if cut === nothing
                 error(
                     "This model uses features that are not suppored in async " *
-                    "mode. Use `parallel_scheme = Threaded()` instead.",
+                    "mode. Use `parallel_scheme = Serial()` instead.",
                 )
             end
             _add_cut(

@@ -1018,7 +1018,7 @@ function train(
     cut_deletion_minimum::Int = 1,
     backward_sampling_scheme::AbstractBackwardSamplingScheme = SDDP.CompleteSampler(),
     dashboard::Bool = false,
-    parallel_scheme::AbstractParallelScheme = Threaded(),
+    parallel_scheme::AbstractParallelScheme = Serial(),
     forward_pass::AbstractForwardPass = DefaultForwardPass(),
     forward_pass_resampling_probability::Union{Nothing,Float64} = nothing,
     add_to_existing_cuts::Bool = false,
@@ -1342,7 +1342,7 @@ end
         custom_recorders = Dict{Symbol, Function}(),
         duality_handler::Union{Nothing,AbstractDualityHandler} = nothing,
         skip_undefined_variables::Bool = false,
-        parallel_scheme::AbstractParallelScheme = Threaded(),
+        parallel_scheme::AbstractParallelScheme = Serial(),
         incoming_state::Dict{String,Float64} = _initial_state(model),
      )::Vector{Vector{Dict{Symbol,Any}}}
 
@@ -1433,7 +1433,7 @@ function simulate(
     custom_recorders = Dict{Symbol,Function}(),
     duality_handler::Union{Nothing,AbstractDualityHandler} = nothing,
     skip_undefined_variables::Bool = false,
-    parallel_scheme::AbstractParallelScheme = Threaded(),
+    parallel_scheme::AbstractParallelScheme = Serial(),
     incoming_state::Dict{String,Float64} = _initial_state(model),
 )
     return _simulate(
