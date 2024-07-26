@@ -54,6 +54,7 @@ function infinite_hydro_thermal(; cut_type)
         cut_type = cut_type,
         log_frequency = 100,
         sampling_scheme = SDDP.InSampleMonteCarlo(; terminate_on_cycle = true),
+        parallel_scheme = SDDP.Serial(),
         cycle_discretization_delta = 0.1,
     )
     @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
