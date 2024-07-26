@@ -83,7 +83,7 @@ function forward_pass(
                     # incoming state is more than δ away from the other states, add it
                     # as a possible starting state.
                     if distance(starting_states, incoming_state_value) >
-                    options.cycle_discretization_delta
+                       options.cycle_discretization_delta
                         push!(starting_states, incoming_state_value)
                     end
                     # TODO(odow):
@@ -93,8 +93,10 @@ function forward_pass(
                     #   starting states keeps changing, but from a computational
                     #   perspective, we don't want to keep a list of discretized points
                     #   in the state-space δ distance apart...
-                    incoming_state_value =
-                        splice!(starting_states, rand(1:length(starting_states)))
+                    incoming_state_value = splice!(
+                        starting_states,
+                        rand(1:length(starting_states)),
+                    )
                 end
             finally
                 unlock(options.lock)
@@ -139,7 +141,7 @@ function forward_pass(
             # If this incoming state value is more than δ away from another
             # state, add it to the list.
             if distance(starting_states, incoming_state_value) >
-            options.cycle_discretization_delta
+               options.cycle_discretization_delta
                 push!(starting_states, incoming_state_value)
             end
         finally
