@@ -410,7 +410,35 @@ function refine_bellman_function(
     nominal_probability::Vector{Float64},
     objective_realizations::Vector{Float64},
 ) where {T}
-    lock(node.lock)  # LOCK-ID-003
+    lock(node.lock)
+    try
+        return _refine_bellman_function_no_lock(
+            model,
+            node,
+            bellman_function,
+            risk_measure,
+            outgoing_state,
+            dual_variables,
+            noise_supports,
+            nominal_probability,
+            objective_realizations,
+        )
+    finally
+        unlock(node.lock)
+    end
+end
+
+function _refine_bellman_function_no_lock(
+    model::PolicyGraph{T},
+    node::Node{T},
+    bellman_function::BellmanFunction,
+    risk_measure::AbstractRiskMeasure,
+    outgoing_state::Dict{Symbol,Float64},
+    dual_variables::Vector{Dict{Symbol,Float64}},
+    noise_supports::Vector,
+    nominal_probability::Vector{Float64},
+    objective_realizations::Vector{Float64},
+) where {T}
     # Sanity checks.
     @assert length(dual_variables) ==
             length(noise_supports) ==
@@ -427,8 +455,8 @@ function refine_bellman_function(
         model.objective_sense == MOI.MIN_SENSE,
     )
     # The meat of the function.
-    ret = if bellman_function.cut_type == SINGLE_CUT
-        _add_average_cut(
+    if bellman_function.cut_type == SINGLE_CUT
+        return _add_average_cut(
             node,
             outgoing_state,
             risk_adjusted_probability,
@@ -439,7 +467,7 @@ function refine_bellman_function(
     else  # Add a multi-cut
         @assert bellman_function.cut_type == MULTI_CUT
         _add_locals_if_necessary(node, bellman_function, length(dual_variables))
-        _add_multi_cut(
+        return _add_multi_cut(
             node,
             outgoing_state,
             risk_adjusted_probability,
@@ -448,8 +476,6 @@ function refine_bellman_function(
             offset,
         )
     end
-    unlock(node.lock)  # LOCK-ID-003
-    return ret
 end
 
 function _add_average_cut(

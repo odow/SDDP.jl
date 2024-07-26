@@ -285,7 +285,7 @@ function master_loop(
                 result.cumulative_value,
                 time() - options.start_time,
                 result.pid,
-                model.ext[:total_solves],
+                lock(() -> model.ext[:total_solves], model.lock),
                 duality_log_key(options.duality_handler),
                 result.numerical_issue,
             ),
@@ -359,17 +359,28 @@ function master_loop(
     options::Options,
 ) where {T}
     _initialize_solver(model; throw_error = false)
-    convergence_lock = ReentrantLock()
     keep_iterating, status = true, nothing
     @sync for _ in 1:Threads.nthreads()
-        Threads.@spawn while keep_iterating
-            result = iteration(model, options)
-            options.post_iteration_callback(result)
-            lock(() -> log_iteration(options), options.lock)
-            if result.has_converged
-                lock(convergence_lock) do
+        Threads.@spawn begin
+            try
+                # This access of `keep_iterating` is not thread-safe, but it
+                # doesn't matter because all it will do is another iteration
+                # before terminating.
+                while keep_iterating
+                    result = iteration(model, options)
+                    lock(options.lock) do
+                        options.post_iteration_callback(result)
+                        log_iteration(options)
+                        if result.has_converged
+                            keep_iterating = false
+                            status = result.status
+                        end
+                        return
+                    end
+                end
+            finally
+                lock(options.lock) do
                     keep_iterating = false
-                    status = result.status
                     return
                 end
             end

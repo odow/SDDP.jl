@@ -224,7 +224,7 @@ function test_slptestset()
     model, validation_scenarios =
         SDDP.read_from_file(joinpath(@__DIR__, "electric.sof.json"))
     set_optimizer(model, HiGHS.Optimizer)
-    SDDP.train(model; iteration_limit = 20, print_level = 0)
+    SDDP.train(model; iteration_limit = 30, print_level = 0)
     @test isapprox(SDDP.calculate_bound(model), 381.8533; atol = 1e-3)
     scenarios = SDDP.evaluate(model, validation_scenarios)
     @test length(scenarios["problem_sha256_checksum"]) == 64

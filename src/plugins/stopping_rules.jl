@@ -331,7 +331,16 @@ function SimulationStoppingRule(;
         PSRSamplingScheme(replications; sampling_scheme = sampling_scheme)
     function simulator(model, N)
         cached_sampling_scheme.N = max(N, cached_sampling_scheme.N)
-        scenarios = simulate(model, N; sampling_scheme = cached_sampling_scheme)
+        scenarios = simulate(
+            model,
+            N;
+            sampling_scheme = cached_sampling_scheme,
+            # TODO(odow): if we use Threaded() here, then we get out of order
+            # between the simulations and the PSRSamplingScheme: it's not the
+            # case that simulation `i` accesses sample `i`, because they might
+            # happen out-of-order.
+            parallel_scheme = Serial(),
+        )
         # !!! info
         #     At one point, I tried adding the primal value of the state
         #     variables. But it didn't work for some models because of
@@ -461,18 +470,23 @@ function convergence_test(
             "not deterministic",
         )
     end
-    set_incoming_state(node, model.initial_root_state)
-    parameterize(node, first(node.noise_terms).term)
-    optimize!(node.subproblem)
-    state = get_outgoing_state(node)
-    push!(rule.data, state)
-    if length(rule.data) < rule.iterations
-        return false
-    end
-    for i in 1:(rule.iterations-1), (k, v) in state
-        if !isapprox(rule.data[end-i][k], v; atol = rule.atol)
+    lock(node.lock)
+    try
+        set_incoming_state(node, model.initial_root_state)
+        parameterize(node, first(node.noise_terms).term)
+        optimize!(node.subproblem)
+        state = get_outgoing_state(node)
+        push!(rule.data, state)
+        if length(rule.data) < rule.iterations
             return false
         end
+        for i in 1:(rule.iterations-1), (k, v) in state
+            if !isapprox(rule.data[end-i][k], v; atol = rule.atol)
+                return false
+            end
+        end
+        return true
+    finally
+        unlock(node.lock)
     end
-    return true
 end

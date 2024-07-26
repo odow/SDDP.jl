@@ -456,7 +456,7 @@ function test_BanditDuality_eval()
         end
     end
     handler = SDDP.BanditDuality()
-    SDDP.train(model; duality_handler = handler, iteration_limit = 20)
+    SDDP.train(model; duality_handler = handler, iteration_limit = 100)
     @test sum(
         l.duality_key == " " for l in model.most_recent_training_results.log
     ) > 10

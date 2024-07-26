@@ -128,7 +128,7 @@ function test_electric()
     problem = joinpath(@__DIR__, "electric")
     model = MSPFormat.read_from_file(problem)
     JuMP.set_optimizer(model, HiGHS.Optimizer)
-    SDDP.train(model; iteration_limit = 10, print_level = 0)
+    SDDP.train(model; iteration_limit = 40, print_level = 0)
     @test ≈(SDDP.calculate_bound(model), 381.8533, atol = 1e-4)
     return
 end

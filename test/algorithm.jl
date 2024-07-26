@@ -137,7 +137,10 @@ function test_simulate_missing()
         end
         @stageobjective(sp, x[1].out + x[2].out)
     end
-    @test_throws ErrorException SDDP.simulate(model, 1, [:y])
+    @test_throws(
+        ErrorException,
+        SDDP.simulate(model, 1, [:y]; parallel_scheme = SDDP.Serial()),
+    )
     sims = SDDP.simulate(model, 1, [:y]; skip_undefined_variables = true)
     @test sims[1][1][:y] == 0.0
     @test isnan(sims[1][2][:y])
@@ -171,7 +174,15 @@ There are two common causes of this error:
 
 See https://odow.github.io/SDDP.jl/stable/tutorial/warnings/ for more information.""",
     )
-    @test_throws ex SDDP.train(model; iteration_limit = 1, print_level = 0)
+    @test_throws(
+        ex,
+        SDDP.train(
+            model;
+            iteration_limit = 1,
+            print_level = 0,
+            parallel_scheme = SDDP.Serial(),
+        ),
+    )
     @test isfile("subproblem_1.mof.json")
     rm("subproblem_1.mof.json")
     return
@@ -205,7 +216,15 @@ There are two common causes of this error:
 
 See https://odow.github.io/SDDP.jl/stable/tutorial/warnings/ for more information.""",
     )
-    @test_throws ex SDDP.train(model; iteration_limit = 1, print_level = 0)
+    @test_throws(
+        ex,
+        SDDP.train(
+            model;
+            iteration_limit = 1,
+            print_level = 0,
+            parallel_scheme = SDDP.Serial(),
+        ),
+    )
     @test isfile("subproblem_1.mof.json")
     rm("subproblem_1.mof.json")
     return
@@ -228,10 +247,9 @@ function test_refine_at_similar_nodes()
         refine_at_similar_nodes = false,
         print_level = 0,
     )
-    @test SDDP.calculate_bound(model) ≈ 5.7 || SDDP.calculate_bound(model) ≈ 6.3
     mi1 = length(model[(1, 1)].bellman_function.global_theta.cuts)
     mi2 = length(model[(1, 2)].bellman_function.global_theta.cuts)
-    @test mi1 + mi2 == 1
+    @test mi1 + mi2 == length(model.most_recent_training_results.log)
 
     model = SDDP.MarkovianPolicyGraph(;
         transition_matrices = [[0.5 0.5], [0.2 0.8; 0.8 0.2]],
@@ -249,9 +267,9 @@ function test_refine_at_similar_nodes()
         refine_at_similar_nodes = true,
         print_level = 0,
     )
-    @test SDDP.calculate_bound(model) ≈ 9.5
-    @test length(model[(1, 1)].bellman_function.global_theta.cuts) == 1
-    @test length(model[(1, 2)].bellman_function.global_theta.cuts) == 1
+    @test length(model[(1, 1)].bellman_function.global_theta.cuts) ==
+          length(model[(1, 2)].bellman_function.global_theta.cuts) ==
+          length(model.most_recent_training_results.log)
     return
 end
 
@@ -308,9 +326,10 @@ function test_write_log_to_csv()
     log = read("sddp.csv", String)
     saved_log = """
     iteration, simulation, bound, time
-    1, 3.0, 3.0, 2.993860960006714
-    2, 3.0, 3.0, 2.994189739227295
     """
+    for i in 1:length(model.most_recent_training_results.log)
+        saved_log *= "$i, 3.0, 3.0, 3.0\n"
+    end
     @test replace(log, r"[0-9\.]+\n" => "") ==
           replace(saved_log, r"[0-9\.]+\n" => "")
     rm("sddp.csv")

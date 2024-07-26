@@ -290,11 +290,12 @@ function test_FirstStageStoppingRule()
     end
     rule = SDDP.FirstStageStoppingRule()
     SDDP.train(model; stopping_rules = [rule])
-    @test length(rule.data) == 50
+    n_iterations = length(rule.data)
+    @test 50 <= n_iterations <= 55  # Depends on nthreads
     log = model.most_recent_training_results.log
     set_lower_bound(model[1].subproblem[:x].out, 1.0)
     @test !SDDP.convergence_test(model, log, rule)
-    @test length(rule.data) == 51
+    @test length(rule.data) == n_iterations + 1
     model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,

@@ -105,12 +105,7 @@ function test_read_write_cuts_to_file_String()
     )
     model = _create_model(graph)
     @test SDDP.calculate_bound(model) ≈ 9.17 atol = 0.1
-    SDDP.train(
-        model;
-        iteration_limit = 50,
-        print_level = 0,
-        cut_type = SDDP.MULTI_CUT,
-    )
+    SDDP.train(model; iteration_limit = 50, cut_type = SDDP.MULTI_CUT)
     @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
     SDDP.write_cuts_to_file(model, "model.cuts.json")
     model_2 = _create_model(graph)
@@ -224,9 +219,10 @@ function test_add_all_cuts_SINGLE_CUT()
         ) < 10
     end
     SDDP.add_all_cuts(model)
+    n_iter = length(model.most_recent_training_results.log)
     for (t, node) in model.nodes
         n = num_constraints(node.subproblem, AffExpr, MOI.GreaterThan{Float64})
-        @test t == 3 || n == 10
+        @test t == 3 || n == n_iter
     end
     return
 end
@@ -259,9 +255,10 @@ function test_add_all_cuts_MULTI_CUT()
         ) < 31
     end
     SDDP.add_all_cuts(model)
+    n_iter = length(model.most_recent_training_results.log)
     for (t, node) in model.nodes
         n = num_constraints(node.subproblem, AffExpr, MOI.GreaterThan{Float64})
-        @test t == 3 || n == 31
+        @test t == 3 || n == (3 * n_iter + 1)
     end
     return
 end
@@ -308,13 +305,13 @@ function test_belief_state_cut_selection()
     SDDP.train(
         model;
         iteration_limit = 20,
-        cut_deletion_minimum = 20,
+        cut_deletion_minimum = 30,
         print_level = 0,
     )
     n_cuts = count(model[:Ad].bellman_function.global_theta.cuts) do cut
         return cut.constraint_ref !== nothing
     end
-    @test n_cuts == 20
+    @test n_cuts == length(model.most_recent_training_results.log)
     SDDP.train(
         model;
         iteration_limit = 1,

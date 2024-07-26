@@ -58,8 +58,9 @@ function inventory_management_problem()
         iteration_limit = 100,
         cut_type = SDDP.SINGLE_CUT,
         log_frequency = 10,
+        parallel_scheme = SDDP.Serial(),
     )
-    results = SDDP.simulate(model, 500)
+    results = SDDP.simulate(model, 500; parallel_scheme = SDDP.Serial())
     objectives =
         [sum(s[:stage_objective] for s in simulation) for simulation in results]
     sample_mean = round(Statistics.mean(objectives); digits = 2)
