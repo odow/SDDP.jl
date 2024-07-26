@@ -75,24 +75,29 @@ function forward_pass(
                 push!(belief_states, (partition_index, copy(current_belief)))
             end
             # ===== Begin: starting state for infinite horizon =====
-            starting_states = options.starting_states[node_index]
-            if length(starting_states) > 0
-                # There is at least one other possible starting state. If our
-                # incoming state is more than δ away from the other states, add it
-                # as a possible starting state.
-                if distance(starting_states, incoming_state_value) >
-                   options.cycle_discretization_delta
-                    push!(starting_states, incoming_state_value)
+            lock(options.lock)
+            try
+                starting_states = options.starting_states[node_index]
+                if length(starting_states) > 0
+                    # There is at least one other possible starting state. If our
+                    # incoming state is more than δ away from the other states, add it
+                    # as a possible starting state.
+                    if distance(starting_states, incoming_state_value) >
+                    options.cycle_discretization_delta
+                        push!(starting_states, incoming_state_value)
+                    end
+                    # TODO(odow):
+                    # - A better way of randomly sampling a starting state.
+                    # - Is is bad that we splice! here instead of just sampling? For
+                    #   convergence it is probably bad, since our list of possible
+                    #   starting states keeps changing, but from a computational
+                    #   perspective, we don't want to keep a list of discretized points
+                    #   in the state-space δ distance apart...
+                    incoming_state_value =
+                        splice!(starting_states, rand(1:length(starting_states)))
                 end
-                # TODO(odow):
-                # - A better way of randomly sampling a starting state.
-                # - Is is bad that we splice! here instead of just sampling? For
-                #   convergence it is probably bad, since our list of possible
-                #   starting states keeps changing, but from a computational
-                #   perspective, we don't want to keep a list of discretized points
-                #   in the state-space δ distance apart...
-                incoming_state_value =
-                    splice!(starting_states, rand(1:length(starting_states)))
+            finally
+                unlock(options.lock)
             end
             # ===== End: starting state for infinite horizon =====
             # Solve the subproblem, note that `duality_handler = nothing`.
@@ -118,23 +123,27 @@ function forward_pass(
             unlock(node.lock)
         end
     end
-    # TODO(odow): .starting_states isn't thread-safe
-    if terminated_due_to_cycle && Threads.nthreads() == 1
-        # We terminated due to a cycle. Here is the list of possible starting
-        # states for that node:
-        starting_states = options.starting_states[final_node[1]]
-        # We also need the incoming state variable to the final node, which is
-        # the outgoing state value of the second to last node:
-        incoming_state_value = if pass.include_last_node
-            sampled_states[end-1]
-        else
-            sampled_states[end]
-        end
-        # If this incoming state value is more than δ away from another state,
-        # add it to the list.
-        if distance(starting_states, incoming_state_value) >
-           options.cycle_discretization_delta
-            push!(starting_states, incoming_state_value)
+    if terminated_due_to_cycle
+        lock(options.lock)
+        try
+            # We terminated due to a cycle. Here is the list of possible
+            # starting states for that node:
+            starting_states = options.starting_states[final_node[1]]
+            # We also need the incoming state variable to the final node, which
+            # is the outgoing state value of the second to last node:
+            incoming_state_value = if pass.include_last_node
+                sampled_states[end-1]
+            else
+                sampled_states[end]
+            end
+            # If this incoming state value is more than δ away from another
+            # state, add it to the list.
+            if distance(starting_states, incoming_state_value) >
+            options.cycle_discretization_delta
+                push!(starting_states, incoming_state_value)
+            end
+        finally
+            unlock(options.lock)
         end
     end
     # ===== End: drop off starting state if terminated due to cycle =====
