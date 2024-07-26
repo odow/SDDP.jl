@@ -118,7 +118,8 @@ function forward_pass(
             unlock(node.lock)
         end
     end
-    if terminated_due_to_cycle
+    # TODO(odow): .starting_states isn't thread-safe
+    if terminated_due_to_cycle && Threads.nthreads() == 1
         # We terminated due to a cycle. Here is the list of possible starting
         # states for that node:
         starting_states = options.starting_states[final_node[1]]

@@ -480,7 +480,7 @@ function test_objective_state()
     end
     @test_throws(
         ErrorException("No objective state defined."),
-        SDDP.simulate(model, 1),
+        SDDP.simulate(model, 1; parallel_scheme = SDDP.Serial()),
     )
     @test_throws(
         ErrorException("add_objective_state can only be called once."),
