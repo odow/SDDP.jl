@@ -7,6 +7,18 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.8.1 (August 5, 2024)
+
+### Fixed
+
+ - Fixed various issues with `SDDP.Threaded()` (#761)
+ - Fixed a deprecation warning for sorting a dictionary (#763)
+
+### Other
+
+ - Updated copyright notices (#762)
+ - Updated `.JuliaFormatter.toml` (#764)
+
 ## v1.8.0 (July 24, 2024)
 
 ### Added
