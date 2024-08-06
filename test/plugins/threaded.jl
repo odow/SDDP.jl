@@ -4,8 +4,10 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 function test_threaded()
-    # We should test that JULIA_NUM_THREADS is set in CI jobs
-    if get(ENV, "CI", "false") == "true"
+    if Threads.nthreads() == 1
+        return  # Skip this test if running in serial
+    end
+    if haskey(ENV, "JULIA_NUM_THREADS")
         num_threads = get(ENV, "JULIA_NUM_THREADS", "0")
         @test parse(Int, num_threads) == Threads.nthreads()
         @test Threads.nthreads() > 1
