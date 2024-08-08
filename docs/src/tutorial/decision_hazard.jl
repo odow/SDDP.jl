@@ -19,7 +19,7 @@
 #     decision-hazard terms because they clearly communicate the order of the
 #     decision and the uncertainty.
 
-# The purpose of this tutorial is to demonstrate how to model here-and-how
+# The purpose of this tutorial is to demonstrate how to model here-and-now
 # decisions in SDDP.jl.
 
 # This tutorial uses the following packages:
