@@ -207,14 +207,14 @@ You can also pass a vector of scenarios, which are sampled sequentially:
 julia> sampling_scheme = SDDP.Historical(
            [
                [
-                   (1, (inflow = 65.0, fuel_multiplier = 1.1)),
-                   (2, (inflow = 10.0, fuel_multiplier = 1.4)), # Can be out-of-sample
-                   (3, (inflow = 65.0, fuel_multiplier = 1.1)),
+                   ((1,1), (inflow = 65.0, fuel_multiplier = 1.1)),
+                   ((2,2), (inflow = 10.0, fuel_multiplier = 1.4)), # Can be out-of-sample
+                   ((3,1), (inflow = 65.0, fuel_multiplier = 1.1)),
                ],
                [
-                   (1, (inflow = 65.0, fuel_multiplier = 1.1)),
-                   (2, (inflow = 100.0, fuel_multiplier = 0.75)),
-                   (3, (inflow = 0.0, fuel_multiplier = 1.5)),
+                   ((1,1), (inflow = 65.0, fuel_multiplier = 1.1)),
+                   ((2,2), (inflow = 100.0, fuel_multiplier = 0.75)),
+                   ((3,1), (inflow = 0.0, fuel_multiplier = 1.5)),
                ],
            ],
        )
@@ -227,14 +227,14 @@ historical scenarios are sampled probabilistically:
 julia> sampling_scheme = SDDP.Historical(
            [
                [
-                   (1, (inflow = 65.0, fuel_multiplier = 1.1)),
-                   (2, (inflow = 10.0, fuel_multiplier = 1.4)), # Can be out-of-sample
-                   (3, (inflow = 65.0, fuel_multiplier = 1.1)),
+                   ((1,1), (inflow = 65.0, fuel_multiplier = 1.1)),
+                   ((2,2), (inflow = 10.0, fuel_multiplier = 1.4)), # Can be out-of-sample
+                   ((3,1), (inflow = 65.0, fuel_multiplier = 1.1)),
                ],
                [
-                   (1, (inflow = 65.0, fuel_multiplier = 1.1)),
-                   (2, (inflow = 100.0, fuel_multiplier = 0.75)),
-                   (3, (inflow = 0.0, fuel_multiplier = 1.5)),
+                   ((1,1), (inflow = 65.0, fuel_multiplier = 1.1)),
+                   ((2,2), (inflow = 100.0, fuel_multiplier = 0.75)),
+                   ((3,1), (inflow = 0.0, fuel_multiplier = 1.5)),
                ],
            ],
            [0.3, 0.7],
