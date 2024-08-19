@@ -104,16 +104,16 @@ query the solution.
 ```jldoctest tutorial_eight; filter=r"5.4725[0]+[0-9]"
 julia> det_equiv = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
 A JuMP Model
-Minimization problem with:
-Variables: 24
-Objective function type: AffExpr
-`AffExpr`-in-`MathOptInterface.EqualTo{Float64}`: 10 constraints
-`VariableRef`-in-`MathOptInterface.EqualTo{Float64}`: 8 constraints
-`VariableRef`-in-`MathOptInterface.GreaterThan{Float64}`: 6 constraints
-`VariableRef`-in-`MathOptInterface.LessThan{Float64}`: 4 constraints
-Model mode: AUTOMATIC
-CachingOptimizer state: EMPTY_OPTIMIZER
-Solver name: HiGHS
+├ solver: HiGHS
+├ objective_sense: MIN_SENSE
+│ └ objective_function_type: AffExpr
+├ num_variables: 24
+├ num_constraints: 28
+│ ├ AffExpr in MOI.EqualTo{Float64}: 10
+│ ├ VariableRef in MOI.EqualTo{Float64}: 8
+│ ├ VariableRef in MOI.GreaterThan{Float64}: 6
+│ └ VariableRef in MOI.LessThan{Float64}: 4
+└ Names registered in the model: none
 
 julia> set_silent(det_equiv)
 
