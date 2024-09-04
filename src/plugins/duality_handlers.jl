@@ -342,11 +342,7 @@ mutable struct BanditDuality <: AbstractDualityHandler
         # It does't matter that all arms have the same prior because we are
         # sampling them based on a softmax in _choose_arm.
         prior = [0.0, 1.0]
-        return new(
-            _BanditArm[_BanditArm(arg, prior) for arg in args],
-            1,
-            1,
-        )
+        return new(_BanditArm[_BanditArm(arg, prior) for arg in args], 1, 1)
     end
 end
 
