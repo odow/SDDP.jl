@@ -336,13 +336,7 @@ mutable struct BanditDuality <: AbstractDualityHandler
     logs_seen::Int
 
     function BanditDuality(args::AbstractDualityHandler...)
-        # We initialize the arms with an informative prior to ensure that:
-        # 1) the `mean` is positive
-        # 2) the `std` is defined
-        # It does't matter that all arms have the same prior because we are
-        # sampling them based on a softmax in _choose_arm.
-        prior = [0.0, 1.0]
-        return new(_BanditArm[_BanditArm(arg, prior) for arg in args], 1, 1)
+        return new(_BanditArm[_BanditArm(arg, Float64[]) for arg in args], 1, 1)
     end
 end
 
@@ -362,6 +356,13 @@ function _choose_arm(handler::BanditDuality)
     scores = map(handler.arms) do arm
         return Statistics.mean(arm.rewards) + Statistics.std(arm.rewards)
     end
+    # Some scores may be NaN if there are no observations. If so, impute a prior
+    # based on the non-NaN observations
+    mean = Statistics.mean(scores[.!isnan.(scores)])
+    if isnan(mean)
+        mean = 1.0
+    end
+    scores[isnan.(scores)] .= mean
     # Compute softmax
     z = exp.(scores .- maximum(scores))
     z ./= sum(z)
@@ -372,6 +373,7 @@ function _choose_arm(handler::BanditDuality)
         r -= z[i]
         if r <= 0
             index = i
+            break
         end
     end
     handler.last_arm_index = index

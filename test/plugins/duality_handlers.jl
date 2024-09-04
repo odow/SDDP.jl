@@ -459,7 +459,7 @@ function test_BanditDuality_eval()
     SDDP.train(model; duality_handler = handler, iteration_limit = 100)
     @test sum(
         l.duality_key == " " for l in model.most_recent_training_results.log
-    ) > 10
+    ) > 0
     @test sum(
         l.duality_key == "S" for l in model.most_recent_training_results.log
     ) > 0
