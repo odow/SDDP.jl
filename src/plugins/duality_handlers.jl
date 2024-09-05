@@ -352,7 +352,7 @@ function BanditDuality()
     return BanditDuality(ContinuousConicDuality(), StrengthenedConicDuality())
 end
 
-function _choose_arm(handler::BanditDuality)
+function _update_arm(handler::BanditDuality)
     scores = map(handler.arms) do arm
         μ, σ = Statistics.mean(arm.rewards), Statistics.std(arm.rewards)
         # σ may be NaN if there are 0 or 1 observations, or if all observations
@@ -367,7 +367,7 @@ function _choose_arm(handler::BanditDuality)
         # randomly.
         index = rand(findall(isnan.(scores)))
         handler.last_arm_index = index
-        return handler.arms[index]
+        return
     end
     # Compute softmax
     z = exp.(scores .- maximum(scores))
@@ -383,7 +383,7 @@ function _choose_arm(handler::BanditDuality)
         end
     end
     handler.last_arm_index = index
-    return handler.arms[index]
+    return
 end
 
 function _update_rewards(handler::BanditDuality, log::Vector{Log})
@@ -406,8 +406,9 @@ function prepare_backward_pass(
     if length(options.log) > handler.logs_seen
         _update_rewards(handler, options.log)
         handler.logs_seen = length(options.log)
+        _update_arm(handler)
     end
-    arm = _choose_arm(handler)
+    arm = handler.arms[handler.last_arm_index]
     return prepare_backward_pass(node, arm.handler, options)
 end
 
