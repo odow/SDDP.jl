@@ -673,7 +673,9 @@ function write_cuts_to_file(
         end
         for (i, theta) in enumerate(node.bellman_function.local_thetas)
             for (cut, state) in zip(theta.cuts, theta.sampled_states)
-                if !write_only_selected_cuts || cut.constraint_ref !== nothing
+                if write_only_selected_cuts && cut.constraint_ref === nothing
+                    continue
+                end
                     intercept = cut.intercept
                     for (key, π) in cut.coefficients
                         intercept += π * state.state[key]
