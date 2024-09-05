@@ -619,13 +619,18 @@ end
     write_cuts_to_file(
         model::PolicyGraph{T},
         filename::String;
-        node_name_parser::Function = string,
+        kwargs...
     ) where {T}
 
 Write the cuts that form the policy in `model` to `filename` in JSON format.
 
-`node_name_parser` is a function which converts the name of each node into a
-string representation. It has the signature: `node_name_parser(::T)::String`.
+## Keyword arguments
+
+ - `node_name_parser` is a function which converts the name of each node into a
+    string representation. It has the signature: `node_name_parser(::T)::String`.
+
+ - `write_only_selected_cuts` write only the selected cuts to the json file.
+    Defaults to false.
 
 See also [`SDDP.read_cuts_from_file`](@ref).
 """
@@ -633,6 +638,7 @@ function write_cuts_to_file(
     model::PolicyGraph{T},
     filename::String;
     node_name_parser::Function = string,
+    write_only_selected_cuts::Bool = false
 ) where {T}
     cuts = Dict{String,Any}[]
     for (node_name, node) in model.nodes
@@ -650,34 +656,38 @@ function write_cuts_to_file(
         )
         oracle = node.bellman_function.global_theta
         for (cut, state) in zip(oracle.cuts, oracle.sampled_states)
-            intercept = cut.intercept
-            for (key, π) in cut.coefficients
-                intercept += π * state.state[key]
-            end
-            push!(
-                node_cuts["single_cuts"],
-                Dict(
-                    "intercept" => intercept,
-                    "coefficients" => copy(cut.coefficients),
-                    "state" => copy(state.state),
-                ),
-            )
-        end
-        for (i, theta) in enumerate(node.bellman_function.local_thetas)
-            for (cut, state) in zip(theta.cuts, theta.sampled_states)
+            if !write_only_selected_cuts || cut.constraint_ref !== nothing
                 intercept = cut.intercept
                 for (key, π) in cut.coefficients
                     intercept += π * state.state[key]
                 end
                 push!(
-                    node_cuts["multi_cuts"],
+                    node_cuts["single_cuts"],
                     Dict(
-                        "realization" => i,
                         "intercept" => intercept,
                         "coefficients" => copy(cut.coefficients),
                         "state" => copy(state.state),
                     ),
                 )
+            end
+        end
+        for (i, theta) in enumerate(node.bellman_function.local_thetas)
+            for (cut, state) in zip(theta.cuts, theta.sampled_states)
+                if !write_only_selected_cuts || cut.constraint_ref !== nothing
+                    intercept = cut.intercept
+                    for (key, π) in cut.coefficients
+                        intercept += π * state.state[key]
+                    end
+                    push!(
+                        node_cuts["multi_cuts"],
+                        Dict(
+                            "realization" => i,
+                            "intercept" => intercept,
+                            "coefficients" => copy(cut.coefficients),
+                            "state" => copy(state.state),
+                        ),
+                    )
+                end
             end
         end
         for p in node.bellman_function.risk_set_cuts
