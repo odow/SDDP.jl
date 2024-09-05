@@ -638,7 +638,7 @@ function write_cuts_to_file(
     model::PolicyGraph{T},
     filename::String;
     node_name_parser::Function = string,
-    write_only_selected_cuts::Bool = false
+    write_only_selected_cuts::Bool = false,
 ) where {T}
     cuts = Dict{String,Any}[]
     for (node_name, node) in model.nodes
