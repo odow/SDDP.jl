@@ -398,15 +398,27 @@ function _update_rewards(handler::BanditDuality, log::Vector{Log})
     return
 end
 
+function _is_no_progress(log; kwargs...)
+    return length(log) >= 2 &&
+           isapprox(log[end].bound, log[end-1].bound; kwargs...)
+end
+
 function prepare_backward_pass(
     node::Node,
     handler::BanditDuality,
     options::Options,
 )
-    if length(options.log) > handler.logs_seen
-        _update_rewards(handler, options.log)
-        handler.logs_seen = length(options.log)
-        _update_arm(handler)
+    log = options.log
+    if length(log) > handler.logs_seen
+        _update_rewards(handler, log)
+        handler.logs_seen = length(log)
+        if _is_no_progress(log; atol = 1e-6)
+            # The last iteration made no progress. Try the next arm.
+            handler.last_arm_index =
+                mod1(handler.last_arm_index + 1, length(handler.arms))
+        else
+            _update_arm(handler)
+        end
     end
     arm = handler.arms[handler.last_arm_index]
     return prepare_backward_pass(node, arm.handler, options)
