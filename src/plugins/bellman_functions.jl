@@ -656,40 +656,40 @@ function write_cuts_to_file(
         )
         oracle = node.bellman_function.global_theta
         for (cut, state) in zip(oracle.cuts, oracle.sampled_states)
-            if !write_only_selected_cuts || cut.constraint_ref !== nothing
-                intercept = cut.intercept
-                for (key, π) in cut.coefficients
-                    intercept += π * state.state[key]
+            if write_only_selected_cuts && cut.constraint_ref === nothing
+                    continue
                 end
-                push!(
-                    node_cuts["single_cuts"],
-                    Dict(
-                        "intercept" => intercept,
-                        "coefficients" => copy(cut.coefficients),
-                        "state" => copy(state.state),
-                    ),
-                )
+            intercept = cut.intercept
+            for (key, π) in cut.coefficients
+                intercept += π * state.state[key]
             end
+            push!(
+                node_cuts["single_cuts"],
+                Dict(
+                    "intercept" => intercept,
+                    "coefficients" => copy(cut.coefficients),
+                    "state" => copy(state.state),
+                ),
+            )
         end
         for (i, theta) in enumerate(node.bellman_function.local_thetas)
             for (cut, state) in zip(theta.cuts, theta.sampled_states)
                 if write_only_selected_cuts && cut.constraint_ref === nothing
                     continue
                 end
-                    intercept = cut.intercept
-                    for (key, π) in cut.coefficients
-                        intercept += π * state.state[key]
-                    end
-                    push!(
-                        node_cuts["multi_cuts"],
-                        Dict(
-                            "realization" => i,
-                            "intercept" => intercept,
-                            "coefficients" => copy(cut.coefficients),
-                            "state" => copy(state.state),
-                        ),
-                    )
+                intercept = cut.intercept
+                for (key, π) in cut.coefficients
+                    intercept += π * state.state[key]
                 end
+                push!(
+                    node_cuts["multi_cuts"],
+                    Dict(
+                        "realization" => i,
+                        "intercept" => intercept,
+                        "coefficients" => copy(cut.coefficients),
+                        "state" => copy(state.state),
+                    ),
+                )
             end
         end
         for p in node.bellman_function.risk_set_cuts
