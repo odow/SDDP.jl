@@ -354,15 +354,21 @@ end
 
 function _choose_arm(handler::BanditDuality)
     scores = map(handler.arms) do arm
-        return Statistics.mean(arm.rewards) + Statistics.std(arm.rewards)
+        μ, σ = Statistics.mean(arm.rewards), Statistics.std(arm.rewards)
+        # σ may be NaN if there are 0 or 1 observations, or if all observations
+        # are the same.
+        if isnan(σ)
+            return μ
+        end
+        return μ + σ
     end
-    # Some scores may be NaN if there are no observations. If so, impute a prior
-    # based on the non-NaN observations
-    mean = Statistics.mean(scores[.!isnan.(scores)])
-    if isnan(mean)
-        mean = 1.0
+    if any(isnan, scores)
+        # Some scores may be NaN if there are no observations. Pick an arm
+        # randomly.
+        index = rand(findall(isnan.(scores)))
+        handler.last_arm_index = index
+        return handler.arms[index]
     end
-    scores[isnan.(scores)] .= mean
     # Compute softmax
     z = exp.(scores .- maximum(scores))
     z ./= sum(z)
