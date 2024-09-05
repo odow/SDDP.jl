@@ -619,7 +619,7 @@ end
     write_cuts_to_file(
         model::PolicyGraph{T},
         filename::String;
-        kwargs...
+        kwargs...,
     ) where {T}
 
 Write the cuts that form the policy in `model` to `filename` in JSON format.
@@ -657,8 +657,8 @@ function write_cuts_to_file(
         oracle = node.bellman_function.global_theta
         for (cut, state) in zip(oracle.cuts, oracle.sampled_states)
             if write_only_selected_cuts && cut.constraint_ref === nothing
-                    continue
-                end
+                continue
+            end
             intercept = cut.intercept
             for (key, π) in cut.coefficients
                 intercept += π * state.state[key]
@@ -726,7 +726,7 @@ end
     read_cuts_from_file(
         model::PolicyGraph{T},
         filename::String;
-        kwargs...
+        kwargs...,
     ) where {T}
 
 Read cuts (saved using [`SDDP.write_cuts_to_file`](@ref)) from `filename` into
