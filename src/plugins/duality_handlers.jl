@@ -352,14 +352,38 @@ function BanditDuality()
     return BanditDuality(ContinuousConicDuality(), StrengthenedConicDuality())
 end
 
-function _choose_best_arm(handler::BanditDuality)
-    _, index = findmax(
-        map(handler.arms) do arm
-            return Statistics.mean(arm.rewards) + Statistics.std(arm.rewards)
-        end,
-    )
+function _update_arm(handler::BanditDuality)
+    scores = map(handler.arms) do arm
+        μ, σ = Statistics.mean(arm.rewards), Statistics.std(arm.rewards)
+        # σ may be NaN if there are 0 or 1 observations, or if all observations
+        # are the same.
+        if isnan(σ)
+            return μ
+        end
+        return μ + σ
+    end
+    if any(isnan, scores)
+        # Some scores may be NaN if there are no observations. Pick an arm
+        # randomly.
+        index = rand(findall(isnan.(scores)))
+        handler.last_arm_index = index
+        return
+    end
+    # Compute softmax
+    z = exp.(scores .- maximum(scores))
+    z ./= sum(z)
+    # Sample arm from softmax
+    r = rand()
+    index = length(z)
+    for i in 1:length(z)
+        r -= z[i]
+        if r <= 0
+            index = i
+            break
+        end
+    end
     handler.last_arm_index = index
-    return handler.arms[index]
+    return
 end
 
 function _update_rewards(handler::BanditDuality, log::Vector{Log})
@@ -369,22 +393,14 @@ function _update_rewards(handler::BanditDuality, log::Vector{Log})
     # reward = -----------------------
     #            time_t - time_{t-1}
     t, t′ = log[end], log[end-1]
-    reward = abs(t.bound - t′.bound) / (t.time - t′.time)
-    # This check is needed because we should probably keep using the first
-    # handler until we start to improve the bound. This can take quite a few
-    # iterations in some models. (Until we start to improve, the reward will be
-    # zero, so we'd never revisit it.
-    const_bound = isapprox(log[1].bound, log[end].bound; atol = 1e-6)
-    # To start with, we should add the reward to all arms to construct a prior
-    # distribution for the arms. The 10 is somewhat arbitrary.
-    if length(log) < 10 || const_bound
-        for arm in handler.arms
-            push!(arm.rewards, reward)
-        end
-    else
-        push!(handler.arms[handler.last_arm_index].rewards, reward)
-    end
+    reward = abs(t.bound - t′.bound) / max(t.time - t′.time, 0.1)
+    push!(handler.arms[handler.last_arm_index].rewards, reward)
     return
+end
+
+function _is_no_progress(log; kwargs...)
+    return length(log) >= 2 &&
+           isapprox(log[end].bound, log[end-1].bound; kwargs...)
 end
 
 function prepare_backward_pass(
@@ -392,11 +408,19 @@ function prepare_backward_pass(
     handler::BanditDuality,
     options::Options,
 )
-    if length(options.log) > handler.logs_seen
-        _update_rewards(handler, options.log)
-        handler.logs_seen = length(options.log)
+    log = options.log
+    if length(log) > handler.logs_seen
+        _update_rewards(handler, log)
+        handler.logs_seen = length(log)
+        if _is_no_progress(log; atol = 1e-6)
+            # The last iteration made no progress. Try the next arm.
+            handler.last_arm_index =
+                mod1(handler.last_arm_index + 1, length(handler.arms))
+        else
+            _update_arm(handler)
+        end
     end
-    arm = _choose_best_arm(handler)
+    arm = handler.arms[handler.last_arm_index]
     return prepare_backward_pass(node, arm.handler, options)
 end
 
