@@ -619,13 +619,18 @@ end
     write_cuts_to_file(
         model::PolicyGraph{T},
         filename::String;
-        node_name_parser::Function = string,
+        kwargs...,
     ) where {T}
 
 Write the cuts that form the policy in `model` to `filename` in JSON format.
 
-`node_name_parser` is a function which converts the name of each node into a
-string representation. It has the signature: `node_name_parser(::T)::String`.
+## Keyword arguments
+
+ - `node_name_parser` is a function which converts the name of each node into a
+    string representation. It has the signature: `node_name_parser(::T)::String`.
+
+ - `write_only_selected_cuts` write only the selected cuts to the json file.
+    Defaults to false.
 
 See also [`SDDP.read_cuts_from_file`](@ref).
 """
@@ -633,6 +638,7 @@ function write_cuts_to_file(
     model::PolicyGraph{T},
     filename::String;
     node_name_parser::Function = string,
+    write_only_selected_cuts::Bool = false,
 ) where {T}
     cuts = Dict{String,Any}[]
     for (node_name, node) in model.nodes
@@ -650,6 +656,9 @@ function write_cuts_to_file(
         )
         oracle = node.bellman_function.global_theta
         for (cut, state) in zip(oracle.cuts, oracle.sampled_states)
+            if write_only_selected_cuts && cut.constraint_ref === nothing
+                continue
+            end
             intercept = cut.intercept
             for (key, π) in cut.coefficients
                 intercept += π * state.state[key]
@@ -665,6 +674,9 @@ function write_cuts_to_file(
         end
         for (i, theta) in enumerate(node.bellman_function.local_thetas)
             for (cut, state) in zip(theta.cuts, theta.sampled_states)
+                if write_only_selected_cuts && cut.constraint_ref === nothing
+                    continue
+                end
                 intercept = cut.intercept
                 for (key, π) in cut.coefficients
                     intercept += π * state.state[key]
@@ -714,7 +726,7 @@ end
     read_cuts_from_file(
         model::PolicyGraph{T},
         filename::String;
-        node_name_parser::Function = _node_name_parser,
+        kwargs...,
     ) where {T}
 
 Read cuts (saved using [`SDDP.write_cuts_to_file`](@ref)) from `filename` into
@@ -724,10 +736,15 @@ Since `T` can be an arbitrary Julia type, the conversion to JSON is lossy. When
 reading, `read_cuts_from_file` only supports `T=Int`, `T=NTuple{N, Int}`, and
 `T=Symbol`. If you have manually created a policy graph with a different node
 type `T`, provide a function `node_name_parser` with the signature
-`node_name_parser(T, name::String)::T where {T}` that returns the name of each
-node given the string name `name`.
 
-If `node_name_parser` returns `nothing`, those cuts are skipped.
+## Keyword arguments
+
+ - `node_name_parser(T, name::String)::T where {T}` that returns the name of each
+    node given the string name `name`.
+    If `node_name_parser` returns `nothing`, those cuts are skipped.
+
+ - `cut_selection::Bool` run or not the cut selection algorithm when adding the 
+    cuts to the model.
 
 See also [`SDDP.write_cuts_to_file`](@ref).
 """
@@ -735,6 +752,7 @@ function read_cuts_from_file(
     model::PolicyGraph{T},
     filename::String;
     node_name_parser::Function = _node_name_parser,
+    cut_selection::Bool = true,
 ) where {T}
     cuts = JSON.parsefile(filename; use_mmap = false)
     for node_cuts in cuts
@@ -759,7 +777,7 @@ function read_cuts_from_file(
                 state,
                 nothing,
                 nothing;
-                cut_selection = has_state,
+                cut_selection = (cut_selection && has_state),
             )
         end
         # Loop through and add the multi-cuts. There are two parts:
@@ -788,7 +806,7 @@ function read_cuts_from_file(
                 state,
                 nothing,
                 nothing;
-                cut_selection = has_state,
+                cut_selection = (cut_selection && has_state),
             )
         end
         # Here is part (ii): adding the constraints that define the risk-set
