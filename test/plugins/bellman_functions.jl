@@ -375,6 +375,29 @@ function test_biobjective_cut_selection()
     return
 end
 
+function test_cut_selection_flags()
+    graph = SDDP.Graph(
+        :root_node,
+        [:week],
+        [(:root_node => :week, 1.0), (:week => :week, 0.9)],
+    )
+    model = _create_model(graph)
+    @test SDDP.calculate_bound(model) ≈ 9.17 atol = 0.1
+    SDDP.train(model; iteration_limit = 50, cut_type = SDDP.MULTI_CUT)
+    @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
+    SDDP.write_cuts_to_file(
+        model,
+        "model.cuts.json";
+        write_only_selected_cuts = true,
+    )
+    model_2 = _create_model(graph)
+    @test SDDP.calculate_bound(model_2) ≈ 9.17 atol = 0.1
+    SDDP.read_cuts_from_file(model_2, "model.cuts.json"; cut_selection = false)
+    @test SDDP.calculate_bound(model_2) ≈ 119.167 atol = 0.1
+    rm("model.cuts.json")
+    return
+end
+
 end  # module
 
 TestBellmanFunctions.runtests()
