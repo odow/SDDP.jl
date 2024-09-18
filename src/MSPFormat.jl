@@ -183,7 +183,7 @@ function _build_lhs(stage::Integer, sp::JuMP.Model, terms::Vector{Any})
                 error(
                     "SDDP.jl does not support this MSPFormat file because it " *
                     "contains state variables from stages other than `t` or " *
-                    "`t-1`. Got `t-$(stage - term["stage"])`"
+                    "`t-1`. Got `t-$(stage - term["stage"])`",
                 )
             end
         end

@@ -134,11 +134,11 @@ function test_electric()
 end
 
 function test_stage_lead_time()
-    sp = JuMP.Model()
+    sp = Model()
     sp[:x] = SDDP.State(@variable(sp), @variable(sp))
     terms = Any[
-        Dict{String, Any}("name"=>"x", "stage"=>2, "coefficient"=>Any[1.0])
-        Dict{String, Any}("name"=>"x", "stage"=>0, "coefficient"=>Any[-1.0])
+        Dict("name" => "x", "stage" => 2, "coefficient" => [1.0]),
+        Dict("name" => "x", "stage" => 0, "coefficient" => [-1.0]),
     ]
     @test_throws(
         ErrorException(
