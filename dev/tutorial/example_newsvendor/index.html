@@ -15,7 +15,7 @@ N = 100
 d = sort!(rand(D, N));
 Ω = 1:N
 P = fill(1 / N, N);
-StatsPlots.histogram(d; bins = 20, label = &quot;&quot;, xlabel = &quot;Demand&quot;)</code></pre><img src="7e659354.svg" alt="Example block output"/><h2 id="Kelley&#39;s-cutting-plane-algorithm"><a class="docs-heading-anchor" href="#Kelley&#39;s-cutting-plane-algorithm">Kelley&#39;s cutting plane algorithm</a><a id="Kelley&#39;s-cutting-plane-algorithm-1"></a><a class="docs-heading-anchor-permalink" href="#Kelley&#39;s-cutting-plane-algorithm" title="Permalink"></a></h2><p>Kelley&#39;s cutting plane algorithm is an iterative method for maximizing concave functions. Given a concave function <span>$f(x)$</span>, Kelley&#39;s constructs an outer-approximation of the function at the minimum by a set of first-order Taylor series approximations (called <strong>cuts</strong>) constructed at a set of points <span>$k = 1,\ldots,K$</span>:</p><p class="math-container">\[\begin{aligned}
+StatsPlots.histogram(d; bins = 20, label = &quot;&quot;, xlabel = &quot;Demand&quot;)</code></pre><img src="d216338f.svg" alt="Example block output"/><h2 id="Kelley&#39;s-cutting-plane-algorithm"><a class="docs-heading-anchor" href="#Kelley&#39;s-cutting-plane-algorithm">Kelley&#39;s cutting plane algorithm</a><a id="Kelley&#39;s-cutting-plane-algorithm-1"></a><a class="docs-heading-anchor-permalink" href="#Kelley&#39;s-cutting-plane-algorithm" title="Permalink"></a></h2><p>Kelley&#39;s cutting plane algorithm is an iterative method for maximizing concave functions. Given a concave function <span>$f(x)$</span>, Kelley&#39;s constructs an outer-approximation of the function at the minimum by a set of first-order Taylor series approximations (called <strong>cuts</strong>) constructed at a set of points <span>$k = 1,\ldots,K$</span>:</p><p class="math-container">\[\begin{aligned}
 f^K = \max\limits_{\theta \in \mathbb{R}, x \in \mathbb{R}^N} \;\; &amp; \theta\\
 &amp; \theta \le f(x_k) + \nabla f(x_k)^\top (x - x_k),\quad k=1,\ldots,K\\
 &amp; \theta \le M,
@@ -168,60 +168,55 @@ for k in 1:kIterationLimit
     println(&quot;  Added cut: $c&quot;)
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Solving iteration k = 1
   xᵏ = -0.0
-  V̅ = 1245.5264780974833
+  V̅ = 1169.2339494157955
   V̲ = 0.0
   Added cut: -4.99999999999999 x_out + θ ≤ 0
 Solving iteration k = 2
-  xᵏ = 249.10529561949716
-  V̅ = 747.315886858489
-  V̲ = 491.96970268235873
-  Added cut: 0.10000000000000007 x_out + θ ≤ 1015.0908234833025
+  xᵏ = 233.84678988315954
+  V̅ = 701.5403696494764
+  V̲ = 509.5059321222079
+  Added cut: 0.10000000000000007 x_out + θ ≤ 1000.5841908768431
 Solving iteration k = 3
-  xᵏ = 199.03741636927538
-  V̅ = 597.1122491078243
-  V̲ = 555.4987123222627
-  Added cut: -2.399 x_out + θ ≤ 476.0827831909196
+  xᵏ = 196.19297860330295
+  V̅ = 588.5789358099069
+  V̲ = 546.793476551825
+  Added cut: -2.348 x_out + θ ≤ 478.5183199978747
 Solving iteration k = 4
-  xᵏ = 215.6894919137187
-  V̅ = 562.1428904644933
-  V̲ = 550.2105135064519
-  Added cut: -0.9710000000000003 x_out + θ ≤ 772.155000685669
+  xᵏ = 213.2622021564414
+  V̅ = 552.7335663483163
+  V̲ = 542.4878681825772
+  Added cut: -1.1240000000000003 x_out + θ ≤ 729.3055572716207
 Solving iteration k = 5
-  xᵏ = 207.33348564058088
-  V̅ = 558.8088439615113
-  V̲ = 556.145657464916
-  Added cut: -1.6340000000000008 x_out + θ ≤ 632.0297132093674
+  xᵏ = 204.89153372038086
+  V̅ = 549.8205737325673
+  V̲ = 547.2501615394283
+  Added cut: -1.787000000000001 x_out + θ ≤ 590.8920582218686
 Solving iteration k = 6
-  xᵏ = 203.85219610254626
-  V̅ = 557.4198094358355
-  V̲ = 556.4171634611338
-  Added cut: -2.093000000000001 x_out + θ ≤ 537.4589092235976
+  xᵏ = 200.30969380391113
+  V̅ = 548.2260934416356
+  V̲ = 547.5991902535038
+  Added cut: -2.042000000000001 x_out + θ ≤ 539.1861831137402
 Solving iteration k = 7
-  xᵏ = 206.03660999078406
-  V̅ = 556.6203139527406
-  V̲ = 556.4434704859468
-  Added cut: -1.8890000000000011 x_out + θ ≤ 579.3135341949252
+  xᵏ = 202.76813767893546
+  V̅ = 547.7024448962557
+  V̲ = 547.5038676943477
+  Added cut: -1.8890000000000011 x_out + θ ≤ 570.0111309767083
 Solving iteration k = 8
-  xᵏ = 205.16973025160593
-  V̅ = 556.5396941369971
-  V̲ = 556.4885423989671
-  Added cut: -2.042000000000001 x_out + θ ≤ 547.8714137284016
+  xᵏ = 201.47024747038
+  V̅ = 547.6479335074963
+  V̲ = 547.6069348850684
+  Added cut: -1.940000000000001 x_out + θ ≤ 559.695149733293
 Solving iteration k = 9
-  xᵏ = 205.5040553367576
-  V̅ = 556.5025840525454
-  V̲ = 556.4813589257867
-  Added cut: -1.940000000000001 x_out + θ ≤ 568.8116022459918
+  xᵏ = 201.0683001916898
+  V̅ = 547.6310517217914
+  V̲ = 547.6199957528233
+  Added cut: -1.9910000000000012 x_out + θ ≤ 549.4296104545498
 Solving iteration k = 10
-  xᵏ = 205.29596585872306
-  V̅ = 556.4938442944683
-  V̲ = 556.4921467687589
-  Added cut: -1.9910000000000012 x_out + θ ≤ 558.3398104614885
-Solving iteration k = 11
-  xᵏ = 205.26268104094572
-  V̅ = 556.4924463321216
-  V̲ = 556.492446332118
+  xᵏ = 200.85151648648937
+  V̅ = 547.6219468061729
+  V̲ = 547.6219468061706
 Terminating with near-optimal solution</code></pre><p>To get the first-stage solution, we do:</p><pre><code class="language-julia hljs">optimize!(model)
-xᵏ = value(x_out)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">205.26268104094572</code></pre><p>To compute a second-stage solution, we do:</p><pre><code class="language-julia hljs">solve_second_stage(xᵏ, 170.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(V = 846.4737318959054, λ = -0.1, x = 35.26268104094572, u = 170.0)</code></pre><h2 id="Policy-Graph"><a class="docs-heading-anchor" href="#Policy-Graph">Policy Graph</a><a id="Policy-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Policy-Graph" title="Permalink"></a></h2><p>Now let&#39;s see how we can formulate and train a policy for the two-stage newsvendor problem using <code>SDDP.jl</code>. Under the hood, <code>SDDP.jl</code> implements the exact algorithm that we just wrote by hand.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
+xᵏ = value(x_out)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">200.85151648648937</code></pre><p>To compute a second-stage solution, we do:</p><pre><code class="language-julia hljs">solve_second_stage(xᵏ, 170.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(V = 846.9148483513511, λ = -0.1, x = 30.851516486489373, u = 170.0)</code></pre><h2 id="Policy-Graph"><a class="docs-heading-anchor" href="#Policy-Graph">Policy Graph</a><a id="Policy-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Policy-Graph" title="Permalink"></a></h2><p>Now let&#39;s see how we can formulate and train a policy for the two-stage newsvendor problem using <code>SDDP.jl</code>. Under the hood, <code>SDDP.jl</code> implements the exact algorithm that we just wrote by hand.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
     stages = 2,
     sense = :Max,
     upper_bound = 5 * maximum(d),  # The `M` in θ &lt;= M
@@ -271,87 +266,87 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   0.000000e+00  7.473159e+02  6.280899e-03       103   1
-         2   6.038257e+02  5.971122e+02  2.299190e-02       406   1
-         3   5.143764e+02  5.621429e+02  2.759695e-02       509   1
-         4   5.534080e+02  5.588088e+02  3.219700e-02       612   1
-         5   4.281084e+02  5.574198e+02  3.704596e-02       715   1
-         6   6.115566e+02  5.566203e+02  4.150105e-02       818   1
-         7   4.451920e+02  5.565397e+02  4.611802e-02       921   1
-         8   5.360916e+02  5.565026e+02  5.069995e-02      1024   1
-         9   4.585546e+02  5.564938e+02  5.533695e-02      1127   1
-        10   4.610594e+02  5.564924e+02  5.993295e-02      1230   1
-        11   5.324545e+02  5.564924e+02  6.477499e-02      1333   1
-        12   5.935770e+02  5.564924e+02  6.981397e-02      1436   1
-        13   5.013033e+02  5.564924e+02  7.476497e-02      1539   1
-        14   4.820763e+02  5.564924e+02  7.997894e-02      1642   1
-        15   5.536655e+02  5.564924e+02  8.514595e-02      1745   1
-        16   5.197707e+02  5.564924e+02  9.030104e-02      1848   1
-        17   6.157880e+02  5.564924e+02  9.560204e-02      1951   1
-        18   4.228792e+02  5.564924e+02  1.008041e-01      2054   1
-        19   6.004763e+02  5.564924e+02  1.060951e-01      2157   1
-        20   6.157880e+02  5.564924e+02  1.116381e-01      2260   1
-        21   6.157880e+02  5.564924e+02  1.319170e-01      2563   1
-        22   4.468173e+02  5.564924e+02  1.371191e-01      2666   1
-        23   5.358964e+02  5.564924e+02  1.424551e-01      2769   1
-        24   3.759647e+02  5.564924e+02  1.476729e-01      2872   1
-        25   4.146331e+02  5.564924e+02  1.528201e-01      2975   1
-        26   4.146331e+02  5.564924e+02  1.579380e-01      3078   1
-        27   5.654733e+02  5.564924e+02  1.631601e-01      3181   1
-        28   6.157880e+02  5.564924e+02  1.682520e-01      3284   1
-        29   6.157880e+02  5.564924e+02  1.733911e-01      3387   1
-        30   6.157880e+02  5.564924e+02  1.785710e-01      3490   1
-        31   6.101988e+02  5.564924e+02  1.837721e-01      3593   1
-        32   5.013033e+02  5.564924e+02  1.890841e-01      3696   1
-        33   5.764776e+02  5.564924e+02  1.942949e-01      3799   1
-        34   6.157880e+02  5.564924e+02  2.851810e-01      3902   1
-        35   4.905092e+02  5.564924e+02  2.903130e-01      4005   1
-        36   4.324571e+02  5.564924e+02  2.953961e-01      4108   1
-        37   6.157880e+02  5.564924e+02  3.004379e-01      4211   1
-        38   6.157880e+02  5.564924e+02  3.056180e-01      4314   1
-        39   5.764776e+02  5.564924e+02  3.108280e-01      4417   1
-        40   4.146331e+02  5.564924e+02  3.159089e-01      4520   1
+         1   0.000000e+00  7.015404e+02  6.805897e-03       103   1
+         2   3.894269e+02  5.885789e+02  2.425408e-02       406   1
+         3   5.885789e+02  5.527336e+02  2.917099e-02       509   1
+         4   4.905407e+02  5.498206e+02  3.403807e-02       612   1
+         5   6.146746e+02  5.482261e+02  3.874707e-02       715   1
+         6   5.433554e+02  5.477024e+02  4.350495e-02       818   1
+         7   6.083044e+02  5.476479e+02  4.827404e-02       921   1
+         8   5.219405e+02  5.476311e+02  5.312395e-02      1024   1
+         9   5.691801e+02  5.476219e+02  5.794811e-02      1127   1
+        10   6.025545e+02  5.476219e+02  6.305099e-02      1230   1
+        11   5.696354e+02  5.476219e+02  6.796694e-02      1333   1
+        12   5.898145e+02  5.476219e+02  7.302308e-02      1436   1
+        13   5.276244e+02  5.476219e+02  7.790613e-02      1539   1
+        14   4.767893e+02  5.476219e+02  8.285904e-02      1642   1
+        15   6.025545e+02  5.476219e+02  8.779097e-02      1745   1
+        16   4.668812e+02  5.476219e+02  9.275508e-02      1848   1
+        17   6.025545e+02  5.476219e+02  9.770012e-02      1951   1
+        18   3.872679e+02  5.476219e+02  1.026189e-01      2054   1
+        19   4.339795e+02  5.476219e+02  1.076651e-01      2157   1
+        20   6.025545e+02  5.476219e+02  1.125369e-01      2260   1
+        21   5.898145e+02  5.476219e+02  1.322961e-01      2563   1
+        22   5.972753e+02  5.476219e+02  1.376910e-01      2666   1
+        23   6.025545e+02  5.476219e+02  1.427741e-01      2769   1
+        24   6.025545e+02  5.476219e+02  1.478560e-01      2872   1
+        25   5.777232e+02  5.476219e+02  1.529441e-01      2975   1
+        26   6.025545e+02  5.476219e+02  1.580560e-01      3078   1
+        27   6.025545e+02  5.476219e+02  1.638000e-01      3181   1
+        28   4.693621e+02  5.476219e+02  1.692870e-01      3284   1
+        29   5.293627e+02  5.476219e+02  1.747410e-01      3387   1
+        30   5.259697e+02  5.476219e+02  1.801431e-01      3490   1
+        31   6.025545e+02  5.476219e+02  1.856899e-01      3593   1
+        32   6.025545e+02  5.476219e+02  1.911261e-01      3696   1
+        33   5.298723e+02  5.476219e+02  1.966910e-01      3799   1
+        34   6.025545e+02  5.476219e+02  2.021379e-01      3902   1
+        35   6.025545e+02  5.476219e+02  2.076550e-01      4005   1
+        36   5.258431e+02  5.476219e+02  2.132280e-01      4108   1
+        37   6.025545e+02  5.476219e+02  2.186460e-01      4211   1
+        38   6.025545e+02  5.476219e+02  2.242081e-01      4314   1
+        39   5.691656e+02  5.476219e+02  2.296660e-01      4417   1
+        40   5.107590e+02  5.476219e+02  2.351890e-01      4520   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 3.159089e-01
+total time (s) : 2.351890e-01
 total solves   : 4520
-best bound     :  5.564924e+02
-simulation ci  :  5.178986e+02 ± 3.510483e+01
+best bound     :  5.476219e+02
+simulation ci  :  5.409726e+02 ± 3.318410e+01
 numeric issues : 0
--------------------------------------------------------------------</code></pre><p>One way to query the optimal policy is with <a href="../../apireference/#SDDP.DecisionRule"><code>SDDP.DecisionRule</code></a>:</p><pre><code class="language-julia hljs">first_stage_rule = SDDP.DecisionRule(model; node = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A decision rule for node 1</code></pre><pre><code class="language-julia hljs">solution_1 = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x =&gt; 0.0))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(stage_objective = -410.5253620816939, outgoing_state = Dict(:x =&gt; 205.26268104084696), controls = Dict{Any, Any}())</code></pre><p>Here&#39;s the second stage:</p><pre><code class="language-julia hljs">second_stage_rule = SDDP.DecisionRule(model; node = 2)
+-------------------------------------------------------------------</code></pre><p>One way to query the optimal policy is with <a href="../../apireference/#SDDP.DecisionRule"><code>SDDP.DecisionRule</code></a>:</p><pre><code class="language-julia hljs">first_stage_rule = SDDP.DecisionRule(model; node = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A decision rule for node 1</code></pre><pre><code class="language-julia hljs">solution_1 = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x =&gt; 0.0))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(stage_objective = -401.7030329728548, outgoing_state = Dict(:x =&gt; 200.8515164864274), controls = Dict{Any, Any}())</code></pre><p>Here&#39;s the second stage:</p><pre><code class="language-julia hljs">second_stage_rule = SDDP.DecisionRule(model; node = 2)
 solution = SDDP.evaluate(
     second_stage_rule;
     incoming_state = Dict(:x =&gt; solution_1.outgoing_state[:x]),
     noise = 170.0,  # A value of d[ω], can be out-of-sample.
     controls_to_record = [:u_sell],
-)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(stage_objective = 846.4737318959153, outgoing_state = Dict(:x =&gt; 35.26268104084696), controls = Dict(:u_sell =&gt; 170.0))</code></pre><h2 id="Simulation"><a class="docs-heading-anchor" href="#Simulation">Simulation</a><a id="Simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Simulation" title="Permalink"></a></h2><p>Querying the decision rules is tedious. It&#39;s often more useful to simulate the policy:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(stage_objective = 846.9148483513573, outgoing_state = Dict(:x =&gt; 30.851516486427414), controls = Dict(:u_sell =&gt; 170.0))</code></pre><h2 id="Simulation"><a class="docs-heading-anchor" href="#Simulation">Simulation</a><a id="Simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Simulation" title="Permalink"></a></h2><p>Querying the decision rules is tedious. It&#39;s often more useful to simulate the policy:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
     model,
     10,  #= number of replications =#
     [:x, :u_sell, :u_make];  #= variables to record =#
     skip_undefined_variables = true,
 );</code></pre><p><code>simulations</code> is a vector with 10 elements</p><pre><code class="language-julia hljs">length(simulations)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">10</code></pre><p>and each element is a vector with two elements (one for each stage)</p><pre><code class="language-julia hljs">length(simulations[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2</code></pre><p>The first stage contains:</p><pre><code class="language-julia hljs">simulations[1][1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
-  :u_make          =&gt; 205.263
-  :bellman_term    =&gt; 967.018
+  :u_make          =&gt; 200.852
+  :bellman_term    =&gt; 949.325
   :noise_term      =&gt; nothing
   :node_index      =&gt; 1
-  :stage_objective =&gt; -410.525
+  :stage_objective =&gt; -401.703
   :objective_state =&gt; nothing
   :u_sell          =&gt; NaN
   :belief          =&gt; Dict(1=&gt;1.0)
-  :x               =&gt; State{Float64}(0.0, 205.263)</code></pre><p>The second stage contains:</p><pre><code class="language-julia hljs">simulations[1][2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :x               =&gt; State{Float64}(0.0, 200.852)</code></pre><p>The second stage contains:</p><pre><code class="language-julia hljs">simulations[1][2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
   :u_make          =&gt; NaN
   :bellman_term    =&gt; 0.0
-  :noise_term      =&gt; 218.463
+  :noise_term      =&gt; 194.397
   :node_index      =&gt; 2
-  :stage_objective =&gt; 1026.31
+  :stage_objective =&gt; 971.338
   :objective_state =&gt; nothing
-  :u_sell          =&gt; 205.263
+  :u_sell          =&gt; 194.397
   :belief          =&gt; Dict(2=&gt;1.0)
-  :x               =&gt; State{Float64}(205.263, -0.0)</code></pre><p>We can compute aggregated statistics across the simulations:</p><pre><code class="language-julia hljs">objectives = map(simulations) do simulation
+  :x               =&gt; State{Float64}(200.852, 6.45474)</code></pre><p>We can compute aggregated statistics across the simulations:</p><pre><code class="language-julia hljs">objectives = map(simulations) do simulation
     return sum(data[:stage_objective] for data in simulation)
 end
 μ, t = SDDP.confidence_interval(objectives)
-println(&quot;Simulation ci : $μ ± $t&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Simulation ci : 583.9551730614374 ± 30.642623762359328</code></pre><h2 id="Risk-aversion-revisited"><a class="docs-heading-anchor" href="#Risk-aversion-revisited">Risk aversion revisited</a><a id="Risk-aversion-revisited-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-aversion-revisited" title="Permalink"></a></h2><p>SDDP.jl contains a number of risk measures. One example is:</p><pre><code class="language-julia hljs">0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()</code></pre><p>You can construct a risk-averse policy by passing a risk measure to the <code>risk_measure</code> keyword argument of <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a>.</p><p>We can explore how the optimal decision changes with risk by creating a function:</p><pre><code class="language-julia hljs">function solve_newsvendor(risk_measure::SDDP.AbstractRiskMeasure)
+println(&quot;Simulation ci : $μ ± $t&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Simulation ci : 574.1029258053804 ± 27.454698937254534</code></pre><h2 id="Risk-aversion-revisited"><a class="docs-heading-anchor" href="#Risk-aversion-revisited">Risk aversion revisited</a><a id="Risk-aversion-revisited-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-aversion-revisited" title="Permalink"></a></h2><p>SDDP.jl contains a number of risk measures. One example is:</p><pre><code class="language-julia hljs">0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()</code></pre><p>You can construct a risk-averse policy by passing a risk measure to the <code>risk_measure</code> keyword argument of <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a>.</p><p>We can explore how the optimal decision changes with risk by creating a function:</p><pre><code class="language-julia hljs">function solve_newsvendor(risk_measure::SDDP.AbstractRiskMeasure)
     model = SDDP.LinearPolicyGraph(;
         stages = 2,
         sense = :Max,
@@ -377,7 +372,7 @@ println(&quot;Simulation ci : $μ ± $t&quot;)</code></pre><pre class="documente
     first_stage_rule = SDDP.DecisionRule(model; node = 1)
     solution = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x =&gt; 0.0))
     return solution.outgoing_state[:x]
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_newsvendor (generic function with 1 method)</code></pre><p>Now we can see how many units a decision maker would order using <code>CVaR</code>:</p><pre><code class="language-julia hljs">solve_newsvendor(SDDP.CVaR(0.4))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">181.10517768721243</code></pre><p>as well as a decision-maker who cares only about the worst-case outcome:</p><pre><code class="language-julia hljs">solve_newsvendor(SDDP.WorstCase())</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">158.23850206657022</code></pre><p>In general, the decision-maker will be somewhere between the two extremes. The <a href="../../guides/add_a_risk_measure/#SDDP.Entropic"><code>SDDP.Entropic</code></a> risk measure is a risk measure that has a single parameter that lets us explore the space of policies between the two extremes. When the parameter is small, the measure acts like <a href="../../guides/add_a_risk_measure/#SDDP.Expectation"><code>SDDP.Expectation</code></a>, and when it is large, it acts like <a href="../../guides/add_a_risk_measure/#SDDP.WorstCase"><code>SDDP.WorstCase</code></a>.</p><p>Here is what we get if we solve our problem multiple times for different values of the risk aversion parameter <span>$\gamma$</span>:</p><pre><code class="language-julia hljs">Γ = [10^i for i in -4:0.5:1]
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_newsvendor (generic function with 1 method)</code></pre><p>Now we can see how many units a decision maker would order using <code>CVaR</code>:</p><pre><code class="language-julia hljs">solve_newsvendor(SDDP.CVaR(0.4))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">182.16897425118765</code></pre><p>as well as a decision-maker who cares only about the worst-case outcome:</p><pre><code class="language-julia hljs">solve_newsvendor(SDDP.WorstCase())</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">154.77932541747666</code></pre><p>In general, the decision-maker will be somewhere between the two extremes. The <a href="../../guides/add_a_risk_measure/#SDDP.Entropic"><code>SDDP.Entropic</code></a> risk measure is a risk measure that has a single parameter that lets us explore the space of policies between the two extremes. When the parameter is small, the measure acts like <a href="../../guides/add_a_risk_measure/#SDDP.Expectation"><code>SDDP.Expectation</code></a>, and when it is large, it acts like <a href="../../guides/add_a_risk_measure/#SDDP.WorstCase"><code>SDDP.WorstCase</code></a>.</p><p>Here is what we get if we solve our problem multiple times for different values of the risk aversion parameter <span>$\gamma$</span>:</p><pre><code class="language-julia hljs">Γ = [10^i for i in -4:0.5:1]
 buy = [solve_newsvendor(SDDP.Entropic(γ)) for γ in Γ]
 Plots.plot(
     Γ,
@@ -386,4 +381,4 @@ Plots.plot(
     xlabel = &quot;Risk aversion parameter γ&quot;,
     ylabel = &quot;Number of pies to make&quot;,
     legend = false,
-)</code></pre><img src="c6d74c97.svg" alt="Example block output"/><h2 id="Things-to-try"><a class="docs-heading-anchor" href="#Things-to-try">Things to try</a><a id="Things-to-try-1"></a><a class="docs-heading-anchor-permalink" href="#Things-to-try" title="Permalink"></a></h2><p>There are a number of things you can try next:</p><ul><li>Experiment with different buy and sales prices</li><li>Experiment with different distributions of demand</li><li>Explore how the optimal policy changes if you use a different risk measure</li><li>What happens if you can only buy and sell integer numbers of newspapers? Try this by adding <code>Int</code> to the variable definitions: <code>@variable(subproblem, buy &gt;= 0, Int)</code></li><li>What happens if you use a different upper bound? Try an invalid one like <code>-100</code>, and a very large one like <code>1e12</code>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mdps/">« Example: Markov Decision Processes</a><a class="docs-footer-nextpage" href="../example_reservoir/">Example: deterministic to stochastic »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Monday 9 September 2024 21:23">Monday 9 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+)</code></pre><img src="2284ab75.svg" alt="Example block output"/><h2 id="Things-to-try"><a class="docs-heading-anchor" href="#Things-to-try">Things to try</a><a id="Things-to-try-1"></a><a class="docs-heading-anchor-permalink" href="#Things-to-try" title="Permalink"></a></h2><p>There are a number of things you can try next:</p><ul><li>Experiment with different buy and sales prices</li><li>Experiment with different distributions of demand</li><li>Explore how the optimal policy changes if you use a different risk measure</li><li>What happens if you can only buy and sell integer numbers of newspapers? Try this by adding <code>Int</code> to the variable definitions: <code>@variable(subproblem, buy &gt;= 0, Int)</code></li><li>What happens if you use a different upper bound? Try an invalid one like <code>-100</code>, and a very large one like <code>1e12</code>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mdps/">« Example: Markov Decision Processes</a><a class="docs-footer-nextpage" href="../example_reservoir/">Example: deterministic to stochastic »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Wednesday 18 September 2024 02:22">Wednesday 18 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
