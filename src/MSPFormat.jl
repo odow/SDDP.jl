@@ -177,9 +177,14 @@ function _build_lhs(stage::Integer, sp::JuMP.Model, terms::Vector{Any})
             @assert x isa SDDP.State
             if term["stage"] == stage
                 x = x.out
-            else
-                @assert term["stage"] == stage - 1
+            elseif term["stage"] == stage - 1
                 x = x.in
+            else
+                error(
+                    "SDDP.jl does not support this MSPFormat file because it " *
+                    "contains state variables from stages other than `t` or " *
+                    "`t-1`. Got `t-$(stage - term["stage"])`"
+                )
             end
         end
         coef = _get_constant(term["coefficient"])

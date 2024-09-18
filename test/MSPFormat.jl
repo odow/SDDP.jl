@@ -133,6 +133,22 @@ function test_electric()
     return
 end
 
+function test_stage_lead_time()
+    sp = JuMP.Model()
+    sp[:x] = SDDP.State(@variable(sp), @variable(sp))
+    terms = Any[
+        Dict{String, Any}("name"=>"x", "stage"=>2, "coefficient"=>Any[1.0])
+        Dict{String, Any}("name"=>"x", "stage"=>0, "coefficient"=>Any[-1.0])
+    ]
+    @test_throws(
+        ErrorException(
+            "SDDP.jl does not support this MSPFormat file because it contains state variables from stages other than `t` or `t-1`. Got `t-2`",
+        ),
+        MSPFormat._build_lhs(2, sp, terms),
+    )
+    return
+end
+
 end  # module
 
 TestMSPFormat.runtests()
