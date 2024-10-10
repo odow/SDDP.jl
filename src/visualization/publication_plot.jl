@@ -12,19 +12,25 @@ function publication_data(
 )
     max_stages = maximum(length.(dataset))
     output_array = fill(NaN, length(quantiles), max_stages)
-    for stage in 1:max_stages
-        stage_data = stage_function.([data[stage] for data in dataset])
-        for (i, s) in enumerate(stage_data)
+    for t in 1:max_stages
+        stage_data = Float64[]
+        for (i, d) in enumerate(dataset)
+            if length(d) < t
+                # Skip this replication because it doesn't have enough stages
+                continue
+            end
+            s = stage_function(d[t])
             if !isfinite(s)
                 error(
-                    "Unable to plot `publication_plot` because stage $stage " *
+                    "Unable to plot `publication_plot` because stage $t " *
                     "of replication $i contains data that is not finite. " *
                     "The data function must return a finite real-valued " *
                     "scalar. Got: $s",
                 )
             end
+            push!(stage_data, s)
         end
-        output_array[:, stage] .= Statistics.quantile(stage_data, quantiles)
+        output_array[:, t] .= Statistics.quantile(stage_data, quantiles)
     end
     return output_array
 end
