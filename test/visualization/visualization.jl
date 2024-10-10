@@ -78,6 +78,17 @@ function test_PublicationPlot()
     return
 end
 
+function test_PublicationPlot_different_lengths()
+    simulations = [
+        [Dict{Symbol,Any}(:x => 1), Dict{Symbol,Any}(:x => 5)],
+        [Dict{Symbol,Any}(:x => 2)],
+        [Dict{Symbol,Any}(:x => 3), Dict{Symbol,Any}(:x => 4)],
+    ]
+    data = SDDP.publication_data(simulations, [0.0, 0.25, 0.5, 1.0], d -> d[:x])
+    @test data == [1.0 4.0; 1.5 4.25; 2.0 4.5; 3.0 5.0]
+    return
+end
+
 end  # module
 
 TestVisualization.runtests()
