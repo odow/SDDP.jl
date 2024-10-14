@@ -40,21 +40,23 @@ function master_loop(
     options::Options,
 ) where {T}
     _initialize_solver(model; throw_error = false)
-    while true
+    status = nothing
+    while status === nothing
         # Disable CTRL+C so that InterruptExceptions can be thrown only between
         # each iteration. Note that if the user presses CTRL+C during an
         # iteration, then this will be cached and re-thrown as disable_sigint
         # exits.
-        disable_sigint() do
+        status = disable_sigint() do
             result = iteration(model, options)
             options.post_iteration_callback(result)
             log_iteration(options)
             if result.has_converged
                 return result.status
             end
+            return nothing
         end
     end
-    return
+    return return status
 end
 
 function _simulate(
@@ -388,6 +390,7 @@ function master_loop(
                             end
                             return
                         end
+                        return
                     end
                 end
             finally
