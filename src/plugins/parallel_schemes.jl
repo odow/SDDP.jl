@@ -56,7 +56,7 @@ function master_loop(
             return nothing
         end
     end
-    return return status
+    return status
 end
 
 function _simulate(
