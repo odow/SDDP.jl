@@ -292,19 +292,25 @@ function _has_primal_solution(node::Node)
     return status in (JuMP.FEASIBLE_POINT, JuMP.NEARLY_FEASIBLE_POINT)
 end
 
-function attempt_numerical_recovery(model::PolicyGraph, node::Node)
-    if JuMP.mode(node.subproblem) == JuMP.DIRECT
-        @warn(
-            "Unable to recover in direct mode! Remove `direct = true` when " *
-            "creating the policy graph."
-        )
-    else
-        model.ext[:numerical_issue] = true
-        MOI.Utilities.reset_optimizer(node.subproblem)
-        optimize!(node.subproblem)
-    end
-    if !_has_primal_solution(node)
-        model.ext[:numerical_issue] = true
+function _has_dual_solution(node::Node)
+    status = JuMP.dual_status(node.subproblem)
+    return status in (JuMP.FEASIBLE_POINT, JuMP.NEARLY_FEASIBLE_POINT)
+end
+
+function attempt_numerical_recovery(
+    model::PolicyGraph,
+    node::Node;
+    require_dual::Bool = false,
+)
+    model.ext[:numerical_issue] = true
+    callback = get(
+        model.ext,
+        :numerical_difficulty_callback,
+        default_numerical_difficulty_callback,
+    )
+    callback(model, node)
+    missing_dual_solution = require_dual && !_has_dual_solution(node)
+    if !_has_primal_solution(node) || missing_dual_solution
         # We use the `node.index` in the filename because two threads could both
         # try to write the cuts to file at the same time. If, after writing this
         # file, a second thread finds an infeasibility of the same node, it
@@ -318,6 +324,19 @@ function attempt_numerical_recovery(model::PolicyGraph, node::Node)
             throw_error = true,
         )
     end
+    return
+end
+
+function default_numerical_difficulty_callback(model::PolicyGraph, node::Node)
+    if JuMP.mode(node.subproblem) == JuMP.DIRECT
+        @warn(
+            "Unable to recover in direct mode! Remove `direct = true` when " *
+            "creating the policy graph."
+        )
+        return
+    end
+    MOI.Utilities.reset_optimizer(node.subproblem)
+    optimize!(node.subproblem)
     return
 end
 
