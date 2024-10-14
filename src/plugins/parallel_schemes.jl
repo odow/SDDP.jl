@@ -40,15 +40,23 @@ function master_loop(
     options::Options,
 ) where {T}
     _initialize_solver(model; throw_error = false)
-    while true
-        result = iteration(model, options)
-        options.post_iteration_callback(result)
-        log_iteration(options)
-        if result.has_converged
-            return result.status
+    status = nothing
+    while status === nothing
+        # Disable CTRL+C so that InterruptExceptions can be thrown only between
+        # each iteration. Note that if the user presses CTRL+C during an
+        # iteration, then this will be cached and re-thrown as disable_sigint
+        # exits.
+        status = disable_sigint() do
+            result = iteration(model, options)
+            options.post_iteration_callback(result)
+            log_iteration(options)
+            if result.has_converged
+                return result.status
+            end
+            return nothing
         end
     end
-    return
+    return status
 end
 
 function _simulate(
@@ -367,13 +375,20 @@ function master_loop(
                 # doesn't matter because all it will do is another iteration
                 # before terminating.
                 while keep_iterating
-                    result = iteration(model, options)
-                    lock(options.lock) do
-                        options.post_iteration_callback(result)
-                        log_iteration(options)
-                        if result.has_converged
-                            keep_iterating = false
-                            status = result.status
+                    # Disable CTRL+C so that InterruptExceptions can be thrown
+                    # only between each iteration. Note that if the user presses
+                    # CTRL+C during an iteration, then this will be cached and
+                    # re-thrown as disable_sigint exits.
+                    disable_sigint() do
+                        result = iteration(model, options)
+                        lock(options.lock) do
+                            options.post_iteration_callback(result)
+                            log_iteration(options)
+                            if result.has_converged
+                                keep_iterating = false
+                                status = result.status
+                            end
+                            return
                         end
                         return
                     end
