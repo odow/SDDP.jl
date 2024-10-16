@@ -34,6 +34,7 @@ SDDP.termination_status
 SDDP.write_cuts_to_file
 SDDP.read_cuts_from_file
 SDDP.write_log_to_csv
+SDDP.set_numerical_difficulty_callback
 ```
 
 ### [Stopping rules](@id api_stopping_rules)

@@ -359,6 +359,34 @@ function test_log_frequency_argument_error()
     return
 end
 
+function test_numerical_difficulty_callback()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
+        if stage == 2
+            @constraint(node, c_infeasible, x.in >= 2)
+        end
+        @stageobjective(node, x.out)
+    end
+    callback_called_from = Int[]
+    function my_callback(model, node; require_dual)
+        push!(callback_called_from, node.index)
+        JuMP.delete(node.subproblem, node.subproblem[:c_infeasible])
+        JuMP.optimize!(node.subproblem)
+        return
+    end
+    SDDP.set_numerical_difficulty_callback(model, my_callback)
+    SDDP.train(model; iteration_limit = 3)
+    @test callback_called_from == [2]
+    @test model.most_recent_training_results.status == :iteration_limit
+    log = model.most_recent_training_results.log
+    @test map(l -> l.serious_numerical_issue, log) == [1, 0, 0]
+    return
+end
+
 end  # module
 
 TestAlgorithm.runtests()

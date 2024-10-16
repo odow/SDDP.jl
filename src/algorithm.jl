@@ -292,19 +292,77 @@ function _has_primal_solution(node::Node)
     return status in (JuMP.FEASIBLE_POINT, JuMP.NEARLY_FEASIBLE_POINT)
 end
 
-function attempt_numerical_recovery(model::PolicyGraph, node::Node)
-    if JuMP.mode(node.subproblem) == JuMP.DIRECT
-        @warn(
-            "Unable to recover in direct mode! Remove `direct = true` when " *
-            "creating the policy graph."
-        )
-    else
-        model.ext[:numerical_issue] = true
-        MOI.Utilities.reset_optimizer(node.subproblem)
-        optimize!(node.subproblem)
+function _has_dual_solution(node::Node)
+    status = JuMP.dual_status(node.subproblem)
+    return status in (JuMP.FEASIBLE_POINT, JuMP.NEARLY_FEASIBLE_POINT)
+end
+
+"""
+    set_numerical_difficulty_callback(
+        model::PolicyGraph,
+        callback::Function,
+    )
+
+Set a callback function `callback(::PolicyGraph, ::Node; require_dual::Bool)`
+that is run when the optimizer terminates without finding a primal solution (and
+dual solution if `require_dual` is `true`).
+
+## Default callback
+
+The default callback is a small variation of:
+```julia
+function callback(::PolicyGraph, node::Node; require_dual::Bool)
+    MOI.Utilities.reset_optimizer(node.subproblem)
+    optimize!(node.subproblem)
+    return
+end
+```
+This callback is the default because a common issue is solvers declaring the
+infeasible because of numerical issues related to the large number of cutting
+planes. Resetting the subproblem---and therefore starting from a fresh problem
+instead of warm-starting from the previous solution---is often enough to fix the
+problem and allow more iterations.
+
+## Other callbacks
+
+In cases where the problem is truely infeasible (not because of numerical issues
+), it may be helpful to write out the irreducible infeasible subsystem (IIS) for
+debugging. For this use-case, use a callback as follows:
+```julia
+function callback(::PolicyGraph, node::Node; require_dual::Bool)
+    JuMP.compute_conflict!(node.suprobblem)
+    status = JuMP.get_attribute(node.subproblem, MOI.ConflictStatus())
+    if status == MOI.CONFLICT_FOUND
+        iis_model, _ = JuMP.copy_conflict(node.subproblem)
+        print(iis_model)
     end
-    if !_has_primal_solution(node)
-        model.ext[:numerical_issue] = true
+    return
+end
+SDDP.set_numerical_difficulty_callback(model, callback)
+```
+"""
+function set_numerical_difficulty_callback(
+    model::PolicyGraph,
+    callback::Function,
+)
+    model.ext[:numerical_difficulty_callback] = callback
+    return
+end
+
+function attempt_numerical_recovery(
+    model::PolicyGraph,
+    node::Node;
+    require_dual::Bool = false,
+)
+    model.ext[:numerical_issue] = true
+    callback = get(
+        model.ext,
+        :numerical_difficulty_callback,
+        default_numerical_difficulty_callback,
+    )
+    callback(model, node; require_dual)
+    missing_dual_solution = require_dual && !_has_dual_solution(node)
+    if !_has_primal_solution(node) || missing_dual_solution
         # We use the `node.index` in the filename because two threads could both
         # try to write the cuts to file at the same time. If, after writing this
         # file, a second thread finds an infeasibility of the same node, it
@@ -318,6 +376,23 @@ function attempt_numerical_recovery(model::PolicyGraph, node::Node)
             throw_error = true,
         )
     end
+    return
+end
+
+function default_numerical_difficulty_callback(
+    model::PolicyGraph,
+    node::Node;
+    kwargs...,
+)
+    if JuMP.mode(node.subproblem) == JuMP.DIRECT
+        @warn(
+            "Unable to recover in direct mode! Remove `direct = true` when " *
+            "creating the policy graph."
+        )
+        return
+    end
+    MOI.Utilities.reset_optimizer(node.subproblem)
+    optimize!(node.subproblem)
     return
 end
 
