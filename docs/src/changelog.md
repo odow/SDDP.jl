@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Fixed the tests to skip threading tests if running in serial (#770)
  - Fixed [`BanditDuality`](@ref) to handle the case where the standard deviation
    is `NaN` (#779)
- - Fixed an error when lagged state variables are encountered in MSPFormat
+ - Fixed an error when lagged state variables are encountered in `MSPFormat`
    (#786)
  - Fixed `publication_plot` with replications of different lengths (#788)
  - Fixed CTRL+C interrupting the code at unsafe points (#789)
