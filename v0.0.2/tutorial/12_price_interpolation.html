@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial Twelve: price interpolation · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="01_first_steps.html">Tutorial One: first steps</a></li><li><a class="toctext" href="02_rhs_noise.html">Tutorial Two: RHS noise</a></li><li><a class="toctext" href="03_objective_noise.html">Tutorial Three: objective noise</a></li><li><a class="toctext" href="04_markovian_policygraphs.html">Tutorial Four: Markovian policy graphs</a></li><li><a class="toctext" href="05_risk.html">Tutorial Five: risk</a></li><li><a class="toctext" href="06_cut_selection.html">Tutorial Six: cut selection</a></li><li><a class="toctext" href="07_plotting.html">Tutorial Seven: plotting</a></li><li><a class="toctext" href="08_odds_and_ends.html">Tutorial Eight: odds and ends</a></li><li><a class="toctext" href="09_nonlinear.html">Tutorial Nine: nonlinear models</a></li><li><a class="toctext" href="10_parallel.html">Tutorial Ten: parallelism</a></li><li><a class="toctext" href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a></li><li class="current"><a class="toctext" href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a><ul class="internal"></ul></li><li><a class="toctext" href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a></li></ul></li><li><a class="toctext" href="../readings.html">Readings</a></li><li><a class="toctext" href="../apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/12_price_interpolation.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorial Twelve: price interpolation</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-Twelve:-price-interpolation-1" href="#Tutorial-Twelve:-price-interpolation-1">Tutorial Twelve: price interpolation</a></h1><p>There are many applications in which we want to model a price process that follows some auto-regressive process. Common examples include stock prices on financial exchanges and spot-prices in energy markets. However, it is well known that these cannot be incorporated in to SDDP because they result in cost-to-go functions that are convex with respect to some state variables (e.g., the reservoir levels) and concave with respect to other state variables (e.g., the spot price in the current stage). To overcome this problem, the approach in the literature has been to discretize the price process in order to model it using a Markovian policy graph like those discussed in <a href="04_markovian_policygraphs.html#Tutorial-Four:-Markovian-policy-graphs-1">Tutorial Four: Markovian policy graphs</a>.</p><p>However, recent work offers a way to include <em>stagewise-dependent</em> objective uncertainty into the objective function of SDDP subproblems. Readers are directed to the following works for an introduction:</p><ul><li><p>Downward, A., Dowson, O., and Baucke, R. (2017). Stochastic dual dynamic programming with stagewise dependent objective uncertainty. <a href="http://www.optimization-online.org/DB_HTML/2018/02/6454.html">Optimization Online</a>.</p></li><li><p>Dowson, O. PhD Thesis. University of Auckland, 2018. <a href="../assets/dowson_thesis.pdf">link</a></p></li></ul><p>In <a href="05_risk.html#Tutorial-Five:-risk-1">Tutorial Five: risk</a>, we formulated a risk-averse version of the hydrothermal scheduling problem. In this tutorial, we extend that model to the case where the fuel cost follows the log auto-regressive process:</p><pre><code class="language-none"> log(fuel_cost[t]) = log(fuel_cost[t-1]) + log(noise)</code></pre><p>where <code>noise</code> is drawn from the sample space <code>[0.9, 1.0, 1.1]</code> with equal probability.</p><p>To model this in SDDP.jl, we can pass a <a href="../apireference.html#SDDP.DynamicPriceInterpolation"><code>DynamicPriceInterpolation</code></a> object to the <code>value_function</code> keyword in <a href="../apireference.html#SDDP.SDDPModel"><code>SDDPModel</code></a>. <a href="../apireference.html#SDDP.DynamicPriceInterpolation"><code>DynamicPriceInterpolation</code></a> takes a number of arguments. First, we need to pass <code>dynamics</code> a function that takes two inputs – the value of the price state in the previous stage and an instance of the  noise – and returns value of the price state for the current stage. For example, the dynamics of our price process are:</p><pre><code class="language-julia">function fuel_cost_dynamics(fuel_cost, noise)
+    return noise * fuel_cost
+end</code></pre><p>We also need to specify the distribution of the noise term. We do this by passing a <a href="../apireference.html#SDDP.DiscreteDistribution"><code>DiscreteDistribution</code></a> to the <code>noise</code> keyword. <a href="../apireference.html#SDDP.DiscreteDistribution"><code>DiscreteDistribution</code></a> takes two arguments: the first is a vector of realizations, and the second is a corresponding vector of probabilities. For our example, we create the noise distribution as:</p><pre><code class="language-julia">noise = DiscreteDistribution( [0.9, 1.0, 1.1], [1/3, 1/3, 1/3] )</code></pre><p>It is the realizations of the noise <code>0.9</code>, <code>1.0</code>, or <code>1.1</code> that are passed as <code>noise</code> to <code>fuel_cost_dynamics</code>.</p><p>We also need to pass the value of the price state in the root node to <code>initial_price</code>, as well as the minimum (to <code>min_price</code>) and maximum (to <code>max_price</code>) possible values of the price state variable.</p><p>Finally, we need to declare a <code>lipschitz_constant</code>. In each stage, the <code>lipschitz_constant</code> should be larger than the maximum possible absolute change in the cost-to-go function given a one-unit change  in the value of the price state variable. For example, in our model, the worst-case scenario is if we are forced to use thermal generation exclusively. In that case, we need to supply 450 MWh of energy. Therefore, a one-unit change in the value of the price-state can, at most, lead to a $450 change in the cost-to-go function. However, to be on the safe side, we choose a larger value of <code>1000.0</code>.</p><p>Putting all of this together, we can initialize the <a href="../apireference.html#SDDP.SDDPModel"><code>SDDPModel</code></a> using dynamic interpolation as:</p><pre><code class="language-julia">m = SDDPModel(
+    # ... arguments omitted ...
+    value_function = DynamicPriceInterpolation(
+        dynamics           = fuel_cost_dynamics,
+        noise              = DiscreteDistribution([0.9, 1.0, 1.1], [1/3, 1/3, 1/3]),
+        initial_price      = 100.0,
+        min_price          =  50.0,
+        max_price          = 150.0,
+        lipschitz_constant = 1000.0
+    )
+        do sp, t
+    # ... subproblem definition ...
+end</code></pre><p>In the subproblem definition, we use a different version of the <a href="../apireference.html#SDDP.@stageobjective"><code>@stageobjective</code></a> function. This version takes a function that maps the price in the current stage to an expression for the stage objective. For our example, the stage-objective is:</p><pre><code class="language-julia"> @stageobjective(sp, (fuel_cost) -&gt; fuel_cost * thermal_generation )</code></pre><p>The next question is how to extend this notation to models in which the price process depends upon the stage or Markov state. This can be implemented in SDDP.jl following a similar approach to that we discussed in <a href="08_odds_and_ends.html#Stage-dependent-risk-measures-1">Stage-dependent risk measures</a>. Instead of passing an instance of <code>DynamicPriceInterpolation</code>, we pass a function that takes two arguments – the stage <code>t</code> and Markov state <code>i</code> – and returns an instance of <code>DynamicPriceInterpolation</code>. For our example, if the price is deterministic in the first stage:</p><pre><code class="language-julia">function build_price_interpolation(t::Int, i::Int)
+    noise = if t == 1
+        DiscreteDistribution([1.0], [1.0])
+    else
+        DiscreteDistribution([0.9, 1.0, 1.1], [1/3, 1/3, 1/3])
+    end
+    DynamicPriceInterpolation(
+        dynamics           = fuel_cost_dynamics,
+        initial_price      = 100.0,
+        min_price          =  50.0,
+        max_price          = 150.0,
+        noise              = noise,
+        lipschitz_constant = 1000.0
+    )
+end</code></pre><p>Putting all this together, our model is:</p><pre><code class="language-julia">m = SDDPModel(
+    sense             = :Min,
+    stages            = 3,
+    solver            = ClpSolver(),
+    objective_bound   = 0.0,
+    markov_transition = Array{Float64, 2}[
+        [ 1.0 ]&#39;,
+        [ 0.75 0.25 ],
+        [ 0.75 0.25 ; 0.25 0.75 ]
+    ],
+    risk_measure      = EAVaR(lambda=0.5, beta=0.1),
+    value_function    = build_price_interpolation
+                                        ) do sp, t, i
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+        outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+    )
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    @stageobjective(sp, (fuel_cost) -&gt; fuel_cost * thermal_generation )
+    if i == 1  # wet climate state
+        setnoiseprobability!(sp, [1/6, 1/3, 0.5])
+    else       # dry climate state
+        setnoiseprobability!(sp, [0.5, 1/3, 1/6])
+    end
+end</code></pre><p>Now we can solve this model as usual.</p><pre><code class="language-julia">status = solve(m; iteration_limit=100)</code></pre><p>When we simulate the policy, we can include the extra key <code>:price</code>, which records the value of the price state in each stage. For example:</p><pre><code class="language-julia">simulation_result = simulate(m, 100,
+    [:outgoing_volume, :thermal_generation, :hydro_generation, :hydro_spill, :price]
+)</code></pre><p>We can check that the price follows the auto-regressive process:</p><pre><code class="language-julia">julia&gt; simulation_result[1][:price]
+ 100.0
+  90.0
+  99.0</code></pre><p>We can also plot the cost-to-go function using <a href="../apireference.html#SDDP.plotvaluefunction"><code>SDDP.plotvaluefunction</code></a> like we discussed in <a href="07_plotting.html#Tutorial-Seven:-plotting-1">Tutorial Seven: plotting</a>:</p><pre><code class="language-julia">SDDP.plotvaluefunction(m, 2, 2,
+    linspace(0, 200, 50),   # the reservoir volume
+    linspace(70, 130, 50);  # the price state
+    label1=&quot;Volume&quot;,
+    label2=&quot;Price&quot;
+)</code></pre><p>This will launch a browser window with the following: <img src="../assets/saddle_function.gif" alt="3d saddle function"/></p><p>Note that the surface is convex with respect to the volume dimension and concave with respect to the price dimension.</p><p>That concludes our twelfth tutorial for <code>SDDP.jl</code>. In the next tutorial, <a href="13_constraint_noise.html#Tutorial-Thirteen:-constraint-noise-1">Tutorial Thirteen: constraint noise</a>, we discuss experimental support for noise in the constraint matrix.</p><footer><hr/><a class="previous" href="11_DRO.html"><span class="direction">Previous</span><span class="title">Tutorial Eleven: distributionally robust SDDP</span></a><a class="next" href="13_constraint_noise.html"><span class="direction">Next</span><span class="title">Tutorial Thirteen: constraint noise</span></a></footer></article></body></html>
