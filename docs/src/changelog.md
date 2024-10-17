@@ -7,6 +7,31 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.9.0 (October 17, 2024)
+
+### Added
+
+ - Added `write_only_selected_cuts` and `cut_selection` keyword arguments to
+   [`write_cuts_to_file`](@ref) and [`read_cuts_from_file`](@ref) to skip
+   potentially expensive operations (#781) (#784)
+ - Added [`set_numerical_difficulty_callback`](@ref) to modify the subproblem on
+   numerical difficulty (#790)
+
+### Fixed
+
+ - Fixed the tests to skip threading tests if running in serial (#770)
+ - Fixed [`BanditDuality`](@ref) to handle the case where the standard deviation
+   is `NaN` (#779)
+ - Fixed an error when lagged state variables are encountered in MSPFormat
+   (#786)
+ - Fixed `publication_plot` with replications of different lengths (#788)
+ - Fixed CTRL+C interrupting the code at unsafe points (#789)
+
+### Other
+
+ - Documentation improvements (#771) (#772)
+ - Updated printing because of changes in JuMP (#773)
+
 ## v1.8.1 (August 5, 2024)
 
 ### Fixed
