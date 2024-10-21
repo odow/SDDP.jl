@@ -157,6 +157,7 @@ Documenter.makedocs(;
             "tutorial/example_newsvendor.md",
             "tutorial/example_reservoir.md",
             "tutorial/example_milk_producer.md",
+            "tutorial/inventory.md",
         ],
         "How-to guides" => [
             "guides/access_previous_variables.md",
