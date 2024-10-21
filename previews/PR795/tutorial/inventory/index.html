@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example: inventory management · SDDP.jl</title><meta name="title" content="Example: inventory management · SDDP.jl"/><meta property="og:title" content="Example: inventory management · SDDP.jl"/><meta property="twitter:title" content="Example: inventory management · SDDP.jl"/><meta name="description" content="Documentation for SDDP.jl."/><meta property="og:description" content="Documentation for SDDP.jl."/><meta property="twitter:description" content="Documentation for SDDP.jl."/><script async src="https://www.googletagmanager.com/gtag/js?id=G-HZQQDVMPZW"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HZQQDVMPZW', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="SDDP.jl logo"/></a><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../plotting/">Plotting tools</a></li><li><a class="tocitem" href="../warnings/">Words of warning</a></li><li><a class="tocitem" href="../arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../objective_states/">Objective states</a></li><li><a class="tocitem" href="../pglib_opf/">Alternative forward models</a></li><li><a class="tocitem" href="../mdps/">Example: Markov Decision Processes</a></li><li><a class="tocitem" href="../example_newsvendor/">Example: two-stage newsvendor</a></li><li><a class="tocitem" href="../example_reservoir/">Example: deterministic to stochastic</a></li><li><a class="tocitem" href="../example_milk_producer/">Example: the milk producer</a></li><li class="is-active"><a class="tocitem" href>Example: inventory management</a><ul class="internal"><li><a class="tocitem" href="#Required-packages"><span>Required packages</span></a></li><li><a class="tocitem" href="#Background"><span>Background</span></a></li><li><a class="tocitem" href="#Finite-horizon"><span>Finite horizon</span></a></li><li><a class="tocitem" href="#Infinite-horizon"><span>Infinite horizon</span></a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../explanation/theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../explanation/risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Example: inventory management</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example: inventory management</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/inventory.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Example:-inventory-management"><a class="docs-heading-anchor" href="#Example:-inventory-management">Example: inventory management</a><a id="Example:-inventory-management-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-inventory-management" title="Permalink"></a></h1><p><em>This tutorial was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em> <a href="../inventory.jl"><em>Download the source as a <code>.jl</code> file</em></a>. <a href="../inventory.ipynb"><em>Download the source as a <code>.ipynb</code> file</em></a>.</p><p>The purpose of this tutorial is to demonstrate a well-known inventory management problem with a finite- and infinite-horizon policy.</p><h2 id="Required-packages"><a class="docs-heading-anchor" href="#Required-packages">Required packages</a><a id="Required-packages-1"></a><a class="docs-heading-anchor-permalink" href="#Required-packages" title="Permalink"></a></h2><p>This tutorial requires the following packages:</p><pre><code class="language-julia hljs">using SDDP
+import Distributions
+import HiGHS
+import Plots
+import Statistics</code></pre><h2 id="Background"><a class="docs-heading-anchor" href="#Background">Background</a><a id="Background-1"></a><a class="docs-heading-anchor-permalink" href="#Background" title="Permalink"></a></h2><p>Consider a periodic review inventory problem involving a single product. The initial inventory is denoted by <span>$x_0 \geq 0$</span>, and a decision-maker can place an order at the start of each stage. The objective is to minimize expected costs over the planning horizon. The following parameters define the cost structure:</p><ul><li><p class="math-container">\[c\]</p>is the unit cost for purchasing each unit</li><li><p class="math-container">\[h\]</p>is the holding cost per unit remaining at the end of each stage</li><li><p class="math-container">\[p\]</p>is the shortage cost per unit of unsatisfied demand at the end of each stage</li></ul><p>There are no fixed ordering costs, and the demand at each stage is assumed to follow an independent and identically distributed random variable with cumulative distribution function (CDF) <span>$\Phi(\cdot)$</span>. Any unsatisfied demand is backlogged and carried forward to the next stage.</p><p>At each stage, an agent must decide how many items to order or, equivalently, what the inventory level should be at the beginning of the next stage. The per-stage costs are the sum of the order costs, shortage and holding costs incurred at the end of the stage, after demand is realized. If <span>$x$</span> represents the inventory level at the beginning of a stage, and <span>$y$</span> is the level of inventory after ordering, the stage costs are given by</p><p class="math-container">\[c(y-x) + \int_{0}^y h(y-\xi) d\Phi(\xi) + \int_{y}^{\infty} p(\xi - y) d\Phi(\xi).\]</p><p>Following Chapter 19 of Introduction to Operations Research by Hillier and Lieberman (7th edition), we use the following parameters: <span>$c=15, h=1, p=15$</span>, and demand follows a continuous uniform distribution between 0 and 800.</p><pre><code class="language-julia hljs">x0 = 100        # Initial inventory
+α = 0.995       # discount factor
+c = 35          # unit inventory cost
+h = 1           # unit inventory holding cost
+p = 15          # unit order cost
+UD = 800        # upper bound for demand
+N = 10          # size of sample space
+Ω = rand(Distributions.Uniform(0, UD), N);</code></pre><p>This is a well-known inventory problem with a closed-form solution. The optimal policy is a simple order-up-to policy: if the inventory level is below 741 units, the decision-maker orders up to 741 units. Otherwise, no order is placed. For a detailed analysis, refer to Foundations of Stochastic Inventory Theory by Evan Porteus (Stanford Business Books, 2002).</p><h2 id="Finite-horizon"><a class="docs-heading-anchor" href="#Finite-horizon">Finite horizon</a><a id="Finite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Finite-horizon" title="Permalink"></a></h2><p>For a finite horizon of length <span>$T$</span>,  the problem is to minimize the total expected cost over all stages, with a terminal value function given by:</p><p class="math-container">\[v_T(x) = cx.\]</p><p>This reflects that at the end of the last stage, the decision-maker can recover the unit cost for each leftover item while incurring any backlog costs and shortage penalties from the previous period.</p><pre><code class="language-julia hljs">T = 10 # number of stages
+
+model = SDDP.LinearPolicyGraph(
+    stages = T + 1,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, t
+    @variable(sp, x, SDDP.State, initial_value = x0)
+    @variable(sp, y, SDDP.State, initial_value = x0)
+    @constraint(sp, y.out &gt;= x.out)
+    @constraint(sp, con_balance, x.out == y.in)
+    if t == 1
+        @stageobjective(sp, 0)
+    elseif t == T + 1
+        @stageobjective(sp, α^(t - 1) * (-c * x.in))
+    else
+        @stageobjective(
+            sp,
+            α^(t - 1) * (
+                p * UD / 2 + (c - p) * y.in - c * x.in + (h + p) / (2 * UD) * y.in^2
+            )
+        )
+        SDDP.parameterize(ω -&gt; JuMP.set_normalized_rhs(con_balance, -ω), sp, Ω)
+    end
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 11 nodes.
+ Node indices: 1, ..., 11
+</code></pre><p>Train and simulate the policy:</p><pre><code class="language-julia hljs">SDDP.train(model; iteration_limit = 100)
+simulations = SDDP.simulate(model, 200, [:y])
+objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
+μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
+lower_bound = round(SDDP.calculate_bound(model); digits = 2)
+println(&quot;Confidence interval: &quot;, μ, &quot; ± &quot;, ci)
+println(&quot;Lower bound: &quot;, lower_bound)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-24
+-------------------------------------------------------------------
+problem
+  nodes           : 11
+  state variables : 2
+  scenarios       : 1.00000e+09
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [5, 5]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  AffExpr in MOI.GreaterThan{Float64}     : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [1, 1]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 3e+01]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [2e+02, 8e+02]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   9.277583e+05  9.264283e+05  3.192806e-02       103   1
+        38   6.642058e+05  1.159526e+06  1.046074e+00      3914   1
+        77   8.999087e+05  1.274397e+06  2.065803e+00      7931   1
+       100   7.661532e+05  1.320371e+06  2.676061e+00     10300   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 2.676061e+00
+total solves   : 10300
+best bound     :  1.320371e+06
+simulation ci  :  7.852787e+05 ± 3.892416e+04
+numeric issues : 0
+-------------------------------------------------------------------
+
+Confidence interval: 778589.71 ± 25658.76
+Lower bound: 1.32037064e6</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">SDDP.publication_plot(
+    simulations;
+    title = &quot;Inventory level&quot;,
+    xlabel = &quot;Stage&quot;,
+    ylabel = &quot;Inventory level&quot;,
+) do data
+    return data[:y].in
+end</code></pre><img src="ad0679ec.svg" alt="Example block output"/><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.995$</span>. The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
+    SDDP.UnicyclicGraph(α; num_nodes = 1);
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, t
+    @variable(sp, x, SDDP.State, initial_value = x0)
+    @variable(sp, y, SDDP.State, initial_value = x0)
+    @constraint(sp, y.out &gt;= x.out)
+    @constraint(sp, con_balance, x.out == y.in)
+    @stageobjective(
+        sp,
+        p * UD / 2 + (c - p) * y.in - c * x.in + (h + p) / (2 * UD) * y.in^2
+    )
+    SDDP.parameterize(ω -&gt; JuMP.set_normalized_rhs(con_balance, -ω), sp, Ω)
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 1 nodes.
+ Node indices: 1
+</code></pre><p>Train and simulate the policy:</p><pre><code class="language-julia hljs">SDDP.train(model; iteration_limit = 100)
+simulations = SDDP.simulate(model, 200, [:y])
+objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
+μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
+lower_bound = round(SDDP.calculate_bound(model); digits = 2)
+println(&quot;Confidence interval: &quot;, μ, &quot; ± &quot;, ci)
+println(&quot;Lower bound: &quot;, lower_bound)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-24
+-------------------------------------------------------------------
+problem
+  nodes           : 1
+  state variables : 2
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [5, 5]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  AffExpr in MOI.GreaterThan{Float64}     : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [0e+00, 0e+00]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [2e+02, 8e+02]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Found a cut with a mix of small and large coefficients.
+<span class="sgr33"><span class="sgr1">│ </span></span>    The order of magnitude difference is 10.005906830214101.
+<span class="sgr33"><span class="sgr1">│ </span></span>    The smallest cofficient is 0.0.
+<span class="sgr33"><span class="sgr1">│ </span></span>    The largest coefficient is 1.0136938932783587e10.
+<span class="sgr33"><span class="sgr1">│ </span></span>
+<span class="sgr33"><span class="sgr1">│ </span></span>You can ignore this warning, but it may be an indication of numerical issues.
+<span class="sgr33"><span class="sgr1">│ </span></span>
+<span class="sgr33"><span class="sgr1">│ </span></span>Consider rescaling your model by using different units, e.g, kilometers instead
+<span class="sgr33"><span class="sgr1">│ </span></span>of meters. You should also consider reducing the accuracy of your input data (if
+<span class="sgr33"><span class="sgr1">│ </span></span>you haven&#39;t already). For example, it probably doesn&#39;t make sense to measure the
+<span class="sgr33"><span class="sgr1">│ </span></span>inflow into a reservoir to 10 decimal places.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ SDDP ~/work/SDDP.jl/SDDP.jl/src/plugins/bellman_functions.jl:68</span>
+         1   3.221838e+10  1.694961e+10  1.168012e+00      3970   1
+         2   3.075590e+10  2.508265e+10  2.474737e+00      7951   1
+         3   4.188401e+10  3.461947e+10  3.936885e+00     12086   1
+         5   4.639655e+10  4.145625e+10  6.592339e+00     18739   1
+         7   1.053531e+10  4.145625e+10  7.907623e+00     21509   1
+        10   7.112914e+10  9.751671e+10  1.553424e+01     36961   1
+        14   1.128588e+11  1.010465e+11  2.369178e+01     49013   1
+        17   2.529038e+10  1.010465e+11  3.026359e+01     58987   1
+        21   1.219371e+10  1.010465e+11  3.621950e+01     65660   1
+        25   1.425569e+10  1.010465e+11  4.198598e+01     72058   1
+        29   1.570352e+10  1.010465e+11  4.751969e+01     78060   1
+        33   1.060937e+10  1.010465e+11  5.478124e+01     86174   1
+        35   1.691677e+10  1.010465e+11  6.033943e+01     92090   1
+        40   2.792559e+10  1.010465e+11  6.727806e+01    100555   1
+        45   2.501997e+08  1.010465e+11  7.259210e+01    106776   1
+        48   2.177706e+08  1.062048e+11  7.817310e+01    114572   1
+        51   4.712886e+10  1.062048e+11  8.502302e+01    123138   1
+        54   1.075144e+09  1.062048e+11  9.120805e+01    129218   1
+        56   4.315637e+09  1.062048e+11  9.683200e+01    133847   1
+        60   2.475815e+08  1.062048e+11  1.022859e+02    139640   1
+        63   2.680930e+10  1.062048e+11  1.078765e+02    144994   1
+        68   5.474070e+10  1.062048e+11  1.165056e+02    153239   1
+        73   1.596421e+10  6.811916e+11  1.481515e+02    178369   1
+        80   8.562426e+11  6.811916e+11  1.886068e+02    201143   1
+        86   2.238137e+10  6.811916e+11  2.216487e+02    213666   1
+        93   2.211750e+10  6.811916e+11  2.603392e+02    226727   1
+        99   2.497101e+11  6.811916e+11  2.950645e+02    239118   1
+       100   2.472307e+10  6.811916e+11  3.057060e+02    242802   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 3.057060e+02
+total solves   : 242802
+best bound     :  6.811916e+11
+simulation ci  :  5.530691e+10 ± 5.966968e+10
+numeric issues : 0
+-------------------------------------------------------------------
+
+Confidence interval: 4.004995822741e10 ± 1.867261168888e10
+Lower bound: 6.8119160600243e11</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">SDDP.publication_plot(
+    simulations;
+    title = &quot;Inventory level&quot;,
+    xlabel = &quot;Stage&quot;,
+    ylabel = &quot;Inventory level&quot;,
+) do data
+    return data[:y].in
+end</code></pre><img src="214a3c92.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Monday 21 October 2024 03:03">Monday 21 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
