@@ -61,7 +61,8 @@ end
 function get_same_children(model::PolicyGraph{T}) where {T}
     tmp = Dict{Set{T},Set{T}}()
     for (key, node) in model.nodes
-        children = Set(child.term for child in node.children)
+        children =
+            Set(child.term for child in node.children if child.probabillity > 0)
         if length(children) == 0
             continue
         elseif haskey(tmp, children)
