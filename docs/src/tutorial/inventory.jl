@@ -109,7 +109,7 @@ end
 # Train and simulate the policy:
 
 SDDP.train(model; iteration_limit = 100)
-simulations = SDDP.simulate(model, 200, [:y])
+simulations = SDDP.simulate(model, 200, [:x_inventory, :u_buy])
 objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
 μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
 lower_bound = round(SDDP.calculate_bound(model); digits = 2)
