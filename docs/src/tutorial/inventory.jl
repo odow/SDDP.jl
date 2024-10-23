@@ -26,9 +26,9 @@ import Statistics
 # costs over the planning horizon. The following parameters define the cost
 # structure:
 #
-#  * $c$ is the unit cost for purchasing each unit
-#  * $h$ is the holding cost per unit remaining at the end of each stage
-#  * $p$ is the shortage cost per unit of unsatisfied demand at the end of each
+#  * `c` is the unit cost for purchasing each unit
+#  * `h` is the holding cost per unit remaining at the end of each stage
+#  * `p` is the shortage cost per unit of unsatisfied demand at the end of each
 #    stage
 #
 # There are no fixed ordering costs, and the demand at each stage is assumed to
@@ -78,29 +78,30 @@ N = 10          # size of sample space
 # and shortage penalties from the previous period.
 
 T = 10 # number of stages
-
 model = SDDP.LinearPolicyGraph(
     stages = T + 1,
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, t
-    @variable(sp, x, SDDP.State, initial_value = x0)
-    @variable(sp, y, SDDP.State, initial_value = x0)
-    @constraint(sp, y.out >= x.out)
-    @constraint(sp, con_balance, x.out == y.in)
+    @variable(sp, x_inventory >= 0, SDDP.State, initial_value = x0)
+    @variable(sp, x_demand >= 0, SDDP.State, initial_value = 0)
+    ## u_buy is a Decision-Hazard control variable. We decide u.out for use in
+    ## the next stage
+    @variable(sp, u_buy >= 0, SDDP.State, initial_value = 0)
+    @variable(sp, u_sell >= 0)
+    @variable(sp, w_demand == 0)
+    @constraint(sp, x_inventory.out == x_inventory.in + u_buy.in - u_sell)
+    @constraint(sp, x_demand.out == x_demand.in + w_demand - u_sell)
     if t == 1
-        @stageobjective(sp, 0)
-    elseif t == T + 1
-        @stageobjective(sp, α^(t - 1) * (-c * x.in))
+        fix(u_sell, 0; force = true)
+        @stageobjective(sp, c * u_buy.out)
     else
         @stageobjective(
             sp,
-            α^(t - 1) * (
-                p * UD / 2 + (c - p) * y.in - c * x.in + (h + p) / (2 * UD) * y.in^2
-            )
+            c * u_buy.out + h * x_inventory.out + p * x_demand.out,
         )
-        SDDP.parameterize(ω -> JuMP.set_normalized_rhs(con_balance, -ω), sp, Ω)
+        SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
     end
     return
 end
@@ -117,14 +118,15 @@ println("Lower bound: ", lower_bound)
 
 # Plot the optimal inventory levels:
 
-SDDP.publication_plot(
-    simulations;
-    title = "Inventory level",
+Plots.plot(
+    SDDP.publication_plot(simulations; title = "x_inventory.out") do data
+        return data[:x_inventory].out
+    end;
+    SDDP.publication_plot(simulations; title = "u_buy.out") do data
+        return data[:u_buy].out
+    end;
     xlabel = "Stage",
-    ylabel = "Inventory level",
-) do data
-    return data[:y].in
-end
+)
 
 # ## Infinite horizon
 
@@ -132,41 +134,56 @@ end
 # objective in this case is to minimize the discounted expected costs over an
 # infinite planning horizon.
 
+graph = SDDP.LinearGraph(2)
+SDDP.add_edge(graph, 2 => 1, α)
 model = SDDP.PolicyGraph(
-    SDDP.UnicyclicGraph(α; num_nodes = 1);
+    graph;
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, t
-    @variable(sp, x, SDDP.State, initial_value = x0)
-    @variable(sp, y, SDDP.State, initial_value = x0)
-    @constraint(sp, y.out >= x.out)
-    @constraint(sp, con_balance, x.out == y.in)
-    @stageobjective(
-        sp,
-        p * UD / 2 + (c - p) * y.in - c * x.in + (h + p) / (2 * UD) * y.in^2
-    )
-    SDDP.parameterize(ω -> JuMP.set_normalized_rhs(con_balance, -ω), sp, Ω)
+    @variable(sp, x_inventory >= 0, SDDP.State, initial_value = x0)
+    @variable(sp, x_demand >= 0, SDDP.State, initial_value = 0)
+    ## u_buy is a Decision-Hazard control variable. We decide u.out for use in
+    ## the next stage
+    @variable(sp, u_buy >= 0, SDDP.State, initial_value = 0)
+    @variable(sp, u_sell >= 0)
+    @variable(sp, w_demand == 0)
+    @constraint(sp, x_inventory.out == x_inventory.in + u_buy.in - u_sell)
+    @constraint(sp, x_demand.out == x_demand.in + w_demand - u_sell)
+    if t == 1
+        fix(u_sell, 0; force = true)
+        @stageobjective(sp, c * u_buy.out)
+    else
+        @stageobjective(
+            sp,
+            c * u_buy.out + h * x_inventory.out + p * x_demand.out,
+        )
+        SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
+    end
     return
 end
 
-# Train and simulate the policy:
+SDDP.train(model; iteration_limit = 100, log_every_iteration = true)
 
-SDDP.train(model; iteration_limit = 100)
-simulations = SDDP.simulate(model, 200, [:y])
-objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
-μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
-lower_bound = round(SDDP.calculate_bound(model); digits = 2)
-println("Confidence interval: ", μ, " ± ", ci)
-println("Lower bound: ", lower_bound)
+simulations = SDDP.simulate(
+    model,
+    200,
+    [:x_inventory, :u_buy];
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        max_depth = 50,
+        terminate_on_dummy_leaf = false,
+    ),
+);
 
 # Plot the optimal inventory levels:
 
-SDDP.publication_plot(
-    simulations;
-    title = "Inventory level",
+Plots.plot(
+    SDDP.publication_plot(simulations; title = "x_inventory.out") do data
+        return data[:x_inventory].out
+    end;
+    SDDP.publication_plot(simulations; title = "u_buy.out") do data
+        return data[:u_buy].out
+    end;
     xlabel = "Stage",
-    ylabel = "Inventory level",
-) do data
-    return data[:y].in
-end
+)
