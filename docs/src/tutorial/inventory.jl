@@ -121,7 +121,7 @@ println("Lower bound: ", lower_bound)
 Plots.plot(
     SDDP.publication_plot(simulations; title = "x_inventory.out") do data
         return data[:x_inventory].out
-    end;
+    end,
     SDDP.publication_plot(simulations; title = "u_buy.out") do data
         return data[:u_buy].out
     end;
@@ -181,7 +181,7 @@ simulations = SDDP.simulate(
 Plots.plot(
     SDDP.publication_plot(simulations; title = "x_inventory.out") do data
         return data[:x_inventory].out
-    end;
+    end,
     SDDP.publication_plot(simulations; title = "u_buy.out") do data
         return data[:u_buy].out
     end;
