@@ -7,7 +7,7 @@
 import Distributions
 import HiGHS
 import Plots
-import Statistics</code></pre><h2 id="Background"><a class="docs-heading-anchor" href="#Background">Background</a><a id="Background-1"></a><a class="docs-heading-anchor-permalink" href="#Background" title="Permalink"></a></h2><p>Consider a periodic review inventory problem involving a single product. The initial inventory is denoted by <span>$x_0 \geq 0$</span>, and a decision-maker can place an order at the start of each stage. The objective is to minimize expected costs over the planning horizon. The following parameters define the cost structure:</p><ul><li><p class="math-container">\[c\]</p>is the unit cost for purchasing each unit</li><li><p class="math-container">\[h\]</p>is the holding cost per unit remaining at the end of each stage</li><li><p class="math-container">\[p\]</p>is the shortage cost per unit of unsatisfied demand at the end of each stage</li></ul><p>There are no fixed ordering costs, and the demand at each stage is assumed to follow an independent and identically distributed random variable with cumulative distribution function (CDF) <span>$\Phi(\cdot)$</span>. Any unsatisfied demand is backlogged and carried forward to the next stage.</p><p>At each stage, an agent must decide how many items to order or, equivalently, what the inventory level should be at the beginning of the next stage. The per-stage costs are the sum of the order costs, shortage and holding costs incurred at the end of the stage, after demand is realized. If <span>$x$</span> represents the inventory level at the beginning of a stage, and <span>$y$</span> is the level of inventory after ordering, the stage costs are given by</p><p class="math-container">\[c(y-x) + \int_{0}^y h(y-\xi) d\Phi(\xi) + \int_{y}^{\infty} p(\xi - y) d\Phi(\xi).\]</p><p>Following Chapter 19 of Introduction to Operations Research by Hillier and Lieberman (7th edition), we use the following parameters: <span>$c=15, h=1, p=15$</span>, and demand follows a continuous uniform distribution between 0 and 800.</p><pre><code class="language-julia hljs">x0 = 100        # Initial inventory
+import Statistics</code></pre><h2 id="Background"><a class="docs-heading-anchor" href="#Background">Background</a><a id="Background-1"></a><a class="docs-heading-anchor-permalink" href="#Background" title="Permalink"></a></h2><p>Consider a periodic review inventory problem involving a single product. The initial inventory is denoted by <span>$x_0 \geq 0$</span>, and a decision-maker can place an order at the start of each stage. The objective is to minimize expected costs over the planning horizon. The following parameters define the cost structure:</p><ul><li><code>c</code> is the unit cost for purchasing each unit</li><li><code>h</code> is the holding cost per unit remaining at the end of each stage</li><li><code>p</code> is the shortage cost per unit of unsatisfied demand at the end of each stage</li></ul><p>There are no fixed ordering costs, and the demand at each stage is assumed to follow an independent and identically distributed random variable with cumulative distribution function (CDF) <span>$\Phi(\cdot)$</span>. Any unsatisfied demand is backlogged and carried forward to the next stage.</p><p>At each stage, an agent must decide how many items to order or, equivalently, what the inventory level should be at the beginning of the next stage. The per-stage costs are the sum of the order costs, shortage and holding costs incurred at the end of the stage, after demand is realized. If <span>$x$</span> represents the inventory level at the beginning of a stage, and <span>$y$</span> is the level of inventory after ordering, the stage costs are given by</p><p class="math-container">\[c(y-x) + \int_{0}^y h(y-\xi) d\Phi(\xi) + \int_{y}^{\infty} p(\xi - y) d\Phi(\xi).\]</p><p>Following Chapter 19 of Introduction to Operations Research by Hillier and Lieberman (7th edition), we use the following parameters: <span>$c=15, h=1, p=15$</span>, and demand follows a continuous uniform distribution between 0 and 800.</p><pre><code class="language-julia hljs">x0 = 100        # Initial inventory
 α = 0.995       # discount factor
 c = 35          # unit inventory cost
 h = 1           # unit inventory holding cost
@@ -15,35 +15,36 @@ p = 15          # unit order cost
 UD = 800        # upper bound for demand
 N = 10          # size of sample space
 Ω = rand(Distributions.Uniform(0, UD), N);</code></pre><p>This is a well-known inventory problem with a closed-form solution. The optimal policy is a simple order-up-to policy: if the inventory level is below 741 units, the decision-maker orders up to 741 units. Otherwise, no order is placed. For a detailed analysis, refer to Foundations of Stochastic Inventory Theory by Evan Porteus (Stanford Business Books, 2002).</p><h2 id="Finite-horizon"><a class="docs-heading-anchor" href="#Finite-horizon">Finite horizon</a><a id="Finite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Finite-horizon" title="Permalink"></a></h2><p>For a finite horizon of length <span>$T$</span>,  the problem is to minimize the total expected cost over all stages, with a terminal value function given by:</p><p class="math-container">\[v_T(x) = cx.\]</p><p>This reflects that at the end of the last stage, the decision-maker can recover the unit cost for each leftover item while incurring any backlog costs and shortage penalties from the previous period.</p><pre><code class="language-julia hljs">T = 10 # number of stages
-
 model = SDDP.LinearPolicyGraph(
     stages = T + 1,
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, t
-    @variable(sp, x, SDDP.State, initial_value = x0)
-    @variable(sp, y, SDDP.State, initial_value = x0)
-    @constraint(sp, y.out &gt;= x.out)
-    @constraint(sp, con_balance, x.out == y.in)
+    @variable(sp, x_inventory &gt;= 0, SDDP.State, initial_value = x0)
+    @variable(sp, x_demand &gt;= 0, SDDP.State, initial_value = 0)
+    # u_buy is a Decision-Hazard control variable. We decide u.out for use in
+    # the next stage
+    @variable(sp, u_buy &gt;= 0, SDDP.State, initial_value = 0)
+    @variable(sp, u_sell &gt;= 0)
+    @variable(sp, w_demand == 0)
+    @constraint(sp, x_inventory.out == x_inventory.in + u_buy.in - u_sell)
+    @constraint(sp, x_demand.out == x_demand.in + w_demand - u_sell)
     if t == 1
-        @stageobjective(sp, 0)
-    elseif t == T + 1
-        @stageobjective(sp, α^(t - 1) * (-c * x.in))
+        fix(u_sell, 0; force = true)
+        @stageobjective(sp, c * u_buy.out)
     else
         @stageobjective(
             sp,
-            α^(t - 1) * (
-                p * UD / 2 + (c - p) * y.in - c * x.in + (h + p) / (2 * UD) * y.in^2
-            )
+            c * u_buy.out + h * x_inventory.out + p * x_demand.out,
         )
-        SDDP.parameterize(ω -&gt; JuMP.set_normalized_rhs(con_balance, -ω), sp, Ω)
+        SDDP.parameterize(ω -&gt; JuMP.fix(w_demand, ω), sp, Ω)
     end
     return
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 11 nodes.
  Node indices: 1, ..., 11
 </code></pre><p>Train and simulate the policy:</p><pre><code class="language-julia hljs">SDDP.train(model; iteration_limit = 100)
-simulations = SDDP.simulate(model, 200, [:y])
+simulations = SDDP.simulate(model, 200, [:x_inventory, :u_buy])
 objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
 μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
 lower_bound = round(SDDP.calculate_bound(model); digits = 2)
@@ -53,78 +54,93 @@ println(&quot;Lower bound: &quot;, lower_bound)</code></pre><pre class="document
 -------------------------------------------------------------------
 problem
   nodes           : 11
-  state variables : 2
-  scenarios       : 1.00000e+09
+  state variables : 3
+  scenarios       : 1.00000e+10
   existing cuts   : false
 options
   solver          : serial mode
   risk measure    : SDDP.Expectation()
   sampling scheme : SDDP.InSampleMonteCarlo
 subproblem structure
-  VariableRef                             : [5, 5]
-  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
-  AffExpr in MOI.GreaterThan{Float64}     : [1, 1]
-  VariableRef in MOI.GreaterThan{Float64} : [1, 1]
+  VariableRef                             : [9, 9]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.EqualTo{Float64}     : [1, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [4, 5]
   VariableRef in MOI.LessThan{Float64}    : [1, 1]
 numerical stability report
   matrix range     [1e+00, 1e+00]
-  objective range  [1e+00, 3e+01]
+  objective range  [1e+00, 4e+01]
   bounds range     [0e+00, 0e+00]
-  rhs range        [2e+02, 8e+02]
+  rhs range        [0e+00, 0e+00]
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   9.277583e+05  9.264283e+05  3.192806e-02       103   1
-        38   6.642058e+05  1.159526e+06  1.046074e+00      3914   1
-        77   8.999087e+05  1.274397e+06  2.065803e+00      7931   1
-       100   7.661532e+05  1.320371e+06  2.676061e+00     10300   1
+         1   3.009078e+05  4.546944e+04  1.443601e-02       112   1
+       100   1.001144e+05  1.308142e+05  9.676559e-01     11200   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 2.676061e+00
-total solves   : 10300
-best bound     :  1.320371e+06
-simulation ci  :  7.852787e+05 ± 3.892416e+04
+total time (s) : 9.676559e-01
+total solves   : 11200
+best bound     :  1.308142e+05
+simulation ci  :  1.369599e+05 ± 6.904532e+03
 numeric issues : 0
 -------------------------------------------------------------------
 
-Confidence interval: 778589.71 ± 25658.76
-Lower bound: 1.32037064e6</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">SDDP.publication_plot(
-    simulations;
-    title = &quot;Inventory level&quot;,
+Confidence interval: 133755.3 ± 4109.33
+Lower bound: 130814.24</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">Plots.plot(
+    SDDP.publication_plot(simulations; title = &quot;x_inventory.out&quot;) do data
+        return data[:x_inventory].out
+    end,
+    SDDP.publication_plot(simulations; title = &quot;u_buy.out&quot;) do data
+        return data[:u_buy].out
+    end;
     xlabel = &quot;Stage&quot;,
-    ylabel = &quot;Inventory level&quot;,
-) do data
-    return data[:y].in
-end</code></pre><img src="ad0679ec.svg" alt="Example block output"/><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.995$</span>. The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
-    SDDP.UnicyclicGraph(α; num_nodes = 1);
+)</code></pre><img src="76f8a37d.svg" alt="Example block output"/><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.995$</span>. The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">graph = SDDP.LinearGraph(2)
+SDDP.add_edge(graph, 2 =&gt; 1, α)
+model = SDDP.PolicyGraph(
+    graph;
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, t
-    @variable(sp, x, SDDP.State, initial_value = x0)
-    @variable(sp, y, SDDP.State, initial_value = x0)
-    @constraint(sp, y.out &gt;= x.out)
-    @constraint(sp, con_balance, x.out == y.in)
-    @stageobjective(
-        sp,
-        p * UD / 2 + (c - p) * y.in - c * x.in + (h + p) / (2 * UD) * y.in^2
-    )
-    SDDP.parameterize(ω -&gt; JuMP.set_normalized_rhs(con_balance, -ω), sp, Ω)
+    @variable(sp, x_inventory &gt;= 0, SDDP.State, initial_value = x0)
+    @variable(sp, x_demand &gt;= 0, SDDP.State, initial_value = 0)
+    # u_buy is a Decision-Hazard control variable. We decide u.out for use in
+    # the next stage
+    @variable(sp, u_buy &gt;= 0, SDDP.State, initial_value = 0)
+    @variable(sp, u_sell &gt;= 0)
+    @variable(sp, w_demand == 0)
+    @constraint(sp, x_inventory.out == x_inventory.in + u_buy.in - u_sell)
+    @constraint(sp, x_demand.out == x_demand.in + w_demand - u_sell)
+    if t == 1
+        fix(u_sell, 0; force = true)
+        @stageobjective(sp, c * u_buy.out)
+    else
+        @stageobjective(
+            sp,
+            c * u_buy.out + h * x_inventory.out + p * x_demand.out,
+        )
+        SDDP.parameterize(ω -&gt; JuMP.fix(w_demand, ω), sp, Ω)
+    end
     return
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 1 nodes.
- Node indices: 1
-</code></pre><p>Train and simulate the policy:</p><pre><code class="language-julia hljs">SDDP.train(model; iteration_limit = 100)
-simulations = SDDP.simulate(model, 200, [:y])
-objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
-μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
-lower_bound = round(SDDP.calculate_bound(model); digits = 2)
-println(&quot;Confidence interval: &quot;, μ, &quot; ± &quot;, ci)
-println(&quot;Lower bound: &quot;, lower_bound)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+end
+
+SDDP.train(model; iteration_limit = 100, log_every_iteration = true)
+
+simulations = SDDP.simulate(
+    model,
+    200,
+    [:x_inventory, :u_buy];
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        max_depth = 50,
+        terminate_on_dummy_leaf = false,
+    ),
+);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
          SDDP.jl (c) Oscar Dowson and contributors, 2017-24
 -------------------------------------------------------------------
 problem
-  nodes           : 1
-  state variables : 2
+  nodes           : 2
+  state variables : 3
   scenarios       : Inf
   existing cuts   : false
 options
@@ -132,73 +148,131 @@ options
   risk measure    : SDDP.Expectation()
   sampling scheme : SDDP.InSampleMonteCarlo
 subproblem structure
-  VariableRef                             : [5, 5]
-  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
-  AffExpr in MOI.GreaterThan{Float64}     : [1, 1]
-  VariableRef in MOI.GreaterThan{Float64} : [1, 1]
+  VariableRef                             : [9, 9]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.EqualTo{Float64}     : [1, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [4, 5]
 numerical stability report
   matrix range     [1e+00, 1e+00]
-  objective range  [0e+00, 0e+00]
+  objective range  [1e+00, 4e+01]
   bounds range     [0e+00, 0e+00]
-  rhs range        [2e+02, 8e+02]
+  rhs range        [0e+00, 0e+00]
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Found a cut with a mix of small and large coefficients.
-<span class="sgr33"><span class="sgr1">│ </span></span>    The order of magnitude difference is 10.005906830214101.
-<span class="sgr33"><span class="sgr1">│ </span></span>    The smallest cofficient is 0.0.
-<span class="sgr33"><span class="sgr1">│ </span></span>    The largest coefficient is 1.0136938932783587e10.
-<span class="sgr33"><span class="sgr1">│ </span></span>
-<span class="sgr33"><span class="sgr1">│ </span></span>You can ignore this warning, but it may be an indication of numerical issues.
-<span class="sgr33"><span class="sgr1">│ </span></span>
-<span class="sgr33"><span class="sgr1">│ </span></span>Consider rescaling your model by using different units, e.g, kilometers instead
-<span class="sgr33"><span class="sgr1">│ </span></span>of meters. You should also consider reducing the accuracy of your input data (if
-<span class="sgr33"><span class="sgr1">│ </span></span>you haven&#39;t already). For example, it probably doesn&#39;t make sense to measure the
-<span class="sgr33"><span class="sgr1">│ </span></span>inflow into a reservoir to 10 decimal places.
-<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ SDDP ~/work/SDDP.jl/SDDP.jl/src/plugins/bellman_functions.jl:68</span>
-         1   3.221838e+10  1.694961e+10  1.168012e+00      3970   1
-         2   3.075590e+10  2.508265e+10  2.474737e+00      7951   1
-         3   4.188401e+10  3.461947e+10  3.936885e+00     12086   1
-         5   4.639655e+10  4.145625e+10  6.592339e+00     18739   1
-         7   1.053531e+10  4.145625e+10  7.907623e+00     21509   1
-        10   7.112914e+10  9.751671e+10  1.553424e+01     36961   1
-        14   1.128588e+11  1.010465e+11  2.369178e+01     49013   1
-        17   2.529038e+10  1.010465e+11  3.026359e+01     58987   1
-        21   1.219371e+10  1.010465e+11  3.621950e+01     65660   1
-        25   1.425569e+10  1.010465e+11  4.198598e+01     72058   1
-        29   1.570352e+10  1.010465e+11  4.751969e+01     78060   1
-        33   1.060937e+10  1.010465e+11  5.478124e+01     86174   1
-        35   1.691677e+10  1.010465e+11  6.033943e+01     92090   1
-        40   2.792559e+10  1.010465e+11  6.727806e+01    100555   1
-        45   2.501997e+08  1.010465e+11  7.259210e+01    106776   1
-        48   2.177706e+08  1.062048e+11  7.817310e+01    114572   1
-        51   4.712886e+10  1.062048e+11  8.502302e+01    123138   1
-        54   1.075144e+09  1.062048e+11  9.120805e+01    129218   1
-        56   4.315637e+09  1.062048e+11  9.683200e+01    133847   1
-        60   2.475815e+08  1.062048e+11  1.022859e+02    139640   1
-        63   2.680930e+10  1.062048e+11  1.078765e+02    144994   1
-        68   5.474070e+10  1.062048e+11  1.165056e+02    153239   1
-        73   1.596421e+10  6.811916e+11  1.481515e+02    178369   1
-        80   8.562426e+11  6.811916e+11  1.886068e+02    201143   1
-        86   2.238137e+10  6.811916e+11  2.216487e+02    213666   1
-        93   2.211750e+10  6.811916e+11  2.603392e+02    226727   1
-        99   2.497101e+11  6.811916e+11  2.950645e+02    239118   1
-       100   2.472307e+10  6.811916e+11  3.057060e+02    242802   1
+         1   2.950802e+08  4.698487e+04  3.811722e-01      4148   1
+         2   1.019143e+06  1.929442e+05  4.827561e-01      5059   1
+         3   1.538660e+06  2.361150e+05  5.181491e-01      5437   1
+         4   1.109292e+06  3.510530e+05  6.165080e-01      6296   1
+         5   3.321617e+07  3.900348e+05  2.267178e+00     14149   1
+         6   4.927470e+06  4.860925e+05  3.469494e+00     18479   1
+         7   6.049267e+06  5.246209e+05  3.690993e+00     20105   1
+         8   1.361388e+06  6.034406e+05  3.901718e+00     21367   1
+         9   2.536705e+07  6.361492e+05  5.872033e+00     28843   1
+        10   1.150057e+06  7.481157e+05  6.044932e+00     29767   1
+        11   1.891274e+07  7.772863e+05  6.921661e+00     34032   1
+        12   6.169297e+06  8.327010e+05  8.609038e+00     39363   1
+        13   4.381585e+06  8.607945e+05  8.905735e+00     40898   1
+        14   3.665429e+06  9.055810e+05  9.939111e+00     44240   1
+        15   2.844500e+06  9.320186e+05  1.021754e+01     45567   1
+        16   5.058398e+05  9.674076e+05  1.030412e+01     45971   1
+        17   2.351172e+04  9.765511e+05  1.031036e+01     45998   1
+        18   9.747442e+04  9.951440e+05  1.033200e+01     46090   1
+        19   2.968870e+06  1.003888e+06  1.047007e+01     46702   1
+        20   1.812686e+07  1.005681e+06  2.088573e+01     58052   1
+        21   1.612505e+07  1.006038e+06  3.372422e+01     70000   1
+        22   2.486788e+06  1.038057e+06  3.458071e+01     72237   1
+        23   1.136583e+07  1.060787e+06  3.620511e+01     76333   1
+        24   5.332666e+06  1.091319e+06  3.915626e+01     81170   1
+        25   6.798947e+06  1.113110e+06  4.056612e+01     84512   1
+        26   8.095121e+05  1.139630e+06  4.085549e+01     85241   1
+        27   6.759866e+06  1.160496e+06  4.239494e+01     88687   1
+        28   3.678473e+06  1.183714e+06  4.391463e+01     91782   1
+        29   1.017451e+07  1.203725e+06  4.678948e+01     97308   1
+        30   3.336504e+06  1.225011e+06  4.888744e+01    100520   1
+        31   3.121844e+06  1.244961e+06  4.970302e+01    102159   1
+        32   5.225417e+06  1.263752e+06  5.347146e+01    106775   1
+        33   1.096433e+06  1.279556e+06  5.383259e+01    107413   1
+        34   7.638942e+06  1.296924e+06  5.929672e+01    113758   1
+        35   3.776786e+05  1.311534e+06  5.941580e+01    113954   1
+        36   1.342204e+06  1.328847e+06  6.023193e+01    115203   1
+        37   5.427754e+06  1.341669e+06  6.221627e+01    118220   1
+        38   6.842114e+05  1.358487e+06  6.269911e+01    118871   1
+        39   1.608364e+06  1.371227e+06  6.338412e+01    119743   1
+        40   4.221283e+05  1.388394e+06  6.362953e+01    120082   1
+        41   1.422447e+06  1.400500e+06  6.423695e+01    120928   1
+        42   1.415060e+06  1.416394e+06  6.508084e+01    122125   1
+        43   6.999448e+06  1.433376e+06  6.813897e+01    126143   1
+        44   1.360793e+06  1.449925e+06  6.901818e+01    127275   1
+        45   9.139447e+06  1.461602e+06  7.348093e+01    132775   1
+        46   4.160679e+06  1.477691e+06  7.680253e+01    136390   1
+        47   5.338200e+06  1.488732e+06  7.971393e+01    139459   1
+        48   2.697976e+06  1.504672e+06  8.207437e+01    141982   1
+        49   1.529217e+07  1.514978e+06  9.056530e+01    150589   1
+        50   6.186382e+05  1.530035e+06  9.120199e+01    151175   1
+        51   4.458655e+06  1.541987e+06  9.399948e+01    153802   1
+        52   8.090242e+06  1.555538e+06  1.027265e+02    160628   1
+        53   2.803157e+06  1.564878e+06  1.048824e+02    162488   1
+        54   3.460208e+06  1.584360e+06  1.083023e+02    165258   1
+        55   1.838635e+07  1.596719e+06  1.275548e+02    175399   1
+        56   1.263153e+06  1.630942e+06  1.289737e+02    176479   1
+        57   1.199413e+06  1.643219e+06  1.296444e+02    177013   1
+        58   1.347039e+06  1.657150e+06  1.314532e+02    178366   1
+        59   2.973300e+06  1.663210e+06  1.338050e+02    180148   1
+        60   9.344613e+05  1.675270e+06  1.349490e+02    180981   1
+        61   3.215794e+06  1.683491e+06  1.377234e+02    182997   1
+        62   7.650862e+06  1.694571e+06  1.476527e+02    189498   1
+        63   1.691244e+06  1.702940e+06  1.492737e+02    190617   1
+        64   2.940426e+06  1.714142e+06  1.527789e+02    193049   1
+        65   3.309612e+06  1.722435e+06  1.558878e+02    195104   1
+        66   3.986479e+06  1.733250e+06  1.610783e+02    198433   1
+        67   1.658477e+06  1.741200e+06  1.626280e+02    199448   1
+        68   7.863528e+05  1.751916e+06  1.635003e+02    199995   1
+        69   8.652591e+06  1.759422e+06  1.728033e+02    205820   1
+        70   6.476857e+06  1.769942e+06  1.819863e+02    211125   1
+        71   2.635990e+06  1.777132e+06  1.850352e+02    212920   1
+        72   4.908047e+06  1.787412e+06  1.925812e+02    217120   1
+        73   9.676365e+06  1.794391e+06  2.043387e+02    223465   1
+        74   7.894502e+05  1.804432e+06  2.055683e+02    224129   1
+        75   1.764685e+06  1.811351e+06  2.078297e+02    225352   1
+        76   2.185326e+06  1.821045e+06  2.117900e+02    227342   1
+        77   9.432476e+05  1.827739e+06  2.130549e+02    228019   1
+        78   1.890987e+06  1.837187e+06  2.161105e+02    229619   1
+        79   4.835950e+06  1.843855e+06  2.222994e+02    232779   1
+        80   1.599863e+06  1.853023e+06  2.246611e+02    234002   1
+        81   3.805416e+06  1.859622e+06  2.299271e+02    236629   1
+        82   1.083605e+06  1.868512e+06  2.317733e+02    237553   1
+        83   1.720126e+06  1.875039e+06  2.339554e+02    238646   1
+        84   4.065220e+06  1.883657e+06  2.410003e+02    242014   1
+        85   4.725891e+06  1.890112e+06  2.472377e+02    245031   1
+        86   4.158631e+05  1.898466e+06  2.478963e+02    245357   1
+        87   8.745955e+05  1.904848e+06  2.491829e+02    245995   1
+        88   1.940624e+06  1.912944e+06  2.531685e+02    247868   1
+        89   4.514438e+06  1.919255e+06  2.599958e+02    251041   1
+        90   5.084542e+05  1.927101e+06  2.608648e+02    251471   1
+        91   8.179757e+05  1.933129e+06  2.619877e+02    252018   1
+        92   4.450394e+06  1.941201e+06  2.701858e+02    255815   1
+        93   4.776378e+06  1.947911e+06  2.776549e+02    259313   1
+        94   1.532878e+06  1.955352e+06  2.807624e+02    260757   1
+        95   1.468089e+06  1.961478e+06  2.828221e+02    261707   1
+        96   5.424190e+05  1.968681e+06  2.840114e+02    262228   1
+        97   3.269369e+06  1.974637e+06  2.890269e+02    264530   1
+        98   4.752398e+05  1.984089e+06  2.898837e+02    264934   1
+        99   1.074300e+06  1.990602e+06  2.914900e+02    265689   1
+       100   2.040561e+06  1.997535e+06  2.960690e+02    267666   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 3.057060e+02
-total solves   : 242802
-best bound     :  6.811916e+11
-simulation ci  :  5.530691e+10 ± 5.966968e+10
+total time (s) : 2.960690e+02
+total solves   : 267666
+best bound     :  1.997535e+06
+simulation ci  :  7.313893e+06 ± 5.793913e+06
 numeric issues : 0
--------------------------------------------------------------------
-
-Confidence interval: 4.004995822741e10 ± 1.867261168888e10
-Lower bound: 6.8119160600243e11</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">SDDP.publication_plot(
-    simulations;
-    title = &quot;Inventory level&quot;,
+-------------------------------------------------------------------</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">Plots.plot(
+    SDDP.publication_plot(simulations; title = &quot;x_inventory.out&quot;) do data
+        return data[:x_inventory].out
+    end,
+    SDDP.publication_plot(simulations; title = &quot;u_buy.out&quot;) do data
+        return data[:u_buy].out
+    end;
     xlabel = &quot;Stage&quot;,
-    ylabel = &quot;Inventory level&quot;,
-) do data
-    return data[:y].in
-end</code></pre><img src="214a3c92.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Monday 21 October 2024 03:03">Monday 21 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+)</code></pre><img src="1ee57589.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Wednesday 23 October 2024 23:14">Wednesday 23 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
