@@ -78,7 +78,7 @@ N = 10          # size of sample space
 # and shortage penalties from the previous period.
 
 T = 10 # number of stages
-model = SDDP.LinearPolicyGraph(
+model = SDDP.LinearPolicyGraph(;
     stages = T + 1,
     sense = :Min,
     lower_bound = 0.0,
@@ -97,10 +97,7 @@ model = SDDP.LinearPolicyGraph(
         fix(u_sell, 0; force = true)
         @stageobjective(sp, c * u_buy.out)
     else
-        @stageobjective(
-            sp,
-            c * u_buy.out + h * x_inventory.out + p * x_demand.out,
-        )
+        @stageobjective(sp, c * u_buy.out + h * x_inventory.out + p * x_demand.out)
         SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
     end
     return
@@ -108,7 +105,7 @@ end
 
 # Train and simulate the policy:
 
-SDDP.train(model; iteration_limit = 100)
+SDDP.train(model; iteration_limit = 200)
 simulations = SDDP.simulate(model, 200, [:x_inventory, :u_buy])
 objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
 μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
@@ -155,16 +152,13 @@ model = SDDP.PolicyGraph(
         fix(u_sell, 0; force = true)
         @stageobjective(sp, c * u_buy.out)
     else
-        @stageobjective(
-            sp,
-            c * u_buy.out + h * x_inventory.out + p * x_demand.out,
-        )
+        @stageobjective(sp, c * u_buy.out + h * x_inventory.out + p * x_demand.out)
         SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
     end
     return
 end
 
-SDDP.train(model; iteration_limit = 100, log_every_iteration = true)
+SDDP.train(model; iteration_limit = 200)
 
 simulations = SDDP.simulate(
     model,
