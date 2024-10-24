@@ -39,26 +39,20 @@ import Statistics
 # At each stage, an agent must decide how many items to order or, equivalently,
 # what the inventory level should be at the beginning of the next stage. The
 # per-stage costs are the sum of the order costs, shortage and holding costs
-# incurred at the end of the stage, after demand is realized. If $x$ represents
-# the inventory level at the beginning of a stage, and $y$ is the level of
-# inventory after ordering, the stage costs are given by
-#
-# ```math
-# c(y-x) + \int_{0}^y h(y-\xi) d\Phi(\xi) + \int_{y}^{\infty} p(\xi - y) d\Phi(\xi).
-# ```
+# incurred at the end of the stage, after demand is realized.
 
 # Following Chapter 19 of Introduction to Operations Research by Hillier and
-# Lieberman (7th edition), we use the following parameters: $c=15, h=1, p=15$,
-# and demand follows a continuous uniform distribution between 0 and 800.
+# Lieberman (7th edition), we use the following parameters: $c=15, h=1, p=15$.
 
-x0 = 100        # Initial inventory
-α = 0.95       # discount factor
+x_0 = 10        # initial inventory
 c = 35          # unit inventory cost
 h = 1           # unit inventory holding cost
 p = 15          # unit order cost
-UD = 800        # upper bound for demand
-N = 10          # size of sample space
-Ω = rand(Distributions.Uniform(0, UD), N);
+
+# Demand follows a continuous uniform distribution between 0 and 800. We
+# construct a sample average approximation with 10 scenarios:
+
+Ω = rand(Distributions.Uniform(0, 800), 10);
 
 # This is a well-known inventory problem with a closed-form solution. The
 # optimal policy is a simple order-up-to policy: if the inventory level is
@@ -84,7 +78,7 @@ model = SDDP.LinearPolicyGraph(;
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, t
-    @variable(sp, x_inventory >= 0, SDDP.State, initial_value = x0)
+    @variable(sp, x_inventory >= 0, SDDP.State, initial_value = x_0)
     @variable(sp, x_demand >= 0, SDDP.State, initial_value = 0)
     ## u_buy is a Decision-Hazard control variable. We decide u.out for use in
     ## the next stage
@@ -129,11 +123,18 @@ plt = SDDP.publication_plot(
 end
 Plots.hline!(plt, [741]; label = "Analytic solution")
 
+# Note that, because of our sample average approximation, we do not obtain the
+# analytic solution. However, if we increased the number of sample points, our
+# solution would approach the analytic solution.
+
 # ## Infinite horizon
 
-# For the infinite horizon case, assume a discount factor $\alpha=0.995$. The
-# objective in this case is to minimize the discounted expected costs over an
-# infinite planning horizon.
+# For the infinite horizon case, assume a discount factor $\alpha=0.995$.
+
+α = 0.95
+
+# The objective in this case is to minimize the discounted expected costs over
+# an infinite planning horizon.
 
 graph = SDDP.LinearGraph(2)
 SDDP.add_edge(graph, 2 => 2, α)
