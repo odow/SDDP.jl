@@ -162,7 +162,7 @@ model = SDDP.PolicyGraph(
     return
 end
 
-SDDP.train(model; iteration_limit = 300)
+SDDP.train(model; iteration_limit = 400)
 simulations = SDDP.simulate(
     model,
     200,
