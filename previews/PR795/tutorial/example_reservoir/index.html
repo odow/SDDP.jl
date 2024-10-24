@@ -9,7 +9,7 @@ import CSV
 import DataFrames
 import HiGHS
 import Plots</code></pre><h2 id="Data"><a class="docs-heading-anchor" href="#Data">Data</a><a id="Data-1"></a><a class="docs-heading-anchor-permalink" href="#Data" title="Permalink"></a></h2><p>First, we need some data for the problem. For this tutorial, we&#39;ll write CSV files to a temporary directory from Julia. If you have an existing file, you could change the filename to point to that instead.</p><pre><code class="language-julia hljs">dir = mktempdir()
-filename = joinpath(dir, &quot;example_reservoir.csv&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&quot;/tmp/jl_dX3UWu/example_reservoir.csv&quot;</code></pre><p>Here is the data</p><pre><code class="language-julia hljs">csv_data = &quot;&quot;&quot;
+filename = joinpath(dir, &quot;example_reservoir.csv&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&quot;/tmp/jl_aQV0GP/example_reservoir.csv&quot;</code></pre><p>Here is the data</p><pre><code class="language-julia hljs">csv_data = &quot;&quot;&quot;
 week,inflow,demand,cost
 1,3,7,10.2\n2,2,7.1,10.4\n3,3,7.2,10.6\n4,2,7.3,10.9\n5,3,7.4,11.2\n
 6,2,7.6,11.5\n7,3,7.8,11.9\n8,2,8.1,12.3\n9,3,8.3,12.7\n10,2,8.6,13.1\n
@@ -29,7 +29,7 @@ write(filename, csv_data);</code></pre><p>And here we read it into a DataFrame:<
     Plots.plot(data[!, :cost]; ylabel = &quot;Cost&quot;, xlabel = &quot;Week&quot;);
     layout = (3, 1),
     legend = false,
-)</code></pre><img src="0ed0655b.svg" alt="Example block output"/><p>The number of weeks will be useful later:</p><pre><code class="language-julia hljs">T = size(data, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52</code></pre><h2 id="Deterministic-JuMP-model"><a class="docs-heading-anchor" href="#Deterministic-JuMP-model">Deterministic JuMP model</a><a id="Deterministic-JuMP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Deterministic-JuMP-model" title="Permalink"></a></h2><p>To start, we construct a deterministic model in pure JuMP.</p><p>Create a JuMP model, using <code>HiGHS</code> as the optimizer:</p><pre><code class="language-julia hljs">model = Model(HiGHS.Optimizer)
+)</code></pre><img src="be9e547c.svg" alt="Example block output"/><p>The number of weeks will be useful later:</p><pre><code class="language-julia hljs">T = size(data, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52</code></pre><h2 id="Deterministic-JuMP-model"><a class="docs-heading-anchor" href="#Deterministic-JuMP-model">Deterministic JuMP model</a><a id="Deterministic-JuMP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Deterministic-JuMP-model" title="Permalink"></a></h2><p>To start, we construct a deterministic model in pure JuMP.</p><p>Create a JuMP model, using <code>HiGHS</code> as the optimizer:</p><pre><code class="language-julia hljs">model = Model(HiGHS.Optimizer)
 set_silent(model)</code></pre><p><code>x_storage[t]</code>: the amount of water in the reservoir at the start of stage <code>t</code>:</p><pre><code class="language-julia hljs">reservoir_max = 320.0
 @variable(model, 0 &lt;= x_storage[1:T+1] &lt;= reservoir_max)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">53-element Vector{VariableRef}:
  x_storage[1]
@@ -197,13 +197,13 @@ solution_summary(model)</code></pre><pre class="documenter-example-output"><code
   Dual objective value : 6.82910e+02
 
 * Work counters
-  Solve time (sec)   : 8.08954e-04
+  Solve time (sec)   : 8.16584e-04
   Simplex iterations : 53
   Barrier iterations : 0
   Node count         : -1
 </code></pre><p>The total cost is:</p><pre><code class="language-julia hljs">objective_value(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">682.9099999999999</code></pre><p>Here&#39;s a plot of demand and generation:</p><pre><code class="language-julia hljs">Plots.plot(data[!, :demand]; label = &quot;Demand&quot;, xlabel = &quot;Week&quot;)
 Plots.plot!(value.(u_thermal); label = &quot;Thermal&quot;)
-Plots.plot!(value.(u_flow); label = &quot;Hydro&quot;)</code></pre><img src="024c3bed.svg" alt="Example block output"/><p>And here&#39;s the storage over time:</p><pre><code class="language-julia hljs">Plots.plot(value.(x_storage); label = &quot;Storage&quot;, xlabel = &quot;Week&quot;)</code></pre><img src="ee5342ba.svg" alt="Example block output"/><h2 id="Deterministic-SDDP-model"><a class="docs-heading-anchor" href="#Deterministic-SDDP-model">Deterministic SDDP model</a><a id="Deterministic-SDDP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Deterministic-SDDP-model" title="Permalink"></a></h2><p>For the next step, we show how to decompose our JuMP model into SDDP.jl. It should obtain the same solution.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
+Plots.plot!(value.(u_flow); label = &quot;Hydro&quot;)</code></pre><img src="f6caca7e.svg" alt="Example block output"/><p>And here&#39;s the storage over time:</p><pre><code class="language-julia hljs">Plots.plot(value.(x_storage); label = &quot;Storage&quot;, xlabel = &quot;Week&quot;)</code></pre><img src="1e774439.svg" alt="Example block output"/><h2 id="Deterministic-SDDP-model"><a class="docs-heading-anchor" href="#Deterministic-SDDP-model">Deterministic SDDP model</a><a id="Deterministic-SDDP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Deterministic-SDDP-model" title="Permalink"></a></h2><p>For the next step, we show how to decompose our JuMP model into SDDP.jl. It should obtain the same solution.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
     stages = T,
     sense = :Min,
     lower_bound = 0.0,
@@ -252,11 +252,11 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   1.079600e+03  3.157700e+02  4.216099e-02       104   1
-        10   6.829100e+02  6.829100e+02  1.355321e-01      1040   1
+         1   1.079600e+03  3.157700e+02  4.155111e-02       104   1
+        10   6.829100e+02  6.829100e+02  1.342909e-01      1040   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 1.355321e-01
+total time (s) : 1.342909e-01
 total solves   : 1040
 best bound     :  6.829100e+02
 simulation ci  :  7.289889e+02 ± 7.726064e+01
@@ -279,9 +279,9 @@ u_sim = [sim[:u_flow] for sim in simulations[1]]
 
 Plots.plot(data[!, :demand]; label = &quot;Demand&quot;, xlabel = &quot;Week&quot;)
 Plots.plot!(r_sim; label = &quot;Thermal&quot;)
-Plots.plot!(u_sim; label = &quot;Hydro&quot;)</code></pre><img src="8712276e.svg" alt="Example block output"/><p>Perfect. That&#39;s the same as we got before.</p><p>Now let&#39;s look at <code>x_storage</code>. This is a little more complicated, because we need to grab the outgoing value of the state variable in each stage:</p><pre><code class="language-julia hljs">x_sim = [sim[:x_storage].out for sim in simulations[1]]
+Plots.plot!(u_sim; label = &quot;Hydro&quot;)</code></pre><img src="c70d804a.svg" alt="Example block output"/><p>Perfect. That&#39;s the same as we got before.</p><p>Now let&#39;s look at <code>x_storage</code>. This is a little more complicated, because we need to grab the outgoing value of the state variable in each stage:</p><pre><code class="language-julia hljs">x_sim = [sim[:x_storage].out for sim in simulations[1]]
 
-Plots.plot(x_sim; label = &quot;Storage&quot;, xlabel = &quot;Week&quot;)</code></pre><img src="fdfba59e.svg" alt="Example block output"/><h2 id="Stochastic-SDDP-model"><a class="docs-heading-anchor" href="#Stochastic-SDDP-model">Stochastic SDDP model</a><a id="Stochastic-SDDP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Stochastic-SDDP-model" title="Permalink"></a></h2><p>Now we add some randomness to our model. In each stage, we assume that the inflow could be: 2 units lower, with 30% probability; the same as before, with 40% probability; or 5 units higher, with 30% probability.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
+Plots.plot(x_sim; label = &quot;Storage&quot;, xlabel = &quot;Week&quot;)</code></pre><img src="b2cec97b.svg" alt="Example block output"/><h2 id="Stochastic-SDDP-model"><a class="docs-heading-anchor" href="#Stochastic-SDDP-model">Stochastic SDDP model</a><a id="Stochastic-SDDP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Stochastic-SDDP-model" title="Permalink"></a></h2><p>Now we add some randomness to our model. In each stage, we assume that the inflow could be: 2 units lower, with 30% probability; the same as before, with 40% probability; or 5 units higher, with 30% probability.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
     stages = T,
     sense = :Min,
     lower_bound = 0.0,
@@ -335,23 +335,23 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   2.984700e+02  1.372705e+02  4.645395e-02       208   1
-        48   4.628805e+02  2.480494e+02  1.065504e+00      9984   1
-        89   1.182891e+02  2.663069e+02  2.082914e+00     18512   1
-       100   4.598858e+02  2.698439e+02  2.370788e+00     20800   1
+         1   1.068000e+02  6.918721e+01  4.655290e-02       208   1
+        48   4.043100e+02  2.472772e+02  1.057488e+00      9984   1
+        88   1.333311e+02  2.654216e+02  2.078859e+00     18304   1
+       100   1.546380e+02  2.679907e+02  2.412761e+00     20800   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 2.370788e+00
+total time (s) : 2.412761e+00
 total solves   : 20800
-best bound     :  2.698439e+02
-simulation ci  :  2.767902e+02 ± 3.995998e+01
+best bound     :  2.679907e+02
+simulation ci  :  2.819429e+02 ± 4.049115e+01
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><p>Now simulate the policy. This time we do 100 replications because the policy is now stochastic instead of deterministic:</p><pre><code class="language-julia hljs">simulations =
     SDDP.simulate(model, 100, [:x_storage, :u_flow, :u_thermal, :ω_inflow]);</code></pre><p>And let&#39;s plot the use of thermal generation in each replication:</p><pre><code class="language-julia hljs">plot = Plots.plot(data[!, :demand]; label = &quot;Demand&quot;, xlabel = &quot;Week&quot;)
 for simulation in simulations
     Plots.plot!(plot, [sim[:u_thermal] for sim in simulation]; label = &quot;&quot;)
 end
-plot</code></pre><img src="5fdd0fd6.svg" alt="Example block output"/><p>Viewing an interpreting static plots like this is difficult, particularly as the number of simulations grows. SDDP.jl includes an interactive <code>SpaghettiPlot</code> that makes things easier:</p><pre><code class="language-julia hljs">plot = SDDP.SpaghettiPlot(simulations)
+plot</code></pre><img src="d6b25771.svg" alt="Example block output"/><p>Viewing an interpreting static plots like this is difficult, particularly as the number of simulations grows. SDDP.jl includes an interactive <code>SpaghettiPlot</code> that makes things easier:</p><pre><code class="language-julia hljs">plot = SDDP.SpaghettiPlot(simulations)
 SDDP.add_spaghetti(plot; title = &quot;Storage&quot;) do sim
     return sim[:x_storage].out
 end
@@ -427,41 +427,43 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   5.125450e+03  4.128447e+03  6.424904e-02       419   1
-         7   1.731337e+05  8.644709e+04  1.131367e+00     13333   1
-         9   2.826648e+05  9.242587e+04  2.718143e+00     30395   1
-        11   1.149201e+05  9.323548e+04  4.142502e+00     44129   1
-        13   1.531879e+05  9.330497e+04  5.928533e+00     59527   1
-        14   2.727588e+05  9.334197e+04  7.457668e+00     71386   1
-        17   1.168260e+05  9.335179e+04  8.639228e+00     80131   1
-        18   1.665252e+05  9.335210e+04  9.728373e+00     87414   1
-        26   2.326570e+05  9.336405e+04  1.544043e+01    121134   1
-        40   2.494857e+05  9.337375e+04  2.179031e+01    153000   1
-        47   3.764467e+05  9.337642e+04  2.721520e+01    176317   1
-        53   2.897221e+05  9.337834e+04  3.495283e+01    204831   1
-        57   1.012373e+05  9.338095e+04  4.025078e+01    224811   1
-        62   1.011758e+05  9.338237e+04  4.554150e+01    243962   1
-        64   2.845468e+04  9.338582e+04  5.074128e+01    261440   1
-        68   3.013165e+05  9.338653e+04  5.773348e+01    283916   1
-        71   5.337611e+04  9.338701e+04  6.331455e+01    301189   1
-        73   3.126494e+05  9.338738e+04  7.013980e+01    320747   1
-        75   3.985204e+05  9.338794e+04  7.666148e+01    338641   1
-        81   9.451027e+04  9.339006e+04  8.242196e+01    353843   1
-        85   2.508271e+05  9.339135e+04  8.817798e+01    368623   1
-        93   8.831597e+04  9.339206e+04  9.433940e+01    384247   1
-       100   3.225086e+04  9.339264e+04  9.931569e+01    396124   1
+         1   1.727721e+05  7.441424e+04  5.692730e-01      6867   1
+         4   1.355335e+05  9.033775e+04  1.793179e+00     19980   1
+         7   6.921104e+04  9.256999e+04  2.816775e+00     30597   1
+        11   1.496473e+05  9.300367e+04  4.265969e+00     42673   1
+        13   9.304641e+03  9.322369e+04  5.268422e+00     50791   1
+        15   1.628752e+05  9.331022e+04  7.063619e+00     63693   1
+        17   1.266822e+05  9.334107e+04  8.717791e+00     74931   1
+        19   5.802565e+04  9.334676e+04  9.732493e+00     81593   1
+        30   4.433486e+04  9.336245e+04  1.498030e+01    112202   1
+        36   1.584218e+05  9.336901e+04  2.065122e+01    140716   1
+        39   2.545340e+05  9.337241e+04  2.575421e+01    163397   1
+        47   7.492071e+04  9.337850e+04  3.079555e+01    184221   1
+        52   1.900511e+05  9.337941e+04  3.692804e+01    207324   1
+        59   1.307530e+05  9.338279e+04  4.344587e+01    230225   1
+        62   1.776362e+05  9.338328e+04  4.909188e+01    247082   1
+        67   5.034466e+05  9.338544e+04  6.018303e+01    280793   1
+        72   1.622524e+05  9.338765e+04  6.584501e+01    297240   1
+        75   1.487548e+05  9.338838e+04  7.130030e+01    312225   1
+        78   2.523205e+05  9.338871e+04  7.697461e+01    327210   1
+        84   2.473899e+05  9.338948e+04  8.536887e+01    348652   1
+        89   2.309229e+05  9.339004e+04  9.161628e+01    364059   1
+        91   8.841871e+04  9.339010e+04  9.681205e+01    376545   1
+        94   4.256059e+05  9.339051e+04  1.068718e+02    399642   1
+        99   1.574171e+05  9.339204e+04  1.137983e+02    415049   1
+       100   1.250015e+05  9.339331e+04  1.163001e+02    420460   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 9.931569e+01
-total solves   : 396124
-best bound     :  9.339264e+04
-simulation ci  :  8.894918e+04 ± 1.956718e+04
+total time (s) : 1.163001e+02
+total solves   : 420460
+best bound     :  9.339331e+04
+simulation ci  :  9.438624e+04 ± 1.628476e+04
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><p>When we simulate now, each trajectory will be a different length, because each cycle has a 95% probability of continuing and a 5% probability of stopping.</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(model, 3);
 length.(simulations)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Int64}:
-  364
-  364
- 1404</code></pre><p>We can simulate a fixed number of cycles by passing a <code>sampling_scheme</code>:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
+ 3432
+ 2236
+  312</code></pre><p>We can simulate a fixed number of cycles by passing a <code>sampling_scheme</code>:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
     model,
     100,
     [:x_storage, :u_flow];
@@ -498,4 +500,4 @@ length.(simulations)</code></pre><pre class="documenter-example-output"><code cl
         return sim[:u_flow]
     end;
     layout = (2, 1),
-)</code></pre><img src="a59fe01f.svg" alt="Example block output"/><h2 id="Next-steps"><a class="docs-heading-anchor" href="#Next-steps">Next steps</a><a id="Next-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-steps" title="Permalink"></a></h2><p>Our model is very basic. There are many aspects that we could improve:</p><ul><li><p>Can you add a second reservoir to make a river chain?</p></li><li><p>Can you modify the problem and data to use proper units, including a conversion between the volume of water flowing through the turbine and the electrical power output?</p></li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_newsvendor/">« Example: two-stage newsvendor</a><a class="docs-footer-nextpage" href="../example_milk_producer/">Example: the milk producer »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 24 October 2024 04:22">Thursday 24 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+)</code></pre><img src="caa83ecd.svg" alt="Example block output"/><h2 id="Next-steps"><a class="docs-heading-anchor" href="#Next-steps">Next steps</a><a id="Next-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-steps" title="Permalink"></a></h2><p>Our model is very basic. There are many aspects that we could improve:</p><ul><li><p>Can you add a second reservoir to make a river chain?</p></li><li><p>Can you modify the problem and data to use proper units, including a conversion between the volume of water flowing through the turbine and the electrical power output?</p></li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_newsvendor/">« Example: two-stage newsvendor</a><a class="docs-footer-nextpage" href="../example_milk_producer/">Example: the milk producer »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 24 October 2024 05:12">Thursday 24 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
