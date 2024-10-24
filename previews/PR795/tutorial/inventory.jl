@@ -36,10 +36,9 @@ import Statistics
 # cumulative distribution function (CDF) $\Phi(\cdot)$. Any unsatisfied demand
 # is backlogged and carried forward to the next stage.
 
-# At each stage, an agent must decide how many items to order or, equivalently,
-# what the inventory level should be at the beginning of the next stage. The
-# per-stage costs are the sum of the order costs, shortage and holding costs
-# incurred at the end of the stage, after demand is realized.
+# At each stage, an agent must decide how many items to order. The per-stage
+# costs are the sum of the order costs, shortage and holding costs incurred at
+# the end of the stage, after demand is realized.
 
 # Following Chapter 19 of Introduction to Operations Research by Hillier and
 # Lieberman (7th edition), we use the following parameters: $c=15, h=1, p=15$.
@@ -56,20 +55,18 @@ p = 15          # unit order cost
 
 # This is a well-known inventory problem with a closed-form solution. The
 # optimal policy is a simple order-up-to policy: if the inventory level is
-# below 741 units, the decision-maker orders up to 741 units. Otherwise, no
-# order is placed. For a detailed analysis, refer to Foundations of Stochastic
-# Inventory Theory by Evan Porteus (Stanford Business Books, 2002).
+# below a certain number of units, the decision-maker orders up to that number
+# of units. Otherwise, no order is placed. For a detailed analysis, refer
+# to Foundations of Stochastic Inventory Theory by Evan Porteus (Stanford
+# Business Books, 2002).
 
 # ## Finite horizon
 
 # For a finite horizon of length $T$,  the problem is to minimize the total
-# expected cost over all stages, with a terminal value function given by:
-# ```math
-# v_T(x) = cx.
-# ```
-# This reflects that at the end of the last stage, the decision-maker can
-# recover the unit cost for each leftover item while incurring any backlog costs
-# and shortage penalties from the previous period.
+# expected cost over all stages.
+
+# In the last stage, the decision-maker can recover the unit cost `c` for each
+# leftover item, or buy out any remaining backlog, also at the unit cost `c`.
 
 T = 10 # number of stages
 model = SDDP.LinearPolicyGraph(;
@@ -122,23 +119,24 @@ plt = SDDP.publication_plot(
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
-Plots.hline!(plt, [741]; label = "Analytic solution")
 
-# Note that, because of our sample average approximation, we do not obtain the
-# analytic solution. However, if we increased the number of sample points, our
-# solution would approach the analytic solution.
+# In the early stages, we indeed recover an order-up-to policy. However,
+# there are end-of-horizon effects as the agent tries to optimize their
+# decision making knowing that they have 10 realizations of demand.
 
 # ## Infinite horizon
 
-# For the infinite horizon case, assume a discount factor $\alpha=0.95$.
+# We can remove the end-of-horizonn effects by considering an infinite
+# horizon model. We assume a discount factor $\alpha=0.95$:
 
 α = 0.95
+graph = SDDP.LinearGraph(2)
+SDDP.add_edge(graph, 2 => 2, α)
+graph
 
 # The objective in this case is to minimize the discounted expected costs over
 # an infinite planning horizon.
 
-graph = SDDP.LinearGraph(2)
-SDDP.add_edge(graph, 2 => 2, α)
 model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
@@ -186,4 +184,9 @@ plt = SDDP.publication_plot(
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
-Plots.hline!(plt, [741]; label = "Analytic solution")
+Plots.hline!(plt, [622]; label = "Analytic solution")
+
+# We again recover an order-up-to policy. The analytic solution is to
+# order-up-to 662 units. We do not precisely recover this solution because
+# we used a sample average approximation of 20 elements. If we increased the
+# number of samples, our solution would approach the analytic solution.
