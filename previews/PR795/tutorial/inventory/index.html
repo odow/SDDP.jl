@@ -10,7 +10,7 @@ import Plots
 import Statistics</code></pre><h2 id="Background"><a class="docs-heading-anchor" href="#Background">Background</a><a id="Background-1"></a><a class="docs-heading-anchor-permalink" href="#Background" title="Permalink"></a></h2><p>Consider a periodic review inventory problem involving a single product. The initial inventory is denoted by <span>$x_0 \geq 0$</span>, and a decision-maker can place an order at the start of each stage. The objective is to minimize expected costs over the planning horizon. The following parameters define the cost structure:</p><ul><li><code>c</code> is the unit cost for purchasing each unit</li><li><code>h</code> is the holding cost per unit remaining at the end of each stage</li><li><code>p</code> is the shortage cost per unit of unsatisfied demand at the end of each stage</li></ul><p>There are no fixed ordering costs, and the demand at each stage is assumed to follow an independent and identically distributed random variable with cumulative distribution function (CDF) <span>$\Phi(\cdot)$</span>. Any unsatisfied demand is backlogged and carried forward to the next stage.</p><p>At each stage, an agent must decide how many items to order or, equivalently, what the inventory level should be at the beginning of the next stage. The per-stage costs are the sum of the order costs, shortage and holding costs incurred at the end of the stage, after demand is realized.</p><p>Following Chapter 19 of Introduction to Operations Research by Hillier and Lieberman (7th edition), we use the following parameters: <span>$c=15, h=1, p=15$</span>.</p><pre><code class="language-julia hljs">x_0 = 10        # initial inventory
 c = 35          # unit inventory cost
 h = 1           # unit inventory holding cost
-p = 15          # unit order cost</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">15</code></pre><p>Demand follows a continuous uniform distribution between 0 and 800. We construct a sample average approximation with 10 scenarios:</p><pre><code class="language-julia hljs">Ω = range(0, 800; length = 10);</code></pre><p>This is a well-known inventory problem with a closed-form solution. The optimal policy is a simple order-up-to policy: if the inventory level is below 741 units, the decision-maker orders up to 741 units. Otherwise, no order is placed. For a detailed analysis, refer to Foundations of Stochastic Inventory Theory by Evan Porteus (Stanford Business Books, 2002).</p><h2 id="Finite-horizon"><a class="docs-heading-anchor" href="#Finite-horizon">Finite horizon</a><a id="Finite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Finite-horizon" title="Permalink"></a></h2><p>For a finite horizon of length <span>$T$</span>,  the problem is to minimize the total expected cost over all stages, with a terminal value function given by:</p><p class="math-container">\[v_T(x) = cx.\]</p><p>This reflects that at the end of the last stage, the decision-maker can recover the unit cost for each leftover item while incurring any backlog costs and shortage penalties from the previous period.</p><pre><code class="language-julia hljs">T = 10 # number of stages
+p = 15          # unit order cost</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">15</code></pre><p>Demand follows a continuous uniform distribution between 0 and 800. We construct a sample average approximation with 20 scenarios:</p><pre><code class="language-julia hljs">Ω = range(0, 800; length = 20);</code></pre><p>This is a well-known inventory problem with a closed-form solution. The optimal policy is a simple order-up-to policy: if the inventory level is below 741 units, the decision-maker orders up to 741 units. Otherwise, no order is placed. For a detailed analysis, refer to Foundations of Stochastic Inventory Theory by Evan Porteus (Stanford Business Books, 2002).</p><h2 id="Finite-horizon"><a class="docs-heading-anchor" href="#Finite-horizon">Finite horizon</a><a id="Finite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Finite-horizon" title="Permalink"></a></h2><p>For a finite horizon of length <span>$T$</span>,  the problem is to minimize the total expected cost over all stages, with a terminal value function given by:</p><p class="math-container">\[v_T(x) = cx.\]</p><p>This reflects that at the end of the last stage, the decision-maker can recover the unit cost for each leftover item while incurring any backlog costs and shortage penalties from the previous period.</p><pre><code class="language-julia hljs">T = 10 # number of stages
 model = SDDP.LinearPolicyGraph(;
     stages = T + 1,
     sense = :Min,
@@ -52,7 +52,7 @@ println(&quot;Lower bound: &quot;, lower_bound)</code></pre><pre class="document
 problem
   nodes           : 11
   state variables : 3
-  scenarios       : 1.00000e+10
+  scenarios       : 1.02400e+13
   existing cuts   : false
 options
   solver          : serial mode
@@ -72,19 +72,24 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   6.134111e+05  4.649757e+04  1.585698e-02       112   1
-        43   1.515611e+05  1.446620e+05  5.352190e-01      7016   1
+         1   4.069316e+05  4.573582e+04  1.916409e-02       212   1
+        57   1.446395e+05  1.443373e+05  1.026549e+00     15384   1
+       109   1.636079e+05  1.443373e+05  2.037431e+00     28608   1
+       171   1.434816e+05  1.443373e+05  3.048809e+00     41752   1
+       218   1.357342e+05  1.443373e+05  4.065615e+00     52816   1
+       253   1.575868e+05  1.443373e+05  5.449578e+00     60236   1
+       287   1.472711e+05  1.443373e+05  6.087558e+00     67444   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 5.352190e-01
-total solves   : 7016
-best bound     :  1.446620e+05
-simulation ci  :  1.611072e+05 ± 2.287791e+04
+total time (s) : 6.087558e+00
+total solves   : 67444
+best bound     :  1.443373e+05
+simulation ci  :  1.456403e+05 ± 3.546204e+03
 numeric issues : 0
 -------------------------------------------------------------------
 
-Confidence interval: 142555.78 ± 3814.94
-Lower bound: 144661.96</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
+Confidence interval: 142164.53 ± 3752.43
+Lower bound: 144337.34</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
     simulations;
     title = &quot;x_inventory.out + u_buy.out&quot;,
     xlabel = &quot;Stage&quot;,
@@ -93,7 +98,7 @@ Lower bound: 144661.96</code></pre><p>Plot the optimal inventory levels:</p><pre
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
-Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="b842c481.svg" alt="Example block output"/><p>Note that, because of our sample average approximation, we do not obtain the analytic solution. However, if we increased the number of sample points, our solution would approach the analytic solution.</p><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.95$</span>.</p><pre><code class="language-julia hljs">α = 0.95</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.95</code></pre><p>The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">graph = SDDP.LinearGraph(2)
+Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="00600985.svg" alt="Example block output"/><p>Note that, because of our sample average approximation, we do not obtain the analytic solution. However, if we increased the number of sample points, our solution would approach the analytic solution.</p><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.95$</span>.</p><pre><code class="language-julia hljs">α = 0.95</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.95</code></pre><p>The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">graph = SDDP.LinearGraph(2)
 SDDP.add_edge(graph, 2 =&gt; 2, α)
 model = SDDP.PolicyGraph(
     graph;
@@ -154,25 +159,25 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   1.140641e+07  5.010341e+04  4.730582e-02       727   1
-        43   1.419796e+06  3.122384e+05  1.056166e+00     10460   1
-        66   9.664479e+05  3.135270e+05  2.087573e+00     18238   1
-        95   1.042050e+06  3.135627e+05  3.108723e+00     24977   1
-       113   3.942278e+05  3.135638e+05  4.144876e+00     30550   1
-       133   1.871561e+06  3.135638e+05  5.262636e+00     36356   1
-       150   1.955611e+05  3.135638e+05  6.280627e+00     40883   1
-       167   4.333389e+05  3.135638e+05  7.341383e+00     45047   1
-       193   9.822778e+04  3.135638e+05  8.374967e+00     48780   1
-       206   1.345833e+05  3.135638e+05  9.396992e+00     51576   1
-       247   1.647167e+05  3.135638e+05  1.444587e+01     60505   1
-       285   1.563611e+05  3.135638e+05  1.947441e+01     67693   1
-       300   2.480944e+05  3.135638e+05  2.276772e+01     71151   1
+         1   7.567105e+04  4.040190e+04  8.861065e-03       127   1
+        38   4.946998e+05  3.038391e+05  1.024675e+00     14108   1
+        69   7.424700e+05  3.123774e+05  2.086668e+00     26445   1
+        93   1.322471e+05  3.126330e+05  3.100011e+00     36633   1
+       116   2.787417e+05  3.126617e+05  4.114832e+00     46673   1
+       130   8.233196e+05  3.126642e+05  5.269410e+00     56809   1
+       147   9.996515e+05  3.126649e+05  6.351486e+00     65352   1
+       161   7.930819e+05  3.126650e+05  7.400513e+00     72527   1
+       171   6.644922e+05  3.126650e+05  8.542456e+00     79215   1
+       184   3.371237e+05  3.126650e+05  9.557956e+00     84583   1
+       249   5.919026e+05  3.126650e+05  1.465835e+01    110835   1
+       293   6.879026e+05  3.126650e+05  1.989929e+01    131333   1
+       300   4.791447e+05  3.126650e+05  2.056792e+01    133755   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 2.276772e+01
-total solves   : 71151
-best bound     :  3.135638e+05
-simulation ci  :  3.564506e+05 ± 7.966917e+04
+total time (s) : 2.056792e+01
+total solves   : 133755
+best bound     :  3.126650e+05
+simulation ci  :  3.424430e+05 ± 5.546361e+04
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
     simulations;
@@ -183,4 +188,4 @@ numeric issues : 0
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
-Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="4e8307d2.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 24 October 2024 06:29">Thursday 24 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="a4b62638.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 24 October 2024 07:06">Thursday 24 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
