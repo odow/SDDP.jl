@@ -130,7 +130,7 @@ Plots.hline!(plt, [741]; label = "Analytic solution")
 
 # ## Infinite horizon
 
-# For the infinite horizon case, assume a discount factor $\alpha=0.995$.
+# For the infinite horizon case, assume a discount factor $\alpha=0.95$.
 
 α = 0.95
 

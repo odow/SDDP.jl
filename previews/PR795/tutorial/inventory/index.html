@@ -72,19 +72,19 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   3.671889e+05  4.649757e+04  1.383686e-02       112   1
-        64   1.538278e+05  1.446604e+05  7.858779e-01     10468   1
+         1   6.134111e+05  4.649757e+04  1.585698e-02       112   1
+        43   1.515611e+05  1.446620e+05  5.352190e-01      7016   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 7.858779e-01
-total solves   : 10468
-best bound     :  1.446604e+05
-simulation ci  :  1.500288e+05 ± 9.893702e+03
+total time (s) : 5.352190e-01
+total solves   : 7016
+best bound     :  1.446620e+05
+simulation ci  :  1.611072e+05 ± 2.287791e+04
 numeric issues : 0
 -------------------------------------------------------------------
 
-Confidence interval: 142296.22 ± 4074.38
-Lower bound: 144660.4</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
+Confidence interval: 142555.78 ± 3814.94
+Lower bound: 144661.96</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
     simulations;
     title = &quot;x_inventory.out + u_buy.out&quot;,
     xlabel = &quot;Stage&quot;,
@@ -93,7 +93,7 @@ Lower bound: 144660.4</code></pre><p>Plot the optimal inventory levels:</p><pre>
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
-Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="e030e619.svg" alt="Example block output"/><p>Note that, because of our sample average approximation, we do not obtain the analytic solution. However, if we increased the number of sample points, our solution would approach the analytic solution.</p><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.995$</span>.</p><pre><code class="language-julia hljs">α = 0.95</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.95</code></pre><p>The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">graph = SDDP.LinearGraph(2)
+Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="b842c481.svg" alt="Example block output"/><p>Note that, because of our sample average approximation, we do not obtain the analytic solution. However, if we increased the number of sample points, our solution would approach the analytic solution.</p><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.95$</span>.</p><pre><code class="language-julia hljs">α = 0.95</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.95</code></pre><p>The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">graph = SDDP.LinearGraph(2)
 SDDP.add_edge(graph, 2 =&gt; 2, α)
 model = SDDP.PolicyGraph(
     graph;
@@ -154,26 +154,25 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   1.000000e+01  1.653070e+04  3.365040e-03        23   1
-        39   8.933599e+05  3.107260e+05  1.061975e+00     10764   1
-        72   5.092602e+05  3.135559e+05  2.089934e+00     19267   1
-        99   3.355612e+05  3.135637e+05  3.099295e+00     25916   1
-       118   6.575166e+05  3.135638e+05  4.136749e+00     31842   1
-       136   2.219611e+05  3.135638e+05  5.157850e+00     37107   1
-       157   1.138406e+06  3.135638e+05  6.296742e+00     42276   1
-       170   4.808056e+05  3.135638e+05  7.336887e+00     46887   1
-       185   9.136944e+05  3.135638e+05  8.460984e+00     51027   1
-       197   6.246278e+05  3.135638e+05  9.608750e+00     54042   1
-       238   6.485389e+05  3.135638e+05  1.493969e+01     64126   1
-       272   1.287206e+06  3.135638e+05  2.049339e+01     71266   1
-       293   2.660500e+05  3.135638e+05  2.562704e+01     76160   1
-       300   2.557389e+05  3.135638e+05  2.768407e+01     77927   1
+         1   1.140641e+07  5.010341e+04  4.730582e-02       727   1
+        43   1.419796e+06  3.122384e+05  1.056166e+00     10460   1
+        66   9.664479e+05  3.135270e+05  2.087573e+00     18238   1
+        95   1.042050e+06  3.135627e+05  3.108723e+00     24977   1
+       113   3.942278e+05  3.135638e+05  4.144876e+00     30550   1
+       133   1.871561e+06  3.135638e+05  5.262636e+00     36356   1
+       150   1.955611e+05  3.135638e+05  6.280627e+00     40883   1
+       167   4.333389e+05  3.135638e+05  7.341383e+00     45047   1
+       193   9.822778e+04  3.135638e+05  8.374967e+00     48780   1
+       206   1.345833e+05  3.135638e+05  9.396992e+00     51576   1
+       247   1.647167e+05  3.135638e+05  1.444587e+01     60505   1
+       285   1.563611e+05  3.135638e+05  1.947441e+01     67693   1
+       300   2.480944e+05  3.135638e+05  2.276772e+01     71151   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 2.768407e+01
-total solves   : 77927
+total time (s) : 2.276772e+01
+total solves   : 71151
 best bound     :  3.135638e+05
-simulation ci  :  3.601367e+05 ± 3.596807e+04
+simulation ci  :  3.564506e+05 ± 7.966917e+04
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
     simulations;
@@ -184,4 +183,4 @@ numeric issues : 0
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
-Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="b0ee3bf8.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 24 October 2024 06:23">Thursday 24 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="4e8307d2.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 24 October 2024 06:29">Thursday 24 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
