@@ -50,9 +50,9 @@ h = 1           # unit inventory holding cost
 p = 15          # unit order cost
 
 # Demand follows a continuous uniform distribution between 0 and 800. We
-# construct a sample average approximation with 10 scenarios:
+# construct a sample average approximation with 20 scenarios:
 
-Ω = range(0, 800; length = 10);
+Ω = range(0, 800; length = 20);
 
 # This is a well-known inventory problem with a closed-form solution. The
 # optimal policy is a simple order-up-to policy: if the inventory level is
