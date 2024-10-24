@@ -184,7 +184,7 @@ plt = SDDP.publication_plot(
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
-Plots.hline!(plt, [622]; label = "Analytic solution")
+Plots.hline!(plt, [662]; label = "Analytic solution")
 
 # We again recover an order-up-to policy. The analytic solution is to
 # order-up-to 662 units. We do not precisely recover this solution because
