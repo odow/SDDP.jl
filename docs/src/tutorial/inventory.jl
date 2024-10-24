@@ -52,7 +52,7 @@ p = 15          # unit order cost
 # Demand follows a continuous uniform distribution between 0 and 800. We
 # construct a sample average approximation with 10 scenarios:
 
-Ω = rand(Distributions.Uniform(0, 800), 10);
+Ω = range(0, 800; length = 10);
 
 # This is a well-known inventory problem with a closed-form solution. The
 # optimal policy is a simple order-up-to policy: if the inventory level is
@@ -118,6 +118,7 @@ plt = SDDP.publication_plot(
     title = "x_inventory.out + u_buy.out",
     xlabel = "Stage",
     ylabel = "Quantity",
+    ylims = (0, 1_000),
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
@@ -144,7 +145,7 @@ model = SDDP.PolicyGraph(
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, t
-    @variable(sp, x_inventory >= 0, SDDP.State, initial_value = x0)
+    @variable(sp, x_inventory >= 0, SDDP.State, initial_value = x_0)
     @variable(sp, x_demand >= 0, SDDP.State, initial_value = 0)
     ## u_buy is a Decision-Hazard control variable. We decide u.out for use in
     ## the next stage
@@ -163,13 +164,7 @@ model = SDDP.PolicyGraph(
     return
 end
 
-SDDP.train(
-    model;
-    iteration_limit = 300,
-    sampling_scheme = SDDP.InSampleMonteCarlo(;
-        rollout_limit = i -> min(i, 20 * ceil(Int, i / 100)),
-    ),
-)
+SDDP.train(model; iteration_limit = 300)
 simulations = SDDP.simulate(
     model,
     200,
@@ -187,6 +182,7 @@ plt = SDDP.publication_plot(
     title = "x_inventory.out + u_buy.out",
     xlabel = "Stage",
     ylabel = "Quantity",
+    ylims = (0, 1_000),
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
