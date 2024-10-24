@@ -96,6 +96,10 @@ model = SDDP.LinearPolicyGraph(;
     if t == 1
         fix(u_sell, 0; force = true)
         @stageobjective(sp, c * u_buy.out)
+    elseif t == T + 1
+        fix(u_buy.out, 0; force = true)
+        @stageobjective(sp, -c * x_inventory.out + c * x_demand.out)
+        SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
     else
         @stageobjective(sp, c * u_buy.out + h * x_inventory.out + p * x_demand.out)
         SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
@@ -105,7 +109,7 @@ end
 
 # Train and simulate the policy:
 
-SDDP.train(model; iteration_limit = 200)
+SDDP.train(model; iteration_limit = 300)
 simulations = SDDP.simulate(model, 200, [:x_inventory, :u_buy])
 objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
 μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
@@ -158,8 +162,11 @@ model = SDDP.PolicyGraph(
     return
 end
 
-SDDP.train(model; iteration_limit = 200)
-
+SDDP.train(
+    model;
+    iteration_limit = 300,
+    sampling_scheme = SDDP.InSampleMonteCarlo(; rollout_limit = i -> i),
+)
 simulations = SDDP.simulate(
     model,
     200,
