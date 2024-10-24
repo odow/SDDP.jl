@@ -52,7 +52,7 @@ import Statistics
 # and demand follows a continuous uniform distribution between 0 and 800.
 
 x0 = 100        # Initial inventory
-α = 0.995       # discount factor
+α = 0.95       # discount factor
 c = 35          # unit inventory cost
 h = 1           # unit inventory holding cost
 p = 15          # unit order cost
@@ -109,7 +109,7 @@ end
 
 # Train and simulate the policy:
 
-SDDP.train(model; iteration_limit = 300)
+SDDP.train(model)
 simulations = SDDP.simulate(model, 200, [:x_inventory, :u_buy])
 objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
 μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
@@ -119,15 +119,15 @@ println("Lower bound: ", lower_bound)
 
 # Plot the optimal inventory levels:
 
-Plots.plot(
-    SDDP.publication_plot(simulations; title = "x_inventory.out") do data
-        return data[:x_inventory].out
-    end,
-    SDDP.publication_plot(simulations; title = "u_buy.out") do data
-        return data[:u_buy].out
-    end;
+plt = SDDP.publication_plot(
+    simulations;
+    title = "x_inventory.out + u_buy.out",
     xlabel = "Stage",
-)
+    ylabel = "Quantity",
+) do data
+    return data[:x_inventory].out + data[:u_buy].out
+end
+Plots.hline!(plt, [741]; label = "Analytic solution")
 
 # ## Infinite horizon
 
@@ -136,7 +136,7 @@ Plots.plot(
 # infinite planning horizon.
 
 graph = SDDP.LinearGraph(2)
-SDDP.add_edge(graph, 2 => 1, α)
+SDDP.add_edge(graph, 2 => 2, α)
 model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
@@ -165,7 +165,9 @@ end
 SDDP.train(
     model;
     iteration_limit = 300,
-    sampling_scheme = SDDP.InSampleMonteCarlo(; rollout_limit = i -> i),
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        rollout_limit = i -> min(i, 20 * ceil(Int, i / 100)),
+    ),
 )
 simulations = SDDP.simulate(
     model,
@@ -179,12 +181,12 @@ simulations = SDDP.simulate(
 
 # Plot the optimal inventory levels:
 
-Plots.plot(
-    SDDP.publication_plot(simulations; title = "x_inventory.out") do data
-        return data[:x_inventory].out
-    end,
-    SDDP.publication_plot(simulations; title = "u_buy.out") do data
-        return data[:u_buy].out
-    end;
+plt = SDDP.publication_plot(
+    simulations;
+    title = "x_inventory.out + u_buy.out",
     xlabel = "Stage",
-)
+    ylabel = "Quantity",
+) do data
+    return data[:x_inventory].out + data[:u_buy].out
+end
+Plots.hline!(plt, [741]; label = "Analytic solution")

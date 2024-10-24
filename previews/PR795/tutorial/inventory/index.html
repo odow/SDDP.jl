@@ -8,7 +8,7 @@ import Distributions
 import HiGHS
 import Plots
 import Statistics</code></pre><h2 id="Background"><a class="docs-heading-anchor" href="#Background">Background</a><a id="Background-1"></a><a class="docs-heading-anchor-permalink" href="#Background" title="Permalink"></a></h2><p>Consider a periodic review inventory problem involving a single product. The initial inventory is denoted by <span>$x_0 \geq 0$</span>, and a decision-maker can place an order at the start of each stage. The objective is to minimize expected costs over the planning horizon. The following parameters define the cost structure:</p><ul><li><code>c</code> is the unit cost for purchasing each unit</li><li><code>h</code> is the holding cost per unit remaining at the end of each stage</li><li><code>p</code> is the shortage cost per unit of unsatisfied demand at the end of each stage</li></ul><p>There are no fixed ordering costs, and the demand at each stage is assumed to follow an independent and identically distributed random variable with cumulative distribution function (CDF) <span>$\Phi(\cdot)$</span>. Any unsatisfied demand is backlogged and carried forward to the next stage.</p><p>At each stage, an agent must decide how many items to order or, equivalently, what the inventory level should be at the beginning of the next stage. The per-stage costs are the sum of the order costs, shortage and holding costs incurred at the end of the stage, after demand is realized. If <span>$x$</span> represents the inventory level at the beginning of a stage, and <span>$y$</span> is the level of inventory after ordering, the stage costs are given by</p><p class="math-container">\[c(y-x) + \int_{0}^y h(y-\xi) d\Phi(\xi) + \int_{y}^{\infty} p(\xi - y) d\Phi(\xi).\]</p><p>Following Chapter 19 of Introduction to Operations Research by Hillier and Lieberman (7th edition), we use the following parameters: <span>$c=15, h=1, p=15$</span>, and demand follows a continuous uniform distribution between 0 and 800.</p><pre><code class="language-julia hljs">x0 = 100        # Initial inventory
-α = 0.995       # discount factor
+α = 0.95       # discount factor
 c = 35          # unit inventory cost
 h = 1           # unit inventory holding cost
 p = 15          # unit order cost
@@ -44,7 +44,7 @@ model = SDDP.LinearPolicyGraph(;
     return
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 11 nodes.
  Node indices: 1, ..., 11
-</code></pre><p>Train and simulate the policy:</p><pre><code class="language-julia hljs">SDDP.train(model; iteration_limit = 300)
+</code></pre><p>Train and simulate the policy:</p><pre><code class="language-julia hljs">SDDP.train(model)
 simulations = SDDP.simulate(model, 200, [:x_inventory, :u_buy])
 objective_values = [sum(t[:stage_objective] for t in s) for s in simulations]
 μ, ci = round.(SDDP.confidence_interval(objective_values, 1.96); digits = 2)
@@ -76,32 +76,28 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   4.077520e+05  5.811480e+04  1.482987e-02       112   1
-       100   1.651060e+05  1.839392e+05  1.016457e+00     11200   1
-       180   2.126435e+05  1.839392e+05  2.022725e+00     20160   1
-       243   2.399840e+05  1.839392e+05  3.026203e+00     27216   1
-       297   1.655207e+05  1.839392e+05  4.039709e+00     33264   1
-       300   1.898383e+05  1.839392e+05  4.112921e+00     33600   1
+         1   4.577292e+05  4.232784e+04  1.417184e-02       112   1
+        44   9.141234e+04  1.337135e+05  5.542030e-01      7128   1
 -------------------------------------------------------------------
-status         : iteration_limit
-total time (s) : 4.112921e+00
-total solves   : 33600
-best bound     :  1.839392e+05
-simulation ci  :  1.851056e+05 ± 3.545549e+03
+status         : simulation_stopping
+total time (s) : 5.542030e-01
+total solves   : 7128
+best bound     :  1.337135e+05
+simulation ci  :  1.450376e+05 ± 1.662673e+04
 numeric issues : 0
 -------------------------------------------------------------------
 
-Confidence interval: 184891.96 ± 3540.79
-Lower bound: 183939.16</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">Plots.plot(
-    SDDP.publication_plot(simulations; title = &quot;x_inventory.out&quot;) do data
-        return data[:x_inventory].out
-    end,
-    SDDP.publication_plot(simulations; title = &quot;u_buy.out&quot;) do data
-        return data[:u_buy].out
-    end;
+Confidence interval: 135411.59 ± 3901.96
+Lower bound: 133713.49</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
+    simulations;
+    title = &quot;x_inventory.out + u_buy.out&quot;,
     xlabel = &quot;Stage&quot;,
-)</code></pre><img src="e5ce8043.svg" alt="Example block output"/><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.995$</span>. The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">graph = SDDP.LinearGraph(2)
-SDDP.add_edge(graph, 2 =&gt; 1, α)
+    ylabel = &quot;Quantity&quot;,
+) do data
+    return data[:x_inventory].out + data[:u_buy].out
+end
+Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="b3be992a.svg" alt="Example block output"/><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>For the infinite horizon case, assume a discount factor <span>$\alpha=0.995$</span>. The objective in this case is to minimize the discounted expected costs over an infinite planning horizon.</p><pre><code class="language-julia hljs">graph = SDDP.LinearGraph(2)
+SDDP.add_edge(graph, 2 =&gt; 2, α)
 model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
@@ -130,7 +126,9 @@ end
 SDDP.train(
     model;
     iteration_limit = 300,
-    sampling_scheme = SDDP.InSampleMonteCarlo(; rollout_limit = i -&gt; i),
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        rollout_limit = i -&gt; min(i, 20 * ceil(Int, i / 100)),
+    ),
 )
 simulations = SDDP.simulate(
     model,
@@ -165,99 +163,33 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   1.263408e+07  5.969223e+04  5.397391e-02       703   1
-         6   6.523926e+06  4.409599e+05  1.243209e+00      9704   1
-         9   2.617620e+07  6.646159e+05  2.276884e+00     16428   1
-        10   7.164139e+06  7.728511e+05  3.338331e+00     21291   1
-        15   1.749099e+07  1.057812e+06  5.389599e+00     31995   1
-        18   4.140188e+06  1.215033e+06  6.973252e+00     39044   1
-        22   8.559418e+06  1.373784e+06  9.108218e+00     46432   1
-        32   3.575248e+06  1.626596e+06  1.434394e+01     64395   1
-        40   2.686386e+07  1.764495e+06  3.002197e+01     96123   1
-        44   1.046861e+06  1.834125e+06  3.535064e+01    105487   1
-        46   1.012820e+07  1.864568e+06  4.320509e+01    116227   1
-        47   1.623428e+07  1.874879e+06  4.953648e+01    124145   1
-        49   1.113727e+06  1.902112e+06  5.486790e+01    130075   1
-        53   1.461156e+07  1.955535e+06  6.656253e+01    141896   1
-        54   8.627353e+06  1.969800e+06  7.295674e+01    147643   1
-        58   1.071340e+07  2.011057e+06  8.457247e+01    157670   1
-        62   3.339808e+06  2.053348e+06  9.139655e+01    163381   1
-        64   7.003152e+06  2.081916e+06  9.799565e+01    168531   1
-        68   2.760618e+06  2.157234e+06  1.036599e+02    172890   1
-        71   3.032249e+06  2.179551e+06  1.101645e+02    177729   1
-        77   8.229691e+06  2.230521e+06  1.418947e+02    198353   1
-        89   6.688242e+06  2.327195e+06  1.773390e+02    218931   1
-        95   1.672361e+07  2.372675e+06  2.112803e+02    236110   1
-       101   5.588061e+06  2.417133e+06  2.445712e+02    251885   1
-       107   1.332158e+07  2.459461e+06  2.875735e+02    270702   1
-       111   8.604354e+06  2.485080e+06  3.187503e+02    282354   1
-       115   2.274210e+06  2.512061e+06  3.515469e+02    294409   1
-       120   3.025862e+06  2.547843e+06  3.821605e+02    306166   1
-       124   8.767600e+06  2.573168e+06  4.196548e+02    319833   1
-       130   9.676463e+06  2.609976e+06  4.582947e+02    332826   1
-       135   8.335596e+06  2.636409e+06  4.949347e+02    344115   1
-       141   2.646040e+06  2.671035e+06  5.271438e+02    353559   1
-       143   1.790968e+07  2.682305e+06  5.690998e+02    365170   1
-       146   1.648898e+07  2.701779e+06  6.141793e+02    378394   1
-       151   2.050870e+06  2.725954e+06  6.470738e+02    387993   1
-       154   9.500665e+06  2.744433e+06  6.903189e+02    399787   1
-       157   8.696561e+06  2.757224e+06  7.311889e+02    410736   1
-       162   1.552092e+06  2.784960e+06  7.616233e+02    418788   1
-       170   2.394566e+06  2.838931e+06  7.975613e+02    428312   1
-       175   5.173462e+06  2.859089e+06  8.393736e+02    438665   1
-       180   1.323128e+06  2.883260e+06  8.717289e+02    446717   1
-       183   6.728147e+06  2.893869e+06  9.122248e+02    456431   1
-       187   1.572527e+06  2.910625e+06  9.427791e+02    463715   1
-       191   3.192479e+06  2.926895e+06  9.736382e+02    471038   1
-       193   1.548787e+07  2.934969e+06  1.027156e+03    482818   1
-       196   1.009460e+07  2.948826e+06  1.064380e+03    491206   1
-       199   1.441304e+07  2.958403e+06  1.126430e+03    504963   1
-       200   1.026012e+07  2.964412e+06  1.156977e+03    511789   1
-       202   5.833786e+06  2.972315e+06  1.189222e+03    518915   1
-       204   1.461210e+07  2.979843e+06  1.244404e+03    530890   1
-       205   2.712748e+07  2.981210e+06  1.320090e+03    546595   1
-       211   4.819607e+06  3.001745e+06  1.364480e+03    555844   1
-       215   2.206109e+06  3.015934e+06  1.395670e+03    562335   1
-       217   4.733993e+06  3.022944e+06  1.426861e+03    568811   1
-       220   1.937122e+06  3.035225e+06  1.459081e+03    575340   1
-       226   3.770782e+06  3.055373e+06  1.496812e+03    582977   1
-       227   1.892521e+07  3.056512e+06  1.555973e+03    594223   1
-       233   6.511407e+06  3.102630e+06  1.592239e+03    601301   1
-       236   6.783752e+06  3.113707e+06  1.628708e+03    608337   1
-       239   4.533750e+06  3.120362e+06  1.670038e+03    616088   1
-       240   9.998521e+06  3.127837e+06  1.707664e+03    623044   1
-       241   1.135122e+07  3.131500e+06  1.740007e+03    629012   1
-       244   1.832567e+06  3.237763e+06  1.772752e+03    635099   1
-       247   1.048380e+06  3.246914e+06  1.803534e+03    640601   1
-       248   8.894159e+06  3.248172e+06  1.836428e+03    646413   1
-       251   9.206940e+06  3.256837e+06  1.889203e+03    655776   1
-       255   3.230601e+06  3.265458e+06  1.928689e+03    662592   1
-       258   8.813018e+06  3.271020e+06  1.977994e+03    671097   1
-       262   5.280669e+06  3.279762e+06  2.023103e+03    678654   1
-       265   7.141217e+06  3.287780e+06  2.078863e+03    687809   1
-       270   5.323753e+06  3.306239e+06  2.129870e+03    696134   1
-       272   3.525056e+06  3.311855e+06  2.169823e+03    702545   1
-       274   1.482315e+06  3.315946e+06  2.200645e+03    707370   1
-       277   4.149221e+06  3.320824e+06  2.237693e+03    713184   1
-       281   5.535410e+06  3.328890e+06  2.276584e+03    719233   1
-       286   1.314443e+07  3.339957e+06  2.359066e+03    731666   1
-       291   1.388977e+07  3.348502e+06  2.446013e+03    744242   1
-       295   1.659494e+06  3.355749e+06  2.482320e+03    749628   1
-       297   1.088359e+07  3.359422e+06  2.537822e+03    757508   1
-       300   2.482361e+06  3.366010e+06  2.569104e+03    761918   1
+         1   6.647564e+06  4.366191e+04  4.778504e-02       551   1
+        41   6.956483e+05  2.911699e+05  1.082711e+00     10964   1
+        75   4.017350e+04  2.938037e+05  2.086713e+00     18379   1
+       106   5.714144e+05  2.938251e+05  3.129158e+00     25307   1
+       127   2.601696e+05  2.938255e+05  4.144520e+00     31191   1
+       154   5.791794e+05  2.938255e+05  5.193188e+00     36729   1
+       172   2.612307e+05  2.938255e+05  6.210205e+00     41653   1
+       191   3.170066e+05  2.938255e+05  7.271533e+00     46127   1
+       214   9.941769e+05  2.938255e+05  8.508037e+00     50957   1
+       230   2.440770e+05  2.938255e+05  9.522028e+00     53426   1
+       258   6.060096e+05  2.938255e+05  1.483153e+01     59867   1
+       271   5.052161e+05  2.938255e+05  1.995984e+01     63796   1
+       286   6.427624e+05  2.938255e+05  2.598785e+01     67870   1
+       300   1.352845e+05  2.938255e+05  3.138429e+01     71074   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 2.569104e+03
-total solves   : 761918
-best bound     :  3.366010e+06
-simulation ci  :  4.410659e+06 ± 5.182253e+05
+total time (s) : 3.138429e+01
+total solves   : 71074
+best bound     :  2.938255e+05
+simulation ci  :  3.160691e+05 ± 5.081285e+04
 numeric issues : 0
--------------------------------------------------------------------</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">Plots.plot(
-    SDDP.publication_plot(simulations; title = &quot;x_inventory.out&quot;) do data
-        return data[:x_inventory].out
-    end,
-    SDDP.publication_plot(simulations; title = &quot;u_buy.out&quot;) do data
-        return data[:u_buy].out
-    end;
+-------------------------------------------------------------------</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
+    simulations;
+    title = &quot;x_inventory.out + u_buy.out&quot;,
     xlabel = &quot;Stage&quot;,
-)</code></pre><img src="2c48a18b.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 24 October 2024 03:47">Thursday 24 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+    ylabel = &quot;Quantity&quot;,
+) do data
+    return data[:x_inventory].out + data[:u_buy].out
+end
+Plots.hline!(plt, [741]; label = &quot;Analytic solution&quot;)</code></pre><img src="42e396ac.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../../guides/access_previous_variables/">Access variables from a previous stage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Thursday 24 October 2024 04:22">Thursday 24 October 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
