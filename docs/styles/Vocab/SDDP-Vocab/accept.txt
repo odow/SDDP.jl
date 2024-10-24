@@ -39,6 +39,7 @@ Markovian
 Pagnoncelli
 Papavasiliou
 Philpott
+Porteus
 Putterman
 Wasserstein
 Xpress
