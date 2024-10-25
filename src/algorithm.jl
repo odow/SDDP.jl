@@ -61,8 +61,7 @@ end
 function get_same_children(model::PolicyGraph{T}) where {T}
     tmp = Dict{Set{T},Set{T}}()
     for (key, node) in model.nodes
-        children =
-            Set(child.term for child in node.children if child.probability > 0)
+        children = Set(child.term for child in node.children)
         if length(children) == 0
             continue
         elseif haskey(tmp, children)
@@ -752,9 +751,14 @@ function solve_all_children(
 ) where {T}
     length_scenario_path = length(scenario_path)
     for child in node.children
-        if isapprox(child.probability, 0.0; atol = 1e-6)
-            continue
-        end
+        # We _do_ want to solve zero probability nodes, because they might allow
+        # us to cut share between similar nodes of a Markovian policy graph. If
+        # the user put them in, assume that they're there for a reason.
+        #
+        # See SDDP.jl#796 and SDDP.jl#797 for more discussion.
+        # if isapprox(child.probability, 0.0; atol = 1e-6)
+        #     continue
+        # end
         child_node = model[child.term]
         lock(child_node.lock)
         try
@@ -863,6 +867,9 @@ function calculate_bound(
     current_belief = initialize_belief(model)
     # Solve all problems that are children of the root node.
     for child in model.root_children
+        # It's okay to skip nodes with zero probability.
+        #
+        # See SDDP.jl#796 and SDDP.jl#797 for more discussion.
         if isapprox(child.probability, 0.0; atol = 1e-6)
             continue
         end
