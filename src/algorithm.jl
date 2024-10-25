@@ -693,7 +693,7 @@ function backward_pass(
                     # Need to check that every child of other_node is in this
                     # list
                     other_children = Set(c.term for c in other_node.children)
-                    # Thhe order of setdiff(A, B) matters.
+                    # The order of setdiff(A, B) matters.
                     @assert isempty(setdiff(other_children, Set(items.nodes)))
                     for (idx, child_index) in enumerate(items.nodes)
                         copied_probability[idx] =
@@ -760,10 +760,14 @@ function solve_all_children(
         # us to cut share between similar nodes of a Markovian policy graph. If
         # the user put them in, assume that they're there for a reason.
         #
+        # If we have a belief state, then skip the node. I don't really know
+        # why, but tests failed when I tried to remove this.
+        #
         # See SDDP.jl#796 and SDDP.jl#797 for more discussion.
-        # if isapprox(child.probability, 0.0; atol = 1e-6)
-        #     continue
-        # end
+        if belief_state !== nothing &&
+           isapprox(child.probability, 0.0; atol = 1e-6)
+            continue
+        end
         child_node = model[child.term]
         lock(child_node.lock)
         try
