@@ -690,6 +690,11 @@ function backward_pass(
                 for other_index in options.similar_children[node_index]
                     copied_probability = similar(items.probability)
                     other_node = model[other_index]
+                    # Need to check that every child of other_node is in this
+                    # list
+                    other_children = Set(c.term for c in other_node.children)
+                    # Thhe order of setdiff(A, B) matters.
+                    @assert isempty(setdiff(other_children, Set(items.nodes)))
                     for (idx, child_index) in enumerate(items.nodes)
                         copied_probability[idx] =
                             get(options.Φ, (other_index, child_index), 0.0) *

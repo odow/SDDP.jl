@@ -387,6 +387,64 @@ function test_numerical_difficulty_callback()
     return
 end
 
+function test_Markovian_zero_edges()
+    function build_model()
+        return SDDP.MarkovianPolicyGraph(;
+            transition_matrices = Matrix{Float64}[
+                [1.0;;],
+                [0.5 0.5],
+                [1.0 0.0; 0.0 1.0],
+            ],
+            optimizer = HiGHS.Optimizer,
+            sense = :Min,
+            lower_bound = 0.0,
+        ) do sp, node
+            t, i = node
+            @variable(sp, 0 <= x <= 100, SDDP.State, initial_value = 0)
+            @variable(sp, 0 <= u_p <= 200)
+            @variable(sp, u_o >= 0)
+            @constraint(sp, x.out == x.in + u_p + u_o - (200 * i - 100))
+            @stageobjective(sp, (100 + i) * u_p + 300 * u_o + 50 * x.out)
+            return
+        end
+    end
+    # refine_at_similar_nodes = true
+    model = build_model()
+    sp_21, sp_22 = model[(2, 1)].subproblem, model[(2, 2)].subproblem
+    n_21 = num_constraints(sp_21; count_variable_in_set_constraints = false)
+    n_22 = num_constraints(sp_22; count_variable_in_set_constraints = false)
+    @test n_21 == n_22 == 1
+    SDDP.train(model; iteration_limit = 1, print_level = 0)
+    n_21 = num_constraints(sp_21; count_variable_in_set_constraints = false)
+    n_22 = num_constraints(sp_22; count_variable_in_set_constraints = false)
+    @test n_21 == n_22 == 2
+    SDDP.train(model; print_level = 0, add_to_existing_cuts = true)
+    @test isapprox(SDDP.calculate_bound(model), 6.565e4; atol = 1e-4)
+    # refine_at_similar_nodes = false
+    model = build_model()
+    sp_21, sp_22 = model[(2, 1)].subproblem, model[(2, 2)].subproblem
+    n_21 = num_constraints(sp_21; count_variable_in_set_constraints = false)
+    n_22 = num_constraints(sp_22; count_variable_in_set_constraints = false)
+    @test n_21 == n_22 == 1
+    SDDP.train(
+        model;
+        iteration_limit = 1,
+        print_level = 0,
+        refine_at_similar_nodes = false,
+    )
+    n_21 = num_constraints(sp_21; count_variable_in_set_constraints = false)
+    n_22 = num_constraints(sp_22; count_variable_in_set_constraints = false)
+    @test 1 <= n_21 <= 2 && 1 <= n_22 <= 2 && n_21 != n_22
+    SDDP.train(
+        model;
+        print_level = 0,
+        add_to_existing_cuts = true,
+        refine_at_similar_nodes = false,
+    )
+    @test isapprox(SDDP.calculate_bound(model), 6.565e4; atol = 1e-4)
+    return
+end
+
 end  # module
 
 TestAlgorithm.runtests()

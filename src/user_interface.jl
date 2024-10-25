@@ -478,16 +478,14 @@ function MarkovianGraph(transition_matrices::Vector{Matrix{Float64}})
         for markov_state in 1:size(transition, 2)
             for last_markov_state in 1:size(transition, 1)
                 probability = transition[last_markov_state, markov_state]
-                if 0.0 < probability <= 1.0
-                    push!(
-                        edges,
-                        (
-                            (stage - 1, last_markov_state) =>
-                                (stage, markov_state),
-                            probability,
-                        ),
-                    )
-                end
+                push!(
+                    edges,
+                    (
+                        (stage - 1, last_markov_state) =>
+                            (stage, markov_state),
+                        probability,
+                    ),
+                )
             end
         end
     end
