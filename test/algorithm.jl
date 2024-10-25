@@ -391,7 +391,7 @@ function test_Markovian_zero_edges()
     function build_model()
         return SDDP.MarkovianPolicyGraph(;
             transition_matrices = Matrix{Float64}[
-                [1.0;;],
+                reshape([1.0], 1, 1),
                 [0.5 0.5],
                 [1.0 0.0; 0.0 1.0],
             ],
