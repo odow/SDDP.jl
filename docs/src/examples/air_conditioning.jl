@@ -6,6 +6,13 @@
 # # Air conditioning
 
 # Taken from [Anthony Papavasiliou's notes on SDDP](https://web.archive.org/web/20200504214809/https://perso.uclouvain.be/anthony.papavasiliou/public_html/SDDP.pdf)
+# This is a variation of the problem that first appears in the book 
+# Introduction to Stochastic Programming by Birge and Louveaux, 1997, 
+# Springer-Verlag, New York, on page 237, Example 1. For a rescaled problem,
+# they reported an optimal value of 6.25 with a first-stage solution of $x^1 = 2$ 
+# (production)and $y^1 = 1$ (store production). On this variation, without rescaling, 
+# it would be equivalent to 62500, 200 and 100, respectively.
+
 
 # Consider the following problem
 # * Produce air conditioners for 3 months
@@ -49,8 +56,18 @@ function air_conditioning_model(duality_handler)
         )
     end
     SDDP.train(model; duality_handler = duality_handler)
-    @test isapprox(SDDP.calculate_bound(model), 62_500.0, atol = 0.1)
-    return
+    lb = SDDP.calculate_bound(model)
+    println("Lower bound is: $lb")
+    @test isapprox(lb, 62_500.0, atol = 0.1)
+
+    sims = SDDP.simulate(model, 1, [:production, :stored_production])
+    x1 = sims[1][1][:production]
+    y1 = sims[1][1][:stored_production].out
+    @test isapprox(x1, 200, atol = 0.1)
+    @test isapprox(y1, 100, atol = 0.1)
+    println("With first stage soluctions $x1 (production) and $y1 (stored_production).")
+
+    return 
 end
 
 for duality_handler in [SDDP.LagrangianDuality(), SDDP.ContinuousConicDuality()]
