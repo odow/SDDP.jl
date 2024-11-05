@@ -13,7 +13,6 @@
 # (production)and y1 = 1 (store production). On this variation, without rescaling, 
 # it would be equivalent to 62500, 200 and 100, respectively.
 
-
 # Consider the following problem
 # * Produce air conditioners for 3 months
 # * 200 units/month at 100 \$/unit
@@ -33,7 +32,13 @@ function air_conditioning_model(duality_handler)
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, stage
-        @variable(sp, 0 <= stored_production <= 100, Int, SDDP.State, initial_value = 0)
+       @variable(
+            sp,
+            0 <= stored_production <= 100,
+            Int,
+            SDDP.State,
+            initial_value = 0
+        )
         @variable(sp, 0 <= production <= 200, Int)
         @variable(sp, overtime >= 0, Int)
         @variable(sp, demand)
@@ -41,9 +46,13 @@ function air_conditioning_model(duality_handler)
         SDDP.parameterize(ω -> JuMP.fix(demand, ω), sp, DEMAND[stage])
         @constraint(
             sp,
-            stored_production.out == stored_production.in + production + overtime - demand
+            stored_production.out ==
+            stored_production.in + production + overtime - demand
         )
-        @stageobjective(sp, 100 * production + 300 * overtime + 50 * stored_production.out)
+        @stageobjective(
+            sp,
+            100 * production + 300 * overtime + 50 * stored_production.out
+        )
     end
     SDDP.train(model; duality_handler = duality_handler)
     lb = SDDP.calculate_bound(model)
@@ -55,7 +64,9 @@ function air_conditioning_model(duality_handler)
     y1 = sims[1][1][:stored_production].out
     @test isapprox(x1, 200, atol = 0.1)
     @test isapprox(y1, 100, atol = 0.1)
-    println("With first stage soluctions $(x1) (production) and $(y1) (stored_production).")
+    println(
+        "With first stage soluctions $(x1) (production) and $(y1) (stored_production).",
+    )
 
     return
 end
