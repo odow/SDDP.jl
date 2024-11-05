@@ -32,7 +32,7 @@ function air_conditioning_model(duality_handler)
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, stage
-       @variable(
+        @variable(
             sp,
             0 <= stored_production <= 100,
             Int,
