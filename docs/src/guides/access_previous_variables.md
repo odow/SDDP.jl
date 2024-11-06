@@ -102,7 +102,8 @@ In this example, we consider the lead time to follow a truncated Geometric
 distribution.
 
 ### Tracking the orders
-We add a dimension on the x_orders variable to track the orders in transit, assuming 
+
+We add a dimension on the `x_orders` variable to track the orders in transit, assuming 
 they can take 1:T lead times. Thus, x_orders[1] are arriving in the inventory and 
 x_orders[2] will arrive in the next stage.
 
@@ -148,7 +149,6 @@ model = SDDP.LinearPolicyGraph(
         # x_orders[1].in are arriving on the inventory
         x_inventory.out == x_inventory.in - u_sell + x_orders[1].in
     end)
-    # 
     Ω = 1:T
     P = Distributions.pdf.(Distributions.Geometric(1 / 5), 0:T-1)
     P ./= sum(P)
