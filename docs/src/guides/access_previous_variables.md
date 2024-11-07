@@ -54,7 +54,10 @@ end
 
 ## Access a decision from N stages ago
 
-This is often useful if have some inventory problem with a lead-time on orders.
+This is often useful if you have some inventory problem with a lead time on orders.
+In the code below, we assume that the product has a lead time of 5 stages, and we 
+use a state variable to track the decisions on the production for the last 5 stages. 
+The decisions are passed to the next stage by shifting them by one stage.
 
 ```@repl
 using SDDP, HiGHS
@@ -90,3 +93,57 @@ end
 !!! warning
     You must initialize the same number of state variables in every stage, even
     if they are not used in that stage.
+
+## Stochastic lead times
+
+Stochastic lead times can be modeled by adding stochasticity to the pipeline
+balance constraint.
+
+The trick is to use the random variable ``\omega`` to represent the lead time,
+together with `JuMP.set_normalized_coefficient` to add `u_buy` to the `i`
+pipeline balance constraint when ``\omega`` is equal to `i`. For example, if
+``\omega = 2`` and `T = 4`, we would have constraints:
+```julia
+c_pipeline[1], x_pipeline[1].out == x_pipeline[2].in + 0 * u_buy
+c_pipeline[2], x_pipeline[2].out == x_pipeline[3].in + 1 * u_buy
+c_pipeline[3], x_pipeline[3].out == x_pipeline[4].in + 0 * u_buy
+c_pipeline[4], x_pipeline[4].out == x_pipeline[5].in + 0 * u_buy
+```
+
+```@repl
+using SDDP
+import HiGHS
+T = 10
+model = SDDP.LinearPolicyGraph(
+    stages = 20,
+    sense = :Max,
+    upper_bound = 1000,
+    optimizer = HiGHS.Optimizer,
+) do sp, t
+    @variables(sp, begin
+        x_inventory >= 0, SDDP.State, (initial_value = 0)
+        x_pipeline[1:T+1], SDDP.State, (initial_value = 0)
+        0 <= u_buy <= 10
+        u_sell >= 0
+    end)
+    fix(x_pipeline[T+1].out, 0)
+    @stageobjective(sp, u_sell)
+    @constraints(sp, begin
+        # Shift the orders one stage 
+        c_pipeline[i=1:T], x_pipeline[i].out == x_pipeline[i+1].in + 1 * u_buy
+        # x_pipeline[1].in are arriving on the inventory
+        x_inventory.out == x_inventory.in - u_sell + x_pipeline[1].in
+    end)
+    SDDP.parameterize(sp, 1:T) do ω
+        # Rewrite the constraint c_pipeline[i=1:T] indicating how many stages
+        # ahead the order will arrive (ω)
+        # if ω == i:
+        #   x_pipeline[i+1].in + 1 * u_buy == x_pipeline[i].out
+        # else:
+        #   x_pipeline[i+1].in + 0 * u_buy == x_pipeline[i].out
+        for i in 1:T
+            set_normalized_coefficient(c_pipeline[i], u_buy, ω == i ? 1 : 0)
+        end
+    end
+end
+```
