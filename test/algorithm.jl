@@ -163,7 +163,7 @@ Unable to retrieve solution from node 1.
 
   Termination status : INFEASIBLE
   Primal status      : NO_SOLUTION
-  Dual status        : NO_SOLUTION.
+  Dual status        : INFEASIBILITY_CERTIFICATE.
 
 The current subproblem was written to `subproblem_1.mof.json`.
 
@@ -205,7 +205,7 @@ Unable to retrieve solution from node 1.
 
   Termination status : INFEASIBLE
   Primal status      : NO_SOLUTION
-  Dual status        : NO_SOLUTION.
+  Dual status        : INFEASIBILITY_CERTIFICATE.
 
 The current subproblem was written to `subproblem_1.mof.json`.
 
@@ -384,6 +384,33 @@ function test_numerical_difficulty_callback()
     @test model.most_recent_training_results.status == :iteration_limit
     log = model.most_recent_training_results.log
     @test map(l -> l.serious_numerical_issue, log) == [1, 0, 0]
+    return
+end
+
+function test_root_node_risk_measure()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, stage
+        @variable(sp, 0 <= x <= 100, SDDP.State, initial_value = 0)
+        @variable(sp, 0 <= u_p <= 200)
+        @variable(sp, u_o >= 0)
+        @variable(sp, w)
+        SDDP.parameterize(ω -> JuMP.fix(w, ω), sp, [100, 300])
+        @constraint(sp, x.out == x.in + u_p + u_o - w)
+        @stageobjective(sp, 100 * u_p + 300 * u_o + 50 * x.out)
+    end
+    SDDP.train(model; root_node_risk_measure = SDDP.WorstCase())
+    @test isapprox(model.most_recent_training_results.log[end].bound, 107500.0)
+    @test isapprox(
+        SDDP.calculate_bound(model; risk_measure = SDDP.WorstCase()),
+        107500.0,
+    )
+    @test isapprox(
+        SDDP.calculate_bound(model; risk_measure = SDDP.Expectation()),
+        85000.0,
+    )
     return
 end
 
