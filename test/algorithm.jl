@@ -163,7 +163,7 @@ Unable to retrieve solution from node 1.
 
   Termination status : INFEASIBLE
   Primal status      : NO_SOLUTION
-  Dual status        : NO_SOLUTION.
+  Dual status        : INFEASIBILITY_CERTIFICATE.
 
 The current subproblem was written to `subproblem_1.mof.json`.
 
@@ -205,7 +205,7 @@ Unable to retrieve solution from node 1.
 
   Termination status : INFEASIBLE
   Primal status      : NO_SOLUTION
-  Dual status        : NO_SOLUTION.
+  Dual status        : INFEASIBILITY_CERTIFICATE.
 
 The current subproblem was written to `subproblem_1.mof.json`.
 
@@ -402,10 +402,7 @@ function test_root_node_risk_measure()
         @stageobjective(sp, 100 * u_p + 300 * u_o + 50 * x.out)
     end
     SDDP.train(model; root_node_risk_measure = SDDP.WorstCase())
-    @test isapprox(
-        model.most_recent_training_results.log[end].bound,
-        107500.0,
-    )
+    @test isapprox(model.most_recent_training_results.log[end].bound, 107500.0)
     @test isapprox(
         SDDP.calculate_bound(model; risk_measure = SDDP.WorstCase()),
         107500.0,
