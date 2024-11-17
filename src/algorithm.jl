@@ -116,6 +116,7 @@ struct Options{T}
     last_log_iteration::Ref{Int}
     # For threading
     lock::ReentrantLock
+    root_node_risk_measure::AbstractRiskMeasure
     # Internal function: users should never construct this themselves.
     function Options(
         model::PolicyGraph{T},
@@ -136,6 +137,7 @@ struct Options{T}
         duality_handler::AbstractDualityHandler = ContinuousConicDuality(),
         forward_pass_callback = x -> nothing,
         post_iteration_callback = result -> nothing,
+        root_node_risk_measure::AbstractRiskMeasure = Expectation(),
     ) where {T}
         return new{T}(
             initial_state,
@@ -160,6 +162,7 @@ struct Options{T}
             post_iteration_callback,
             Ref{Int}(0),  # last_log_iteration
             ReentrantLock(),
+            root_node_risk_measure,
         )
     end
 end
@@ -963,7 +966,10 @@ function iteration(model::PolicyGraph{T}, options::Options) where {T}
         )
     end
     @_timeit_threadsafe model.timer_output "calculate_bound" begin
-        bound = calculate_bound(model)
+        bound = calculate_bound(
+            model;
+            risk_measure = options.root_node_risk_measure,
+        )
     end
     lock(options.lock)
     try
@@ -1053,6 +1059,12 @@ Train the policy for `model`.
  - `risk_measure`: the risk measure to use at each node. Defaults to
    [`Expectation`](@ref).
 
+ -  `root_node_risk_measure::AbstractRiskMeasure`: the risk measure to use at
+    the root node when computing the `Bound` column. Note that the choice of
+    this option does not change the primal policy, and it applies only if the
+    transition from the root node to the first stage is stochastic. Defaults to
+    [`Expectation`](@ref).
+
  - `sampling_scheme`: a sampling scheme to use on the forward pass of the
     algorithm. Defaults to [`InSampleMonteCarlo`](@ref).
 
@@ -1103,6 +1115,7 @@ function train(
     run_numerical_stability_report::Bool = true,
     stopping_rules = AbstractStoppingRule[],
     risk_measure = SDDP.Expectation(),
+    root_node_risk_measure::AbstractRiskMeasure = Expectation(),
     sampling_scheme = SDDP.InSampleMonteCarlo(),
     cut_type = SDDP.SINGLE_CUT,
     cycle_discretization_delta::Float64 = 0.0,
@@ -1265,6 +1278,7 @@ function train(
         duality_handler,
         forward_pass_callback,
         post_iteration_callback,
+        root_node_risk_measure,
     )
     status = :not_solved
     try

@@ -284,7 +284,10 @@ function master_loop(
             end
         end
         slave_update(model, result)
-        bound = calculate_bound(model)
+        bound = calculate_bound(
+            model;
+            risk_measure = options.root_node_risk_measure,
+        )
         push!(
             options.log,
             Log(
