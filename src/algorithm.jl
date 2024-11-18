@@ -693,6 +693,11 @@ function backward_pass(
                 for other_index in options.similar_children[node_index]
                     copied_probability = similar(items.probability)
                     other_node = model[other_index]
+                    # Need to check that every child of other_node is in this
+                    # list
+                    other_children = Set(c.term for c in other_node.children)
+                    # The order of setdiff(A, B) matters.
+                    @assert isempty(setdiff(other_children, Set(items.nodes)))
                     for (idx, child_index) in enumerate(items.nodes)
                         copied_probability[idx] =
                             get(options.Φ, (other_index, child_index), 0.0) *
@@ -754,7 +759,16 @@ function solve_all_children(
 ) where {T}
     length_scenario_path = length(scenario_path)
     for child in node.children
-        if isapprox(child.probability, 0.0; atol = 1e-6)
+        # We _do_ want to solve zero probability nodes, because they might allow
+        # us to cut share between similar nodes of a Markovian policy graph. If
+        # the user put them in, assume that they're there for a reason.
+        #
+        # If we have a belief state, then skip the node. I don't really know
+        # why, but tests failed when I tried to remove this.
+        #
+        # See SDDP.jl#796 and SDDP.jl#797 for more discussion.
+        if belief_state !== nothing &&
+           isapprox(child.probability, 0.0; atol = 1e-6)
             continue
         end
         child_node = model[child.term]
@@ -865,6 +879,9 @@ function calculate_bound(
     current_belief = initialize_belief(model)
     # Solve all problems that are children of the root node.
     for child in model.root_children
+        # It's okay to skip nodes with zero probability.
+        #
+        # See SDDP.jl#796 and SDDP.jl#797 for more discussion.
         if isapprox(child.probability, 0.0; atol = 1e-6)
             continue
         end

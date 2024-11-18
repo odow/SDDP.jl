@@ -136,7 +136,6 @@ function test_ValueFunction_belief_state()
     b = Dict((1, 1) => 0.8, (1, 2) => 0.2)
     (y, duals) = SDDP.evaluate(V11, Dict(:x => 1.0); belief_state = b)
     @test duals[:x] ≈ y ≈ 1.68
-
     V12 = SDDP.ValueFunction(model[(1, 2)])
     (y, duals) = SDDP.evaluate(V12, Dict(:x => 1.0); belief_state = b)
     @test duals[:x] ≈ y ≈ 1.68
