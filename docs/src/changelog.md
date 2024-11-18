@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
- - Added `root_node_risk_measure` kwarg to [`train`](@ref) (#804)
+ - Added `root_node_risk_measure` keyword to [`train`](@ref) (#804)
 
 ### Fixed
 
