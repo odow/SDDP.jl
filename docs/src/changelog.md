@@ -7,6 +7,21 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.10.0 (November 19, 2024)
+
+### Added
+
+ - Added `root_node_risk_measure` keyword to [`train`](@ref) (#804)
+
+### Fixed
+
+ - Fixed a bug with cut sharing in a graph with zero-probability arcs (#797)
+
+### Other
+
+ - Added a new tutorial [Example: inventory management](@ref) (#795)
+ - Added a stochastic lead time example to docs (#800)
+
 ## v1.9.0 (October 17, 2024)
 
 ### Added
