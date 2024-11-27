@@ -363,9 +363,9 @@ function forward_pass(
                 continue  # Not a finitely bounded state. Ignore for now
             end
             if !haskey(fp.old_bounds, k)
-                old_bounds[k] = (lower_bound(v.out), upper_bound(v.out))
+                fp.old_bounds[k] = (lower_bound(v.out), upper_bound(v.out))
             end
-            l, u = old_bounds[k]
+            l, u = fp.old_bounds[k]
             x = get(fp.trial_centre, k, model.initial_root_state[k])
             set_lower_bound(v.out, max(l, x - fp.ρ * (u - l)))
             set_upper_bound(v.out, min(u, x + fp.ρ * (u - l)))
