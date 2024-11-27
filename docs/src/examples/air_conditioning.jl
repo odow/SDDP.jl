@@ -58,16 +58,14 @@ function air_conditioning_model(duality_handler)
     lb = SDDP.calculate_bound(model)
     println("Lower bound is: $lb")
     @test isapprox(lb, 62_500.0, atol = 0.1)
-
     sims = SDDP.simulate(model, 1, [:production, :stored_production])
     x1 = sims[1][1][:production]
     y1 = sims[1][1][:stored_production].out
     @test isapprox(x1, 200, atol = 0.1)
     @test isapprox(y1, 100, atol = 0.1)
     println(
-        "With first stage soluctions $(x1) (production) and $(y1) (stored_production).",
+        "With first stage solutions $(x1) (production) and $(y1) (stored_production).",
     )
-
     return
 end
 
