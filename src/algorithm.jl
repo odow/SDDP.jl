@@ -1136,7 +1136,7 @@ function train(
         parallel_scheme = Serial()
     end
     if forward_pass isa AlternativeForwardPass
-        # FIXME(odow): Threaded is broken for these forward passes
+        # FIXME(odow): Threaded is broken for this forward pass
         parallel_scheme = Serial()
     end
     if log_frequency <= 0
