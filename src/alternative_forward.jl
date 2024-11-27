@@ -31,12 +31,13 @@ Sustainable Energy. 13(1), 196-206.
 struct AlternativeForwardPass{T} <: AbstractForwardPass
     model::PolicyGraph{T}
     forward_pass::AbstractForwardPass
+    lock::ReentrantLock
 
     function AlternativeForwardPass(
         model::PolicyGraph{T};
         forward_pass::AbstractForwardPass = DefaultForwardPass(),
     ) where {T}
-        return new{T}(model, forward_pass)
+        return new{T}(model, forward_pass, ReentrantLock())
     end
 end
 
@@ -45,20 +46,24 @@ function forward_pass(
     options::Options,
     pass::AlternativeForwardPass{T},
 ) where {T}
+    # No need for locks here, delegate threadsafety to pass.forward_pass.
     return forward_pass(pass.model, options, pass.forward_pass)
 end
 
 """
     AlternativePostIterationCallback(forward_model::PolicyGraph)
 
-A post-iteration callback that should be used whenever [`SDDP.AlternativeForwardPass`](@ref)
-is used.
+A post-iteration callback that should be used whenever
+[`SDDP.AlternativeForwardPass`](@ref) is used.
 """
 struct AlternativePostIterationCallback{T}
     model::PolicyGraph{T}
 end
 
 function (callback::AlternativePostIterationCallback)(result::IterationResult)
-    slave_update(callback.model, result)
+    # Only one thread is allowed to update the callback model at a time.
+    callback.lock() do
+        slave_update(callback.model, result)
+    end
     return
 end

@@ -1135,10 +1135,6 @@ function train(
         # FIXME(odow): Threaded is broken for objective states
         parallel_scheme = Serial()
     end
-    if forward_pass isa AlternativeForwardPass
-        # FIXME(odow): Threaded is broken for this forward pass
-        parallel_scheme = Serial()
-    end
     if log_frequency <= 0
         msg = "`log_frequency` must be at least `1`. Got $log_frequency."
         throw(ArgumentError(msg))
