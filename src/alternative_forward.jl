@@ -45,20 +45,25 @@ function forward_pass(
     options::Options,
     pass::AlternativeForwardPass{T},
 ) where {T}
+    # No need for locks here, delegate threadsafety to pass.forward_pass.
     return forward_pass(pass.model, options, pass.forward_pass)
 end
 
 """
     AlternativePostIterationCallback(forward_model::PolicyGraph)
 
-A post-iteration callback that should be used whenever [`SDDP.AlternativeForwardPass`](@ref)
-is used.
+A post-iteration callback that should be used whenever
+[`SDDP.AlternativeForwardPass`](@ref) is used.
 """
 struct AlternativePostIterationCallback{T}
     model::PolicyGraph{T}
 end
 
 function (callback::AlternativePostIterationCallback)(result::IterationResult)
-    slave_update(callback.model, result)
+    # Only one thread is allowed to update the callback model at a time.
+    lock(callback.model.lock) do
+        slave_update(callback.model, result)
+        return
+    end
     return
 end
