@@ -384,7 +384,7 @@ function forward_pass(
     #  * This means that Thread A is solving the unregularized problem, but it
     #    doesn't really matter because it doesn't change the validity; this is a
     #    performance optimization.
-    #  * It might also be that we "skip" some of the starting tirla points,
+    #  * It might also be that we "skip" some of the starting trial points,
     #    because Thread A sets a trial centre, then thread B comes along and
     #    sets a new one before A can start the forward pass. Again, this doesn't
     #    really matter; this regularization is just a performance optimization.
