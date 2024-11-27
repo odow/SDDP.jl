@@ -31,13 +31,12 @@ Sustainable Energy. 13(1), 196-206.
 struct AlternativeForwardPass{T} <: AbstractForwardPass
     model::PolicyGraph{T}
     forward_pass::AbstractForwardPass
-    lock::ReentrantLock
 
     function AlternativeForwardPass(
         model::PolicyGraph{T};
         forward_pass::AbstractForwardPass = DefaultForwardPass(),
     ) where {T}
-        return new{T}(model, forward_pass, ReentrantLock())
+        return new{T}(model, forward_pass)
     end
 end
 
@@ -62,7 +61,7 @@ end
 
 function (callback::AlternativePostIterationCallback)(result::IterationResult)
     # Only one thread is allowed to update the callback model at a time.
-    callback.lock() do
+    callback.model.lock() do
         slave_update(callback.model, result)
         return
     end
