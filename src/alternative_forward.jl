@@ -61,7 +61,7 @@ end
 
 function (callback::AlternativePostIterationCallback)(result::IterationResult)
     # Only one thread is allowed to update the callback model at a time.
-    callback.model.lock() do
+    lock(callback.model.lock) do
         slave_update(callback.model, result)
         return
     end
