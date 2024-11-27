@@ -1135,8 +1135,7 @@ function train(
         # FIXME(odow): Threaded is broken for objective states
         parallel_scheme = Serial()
     end
-    if forward_pass isa AlternativeForwardPass ||
-       forward_pass isa RegularizedForwardPass
+    if forward_pass isa AlternativeForwardPass
         # FIXME(odow): Threaded is broken for these forward passes
         parallel_scheme = Serial()
     end
