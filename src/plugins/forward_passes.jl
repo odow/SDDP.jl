@@ -394,6 +394,7 @@ function forward_pass(
             set_lower_bound(node.states[k].out, l)
             set_upper_bound(node.states[k].out, u)
         end
+        return
     end
     return pass
 end
