@@ -37,7 +37,20 @@ function test_Binary_Expansion()
     @test binexpand(0.5, 0.5, 0.01) == binexpand(50, 50)
     @test binexpand(0.54, 0.54, 0.01) == binexpand(54, 54)
     @test binexpand(0.56, 0.56, 0.01) == binexpand(56, 56)
-
+    @test_throws(
+        ErrorException(
+            "Cannot perform binary expansion on a negative number." *
+            "Initial values of state variables must be nonnegative.",
+        ),
+        binexpand(-1, 5),
+    )
+    @test_throws(
+        ErrorException(
+            "Cannot perform binary expansion on zero-length " *
+            "vector. Upper bounds of state variables must be positive.",
+        ),
+        binexpand(5, 0),
+    )
     @test 0 == bincontract([0])
     @test 1 == bincontract([1])
     @test 0 == bincontract([0, 0])

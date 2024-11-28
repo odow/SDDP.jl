@@ -310,7 +310,7 @@ function get_axis(x::Vector{NTuple{N,T}}) where {N,T}
            [xi[changing_index] for xi in x]
 end
 
-get_axis(x::Vector{Nothing}) = nothing
+get_axis(::Vector{Nothing}) = nothing
 
 function get_axis(X::Vector{Point{Y,B}}) where {Y,B}
     for f in [x -> x.x, x -> x.y, x -> x.b]

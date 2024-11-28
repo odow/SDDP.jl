@@ -34,6 +34,7 @@ function test_ValueFunction_Min()
     @test SDDP.evaluate(V1, Dict(:x => 1.0)) == (0.0, Dict(:x => 0.0))
     SDDP.train(model; iteration_limit = 2, print_level = 0)
     V1 = SDDP.ValueFunction(model[1])
+    @test sprint(show, V1) == "A value function for node 1"
     for (xhat, yhat, pihat) in
         [(0.0, 0.0, 0.0), (1.0, 2.0, 2.0), (2.0, 4.0, 2.0)]
         @test SDDP.evaluate(V1, Dict(:x => xhat)) == (yhat, Dict(:x => pihat))
@@ -160,6 +161,66 @@ function test_ValuaeFunction_plot()
     V1 = SDDP.ValueFunction(model[1])
     SDDP.plot(V1; x = 0:0.1:2, y = 0, open = false)
     SDDP.plot(V1; x = 0:0.1:2, y = 0:0.1:2, open = false)
+    return
+end
+
+function test_ValueFunction_risk_measure_min()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
+        @constraint(sp, x.out == x.in)
+        SDDP.parameterize(sp, [1, 2]) do w
+            @stageobjective(sp, w * x.out)
+            return
+        end
+        return
+    end
+    SDDP.train(
+        model;
+        iteration_limit = 2,
+        print_level = 0,
+        risk_measure = SDDP.CVaR(0.25),
+        cut_type = SDDP.MULTI_CUT,
+    )
+    V1 = SDDP.ValueFunction(model[1])
+    for (xhat, yhat, pihat) in
+        [(0.0, 0.0, 0.0), (1.0, 2.0, 2.0), (2.0, 4.0, 2.0)]
+        @test SDDP.evaluate(V1, Dict(:x => xhat)) == (yhat, Dict(:x => pihat))
+    end
+    return
+end
+
+function test_ValueFunction_risk_measure_max()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        upper_bound = 10.0,
+        sense = :Max,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, x >= 0, SDDP.State, initial_value = 1.5)
+        @constraint(sp, x.out == x.in)
+        SDDP.parameterize(sp, [1, 2]) do w
+            @stageobjective(sp, w * x.out)
+            return
+        end
+        return
+    end
+    SDDP.train(
+        model;
+        iteration_limit = 2,
+        print_level = 0,
+        risk_measure = SDDP.CVaR(0.25),
+        cut_type = SDDP.MULTI_CUT,
+    )
+    V1 = SDDP.ValueFunction(model[1])
+    for (xhat, yhat, pihat) in
+        [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (2.0, 2.0, 1.0)]
+        @test SDDP.evaluate(V1, Dict(:x => xhat)) == (yhat, Dict(:x => pihat))
+        @test SDDP.evaluate(V1, Dict("x" => xhat)) == (yhat, Dict(:x => pihat))
+    end
     return
 end
 
