@@ -567,12 +567,7 @@ function adjust_probability(
         sum(objective_realizations[i] * p[i] for i in 1:N)
     )
     JuMP.optimize!(wasserstein)
-    if JuMP.primal_status(wasserstein) != MOI.FEASIBLE_POINT
-        error(
-            "Unable to solver Wasserstein subproblem. Status: ",
-            JuMP.termination_status(wassserstein),
-        )
-    end
+    @assert JuMP.primal_status(wasserstein) == MOI.FEASIBLE_POINT
     copyto!(risk_adjusted_probability, JuMP.value.(p))
     return 0.0
 end

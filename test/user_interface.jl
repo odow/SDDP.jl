@@ -79,6 +79,7 @@ function test_construct_Graph()
     graph = SDDP.Graph(:root)
     @test graph.root_node == :root
     @test collect(keys(graph.nodes)) == [:root]
+    @test sprint(show, graph) == "Root\n root\nNodes\n {}\nArcs\n {}"
     return
 end
 
@@ -767,6 +768,74 @@ function test_no_stage_objective()
     @test model[2].stage_objective == 0.0
     SDDP.train(model; iteration_limit = 3, print_level = 0)
     @test SDDP.calculate_bound(model) ≈ 0.0 atol = 1e-8
+    return
+end
+
+function test_validate_graph_errors()
+    graph = SDDP.LinearGraph(2)
+    SDDP.add_ambiguity_set(graph, [1])
+    @test_throws(
+        ErrorException(
+            "Belief partition [[1]] does not form a valid partition of the nodes in the graph.",
+        ),
+        SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, t
+            @variable(sp, x, SDDP.State, initial_value = 1.0)
+            @constraint(sp, x.in == x.out)
+        end,
+    )
+    SDDP.add_ambiguity_set(graph, [0, 2])
+    @test_throws(
+        ErrorException(
+            "Belief partition [[1], [0, 2]] cannot contain the root node 0.",
+        ),
+        SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, t
+            @variable(sp, x, SDDP.State, initial_value = 1.0)
+            @constraint(sp, x.in == x.out)
+        end,
+    )
+    return
+end
+
+function test_show_node()
+    model = SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 1.0)
+        @constraint(sp, x.in == x.out)
+        SDDP.parameterize(sp, [1, 2]) do w
+            @stageobjective(sp, w * x.out)
+            return
+        end
+    end
+    @test sprint(show, model[1]) ==
+          "Node 1\n  # State variables : 1\n  # Children        : 1\n  # Noise terms     : 2\n"
+    @test sprint(show, model[2]) ==
+          "Node 2\n  # State variables : 1\n  # Children        : 0\n  # Noise terms     : 2\n"
+    return
+end
+
+function test_show_many_nodes()
+    model = SDDP.LinearPolicyGraph(; stages = 20, lower_bound = 0.0) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 1.0)
+        @constraint(sp, x.in == x.out)
+    end
+    @test sprint(show, model) ==
+          "A policy graph with 20 nodes.\n Node indices: 1, ..., 20\n"
+    return
+end
+
+function test_policy_graph_sense_error()
+    @test_throws(
+        ErrorException(
+            "The optimization sense must be `:Min` or `:Max`. It is MiniMization.",
+        ),
+        SDDP.LinearPolicyGraph(;
+            stages = 2,
+            sense = :MiniMization,
+            lower_bound = 0.0,
+        ) do sp, t
+            @variable(sp, x, SDDP.State, initial_value = 1.0)
+            @constraint(sp, x.in == x.out)
+        end,
+    )
     return
 end
 

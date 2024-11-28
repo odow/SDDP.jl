@@ -8,6 +8,8 @@ module TestVisualization
 using SDDP
 using Test
 
+import Plots
+
 function runtests()
     for name in names(@__MODULE__; all = true)
         if startswith("$(name)", "test_")
@@ -62,6 +64,10 @@ function test_PublicationPlot()
         [Dict{Symbol,Any}(:x => 2), Dict{Symbol,Any}(:x => 6)],
         [Dict{Symbol,Any}(:x => 3), Dict{Symbol,Any}(:x => 4)],
     ]
+    plot = SDDP.publication_plot(simulations) do data
+        return data[:x]
+    end
+    @test plot isa Plots.Plot
     data = SDDP.publication_data(simulations, [0.0, 0.25, 0.5, 1.0], d -> d[:x])
     @test data == [1 4; 1.5 4.5; 2 5; 3 6]
     for val in (-Inf, Inf, NaN)

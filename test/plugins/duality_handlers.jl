@@ -466,6 +466,17 @@ function test_BanditDuality_eval()
     return
 end
 
+function test_deprecate_integrality_handler()
+    err = try
+        SDDP._deprecate_integrality_handler()
+    catch err
+        err
+    end
+    @test_throws err SDDP.SDDiP()
+    @test_throws err SDDP.ContinuousRelaxation()
+    return
+end
+
 end
 
 TestDualityHandlers.runtests()

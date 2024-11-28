@@ -387,6 +387,29 @@ function test_ModifiedChiSquared_Min_sqrt08()
     return
 end
 
+function test_ModifiedChiSquared_default()
+    P, Q = [0.4, 0.6], zeros(2)
+    F = SDDP.ModifiedChiSquared(0.1)
+    a = SDDP.adjust_probability(F, Q, P, [:a, :b], [1.0, 1.0], true)
+    @test iszero(a)
+    @test P == Q
+    return
+end
+
+function test_ModifiedChiSquared_zero_prob()
+    P, Q = [1.0, 0.0], zeros(2)
+    F = SDDP.ModifiedChiSquared(0.1)
+    a = SDDP.adjust_probability(F, Q, P, [:a, :b], [1.0, 2.0], true)
+    @test iszero(a)
+    @test P == Q
+    P, Q = [0.5, 0.0, 0.5], zeros(3)
+    F = SDDP.ModifiedChiSquared(0.1)
+    a = SDDP.adjust_probability(F, Q, P, [:a, :b, :c], [1.0, 1.0, 2.0], true)
+    @test iszero(a)
+    @test isapprox(Q, [0.4292893218813453, 0.0, 0.5707106781186547])
+    return
+end
+
 function _default_wasserstein(alpha)
     return SDDP.Wasserstein(HiGHS.Optimizer; alpha = alpha) do x, y
         return abs(x - y)
@@ -486,6 +509,17 @@ end
 function test_Entropic()
     @test sprint(show, SDDP.Entropic(0.1)) ==
           "Entropic risk measure with γ = 0.1"
+    return
+end
+
+function test_Entropic_zero()
+    # Test that increasing values of θ lead to larger values for F[X].
+    X = [1.0, 2.0, 3.0]
+    P = [0.5, 0.5, 0.0]
+    Q = [NaN, NaN, NaN]
+    α = SDDP.adjust_probability(SDDP.Entropic(0.0), Q, P, [], X, true)
+    @test iszero(α)
+    @test Q == P
     return
 end
 

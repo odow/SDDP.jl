@@ -282,6 +282,21 @@ function test_vector_valued_functions()
     return
 end
 
+function test_copy_and_replace_error()
+    model = SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+        @constraint(sp, sin(x.out) == x.in)
+        @stageobjective(sp, x.out)
+    end
+    @test_throws(
+        ErrorException(
+            "Unable to formulate deterministic equivalent: `copy_and_replace_variables` is not implemented for functions like `sin(x_out) - x_in`.",
+        ),
+        SDDP.deterministic_equivalent(model),
+    )
+    return
+end
+
 end  # module
 
 TestDeterministicEquivalent.runtests()
