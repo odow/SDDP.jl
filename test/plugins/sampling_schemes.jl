@@ -160,6 +160,12 @@ end
 
 function test_Historical()
     @test_throws Exception SDDP.Historical([[1, 2], [3, 4]], [0.6, 0.6])
+    @test_throws(
+        ErrorException(
+            "Probability of historical scenarios must sum to 1. Currently: 1.1.",
+        ),
+        SDDP.Historical([[(1, 1), (2, 2)]], [1.1]),
+    )
     return
 end
 
@@ -174,10 +180,11 @@ function test_Historical_SingleTrajectory()
             return JuMP.set_upper_bound(x, ω)
         end
     end
-    scenario, terminated_due_to_cycle = SDDP.sample_scenario(
-        model,
-        SDDP.Historical([(1, 0.1), (2, 0.2), (1, 0.3)]),
-    )
+    sampling_scheme = SDDP.Historical([(1, 0.1), (2, 0.2), (1, 0.3)])
+    @test sprint(show, sampling_scheme) ==
+          "A Historical sampler with 1 scenarios sampled sequentially."
+    scenario, terminated_due_to_cycle =
+        SDDP.sample_scenario(model, sampling_scheme)
     @test length(scenario) == 3
     @test !terminated_due_to_cycle
     @test scenario == [(1, 0.1), (2, 0.2), (1, 0.3)]
@@ -249,6 +256,7 @@ function test_PSR()
         end
     end
     scheme = SDDP.PSRSamplingScheme(2)
+    @test sprint(show, scheme) == "A sampler with 0 scenarios like PSR does."
     scenario_1, term_1 = SDDP.sample_scenario(model, scheme)
     @test length(scenario_1) == 2
     @test !term_1
@@ -345,6 +353,7 @@ function test_SimulatorSamplingScheme()
         end
     end
     sampler = SDDP.SimulatorSamplingScheme(simulator)
+    @test sprint(show, sampler) == "SimulatorSamplingScheme"
     scenario, _ = SDDP.sample_scenario(model, sampler)
     @test length(scenario) == 3
     @test haskey(graph.nodes, scenario[1][1])
@@ -382,6 +391,19 @@ function test_SimulatorSamplingScheme_with_noise()
     @test scenario[1][2] isa Tuple{Float64,Int}
     @test scenario[1][2][1] in (40.0, 50.1, 59.6)
     @test scenario[1][2][2] in 1:3
+    return
+end
+
+function test_sample_noise()
+    @test SDDP.sample_noise(SDDP.Noise{Int}[]) === nothing
+    @test_throws(
+        ErrorException("Cumulative probability cannot be greater than 1.0."),
+        SDDP.sample_noise(SDDP.Noise.([1, 2], [0.5, 0.6])),
+    )
+    @test_throws(
+        ErrorException("Cumulative probability cannot be greater than 1.0."),
+        SDDP.sample_noise(SDDP.Noise.([1, 2], [0.5, -0.6])),
+    )
     return
 end
 

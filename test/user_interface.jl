@@ -797,10 +797,7 @@ function test_validate_graph_errors()
 end
 
 function test_show_node()
-    model = SDDP.LinearPolicyGraph(;
-        stages = 2,
-        lower_bound = 0.0,
-    ) do sp, t
+    model = SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0.0) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 1.0)
         @constraint(sp, x.in == x.out)
         SDDP.parameterize(sp, [1, 2]) do w
@@ -809,17 +806,14 @@ function test_show_node()
         end
     end
     @test sprint(show, model[1]) ==
-          "Node 2\n  # State variables : 1\n  # Children        : 1\n  # Noise terms     : 2\n"
+          "Node 1\n  # State variables : 1\n  # Children        : 1\n  # Noise terms     : 2\n"
     @test sprint(show, model[2]) ==
           "Node 2\n  # State variables : 1\n  # Children        : 0\n  # Noise terms     : 2\n"
     return
 end
 
 function test_show_many_nodes()
-    model = SDDP.LinearPolicyGraph(;
-        stages = 20,
-        lower_bound = 0.0,
-    ) do sp, t
+    model = SDDP.LinearPolicyGraph(; stages = 20, lower_bound = 0.0) do sp, t
         @variable(sp, x, SDDP.State, initial_value = 1.0)
         @constraint(sp, x.in == x.out)
     end
