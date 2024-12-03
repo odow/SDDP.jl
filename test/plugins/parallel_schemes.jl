@@ -67,10 +67,7 @@ function test_Asynchronous_optimizer()
         ),
         SDDP._uninitialize_solver(model; throw_error = true),
     )
-    model = SDDP.LinearPolicyGraph(;
-        stages = 3,
-        lower_bound = 0.0,
-    ) do sp, stage
+    model = SDDP.LinearPolicyGraph(; stages = 3, lower_bound = 0.0) do sp, stage
         @variable(sp, 0 <= x <= 100, SDDP.State, initial_value = 0)
         @stageobjective(sp, x.in)
     end

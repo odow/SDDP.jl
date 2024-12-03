@@ -537,12 +537,10 @@ function test_objective_state()
 end
 
 function test_objective_state_two()
-    model = SDDP.LinearPolicyGraph(;
-        stages = 2,
-        lower_bound = 0,
-    ) do subproblem, t
-        @variable(subproblem, x, SDDP.State, initial_value = 0)
-        SDDP.add_objective_state(
+    model =
+        SDDP.LinearPolicyGraph(; stages = 2, lower_bound = 0) do subproblem, t
+            @variable(subproblem, x, SDDP.State, initial_value = 0)
+            SDDP.add_objective_state(
                 subproblem;
                 initial_value = (1.5, 0.0),
                 lower_bound = (0.75, 0.0),
@@ -551,13 +549,13 @@ function test_objective_state_two()
             ) do y, ω
                 return (y + ω, y)
             end
-        SDDP.parameterize(subproblem, [1, 2]) do ω
-            ret = SDDP.objective_state(subproblem)
-            @test ret isa Tuple{Float64,Float64}
-            @stageobjective(subproblem, ret[1] * x.out)
-            return
+            SDDP.parameterize(subproblem, [1, 2]) do ω
+                ret = SDDP.objective_state(subproblem)
+                @test ret isa Tuple{Float64,Float64}
+                @stageobjective(subproblem, ret[1] * x.out)
+                return
+            end
         end
-    end
     SDDP.parameterize(model[1], 2)
     return
 end
