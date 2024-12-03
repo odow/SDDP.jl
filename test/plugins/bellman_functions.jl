@@ -362,16 +362,25 @@ function test_biobjective_cut_selection()
             )
         end
     end
-    SDDP.train_biobjective(
+    ret = SDDP.train_biobjective(
         model;
         solution_limit = 10,
         iteration_limit = 10,
         print_level = 0,
     )
+    @test ret isa Dict{Float64,Float64}
     n_cuts = count(model[1].bellman_function.global_theta.cuts) do cut
         return cut.constraint_ref !== nothing
     end
     @test n_cuts < 100
+    ret = SDDP.train_biobjective(
+        model;
+        solution_limit = 10,
+        iteration_limit = 10,
+        print_level = 0,
+        include_timing = true,
+    )
+    @test ret isa Dict{Float64,Tuple{Float64,Float64}}
     return
 end
 

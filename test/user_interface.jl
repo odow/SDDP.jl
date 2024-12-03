@@ -453,13 +453,31 @@ function test_numerical_stability_report()
         lower_bound = -1e10,
         direct_mode = false,
     ) do subproblem, t
-        @variable(subproblem, x >= -1e7, SDDP.State, initial_value = 1e-5)
+        @variable(subproblem, x >= -1e-7, SDDP.State, initial_value = 1e-5)
         @variable(subproblem, 1 <= y <= 5, Int)  # Note: this is just to test range fallback
-        @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 1e-8)
+        @constraint(subproblem, 1e-8 <= x.in + y <= 10)
+        @constraint(subproblem, [x.in, x.out, y] in MOI.ExponentialCone())
+        @constraint(subproblem, 1e9 * x.out >= 1e-6 * x.in + 0)
         @stageobjective(subproblem, 1e9 * x.out)
+    end
+    mktempdir() do dir
+        filename = joinpath(dir, "log.stdout")
+        open(filename, "w") do io
+            redirect_stdout(io) do
+                @test SDDP.numerical_stability_report(model) === nothing
+                return
+            end
+            return
+        end
+        contents = read(filename, String)
+        @test occursin("WARNING", contents)
+        @test occursin("numerical stability report", contents)
+        return
     end
     report = sprint(SDDP.numerical_stability_report, model)
     @test occursin("WARNING", report)
+    @test occursin("[1e-07, 1e+10]", report)
+    @test occursin("[1e-08, 1e+01]", report)
     report_2 =
         sprint(io -> SDDP.numerical_stability_report(io, model; by_node = true))
     @test occursin("numerical stability report for node: 1", report_2)
@@ -515,6 +533,32 @@ function test_objective_state()
             end
         end,
     )
+    return
+end
+
+function test_objective_state_two()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0,
+    ) do subproblem, t
+        @variable(subproblem, x, SDDP.State, initial_value = 0)
+        SDDP.add_objective_state(
+                subproblem;
+                initial_value = (1.5, 0.0),
+                lower_bound = (0.75, 0.0),
+                upper_bound = (2.25, 0.0),
+                lipschitz = (100.0, 100.0),
+            ) do y, ω
+                return (y + ω, y)
+            end
+        SDDP.parameterize(subproblem, [1, 2]) do ω
+            ret = SDDP.objective_state(subproblem)
+            @test ret isa Tuple{Float64,Float64}
+            @stageobjective(subproblem, ret[1] * x.out)
+            return
+        end
+    end
+    SDDP.parameterize(model[1], 2)
     return
 end
 
@@ -836,6 +880,37 @@ function test_policy_graph_sense_error()
             @constraint(sp, x.in == x.out)
         end,
     )
+    return
+end
+
+
+function test_print_problem_statistics()
+    graph = SDDP.Graph(0)
+    for i in 1:4
+        SDDP.add_node(graph, i)
+    end
+    SDDP.add_edge(graph, 0 => 1, 1.0)
+    SDDP.add_edge(graph, 0 => 4, 0.0)
+    SDDP.add_edge(graph, 1 => 2, 0.2)
+    SDDP.add_edge(graph, 1 => 3, 0.3)
+    SDDP.add_edge(graph, 1 => 4, 0.5)
+    SDDP.add_edge(graph, 2 => 3, 0.5)
+    SDDP.add_edge(graph, 2 => 4, 0.5)
+    SDDP.add_edge(graph, 3 => 4, 1.0)
+    graph
+    model = SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 1.0)
+        @constraint(sp, x.in == x.out)
+    end
+    contents = sprint(
+        SDDP.print_problem_statistics,
+        model,
+        false,
+        nothing,
+        nothing,
+        nothing,
+    )
+    @test occursin("scenarios       : 4.00000e+00", contents)
     return
 end
 

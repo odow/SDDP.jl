@@ -71,6 +71,7 @@ function test_Binary_Expansion()
     @test bincontract([0, 1, 0], 0.1) ≈ 0.2
     @test bincontract([1, 1, 0], 0.1) ≈ 0.3
     @test bincontract([1, 0, 1], 0.1) ≈ 0.5
+    return
 end
 
 end  # module

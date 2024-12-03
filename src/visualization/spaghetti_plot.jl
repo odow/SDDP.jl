@@ -152,15 +152,14 @@ function save(p::SpaghettiPlot, args...; kwargs...)
     return plot(p, args...; kwargs...)
 end
 
-function launch_file(filename)
+function launch_file(filename, fn = run)
     if Sys.iswindows()
-        run(`$(ENV["COMSPEC"]) /c start $(filename)`)
+        return fn(`$(ENV["COMSPEC"]) /c start $(filename)`)
     elseif Sys.isapple()
-        run(`open $(filename)`)
+        return fn(`open $(filename)`)
     elseif Sys.islinux() || Sys.isbsd()
-        run(`xdg-open $(filename)`)
+        return fn(`xdg-open $(filename)`)
     else
         error("Unable to show plot. Try opening the file $(filename) manually.")
     end
-    return
 end
