@@ -85,8 +85,6 @@ function test_Asynchronous_optimizer()
     )
     return
 end
-    return
-end
 
 function test_slave_update()
     model = SDDP.LinearPolicyGraph(;

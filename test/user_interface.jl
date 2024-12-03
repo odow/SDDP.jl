@@ -883,7 +883,6 @@ function test_policy_graph_sense_error()
     return
 end
 
-
 function test_print_problem_statistics()
     graph = SDDP.Graph(0)
     for i in 1:4
