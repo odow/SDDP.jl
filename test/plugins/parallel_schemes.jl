@@ -45,6 +45,41 @@ function test_Asynchronous_optimizer()
     a = SDDP.Asynchronous(HiGHS.Optimizer)
     a.init_callback(model)
     @test solver_name(model[2].subproblem) == "HiGHS"
+    model = SDDP.LinearPolicyGraph(;
+        stages = 3,
+        lower_bound = 0.0,
+        direct_mode = true,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, stage
+        @variable(sp, 0 <= x <= 100, SDDP.State, initial_value = 0)
+        @stageobjective(sp, x.in)
+    end
+    scheme = SDDP.Asynchronous()
+    @test_throws(
+        ErrorException(
+            "Cannot use asynchronous solver with optimizers in direct mode.",
+        ),
+        scheme.init_callback(model),
+    )
+    @test_throws(
+        ErrorException(
+            "Cannot use asynchronous solver with optimizers in direct mode.",
+        ),
+        SDDP._uninitialize_solver(model; throw_error = true),
+    )
+    model = SDDP.LinearPolicyGraph(; stages = 3, lower_bound = 0.0) do sp, stage
+        @variable(sp, 0 <= x <= 100, SDDP.State, initial_value = 0)
+        @stageobjective(sp, x.in)
+    end
+    scheme = SDDP.Asynchronous()
+    @test_throws(
+        ErrorException(
+            "You must supply an optimizer for the policy graph, either by passing\n" *
+            "one to the `optimizer` keyword argument to `PolicyGraph`, or by\n" *
+            "using `JuMP.set_optimizer(model, optimizer)`.\n",
+        ),
+        scheme.init_callback(model),
+    )
     return
 end
 

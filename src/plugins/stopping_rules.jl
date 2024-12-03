@@ -171,14 +171,9 @@ function convergence_test(
 
     if graph.objective_sense == MOI.MIN_SENSE
         return sample_mean - sample_ci <= current_bound
-    elseif graph.objective_sense == MOI.MAX_SENSE
-        return current_bound <= sample_mean + sample_ci
     else
-        # If sense is none of the above for some awkward reason, return to
-        # previous criteria
-        return sample_mean - sample_ci <=
-               current_bound <=
-               sample_mean + sample_ci
+        @assert graph.objective_sense == MOI.MAX_SENSE
+        return current_bound <= sample_mean + sample_ci
     end
 end
 
@@ -279,10 +274,6 @@ mutable struct SimulationStoppingRule{F} <: AbstractStoppingRule
     last_iteration::Int
     distance_tol::Float64
     bound_tol::Float64
-end
-
-function _get_state_variable_value(key)
-    return sp -> JuMP.value(JuMP.variable_by_name(sp, "$(key)_out"))
 end
 
 """

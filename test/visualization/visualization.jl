@@ -55,6 +55,7 @@ function test_SpaghettiPlot()
         @test read("test.html", String) == read(control, String)
     end
     rm("test.html")
+    @test SDDP.launch_file("test.html", identity) isa Cmd
     return
 end
 

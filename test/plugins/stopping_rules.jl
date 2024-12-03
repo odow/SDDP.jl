@@ -134,6 +134,12 @@ function test_Statistical()
         [SDDP.Log(1, 12.0, 9.0, 1.0, 1, 1, " ", false)],
         rule,
     )
+    rule = SDDP.Statistical(; num_replications = 20, iteration_period = 2)
+    @test !SDDP.convergence_test(
+        model,
+        [SDDP.Log(1, 6.0, 9.0, 1.0, 1, 1, " ", false)],
+        rule,
+    )
     return
 end
 
@@ -185,6 +191,17 @@ function test_BoundStalling()
     # This also meets the test, because it looks like a deterministic
     # policy
     @test SDDP.convergence_test(
+        graph,
+        [
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " ", false),
+            SDDP.Log(2, 0.0, 0.0, 1.0, 1, 1, " ", false),
+            SDDP.Log(3, 0.0, 0.0, 1.0, 1, 1, " ", false),
+            SDDP.Log(4, 0.0, 0.0, 1.0, 1, 1, " ", false),
+        ],
+        rule,
+    )
+    rule = SDDP.BoundStalling(5, 1.0)
+    @test !SDDP.convergence_test(
         graph,
         [
             SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " ", false),
@@ -276,6 +293,10 @@ function test_SimulationStoppingRule()
     @test !SDDP.convergence_test(graph, log[1:10], rule)
     @test !SDDP.convergence_test(graph, log[1:19], rule)
     @test SDDP.convergence_test(graph, log[1:20], rule)
+    rule = SDDP.SimulationStoppingRule(; period = 1)
+    rule.last_iteration = 20
+    @test rule.period == 1
+    @test !SDDP.convergence_test(graph, log, rule)
     return
 end
 
