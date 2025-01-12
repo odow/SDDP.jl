@@ -63,11 +63,12 @@ SDDP.train(
 
 The following risk measures are implemented in SDDP.jl:
 
- - [`Expectation`](@ref)  [default]
- - [`WorstCase`](@ref)
- - [`AVaR`](@ref) or [`CVaR`](@ref)
- - [`ConvexCombination`](@ref)
- - [`EAVaR`](@ref)
- - [`ModifiedChiSquared`](@ref)
- - [`Entropic`](@ref)
- - [`Wasserstein`](@ref)
+ - [`SDDP.Expectation`](@ref)  [default]
+ - [`SDDP.AVaR`](@ref)
+ - [`SDDP.ConvexCombination`](@ref)
+ - [`SDDP.CVaR`](@ref)
+ - [`SDDP.EAVaR`](@ref)
+ - [`SDDP.Entropic`](@ref)
+ - [`SDDP.ModifiedChiSquared`](@ref)
+ - [`SDDP.Wasserstein`](@ref)
+ - [`SDDP.WorstCase`](@ref)
