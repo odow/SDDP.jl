@@ -8,18 +8,43 @@
 """
     Expectation()
 
-The Expectation risk measure. Identical to taking the expectation with respect
-to the nominal distribution.
+The Expectation risk measure.
+
+This risk measure is identical to taking the expectation with respect to the
+nominal distribution.
+
+## Example
+
+```jldoctest
+julia> risk_adjusted_probability = zeros(4);
+
+julia> SDDP.adjust_probability(
+           SDDP.Expectation(),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.1
+ 0.2
+ 0.3
+ 0.4
+```
 """
 struct Expectation <: AbstractRiskMeasure end
 
 function adjust_probability(
-    measure::Expectation,
+    ::Expectation,
     risk_adjusted_probability::Vector{Float64},
     original_probability::Vector{Float64},
-    noise_support::Vector,
-    objective_realizations::Vector{Float64},
-    is_minimization::Bool,
+    ::Vector,
+    ::Vector{Float64},
+    ::Bool,
 )
     risk_adjusted_probability .= original_probability
     return 0.0
@@ -30,16 +55,40 @@ end
 """
     WorstCase()
 
-The worst-case risk measure. Places all of the probability weight on the worst
-outcome.
+The worst-case risk measure.
+
+This risk measure places all of the probability weight on the worst outcome.
+
+## Example
+
+```jldoctest
+julia> risk_adjusted_probability = zeros(4);
+
+julia> SDDP.adjust_probability(
+           SDDP.WorstCase(),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.0
+ 0.0
+ 1.0
+ 0.0
+```
 """
 struct WorstCase <: AbstractRiskMeasure end
 
 function adjust_probability(
-    measure::WorstCase,
+    ::WorstCase,
     risk_adjusted_probability::Vector{Float64},
     original_probability::Vector{Float64},
-    noise_support::Vector,
+    ::Vector,
     objective_realizations::Vector{Float64},
     is_minimization::Bool,
 )
@@ -67,22 +116,78 @@ end
 
 The average value at risk (AV@R) risk measure.
 
-Computes the expectation of the β fraction of worst outcomes. β must be in `[0,
-1]`. When `β=1`, this is equivalent to the [`Expectation`](@ref) risk measure.
+This risk measure computes the expectation of the β fraction of worst outcomes.
+β must be in `[0, 1]`.
+
+When `β=1`, this is equivalent to the [`Expectation`](@ref) risk measure.
 When `β=0`, this is equivalent  to the [`WorstCase`](@ref) risk measure.
 
 AV@R is also known as the conditional value at risk (CV@R) or expected
 shortfall.
+
+## Example
+
+```jldoctest
+julia> risk_adjusted_probability = zeros(4);
+
+julia> SDDP.adjust_probability(
+           SDDP.AVaR(0.5),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.2
+ 0.19999999999999996
+ 0.6
+ 0.0
+
+julia> SDDP.adjust_probability(
+           SDDP.AVaR(1.0),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.1
+ 0.2
+ 0.3
+ 0.4
+
+julia> SDDP.adjust_probability(
+           SDDP.AVaR(0.0),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.0
+ 0.0
+ 1.0
+ 0.0
+```
 """
 struct AVaR <: AbstractRiskMeasure
     β::Float64
     function AVaR(β::Float64)
         if !(0 <= β <= 1)
-            throw(
-                ArgumentError(
-                    "Risk-quantile β must be in [0, 1]. Currently it is $(β).",
-                ),
-            )
+            msg = "Risk-quantile β must be in [0, 1]. Currently it is $(β)."
+            throw(ArgumentError(msg))
         end
         return new(β)
     end
@@ -93,11 +198,70 @@ end
 
 The conditional value at risk (CV@R) risk measure.
 
-Computes the expectation of the γ fraction of worst outcomes. γ must be in `[0,
-1]`. When `γ=1`, this is equivalent to the [`Expectation`](@ref) risk measure.
+This risk measure computes the expectation of the γ fraction of worst outcomes.
+γ must be in `[0, 1]`.
+
+When `γ=1`, this is equivalent to the [`Expectation`](@ref) risk measure.
 When `γ=0`, this is equivalent  to the [`WorstCase`](@ref) risk measure.
 
 CV@R is also known as the average value at risk (AV@R) or expected shortfall.
+
+## Example
+
+```jldoctest
+julia> risk_adjusted_probability = zeros(4);
+
+julia> SDDP.adjust_probability(
+           SDDP.CVaR(0.5),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.2
+ 0.19999999999999996
+ 0.6
+ 0.0
+
+julia> SDDP.adjust_probability(
+           SDDP.CVaR(1.0),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.1
+ 0.2
+ 0.3
+ 0.4
+
+julia> SDDP.adjust_probability(
+           SDDP.CVaR(0.0),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.0
+ 0.0
+ 1.0
+ 0.0
+```
 """
 const CVaR = AVaR
 
@@ -131,7 +295,9 @@ function adjust_probability(
     risk_adjusted_probability .= 0.0
     quantile_collected = 0.0
     for i in sortperm(objective_realizations; rev = is_minimization)
-        quantile_collected >= measure.β && break
+        if quantile_collected >= measure.β
+            break
+        end
         avar_prob =
             min(original_probability[i], measure.β - quantile_collected) /
             measure.β
@@ -150,15 +316,21 @@ Create a weighted combination of risk measures.
 
 ## Examples
 
-    SDDP.ConvexCombination(
-        (0.5, SDDP.Expectation()),
-        (0.5, SDDP.AVaR(0.25))
-    )
+```jldoctest
+julia> SDDP.ConvexCombination(
+           (0.5, SDDP.Expectation()),
+           (0.5, SDDP.AVaR(0.25))
+       )
+A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.25)
+```
 
 Convex combinations can also be constructed by adding weighted risk measures
 together as follows:
 
-    0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.5)
+```jldoctest
+julia> 0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.5)
+A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.5)
+```
 """
 struct ConvexCombination{T<:Tuple} <: AbstractRiskMeasure
     measures::T
@@ -222,7 +394,7 @@ Risk (also called Conditional Value @ Risk).
 
         λ * E[x] + (1 - λ) * AV@R(β)[x]
 
-### Keyword Arguments
+## Keyword Arguments
 
 * `lambda`: Convex weight on the expectation (`(1-lambda)` weight is put on the
   AV@R component. Inreasing values of `lambda` are less risk averse (more
@@ -231,6 +403,19 @@ Risk (also called Conditional Value @ Risk).
 * `beta`: The quantile at which to calculate the Average Value @ Risk.
   Increasing values of `beta` are less risk averse. If `beta=0`, then the AV@R
   component is the worst case risk measure.
+
+## Example
+
+```jldoctest
+julia> SDDP.EAVaR(; lambda = 1.0, beta = 1.0)
+A convex combination of 1.0 * SDDP.Expectation() + 0.0 * SDDP.AVaR(1.0)
+
+julia> SDDP.EAVaR(; lambda = 0.0, beta = 1.0)
+A convex combination of 0.0 * SDDP.Expectation() + 1.0 * SDDP.AVaR(1.0)
+
+julia> SDDP.EAVaR(; lambda = 0.5, beta = 0.5)
+A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.5)
+```
 """
 function EAVaR(; lambda::Float64 = 1.0, beta::Float64 = 1.0)
     if !(0.0 <= lambda <= 1.0)
@@ -292,6 +477,46 @@ If the uncorrected standard deviation of the objecive realizations is less than
 `minimum_std`, then the risk-measure will default to `Expectation()`.
 
 This code was contributed by Lea Kapelevich.
+
+## Example
+
+```jldoctest
+julia> risk_adjusted_probability = zeros(4);
+
+julia> SDDP.adjust_probability(
+           SDDP.ModifiedChiSquared(0.5),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.2267731382092775
+ 0.1577422872635742
+ 0.5958039891549808
+ 0.019680585372167547
+
+julia> SDDP.adjust_probability(
+           SDDP.ModifiedChiSquared(0.5),
+           risk_adjusted_probability,
+           [0.25, 0.25, 0.25, 0.25],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.25, 0.25, 0.25, 0.25]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.3333333333333333
+ 0.044658198738520394
+ 0.6220084679281462
+ 0.0
+```
 """
 struct ModifiedChiSquared <: AbstractRiskMeasure
     radius::Float64
@@ -518,6 +743,44 @@ A distributionally-robust risk measure based on the Wasserstein distance.
 As `alpha` increases, the measure becomes more risk-averse. When `alpha=0`, the
 measure is equivalent to the expectation operator. As `alpha` increases, the
 measure approaches the Worst-case risk measure.
+
+## `norm`
+
+The `norm` argument is a fuction that computes the distance between two supports
+of your distribution. It must have the signature:
+```julia
+wasserstein_norm(x::SDDP.Noise, y::SDDP.Noise)::Float64
+```
+
+The input arguments are of type [`Noise`](@ref). The `.term` values will depend
+on what supports you passed to [`parameterize`](@ref).
+
+## Example
+
+```jldoctest
+julia> import HiGHS
+
+julia> risk_adjusted_probability = zeros(4);
+
+julia> wasserstein_norm(x::SDDP.Noise, y::SDDP.Noise) = abs(x.term - y.term);
+
+julia> SDDP.adjust_probability(
+           SDDP.Wasserstein(wasserstein_norm, HiGHS.Optimizer; alpha = 0.5),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1.0, 2.0, 3.0, 4.0], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+0.0
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+  0.1
+  0.10000000000000003
+  0.7999999999999999
+ -0.0
+```
 """
 struct Wasserstein{T,F} <: AbstractRiskMeasure
     alpha::Float64
@@ -584,6 +847,63 @@ The entropic risk measure as described by:
     Operations Research (2022). [doi](https://doi.org/10.1007/s10479-022-04977-w).
 
 As γ increases, the measure becomes more risk-averse.
+
+## Example
+
+```jldoctest
+julia> risk_adjusted_probability = zeros(4);
+
+julia> SDDP.adjust_probability(
+           SDDP.Entropic(0.1),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+-0.14333892665462006
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.1100296362588547
+ 0.19911786395979578
+ 0.3648046623591841
+ 0.3260478374221655
+
+julia> SDDP.adjust_probability(
+           SDDP.Entropic(1.0),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+-0.12038063114659443
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 0.09911045746726178
+ 0.07292139941460454
+ 0.8082304666305623
+ 0.019737676487571337
+
+julia> SDDP.adjust_probability(
+           SDDP.Entropic(10.0),
+           risk_adjusted_probability,
+           [0.1, 0.2, 0.3, 0.4],  # nominal_probability,
+           SDDP.Noise.([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4]),  # noise_supports,
+           [5.0, 4.0, 6.0, 2.0],  # cost_realizations,
+           true,                  # is_minimization
+       )
+-0.12038063114659443
+
+julia> risk_adjusted_probability
+4-element Vector{Float64}:
+ 1.5133080886430772e-5
+ 1.374081618667918e-9
+ 0.999984865545032
+ 5.664386611687232e-18
+```
 """
 mutable struct Entropic <: AbstractRiskMeasure
     γ::Float64

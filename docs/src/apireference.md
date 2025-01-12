@@ -90,6 +90,15 @@ SDDP.RegularizedForwardPass
 ```@docs
 SDDP.AbstractRiskMeasure
 SDDP.adjust_probability
+SDDP.Expectation
+SDDP.WorstCase
+SDDP.AVaR
+SDDP.CVaR
+SDDP.ConvexCombination
+SDDP.EAVaR
+SDDP.ModifiedChiSquared
+SDDP.Entropic
+SDDP.Wasserstein
 ```
 
 ### Duality handlers
