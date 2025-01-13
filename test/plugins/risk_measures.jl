@@ -560,6 +560,25 @@ function test_Entropic_Max()
     return
 end
 
+function test_ConvexCombination_with_intercept()
+    X = [1.0, 2.0, 3.0]
+    P = [0.5, 0.2, 0.3]
+    F_ent = SDDP.Entropic(1.0)
+    Q_ent = [NaN, NaN, NaN]
+    α_ent = SDDP.adjust_probability(F_ent, Q_ent, P, [], X, false)
+    @test α_ent > 0
+    F_wc = SDDP.WorstCase()
+    Q_wc = [NaN, NaN, NaN]
+    α_wc = SDDP.adjust_probability(F_wc, Q_wc, P, [], X, false)
+    @test α_wc == 0.0
+    F = 0.3 * F_ent + 0.7 * F_wc
+    Q = [NaN, NaN, NaN]
+    α = SDDP.adjust_probability(F, Q, P, [], X, false)
+    @test isapprox(α, 0.3 * α_ent + 0.7 * α_wc)
+    @test isapprox(Q, 0.3 * Q_ent + 0.7 * Q_wc)
+    return
+end
+
 end  # module
 
 TestRiskMeasures.runtests()

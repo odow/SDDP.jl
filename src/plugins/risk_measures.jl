@@ -369,9 +369,10 @@ function adjust_probability(
 )
     risk_adjusted_probability .= 0.0
     partial_distribution = similar(risk_adjusted_probability)
+    alpha = 0.0
     for (weight, measure) in measure.measures
         partial_distribution .= 0.0
-        adjust_probability(
+        a = adjust_probability(
             measure,
             partial_distribution,
             original_probability,
@@ -379,9 +380,10 @@ function adjust_probability(
             objective_realizations,
             is_minimization,
         )
+        alpha += weight * a
         risk_adjusted_probability .+= weight * partial_distribution
     end
-    return 0.0
+    return alpha
 end
 
 # =================================== EAV@R ================================== #
