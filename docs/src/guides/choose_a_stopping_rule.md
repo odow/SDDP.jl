@@ -39,18 +39,27 @@ SDDP.train(
 
 # Terminate if BoundStalling OR TimeLimit becomes true
 SDDP.train(
-    model; 
+    model;
     stopping_rules = [SDDP.BoundStalling(10, 1e-4), SDDP.TimeLimit(100.0)],
 )
 
 # Terminate if BoundStalling AND TimeLimit becomes true
 SDDP.train(
-    model; 
+    model;
     stopping_rules = [
         SDDP.StoppingChain(SDDP.BoundStalling(10, 1e-4), SDDP.TimeLimit(100.0)),
     ],
 )
 ```
 
-See [Stopping rules](@ref api_stopping_rules) for a list of stopping rules
-supported by SDDP.jl.
+## Supported rules
+
+The stopping rules implemented in SDDP.jl are:
+
+ - [`SDDP.IterationLimit`](@ref)
+ - [`SDDP.TimeLimit`](@ref)
+ - [`SDDP.Statistical`](@ref)
+ - [`SDDP.BoundStalling`](@ref)
+ - [`SDDP.StoppingChain`](@ref)
+ - [`SDDP.SimulationStoppingRule`](@ref)
+ - [`SDDP.FirstStageStoppingRule`](@ref)
