@@ -29,7 +29,12 @@ If you want finer control over how SDDP.jl computes subgradients in the backward
 pass, you can pass an [`SDDP.AbstractDualityHandler`](@ref) to the
 `duality_handler` argument of [`SDDP.train`](@ref).
 
-See [Duality handlers](@ref) for the list of handlers you can pass.
+The duality handlers implemented in SDDP.jl are:
+
+ - [`SDDP.ContinuousConicDuality`](@ref)
+ - [`SDDP.LagrangianDuality`](@ref)
+ - [`SDDP.StrengthenedConicDuality`](@ref)
+ - [`SDDP.BanditDuality`](@ref)
 
 ## Convergence
 
@@ -47,11 +52,11 @@ Most discussions of SDDiP in the literature confuse two unrelated things.
 
  * First, how to compute dual variables
  * Second, when the algorithm will converge to a globally optimal policy.
- 
+
 ### Computing dual variables
 
 The stochastic dual dynamic programming algorithm requires a subgradient of the
-objective with respect to the incoming state variable. 
+objective with respect to the incoming state variable.
 
 One way to obtain a valid subgradient is to compute an optimal value of the
 dual variable ``\lambda`` in the following subproblem:

@@ -1,459 +1,450 @@
 # [API Reference](@id api_reference_list)
 
-## Policy graphs
+This page lists the public API of SDDP.jl. Any functions in SDDP that are not
+listed here are considered part of the private API and may change in any future
+release.
 
-### `Graph`
+!!! info
+    This page is a semi-structured list of the SDDP.jl API. For a more
+    structured overview, read the How-to guides or Tutorial parts of this
+    documentation.
+
+Load SDDP using:
+```julia
+using SDDP
+```
+
+SDDP exports only [`@stageobjective`](@ref). Therefore, all other calls must be
+prefixed with `SDDP.`.
+
+## `Graph`
 ```@docs
 SDDP.Graph
 ```
 
-### `add_node`
+## `add_node`
 ```@docs
 SDDP.add_node
 ```
 
-### `add_edge`
+## `add_edge`
 ```@docs
 SDDP.add_edge
 ```
 
-### `add_ambiguity_set`
+## `add_ambiguity_set`
 ```@docs
 SDDP.add_ambiguity_set
 ```
 
-### `LinearGraph`
+## `LinearGraph`
 ```@docs
 SDDP.LinearGraph
 ```
 
-### `MarkovianGraph`
+## `MarkovianGraph`
 ```@docs
 SDDP.MarkovianGraph
 ```
 
-### `UnicyclicGraph`
+## `UnicyclicGraph`
 ```@docs
 SDDP.UnicyclicGraph
 ```
 
-### `LinearPolicyGraph`
+## `LinearPolicyGraph`
 ```@docs
 SDDP.LinearPolicyGraph
 ```
 
-### `MarkovianPolicyGraph`
+## `MarkovianPolicyGraph`
 ```@docs
 SDDP.MarkovianPolicyGraph
 ```
 
-### `PolicyGraph`
+## `PolicyGraph`
 ```@docs
 SDDP.PolicyGraph
 ```
 
-## Subproblem definition
-
-### `@stageobjective`
+## `@stageobjective`
 ```@docs
 @stageobjective
 ```
 
-### `parameterize`
+## `parameterize`
 ```@docs
 SDDP.parameterize
 ```
 
-### `add_objective_state`
+## `add_objective_state`
 ```@docs
 SDDP.add_objective_state
 ```
 
-### `objective_state`
+## `objective_state`
 ```@docs
 SDDP.objective_state
 ```
 
-### `Noise`
+## `Noise`
 ```@docs
 SDDP.Noise
 ```
 
-## Training the policy
-
-### `numerical_stability_report`
+## `numerical_stability_report`
 ```@docs
 SDDP.numerical_stability_report
 ```
 
-### `train`
+## `train`
 ```@docs
 SDDP.train
 ```
 
-### `termination_status`
+## `termination_status`
 ```@docs
 SDDP.termination_status
 ```
 
-### `write_cuts_to_file`
+## `write_cuts_to_file`
 ```@docs
 SDDP.write_cuts_to_file
 ```
 
-### `read_cuts_from_file`
+## `read_cuts_from_file`
 ```@docs
 SDDP.read_cuts_from_file
 ```
 
-### `write_log_to_csv`
+## `write_log_to_csv`
 ```@docs
 SDDP.write_log_to_csv
 ```
 
-### `set_numerical_difficulty_callback`
+## `set_numerical_difficulty_callback`
 ```@docs
 SDDP.set_numerical_difficulty_callback
 ```
 
-## [Stopping rules](@id api_stopping_rules)
-
-### `AbstractStoppingRule`
+## `AbstractStoppingRule`
 ```@docs
 SDDP.AbstractStoppingRule
 ```
 
-### `stopping_rule_status`
+## `stopping_rule_status`
 ```@docs
 SDDP.stopping_rule_status
 ```
 
-### `convergence_test`
+## `convergence_test`
 ```@docs
 SDDP.convergence_test
 ```
 
-### `IterationLimit`
+## `IterationLimit`
 ```@docs
 SDDP.IterationLimit
 ```
 
-### `TimeLimit`
+## `TimeLimit`
 ```@docs
 SDDP.TimeLimit
 ```
 
-### `Statistical`
+## `Statistical`
 ```@docs
 SDDP.Statistical
 ```
 
-### `BoundStalling`
+## `BoundStalling`
 ```@docs
 SDDP.BoundStalling
 ```
 
-### `StoppingChain`
+## `StoppingChain`
 ```@docs
 SDDP.StoppingChain
 ```
 
-### `SimulationStoppingRule`
+## `SimulationStoppingRule`
 ```@docs
 SDDP.SimulationStoppingRule
 ```
 
-### `FirstStageStoppingRule`
+## `FirstStageStoppingRule`
 ```@docs
 SDDP.FirstStageStoppingRule
 ```
 
-## Sampling schemes
-
-### `AbstractSamplingScheme`
+## `AbstractSamplingScheme`
 ```@docs
 SDDP.AbstractSamplingScheme
 ```
 
-### `sample_scenario`
+## `sample_scenario`
 ```@docs
 SDDP.sample_scenario
 ```
 
-### `InSampleMonteCarlo`
+## `InSampleMonteCarlo`
 ```@docs
 SDDP.InSampleMonteCarlo
 ```
 
-### `OutOfSampleMonteCarlo`
+## `OutOfSampleMonteCarlo`
 ```@docs
 SDDP.OutOfSampleMonteCarlo
 ```
 
-### `Historical`
+## `Historical`
 ```@docs
 SDDP.Historical
 ```
 
-### `PSRSamplingScheme`
+## `PSRSamplingScheme`
 ```@docs
 SDDP.PSRSamplingScheme
 ```
 
-### `SimulatorSamplingScheme`
+## `SimulatorSamplingScheme`
 ```@docs
 SDDP.SimulatorSamplingScheme
 ```
 
-## Parallel schemes
-
-### `AbstractParallelScheme`
+## `AbstractParallelScheme`
 ```@docs
 SDDP.AbstractParallelScheme
 ```
 
-### `Serial`
+## `Serial`
 ```@docs
 SDDP.Serial
 ```
 
-### `Threaded`
+## `Threaded`
 ```@docs
 SDDP.Threaded
 ```
 
-### `Asynchronous`
+## `Asynchronous`
 ```@docs
 SDDP.Asynchronous
 ```
 
-## Forward passes
-
-### `AbstractForwardPass`
+## `AbstractForwardPass`
 ```@docs
 SDDP.AbstractForwardPass
 ```
 
-### `DefaultForwardPass`
+## `DefaultForwardPass`
 ```@docs
 SDDP.DefaultForwardPass
 ```
 
-### `RevisitingForwardPass`
+## `RevisitingForwardPass`
 ```@docs
 SDDP.RevisitingForwardPass
 ```
 
-### `RiskAdjustedForwardPass`
+## `RiskAdjustedForwardPass`
 ```@docs
 SDDP.RiskAdjustedForwardPass
 ```
 
-### `AlternativeForwardPass`
+## `AlternativeForwardPass`
 ```@docs
 SDDP.AlternativeForwardPass
 ```
 
-### `AlternativePostIterationCallback`
+## `AlternativePostIterationCallback`
 ```@docs
 SDDP.AlternativePostIterationCallback
 ```
 
-### `RegularizedForwardPass`
+## `RegularizedForwardPass`
 ```@docs
 SDDP.RegularizedForwardPass
 ```
 
-## Risk Measures
-
-### `AbstractRiskMeasure`
+## `AbstractRiskMeasure`
 ```@docs
 SDDP.AbstractRiskMeasure
 ```
 
-### `adjust_probability`
+## `adjust_probability`
 ```@docs
 SDDP.adjust_probability
 ```
 
-### `Expectation`
+## `Expectation`
 ```@docs
 SDDP.Expectation
 ```
 
-### `WorstCase`
+## `WorstCase`
 ```@docs
 SDDP.WorstCase
 ```
 
-### `AVaR`
+## `AVaR`
 ```@docs
 SDDP.AVaR
 ```
 
-### `CVaR`
+## `CVaR`
 ```@docs
 SDDP.CVaR
 ```
 
-### `ConvexCombination`
+## `ConvexCombination`
 ```@docs
 SDDP.ConvexCombination
 ```
 
-### `EAVaR`
+## `EAVaR`
 ```@docs
 SDDP.EAVaR
 ```
 
-### `ModifiedChiSquared`
+## `ModifiedChiSquared`
 ```@docs
 SDDP.ModifiedChiSquared
 ```
 
-### `Entropic`
+## `Entropic`
 ```@docs
 SDDP.Entropic
 ```
 
-### `Wasserstein`
+## `Wasserstein`
 ```@docs
 SDDP.Wasserstein
 ```
 
-## Duality handlers
-
-### `AbstractDualityHandler`
+## `AbstractDualityHandler`
 ```@docs
 SDDP.AbstractDualityHandler
 ```
 
-### `ContinuousConicDuality`
+## `ContinuousConicDuality`
 ```@docs
 SDDP.ContinuousConicDuality
 ```
 
-### `LagrangianDuality`
+## `LagrangianDuality`
 ```@docs
 SDDP.LagrangianDuality
 ```
 
-### `StrengthenedConicDuality`
+## `StrengthenedConicDuality`
 ```@docs
 SDDP.StrengthenedConicDuality
 ```
 
-### `BanditDuality`
+## `BanditDuality`
 ```@docs
 SDDP.BanditDuality
 ```
 
-## Simulating the policy
-
-### `simulate`
+## `simulate`
 ```@docs
 SDDP.simulate
 ```
 
-### `calculate_bound`
+## `calculate_bound`
 ```@docs
 SDDP.calculate_bound
 ```
 
-### `add_all_cuts`
+## `add_all_cuts`
 ```@docs
 SDDP.add_all_cuts
 ```
 
 ## Decision rules
 
-### `DecisionRule`
+## `DecisionRule`
 ```@docs
 SDDP.DecisionRule
 ```
 
-### `evaluate`
+## `evaluate`
 ```@docs
 SDDP.evaluate
 ```
 
-## Visualizing the policy
-
-### `SpaghettiPlot`
+## `SpaghettiPlot`
 ```@docs
 SDDP.SpaghettiPlot
 ```
 
-### `add_spaghetti`
+## `add_spaghetti`
 ```@docs
 SDDP.add_spaghetti
 ```
 
-### `publication_plot`
+## `publication_plot`
 ```@docs
 SDDP.publication_plot
 ```
 
-### `ValueFunction`
+## `ValueFunction`
 ```@docs
 SDDP.ValueFunction
 ```
 
-### `evaluate`
+## `evaluate`
 ```@docs
 SDDP.evaluate(::SDDP.ValueFunction, ::Dict{Symbol,Float64})
 ```
 
-### `plot`
+## `plot`
 ```@docs
 SDDP.plot
 ```
 
-## Debugging the model
-
-### `write_subproblem_to_file`
+## `write_subproblem_to_file`
 ```@docs
 SDDP.write_subproblem_to_file
 ```
 
-### `deterministic_equivalent`
+## `deterministic_equivalent`
 ```@docs
 SDDP.deterministic_equivalent
 ```
 
-## StochOptFormat
-
-### `write_to_file`
+## `write_to_file`
 ```@docs
 SDDP.write_to_file
 ```
 
-### `read_from_file`
+## `read_from_file`
 ```@docs
 SDDP.read_from_file
 ```
 
-### `write`
+## `write`
 ```@docs
 Base.write(::IO, ::SDDP.PolicyGraph)
 ```
 
-### `read`
+## `read`
 ```@docs
 Base.read(::IO, ::Type{SDDP.PolicyGraph})
 ```
 
-### `evaluate`
+## `evaluate`
 ```@docs
 SDDP.evaluate(::SDDP.PolicyGraph{T}, ::SDDP.ValidationScenarios{T}) where {T}
 ```
 
-### `ValidationScenarios`
+## `ValidationScenarios`
 ```@docs
 SDDP.ValidationScenarios
 ```
 
-### `ValidationScenario`
+## `ValidationScenario`
 ```@docs
 SDDP.ValidationScenario
 ```
