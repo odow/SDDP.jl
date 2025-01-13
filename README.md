@@ -2,7 +2,7 @@
 
 # SDDP.jl
 
-[![Build Status](https://github.com/odow/SDDP.jl/workflows/CI/badge.svg?branch=master)](https://github.com/odow/SDDP.jl/actions?query=workflow%3ACI)
+[![Build Status](https://github.com/odow/SDDP.jl/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/odow/SDDP.jl/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/odow/SDDP.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/odow/SDDP.jl)
 
 [SDDP.jl](https://github.com/odow/SDDP.jl) is a JuMP extension for solving large
