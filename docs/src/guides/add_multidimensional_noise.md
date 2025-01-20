@@ -26,11 +26,12 @@ julia> model = SDDP.LinearPolicyGraph(
            SDDP.parameterize(subproblem, Ω, P) do ω
                JuMP.fix(x.out, ω.value)
                @stageobjective(subproblem, ω.coefficient * x.out)
-               println("ω is: ", ω)
            end
        end;
 
-julia> SDDP.simulate(model, 1);
+julia> for s in SDDP.simulate(model, 1)[1]
+           println("ω is: ", s[:noise_term_term])
+       end
 ω is: (value = 1, coefficient = 4)
 ω is: (value = 1, coefficient = 3)
 ω is: (value = 2, coefficient = 4)
@@ -46,7 +47,7 @@ For sampling multidimensional random variates, it can be useful to use the
 There are several ways to go about this. If the sample space is finite, and
 small enough that it makes sense to enumerate each element, we can use
 `Base.product` and `Distributions.support` to generate the entire sample space
-`Ω` from each of the marginal distributions. 
+`Ω` from each of the marginal distributions.
 
 We can then evaluate the density function of the product distribution on each
 element of this space to get the vector of corresponding probabilities, `P`.
@@ -75,11 +76,12 @@ julia> model = SDDP.LinearPolicyGraph(
            SDDP.parameterize(subproblem, Ω, P) do ω
                JuMP.fix(x.out, ω[1])
                @stageobjective(subproblem, ω[2] * x.out + ω[3])
-               println("ω is: ", ω)
            end
        end;
 
-julia> SDDP.simulate(model, 1);
+julia> for s in SDDP.simulate(model, 1)[1]
+           println("ω is: ", s[:noise_term])
+       end
 ω is: [10, 0, 3]
 ω is: [0, 1, 6]
 ω is: [6, 0, 5]
@@ -117,11 +119,12 @@ julia> model = SDDP.LinearPolicyGraph(
            SDDP.parameterize(subproblem, Ω, P) do ω
                JuMP.fix(x.out, ω[1])
                @stageobjective(subproblem, ω[2] * x.out + ω[3])
-               println("ω is: ", ω)
            end
        end;
 
-julia> SDDP.simulate(model, 1);
+julia> for s in SDDP.simulate(model, 1)[1]
+           println("ω is: ", s[:noise_term])
+       end
 ω is: [54, 38, 19]
 ω is: [43, 3, 13]
 ω is: [43, 4, 17]
