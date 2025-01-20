@@ -929,7 +929,8 @@ function test_incoming_state_bounds()
             set_binary(z.out)
             SDDP.parameterize(sp, 1:2) do w
                 JuMP.set_lower_bound(x.out, -w)
-                return JuMP.set_upper_bound(y.out, w)
+                JuMP.set_upper_bound(y.out, w)
+                return
             end
         elseif node == 2
         elseif node == 3

@@ -1065,13 +1065,12 @@ function _get_incoming_domain(model::PolicyGraph{T}) where {T}
     compare(f, a, ::Nothing) = a
     compare(f, ::Nothing, ::Nothing) = nothing
     outgoing_bounds = Dict{Tuple{T,Symbol},NTuple{2,Union{Nothing,Float64}}}(
-        (k, state_name) => (nothing, nothing)
-        for (k, node) in model.nodes
+        (k, state_name) => (nothing, nothing) for (k, node) in model.nodes
         for (state_name, state) in node.states
     )
     for (k, node) in model.nodes
         for noise in node.noise_terms
-            SDDP.parameterize(node, noise.term)
+            parameterize(node, noise.term)
             for (state_name, state) in node.states
                 l, u = outgoing_bounds[(k, state_name)]
                 l_new, u_new = _bounds(state.out)
@@ -1083,8 +1082,8 @@ function _get_incoming_domain(model::PolicyGraph{T}) where {T}
     incoming_bounds = Dict{T,Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}}()
     for (k, node) in model.nodes
         incoming_bounds[k] = Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}(
-            state_name => (nothing, nothing)
-            for (state_name, state) in node.states
+            state_name => (nothing, nothing) for
+            (state_name, state) in node.states
         )
     end
     for (parent_name, parent) in model.nodes
