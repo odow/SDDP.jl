@@ -655,6 +655,7 @@ mutable struct Node{T}
     ext::Dict{Symbol,Any}
     # Lock for threading
     lock::ReentrantLock
+    incoming_state_bounds::Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}
 end
 
 function Base.show(io::IO, node::Node)
@@ -987,6 +988,7 @@ function PolicyGraph(
             # The extension dictionary.
             Dict{Symbol,Any}(),
             ReentrantLock(),
+            Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}(),
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
@@ -1032,7 +1034,82 @@ function PolicyGraph(
     if length(graph.belief_partition) > 0
         initialize_belief_states(policy_graph, graph)
     end
+    domain = _get_incoming_domain(policy_graph)
+    for (node_name, node) in policy_graph.nodes
+        for (k, v) in domain[node_name]
+            node.incoming_state_bounds[k] = v
+        end
+    end
     return policy_graph
+end
+
+function _get_incoming_domain(model::PolicyGraph{T}) where {T}
+    function _bounds(x)
+        l, u = nothing, nothing
+        if has_lower_bound(x)
+            l = lower_bound(x)
+        end
+        if has_upper_bound(x)
+            u = upper_bound(x)
+        end
+        if is_fixed(x)
+            l = u = fix_value(x)
+        end
+        if is_binary(x)
+            l, u = max(something(l, 0.0), 0.0), min(something(u, 1.0), 1.0)
+        end
+        return l, u
+    end
+    compare(f, a, b) = f(a, b)
+    compare(f, ::Nothing, b) = b
+    compare(f, a, ::Nothing) = a
+    compare(f, ::Nothing, ::Nothing) = nothing
+    outgoing_bounds = Dict{Tuple{T,Symbol},NTuple{2,Union{Nothing,Float64}}}(
+        (k, state_name) => (nothing, nothing)
+        for (k, node) in model.nodes
+        for (state_name, state) in node.states
+    )
+    for (k, node) in model.nodes
+        for noise in node.noise_terms
+            SDDP.parameterize(node, noise.term)
+            for (state_name, state) in node.states
+                l, u = outgoing_bounds[(k, state_name)]
+                l_new, u_new = _bounds(state.out)
+                outgoing_bounds[(k, state_name)] =
+                    compare(min, l, l_new), compare(max, u, u_new)
+            end
+        end
+    end
+    incoming_bounds = Dict{T,Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}}()
+    for (k, node) in model.nodes
+        incoming_bounds[k] = Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}(
+            state_name => (nothing, nothing)
+            for (state_name, state) in node.states
+        )
+    end
+    for (parent_name, parent) in model.nodes
+        for (state_name, state) in parent.states
+            l_new, u_new = outgoing_bounds[(parent_name, state_name)]
+            for child in parent.children
+                l, u = incoming_bounds[child.term][state_name]
+                incoming_bounds[child.term][state_name] =
+                    compare(min, l, l_new), compare(max, u, u_new)
+            end
+        end
+    end
+    for (state_name, value) in model.initial_root_state
+        for child in model.root_children
+            l, u = incoming_bounds[child.term][state_name]
+            if l !== nothing
+                l = compare(min, l, value)
+            end
+            if u !== nothing
+                u = compare(max, u, value)
+            end
+            incoming_bounds[child.term][state_name] = (l, u)
+        end
+    end
+    return incoming_bounds
 end
 
 # Internal function: set up ::BeliefState for each node.

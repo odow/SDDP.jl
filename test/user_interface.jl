@@ -911,6 +911,47 @@ function test_print_problem_statistics()
     return
 end
 
+function test_incoming_state_bounds()
+    graph = SDDP.Graph(0)
+    SDDP.add_node.((graph,), 1:3)
+    SDDP.add_edge(graph, 0 => 1, 0.5)
+    SDDP.add_edge(graph, 0 => 2, 0.5)
+    SDDP.add_edge(graph, 1 => 2, 1.0)
+    SDDP.add_edge(graph, 2 => 2, 0.45)
+    SDDP.add_edge(graph, 2 => 3, 0.5)
+    SDDP.add_edge(graph, 3 => 1, 1.0)
+
+    model = SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, node
+        @variable(sp, x, SDDP.State, initial_value = 0)
+        @variable(sp, y, SDDP.State, initial_value = -1)
+        @variable(sp, z, SDDP.State, initial_value = 1)
+        if node == 1
+            set_binary(z.out)
+            SDDP.parameterize(sp, 1:2) do w
+                JuMP.set_lower_bound(x.out, -w)
+                return JuMP.set_upper_bound(y.out, w)
+            end
+        elseif node == 2
+        elseif node == 3
+            set_lower_bound(x.out, 1)
+            set_upper_bound(x.out, 2)
+            fix(y.out, 3)
+        end
+        @stageobjective(sp, 0)
+        return
+    end
+    @test model[1].incoming_state_bounds ==
+          Dict(:x => (0.0, 2.0), :y => (-1.0, 3.0), :z => (nothing, nothing))
+    @test model[2].incoming_state_bounds ==
+          Dict(:x => (-2.0, nothing), :y => (nothing, 2.0), :z => (0.0, 1.0))
+    @test model[3].incoming_state_bounds == Dict(
+        :x => (nothing, nothing),
+        :y => (nothing, nothing),
+        :z => (nothing, nothing),
+    )
+    return
+end
+
 end  # module
 
 TestUserInterface.runtests()
