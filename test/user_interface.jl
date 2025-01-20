@@ -305,7 +305,8 @@ function test_parameterize()
     end
     node = model[2]
     @test length(node.noise_terms) == 3
-    @test JuMP.upper_bound(node.subproblem[:x]) == 1
+    # SDDP is allowed to call `parameterize` during construction
+    # @test JuMP.upper_bound(node.subproblem[:x]) == 1
     node.parameterize(node.noise_terms[2].term)
     @test JuMP.upper_bound(node.subproblem[:x]) == 2
     node.parameterize(3)
@@ -486,20 +487,19 @@ function test_numerical_stability_report()
 end
 
 function test_objective_state()
-    model = SDDP.LinearPolicyGraph(;
-        stages = 2,
-        lower_bound = 0,
-        optimizer = HiGHS.Optimizer,
-    ) do subproblem, t
-        @variable(subproblem, x, SDDP.State, initial_value = 0)
-        SDDP.parameterize(subproblem, [1, 2]) do ω
-            price = SDDP.objective_state(subproblem)
-            @stageobjective(subproblem, price * x.out)
-        end
-    end
     @test_throws(
         ErrorException("No objective state defined."),
-        SDDP.simulate(model, 1; parallel_scheme = SDDP.Serial()),
+        SDDP.LinearPolicyGraph(;
+            stages = 2,
+            lower_bound = 0,
+            optimizer = HiGHS.Optimizer,
+        ) do subproblem, t
+            @variable(subproblem, x, SDDP.State, initial_value = 0)
+            SDDP.parameterize(subproblem, [1, 2]) do ω
+                price = SDDP.objective_state(subproblem)
+                @stageobjective(subproblem, price * x.out)
+            end
+        end,
     )
     @test_throws(
         ErrorException("add_objective_state can only be called once."),
