@@ -30,7 +30,7 @@ julia> model = SDDP.LinearPolicyGraph(
        end;
 
 julia> for s in SDDP.simulate(model, 1)[1]
-           println("ω is: ", s[:noise_term_term])
+           println("ω is: ", s[:noise_term])
        end
 ω is: (value = 1, coefficient = 4)
 ω is: (value = 1, coefficient = 3)
