@@ -180,10 +180,10 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         h_expr[i] = @expression(node.subproblem, state.in - x_in_value[i])
         JuMP.unfix(state.in)
         l, u = node.incoming_state_bounds[key]
-        if l !== nothing
+        if l > -Inf
             JuMP.set_lower_bound(state.in, l)
         end
-        if u !== nothing
+        if u < Inf
             JuMP.set_upper_bound(state.in, u)
         end
         λ_star[i] = conic_dual[key]

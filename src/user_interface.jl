@@ -655,7 +655,7 @@ mutable struct Node{T}
     ext::Dict{Symbol,Any}
     # Lock for threading
     lock::ReentrantLock
-    incoming_state_bounds::Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}
+    incoming_state_bounds::Dict{Symbol,NTuple{2,Float64}}
 end
 
 function Base.show(io::IO, node::Node)
@@ -988,7 +988,7 @@ function PolicyGraph(
             # The extension dictionary.
             Dict{Symbol,Any}(),
             ReentrantLock(),
-            Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}(),
+            Dict{Symbol,NTuple{2,Float64}}(),
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
@@ -1045,7 +1045,7 @@ end
 
 function _get_incoming_domain(model::PolicyGraph{T}) where {T}
     function _bounds(x)
-        l, u = nothing, nothing
+        l, u = -Inf, Inf
         if has_lower_bound(x)
             l = lower_bound(x)
         end
@@ -1061,10 +1061,8 @@ function _get_incoming_domain(model::PolicyGraph{T}) where {T}
         return l, u
     end
     compare(f, a, b) = f(a, b)
-    compare(f, ::Nothing, b) = b
-    compare(f, a, ::Nothing) = a
-    compare(f, ::Nothing, ::Nothing) = nothing
-    outgoing_bounds = Dict{Tuple{T,Symbol},NTuple{2,Union{Nothing,Float64}}}(
+    compare(::Function, ::Nothing, b) = b
+    outgoing_bounds = Dict{Tuple{T,Symbol},Any}(
         (k, state_name) => (nothing, nothing) for (k, node) in model.nodes
         for (state_name, state) in node.states
     )
@@ -1079,9 +1077,9 @@ function _get_incoming_domain(model::PolicyGraph{T}) where {T}
             end
         end
     end
-    incoming_bounds = Dict{T,Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}}()
+    incoming_bounds = Dict{T,Dict{Symbol,Any}}()
     for (k, node) in model.nodes
-        incoming_bounds[k] = Dict{Symbol,NTuple{2,Union{Nothing,Float64}}}(
+        incoming_bounds[k] = Dict{Symbol,Any}(
             state_name => (nothing, nothing) for
             (state_name, state) in node.states
         )
@@ -1099,13 +1097,8 @@ function _get_incoming_domain(model::PolicyGraph{T}) where {T}
     for (state_name, value) in model.initial_root_state
         for child in model.root_children
             l, u = incoming_bounds[child.term][state_name]
-            if l !== nothing
-                l = compare(min, l, value)
-            end
-            if u !== nothing
-                u = compare(max, u, value)
-            end
-            incoming_bounds[child.term][state_name] = (l, u)
+            incoming_bounds[child.term][state_name] =
+                (compare(min, l, value), compare(max, u, value))
         end
     end
     return incoming_bounds
