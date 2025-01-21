@@ -913,14 +913,14 @@ end
 
 function test_incoming_state_bounds()
     graph = SDDP.Graph(0)
-    SDDP.add_node.((graph,), 1:3)
-    SDDP.add_edge(graph, 0 => 1, 0.5)
-    SDDP.add_edge(graph, 0 => 2, 0.5)
+    SDDP.add_node.((graph,), 1:4)
+    SDDP.add_edge(graph, 0 => 4, 1.0)
+    SDDP.add_edge(graph, 4 => 1, 0.5)
+    SDDP.add_edge(graph, 4 => 2, 0.5)
     SDDP.add_edge(graph, 1 => 2, 1.0)
-    SDDP.add_edge(graph, 2 => 2, 0.45)
     SDDP.add_edge(graph, 2 => 3, 0.5)
-    SDDP.add_edge(graph, 3 => 1, 1.0)
-
+    SDDP.add_edge(graph, 3 => 1, 0.5)
+    SDDP.add_edge(graph, 3 => 4, 0.5)
     model = SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, node
         @variable(sp, x, SDDP.State, initial_value = 0)
         @variable(sp, y, SDDP.State, initial_value = -1)
@@ -933,23 +933,34 @@ function test_incoming_state_bounds()
                 return
             end
         elseif node == 2
+            SDDP.parameterize(sp, 1:2) do w
+                if w == 1
+                    set_upper_bound(y.out, 1.0)
+                elseif w == 2 && has_upper_bound(y.out)
+                    delete_upper_bound(y.out)
+                end
+                return
+            end
         elseif node == 3
             set_lower_bound(x.out, 1)
             set_upper_bound(x.out, 2)
             fix(y.out, 3)
+        elseif node == 4
+            fix(x.out, 0)
+            fix(y.out, -1)
+            fix(z.out, 1)
         end
         @stageobjective(sp, 0)
         return
     end
     @test model[1].incoming_state_bounds ==
-          Dict(:x => (0.0, 2.0), :y => (-1.0, 3.0), :z => (nothing, nothing))
+          Dict(:x => (0.0, 2.0), :y => (-1.0, 3.0), :z => (-Inf, Inf))
     @test model[2].incoming_state_bounds ==
-          Dict(:x => (-2.0, nothing), :y => (nothing, 2.0), :z => (0.0, 1.0))
-    @test model[3].incoming_state_bounds == Dict(
-        :x => (nothing, nothing),
-        :y => (nothing, nothing),
-        :z => (nothing, nothing),
-    )
+          Dict(:x => (-2.0, Inf), :y => (-Inf, 2.0), :z => (0.0, 1.0))
+    @test model[3].incoming_state_bounds ==
+          Dict(:x => (-Inf, Inf), :y => (-Inf, Inf), :z => (-Inf, Inf))
+    @test model[4].incoming_state_bounds ==
+          Dict(:x => (-Inf, Inf), :y => (-Inf, Inf), :z => (-Inf, Inf))
     return
 end
 

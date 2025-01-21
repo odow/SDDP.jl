@@ -1094,11 +1094,10 @@ function _get_incoming_domain(model::PolicyGraph{T}) where {T}
             end
         end
     end
+    # The incoming state from the root node can be anything
     for (state_name, value) in model.initial_root_state
         for child in model.root_children
-            l, u = incoming_bounds[child.term][state_name]
-            incoming_bounds[child.term][state_name] =
-                (compare(min, l, value), compare(max, u, value))
+            incoming_bounds[child.term][state_name] = (-Inf, Inf)
         end
     end
     return incoming_bounds
