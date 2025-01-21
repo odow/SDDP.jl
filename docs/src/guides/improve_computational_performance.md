@@ -66,7 +66,7 @@ Start Julia from a command line with `N` threads using the `--threads` flag:
 julia --threads N
 ```
 
-Thenn, pass an instance of [`SDDP.Threaded`](@ref) to the `parallel_scheme`
+Then, pass an instance of [`SDDP.Threaded`](@ref) to the `parallel_scheme`
 argument of [`SDDP.train`](@ref) and [`SDDP.simulate`](@ref).
 
 ```julia
