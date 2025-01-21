@@ -1037,6 +1037,9 @@ function PolicyGraph(
     domain = _get_incoming_domain(policy_graph)
     for (node_name, node) in policy_graph.nodes
         for (k, v) in domain[node_name]
+            if v === (nothing, nothing)
+                v = (-Inf, Inf)
+            end
             node.incoming_state_bounds[k] = v
         end
     end
