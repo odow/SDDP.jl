@@ -305,7 +305,8 @@ function test_parameterize()
     end
     node = model[2]
     @test length(node.noise_terms) == 3
-    @test JuMP.upper_bound(node.subproblem[:x]) == 1
+    # SDDP is allowed to call `parameterize` during construction
+    # @test JuMP.upper_bound(node.subproblem[:x]) == 1
     node.parameterize(node.noise_terms[2].term)
     @test JuMP.upper_bound(node.subproblem[:x]) == 2
     node.parameterize(3)
@@ -486,20 +487,19 @@ function test_numerical_stability_report()
 end
 
 function test_objective_state()
-    model = SDDP.LinearPolicyGraph(;
-        stages = 2,
-        lower_bound = 0,
-        optimizer = HiGHS.Optimizer,
-    ) do subproblem, t
-        @variable(subproblem, x, SDDP.State, initial_value = 0)
-        SDDP.parameterize(subproblem, [1, 2]) do ω
-            price = SDDP.objective_state(subproblem)
-            @stageobjective(subproblem, price * x.out)
-        end
-    end
     @test_throws(
         ErrorException("No objective state defined."),
-        SDDP.simulate(model, 1; parallel_scheme = SDDP.Serial()),
+        SDDP.LinearPolicyGraph(;
+            stages = 2,
+            lower_bound = 0,
+            optimizer = HiGHS.Optimizer,
+        ) do subproblem, t
+            @variable(subproblem, x, SDDP.State, initial_value = 0)
+            SDDP.parameterize(subproblem, [1, 2]) do ω
+                price = SDDP.objective_state(subproblem)
+                @stageobjective(subproblem, price * x.out)
+            end
+        end,
     )
     @test_throws(
         ErrorException("add_objective_state can only be called once."),
@@ -908,6 +908,71 @@ function test_print_problem_statistics()
         nothing,
     )
     @test occursin("scenarios       : 4.00000e+00", contents)
+    return
+end
+
+function test_incoming_state_bounds()
+    graph = SDDP.Graph(0)
+    SDDP.add_node.((graph,), 1:4)
+    SDDP.add_edge(graph, 0 => 4, 1.0)
+    SDDP.add_edge(graph, 4 => 1, 0.5)
+    SDDP.add_edge(graph, 4 => 2, 0.5)
+    SDDP.add_edge(graph, 1 => 2, 1.0)
+    SDDP.add_edge(graph, 2 => 3, 0.5)
+    SDDP.add_edge(graph, 3 => 1, 0.5)
+    SDDP.add_edge(graph, 3 => 4, 0.5)
+    model = SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, node
+        @variable(sp, x, Int, SDDP.State, initial_value = 0)
+        @variable(sp, y, SDDP.State, initial_value = -1)
+        @variable(sp, z, SDDP.State, initial_value = 1)
+        if node == 1
+            set_binary(z.out)
+            SDDP.parameterize(sp, 1:2) do w
+                JuMP.set_lower_bound(x.out, -w)
+                JuMP.set_upper_bound(y.out, w)
+                return
+            end
+        elseif node == 2
+            SDDP.parameterize(sp, 1:2) do w
+                if w == 1
+                    set_upper_bound(y.out, 1.0)
+                elseif w == 2 && has_upper_bound(y.out)
+                    delete_upper_bound(y.out)
+                end
+                return
+            end
+        elseif node == 3
+            set_lower_bound(x.out, 1)
+            set_upper_bound(x.out, 2)
+            fix(y.out, 3)
+        elseif node == 4
+            fix(x.out, 0)
+            fix(y.out, -1)
+            fix(z.out, 1)
+        end
+        @stageobjective(sp, 0)
+        return
+    end
+    @test model[1].incoming_state_bounds == Dict(
+        :x => (0.0, 2.0, true),
+        :y => (-1.0, 3.0, false),
+        :z => (-Inf, Inf, false),
+    )
+    @test model[2].incoming_state_bounds == Dict(
+        :x => (-2.0, Inf, true),
+        :y => (-Inf, 2.0, false),
+        :z => (0.0, 1.0, false),
+    )
+    @test model[3].incoming_state_bounds == Dict(
+        :x => (-Inf, Inf, true),
+        :y => (-Inf, Inf, false),
+        :z => (-Inf, Inf, false),
+    )
+    @test model[4].incoming_state_bounds == Dict(
+        :x => (-Inf, Inf, false),
+        :y => (-Inf, Inf, false),
+        :z => (-Inf, Inf, false),
+    )
     return
 end
 

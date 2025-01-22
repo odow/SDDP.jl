@@ -655,6 +655,8 @@ mutable struct Node{T}
     ext::Dict{Symbol,Any}
     # Lock for threading
     lock::ReentrantLock
+    # (lower, upper, is_integer)
+    incoming_state_bounds::Dict{Symbol,Tuple{Float64,Float64,Bool}}
 end
 
 function Base.show(io::IO, node::Node)
@@ -987,6 +989,7 @@ function PolicyGraph(
             # The extension dictionary.
             Dict{Symbol,Any}(),
             ReentrantLock(),
+            Dict{Symbol,Tuple{Float64,Float64,Bool}}(),
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
@@ -1032,7 +1035,81 @@ function PolicyGraph(
     if length(graph.belief_partition) > 0
         initialize_belief_states(policy_graph, graph)
     end
+    domain = _get_incoming_domain(policy_graph)
+    for (node_name, node) in policy_graph.nodes
+        for (k, v) in domain[node_name]
+            node.incoming_state_bounds[k] = something(v, (-Inf, Inf, false))
+        end
+    end
     return policy_graph
+end
+
+function _get_incoming_domain(model::PolicyGraph{T}) where {T}
+    function _bounds(x)
+        l, u = -Inf, Inf
+        if has_lower_bound(x)
+            l = lower_bound(x)
+        end
+        if has_upper_bound(x)
+            u = upper_bound(x)
+        end
+        if is_fixed(x)
+            l = u = fix_value(x)
+        end
+        is_int = is_integer(x)
+        if is_binary(x)
+            l, u = max(something(l, 0.0), 0.0), min(something(u, 1.0), 1.0)
+            is_int = true
+        end
+        return l, u, is_int
+    end
+    outgoing_bounds = Dict{Tuple{T,Symbol},Any}(
+        (k, state_name) => nothing for (k, node) in model.nodes for
+        (state_name, _) in node.states
+    )
+    for (k, node) in model.nodes
+        for noise in node.noise_terms
+            parameterize(node, noise.term)
+            for (state_name, state) in node.states
+                domain = outgoing_bounds[(k, state_name)]
+                l_new, u_new, is_int_new = _bounds(state.out)
+                outgoing_bounds[(k, state_name)] = if domain === nothing
+                    (l_new, u_new, is_int_new)
+                else
+                    l, u, is_int = domain::Tuple{Float64,Float64,Bool}
+                    (min(l, l_new), max(u, u_new), is_int & is_int_new)
+                end
+            end
+        end
+    end
+    incoming_bounds = Dict{T,Dict{Symbol,Any}}()
+    for (k, node) in model.nodes
+        incoming_bounds[k] = Dict{Symbol,Any}(
+            state_name => nothing for (state_name, _) in node.states
+        )
+    end
+    for (parent_name, parent) in model.nodes
+        for (state_name, state) in parent.states
+            domain_new = outgoing_bounds[(parent_name, state_name)]
+            l_new, u_new, is_int_new = domain_new::Tuple{Float64,Float64,Bool}
+            for child in parent.children
+                domain = incoming_bounds[child.term][state_name]
+                incoming_bounds[child.term][state_name] = if domain === nothing
+                    (l_new, u_new, is_int_new)
+                else
+                    l, u, is_int = domain::Tuple{Float64,Float64,Bool}
+                    (min(l, l_new), max(u, u_new), is_int & is_int_new)
+                end
+            end
+        end
+    end
+    # The incoming state from the root node can be anything
+    for (state_name, value) in model.initial_root_state
+        for child in model.root_children
+            incoming_bounds[child.term][state_name] = (-Inf, Inf, false)
+        end
+    end
+    return incoming_bounds
 end
 
 # Internal function: set up ::BeliefState for each node.

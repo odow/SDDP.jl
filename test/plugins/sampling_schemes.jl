@@ -380,8 +380,8 @@ function test_SimulatorSamplingScheme_with_noise()
     ) do sp, node
         t, price = node
         @variable(sp, 0 <= x <= 1, SDDP.State, initial_value = 0)
-        SDDP.parameterize(sp, [(price, i) for i in 1:2]) do ω
-            return SDDP.@stageobjective(sp, price * x.out + i)
+        SDDP.parameterize(sp, [(price, i) for i in 1:2]) do (p, i)
+            return SDDP.@stageobjective(sp, p * x.out + i)
         end
     end
     sampler = SDDP.SimulatorSamplingScheme(simulator)
