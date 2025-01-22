@@ -1037,9 +1037,8 @@ function PolicyGraph(
     end
     domain = _get_incoming_domain(policy_graph)
     for (node_name, node) in policy_graph.nodes
-        for (k, (lower, upper, is_integer)) in domain[node_name]
-            node.incoming_state_bounds[k] =
-                (something(lower, -Inf), something(upper, Inf), is_integer)
+        for (k, v) in domain[node_name]
+            node.incoming_state_bounds[k] = something(v, (-Inf, Inf, false))
         end
     end
     return policy_graph
@@ -1065,8 +1064,8 @@ function _get_incoming_domain(model::PolicyGraph{T}) where {T}
         return l, u, is_int
     end
     outgoing_bounds = Dict{Tuple{T,Symbol},Any}(
-        (k, state_name) => nothing for (k, node) in model.nodes
-        for (state_name, _) in node.states
+        (k, state_name) => nothing for (k, node) in model.nodes for
+        (state_name, _) in node.states
     )
     for (k, node) in model.nodes
         for noise in node.noise_terms
