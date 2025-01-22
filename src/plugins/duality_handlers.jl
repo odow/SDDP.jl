@@ -179,12 +179,15 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         x_in_value[i] = JuMP.fix_value(state.in)
         h_expr[i] = @expression(node.subproblem, state.in - x_in_value[i])
         JuMP.unfix(state.in)
-        l, u = node.incoming_state_bounds[key]
+        l, u, is_integer = node.incoming_state_bounds[key]
         if l > -Inf
             JuMP.set_lower_bound(state.in, l)
         end
         if u < Inf
             JuMP.set_upper_bound(state.in, u)
+        end
+        if is_integer
+            JuMP.set_integer(state.in)
         end
         λ_star[i] = conic_dual[key]
     end
@@ -201,6 +204,9 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
             return L_k === nothing ? nothing : (s * L_k, s * h_k)
         end
     for (i, (_, state)) in enumerate(node.states)
+        if JuMP.is_integer(state.in)
+            JuMP.unset_integer(state.in)
+        end
         JuMP.fix(state.in, x_in_value[i]; force = true)
     end
     λ_solution = Dict{Symbol,Float64}(

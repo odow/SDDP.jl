@@ -922,7 +922,7 @@ function test_incoming_state_bounds()
     SDDP.add_edge(graph, 3 => 1, 0.5)
     SDDP.add_edge(graph, 3 => 4, 0.5)
     model = SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, node
-        @variable(sp, x, SDDP.State, initial_value = 0)
+        @variable(sp, x, Int, SDDP.State, initial_value = 0)
         @variable(sp, y, SDDP.State, initial_value = -1)
         @variable(sp, z, SDDP.State, initial_value = 1)
         if node == 1
@@ -953,14 +953,26 @@ function test_incoming_state_bounds()
         @stageobjective(sp, 0)
         return
     end
-    @test model[1].incoming_state_bounds ==
-          Dict(:x => (0.0, 2.0), :y => (-1.0, 3.0), :z => (-Inf, Inf))
-    @test model[2].incoming_state_bounds ==
-          Dict(:x => (-2.0, Inf), :y => (-Inf, 2.0), :z => (0.0, 1.0))
-    @test model[3].incoming_state_bounds ==
-          Dict(:x => (-Inf, Inf), :y => (-Inf, Inf), :z => (-Inf, Inf))
-    @test model[4].incoming_state_bounds ==
-          Dict(:x => (-Inf, Inf), :y => (-Inf, Inf), :z => (-Inf, Inf))
+    @test model[1].incoming_state_bounds == Dict(
+        :x => (0.0, 2.0, true),
+        :y => (-1.0, 3.0, false),
+        :z => (-Inf, Inf, false),
+    )
+    @test model[2].incoming_state_bounds == Dict(
+        :x => (-2.0, Inf, true),
+        :y => (-Inf, 2.0, false),
+        :z => (0.0, 1.0, false),
+    )
+    @test model[3].incoming_state_bounds == Dict(
+        :x => (-Inf, Inf, true),
+        :y => (-Inf, Inf, false),
+        :z => (-Inf, Inf, false),
+    )
+    @test model[4].incoming_state_bounds == Dict(
+        :x => (-Inf, Inf, false),
+        :y => (-Inf, Inf, false),
+        :z => (-Inf, Inf, false),
+    )
     return
 end
 
