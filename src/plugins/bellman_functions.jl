@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-24, Oscar Dowson and SDDP.jl contributors.
+#  Copyright (c) 2017-25, Oscar Dowson and SDDP.jl contributors.
 #  This Source Code Form is subject to the terms of the Mozilla Public License,
 #  v. 2.0. If a copy of the MPL was not distributed with this file, You can
 #  obtain one at http://mozilla.org/MPL/2.0/.
@@ -743,7 +743,7 @@ type `T`, provide a function `node_name_parser` with the signature
     node given the string name `name`.
     If `node_name_parser` returns `nothing`, those cuts are skipped.
 
- - `cut_selection::Bool` run or not the cut selection algorithm when adding the 
+ - `cut_selection::Bool` run or not the cut selection algorithm when adding the
     cuts to the model.
 
 See also [`SDDP.write_cuts_to_file`](@ref).

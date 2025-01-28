@@ -1,4 +1,4 @@
-#  Copyright (c) 2017-24, Oscar Dowson and SDDP.jl contributors.        #src
+#  Copyright (c) 2017-25, Oscar Dowson and SDDP.jl contributors.        #src
 #  This Source Code Form is subject to the terms of the Mozilla Public  #src
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
@@ -6,11 +6,11 @@
 # # Air conditioning
 
 # Taken from [Anthony Papavasiliou's notes on SDDP](https://web.archive.org/web/20200504214809/https://perso.uclouvain.be/anthony.papavasiliou/public_html/SDDP.pdf)
-# This is a variation of the problem that first appears in the book 
-# Introduction to Stochastic Programming by Birge and Louveaux, 1997, 
+# This is a variation of the problem that first appears in the book
+# Introduction to Stochastic Programming by Birge and Louveaux, 1997,
 # Springer-Verlag, New York, on page 237, Example 1. For a rescaled problem,
-# they reported an optimal value of 6.25 with a first-stage solution of x1 = 2 
-# (production)and y1 = 1 (store production). On this variation, without rescaling, 
+# they reported an optimal value of 6.25 with a first-stage solution of x1 = 2
+# (production)and y1 = 1 (store production). On this variation, without rescaling,
 # it would be equivalent to 62500, 200 and 100, respectively.
 
 # Consider the following problem
