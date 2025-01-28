@@ -66,3 +66,23 @@ function test_threaded()
 end
 
 test_threaded()
+
+function test_threaded_warning()
+    if Threads.nthreads() == 1
+        return  # Skip this test if running in serial
+    end
+    model = SDDP.PolicyGraph(
+        SDDP.UnicyclicGraph(0.95);
+        sense = :Min,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, 0 <= x <= 1, SDDP.State, initial_value = 1)
+        @stageobjective(sp, x.out)
+        return
+    end
+    @test_logs((:warn,), SDDP.train(model; parallel_scheme = SDDP.Threaded()))
+    return
+end
+
+test_threaded_warning()
