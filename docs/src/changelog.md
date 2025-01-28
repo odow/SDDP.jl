@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Throw a warning and limit threads when there are fewer nodes than threads
    available (#823)
  - Fixed [`simulate`](@ref) with [`Threaded`](@ref) to spawn chunked threads
-   instead of one thread for each replication (#824)
+   instead of one thread for each replication (#824) (#828)
 
 ### Other
 
