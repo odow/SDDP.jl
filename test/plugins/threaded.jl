@@ -91,7 +91,21 @@ function test_threaded_warning()
         @stageobjective(sp, x.out)
         return
     end
-    @test_logs((:warn,), SDDP.train(model; parallel_scheme = SDDP.Threaded()))
+    parallel_scheme = SDDP.Threaded()
+    @test_logs((:warn,), SDDP.train(model; parallel_scheme))
+    recorder = Dict{Symbol,Function}(:thread_id => sp -> Threads.threadid())
+    ret = @test_logs(
+        (:warn,),
+        SDDP.simulate(model, 10; parallel_scheme, custom_recorders = recorder),
+    )
+    @test all(all(x[:thread_id] == 1 for x in r) for r in ret)
+    return
+end
+
+function test_chunk_split()
+    @test SDDP._chunk_split(10, 1) == [1:10]
+    @test SDDP._chunk_split(10, 2) == [1:5, 6:10]
+    @test SDDP._chunk_split(10, 3) == [1:3, 4:6, 7:10]
     return
 end
 
