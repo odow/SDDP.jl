@@ -369,9 +369,19 @@ function master_loop(
     model::PolicyGraph{T},
     options::Options,
 ) where {T}
+    max_threads = Threads.nthreads()
+    num_nodes = length(model.nodes)
+    if num_nodes < max_threads
+        @warn(
+            "There are fewer nodes in the graph ($num_nodes) than there are " *
+            "threads available ($max_threads). Limiting the number of " *
+            "threads to $num_nodes."
+        )
+        max_threads = num_nodes
+    end
     _initialize_solver(model; throw_error = false)
     keep_iterating, status = true, nothing
-    @sync for _ in 1:Threads.nthreads()
+    @sync for _ in 1:max_threads
         Threads.@spawn begin
             try
                 # This access of `keep_iterating` is not thread-safe, but it
