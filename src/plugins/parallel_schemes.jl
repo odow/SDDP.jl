@@ -425,7 +425,7 @@ function _chunk_split(num_items, num_chunks)
         push!(chunks, (offset+1):(offset+w))
         offset += w
     end
-    push!(chunks, offset:num_items)
+    push!(chunks, (offset+1):num_items)
     return chunks
 end
 
@@ -436,12 +436,21 @@ function _simulate(
     variables::Vector{Symbol};
     kwargs...,
 )
+    max_threads = Threads.nthreads()
+    num_nodes = length(model.nodes)
+    if num_nodes < max_threads
+        @warn(
+            "There are fewer nodes in the graph ($num_nodes) than there are " *
+            "threads available ($max_threads). Limiting the number of " *
+            "threads to $num_nodes."
+        )
+        max_threads = num_nodes
+    end
     _initialize_solver(model; throw_error = false)
     ret = Vector{Vector{Dict{Symbol,Any}}}(undef, number_replications)
-    chunks = _chunk_split(number_replications, Threads.nthreads())
     # Limit the number of Threads that we `@spawn` to the number of threads.
     # Naively spawning `number_replications` threads can slow down the scheduler.
-    @sync for chunk in chunks
+    @sync for chunk in _chunk_split(number_replications, max_threads)
         Threads.@spawn for j in chunk
             ret[j] = _simulate(model, variables; kwargs...)
         end
