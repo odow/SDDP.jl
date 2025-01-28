@@ -7,6 +7,20 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.10.4 (January 29, 2025)
+
+### Fixed
+
+ - Throw a warning and limit threads when there are fewer nodes than threads
+   available (#823)
+ - Fixed [`simulate`](@ref) with [`Threaded`](@ref) to spawn chunked threads
+   instead of one thread for each replication (#824)
+
+### Other
+
+ - Updated `test/plugins/threaded.jl` to use a module (#825)
+ - Updated the copyright notice to 2025 (#826)
+
 ## v1.10.3 (January 22, 2025)
 
 ### Other
