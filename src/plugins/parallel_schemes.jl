@@ -407,6 +407,18 @@ function master_loop(
     return status
 end
 
+function _chunk_split(num_items, num_chunks)
+    w = div(num_items, num_chunks)
+    chunks = UnitRange{Int}[]
+    offset = 0
+    for i in 1:num_chunks-1
+        push!(chunks, (offset+1):(offset+w))
+        offset += w
+    end
+    push!(chunks, offset:num_items)
+    return chunks
+end
+
 function _simulate(
     model::PolicyGraph,
     ::Threaded,
@@ -416,8 +428,13 @@ function _simulate(
 )
     _initialize_solver(model; throw_error = false)
     ret = Vector{Vector{Dict{Symbol,Any}}}(undef, number_replications)
-    @sync for i in 1:number_replications
-        Threads.@spawn ret[i] = _simulate(model, variables; kwargs...)
+    chunks = _chunk_split(number_replications, Threads.nthreads())
+    # Limit the number of Threads that we `@spawn` to the number of threads.
+    # Naively spawning `number_replications` threads can slow down the scheduler.
+    @sync for chunk in chunks
+        Threads.@spawn for j in chunk
+            ret[j] = _simulate(model, variables; kwargs...)
+        end
     end
     return ret
 end
