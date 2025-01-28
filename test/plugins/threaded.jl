@@ -81,10 +81,7 @@ function test_threaded_warning()
         @stageobjective(sp, x.out)
         return
     end
-    @test_logs(
-        (:warn,),
-        SDDP.train(model; parallel_scheme = SDDP.Threaded()),
-    )
+    @test_logs((:warn,), SDDP.train(model; parallel_scheme = SDDP.Threaded()))
     return
 end
 
