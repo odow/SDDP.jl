@@ -595,6 +595,85 @@ function inner_dp(
     return pb_inner, ub, total_dt
 end
 
+"""
+    write_vertices_to_file(
+        model::PolicyGraph{T},
+        filename::String;
+        kwargs...,
+    ) where {T}
+
+Write the vertices that form the policy in `model` to `filename` in JSON format.
+
+## Keyword arguments
+
+ - `node_name_parser` is a function which converts the name of each node into a
+    string representation. It has the signature: `node_name_parser(::T)::String`.
+
+ - `write_only_selected_vertices` write only the selected vertices to the json file.
+    Defaults to false.
+
+See also [`SDDP.read_vertices_from_file`](@ref) and [`SDDP.write_cuts_to_file`](@ref).
+"""
+function write_vertices_to_file(
+    model::SDDP.PolicyGraph{T},
+    filename::String;
+    node_name_parser::Function = string,
+    write_only_selected_vertices::Bool = false,
+) where {T}
+    vertices = Dict{String,Any}[]
+    for (node_name, node) in model.nodes
+        if node.objective_state !== nothing || node.belief_state !== nothing
+            error(
+                "Unable to write vertices to file because model contains " *
+                "objective states or belief states.",
+            )
+        end
+        node_vertices = Dict(
+            "node" => node_name_parser(node_name),
+            "vertices" => Dict{String,Any}[],
+            "multi_vertices" => Dict{String,Any}[],
+            "risk_set_cuts" => Vector{Float64}[],
+        )
+        oracle = node.bellman_function.global_theta
+        for vertex in oracle.vertices
+            if write_only_selected_vertices && vertex.variable_ref === nothing
+                continue
+            end
+            push!(
+                node_vertices["vertices"],
+                Dict(
+                    "value" => vertex.value,
+                    "state" => copy(vertex.state),
+                ),
+            )
+        end
+        for (i, theta) in enumerate(node.bellman_function.local_thetas)
+            for vertex in theta.vertices
+                if write_only_selected_vertices && vertex.variable_ref === nothing
+                    continue
+                end
+                push!(
+                    node_vertices["multi_vertices"],
+                    Dict(
+                        "realization" => i,
+                        "value" => vertex.value,
+                        "state" => copy(state.state),
+                    ),
+                )
+            end
+        end
+        for p in node.bellman_function.risk_set_cuts
+            push!(node_vertices["risk_set_cuts"], p)
+        end
+        push!(vertices, node_vertices)
+    end
+    open(filename, "w") do io
+        return write(io, JSON.json(vertices))
+    end
+    return
+end
+
+
 function _vertex_name_parser(vertex_name::String)::String
     return vertex_name
 end
