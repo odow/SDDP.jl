@@ -556,7 +556,7 @@ function inner_dp(
                     nothing, # objective_state
                     outgoing_state,
                     opts.backward_sampling_scheme,
-                    Tuple{T,Float64}[], # scenario_path
+                    Tuple{T,Any}[], # scenario_path
                     opts.duality_handler,
                     opts,
                 )
