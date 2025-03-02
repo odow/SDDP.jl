@@ -3,28 +3,17 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-module TestInner
+# # Hydro 1d
 
-using SDDP
-using Test
-import HiGHS
-import Random
+# This is a simple version of the hydro-thermal scheduling problem. The goal is
+# to operate one hydro-dam and two termal plants over time in the face of inflow
+# uncertainty.
 
-using Statistics: mean, std
+
+using SDDP, HiGHS, Test, Random, Statistics
 import SDDP: Inner
 
-function runtests()
-    for name in names(@__MODULE__; all = true)
-        if startswith("$(name)", "test_")
-            @testset "$(name)" begin
-                getfield(@__MODULE__, name)()
-            end
-        end
-    end
-    return
-end
-
-function test_1d()
+function test_inner_hydro_1d()
     # Parameters
     # Model
     nstages = 4
@@ -46,7 +35,9 @@ function test_1d()
     # Solving
     niters = 10
     ub_step = 10
+    solver = HiGHS.Optimizer
 
+    # The model
     function build_hydro(sp, t)
         @variable(sp, 0 <= vol <= 100, SDDP.State, initial_value = inivol)
         @variable(sp, 0 <= gh <= 60)
@@ -70,8 +61,7 @@ function test_1d()
         @stageobjective(sp, spill + 5 * gt[1] + 10 * gt[2] + 50 * def)
     end
 
-    solver = HiGHS.Optimizer
-
+    # Lower bound via cuts
     println("Build primal outer model")
     pb = SDDP.LinearPolicyGraph(
         build_hydro;
@@ -84,17 +74,18 @@ function test_1d()
     println("Solving primal outer model")
     SDDP.train(pb; iteration_limit = niters, risk_measure = rho)
     lb = SDDP.calculate_bound(pb; risk_measure = rho)
+    println("       Risk-adjusted lower bound: ", round(lb; digits = 2))
 
-    # Monte-Carlo estimate; does not take risk_measure into account
+    # Monte-Carlo policy cost estimate; does not take risk_measure into account
     simulations = SDDP.simulate(pb, 500, [:vol, :gh, :spill, :gt, :def])
     objective_values =
         [sum(stage[:stage_objective] for stage in sim) for sim in simulations]
     μ = round(mean(objective_values); digits = 2)
     ci = round(1.96 * std(objective_values) / sqrt(500); digits = 2)
 
-    println("Confidence interval: ", μ, " ± ", ci)
-    println("        Lower bound: ", round(lb; digits = 2))
+    println("Risk-neutral confidence interval: ", μ, " ± ", ci)
 
+    # Upper bound via inner approximation
     base_Lip = 50.0
     base_ub = 75.0 * base_Lip
     build_Lip(t) = base_Lip * (nstages - t)
@@ -105,8 +96,8 @@ function test_1d()
         vertex_type = SDDP.SINGLE_CUT,
     )
 
-    println("\nSolving inner model for upper bounds")
-    pb_outer, ub = Inner.inner_dp(
+    println("\nBuilding and Solving inner model for upper bounds")
+    pb_inner, ub = Inner.inner_dp(
         build_hydro,
         pb;
         nstages,
@@ -121,6 +112,4 @@ function test_1d()
     @test lb <= ub
 end
 
-end  # module
-
-TestInner.runtests()
+test_inner_hydro_1d()
