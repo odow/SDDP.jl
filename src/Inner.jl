@@ -641,15 +641,13 @@ function write_vertices_to_file(
             end
             push!(
                 node_vertices["vertices"],
-                Dict(
-                    "value" => vertex.value,
-                    "state" => copy(vertex.state),
-                ),
+                Dict("value" => vertex.value, "state" => copy(vertex.state)),
             )
         end
         for (i, theta) in enumerate(node.bellman_function.local_thetas)
             for vertex in theta.vertices
-                if write_only_selected_vertices && vertex.variable_ref === nothing
+                if write_only_selected_vertices &&
+                   vertex.variable_ref === nothing
                     continue
                 end
                 push!(
@@ -672,7 +670,6 @@ function write_vertices_to_file(
     end
     return
 end
-
 
 function _vertex_name_parser(vertex_name::String)::String
     return vertex_name

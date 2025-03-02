@@ -9,7 +9,7 @@ using SDDP
 using Test
 import HiGHS
 
-import SDDP:Inner
+import SDDP: Inner
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -39,8 +39,7 @@ function build(subproblem, t)
     @constraints(
         subproblem,
         begin
-            reservoir.out ==
-            reservoir.in - hydro_generation - spill + inflow
+            reservoir.out == reservoir.in - hydro_generation - spill + inflow
             hydro_generation + thermal_generation == demand
         end
     )
@@ -58,26 +57,38 @@ function build(subproblem, t)
     end
 end
 
-function _create_model(graph, bellman_function=nothing)
+function _create_model(graph, bellman_function = nothing)
     return SDDP.PolicyGraph(
         build,
         graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
-        bellman_function
+        bellman_function,
     )
 end
 
 function test_Read_write_cuts_to_file()
     nstages = 4
     graphs = [
-        ("Int", SDDP.Graph(0, [1,2,3,4], [(0 => 1, 1.0), (1 => 2, 1.0), (2 => 3, 1.0), (3 => 4, 1.0)])),
+        (
+            "Int",
+            SDDP.Graph(
+                0,
+                [1, 2, 3, 4],
+                [(0 => 1, 1.0), (1 => 2, 1.0), (2 => 3, 1.0), (3 => 4, 1.0)],
+            ),
+        ),
         (
             "NTuple",
             SDDP.Graph(
                 (0, 1),
                 [(1, 1), (1, 2), (1, 3), (1, 4)],
-                [((0, 1) => (1, 1), 1.0), ((1, 1) => (1, 2), 1.0), ((1, 2) => (1, 3), 1.0), ((1, 3) => (1, 4), 1.0)],
+                [
+                    ((0, 1) => (1, 1), 1.0),
+                    ((1, 1) => (1, 2), 1.0),
+                    ((1, 2) => (1, 3), 1.0),
+                    ((1, 3) => (1, 4), 1.0),
+                ],
             ),
         ),
         (
@@ -85,7 +96,12 @@ function test_Read_write_cuts_to_file()
             SDDP.Graph(
                 :root_node,
                 [:w1, :w2, :w3, :w4],
-                [(:root_node => :w1, 1.0), (:w1 => :w2, 1.0), (:w2 => :w3, 1.0), (:w3 => :w4, 1.0)],
+                [
+                    (:root_node => :w1, 1.0),
+                    (:w1 => :w2, 1.0),
+                    (:w2 => :w3, 1.0),
+                    (:w3 => :w4, 1.0),
+                ],
             ),
         ),
     ]
@@ -98,8 +114,7 @@ function test_Read_write_cuts_to_file()
         build_Lip;
         upper_bound = build_ub,
         vertex_type = SDDP.SINGLE_CUT,
-       )
-
+    )
 
     # TODO: generalize other graphs, esp. regarding types
     for (T, graph) in graphs[1:1]
@@ -127,8 +142,15 @@ function test_Read_write_cuts_to_file()
             SDDP.set_objective(node)
         end
         @test SDDP.calculate_bound(model_2) ≈ 801.666 atol = 0.1
-        @test_throws JuMP.NoOptimizer SDDP.Inner.read_vertices_from_file(model_2, "$(T).vertices.json")
-        SDDP.Inner.read_vertices_from_file(model_2, "$(T).vertices.json", optimizer=HiGHS.Optimizer)
+        @test_throws JuMP.NoOptimizer SDDP.Inner.read_vertices_from_file(
+            model_2,
+            "$(T).vertices.json",
+        )
+        SDDP.Inner.read_vertices_from_file(
+            model_2,
+            "$(T).vertices.json";
+            optimizer = HiGHS.Optimizer,
+        )
         @test SDDP.calculate_bound(model_2) ≈ ub atol = 0.1
         rm("$(T).vertices.json")
     end

@@ -9,7 +9,6 @@
 # to operate one hydro-dam and two termal plants over time in the face of inflow
 # uncertainty.
 
-
 using SDDP, HiGHS, Test, Random, Statistics
 import SDDP: Inner
 
