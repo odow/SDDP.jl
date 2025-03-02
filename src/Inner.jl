@@ -733,9 +733,13 @@ function read_vertices_from_file(
     dualcuts::Bool = false,
     node_name_parser::Function = SDDP._node_name_parser,
     vertex_name_parser::Function = _vertex_name_parser,
-    vertex_selection::Bool = true,
+    vertex_selection::Bool = false,
     optimizer = nothing,
 ) where {T}
+    if vertex_selection && isnothing(optimizer)
+        @warn "You must select an optimizer for performing vertex selection."
+        throw(JuMP.NoOptimizer())
+    end
     vertices = JSON.parsefile(filename; use_mmap = false)
     for node_info in vertices
         node_name = node_name_parser(T, node_info["node"])::Union{Nothing,T}
