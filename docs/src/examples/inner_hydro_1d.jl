@@ -13,30 +13,30 @@ using SDDP, HiGHS, Test, Random, Statistics
 import SDDP: Inner
 
 function test_inner_hydro_1d()
-    # Parameters
-    # Model
+    ## Parameters
+    ## Model
     nstages = 4
     inivol = 83.222
 
-    # Uncertainty
+    ## Uncertainty
     nscen = 10
     Random.seed!(2)
     inflows = max.(40 .+ 20 * randn(nscen), 0)
 
-    # Risk aversion
-    # EAVaR(;lambda=1.0, beta=1.0) corresponds to
-    #   ρ = λ * E[x] + (1 - λ) * AV@R(β)[x]
-    # and β = 1.0 makes AV@R = E
+    ## Risk aversion
+    ## EAVaR(;lambda=1.0, beta=1.0) corresponds to
+    ##   ρ = λ * E[x] + (1 - λ) * AV@R(β)[x]
+    ## and β = 1.0 makes AV@R = E
     lambda = 0.5
     beta = 0.20
     rho = SDDP.EAVaR(; lambda, beta)
 
-    # Solving
+    ## Solving
     niters = 10
     ub_step = 10
     solver = HiGHS.Optimizer
 
-    # The model
+    ## The model
     function build_hydro(sp, t)
         @variable(sp, 0 <= vol <= 100, SDDP.State, initial_value = inivol)
         @variable(sp, 0 <= gh <= 60)
@@ -60,7 +60,7 @@ function test_inner_hydro_1d()
         @stageobjective(sp, spill + 5 * gt[1] + 10 * gt[2] + 50 * def)
     end
 
-    # Lower bound via cuts
+    ## Lower bound via cuts
     println("Build primal outer model")
     pb = SDDP.LinearPolicyGraph(
         build_hydro;
@@ -75,7 +75,7 @@ function test_inner_hydro_1d()
     lb = SDDP.calculate_bound(pb; risk_measure = rho)
     println("       Risk-adjusted lower bound: ", round(lb; digits = 2))
 
-    # Monte-Carlo policy cost estimate; does not take risk_measure into account
+    ## Monte-Carlo policy cost estimate; does not take risk_measure into account
     simulations = SDDP.simulate(pb, 500, [:vol, :gh, :spill, :gt, :def])
     objective_values =
         [sum(stage[:stage_objective] for stage in sim) for sim in simulations]
@@ -84,7 +84,7 @@ function test_inner_hydro_1d()
 
     println("Risk-neutral confidence interval: ", μ, " ± ", ci)
 
-    # Upper bound via inner approximation
+    ## Upper bound via inner approximation
     base_Lip = 50.0
     base_ub = 75.0 * base_Lip
     build_Lip(t) = base_Lip * (nstages - t)
