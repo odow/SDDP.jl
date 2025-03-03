@@ -5,9 +5,9 @@
 
 # # Hydro 1d
 
-# This is a simple version of the hydro-thermal scheduling problem. The goal is
-# to operate one hydro-dam and two termal plants over time in the face of inflow
-# uncertainty.
+# This is a simple version of the hydro-thermal scheduling problem.
+# The goal is # to operate one hydro-dam and two thermal plants over time
+# in the face of inflow uncertainty.
 
 using SDDP, HiGHS, Test, Random, Statistics
 import SDDP: Inner
