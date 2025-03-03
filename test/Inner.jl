@@ -145,10 +145,12 @@ function test_Read_write_cuts_to_file()
         @test_throws JuMP.NoOptimizer SDDP.Inner.read_vertices_from_file(
             model_2,
             "$(T).vertices.json",
+            vertex_selection = true,
         )
         SDDP.Inner.read_vertices_from_file(
             model_2,
             "$(T).vertices.json";
+            vertex_selection = true,
             optimizer = HiGHS.Optimizer,
         )
         @test SDDP.calculate_bound(model_2) ≈ ub atol = 0.1
