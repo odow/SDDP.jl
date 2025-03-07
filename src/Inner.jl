@@ -10,6 +10,8 @@ import JuMP
 import JSON
 import ..SDDP
 
+const MOI = SDDP.MOI
+
 mutable struct Vertex
     value::Float64
     state::Dict{Symbol,Float64}
@@ -302,7 +304,7 @@ function SDDP.initialize_bellman_function(
         JuMP.@constraint(sp, [k in keys(x′)], δ_abs[k] >= -δ[k])
 
         JuMP.@variable(sp, 0 <= σ0 <= 1)
-        if JuMP.objective_sense(sp) == JuMP.MOI.MIN_SENSE
+        if JuMP.objective_sense(sp) == MOI.MIN_SENSE
             JuMP.@constraint(
                 sp,
                 theta_cc,
@@ -341,7 +343,7 @@ function SDDP.initialize_bellman_function(
     )
 end
 
-function refine_inner_bellman_function(
+function SDDP.refine_bellman_function(
     model::SDDP.PolicyGraph{T},
     node::SDDP.Node{T},
     bellman_function::InnerBellmanFunction,
@@ -394,7 +396,7 @@ function _refine_inner_bellman_function_no_lock(
         nominal_probability,
         noise_supports,
         objective_realizations,
-        model.objective_sense == JuMP.MOI.MIN_SENSE,
+        model.objective_sense == MOI.MIN_SENSE,
     )
     # The meat of the function.
     if bellman_function.cut_type == SDDP.SINGLE_CUT
@@ -460,6 +462,225 @@ end
 
 function model_type(model::SDDP.PolicyGraph{T}) where {T}
     return T
+end
+
+
+"""
+    _default_lipschitz_estimate(builder::Function)
+
+Makes an estimate of the lipschitz for using in the InnerBellmanFunction
+by calling the suproblem builder for the first node of the graph and taking
+the largest coefficient in the objective function.
+
+"""
+# TODO(rjmalves)
+function _default_lipschitz_estimate(builder::Function)
+    return 0.0
+end
+
+
+"""
+    InnerPolicyGraph(
+        builder::Function,
+        graph::SDDP.Graph{T};
+        sense::Symbol = :Min,
+        lower_bound = -Inf,
+        upper_bound = Inf,
+        optimizer = nothing,
+        lipschitz_constant = nothing,
+    ) where {T}
+
+Construct a policy graph for inner policy approximation based on the graph
+structure of `graph`, which use an InnerBellmanFunction in each node.
+(See [`SDDP.Graph`](@ref) for details.)
+
+## Keyword arguments
+
+ - `sense`: whether we are minimizing (`:Min`) or maximizing (`:Max`).
+
+ - `lower_bound`: if mimimizing, a valid lower bound for the cost to go in all
+   subproblems.
+
+ - `upper_bound`: if maximizing, a valid upper bound for the value to go in all
+   subproblems.
+
+ - `optimizer`: the optimizer to use for each of the subproblems
+
+ - `lipschitz_constant`: an estimate for the Lipschitz constant of each subproblem
+
+## Examples
+
+```julia
+function builder(subproblem::JuMP.Model, index)
+    # ... subproblem definition ...
+end
+
+model = InnerPolicyGraph(
+    builder,
+    graph;
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+)
+```
+
+Or, using the Julia `do ... end` syntax:
+
+```julia
+model = InnerPolicyGraph(
+    graph;
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do subproblem, index
+    # ... subproblem definitions ...
+end
+```
+"""
+function InnerPolicyGraph(
+    builder::Function,
+    graph::SDDP.Graph{T};
+    sense::Symbol = :Min,
+    lower_bound = -Inf,
+    upper_bound = Inf,
+    optimizer = nothing,
+    # These arguments are the only hard difference from the "Cut-Based" Policy Graph
+    lipschitz_constant = nothing,
+    # These arguments are deprecated
+    bellman_function = nothing,
+    direct_mode::Bool = false,
+) where {T}
+    # This function conveniently reuses code from the general PolicyGraph builder
+    # instead of simply calling LinearPolicyGraph, what should simplify things,
+    # but will need to change when support to cyclic graphs is add.
+    
+    # Cannot call PolicyGraph from the SDDP default interface since the
+    # bellman_function named arg is marked as deprecated
+
+    # Spend a one-off cost validating the graph.
+    SDDP._validate_graph(graph)
+    # Construct a basic policy graph. We will add to it in the remainder of this
+    # function.
+    policy_graph = SDDP.PolicyGraph(sense, graph.root_node)
+    if bellman_function === nothing
+        if sense == :Min && lower_bound === -Inf
+            error(
+                "You must specify a finite lower bound on the objective value" *
+                " using the `lower_bound = value` keyword argument.",
+            )
+        elseif sense == :Max && upper_bound === Inf
+            error(
+                "You must specify a finite upper bound on the objective value" *
+                " using the `upper_bound = value` keyword argument.",
+            )
+        else
+            # Default values for the lipschitz constant, if the user didn't give
+            # one in advance
+            if lipschitz_constant === nothing
+                lipschitz_constant = _default_lipschitz_estimate(builder)
+            end
+            if sense == :Min && upper_bound === Inf
+                error(
+                "With inner approximations, you must specify a finite upper bound" *
+                "on the objective value using the `upper_bound = value`" *
+                " keyword argument even when sense = :Min.",
+            )
+            end
+            if sense == :Max && lower_bound === Inf
+                error(
+                "With inner approximations, you must specify a finite lower bound" *
+                "on the objective value using the `lower_bound = value`" *
+                " keyword argument even when sense = :Max.",
+            )
+            end
+            bellman_function = InnerBellmanFunction(
+                lipschitz_constant;
+                lower_bound = lower_bound,
+                upper_bound = upper_bound,
+                vertex_type = SDDP.SINGLE_CUT,
+            )
+        end
+    end
+    # Initialize nodes.
+    for (node_index, children) in graph.nodes
+        if node_index == graph.root_node
+            continue
+        end
+        subproblem = SDDP.construct_subproblem(optimizer, direct_mode)
+        node = SDDP.Node(
+            node_index,
+            subproblem,
+            SDDP.Noise{T}[],
+            SDDP.Noise[],
+            (ω) -> nothing,
+            Dict{Symbol,SDDP.State{JuMP.VariableRef}}(),
+            0.0,
+            false,
+            # Delay initializing the bellman function until later so that it can
+            # use information about the children and number of
+            # stagewise-independent noise realizations.
+            nothing,
+            # Likewise for the objective states.
+            nothing,
+            # And for belief states.
+            nothing,
+            # The optimize hook defaults to nothing.
+            nothing,
+            nothing,
+            false,
+            direct_mode ? nothing : optimizer,
+            # The extension dictionary.
+            Dict{Symbol,Any}(),
+            ReentrantLock(),
+            Dict{Symbol,Tuple{Float64,Float64,Bool}}(),
+        )
+        subproblem.ext[:sddp_policy_graph] = policy_graph
+        policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node
+        JuMP.set_objective_sense(subproblem, policy_graph.objective_sense)
+        builder(subproblem, node_index)
+        # Add a dummy noise here so that all nodes have at least one noise term.
+        if length(node.noise_terms) == 0
+            push!(node.noise_terms, SDDP.Noise(nothing, 1.0))
+        end
+        ctypes = JuMP.list_of_constraint_types(subproblem)
+        node.has_integrality =
+            (JuMP.VariableRef, MOI.Integer) in ctypes ||
+            (JuMP.VariableRef, MOI.ZeroOne) in ctypes
+    end
+    # Loop back through and add the arcs/children.
+    for (node_index, children) in graph.nodes
+        if node_index == graph.root_node
+            continue
+        end
+        node = policy_graph.nodes[node_index]
+        for (child, probability) in children
+            push!(node.children, SDDP.Noise(child, probability))
+        end
+        # Intialize the bellman function. (See note in creation of Node above.)
+        node.bellman_function =
+            SDDP.initialize_bellman_function(bellman_function, policy_graph, node)
+    end
+    # Add root nodes
+    for (child, probability) in graph.nodes[graph.root_node]
+        push!(policy_graph.root_children, SDDP.Noise(child, probability))
+        # We check the feasibility of the initial point here. It is a really
+        # tricky feasibility bug to diagnose otherwise. See #387 for details.
+        for (k, v) in policy_graph.initial_root_state
+            x_out = policy_graph[child].states[k].out
+            if JuMP.has_lower_bound(x_out) && JuMP.lower_bound(x_out) > v
+                error("Initial point $(v) violates lower bound on state $k")
+            elseif JuMP.has_upper_bound(x_out) && JuMP.upper_bound(x_out) < v
+                error("Initial point $(v) violates upper bound on state $k")
+            end
+        end
+    end
+    # Skip belief states since they are not supported
+
+    domain = SDDP._get_incoming_domain(policy_graph)
+    for (node_name, node) in policy_graph.nodes
+        for (k, v) in domain[node_name]
+            node.incoming_state_bounds[k] = something(v, (-Inf, Inf, false))
+        end
+    end
+    return policy_graph
 end
 
 """
@@ -553,7 +774,7 @@ function inner_dp(
                     opts.duality_handler,
                     opts,
                 )
-                refine_inner_bellman_function(
+                SDDP.refine_bellman_function(
                     pb_inner,
                     node,
                     node.bellman_function,
@@ -789,7 +1010,7 @@ function read_vertices_from_file(
                     p * V.theta for (p, V) in zip(json_cut, bf.local_thetas)
                 )
             )
-            if JuMP.objective_sense(node.subproblem) == JuMP.MOI.MIN_SENSE
+            if JuMP.objective_sense(node.subproblem) == MOI.MIN_SENSE
                 JuMP.@constraint(node.subproblem, expr >= 0)
             else
                 JuMP.@constraint(node.subproblem, expr <= 0)
