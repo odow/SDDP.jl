@@ -74,18 +74,11 @@ end
 # TODO(bfpc): implement Objective and Belief states
 function _add_vertex_var_to_model(V::InnerConvexApproximation, vertex::Vertex)
     model = JuMP.owner_model(V.theta)
-    yᵀμ = JuMP.AffExpr(0.0)
     if V.objective_states !== nothing
         error("Objective states not yet implemented.")
-        for (y, μ) in zip(cut.obj_y, V.objective_states)
-            JuMP.add_to_expression!(yᵀμ, y, μ)
-        end
     end
     if V.belief_states !== nothing
         error("Belief states not yet implemented.")
-        for (k, μ) in V.belief_states
-            JuMP.add_to_expression!(yᵀμ, cut.belief_y[k], μ)
-        end
     end
 
     # Add a new variable to the convex combination constraints
