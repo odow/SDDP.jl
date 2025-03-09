@@ -464,18 +464,36 @@ function model_type(model::SDDP.PolicyGraph{T}) where {T}
     return T
 end
 
+"""
+    _validate_linear_graph(graph::SDDP.Graph)
+
+Validates a given graph to be linear by counting the number of children
+at each node. This function does not replace the graph validation step from
+the main SDDP module and is meant to be used in conjunction with it while
+the Inner module does not support other graphs.
 
 """
-    _default_lipschitz_estimate(builder::Function)
-
-Makes an estimate of the lipschitz for using in the InnerBellmanFunction
-by calling the suproblem builder for the first node of the graph and taking
-the largest coefficient in the objective function.
-
-"""
-# TODO(rjmalves)
-function _default_lipschitz_estimate(builder::Function)
-    return 0.0
+function _validate_linear_graph(graph::SDDP.Graph)
+    node_count = length(graph.nodes)
+    has_leaf = false
+    for (node, children) in graph.nodes
+        children_count = length(children)
+        if children_count == 0
+            has_leaf = true
+        elseif children_count != 1
+            error(
+                "The graph is not linear since node $(node) has " *
+                "$(children_count) children and should have 1.",
+            )
+            
+        end
+    end
+    if !has_leaf
+        error(
+            "The graph is not linear since no leaf node was " *
+            "found among $(node_count) nodes.",
+        )
+    end
 end
 
 
@@ -552,9 +570,12 @@ function InnerPolicyGraph(
     # instead of simply calling LinearPolicyGraph, what should simplify things,
     # but will need to change when support to cyclic graphs is add.
     
+    # While only LinearGraphs are supported
+    _validate_linear_graph(graph)
+        
     # Cannot call PolicyGraph from the SDDP default interface since the
     # bellman_function named arg is marked as deprecated
-
+    
     # Spend a one-off cost validating the graph.
     SDDP._validate_graph(graph)
     # Construct a basic policy graph. We will add to it in the remainder of this
@@ -572,24 +593,25 @@ function InnerPolicyGraph(
                 " using the `upper_bound = value` keyword argument.",
             )
         else
-            # Default values for the lipschitz constant, if the user didn't give
-            # one in advance
             if lipschitz_constant === nothing
-                lipschitz_constant = _default_lipschitz_estimate(builder)
+                error(
+                    "With inner approximations, you must specify an estimate for " *
+                    "the Lipschitz constant to be used in the InnerBellmanFunction",
+                )
             end
             if sense == :Min && upper_bound === Inf
                 error(
-                "With inner approximations, you must specify a finite upper bound" *
-                "on the objective value using the `upper_bound = value`" *
-                " keyword argument even when sense = :Min.",
-            )
+                    "With inner approximations, you must specify a finite upper bound" *
+                    "on the objective value using the `upper_bound = value`" *
+                    " keyword argument even when sense = :Min.",
+                )
             end
             if sense == :Max && lower_bound === Inf
                 error(
-                "With inner approximations, you must specify a finite lower bound" *
-                "on the objective value using the `lower_bound = value`" *
-                " keyword argument even when sense = :Max.",
-            )
+                    "With inner approximations, you must specify a finite lower bound" *
+                    "on the objective value using the `lower_bound = value`" *
+                    " keyword argument even when sense = :Max.",
+                )
             end
             bellman_function = InnerBellmanFunction(
                 lipschitz_constant;
@@ -685,16 +707,16 @@ end
 
 
 """
-    from_outer_policy_graph(
-        inner_pb::SDDP.PolicyGraph
-        outer_pb::SDDP.PolicyGraph;
+    read_vertices_from_policy_graph(
+        inner_model::SDDP.PolicyGraph
+        outer_model::SDDP.PolicyGraph;
         optimizer = nothing,
         risk_measures::SDDP.AbstractRiskMeasure = SDDP.Expectation(),
         print_level::Int = 0,
     )
 
-Seeds vertices to `inner_pb`, a `PolicyGraph` with an `InnerBellmanFunction``
-from the states sampled by `outer_pb`, another `PolicyGraph` with an
+Seeds vertices to `inner_model`, a `PolicyGraph` with an `InnerBellmanFunction``
+from the states sampled by `outer_model`, another `PolicyGraph` with an
 "Outer" `BellmanFunction`.
 
 In this process, performs a single dynamic programming backwards iteration,
@@ -716,25 +738,25 @@ that does not require passing the builder or building externally the
 
  - `print_level::Int` level of verbosity.
 """
-function from_outer_policy_graph(
-    inner_pb::SDDP.PolicyGraph,
-    outer_pb::SDDP.PolicyGraph;
+function read_vertices_from_policy_graph(
+    inner_model::SDDP.PolicyGraph,
+    outer_model::SDDP.PolicyGraph;
     optimizer = nothing,
     risk_measures::SDDP.AbstractRiskMeasure = SDDP.Expectation(),
     print_level::Int = 0,
 )
-    opts = SDDP.Options(inner_pb, outer_pb.initial_root_state; risk_measures)
-    T = model_type(inner_pb)
-    for node_index in sort(collect(keys(outer_pb.nodes)); rev = true)[2:end]
+    opts = SDDP.Options(inner_model, outer_model.initial_root_state; risk_measures)
+    T = model_type(inner_model)
+    for node_index in sort(collect(keys(outer_model.nodes)); rev = true)[2:end]
         dt = @elapsed begin
-            node = inner_pb[node_index]
+            node = inner_model[node_index]
             fw_samples =
-            outer_pb[node_index].bellman_function.global_theta.sampled_states
+            outer_model[node_index].bellman_function.global_theta.sampled_states
             for sampled_state in fw_samples
                 outgoing_state = sampled_state.state
                 items = SDDP.BackwardPassItems(T, SDDP.Noise)
                 SDDP.solve_all_children(
-                    inner_pb,
+                    inner_model,
                     node,
                     items,
                     1.0,
@@ -747,7 +769,7 @@ function from_outer_policy_graph(
                     opts,
                 )
                 SDDP.refine_bellman_function(
-                    inner_pb,
+                    inner_model,
                     node,
                     node.bellman_function,
                     opts.risk_measures[node_index],
