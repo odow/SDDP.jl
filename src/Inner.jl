@@ -542,7 +542,7 @@ function InnerPolicyGraph(
     lower_bound = -Inf,
     upper_bound = Inf,
     optimizer = nothing,
-    # These arguments are the only hard difference from the "Cut-Based" Policy Graph
+    # This argument is the only hard difference from the "Cut-Based" PolicyGraph
     lipschitz_constant = nothing,
     # These arguments are deprecated
     bellman_function = nothing,
@@ -682,6 +682,102 @@ function InnerPolicyGraph(
     end
     return policy_graph
 end
+
+
+"""
+    from_outer_policy_graph(
+        inner_pb::SDDP.PolicyGraph
+        outer_pb::SDDP.PolicyGraph;
+        optimizer = nothing,
+        risk_measures::SDDP.AbstractRiskMeasure = SDDP.Expectation(),
+        print_level::Int = 0,
+    )
+
+Seeds vertices to `inner_pb`, a `PolicyGraph` with an `InnerBellmanFunction``
+from the states sampled by `outer_pb`, another `PolicyGraph` with an
+"Outer" `BellmanFunction`.
+
+In this process, performs a single dynamic programming backwards iteration,
+building inner approximations of the value functions.
+
+Currently, only supports LinearPolicyGraphs.
+
+This function is mean to be an alternative to the `inner_dp` function
+that does not require passing the builder or building externally the
+`InnerBellmanFunction`, and may be used together with the
+`InnerPolicyGraph` constructor.
+
+## Keyword arguments
+
+ - `optimizer` optimizer to use in the vertex selection.
+
+ - `risk_measures::SDDP.AbstractRiskMeasure` risk measures
+    for the problem.
+
+ - `print_level::Int` level of verbosity.
+"""
+function from_outer_policy_graph(
+    inner_pb::SDDP.PolicyGraph,
+    outer_pb::SDDP.PolicyGraph;
+    optimizer = nothing,
+    risk_measures::SDDP.AbstractRiskMeasure = SDDP.Expectation(),
+    print_level::Int = 0,
+)
+    opts = SDDP.Options(inner_pb, outer_pb.initial_root_state; risk_measures)
+    T = model_type(inner_pb)
+    for node_index in sort(collect(keys(outer_pb.nodes)); rev = true)[2:end]
+        dt = @elapsed begin
+            node = inner_pb[node_index]
+            fw_samples =
+            outer_pb[node_index].bellman_function.global_theta.sampled_states
+            for sampled_state in fw_samples
+                outgoing_state = sampled_state.state
+                items = SDDP.BackwardPassItems(T, SDDP.Noise)
+                SDDP.solve_all_children(
+                    inner_pb,
+                    node,
+                    items,
+                    1.0,
+                    nothing, # belief_state
+                    nothing, # objective_state
+                    outgoing_state,
+                    opts.backward_sampling_scheme,
+                    Tuple{T,Any}[], # scenario_path
+                    opts.duality_handler,
+                    opts,
+                )
+                SDDP.refine_bellman_function(
+                    inner_pb,
+                    node,
+                    node.bellman_function,
+                    opts.risk_measures[node_index],
+                    outgoing_state,
+                    items.duals,
+                    items.supports,
+                    items.probability,
+                    items.objectives,
+                )
+            end
+        end
+        if optimizer !== nothing
+            dt_vs = @elapsed _vertex_selection(
+                node.bellman_function.global_theta,
+                optimizer,
+            )
+        else
+            dt_vs = 0.0
+        end
+        if print_level > 0
+            println(
+                "Node: $(node_index) - ",
+                "elapsed time: $(round(dt; digits = 2)) ",
+                "plus $(round(dt_vs; digits = 2)) for vertex selection.",
+            )
+        end
+    end
+end
+
+
 
 """
     inner_dp(
@@ -941,9 +1037,9 @@ a policy graph with a different node type `T`, provide a function
 function read_vertices_from_file(
     model::SDDP.PolicyGraph{T},
     filename::String;
-    dualcuts::Bool = false,
     node_name_parser::Function = SDDP._node_name_parser,
     vertex_name_parser::Function = _vertex_name_parser,
+    dualcuts::Bool = false,
     vertex_selection::Bool = false,
     optimizer = nothing,
 ) where {T}

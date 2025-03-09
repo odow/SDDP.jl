@@ -167,7 +167,7 @@ function create_policy_graph_with_inner_approximation()
     # lipschitz estimates used in the test_Read_write_cuts_to_file
     # makes the test for calculating bound after training fails
 
-    return Inner.InnerPolicyGraph(
+    return SDDP.Inner.InnerPolicyGraph(
         build,
         graph;
         lower_bound = 0.0,
@@ -187,6 +187,21 @@ function test_simulate_with_inner_approximation()
     model = create_policy_graph_with_inner_approximation()
     SDDP.train(model; iteration_limit = 50, print_level = 0)
     SDDP.simulate(model, 50, [:vertex_coverage_distance])
+end
+
+function test_from_outer_policy_graph()
+    nstages = 4
+    graph = SDDP.LinearGraph(nstages)
+    cut_model = _create_model(graph)
+    SDDP.train(cut_model; iteration_limit = 50, print_level = 0)
+    vertex_model = create_policy_graph_with_inner_approximation()
+    SDDP.Inner.from_outer_policy_graph(
+        vertex_model,
+        cut_model;
+        optimizer = HiGHS.Optimizer,
+    )
+    @test SDDP.calculate_bound(vertex_model) ≈ 45.833 atol = 0.1
+
 end
 
 end  # module
