@@ -493,6 +493,7 @@ function _validate_linear_graph(graph::SDDP.Graph)
             "found among $(node_count) nodes.",
         )
     end
+    return
 end
 
 """
@@ -798,6 +799,7 @@ function read_vertices_from_policy_graph(
             )
         end
     end
+    return
 end
 
 """
