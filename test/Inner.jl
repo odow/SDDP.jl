@@ -233,7 +233,6 @@ function test_InnerPolicyGraph_LinearGraph()
 end
 
 function test_InnerPolicyGraph_other_graphs()
-
     graph = SDDP.MarkovianGraph([
         ones(Float64, (1, 1)),
         [0.5 0.5],
@@ -273,7 +272,7 @@ function test_InnerPolicGraph_simulate()
     model = create_policy_graph_with_inner_approximation()
     SDDP.train(model; iteration_limit = 50, print_level = 0)
     results = SDDP.simulate(model, 50, [:vertex_coverage_distance])
-    @test typeof(results) === Vector{Vector{Dict{Symbol, Any}}}
+    @test typeof(results) === Vector{Vector{Dict{Symbol,Any}}}
 end
 
 function test_read_vertices_from_policy_graph()

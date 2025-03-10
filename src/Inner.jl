@@ -10,7 +10,7 @@ import JuMP
 import JSON
 import ..SDDP
 
-const MOI = SDDP.MOI
+import JuMP: MOI
 
 mutable struct Vertex
     value::Float64
@@ -485,7 +485,6 @@ function _validate_linear_graph(graph::SDDP.Graph)
                 "The graph is not linear since node $(node) has " *
                 "$(children_count) children and should have 1.",
             )
-            
         end
     end
     if !has_leaf
@@ -495,7 +494,6 @@ function _validate_linear_graph(graph::SDDP.Graph)
         )
     end
 end
-
 
 """
     InnerPolicyGraph(
@@ -569,13 +567,13 @@ function InnerPolicyGraph(
     # This function conveniently reuses code from the general PolicyGraph builder
     # instead of simply calling LinearPolicyGraph, what should simplify things,
     # but will need to change when support to cyclic graphs is add.
-    
+
     # While only LinearGraphs are supported
     _validate_linear_graph(graph)
-        
+
     # Cannot call PolicyGraph from the SDDP default interface since the
     # bellman_function named arg is marked as deprecated
-    
+
     # Spend a one-off cost validating the graph.
     SDDP._validate_graph(graph)
     # Construct a basic policy graph. We will add to it in the remainder of this
@@ -677,8 +675,11 @@ function InnerPolicyGraph(
             push!(node.children, SDDP.Noise(child, probability))
         end
         # Intialize the bellman function. (See note in creation of Node above.)
-        node.bellman_function =
-            SDDP.initialize_bellman_function(bellman_function, policy_graph, node)
+        node.bellman_function = SDDP.initialize_bellman_function(
+            bellman_function,
+            policy_graph,
+            node,
+        )
     end
     # Add root nodes
     for (child, probability) in graph.nodes[graph.root_node]
@@ -704,7 +705,6 @@ function InnerPolicyGraph(
     end
     return policy_graph
 end
-
 
 """
     read_vertices_from_policy_graph(
@@ -745,13 +745,14 @@ function read_vertices_from_policy_graph(
     risk_measures::SDDP.AbstractRiskMeasure = SDDP.Expectation(),
     print_level::Int = 0,
 )
-    opts = SDDP.Options(inner_model, outer_model.initial_root_state; risk_measures)
+    opts =
+        SDDP.Options(inner_model, outer_model.initial_root_state; risk_measures)
     T = model_type(inner_model)
     for node_index in sort(collect(keys(outer_model.nodes)); rev = true)[2:end]
         dt = @elapsed begin
             node = inner_model[node_index]
             fw_samples =
-            outer_model[node_index].bellman_function.global_theta.sampled_states
+                outer_model[node_index].bellman_function.global_theta.sampled_states
             for sampled_state in fw_samples
                 outgoing_state = sampled_state.state
                 items = SDDP.BackwardPassItems(T, SDDP.Noise)
@@ -798,8 +799,6 @@ function read_vertices_from_policy_graph(
         end
     end
 end
-
-
 
 """
     inner_dp(
