@@ -168,6 +168,7 @@ Documenter.makedocs(;
             "guides/add_noise_in_the_constraint_matrix.md",
             "guides/choose_a_stopping_rule.md",
             "guides/create_a_general_policy_graph.md",
+            "guides/add_a_custom_cut.md",
             "guides/debug_a_model.md",
             "guides/improve_computational_performance.md",
             "guides/simulate_using_a_different_sampling_scheme.md",
