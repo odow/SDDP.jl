@@ -38,7 +38,7 @@ theta >= intercept + sum(coefficients[k] * (x[k] - state[k]) for k in keys(state
 ```
 
 In this example, we add the cut ``\theta \ge 55500 - 200 * (x - 10)`` to node 1:
-```@jldoctest guide_add_a_custom_cut
+```jldoctest guide_add_a_custom_cut
 julia> model = create_model();
 
 julia> SDDP.calculate_bound(model)
