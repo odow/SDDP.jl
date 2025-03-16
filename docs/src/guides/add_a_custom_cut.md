@@ -8,14 +8,15 @@ To see the naming convention required by [`read_cuts_from_file`](@ref), train
 your model for one iteration, and use [`write_cuts_to_file`](@ref) to write the
 cuts to file:
 
-```@repl guide_add_a_custom_cut
-using SDDP, HiGHS
-function create_model()
-    return SDDP.LinearPolicyGraph(;
+```jldoctest guide_add_a_custom_cut
+julia> using SDDP, HiGHS
+
+julia> function create_model()
+           return SDDP.LinearPolicyGraph(;
         stages = 3,
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
-    ) do sp, t
+           ) do sp, t
         @variable(sp, 0 <= x <= 100, Int, SDDP.State, initial_value = 0)
         @variable(sp, 0 <= u_p <= 200, Int)
         @variable(sp, u_o >= 0, Int)
@@ -24,12 +25,18 @@ function create_model()
         @stageobjective(sp, 100 * u_p + 300 * u_o + 50 * x.out)
         Ω = [[100.0], [100.0, 300.0], [100.0, 300.0]]
         SDDP.parameterize(ω -> JuMP.fix(w, ω), sp, Ω[t])
-    end
-end
-model = create_model();
-SDDP.train(model; iteration_limit = 1, print_level = 0)
-SDDP.write_cuts_to_file(model, "cuts.json")
-print(read("cuts.json", String))
+           end
+       end
+create_model (generic function with 1 method)
+
+julia> model = create_model();
+
+julia> SDDP.train(model; iteration_limit = 1, print_level = 0)
+
+julia> SDDP.write_cuts_to_file(model, "cuts.json")
+
+julia> print(read("cuts.json", String))
+[{"risk_set_cuts":[],"node":"2","single_cuts":[{"state":{"x":0.0},"intercept":30000.0,"coefficients":{"x":-200.0}}],"multi_cuts":[]},{"risk_set_cuts":[],"node":"3","single_cuts":[],"multi_cuts":[]},{"risk_set_cuts":[],"node":"1","single_cuts":[{"state":{"x":0.0},"intercept":57500.0,"coefficients":{"x":-200.0}}],"multi_cuts":[]}]
 ```
 
 Then create a new file containing the cut. The formula for the cut is
