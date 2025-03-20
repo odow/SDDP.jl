@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Biobjective hydro-thermal · SDDP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SDDP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox"/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Basic</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/basic/01_first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../../tutorial/basic/03_objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../../tutorial/basic/04_markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../../tutorial/basic/05_plotting/">Plotting tools</a></li><li><a class="tocitem" href="../../tutorial/basic/06_warnings/">Words of warning</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-2" type="checkbox"/><label class="tocitem" for="menuitem-2-2"><span class="docs-label">Advanced</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/advanced/11_objective_states/">Objective states</a></li><li><a class="tocitem" href="../../tutorial/advanced/12_belief_states/">Belief states</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-3" type="checkbox"/><label class="tocitem" for="menuitem-2-3"><span class="docs-label">Theory</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/theory/21_theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../tutorial/theory/22_risk/">Risk aversion</a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/acess_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li class="is-active"><a class="tocitem" href>Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Biobjective hydro-thermal</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Biobjective hydro-thermal</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/biobjective_hydro.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Biobjective-hydro-thermal"><a class="docs-heading-anchor" href="#Biobjective-hydro-thermal">Biobjective hydro-thermal</a><a id="Biobjective-hydro-thermal-1"></a><a class="docs-heading-anchor-permalink" href="#Biobjective-hydro-thermal" title="Permalink"></a></h1><pre><code class="language-julia hljs">using SDDP, GLPK, Statistics, Test
+
+function biobjective_example()
+    model = SDDP.LinearPolicyGraph(
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = GLPK.Optimizer,
+    ) do subproblem, _
+        @variable(subproblem, 0 &lt;= v &lt;= 200, SDDP.State, initial_value = 50)
+        @variables(subproblem, begin
+            0 &lt;= g[i = 1:2] &lt;= 100
+            0 &lt;= u &lt;= 150
+            s &gt;= 0
+            shortage_cost &gt;= 0
+        end)
+        @expressions(subproblem, begin
+            objective_1, g[1] + 10 * g[2]
+            objective_2, shortage_cost
+        end)
+        @constraints(subproblem, begin
+                inflow_constraint, v.out == v.in - u - s
+                g[1] + g[2] + u == 150
+                shortage_cost &gt;= 40 - v.out
+                shortage_cost &gt;= 60 - 2 * v.out
+                shortage_cost &gt;= 80 - 4 * v.out
+            end)
+        # You must call this for a biobjective problem!
+        SDDP.initialize_biobjective_subproblem(subproblem)
+        SDDP.parameterize(subproblem, 0.0:5:50.0) do ω
+            JuMP.set_normalized_rhs(inflow_constraint, ω)
+            # You must call `set_biobjective_functions` from within
+            # `SDDP.parameterize`.
+            return SDDP.set_biobjective_functions(
+                subproblem,
+                objective_1,
+                objective_2,
+            )
+        end
+    end
+    pareto_weights =
+        SDDP.train_biobjective(model, solution_limit = 10, iteration_limit = 10)
+    solutions = [(k, v) for (k, v) in pareto_weights]
+    sort!(solutions; by = x -&gt; x[1])
+    @test length(solutions) == 10
+    # Test for convexity! The gradient must be decreasing as we move from left
+    # to right.
+    gradient(a, b) = (b[2] - a[2]) / (b[1] - a[1])
+    grad = Inf
+    for i in 1:9
+        new_grad = gradient(solutions[i], solutions[i+1])
+        @test new_grad &lt; grad
+        grad = new_grad
+    end
+    return
+end
+
+biobjective_example()</code></pre><pre><code class="nohighlight hljs">------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : false
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 5)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    0.000000e+00   0.000000e+00   7.678280e-01          1         36
+        2    0.000000e+00   0.000000e+00   7.755110e-01          1         72
+        3    0.000000e+00   0.000000e+00   7.765610e-01          1        108
+        4    0.000000e+00   0.000000e+00   7.775190e-01          1        144
+        5    0.000000e+00   0.000000e+00   7.784641e-01          1        180
+        6    0.000000e+00   0.000000e+00   7.794960e-01          1        216
+        7    0.000000e+00   0.000000e+00   7.804971e-01          1        252
+        8    0.000000e+00   0.000000e+00   7.815139e-01          1        288
+        9    0.000000e+00   0.000000e+00   7.825391e-01          1        324
+       10    0.000000e+00   0.000000e+00   7.836680e-01          1        360
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 7.836680e-01
+  Total solves   : 360
+  Best bound     :  0.000000e+00
+  Simulation CI  :  0.000000e+00 ± 0.000000e+00
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 7)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    9.500000e+02   5.500000e+02   1.296997e-03          1        407
+        2    8.850000e+02   5.665665e+02   2.413988e-03          1        443
+        3    5.000000e+02   5.699812e+02   3.566027e-03          1        479
+        4    6.500000e+02   5.699812e+02   4.786015e-03          1        515
+        5    7.500000e+02   5.714350e+02   6.037951e-03          1        551
+        6    4.500000e+02   5.718069e+02   7.245064e-03          1        587
+        7    8.500000e+02   5.720098e+02   8.496046e-03          1        623
+        8    8.500000e+02   5.725507e+02   9.752035e-03          1        659
+        9    4.000000e+02   5.725507e+02   1.095510e-02          1        695
+       10    2.850000e+02   5.728212e+02   1.225400e-02          1        731
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.225400e-02
+  Total solves   : 731
+  Best bound     :  5.728212e+02
+  Simulation CI  :  6.570000e+02 ± 1.450577e+02
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 13)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    4.150000e+02   3.347014e+02   1.169920e-03          1        778
+        2    3.125000e+02   3.422223e+02   2.308846e-03          1        814
+        3    1.883824e+02   3.425413e+02   3.425837e-03          1        850
+        4    2.475000e+02   3.455372e+02   4.555941e-03          1        886
+        5    3.900000e+02   3.459853e+02   5.749941e-03          1        922
+        6    4.106071e+02   3.463026e+02   7.087946e-03          1        958
+        7    3.881071e+02   3.464790e+02   8.435965e-03          1        994
+        8    5.318571e+02   3.465177e+02   9.821892e-03          1       1030
+        9    4.325000e+02   3.465177e+02   1.122689e-02          1       1066
+       10    2.825000e+02   3.465177e+02   1.262093e-02          1       1102
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.262093e-02
+  Total solves   : 1102
+  Best bound     :  3.465177e+02
+  Simulation CI  :  3.598954e+02 ± 6.281469e+01
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 19)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    2.387500e+02   1.994007e+02   1.305103e-03          1       1149
+        2    2.037500e+02   2.004250e+02   2.473116e-03          1       1185
+        3    1.706731e+02   2.044431e+02   3.757954e-03          1       1221
+        4    2.500000e+02   2.051658e+02   5.048037e-03          1       1257
+        5    1.550000e+02   2.052799e+02   6.297112e-03          1       1293
+        6    2.575000e+02   2.052799e+02   7.621050e-03          1       1329
+        7    1.675000e+02   2.052799e+02   8.949041e-03          1       1365
+        8    2.837500e+02   2.052799e+02   1.021600e-02          1       1401
+        9    2.212500e+02   2.052799e+02   1.163101e-02          1       1437
+       10    2.587500e+02   2.052799e+02   1.308703e-02          1       1473
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.308703e-02
+  Total solves   : 1473
+  Best bound     :  2.052799e+02
+  Simulation CI  :  2.206923e+02 ± 2.764045e+01
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 23)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    9.375000e+02   4.639992e+02   1.390219e-03          1       1520
+        2    5.225000e+02   4.645195e+02   2.793074e-03          1       1556
+        3    4.850000e+02   4.645840e+02   4.435062e-03          1       1592
+        4    5.925000e+02   4.648526e+02   6.020069e-03          1       1628
+        5    6.012500e+02   4.650282e+02   7.575035e-03          1       1664
+        6    2.287500e+02   4.656771e+02   9.157181e-03          1       1700
+        7    3.725000e+02   4.656771e+02   1.082301e-02          1       1736
+        8    2.212500e+02   4.661223e+02   1.245213e-02          1       1772
+        9    8.262500e+02   4.661223e+02   1.425910e-02          1       1808
+       10    2.875000e+02   4.662669e+02   1.584220e-02          1       1844
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.584220e-02
+  Total solves   : 1844
+  Best bound     :  4.662669e+02
+  Simulation CI  :  5.075000e+02 ± 1.503394e+02
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 29)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    1.112500e+02   1.129545e+02   1.314163e-03          1       1891
+        2    1.675000e+02   1.129545e+02   2.574205e-03          1       1927
+        3    1.362500e+02   1.129715e+02   3.858089e-03          1       1963
+        4    8.000000e+01   1.129771e+02   5.191088e-03          1       1999
+        5    7.312500e+01   1.129771e+02   6.767988e-03          1       2035
+        6    9.812500e+01   1.129771e+02   8.367062e-03          1       2071
+        7    1.418750e+02   1.129771e+02   9.853125e-03          1       2107
+        8    1.106250e+02   1.129771e+02   1.134109e-02          1       2143
+        9    5.000000e+01   1.129771e+02   1.283002e-02          1       2179
+       10    1.000000e+02   1.129771e+02   1.446819e-02          1       2215
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.446819e-02
+  Total solves   : 2215
+  Best bound     :  1.129771e+02
+  Simulation CI  :  1.068750e+02 ± 2.168477e+01
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 33)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    4.562500e+02   2.788481e+02   1.178980e-03          1       2262
+        2    3.187500e+02   2.788481e+02   2.771139e-03          1       2298
+        3    4.000000e+02   2.788481e+02   4.543066e-03          1       2334
+        4    2.062500e+02   2.791304e+02   6.107092e-03          1       2370
+        5    1.750000e+02   2.793022e+02   7.810116e-03          1       2406
+        6    1.593750e+02   2.793496e+02   9.493113e-03          1       2442
+        7    3.625000e+02   2.793496e+02   1.144814e-02          1       2478
+        8    1.906250e+02   2.793496e+02   1.301599e-02          1       2514
+        9    2.593750e+02   2.794553e+02   1.473403e-02          1       2550
+       10    1.625000e+02   2.794553e+02   1.622295e-02          1       2586
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.622295e-02
+  Total solves   : 2586
+  Best bound     :  2.794553e+02
+  Simulation CI  :  2.690625e+02 ± 6.720434e+01
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 37)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    4.810804e+02   4.074078e+02   1.688957e-03          1       2633
+        2    5.818750e+02   4.074078e+02   3.717899e-03          1       2669
+        3    6.150000e+02   4.074234e+02   5.574942e-03          1       2705
+        4    2.695248e+02   4.074405e+02   7.107973e-03          1       2741
+        5    2.637500e+02   4.075507e+02   8.997917e-03          1       2777
+        6    4.200000e+02   4.076751e+02   1.116300e-02          1       2813
+        7    2.390625e+02   4.076885e+02   1.349187e-02          1       2849
+        8    2.268750e+02   4.077332e+02   1.536989e-02          1       2885
+        9    2.175000e+02   4.077362e+02   1.740479e-02          1       2921
+       10    5.487500e+02   4.077362e+02   1.962781e-02          1       2957
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.962781e-02
+  Total solves   : 2957
+  Best bound     :  4.077362e+02
+  Simulation CI  :  3.863418e+02 ± 9.936379e+01
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 44)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    2.718750e+02   5.197604e+02   2.000093e-03          1       3004
+        2    8.123750e+02   5.204363e+02   3.808975e-03          1       3040
+        3    6.356704e+02   5.205770e+02   5.723000e-03          1       3076
+        4    8.115650e+02   5.205966e+02   7.920027e-03          1       3112
+        5    5.375000e+02   5.207854e+02   1.019907e-02          1       3148
+        6    3.175000e+02   5.208704e+02   1.236892e-02          1       3184
+        7    7.237500e+02   5.208722e+02   1.480103e-02          1       3220
+        8    7.218750e+02   5.209793e+02   1.690102e-02          1       3256
+        9    3.218750e+02   5.209793e+02   1.931405e-02          1       3292
+       10    6.771875e+02   5.209997e+02   2.216291e-02          1       3328
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 2.216291e-02
+  Total solves   : 3328
+  Best bound     :  5.209997e+02
+  Simulation CI  :  5.831173e+02 ± 1.295418e+02
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 1.33100e+03
+  Existing cuts   : true
+  Subproblem structure                      : (min, max)
+    Variables                               : (9, 9)
+    VariableRef in MOI.EqualTo{Float64}     : (1, 1)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 51)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 4)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    7.812500e+01   5.727034e+01   1.620054e-03          1       3375
+        2    7.500000e+01   5.888988e+01   2.825975e-03          1       3411
+        3    2.187500e+01   5.932101e+01   4.442930e-03          1       3447
+        4    7.187500e+01   5.938345e+01   5.970955e-03          1       3483
+        5    8.437500e+01   5.938345e+01   7.539988e-03          1       3519
+        6    3.125000e+01   5.938557e+01   9.058952e-03          1       3555
+        7    7.812500e+01   5.938557e+01   1.055598e-02          1       3591
+        8    6.875000e+01   5.938557e+01   1.245904e-02          1       3627
+        9    5.625000e+01   5.938557e+01   1.431394e-02          1       3663
+       10    5.312500e+01   5.938557e+01   1.628804e-02          1       3699
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.628804e-02
+  Total solves   : 3699
+  Best bound     :  5.938557e+01
+  Simulation CI  :  6.187500e+01 ± 1.306667e+01
+------------------------------------------------------------------------------
+</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../belief/">« Partially observable inventory management</a><a class="docs-footer-nextpage" href="../booking_management/">Booking management »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Saturday 11 December 2021 03:56">Saturday 11 December 2021</span>. Using Julia version 1.7.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

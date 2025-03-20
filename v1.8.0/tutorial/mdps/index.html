@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example: Markov Decision Processes · SDDP.jl</title><meta name="title" content="Example: Markov Decision Processes · SDDP.jl"/><meta property="og:title" content="Example: Markov Decision Processes · SDDP.jl"/><meta property="twitter:title" content="Example: Markov Decision Processes · SDDP.jl"/><meta name="description" content="Documentation for SDDP.jl."/><meta property="og:description" content="Documentation for SDDP.jl."/><meta property="twitter:description" content="Documentation for SDDP.jl."/><script async src="https://www.googletagmanager.com/gtag/js?id=G-HZQQDVMPZW"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HZQQDVMPZW', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="SDDP.jl logo"/></a><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../plotting/">Plotting tools</a></li><li><a class="tocitem" href="../warnings/">Words of warning</a></li><li><a class="tocitem" href="../arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../objective_states/">Objective states</a></li><li><a class="tocitem" href="../pglib_opf/">Alternative forward models</a></li><li class="is-active"><a class="tocitem" href>Example: Markov Decision Processes</a><ul class="internal"><li><a class="tocitem" href="#A-simple-example"><span>A simple example</span></a></li><li><a class="tocitem" href="#A-more-complicated-policy"><span>A more complicated policy</span></a></li></ul></li><li><a class="tocitem" href="../example_newsvendor/">Example: two-stage newsvendor</a></li><li><a class="tocitem" href="../example_reservoir/">Example: deterministic to stochastic</a></li><li><a class="tocitem" href="../example_milk_producer/">Example: the milk producer</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../explanation/theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../explanation/risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Example: Markov Decision Processes</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example: Markov Decision Processes</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/mdps.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Example:-Markov-Decision-Processes"><a class="docs-heading-anchor" href="#Example:-Markov-Decision-Processes">Example: Markov Decision Processes</a><a id="Example:-Markov-Decision-Processes-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-Markov-Decision-Processes" title="Permalink"></a></h1><p><em>This tutorial was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em> <a href="../mdps.jl"><em>Download the source as a <code>.jl</code> file</em></a>. <a href="../mdps.ipynb"><em>Download the source as a <code>.ipynb</code> file</em></a>.</p><p><code>SDDP.jl</code> can be used to solve a variety of Markov Decision processes. If the problem has continuous state and control spaces, and the objective and transition function are convex, then SDDP.jl can find a globally optimal policy. In other cases, SDDP.jl will find a locally optimal policy.</p><h2 id="A-simple-example"><a class="docs-heading-anchor" href="#A-simple-example">A simple example</a><a id="A-simple-example-1"></a><a class="docs-heading-anchor-permalink" href="#A-simple-example" title="Permalink"></a></h2><p>A simple demonstration of this is the example taken from page 98 of the book &quot;Markov Decision Processes: Discrete stochastic Dynamic Programming&quot;, by Martin L. Putterman.</p><p>The example, as described in Section 4.6.3 of the book, is to minimize a sum of squares of <code>N</code> non-negative variables, subject to a budget constraint that the variable values add up to <code>M</code>. Put mathematically, that is:</p><p class="math-container">\[\begin{aligned}
+\min \;\; &amp; \sum\limits_{i=1}^N x_i^2       \\
+s.t. \;\; &amp; \sum\limits_{i=1}^N x_i = M     \\
+          &amp; x_i \ge 0, \quad i \in 1,\ldots,N
+\end{aligned}\]</p><p>The optimal objective value is <span>$M^2/N$</span>, and the optimal solution is <span>$x_i = M / N$</span>, which can be shown by induction.</p><p>This can be reformulated as a Markov Decision Process by introducing a state variable, <span>$s$</span>, which tracks the un-spent budget over <span>$N$</span> stages.</p><p class="math-container">\[\begin{aligned}
+V_t(s) = \min \;\; &amp; x^2 + V_{t+1}(s^\prime) \\
+s.t. \;\; &amp; s^\prime = s - x \\
+          &amp; x \le s \\
+          &amp; x \ge 0 \\
+          &amp; s \ge 0
+\end{aligned}\]</p><p>and in the last stage <span>$V_N$</span>, there is an additional constraint that <span>$s^\prime = 0$</span>.</p><p>The budget of <span>$M$</span> is computed by solving for <span>$V_1(M)$</span>.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>Since everything here is continuous and convex, SDDP.jl will find the globally optimal policy.</p></div></div><p>If the reformulation from the single problem into the recursive form of the Markov Decision Process is not obvious, consult Putterman&#39;s book.</p><p>We can model and solve this problem using SDDP.jl as follows:</p><pre><code class="language-julia hljs">using SDDP
+import Ipopt
+
+M, N = 5, 3
+
+model = SDDP.LinearPolicyGraph(
+    stages = N,
+    lower_bound = 0.0,
+    optimizer = Ipopt.Optimizer,
+) do subproblem, node
+    @variable(subproblem, s &gt;= 0, SDDP.State, initial_value = M)
+    @variable(subproblem, x &gt;= 0)
+    @stageobjective(subproblem, x^2)
+    @constraint(subproblem, x &lt;= s.in)
+    @constraint(subproblem, s.out == s.in - x)
+    if node == N
+        fix(s.out, 0.0; force = true)
+    end
+    return
+end
+
+SDDP.train(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : 1.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [4, 4]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.EqualTo{Float64}     : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 3]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [0e+00, 0e+00]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   2.499895e+01  1.562631e+00  2.330613e-02         6   1
+        40   8.333333e+00  8.333333e+00  1.012684e+00       246   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 1.012684e+00
+total solves   : 246
+best bound     :  8.333333e+00
+simulation ci  :  8.810723e+00 ± 8.167195e-01
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><p>Check that we got the theoretical optimum:</p><pre><code class="language-julia hljs">SDDP.calculate_bound(model), M^2 / N</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(8.333333297449974, 8.333333333333334)</code></pre><p>And check that we found the theoretical value for each <span>$x_i$</span>:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(model, 1, [:x])
+for data in simulations[1]
+    println(&quot;x_$(data[:node_index]) = $(data[:x])&quot;)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">x_1 = 1.666665732482549
+x_2 = 1.6666672479151778
+x_3 = 1.666667013035603</code></pre><p>Close enough! We don&#39;t get exactly 5/3 because of numerical tolerances within our choice of optimization solver (in this case, Ipopt).</p><h2 id="A-more-complicated-policy"><a class="docs-heading-anchor" href="#A-more-complicated-policy">A more complicated policy</a><a id="A-more-complicated-policy-1"></a><a class="docs-heading-anchor-permalink" href="#A-more-complicated-policy" title="Permalink"></a></h2><p>SDDP.jl is also capable of finding policies for other types of Markov Decision Processes. A classic example of a Markov Decision Process is the problem of finding a path through a maze.</p><p>Here&#39;s one example of a maze. Try changing the parameters to explore different mazes:</p><pre><code class="language-julia hljs">M, N = 3, 4
+initial_square = (1, 1)
+reward, illegal_squares, penalties = (3, 4), [(2, 2)], [(3, 1), (2, 4)]
+path = fill(&quot;⋅&quot;, M, N)
+path[initial_square...] = &quot;1&quot;
+for (k, v) in (illegal_squares =&gt; &quot;▩&quot;, penalties =&gt; &quot;†&quot;, [reward] =&gt; &quot;*&quot;)
+    for (i, j) in k
+        path[i, j] = v
+    end
+end
+print(join([join(path[i, :], &#39; &#39;) for i in 1:size(path, 1)], &#39;\n&#39;))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1 ⋅ ⋅ ⋅
+⋅ ▩ ⋅ †
+† ⋅ ⋅ *</code></pre><p>Our goal is to get from square <code>1</code> to square <code>*</code>. If we step on a <code>†</code>, we incur a penalty of <code>1</code>. Squares with <code>▩</code> are blocked; we cannot move there.</p><p>There are a variety of ways that we can solve this problem. We&#39;re going to solve it using a stationary binary stochastic programming formulation.</p><p>Our state variable will be a matrix of binary variables <span>$x_{i,j}$</span>, where each element is <span>$1$</span> if the agent is in the square and <span>$0$</span> otherwise. In each period, we incur a reward of <span>$1$</span> if we are in the <code>reward</code> square and a penalty of <span>$-1$</span> if we are in a <code>penalties</code> square. We cannot move to the <code>illegal_squares</code>, so those <span>$x_{i,j} = 0$</span>. Feasibility between moves is modelled by constraints of the form:</p><p class="math-container">\[x^\prime_{i,j} \le \sum\limits_{(a,b)\in P} x_{a,b}\]</p><p>where <span>$P$</span> is the set of squares from which it is valid to move from <code>(a, b)</code> to <code>(i, j)</code>.</p><p>Because we are looking for a stationary policy, we need a unicyclic graph with a discount factor:</p><pre><code class="language-julia hljs">discount_factor = 0.9
+graph = SDDP.UnicyclicGraph(discount_factor)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Root
+ 0
+Nodes
+ 1
+Arcs
+ 0 =&gt; 1 w.p. 1.0
+ 1 =&gt; 1 w.p. 0.9</code></pre><p>Then we can formulate our full model:</p><pre><code class="language-julia hljs">import HiGHS
+
+model = SDDP.PolicyGraph(
+    graph;
+    sense = :Max,
+    upper_bound = 1 / (1 - discount_factor),
+    optimizer = HiGHS.Optimizer,
+) do sp, _
+    # Our state is a binary variable for each square
+    @variable(
+        sp,
+        x[i = 1:M, j = 1:N],
+        Bin,
+        SDDP.State,
+        initial_value = (i, j) == initial_square,
+    )
+    # Can only be in one square at a time
+    @constraint(sp, sum(x[i, j].out for i in 1:M, j in 1:N) == 1)
+    # Incur rewards and penalties
+    @stageobjective(
+        sp,
+        x[reward...].out - sum(x[i, j].out for (i, j) in penalties)
+    )
+    # Some squares are illegal
+    @constraint(sp, [(i, j) in illegal_squares], x[i, j].out &lt;= 0)
+    # Constraints on valid moves
+    for i in 1:M, j in 1:N
+        moves = [(i - 1, j), (i + 1, j), (i, j), (i, j + 1), (i, j - 1)]
+        filter!(v -&gt; 1 &lt;= v[1] &lt;= M &amp;&amp; 1 &lt;= v[2] &lt;= N, moves)
+        @constraint(sp, x[i, j].out &lt;= sum(x[a, b].in for (a, b) in moves))
+    end
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 1 nodes.
+ Node indices: 1
+</code></pre><p>The upper bound is obtained by assuming that we reach the reward square in one move and stay there.</p><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>Since there are discrete decisions here, SDDP.jl is not guaranteed to find the globally optimal policy.</p></div></div><pre><code class="language-julia hljs">SDDP.train(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 1
+  state variables : 12
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                          : [25, 25]
+  AffExpr in MOI.EqualTo{Float64}      : [1, 1]
+  AffExpr in MOI.LessThan{Float64}     : [13, 13]
+  VariableRef in MOI.LessThan{Float64} : [1, 1]
+  VariableRef in MOI.ZeroOne           : [12, 12]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 1e+00]
+  bounds range     [1e+01, 1e+01]
+  rhs range        [1e+00, 1e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   0.000000e+00  1.000000e+01  7.640123e-03        21   1
+        40   0.000000e+00  6.561000e+00  7.318380e-01      2880   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 7.318380e-01
+total solves   : 2880
+best bound     :  6.561000e+00
+simulation ci  :  7.850000e+00 ± 4.334982e+00
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><p>Simulating a cyclic policy graph requires an explicit <code>sampling_scheme</code> that does not terminate early based on the cycle probability:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
+    model,
+    1,
+    [:x];
+    sampling_scheme = SDDP.InSampleMonteCarlo(
+        max_depth = 5,
+        terminate_on_dummy_leaf = false,
+    ),
+);</code></pre><p>Fill in the <code>path</code> with the time-step in which we visit the square:</p><pre><code class="language-julia hljs">for (t, data) in enumerate(simulations[1]), i in 1:M, j in 1:N
+    if data[:x][i, j].in &gt; 0.5
+        path[i, j] = &quot;$t&quot;
+    end
+end
+
+print(join([join(path[i, :], &#39; &#39;) for i in 1:size(path, 1)], &#39;\n&#39;))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1 2 3 ⋅
+⋅ ▩ 4 †
+† ⋅ 5 *</code></pre><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>This formulation will likely struggle as the number of cells in the maze increases. Can you think of an equivalent formulation that uses fewer state variables?</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pglib_opf/">« Alternative forward models</a><a class="docs-footer-nextpage" href="../example_newsvendor/">Example: two-stage newsvendor »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.5.0 on <span class="colophon-date" title="Wednesday 24 July 2024 05:28">Wednesday 24 July 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
