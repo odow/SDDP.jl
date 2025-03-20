@@ -12,6 +12,7 @@ hasard
 infeasibilities
 kwargs
 multistock
+[Mm]ultithread(ed|ing)
 [Nn]ewsvendor
 parameteriz(es|ing)
 performant

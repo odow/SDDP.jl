@@ -160,6 +160,7 @@ Documenter.makedocs(;
             "tutorial/inventory.md",
         ],
         "How-to guides" => [
+            "guides/use_multithreading.md",
             "guides/access_previous_variables.md",
             "guides/add_a_multidimensional_state_variable.md",
             "guides/add_a_risk_measure.md",
