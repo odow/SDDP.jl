@@ -21,7 +21,7 @@ Once Julia has started, check how many threads you have available using
 
 ```jldoctest
 julia> ENV["JULIA_NUM_THREADS"]
-4
+"4"
 
 julia> Threads.nthreads()
 4
@@ -33,7 +33,7 @@ To enable the multithreading algorithm in SDDP.jl, pass an instance of
 [`SDDP.Threaded`](@ref) to the `parallel_scheme` argument of [`SDDP.train`](@ref)
 and [`SDDP.simulate`](@ref).
 
-```julia
+```@repl
 using SDDP, HiGHS
 model = SDDP.LinearPolicyGraph(
     stages = 12,
@@ -46,9 +46,20 @@ end
 SDDP.train(
     model;
     iteration_limit = 10,
+    log_every_iteration = true,
     parallel_scheme = SDDP.Threaded(),
 )
-SDDP.simulate(model, 10; parallel_scheme = SDDP.Threaded())
+simulations = SDDP.simulate(
+    model,
+    100;
+    parallel_scheme = SDDP.Threaded(),
+    custom_recorders =
+        Dict{Symbol,Function}(:thread_id => sp -> Threads.threadid()),
+);
+simulations[1][1][:thread_id]
+simulations[26][1][:thread_id]
+simulations[51][1][:thread_id]
+simulations[76][1][:thread_id]
 ```
 
 ## Choosing the number of threads
