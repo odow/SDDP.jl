@@ -11,7 +11,7 @@ flag, where `N` is the number of threads to use:
 ```julia
 julia --threads N
 ```
-Alteratively, you may set the `JULIA_NUM_THREADS` environment variable to `N`
+Alternatively, you may set the `JULIA_NUM_THREADS` environment variable to `N`
 **before** starting Julia. (There is no way to change the number of threads once
 Julia has started.)
 
