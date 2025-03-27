@@ -10,28 +10,57 @@ import JuMP
 import ..SDDP
 
 function _parse_lattice(filename::String)
+
     data = JuMP.MOI.FileFormats.compressed_open(
         JSON.parse,
         filename,
         "r",
         JuMP.MOI.FileFormats.AutomaticCompression(),
-    )
+   )
     graph = SDDP.Graph("root")
-    for key in keys(data)
-        SDDP.add_node(graph, key)
-    end
+
+    # Identify all nodes at the same stage
+    max_stage = 0
     for (key, value) in data
-        for child in sort(collect(keys(value["successors"])))
-            SDDP.add_edge(graph, key => child, value["successors"][child])
+        if value["stage"] > max_stage
+            max_stage = value["stage"]
         end
     end
+
+    stage_node_combinations = Vector{Vector{String}}(undef, max_stage+1)
+    for stage in 0:max_stage
+        stage_node_combinations[stage+1] = Vector{String}()
+    end
+    
+    for key in keys(data)
+        SDDP.add_node(graph, key)
+        push!(stage_node_combinations[data[key]["stage"]+1], key)
+    end
+
+    # Add edges, including those with zero probability, to retain the Markovian structure
+    for (key, value) in data
+        if value["stage"] == max_stage
+            continue
+        end
+
+        for child in stage_node_combinations[value["stage"]+2]
+            if child in keys(value["successors"])
+                SDDP.add_edge(graph, key => child, value["successors"][child])
+            else
+                SDDP.add_edge(graph, key => child, 0.0)
+            end
+        end
+    end
+
     # MSPFormat doesn't have explicit root -> stage 1 arcs. Assume uniform.
     # Also, MSPFormat uses 0-indexed stages.
     stage_zero = String[key for (key, value) in data if value["stage"] == 0]
     for key in stage_zero
         SDDP.add_edge(graph, "root" => key, 1 / length(stage_zero))
     end
-    return _reduce_lattice(graph, data)
+    
+    return SDDP.MSPFormat._reduce_lattice(graph, data)
+
 end
 
 """
