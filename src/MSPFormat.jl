@@ -47,7 +47,7 @@ function _parse_lattice(filename::String)
     for key in stage_zero
         SDDP.add_edge(graph, "root" => key, 1 / length(stage_zero))
     end
-    return SDDP.MSPFormat._reduce_lattice(graph, data)
+    return _reduce_lattice(graph, data)
 end
 
 """
