@@ -22,10 +22,10 @@ function _parse_lattice(filename::String)
     for value in values(data)
         max_stage = max(value["stage"], max_stage)
     end
-    stage_node_combinations = Vector{String}[String[] for stage in 0:max_stage]
-    for key in keys(data)
+    stage_node_combinations = Dict(stage => String[] for stage in 0:max_stage)
+    for (key, value) in data
         SDDP.add_node(graph, key)
-        push!(stage_node_combinations[data[key]["stage"]+1], key)
+        push!(stage_node_combinations[value["stage"]], key)
     end
     # Add edges, including those with zero probability, to retain the Markovian
     # structure
@@ -33,12 +33,9 @@ function _parse_lattice(filename::String)
         if value["stage"] == max_stage
             continue
         end
-        for child in stage_node_combinations[value["stage"]+2]
-            if child in keys(value["successors"])
-                SDDP.add_edge(graph, key => child, value["successors"][child])
-            else
-                SDDP.add_edge(graph, key => child, 0.0)
-            end
+        for child in stage_node_combinations[value["stage"]+1]
+            prob = get(value["successors"], child, 0.0)
+            SDDP.add_edge(graph, key => child, prob)
         end
     end
     # MSPFormat doesn't have explicit root -> stage 1 arcs. Assume uniform.
