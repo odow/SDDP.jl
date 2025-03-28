@@ -61,14 +61,15 @@ function _add_vertex(
     xᵏ::Dict{Symbol,Float64},
     obj_y::Union{Nothing,NTuple{N,Float64}},
     belief_y::Union{Nothing,Dict{T,Float64}};
+    optimizer = nothing,
     cut_selection::Bool = true,
 ) where {N,T}
     vertex = Vertex(θᵏ, xᵏ, obj_y, belief_y, 1, nothing)
     _add_vertex_var_to_model(V, vertex)
     push!(V.vertices, vertex)
     if cut_selection
-        # TODO(bfpc): implement cut selection
-        nothing # _cut_selection_update(V, vertex, xᵏ)
+        # _vertex_selection(V, solver)
+        nothing
     end
     return
 end
@@ -148,7 +149,7 @@ function _vertex_selection(V::InnerConvexApproximation, solver)
     # Remove all vertices from subproblem
     if length(remove_vars) > 0
         sp = JuMP.owner_model(V.theta)
-        delete(sp, remove_vars)
+        JuMP.delete(sp, remove_vars)
         println("Selection removed $(length(remove_vars)) vertices")
     end
 
@@ -455,7 +456,8 @@ function _add_average_vertex(
         θᵏ,
         outgoing_state,
         obj_y,
-        belief_y,
+        belief_y;
+        optimizer = node.optimizer,
     )
     return (theta = θᵏ, x = outgoing_state, obj_y = obj_y, belief_y = belief_y)
 end
@@ -1083,7 +1085,14 @@ function read_vertices_from_file(
         for json_vertex in list
             value, state, obj_y, belief_y =
                 _get_vertex_info(json_vertex, dualcuts; vertex_name_parser)
-            _add_vertex(bf.global_theta, value, state, obj_y, belief_y)
+            _add_vertex(
+                bf.global_theta,
+                value,
+                state,
+                obj_y,
+                belief_y;
+                optimizer = optimizer,
+            )
         end
         if vertex_selection
             _vertex_selection(bf.global_theta, optimizer)
