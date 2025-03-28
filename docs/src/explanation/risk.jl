@@ -62,7 +62,7 @@ import Statistics
 #
 # **Axiom 2: translation equivariance**
 #
-# Given two random variables $Z_1$ and $Z_2$, then for all $a \in \mathbb{R}$,
+# Given a random variable $Z$, then for all $a \in \mathbb{R}$,
 # $\mathbb{F}[Z + a] = \mathbb{F}[Z] + a$.
 #
 # **Axiom 3: convexity**
