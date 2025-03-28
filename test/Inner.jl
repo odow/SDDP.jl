@@ -5,6 +5,9 @@
 
 module TestInnerBellmanFunctions
 
+# temporary using Random until the SDDP.train does not fail in julia 1.6
+using Random
+
 using SDDP
 using Test
 import HiGHS
@@ -157,6 +160,141 @@ function test_Read_write_cuts_to_file()
         rm("$(T).vertices.json")
     end
     return
+end
+
+function create_policy_graph_with_inner_approximation()
+    nstages = 4
+    graph = SDDP.LinearGraph(nstages)
+
+    # for some reason, creating the model with the same
+    # lipschitz estimates used in the test_Read_write_cuts_to_file
+    # makes the test for calculating bound after training fails
+
+    return SDDP.Inner.InnerPolicyGraph(
+        build,
+        graph;
+        lower_bound = 0.0,
+        upper_bound = 1000,
+        optimizer = HiGHS.Optimizer,
+        lipschitz_constant = 10.0,
+    )
+end
+
+function test_InnerPolicyGraph_LinearGraph()
+    nstages = 4
+    graph = SDDP.LinearGraph(nstages)
+
+    # missing lipschitz_constant
+    @test_throws Exception SDDP.Inner.InnerPolicyGraph(
+        build,
+        graph;
+        sense = :Min,
+        lower_bound = 0.0,
+        upper_bound = 1000.0,
+        optimizer = HiGHS.Optimizer,
+    )
+
+    # missing lower_bound
+    @test_throws Exception SDDP.Inner.InnerPolicyGraph(
+        build,
+        graph;
+        sense = :Min,
+        upper_bound = 1000.0,
+        optimizer = HiGHS.Optimizer,
+        lipschitz_constant = 10.0,
+    )
+
+    # missing upper_bound
+    @test_throws Exception SDDP.Inner.InnerPolicyGraph(
+        build,
+        graph;
+        sense = :Max,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+        lipschitz_constant = 10.0,
+    )
+
+    # missing upper_bound even when sense = :Min
+    @test_throws Exception SDDP.Inner.InnerPolicyGraph(
+        build,
+        graph;
+        sense = :Min,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+        lipschitz_constant = 10.0,
+    )
+
+    # mising lower_bound even when sense = :Max
+    @test_throws Exception SDDP.Inner.InnerPolicyGraph(
+        build,
+        graph;
+        sense = :Max,
+        upper_bound = 1000.0,
+        optimizer = HiGHS.Optimizer,
+        lipschitz_constant = 10.0,
+    )
+end
+
+function test_InnerPolicyGraph_other_graphs()
+    graph = SDDP.MarkovianGraph([
+        ones(Float64, (1, 1)),
+        [0.5 0.5],
+        [0.5 0.5; 0.3 0.4],
+        [0.5 0.5; 0.3 0.4],
+        [0.5 0.5; 0.3 0.4],
+    ])
+
+    # rejects MarkovianGraph
+    @test_throws Exception SDDP.Inner.InnerPolicyGraph(
+        build,
+        graph;
+        lower_bound = 0.0,
+        upper_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    )
+
+    graph = SDDP.UnicyclicGraph(0.9; num_nodes = 4)
+
+    # rejects UnicyclicGraph
+    @test_throws Exception SDDP.Inner.InnerPolicyGraph(
+        build,
+        graph;
+        lower_bound = 0.0,
+        upper_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    )
+end
+
+function test_InnerPolicyGraph_train()
+    # temporary setting seed since with the default seed from SDDP.jl tests,
+    # the forward sampling process results in some "ill-placed" vertices that
+    # stops the (upper, since its inner approximation) bound from improving.
+    # TODO - implement a definitive solution (vertex selection?) 
+    Random.seed!(1234)
+    model = create_policy_graph_with_inner_approximation()
+    SDDP.train(model; iteration_limit = 50, print_level = 0)
+    @test SDDP.calculate_bound(model) ≈ 45.833 atol = 0.1
+end
+
+function test_InnerPolicGraph_simulate()
+    model = create_policy_graph_with_inner_approximation()
+    SDDP.train(model; iteration_limit = 50, print_level = 0)
+    results = SDDP.simulate(model, 50, [:vertex_coverage_distance])
+    @test typeof(results) === Vector{Vector{Dict{Symbol,Any}}}
+end
+
+function test_read_vertices_from_policy_graph()
+    nstages = 4
+    graph = SDDP.LinearGraph(nstages)
+    cut_model = _create_model(graph)
+    SDDP.train(cut_model; iteration_limit = 50, print_level = 0)
+    vertex_model = create_policy_graph_with_inner_approximation()
+    SDDP.Inner.read_vertices_from_policy_graph(
+        vertex_model,
+        cut_model;
+        optimizer = HiGHS.Optimizer,
+    )
+    @test SDDP.calculate_bound(vertex_model) ≈ 45.833 atol = 0.1
 end
 
 end  # module
