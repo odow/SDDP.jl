@@ -33,7 +33,7 @@ function _parse_lattice(filename::String)
         if value["stage"] == max_stage
             continue
         end
-        for child in stage_node_combinations[value["stage"]+1]
+        for child in sort!(stage_node_combinations[value["stage"]+1])
             prob = get(value["successors"], child, 0.0)
             SDDP.add_edge(graph, key => child, prob)
         end
