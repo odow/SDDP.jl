@@ -1,0 +1,20 @@
+[deps]
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
+HiGHS_jll = "8fd58aa0-07eb-5a78-9b36-339c94fd15ea"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+JSONSchema = "7d188eb4-7ad8-530c-ae41-71a32a6d4692"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+HiGHS = "1"
+HiGHS_jll = "=1.9.0, =1.10.0"
+JSON = "0.21"
+JSONSchema = "1"
+Plots = "1"
+julia = "1.6"
