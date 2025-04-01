@@ -24,6 +24,7 @@ procs = Distributed.addprocs(4)
     # @__DIR__          := test/plugins
     # dirname(@__DIR__) := test
     Pkg.activate(joinpath(dirname(@__DIR__), "Project.toml"))
+    Pkg.instantiate()
 end
 
 @everywhere begin
