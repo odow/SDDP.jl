@@ -7,6 +7,21 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.10.5 (April 2, 2025)
+
+### Fixed
+
+ - Fixed a bug in which we discarded the Markovian structure when parsing
+   `MSPFormat` files (#834)
+
+### Other
+
+ - Added documentation [Add a custom cut](@ref) (#832)
+ - Added documentation [Use multithreading](@ref) (#833)
+ - Fixed a typo in [Risk aversion](@ref) (#835)
+ - Changed to use `test/Project.toml` (#837)
+ - Debug and work around a bug in `HiGHS_jll@1.10` (#836), (#839)
+
 ## v1.10.4 (January 29, 2025)
 
 ### Fixed
