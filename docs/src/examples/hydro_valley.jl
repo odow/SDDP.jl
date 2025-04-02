@@ -222,8 +222,8 @@ function test_hydro_valley_model()
     SDDP.train(
         deterministic_model;
         iteration_limit = 10,
-        # We set `cut_deletion_minimum` to work-around a bug in HiGHS_jll@1.10.0
-        # When fixed, revert to `cut_deletion_minimum = 1,`
+        ## We set `cut_deletion_minimum` to work-around a bug in HiGHS_jll@1.10.0
+        ## When fixed, revert to `cut_deletion_minimum = 1,`
         cut_deletion_minimum = 1_000,
         print_level = 0,
     )
@@ -236,8 +236,8 @@ function test_hydro_valley_model()
 
     ## Markov prices
     markov_model = hydro_valley_model(; hasstagewiseinflows = false)
-    # We set `cut_deletion_minimum` to work-around a bug in HiGHS_jll@1.10.0
-    # When fixed, remove `cut_deletion_minimum = 1_000,`
+    ## We set `cut_deletion_minimum` to work-around a bug in HiGHS_jll@1.10.0
+    ## When fixed, remove `cut_deletion_minimum = 1_000,`
     SDDP.train(
         markov_model;
         iteration_limit = 10,

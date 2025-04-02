@@ -132,8 +132,8 @@ function test_mccardle_farm_model()
         end
         return
     end
-    # We set `cut_deletion_minimum` to work-around a bug in HiGHS_jll@1.10.0
-    # When fixed, revert to `SDDP.train(model)`
+    ## We set `cut_deletion_minimum` to work-around a bug in HiGHS_jll@1.10.0
+    ## When fixed, revert to `SDDP.train(model)`
     SDDP.train(model; cut_deletion_minimum = 1_000)
     @test SDDP.termination_status(model) == :simulation_stopping
     @test SDDP.calculate_bound(model) ≈ 4074.1391 atol = 1e-5
