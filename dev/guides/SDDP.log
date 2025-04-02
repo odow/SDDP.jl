@@ -1,0 +1,44 @@
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-25
+-------------------------------------------------------------------
+problem
+  nodes           : 12
+  state variables : 1
+  scenarios       : 1.00000e+00
+  existing cuts   : false
+options
+  solver          : Threaded()
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [3, 3]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 2]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [0e+00, 0e+00]
+  objective range  [1e+00, 1e+00]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   0.000000e+00  0.000000e+00  1.282530e-01        64   4
+         2   0.000000e+00  0.000000e+00  1.318119e-01        96   2
+         5   0.000000e+00  0.000000e+00  1.340821e-01       120   3
+         6   0.000000e+00  0.000000e+00  1.365049e-01       206   2
+         7   0.000000e+00  0.000000e+00  1.372781e-01       216   4
+         8   0.000000e+00  0.000000e+00  1.374729e-01       218   3
+         9   0.000000e+00  0.000000e+00  1.376300e-01       223   1
+        10   0.000000e+00  0.000000e+00  1.400490e-01       293   2
+        11   0.000000e+00  0.000000e+00  1.409531e-01       307   4
+        12   0.000000e+00  0.000000e+00  1.415060e-01       311   2
+        13   0.000000e+00  0.000000e+00  1.416640e-01       312   3
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 1.416640e-01
+total solves   : 312
+best bound     :  0.000000e+00
+simulation ci  :  0.000000e+00 ± 0.000000e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
