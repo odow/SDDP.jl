@@ -17,12 +17,25 @@ function _parse_lattice(filename::String)
         JuMP.MOI.FileFormats.AutomaticCompression(),
     )
     graph = SDDP.Graph("root")
-    for key in keys(data)
-        SDDP.add_node(graph, key)
+    # Identify all nodes at the same stage
+    max_stage = 0
+    for value in values(data)
+        max_stage = max(value["stage"], max_stage)
     end
+    stage_node_combinations = Dict(stage => String[] for stage in 0:max_stage)
     for (key, value) in data
-        for child in sort(collect(keys(value["successors"])))
-            SDDP.add_edge(graph, key => child, value["successors"][child])
+        SDDP.add_node(graph, key)
+        push!(stage_node_combinations[value["stage"]], key)
+    end
+    # Add edges, including those with zero probability, to retain the Markovian
+    # structure
+    for (key, value) in data
+        if value["stage"] == max_stage
+            continue
+        end
+        for child in sort!(stage_node_combinations[value["stage"]+1])
+            prob = get(value["successors"], child, 0.0)
+            SDDP.add_edge(graph, key => child, prob)
         end
     end
     # MSPFormat doesn't have explicit root -> stage 1 arcs. Assume uniform.
