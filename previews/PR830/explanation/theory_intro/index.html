@@ -3,7 +3,7 @@
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-HZQQDVMPZW', {'page_path': location.pathname + location.search + location.hash});
-</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="SDDP.jl logo"/></a><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../../tutorial/objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../../tutorial/markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../../tutorial/plotting/">Plotting tools</a></li><li><a class="tocitem" href="../../tutorial/warnings/">Words of warning</a></li><li><a class="tocitem" href="../../tutorial/arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../../tutorial/decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../../tutorial/objective_states/">Objective states</a></li><li><a class="tocitem" href="../../tutorial/pglib_opf/">Alternative forward models</a></li><li><a class="tocitem" href="../../tutorial/mdps/">Example: Markov Decision Processes</a></li><li><a class="tocitem" href="../../tutorial/example_newsvendor/">Example: two-stage newsvendor</a></li><li><a class="tocitem" href="../../tutorial/example_reservoir/">Example: deterministic to stochastic</a></li><li><a class="tocitem" href="../../tutorial/example_milk_producer/">Example: the milk producer</a></li><li><a class="tocitem" href="../../tutorial/inventory/">Example: inventory management</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li class="is-active"><a class="tocitem" href>Introductory theory</a><ul class="internal"><li><a class="tocitem" href="#Preliminaries:-background-theory"><span>Preliminaries: background theory</span></a></li><li><a class="tocitem" href="#Preliminaries:-Kelley&#39;s-cutting-plane-algorithm"><span>Preliminaries: Kelley&#39;s cutting plane algorithm</span></a></li><li><a class="tocitem" href="#Preliminaries:-approximating-the-cost-to-go-term"><span>Preliminaries: approximating the cost-to-go term</span></a></li><li><a class="tocitem" href="#Implementation:-modeling"><span>Implementation: modeling</span></a></li><li><a class="tocitem" href="#Implementation:-helpful-samplers"><span>Implementation: helpful samplers</span></a></li><li><a class="tocitem" href="#Implementation:-the-forward-pass"><span>Implementation: the forward pass</span></a></li><li><a class="tocitem" href="#Implementation:-the-backward-pass"><span>Implementation: the backward pass</span></a></li><li><a class="tocitem" href="#Implementation:-bounds"><span>Implementation: bounds</span></a></li><li><a class="tocitem" href="#Implementation:-the-training-loop"><span>Implementation: the training loop</span></a></li><li><a class="tocitem" href="#Implementation:-evaluating-the-policy"><span>Implementation: evaluating the policy</span></a></li><li><a class="tocitem" href="#Example:-infinite-horizon"><span>Example: infinite horizon</span></a></li></ul></li><li><a class="tocitem" href="../risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/inner_hydro_1d/">Hydro 1d</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Explanation</a></li><li class="is-active"><a href>Introductory theory</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Introductory theory</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/explanation/theory_intro.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Introductory-theory"><a class="docs-heading-anchor" href="#Introductory-theory">Introductory theory</a><a id="Introductory-theory-1"></a><a class="docs-heading-anchor-permalink" href="#Introductory-theory" title="Permalink"></a></h1><p><em>This tutorial was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em> <a href="../theory_intro.jl"><em>Download the source as a <code>.jl</code> file</em></a>. <a href="../theory_intro.ipynb"><em>Download the source as a <code>.ipynb</code> file</em></a>.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>This tutorial is aimed at advanced undergraduates or early-stage graduate students. You don&#39;t need prior exposure to stochastic programming! (Indeed, it may be better if you don&#39;t, because our approach is non-standard in the literature.)</p><p>This tutorial is also a living document. If parts are unclear, please <a href="https://github.com/odow/SDDP.jl/issues/new">open an issue</a> so it can be improved!</p></div></div><p>This tutorial will teach you how the stochastic dual dynamic programming algorithm works by implementing a simplified version of the algorithm.</p><p>Our implementation is very much a &quot;vanilla&quot; version of SDDP; it doesn&#39;t have (m)any fancy computational tricks (e.g., the ones included in SDDP.jl) that you need to code a performant or stable version that will work on realistic instances. However, our simplified implementation will work on arbitrary policy graphs, including those with cycles such as infinite horizon problems!</p><p><strong>Packages</strong></p><p>This tutorial uses the following packages. For clarity, we call <code>import PackageName</code> so that we must prefix <code>PackageName.</code> to all functions and structs provided by that package. Everything not prefixed is either part of base Julia, or we wrote it.</p><pre><code class="language-julia hljs">import ForwardDiff
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="SDDP.jl logo"/></a><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../../tutorial/objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../../tutorial/markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../../tutorial/plotting/">Plotting tools</a></li><li><a class="tocitem" href="../../tutorial/warnings/">Words of warning</a></li><li><a class="tocitem" href="../../tutorial/arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../../tutorial/decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../../tutorial/objective_states/">Objective states</a></li><li><a class="tocitem" href="../../tutorial/pglib_opf/">Alternative forward models</a></li><li><a class="tocitem" href="../../tutorial/mdps/">Example: Markov Decision Processes</a></li><li><a class="tocitem" href="../../tutorial/example_newsvendor/">Example: two-stage newsvendor</a></li><li><a class="tocitem" href="../../tutorial/example_reservoir/">Example: deterministic to stochastic</a></li><li><a class="tocitem" href="../../tutorial/example_milk_producer/">Example: the milk producer</a></li><li><a class="tocitem" href="../../tutorial/inventory/">Example: inventory management</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/use_multithreading/">Use multithreading</a></li><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/add_a_custom_cut/">Add a custom cut</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li class="is-active"><a class="tocitem" href>Introductory theory</a><ul class="internal"><li><a class="tocitem" href="#Preliminaries:-background-theory"><span>Preliminaries: background theory</span></a></li><li><a class="tocitem" href="#Preliminaries:-Kelley&#39;s-cutting-plane-algorithm"><span>Preliminaries: Kelley&#39;s cutting plane algorithm</span></a></li><li><a class="tocitem" href="#Preliminaries:-approximating-the-cost-to-go-term"><span>Preliminaries: approximating the cost-to-go term</span></a></li><li><a class="tocitem" href="#Implementation:-modeling"><span>Implementation: modeling</span></a></li><li><a class="tocitem" href="#Implementation:-helpful-samplers"><span>Implementation: helpful samplers</span></a></li><li><a class="tocitem" href="#Implementation:-the-forward-pass"><span>Implementation: the forward pass</span></a></li><li><a class="tocitem" href="#Implementation:-the-backward-pass"><span>Implementation: the backward pass</span></a></li><li><a class="tocitem" href="#Implementation:-bounds"><span>Implementation: bounds</span></a></li><li><a class="tocitem" href="#Implementation:-the-training-loop"><span>Implementation: the training loop</span></a></li><li><a class="tocitem" href="#Implementation:-evaluating-the-policy"><span>Implementation: evaluating the policy</span></a></li><li><a class="tocitem" href="#Example:-infinite-horizon"><span>Example: infinite horizon</span></a></li></ul></li><li><a class="tocitem" href="../risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/inner_hydro_1d/">Hydro 1d</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Explanation</a></li><li class="is-active"><a href>Introductory theory</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Introductory theory</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/explanation/theory_intro.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Introductory-theory"><a class="docs-heading-anchor" href="#Introductory-theory">Introductory theory</a><a id="Introductory-theory-1"></a><a class="docs-heading-anchor-permalink" href="#Introductory-theory" title="Permalink"></a></h1><p><em>This tutorial was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em> <a href="../theory_intro.jl"><em>Download the source as a <code>.jl</code> file</em></a>. <a href="../theory_intro.ipynb"><em>Download the source as a <code>.ipynb</code> file</em></a>.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>This tutorial is aimed at advanced undergraduates or early-stage graduate students. You don&#39;t need prior exposure to stochastic programming! (Indeed, it may be better if you don&#39;t, because our approach is non-standard in the literature.)</p><p>This tutorial is also a living document. If parts are unclear, please <a href="https://github.com/odow/SDDP.jl/issues/new">open an issue</a> so it can be improved!</p></div></div><p>This tutorial will teach you how the stochastic dual dynamic programming algorithm works by implementing a simplified version of the algorithm.</p><p>Our implementation is very much a &quot;vanilla&quot; version of SDDP; it doesn&#39;t have (m)any fancy computational tricks (e.g., the ones included in SDDP.jl) that you need to code a performant or stable version that will work on realistic instances. However, our simplified implementation will work on arbitrary policy graphs, including those with cycles such as infinite horizon problems!</p><p><strong>Packages</strong></p><p>This tutorial uses the following packages. For clarity, we call <code>import PackageName</code> so that we must prefix <code>PackageName.</code> to all functions and structs provided by that package. Everything not prefixed is either part of base Julia, or we wrote it.</p><pre><code class="language-julia hljs">import ForwardDiff
 import HiGHS
 import JuMP
 import Statistics</code></pre><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>You can follow along by installing the above packages, and copy-pasting the code we will write into a Julia REPL. Alternatively, you can download the Julia <code>.jl</code> file which created this tutorial <a href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/21_theory_intro.jl">from GitHub</a>.</p></div></div><h2 id="Preliminaries:-background-theory"><a class="docs-heading-anchor" href="#Preliminaries:-background-theory">Preliminaries: background theory</a><a id="Preliminaries:-background-theory-1"></a><a class="docs-heading-anchor-permalink" href="#Preliminaries:-background-theory" title="Permalink"></a></h2><p>Start this tutorial by reading <a href="../../tutorial/first_steps/#An-introduction-to-SDDP.jl">An introduction to SDDP.jl</a>, which introduces the necessary notation and vocabulary that we need for this tutorial.</p><h2 id="Preliminaries:-Kelley&#39;s-cutting-plane-algorithm"><a class="docs-heading-anchor" href="#Preliminaries:-Kelley&#39;s-cutting-plane-algorithm">Preliminaries: Kelley&#39;s cutting plane algorithm</a><a id="Preliminaries:-Kelley&#39;s-cutting-plane-algorithm-1"></a><a class="docs-heading-anchor-permalink" href="#Preliminaries:-Kelley&#39;s-cutting-plane-algorithm" title="Permalink"></a></h2><p>Kelley&#39;s cutting plane algorithm is an iterative method for minimizing convex functions. Given a convex function <span>$f(x)$</span>, Kelley&#39;s constructs an under-approximation of the function at the minimum by a set of first-order Taylor series approximations (called <strong>cuts</strong>) constructed at a set of points <span>$k = 1,\ldots,K$</span>:</p><p class="math-container">\[\begin{aligned}
@@ -200,9 +200,9 @@ Arcs:
     return error(&quot;We should never get here because P should sum to 1.0.&quot;)
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">sample_uncertainty (generic function with 1 method)</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p><code>rand()</code> samples a uniform random variable in <code>[0, 1)</code>.</p></div></div><p>For example:</p><pre><code class="language-julia hljs">for i in 1:3
     println(&quot;ω = &quot;, sample_uncertainty(model.nodes[1].uncertainty))
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ω = 100.0
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ω = 50.0
 ω = 50.0
-ω = 0.0</code></pre><p>It&#39;s also going to be useful to define a function that generates a random walk through the nodes of the graph:</p><pre><code class="language-julia hljs">function sample_next_node(model::PolicyGraph, current::Int)
+ω = 100.0</code></pre><p>It&#39;s also going to be useful to define a function that generates a random walk through the nodes of the graph:</p><pre><code class="language-julia hljs">function sample_next_node(model::PolicyGraph, current::Int)
     if length(model.arcs[current]) == 0
         # No outgoing arcs!
         return nothing
@@ -275,15 +275,15 @@ Next node from 3 = nothing</code></pre><p>This is a little boring, because our g
     return trajectory, simulation_cost
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">forward_pass (generic function with 2 methods)</code></pre><p>Let&#39;s take a look at one forward pass:</p><pre><code class="language-julia hljs">trajectory, simulation_cost = forward_pass(model);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">| Forward Pass
 | | Visiting node 1
-| | | ω = 0.0
+| | | ω = 50.0
 | | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 50.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 0.0
 | | Visiting node 2
 | | | ω = 100.0
-| | | x = Dict(:volume =&gt; 50.0)
+| | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 0.0
+| | | C(x, u, ω) = 5000.0
 | | Visiting node 3
 | | | ω = 100.0
 | | | x = Dict(:volume =&gt; 0.0)
@@ -384,17 +384,61 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
 | | Visiting node 1
 | | | ω = 100.0
 | | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 150.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 0.0
+| | Visiting node 2
+| | | ω = 50.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 10000.0
+| | Visiting node 3
+| | | ω = 0.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 22500.0
+| Backward pass
+| | Visiting node 3
+| | | Skipping node because the cost-to-go is 0
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 22500.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 15000.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 7500.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 15000
+| | Visiting node 1
+| | | Solving φ = 0.0
+| | | | V = 30000.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 22500.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 15000.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 22500
+| Finished iteration
+| | lower_bound = 2500.0
+Starting iteration 2
+| Forward Pass
+| | Visiting node 1
+| | | ω = 0.0
+| | | x = Dict(:volume =&gt; 200.0)
+| | | x′ = Dict(:volume =&gt; 150.0)
+| | | C(x, u, ω) = 5000.0
 | | Visiting node 2
 | | | ω = 100.0
 | | | x = Dict(:volume =&gt; 150.0)
 | | | x′ = Dict(:volume =&gt; 100.0)
 | | | C(x, u, ω) = 0.0
 | | Visiting node 3
-| | | ω = 100.0
+| | | ω = 50.0
 | | | x = Dict(:volume =&gt; 100.0)
-| | | x′ = Dict(:volume =&gt; 50.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 0.0
 | Backward pass
 | | Visiting node 3
@@ -412,40 +456,40 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
 | | | Adding cut : 100 volume_out + cost_to_go ≥ 12500
 | | Visiting node 1
 | | | Solving φ = 0.0
-| | | | V = 12500.0
+| | | | V = 12499.999999999998
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Solving φ = 50.0
-| | | | V = 7500.0
+| | | | V = 7499.999999999998
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Solving φ = 100.0
-| | | | V = 2500.0
+| | | | V = 2499.9999999999986
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Adding cut : 99.99999999999999 volume_out + cost_to_go ≥ 22499.999999999996
 | Finished iteration
-| | lower_bound = 7500.000000000001
-Starting iteration 2
+| | lower_bound = 7499.999999999998
+Starting iteration 3
 | Forward Pass
 | | Visiting node 1
 | | | ω = 50.0
 | | | x = Dict(:volume =&gt; 200.0)
 | | | x′ = Dict(:volume =&gt; 200.0)
-| | | C(x, u, ω) = 5000.0
+| | | C(x, u, ω) = 4999.999999999998
 | | Visiting node 2
-| | | ω = 100.0
+| | | ω = 0.0
 | | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 125.0)
-| | | C(x, u, ω) = 0.0
+| | | x′ = Dict(:volume =&gt; 124.99999999999997)
+| | | C(x, u, ω) = 7499.999999999998
 | | Visiting node 3
 | | | ω = 0.0
-| | | x = Dict(:volume =&gt; 125.0)
+| | | x = Dict(:volume =&gt; 124.99999999999997)
 | | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 3750.0
+| | | C(x, u, ω) = 3750.000000000004
 | Backward pass
 | | Visiting node 3
 | | | Skipping node because the cost-to-go is 0
 | | Visiting node 2
 | | | Solving φ = 0.0
-| | | | V = 3750.0
+| | | | V = 3750.000000000004
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 50.0
 | | | | V = 0.0
@@ -467,52 +511,8 @@ Starting iteration 2
 | | | Adding cut : 83.33333333333331 volume_out + cost_to_go ≥ 19999.999999999996
 | Finished iteration
 | | lower_bound = 8333.333333333332
-Starting iteration 3
-| Forward Pass
-| | Visiting node 1
-| | | ω = 100.0
-| | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 200.0)
-| | | C(x, u, ω) = 2500.0
-| | Visiting node 2
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 100.0)
-| | | C(x, u, ω) = 0.0
-| | Visiting node 3
-| | | ω = 0.0
-| | | x = Dict(:volume =&gt; 100.0)
-| | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 7500.0
-| Backward pass
-| | Visiting node 3
-| | | Skipping node because the cost-to-go is 0
-| | Visiting node 2
-| | | Solving φ = 0.0
-| | | | V = 7500.0
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 0.0
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 100.0
-| | | | V = 0.0
-| | | | dVdx′ = Dict(:volume =&gt; 0.0)
-| | | Adding cut : 100 volume_out + cost_to_go ≥ 12500
-| | Visiting node 1
-| | | Solving φ = 0.0
-| | | | V = 7500.0
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Solving φ = 50.0
-| | | | V = 2500.0
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Solving φ = 100.0
-| | | | V = 0.0
-| | | | dVdx′ = Dict(:volume =&gt; -50.0)
-| | | Adding cut : 83.33333333333331 volume_out + cost_to_go ≥ 19999.999999999996
-| Finished iteration
-| | lower_bound = 8333.333333333332
 Termination status: iteration limit
-Upper bound = 8350.0 ± 1059.0249183932253</code></pre><p>Success! We trained a policy for a finite horizon multistage stochastic program using stochastic dual dynamic programming.</p><h2 id="Implementation:-evaluating-the-policy"><a class="docs-heading-anchor" href="#Implementation:-evaluating-the-policy">Implementation: evaluating the policy</a><a id="Implementation:-evaluating-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-evaluating-the-policy" title="Permalink"></a></h2><p>A final step is the ability to evaluate the policy at a given point.</p><pre><code class="language-julia hljs">function evaluate_policy(
+Upper bound = 8000.0 ± 886.4433530586251</code></pre><p>Success! We trained a policy for a finite horizon multistage stochastic program using stochastic dual dynamic programming.</p><h2 id="Implementation:-evaluating-the-policy"><a class="docs-heading-anchor" href="#Implementation:-evaluating-the-policy">Implementation: evaluating the policy</a><a id="Implementation:-evaluating-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-evaluating-the-policy" title="Permalink"></a></h2><p>A final step is the ability to evaluate the policy at a given point.</p><pre><code class="language-julia hljs">function evaluate_policy(
     model::PolicyGraph;
     node::Int,
     incoming_state::Dict{Symbol,Float64},
@@ -556,15 +556,35 @@ Arcs:
 </code></pre><p>Then, train a policy:</p><pre><code class="language-julia hljs">train(model; iteration_limit = 3, replications = 100)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Starting iteration 1
 | Forward Pass
 | | Visiting node 1
-| | | ω = 0.0
+| | | ω = 50.0
 | | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 50.0)
-| | | C(x, u, ω) = 0.0
-| | Visiting node 2
-| | | ω = 100.0
-| | | x = Dict(:volume =&gt; 50.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 0.0
+| | Visiting node 2
+| | | ω = 0.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 15000.0
+| | Visiting node 3
+| | | ω = 50.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 15000.0
+| | Visiting node 2
+| | | ω = 50.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 10000.0
+| | Visiting node 3
+| | | ω = 100.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 7500.0
+| | Visiting node 2
+| | | ω = 50.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 10000.0
 | | Visiting node 3
 | | | ω = 100.0
 | | | x = Dict(:volume =&gt; 0.0)
@@ -580,26 +600,6 @@ Arcs:
 | | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 7500.0
-| | Visiting node 2
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 0.0)
-| | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 10000.0
-| | Visiting node 3
-| | | ω = 0.0
-| | | x = Dict(:volume =&gt; 0.0)
-| | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 22500.0
-| | Visiting node 2
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 0.0)
-| | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 10000.0
-| | Visiting node 3
-| | | ω = 0.0
-| | | x = Dict(:volume =&gt; 0.0)
-| | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 22500.0
 | Backward pass
 | | Visiting node 3
 | | | Solving φ = 0.0
@@ -691,13 +691,13 @@ Arcs:
 | | | Adding cut : 150 volume_out + cost_to_go ≥ 35312.5
 | | Visiting node 1
 | | | Solving φ = 0.0
-| | | | V = 42812.5
+| | | | V = 50312.5
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 50.0
-| | | | V = 35312.5
+| | | | V = 42812.5
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 100.0
-| | | | V = 27812.5
+| | | | V = 35312.5
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Adding cut : 150 volume_out + cost_to_go ≥ 42812.5
 | Finished iteration
@@ -708,149 +708,53 @@ Starting iteration 2
 | | | ω = 0.0
 | | | x = Dict(:volume =&gt; 200.0)
 | | | x′ = Dict(:volume =&gt; 200.0)
-| | | C(x, u, ω) = 7499.999999999998
-| | Visiting node 2
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 200.0)
-| | | C(x, u, ω) = 10000.0
-| | Visiting node 3
-| | | ω = 0.0
-| | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 50.0)
-| | | C(x, u, ω) = 0.0
-| | Visiting node 2
-| | | ω = 100.0
-| | | x = Dict(:volume =&gt; 50.0)
-| | | x′ = Dict(:volume =&gt; 150.0)
-| | | C(x, u, ω) = 15000.0
-| | Visiting node 3
-| | | ω = 0.0
-| | | x = Dict(:volume =&gt; 150.0)
-| | | x′ = Dict(:volume =&gt; -0.0)
-| | | C(x, u, ω) = 0.0
-| | Visiting node 2
-| | | ω = 0.0
-| | | x = Dict(:volume =&gt; -0.0)
-| | | x′ = Dict(:volume =&gt; -0.0)
-| | | C(x, u, ω) = 15000.0
-| | Visiting node 3
-| | | ω = 100.0
-| | | x = Dict(:volume =&gt; -0.0)
-| | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 7500.0
 | | Visiting node 2
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 0.0)
-| | | x′ = Dict(:volume =&gt; 50.0)
+| | | ω = 0.0
+| | | x = Dict(:volume =&gt; 200.0)
+| | | x′ = Dict(:volume =&gt; 200.0)
 | | | C(x, u, ω) = 15000.0
 | | Visiting node 3
-| | | ω = 100.0
-| | | x = Dict(:volume =&gt; 50.0)
-| | | x′ = Dict(:volume =&gt; 0.0)
+| | | ω = 0.0
+| | | x = Dict(:volume =&gt; 200.0)
+| | | x′ = Dict(:volume =&gt; 50.0)
 | | | C(x, u, ω) = 0.0
 | Backward pass
 | | Visiting node 3
 | | | Solving φ = 0.0
-| | | | V = 50312.5
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
 | | | | V = 42812.5
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 100.0
+| | | Solving φ = 50.0
 | | | | V = 35312.5
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 27812.5
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Adding cut : 75 volume_out + cost_to_go ≥ 21406.25
 | | Visiting node 2
 | | | Solving φ = 0.0
-| | | | V = 36406.25
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | | V = 17656.25
+| | | | dVdx′ = Dict(:volume =&gt; -75.0)
 | | | Solving φ = 50.0
-| | | | V = 28906.25
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 100.0
-| | | | V = 21406.25
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Adding cut : 150 volume_out + cost_to_go ≥ 36406.25
-| | Visiting node 3
-| | | Solving φ = 0.0
-| | | | V = 51406.25
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 43906.25
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 100.0
-| | | | V = 36406.25
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Adding cut : 75 volume_out + cost_to_go ≥ 21953.124999999996
-| | Visiting node 2
-| | | Solving φ = 0.0
-| | | | V = 44453.125
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 36953.125
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 100.0
-| | | | V = 29453.124999999996
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Adding cut : 150 volume_out + cost_to_go ≥ 36953.125
-| | Visiting node 3
-| | | Solving φ = 0.0
-| | | | V = 51953.125
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 44453.125
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 100.0
-| | | | V = 36953.125
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Adding cut : 75 volume_out + cost_to_go ≥ 22226.5625
-| | Visiting node 2
-| | | Solving φ = 0.0
-| | | | V = 22226.5625
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 18476.5625
+| | | | V = 13906.25
 | | | | dVdx′ = Dict(:volume =&gt; -75.0)
 | | | Solving φ = 100.0
-| | | | V = 14726.5625
+| | | | V = 10156.25
 | | | | dVdx′ = Dict(:volume =&gt; -75.0)
-| | | Adding cut : 100 volume_out + cost_to_go ≥ 33476.5625
-| | Visiting node 3
-| | | Solving φ = 0.0
-| | | | V = 44453.125
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 38476.5625
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Solving φ = 100.0
-| | | | V = 33476.5625
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Adding cut : 58.33333333333333 volume_out + cost_to_go ≥ 22317.708333333332
-| | Visiting node 2
-| | | Solving φ = 0.0
-| | | | V = 19401.041666666664
-| | | | dVdx′ = Dict(:volume =&gt; -58.33333333333333)
-| | | Solving φ = 50.0
-| | | | V = 16484.375
-| | | | dVdx′ = Dict(:volume =&gt; -58.33333333333333)
-| | | Solving φ = 100.0
-| | | | V = 13567.708333333332
-| | | | dVdx′ = Dict(:volume =&gt; -58.33333333333333)
-| | | Adding cut : 58.33333333333333 volume_out + cost_to_go ≥ 28151.04166666666
+| | | Adding cut : 75 volume_out + cost_to_go ≥ 28906.25
 | | Visiting node 1
 | | | Solving φ = 0.0
-| | | | V = 28476.5625
+| | | | V = 26041.666666666668
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Solving φ = 50.0
-| | | | V = 23476.5625
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
+| | | | V = 21406.25
+| | | | dVdx′ = Dict(:volume =&gt; -75.0)
 | | | Solving φ = 100.0
-| | | | V = 19401.041666666653
-| | | | dVdx′ = Dict(:volume =&gt; -58.33333333333333)
-| | | Adding cut : 86.1111111111111 volume_out + cost_to_go ≥ 41006.94444444444
+| | | | V = 17656.25
+| | | | dVdx′ = Dict(:volume =&gt; -75.0)
+| | | Adding cut : 83.33333333333333 volume_out + cost_to_go ≥ 38368.055555555555
 | Finished iteration
-| | lower_bound = 28784.72222222222
+| | lower_bound = 26701.38888888889
 Starting iteration 3
 | Forward Pass
 | | Visiting node 1
@@ -859,85 +763,85 @@ Starting iteration 3
 | | | x′ = Dict(:volume =&gt; 200.0)
 | | | C(x, u, ω) = 2500.0
 | | Visiting node 2
-| | | ω = 0.0
+| | | ω = 50.0
 | | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 127.81250000000018)
-| | | C(x, u, ω) = 7781.250000000018
+| | | x′ = Dict(:volume =&gt; 100.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 3
+| | | ω = 0.0
+| | | x = Dict(:volume =&gt; 100.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 7500.0
+| | Visiting node 2
+| | | ω = 100.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 85.41666666666667)
+| | | C(x, u, ω) = 13541.666666666664
 | | Visiting node 3
 | | | ω = 100.0
-| | | x = Dict(:volume =&gt; 127.81250000000018)
-| | | x′ = Dict(:volume =&gt; 77.81250000000017)
-| | | C(x, u, ω) = 0.0
-| | Visiting node 2
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 77.81250000000017)
-| | | x′ = Dict(:volume =&gt; 127.81250000000017)
-| | | C(x, u, ω) = 15000.0
-| | Visiting node 3
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 127.81250000000017)
-| | | x′ = Dict(:volume =&gt; 27.81250000000017)
+| | | x = Dict(:volume =&gt; 85.41666666666667)
+| | | x′ = Dict(:volume =&gt; 35.416666666666686)
 | | | C(x, u, ω) = 0.0
 | Backward pass
 | | Visiting node 3
 | | | Solving φ = 0.0
-| | | | V = 47781.249999999956
+| | | | V = 45000.0
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 50.0
-| | | | V = 40695.312499999985
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
+| | | | V = 37500.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 100.0
-| | | | V = 35695.312499999985
+| | | | V = 32500.0
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Adding cut : 58.33333333333333 volume_out + cost_to_go ≥ 22317.70833333333
+| | | Adding cut : 66.66666666666666 volume_out + cost_to_go ≥ 21527.777777777777
 | | Visiting node 2
 | | | Solving φ = 0.0
-| | | | V = 25645.833333333307
+| | | | V = 31215.277777777777
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 50.0
-| | | | V = 20695.31249999999
-| | | | dVdx′ = Dict(:volume =&gt; -58.33333333333333)
+| | | | V = 23715.277777777774
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 100.0
-| | | | V = 17778.64583333332
-| | | | dVdx′ = Dict(:volume =&gt; -58.33333333333333)
-| | | Adding cut : 88.88888888888889 volume_out + cost_to_go ≥ 32734.374999999996
+| | | | V = 19166.666666666668
+| | | | dVdx′ = Dict(:volume =&gt; -66.66666666666666)
+| | | Adding cut : 122.22222222222221 volume_out + cost_to_go ≥ 35138.88888888889
 | | Visiting node 3
 | | | Solving φ = 0.0
-| | | | V = 40720.17045454544
-| | | | dVdx′ = Dict(:volume =&gt; -100.00000000000001)
-| | | Solving φ = 50.0
-| | | | V = 35720.17045454544
-| | | | dVdx′ = Dict(:volume =&gt; -100.00000000000001)
-| | | Solving φ = 100.0
-| | | | V = 30720.170454545445
-| | | | dVdx′ = Dict(:volume =&gt; -100.00000000000001)
-| | | Adding cut : 50 volume_out + cost_to_go ≥ 21750.710227272728
-| | Visiting node 2
-| | | Solving φ = 0.0
-| | | | V = 25645.833333333303
+| | | | V = 50312.500000000015
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 50.0
-| | | | V = 20695.31249999999
-| | | | dVdx′ = Dict(:volume =&gt; -58.33333333333333)
+| | | | V = 44027.7777777778
+| | | | dVdx′ = Dict(:volume =&gt; -122.22222222222221)
 | | | Solving φ = 100.0
-| | | | V = 17860.085227272717
-| | | | dVdx′ = Dict(:volume =&gt; -50.0)
-| | | Adding cut : 86.11111111111111 volume_out + cost_to_go ≥ 32406.48674242424
+| | | | V = 37916.666666666686
+| | | | dVdx′ = Dict(:volume =&gt; -122.22222222222221)
+| | | Adding cut : 65.74074074074073 volume_out + cost_to_go ≥ 22042.82407407408
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 29542.82407407408
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 22042.82407407408
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 18755.787037037044
+| | | | dVdx′ = Dict(:volume =&gt; -65.74074074074073)
+| | | Adding cut : 121.91358024691357 volume_out + cost_to_go ≥ 35638.503086419754
 | | Visiting node 1
 | | | Solving φ = 0.0
-| | | | V = 28501.42045454545
+| | | | V = 27493.832236842107
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Solving φ = 50.0
-| | | | V = 23845.486111111106
-| | | | dVdx′ = Dict(:volume =&gt; -88.8888888888889)
+| | | | V = 22493.832236842107
+| | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Solving φ = 100.0
-| | | | V = 19489.82007575756
-| | | | dVdx′ = Dict(:volume =&gt; -86.11111111111113)
-| | | Adding cut : 91.66666666666667 volume_out + cost_to_go ≥ 42278.90888047137
+| | | | V = 17656.25
+| | | | dVdx′ = Dict(:volume =&gt; -75.0)
+| | | Adding cut : 91.66666666666666 volume_out + cost_to_go ≥ 40881.304824561405
 | Finished iteration
-| | lower_bound = 28945.575547138033
+| | lower_bound = 27547.97149122807
 Termination status: iteration limit
-Upper bound = 34940.62499999999 ± 7454.736802541472</code></pre><p>Success! We trained a policy for an infinite horizon multistage stochastic program using stochastic dual dynamic programming. Note how some of the forward passes are different lengths!</p><pre><code class="language-julia hljs">evaluate_policy(
+Upper bound = 34594.49013157895 ± 6520.140782152166</code></pre><p>Success! We trained a policy for an infinite horizon multistage stochastic program using stochastic dual dynamic programming. Note how some of the forward passes are different lengths!</p><pre><code class="language-julia hljs">evaluate_policy(
     model;
     node = 3,
     incoming_state = Dict(:volume =&gt; 100.0),
@@ -950,4 +854,4 @@ Upper bound = 34940.62499999999 ± 7454.736802541472</code></pre><p>Success! We 
   :volume_in          =&gt; 100.0
   :thermal_generation =&gt; 40.0
   :hydro_generation   =&gt; 110.0
-  :cost_to_go         =&gt; 22317.7</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../guides/create_a_belief_state/">« Create a belief state</a><a class="docs-footer-nextpage" href="../risk/">Risk aversion »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.1 on <span class="colophon-date" title="Monday 3 March 2025 14:08">Monday 3 March 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  :cost_to_go         =&gt; 22042.8</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../guides/create_a_belief_state/">« Create a belief state</a><a class="docs-footer-nextpage" href="../risk/">Risk aversion »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Friday 4 April 2025 19:56">Friday 4 April 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
