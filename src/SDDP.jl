@@ -64,6 +64,9 @@ include("deterministic_equivalent.jl")
 include("biobjective.jl")
 include("alternative_forward.jl")
 
+# Inner approximation
+include("Inner.jl")
+
 include("Experimental.jl")
 include("MSPFormat.jl")
 
