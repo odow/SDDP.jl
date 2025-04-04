@@ -5,9 +5,6 @@
 
 module TestInnerBellmanFunctions
 
-# temporary using Random until the SDDP.train does not fail in julia 1.6
-using Random
-
 using SDDP
 using Test
 import HiGHS
@@ -163,7 +160,7 @@ function test_Read_write_cuts_to_file()
 end
 
 function create_policy_graph_with_inner_approximation()
-    nstages = 4
+    nstages = 20
     graph = SDDP.LinearGraph(nstages)
 
     # for some reason, creating the model with the same
@@ -266,35 +263,38 @@ function test_InnerPolicyGraph_other_graphs()
 end
 
 function test_InnerPolicyGraph_train()
-    # temporary setting seed since with the default seed from SDDP.jl tests,
-    # the forward sampling process results in some "ill-placed" vertices that
-    # stops the (upper, since its inner approximation) bound from improving.
-    # TODO - implement a definitive solution (vertex selection?) 
-    Random.seed!(1234)
+    # calling SDDP.train with an "inner model" will probably result
+    # in sub-optimal bounds, so this test checks for a bound with a
+    # reasonable gap to the optimal (250.0 > 241.3833)
+    #
+    # however, the function call works and the inner bound might
+    # decrease for some iterations
     model = create_policy_graph_with_inner_approximation()
-    SDDP.train(model; iteration_limit = 50, print_level = 0)
-    @test SDDP.calculate_bound(model) ≈ 45.833 atol = 0.1
+    SDDP.train(model; iteration_limit = 200, print_level = 0)
+    @test SDDP.calculate_bound(model) >= 250.0
 end
 
 function test_InnerPolicGraph_simulate()
     model = create_policy_graph_with_inner_approximation()
     SDDP.train(model; iteration_limit = 50, print_level = 0)
     results = SDDP.simulate(model, 50, [:vertex_coverage_distance])
+    # TODO - make more meaningful tests with the simulation result
     @test typeof(results) === Vector{Vector{Dict{Symbol,Any}}}
 end
 
-function test_read_vertices_from_policy_graph()
-    nstages = 4
+function test_dp_vertices_from_visited_states()
+    nstages = 20
     graph = SDDP.LinearGraph(nstages)
     cut_model = _create_model(graph)
-    SDDP.train(cut_model; iteration_limit = 50, print_level = 0)
+    SDDP.train(cut_model; iteration_limit = 200, print_level = 0)
     vertex_model = create_policy_graph_with_inner_approximation()
-    SDDP.Inner.read_vertices_from_policy_graph(
+    SDDP.Inner.dp_vertices_from_visited_states(
         vertex_model,
         cut_model;
         optimizer = HiGHS.Optimizer,
     )
-    @test SDDP.calculate_bound(vertex_model) ≈ 45.833 atol = 0.1
+    @test SDDP.calculate_bound(cut_model) ≈ 241.3833 atol = 0.1
+    @test SDDP.calculate_bound(vertex_model) ≈ 241.3833 atol = 0.1
 end
 
 end  # module

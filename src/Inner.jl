@@ -710,7 +710,7 @@ function InnerPolicyGraph(
 end
 
 """
-    read_vertices_from_policy_graph(
+    dp_vertices_from_visited_states(
         inner_model::SDDP.PolicyGraph
         outer_model::SDDP.PolicyGraph;
         optimizer = nothing,
@@ -741,7 +741,7 @@ that does not require passing the builder or building externally the
 
  - `print_level::Int` level of verbosity.
 """
-function read_vertices_from_policy_graph(
+function dp_vertices_from_visited_states(
     inner_model::SDDP.PolicyGraph,
     outer_model::SDDP.PolicyGraph;
     optimizer = nothing,
