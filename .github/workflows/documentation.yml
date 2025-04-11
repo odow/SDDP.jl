@@ -5,6 +5,8 @@ on:
     tags: '*'
   pull_request:
     types: [opened, synchronize, reopened]
+permissions:
+  pull-requests: read  # Required when using `push_preview=true`
 jobs:
   build:
     runs-on: ubuntu-latest
