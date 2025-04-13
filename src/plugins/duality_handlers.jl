@@ -89,7 +89,13 @@ min Cᵢ(x̄, u, w) + θᵢ
     x̄ - x == 0          [λ]
 ```
 """
-struct ContinuousConicDuality <: AbstractDualityHandler end
+struct ContinuousConicDuality{O} <: AbstractDualityHandler
+    optimizer::O
+
+    function ContinuousConicDuality(optimizer = nothing)
+        return new{typeof(optimizer)}(optimizer)
+    end
+end
 
 function get_dual_solution(node::Node, ::ContinuousConicDuality)
     if !_has_dual_solution(node)
@@ -106,15 +112,27 @@ function get_dual_solution(node::Node, ::ContinuousConicDuality)
     return objective_value(node.subproblem), λ
 end
 
-function _relax_integrality(node::Node)
+function _relax_integrality(node::Node, optimizer)
     if !node.has_integrality
         return () -> nothing
+    elseif optimizer === nothing
+        return JuMP.relax_integrality(node.subproblem)
     end
-    return JuMP.relax_integrality(node.subproblem)
+    undo_relax = JuMP.relax_integrality(node.subproblem)
+    JuMP.set_optimizer(node.subproblem, optimizer)
+    return () -> begin
+        JuMP.set_optimizer(node.subproblem, node.optimizer)
+        undo_relax()
+        return
+    end
 end
 
-function prepare_backward_pass(node::Node, ::ContinuousConicDuality, ::Options)
-    return _relax_integrality(node)
+function prepare_backward_pass(
+    node::Node,
+    handler::ContinuousConicDuality,
+    ::Options,
+)
+    return _relax_integrality(node, handler.optimizer)
 end
 
 duality_log_key(::ContinuousConicDuality) = " "
@@ -149,10 +167,12 @@ L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
 ```
 and where `h(x̄) = x̄ - x`.
 """
-mutable struct LagrangianDuality <: AbstractDualityHandler
+mutable struct LagrangianDuality{O} <: AbstractDualityHandler
     method::LocalImprovementSearch.AbstractSearchMethod
+    optimizer::O
 
-    function LagrangianDuality(;
+    function LagrangianDuality(
+        optimizer = nothing;
         method = LocalImprovementSearch.BFGS(100),
         kwargs...,
     )
@@ -162,12 +182,12 @@ mutable struct LagrangianDuality <: AbstractDualityHandler
                 "See the documentation for details.",
             )
         end
-        return new(method)
+        return new{typeof(optimizer)}(method, optimizer)
     end
 end
 
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
-    undo_relax = _relax_integrality(node)
+    undo_relax = _relax_integrality(node, lagrange.optimizer)
     optimize!(node.subproblem)
     conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_relax()
@@ -263,10 +283,16 @@ L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' (x̄ - x`)
 ```
 to obtain a better estimate of the intercept.
 """
-mutable struct StrengthenedConicDuality <: AbstractDualityHandler end
+mutable struct StrengthenedConicDuality{O} <: AbstractDualityHandler
+    optimizer::O
 
-function get_dual_solution(node::Node, ::StrengthenedConicDuality)
-    undo_relax = _relax_integrality(node)
+    function StrengthenedConicDuality(optimizer = nothing)
+        return new{typeof(optimizer)}(optimizer)
+    end
+end
+
+function get_dual_solution(node::Node, handler::StrengthenedConicDuality)
+    undo_relax = _relax_integrality(node, handler.optimizer)
     optimize!(node.subproblem)
     conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_relax()
@@ -346,8 +372,11 @@ function Base.show(io::IO, handler::BanditDuality)
     return
 end
 
-function BanditDuality()
-    return BanditDuality(ContinuousConicDuality(), StrengthenedConicDuality())
+function BanditDuality(optimizer = nothing)
+    return BanditDuality(
+        ContinuousConicDuality(optimizer),
+        StrengthenedConicDuality(optimizer),
+    )
 end
 
 function _update_arm(handler::BanditDuality)
