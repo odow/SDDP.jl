@@ -480,7 +480,7 @@ end
 
 function test_duality_handler_with_fallback_optimizer()
     function _train_model_with_duality_handler(duality_handler)
-        model = SDDP.LinearPolicyGraph(
+        model = SDDP.LinearPolicyGraph(;
             stages = 3,
             lower_bound = 0.0,
             optimizer = HiGHS.Optimizer,
