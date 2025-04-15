@@ -11,12 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
- - Added an `optimizer` arugment to the various duality handlers to allow
+ - Added an `optimizer` argument to the various duality handlers to allow
    different optimizers on the forward and backward passes (#846)
 
 ### Other
 
- - Updated `/papers` and their various citatoins (#841)
+ - Updated `/papers` and their various citations (#841)
  - Fixed environment loading in `test/plugins/parallel_schemes.jl` (#842)
  - Fixed a bug in `/papers/msppy/msppy_hydro_thermal.jl` (#843)
  - Rotated `DOCUMENTER_KEY` (#845)
