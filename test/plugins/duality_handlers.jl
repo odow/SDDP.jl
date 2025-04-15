@@ -424,7 +424,7 @@ end
 
 function test_BanditDuality_show()
     @test sprint(show, SDDP.BanditDuality()) ==
-          "BanditDuality with arms:\n * SDDP.ContinuousConicDuality()\n * SDDP.StrengthenedConicDuality()"
+          "BanditDuality with arms:\n * SDDP.ContinuousConicDuality{Nothing}(nothing)\n * SDDP.StrengthenedConicDuality{Nothing}(nothing)"
     return
 end
 
