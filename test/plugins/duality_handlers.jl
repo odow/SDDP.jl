@@ -8,6 +8,7 @@ module TestDualityHandlers
 using SDDP
 using Test
 import HiGHS
+import Ipopt
 
 function runtests()
     for name in names(@__MODULE__; all = true)
