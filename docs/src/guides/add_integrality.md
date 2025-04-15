@@ -5,25 +5,27 @@ CurrentModule = SDDP
 # Integrality
 
 There's nothing special about binary and integer variables in SDDP.jl. Your
-models may contain a mix of binary, integer, or continuous state and control
-variables. Use the standard JuMP syntax to add binary or integer variables.
+models may contain a mix of binary, integer, and continuous state and control
+variables. Use the standard JuMP syntax to add binary and integer variables.
 
 For example:
 
 ```@example
 using SDDP, HiGHS
 model = SDDP.LinearPolicyGraph(
-   stages = 3,
-   lower_bound = 0.0,
-   optimizer = HiGHS.Optimizer,
+    stages = 3,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
 ) do sp, t
-   @variable(sp, 0 <= x <= 100, Int, SDDP.State, initial_value = 0)
-   @variable(sp, 0 <= u <= 200, integer = true)
-   @variable(sp, v >= 0)
-   @constraint(sp, x.out == x.in + u + v - 150)
-   @stageobjective(sp, 2u + 6v + x.out)
+    @variable(sp, 0 <= x <= 100, Int, SDDP.State, initial_value = 0)
+    @variable(sp, 0 <= u <= 200, integer = true)
+    @variable(sp, v >= 0)
+    @constraint(sp, x.out == x.in + u + v - 150)
+    @stageobjective(sp, 2u + 6v + x.out)
 end
 ```
+
+## Specifying a duality handler
 
 If you want finer control over how SDDP.jl computes subgradients in the backward
 pass, you can pass an [`SDDP.AbstractDualityHandler`](@ref) to the
@@ -35,6 +37,53 @@ The duality handlers implemented in SDDP.jl are:
  - [`SDDP.LagrangianDuality`](@ref)
  - [`SDDP.StrengthenedConicDuality`](@ref)
  - [`SDDP.BanditDuality`](@ref)
+
+Here is an example:
+
+```@example
+using SDDP, HiGHS
+model = SDDP.LinearPolicyGraph(
+    stages = 3,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, t
+    @variable(sp, 0 <= x <= 100, Int, SDDP.State, initial_value = 0)
+    @variable(sp, 0 <= u <= 200, integer = true)
+    @variable(sp, v >= 0)
+    @constraint(sp, x.out == x.in + u + v - 150)
+    @stageobjective(sp, 2u + 6v + x.out)
+end
+SDDP.train(
+    model;
+    duality_handler = SDDP.BanditDuality(),
+    log_every_iteration = true,
+)
+```
+
+### Using a different optimizer to compute duals
+
+If your default optimizer cannot compute dual variables, for example, you are
+using Gurobi to solve a MINLP, each duality handler accepts a new optimizer as a
+positional argument that is called once the integrality has been relaxed. For
+example:
+```@example
+using SDDP, HiGHS, Ipopt
+model = SDDP.LinearPolicyGraph(
+   stages = 3,
+   lower_bound = 0.0,
+   optimizer = HiGHS.Optimizer,
+) do sp, t
+   @variable(sp, 0 <= x <= 100, Int, SDDP.State, initial_value = 0)
+   @variable(sp, 0 <= u <= 200, integer = true)
+   @variable(sp, v >= 0)
+   @constraint(sp, x.out == x.in + u + v - 150)
+   @stageobjective(sp, 2u + 6v + x.out)
+end
+SDDP.train(
+    model;
+    duality_handler = SDDP.ContinuousConicDuality(Ipopt.Optimizer),
+)
+```
 
 ## Convergence
 

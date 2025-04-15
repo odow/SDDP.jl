@@ -68,10 +68,26 @@ end
 # ========================= Continuous relaxation ============================ #
 
 """
-    ContinuousConicDuality()
+    ContinuousConicDuality(optimizer = nothing)
 
 Compute dual variables in the backward pass using conic duality, relaxing any
 binary or integer restrictions as necessary.
+
+## Arguments
+
+ * `optimizer`: if  specified, SDDP.jl will call
+   `JuMP.set_optimizer(subproblem, optimizer)` before solving problems on the
+   backward pass. Use this option only if your default optimizer does not
+   support returning a dual solution after the integrality has been relaxed.
+
+## Example
+
+```jldoctest
+julia> import SDDP, Ipopt
+
+julia> handler = SDDP.ContinuousConicDuality(Ipopt.Optimizer)
+SDDP.ContinuousConicDuality{DataType}(Ipopt.Optimizer)
+```
 
 ## Theory
 
@@ -89,7 +105,13 @@ min Cᵢ(x̄, u, w) + θᵢ
     x̄ - x == 0          [λ]
 ```
 """
-struct ContinuousConicDuality <: AbstractDualityHandler end
+struct ContinuousConicDuality{O} <: AbstractDualityHandler
+    optimizer::O
+
+    function ContinuousConicDuality(optimizer = nothing)
+        return new{typeof(optimizer)}(optimizer)
+    end
+end
 
 function get_dual_solution(node::Node, ::ContinuousConicDuality)
     if !_has_dual_solution(node)
@@ -106,15 +128,27 @@ function get_dual_solution(node::Node, ::ContinuousConicDuality)
     return objective_value(node.subproblem), λ
 end
 
-function _relax_integrality(node::Node)
+function _relax_integrality(node::Node, optimizer)
     if !node.has_integrality
         return () -> nothing
+    elseif optimizer === nothing
+        return JuMP.relax_integrality(node.subproblem)
     end
-    return JuMP.relax_integrality(node.subproblem)
+    undo_relax = JuMP.relax_integrality(node.subproblem)
+    JuMP.set_optimizer(node.subproblem, optimizer)
+    return () -> begin
+        JuMP.set_optimizer(node.subproblem, node.optimizer)
+        undo_relax()
+        return
+    end
 end
 
-function prepare_backward_pass(node::Node, ::ContinuousConicDuality, ::Options)
-    return _relax_integrality(node)
+function prepare_backward_pass(
+    node::Node,
+    handler::ContinuousConicDuality,
+    ::Options,
+)
+    return _relax_integrality(node, handler.optimizer)
 end
 
 duality_log_key(::ContinuousConicDuality) = " "
@@ -122,7 +156,8 @@ duality_log_key(::ContinuousConicDuality) = " "
 # =========================== LagrangianDuality ============================== #
 
 """
-    LagrangianDuality(;
+    LagrangianDuality(
+        optimizer = nothing;
         method::LocalImprovementSearch.AbstractSearchMethod =
             LocalImprovementSearch.BFGS(100),
     )
@@ -131,8 +166,22 @@ Obtain dual variables in the backward pass using Lagrangian duality.
 
 ## Arguments
 
+ * `optimizer`: if  specified, SDDP.jl will call
+   `JuMP.set_optimizer(subproblem, optimizer)` before solving problems on the
+   backward pass. Use this option only if your default optimizer does not
+   support returning a dual solution after the integrality has been relaxed.
+
  * `method`: the `LocalImprovementSearch` method for maximizing the Lagrangian
    dual problem.
+
+## Example
+
+```jldoctest
+julia> import SDDP, Ipopt
+
+julia> handler = SDDP.LagrangianDuality(Ipopt.Optimizer)
+SDDP.LagrangianDuality{DataType}(SDDP.LocalImprovementSearch.BFGS(100), Ipopt.Optimizer)
+```
 
 ## Theory
 
@@ -149,10 +198,12 @@ L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
 ```
 and where `h(x̄) = x̄ - x`.
 """
-mutable struct LagrangianDuality <: AbstractDualityHandler
+mutable struct LagrangianDuality{O} <: AbstractDualityHandler
     method::LocalImprovementSearch.AbstractSearchMethod
+    optimizer::O
 
-    function LagrangianDuality(;
+    function LagrangianDuality(
+        optimizer = nothing;
         method = LocalImprovementSearch.BFGS(100),
         kwargs...,
     )
@@ -162,12 +213,12 @@ mutable struct LagrangianDuality <: AbstractDualityHandler
                 "See the documentation for details.",
             )
         end
-        return new(method)
+        return new{typeof(optimizer)}(method, optimizer)
     end
 end
 
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
-    undo_relax = _relax_integrality(node)
+    undo_relax = _relax_integrality(node, lagrange.optimizer)
     optimize!(node.subproblem)
     conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_relax()
@@ -242,9 +293,18 @@ duality_log_key(::LagrangianDuality) = "L"
 # ==================== StrengthenedConicDuality ==================== #
 
 """
-    StrengthenedConicDuality()
+    StrengthenedConicDuality(optimizer = nothing)
 
 Obtain dual variables in the backward pass using strengthened conic duality.
+
+This method is also known in the literature as Strengthened Benders.
+
+## Arguments
+
+ * `optimizer`: if  specified, SDDP.jl will call
+   `JuMP.set_optimizer(subproblem, optimizer)` before solving problems on the
+   backward pass. Use this option only if your default optimizer does not
+   support returning a dual solution after the integrality has been relaxed.
 
 ## Theory
 
@@ -263,10 +323,16 @@ L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' (x̄ - x`)
 ```
 to obtain a better estimate of the intercept.
 """
-mutable struct StrengthenedConicDuality <: AbstractDualityHandler end
+mutable struct StrengthenedConicDuality{O} <: AbstractDualityHandler
+    optimizer::O
 
-function get_dual_solution(node::Node, ::StrengthenedConicDuality)
-    undo_relax = _relax_integrality(node)
+    function StrengthenedConicDuality(optimizer = nothing)
+        return new{typeof(optimizer)}(optimizer)
+    end
+end
+
+function get_dual_solution(node::Node, handler::StrengthenedConicDuality)
+    undo_relax = _relax_integrality(node, handler.optimizer)
     optimize!(node.subproblem)
     conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_relax()
@@ -305,14 +371,10 @@ mutable struct _BanditArm{T}
 end
 
 """
-    BanditDuality()
+    BanditDuality(args::AbstractDualityHandler...)
 
 Formulates the problem of choosing a duality handler as a multi-armed bandit
-problem. The arms to choose between are:
-
- * [`ContinuousConicDuality`](@ref)
- * [`StrengthenedConicDuality`](@ref)
- * [`LagrangianDuality`](@ref)
+problem. The arms to choose between are given by `args`.
 
 Our problem isn't a typical multi-armed bandit for a two reasons:
 
@@ -346,8 +408,37 @@ function Base.show(io::IO, handler::BanditDuality)
     return
 end
 
-function BanditDuality()
-    return BanditDuality(ContinuousConicDuality(), StrengthenedConicDuality())
+"""
+    BanditDuality(optimizer = nothing)
+
+The default implementation of `BanditDuality` that picks between the arms:
+
+ * [`ContinuousConicDuality`](@ref)
+ * [`StrengthenedConicDuality`](@ref)
+
+## Arguments
+
+ * `optimizer`: if  specified, SDDP.jl will call
+   `JuMP.set_optimizer(subproblem, optimizer)` before solving problems on the
+   backward pass. Use this option only if your default optimizer does not
+   support returning a dual solution after the integrality has been relaxed.
+
+## Example
+
+```jldoctest
+julia> import SDDP, Ipopt
+
+julia> handler = SDDP.BanditDuality(Ipopt.Optimizer)
+BanditDuality with arms:
+ * SDDP.ContinuousConicDuality{DataType}(Ipopt.Optimizer)
+ * SDDP.StrengthenedConicDuality{DataType}(Ipopt.Optimizer)
+```
+"""
+function BanditDuality(optimizer = nothing)
+    return BanditDuality(
+        ContinuousConicDuality(optimizer),
+        StrengthenedConicDuality(optimizer),
+    )
 end
 
 function _update_arm(handler::BanditDuality)
