@@ -34,6 +34,7 @@ Geilo
 Gurobi
 Ipopt
 Javascript
+Kvitfjell
 Louveaux
 Markovian
 [Ll]ipschitz
