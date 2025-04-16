@@ -158,6 +158,7 @@ Documenter.makedocs(;
             "tutorial/example_reservoir.md",
             "tutorial/example_milk_producer.md",
             "tutorial/inventory.md",
+            "tutorial/batteries.md",
         ],
         "How-to guides" => [
             "guides/use_multithreading.md",
