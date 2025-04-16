@@ -57,10 +57,10 @@ model = SDDP.LinearPolicyGraph(;
     ## Control variables
     @variable(sp, 0 <= u_charge <= 15)
     @variable(sp, 0 <= u_discharge <= 15)
-	@variable(sp, u_slack >= 0)
-	@variable(sp, u_surplus >= 0)
+    @variable(sp, u_slack >= 0)
+    @variable(sp, u_surplus >= 0)
     ## Random variables
-	@variable(sp, w_load)
+    @variable(sp, w_load)
     Ω = [-4.0, -2.0, 0.0, 2.0, 4.0]
     d = vcat(
         [40, 41, 42, 43, 35, 40, 40, 25, 10, 8, 6, 5],  # Hours 01-12
