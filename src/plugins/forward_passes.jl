@@ -398,3 +398,79 @@ function forward_pass(
     end
     return pass
 end
+
+struct ImportanceSamplingForwardPass <: AbstractForwardPass end
+
+function forward_pass(
+    model::PolicyGraph{T},
+    options::Options,
+    pass::ImportanceSamplingForwardPass,
+) where {T}
+    @assert isempty(model.belief_partition)
+    scenario_path = Tuple{T,Any}[]
+    sampled_states = Dict{Symbol,Float64}[]
+    cumulative_value = 0.0
+    incoming_state_value = copy(options.initial_state)
+    node_index = sample_noise(model.root_children)
+    node = model[node_index]
+    noise = sample_noise(node.noise_terms)
+    while node_index !== nothing
+        node = model[node_index]
+        lock(node.lock)
+        try
+            push!(scenario_path, (node_index, noise))
+            subproblem_results = solve_subproblem(
+                model,
+                node,
+                incoming_state_value,
+                noise,
+                scenario_path;
+                duality_handler = nothing,
+            )
+            cumulative_value += subproblem_results.stage_objective
+            incoming_state_value = copy(subproblem_results.state)
+            push!(sampled_states, incoming_state_value)
+            if isempty(node.bellman_function.local_thetas)
+                # First iteration with no multi-cuts, or a node with no children
+                node_index = SDDP.sample_noise(node.children)
+                if node_index !== nothing
+                    new_node = model[node_index]
+                    noise = SDDP.sample_noise(new_node.noise_terms)
+                end
+            else
+                objectives = map(node.bellman_function.local_thetas) do t
+                    return JuMP.value(t.theta)
+                end
+                adjusted_probability = fill(NaN, length(objectives))
+                nominal_probability = Float64[]
+                support = Any[]
+                for child in node.children
+                    for noise in model[child.term].noise_terms
+                        push!(nominal_probability, child.probability * noise.probability)
+                        push!(support, (child.term, noise.term))
+                    end
+                end
+                @assert length(nominal_probability) == length(objectives)
+                _ = SDDP.adjust_probability(
+                    options.risk_measures[node_index],
+                    adjusted_probability,
+                    nominal_probability,
+                    support,
+                    objectives,
+                    model.objective_sense == MOI.MIN_SENSE,
+                )
+                terms = SDDP.Noise.(support, adjusted_probability)
+                node_index, noise = SDDP.sample_noise(terms)
+            end
+        finally
+            unlock(node.lock)
+        end
+    end
+    return (
+        scenario_path = scenario_path,
+        sampled_states = sampled_states,
+        objective_states = NTuple{0,Float64}[],
+        belief_states = Tuple{Int,Dict{T,Float64}}[],
+        cumulative_value = cumulative_value,
+    )
+end
