@@ -234,11 +234,7 @@ function test_hydro_valley_model()
 
     ## Markov prices
     markov_model = hydro_valley_model(; hasstagewiseinflows = false)
-    SDDP.train(
-        markov_model;
-        iteration_limit = 10,
-        print_level = 0,
-    )
+    SDDP.train(markov_model; iteration_limit = 10, print_level = 0)
     @test SDDP.calculate_bound(markov_model) ≈ 851.8 atol = 1e-2
 
     ## stagewise inflows and Markov prices
