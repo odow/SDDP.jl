@@ -128,8 +128,11 @@ function _line_search(
     evals::Ref{Int},
 ) where {F<:Function}
     while _norm(α * p) > 1e-3 * max(1.0, _norm(x))
+        @show α
+        @show p
         xₖ = x + α * p
         ret = f(xₖ)
+        @show ret
         evals[] -= 1
         if ret === nothing  # Infeasible. So take a smaller step
             α /= 2
