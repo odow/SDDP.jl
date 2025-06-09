@@ -21,6 +21,8 @@ function util_test_directory(dir, exclude = String[])
     return
 end
 
+include(joinpath(dirname(@__DIR__), "docs", "src", "examples", "generation_expansion.jl"))
+error()
 @testset "SDDP.jl" begin
     util_test_directory(".", ["runtests.jl"])
     util_test_directory(joinpath(dirname(@__DIR__), "docs", "src", "examples"))
