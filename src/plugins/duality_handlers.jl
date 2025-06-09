@@ -288,7 +288,9 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     end
     L_star, λ_star =
         LocalImprovementSearch.minimize(lagrange.method, λ_star, conic_obj) do x
+            @show x
             L_k = _solve_primal_problem(node.subproblem, x, h_expr, h_k)
+            @show L_k
             return L_k === nothing ? nothing : (s * L_k, s * h_k)
         end
     for (i, (_, state)) in enumerate(node.states)
