@@ -43,7 +43,7 @@ to this purpose:
 The default algorithm is a modified version of BFGS, with a specialized
 back-tracking inexact line-search.
 """
-function minnimize end
+function minimize end
 
 function minimize(f::Function, x₀::Vector{Float64}, lower_bound::Float64 = -Inf)
     return minimize(f, BFGS(100), x₀, lower_bound)
@@ -71,18 +71,20 @@ function minimize(
     # We assume that the initial iterate is feasible
     xₖ = x₀
     fₖ, ∇fₖ = f(xₖ)::Tuple{Float64,Vector{Float64}}
+    @show fₖ, ∇fₖ
     # Initial step-length
     αₖ = 1.0
     # Evaluation counter
     evals = Ref(bfgs.evaluation_limit)
-    while true
+    for _ in 1:bfgs.evaluation_limit
         # Search direction. We could be clever here and maintain B⁻¹, but we're
         # only ever going to be solving this for very small |x| << 100 problems,
         # so taking the linear solve every time is okay. (The MIP solve is much
         # more of a bottleneck.)
         pₖ = B \ -∇fₖ
+        @show pₖ
         # Run line search in direction `pₖ`
-        αₖ, fₖ₊₁, ∇fₖ₊₁ = _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals)
+        @show αₖ, fₖ₊₁, ∇fₖ₊₁ = _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals)
         if _norm(αₖ * pₖ) / max(1.0, _norm(xₖ)) < 1e-3
             # Small steps! Probably at the edge of the feasible region.
             # Return the current iterate.
