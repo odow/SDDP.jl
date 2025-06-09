@@ -31,6 +31,7 @@ function generation_expansion(duality_handler)
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, stage
+        unset_silent(sp)
         @variable(
             sp,
             0 <= invested[1:num_units] <= 1,
