@@ -106,6 +106,7 @@ function forward_pass(
                     duality_handler = nothing,
                 )
             end
+            @show subproblem_results
             # Cumulate the stage_objective.
             cumulative_value += subproblem_results.stage_objective
             # Set the outgoing state value as the incoming state value for the next

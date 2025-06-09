@@ -524,15 +524,18 @@ function solve_subproblem(
     @_timeit_threadsafe model.timer_output "get_dual_solution" begin
         objective, dual_values = get_dual_solution(node, duality_handler)
     end
+    @show node.post_optimize_hook
     if node.post_optimize_hook !== nothing
         node.post_optimize_hook(pre_optimize_ret)
     end
-    return (
+    ret = (
         state = state,
         duals = dual_values,
         objective = objective,
         stage_objective = stage_objective,
     )
+    @show ret
+    return ret
 end
 
 # Internal function to get the objective state at the root node.
@@ -786,6 +789,7 @@ function solve_all_children(
                 child_node,
                 outgoing_state,
             )
+                @show noise
                 if length(scenario_path) == length_scenario_path
                     push!(scenario_path, (child.term, noise.term))
                 else
@@ -827,6 +831,7 @@ function solve_all_children(
                             duality_handler = duality_handler,
                         )
                     end
+                    @show subproblem_results
                     push!(items.duals, subproblem_results.duals)
                     push!(items.supports, noise)
                     push!(items.nodes, child_node.index)
@@ -841,6 +846,7 @@ function solve_all_children(
                 end
             end
             @_timeit_threadsafe model.timer_output "prepare_backward_pass" begin
+                @show "Calling restore_duality"
                 restore_duality()
             end
         finally
@@ -853,6 +859,7 @@ function solve_all_children(
         # Drop the last element (i.e., the one we added).
         pop!(scenario_path)
     end
+    @show "FIished show all cihldrren"
     return
 end
 
