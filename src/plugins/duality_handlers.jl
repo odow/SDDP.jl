@@ -293,6 +293,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
             @show L_k
             return L_k === nothing ? nothing : (s * L_k, s * h_k)
         end
+    @show L_star, λ_star
     for (i, (_, state)) in enumerate(node.states)
         if JuMP.is_integer(state.in)
             JuMP.unset_integer(state.in)
@@ -302,6 +303,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     λ_solution = Dict{Symbol,Float64}(
         name => λ_star[i] for (i, name) in enumerate(keys(node.states))
     )
+    @show s * L_star, λ_solution
     return s * L_star, λ_solution
 end
 

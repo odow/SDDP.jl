@@ -85,6 +85,7 @@ function minimize(
         @show pₖ
         # Run line search in direction `pₖ`
         @show αₖ, fₖ₊₁, ∇fₖ₊₁ = _line_search(f, fₖ, ∇fₖ, xₖ, pₖ, αₖ, evals)
+        @show _norm(αₖ * pₖ) / max(1.0, _norm(xₖ)) < 1e-3
         if _norm(αₖ * pₖ) / max(1.0, _norm(xₖ)) < 1e-3
             # Small steps! Probably at the edge of the feasible region.
             # Return the current iterate.
