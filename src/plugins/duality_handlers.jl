@@ -609,3 +609,55 @@ end
 function duality_log_key(handler::BanditDuality)
     return duality_log_key(handler.arms[handler.last_arm_index].handler)
 end
+
+# ==================== FixedDiscreteDuality ==================== #
+
+"""
+    FixedDiscreteDuality()
+
+Obtain dual variables in the backward pass by solving the MIP, fixing the
+integrality, and then solving the continuous relaxation.
+
+## Warning
+
+This duality handler is experimental. It is not guaranteed to produce a valid
+bound on the optimal policy. Use it at your own risk.
+
+## Example
+
+Train a model using `FixedDiscreteDuality` by passing it to the
+`duality_handler` keyword argument of [`SDDP.train`](@ref):
+
+```jldoctest
+julia> using SDDP
+
+julia> import HiGHS, Ipopt
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0.0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x, SDDP.State, Int, initial_value = 0)
+           @constraint(sp, x.out >= x.in + 0.5)
+           @stageobjective(sp, x.out)
+       end;
+
+julia> SDDP.train(
+           model;
+           duality_handler = SDDP.FixedDiscreteDuality(),
+           print_level = 0,
+       )
+```
+"""
+mutable struct FixedDiscreteDuality <: AbstractDualityHandler end
+
+function get_dual_solution(node::Node, handler::FixedDiscreteDuality)
+    undo_fix = fix_discrete_variables(node.subproblem)
+    optimize!(node.subproblem)
+    ret = get_dual_solution(node, ContinuousConicDuality())
+    undo_fix()
+    return ret
+end
+
+duality_log_key(::FixedDiscreteDuality) = "F"
