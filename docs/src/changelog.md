@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Added the [Example: batteries](@ref) tutorial (#849)
  - Improved various docstrings (#851), (#855)
  - Updated to HiGHS v1.11 (#850)
- - Skiped a failing test on 32-bit (#853)
+ - Skipped a failing test on 32-bit (#853)
  - Added Oscar's Part IV report (#857)
 
 ## v1.11.0 (April 16, 2025)
