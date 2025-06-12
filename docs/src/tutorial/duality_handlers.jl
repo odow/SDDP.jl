@@ -236,9 +236,6 @@ duality_handler = SDDP.BanditDuality(
     SDDP.StrengthenedConicDuality(),
     SDDP.LagrangianDuality(),
 )
-
-#-
-
 train_and_evaluate_bounds(model_1, duality_handler)
 
 #-

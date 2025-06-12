@@ -515,6 +515,15 @@ mutable struct BanditDuality <: AbstractDualityHandler
     end
 end
 
+function Base.empty!(handler::BanditDuality)
+    for arm in handler.arms
+        empty!(arm.rewards)
+    end
+    handler.last_arm_index = 1
+    handler.logs_seen = 1
+    return
+end
+
 function Base.show(io::IO, handler::BanditDuality)
     print(io, "BanditDuality with arms:")
     for arm in handler.arms
@@ -565,7 +574,7 @@ function _update_arm(handler::BanditDuality)
 end
 
 function _update_rewards(handler::BanditDuality, log::Vector{Log})
-    # The bound is monotonic, so instead of worring about whether we are
+    # The bound is monotonic, so instead of worrying about whether we are
     # maximizing or minimizing, let's just compute:
     #          |bound_t - bound_{t-1}|
     # reward = -----------------------
@@ -587,6 +596,9 @@ function prepare_backward_pass(
     options::Options,
 )
     log = options.log
+    if isempty(log)
+        empty!(handler)
+    end
     if length(log) > handler.logs_seen
         _update_rewards(handler, log)
         handler.logs_seen = length(log)
