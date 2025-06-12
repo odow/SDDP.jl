@@ -6,9 +6,9 @@
 # # Duality handlers
 
 # The purpose of this tutorial is to demonstrate trivial examples that expose
-# the strengths and weaknesses of each duality hander.
+# the strengths and weaknesses of each duality handler.
 
-# For more information on SDDP's duality handlers, see [Integrality](@ref).
+# For more information on SDDP.jl's duality handlers, see [Integrality](@ref).
 
 # This tutorial uses the following packages:
 
@@ -34,9 +34,9 @@ function train_and_evaluate_bounds(
     model = model_fn()
     SDDP.train(model; print_level, duality_handler, kwargs...)
     simulations = SDDP.simulate(model, 1)
-    upper_bound = sum(data[:stage_objective] for data in only(simulations))
     lower_bound = SDDP.calculate_bound(model)
     println("lower_bound: $(lower_bound)")
+    upper_bound = sum(data[:stage_objective] for data in only(simulations))
     println("upper_bound: $(upper_bound)")
     return
 end
@@ -57,6 +57,10 @@ end
 # The default duality handler in SDDP.jl is [`ContinuousConicDuality`](@ref).
 # To compute a cut, it solves the continuous relaxation of the MIP.
 
+# In the same way that solution to a relaxed linear program may be far from the
+# optimal MIP solution, the biggest downside to [`ContinuousConicDuality`](@ref)
+# is that many models have large gaps between the lower and upper bound:
+
 function model_1()
     return SDDP.LinearPolicyGraph(;
         stages = 2,
@@ -74,10 +78,6 @@ function model_1()
         end
     end
 end
-
-# In the same way that solution to a relaxed linear program may be far from the
-# optimal MIP solution, the biggest downside to [`ContinuousConicDuality`](@ref)
-# is that many models have large gaps between the lower and upper bound:
 
 train_and_evaluate_bounds(model_1, SDDP.ContinuousConicDuality())
 
@@ -214,7 +214,7 @@ train_and_evaluate_bounds(model_4, SDDP.LagrangianDuality())
 
 # This relationship is not guaranteed to hold. In some models
 # [`ContinuousConicDuality`](@ref) may find a cheaper policy than
-# [`LagrangianDuality`](@ref), even though the latter finds a tigher lower
+# [`LagrangianDuality`](@ref), even though the latter finds a tighter lower
 # bound. In general, you should experiment with different duality handlers to
 # see what works best for your problem.
 
@@ -256,10 +256,9 @@ train_and_evaluate_bounds(model_3, duality_handler)
 
 # ## [`FixedDiscreteDuality`](@id section_fixed)
 
-# The duality handlers that we have discussed, [`ContinuousConicDuality`](@ref),
-# [`StrengthenedConicDuality`](@ref), [`LagrangianDuality`](@ref), and
-# [`BanditDuality`](@ref) all have the useful feature that their cuts produce
-# valid lower bounds on the optimal policy cost.
+# [`ContinuousConicDuality`](@ref), [`StrengthenedConicDuality`](@ref), and
+# [`LagrangianDuality`](@ref)) all have the useful feature that their cuts
+# produce valid lower bounds on the optimal policy cost.
 
 # [`FixedDiscreteDuality`](@ref) is a duality handler that does NOT guarantee
 # a valid lower bound.
@@ -291,10 +290,6 @@ train_and_evaluate_bounds(model_2, SDDP.FixedDiscreteDuality())
 
 train_and_evaluate_bounds(model_2, SDDP.StrengthenedConicDuality())
 
-# In this case, the solution is the same as [`LagrangianDuality`](@ref):
-
-train_and_evaluate_bounds(model_2, SDDP.LagrangianDuality())
-
 # In other cases, [`FixedDiscreteDuality`](@ref) finds a solution that looks
 # optimal, but because the lower bound lies, we have no way of formally
 # verifying if the upper bound is optimal:
@@ -313,6 +308,6 @@ train_and_evaluate_bounds(model_4, SDDP.LagrangianDuality())
 # We implemented [`FixedDiscreteDuality`](@ref) because it may be useful. In
 # some cases, it can find solutions that are tighter than
 # [`StrengthenedConicDuality`](@ref) for the same computational cost. However,
-# because the cuts are not guaranteed to be gloablly valid, you should exercise
-# great caution when interpretinng the solution. It may be a useful heuristic,
+# because the cuts are not guaranteed to be globally valid, you should exercise
+# great caution when interpreting the solution. It may be a useful heuristic,
 # or it may not. Use [`FixedDiscreteDuality`](@ref) at your own risk.
