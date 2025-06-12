@@ -254,6 +254,8 @@ mutable struct LagrangianDuality{O} <: AbstractDualityHandler
     end
 end
 
+_sparsify(x::Float64) = ifelse(abs(x) < 1e-15, 0.0, x)
+
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     undo_relax = _relax_integrality(node, lagrange.optimizer)
     optimize!(node.subproblem)
@@ -298,7 +300,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         JuMP.fix(state.in, x_in_value[i]; force = true)
     end
     λ_solution = Dict{Symbol,Float64}(
-        name => λ_star[i] for (i, name) in enumerate(keys(node.states))
+        k => _sparsify(λ_star[i]) for (i, k) in enumerate(keys(node.states))
     )
     return s * L_star, λ_solution
 end
