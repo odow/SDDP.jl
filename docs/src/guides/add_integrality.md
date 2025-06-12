@@ -37,6 +37,7 @@ The duality handlers implemented in SDDP.jl are:
  - [`SDDP.LagrangianDuality`](@ref)
  - [`SDDP.StrengthenedConicDuality`](@ref)
  - [`SDDP.BanditDuality`](@ref)
+ - [`SDDP.FixedDiscreteDuality`](@ref)
 
 Here is an example:
 
