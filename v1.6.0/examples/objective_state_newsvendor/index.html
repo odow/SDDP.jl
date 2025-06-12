@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Newsvendor · SDDP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SDDP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../../tutorial/objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../../tutorial/markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../../tutorial/plotting/">Plotting tools</a></li><li><a class="tocitem" href="../../tutorial/warnings/">Words of warning</a></li><li><a class="tocitem" href="../../tutorial/arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../../tutorial/decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../../tutorial/objective_states/">Objective states</a></li><li><a class="tocitem" href="../../tutorial/pglib_opf/">Alternative forward models</a></li><li><a class="tocitem" href="../../tutorial/mdps/">Example: Markov Decision Processes</a></li><li><a class="tocitem" href="../../tutorial/example_newsvendor/">Example: Two-stage Newsvendor</a></li><li><a class="tocitem" href="../../tutorial/example_reservoir/">Example: deterministic to stochastic</a></li><li><a class="tocitem" href="../../tutorial/example_milk_producer/">Example: the milk producer</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../explanation/theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../explanation/risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox" checked/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li class="is-active"><a class="tocitem" href>Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Newsvendor</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Newsvendor</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/objective_state_newsvendor.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Newsvendor"><a class="docs-heading-anchor" href="#Newsvendor">Newsvendor</a><a id="Newsvendor-1"></a><a class="docs-heading-anchor-permalink" href="#Newsvendor" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/odow/SDDP.jl/gh-pages?filepath=v1.6.0/examples/objective_state_newsvendor.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/odow/SDDP.jl/blob/gh-pages/v1.6.0/examples/objective_state_newsvendor.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><p>This example is based on the classical newsvendor problem, but features an AR(1) spot-price.</p><pre><code class="nohighlight hljs">   V(x[t-1], ω[t]) =         max p[t] × u[t]
+                      subject to x[t] = x[t-1] - u[t] + ω[t]
+                                 u[t] ∈ [0, 1]
+                                 x[t] ≥ 0
+                                 p[t] = p[t-1] + ϕ[t]</code></pre><p>The initial conditions are</p><pre><code class="nohighlight hljs">x[0] = 2.0
+p[0] = 1.5
+ω[t] ~ {0, 0.05, 0.10, ..., 0.45, 0.5} with uniform probability.
+ϕ[t] ~ {-0.25, -0.125, 0.125, 0.25} with uniform probability.</code></pre><pre><code class="language-julia hljs">using SDDP, HiGHS, Statistics, Test
+
+function joint_distribution(; kwargs...)
+    names = tuple([first(kw) for kw in kwargs]...)
+    values = tuple([last(kw) for kw in kwargs]...)
+    output_type = NamedTuple{names,Tuple{eltype.(values)...}}
+    distribution = map(output_type, Base.product(values...))
+    return distribution[:]
+end
+
+function newsvendor_example(; cut_type)
+    model = SDDP.PolicyGraph(
+        SDDP.LinearGraph(3),
+        sense = :Max,
+        upper_bound = 50.0,
+        optimizer = HiGHS.Optimizer,
+    ) do subproblem, stage
+        @variables(subproblem, begin
+            x &gt;= 0, (SDDP.State, initial_value = 2)
+            0 &lt;= u &lt;= 1
+            w
+        end)
+        @constraint(subproblem, x.out == x.in - u + w)
+        SDDP.add_objective_state(
+            subproblem,
+            initial_value = 1.5,
+            lower_bound = 0.75,
+            upper_bound = 2.25,
+            lipschitz = 100.0,
+        ) do y, ω
+            return y + ω.price_noise
+        end
+        noise_terms = joint_distribution(
+            demand = 0:0.05:0.5,
+            price_noise = [-0.25, -0.125, 0.125, 0.25],
+        )
+        SDDP.parameterize(subproblem, noise_terms) do ω
+            JuMP.fix(w, ω.demand)
+            price = SDDP.objective_state(subproblem)
+            @stageobjective(subproblem, price * u)
+        end
+    end
+    SDDP.train(
+        model;
+        log_frequency = 10,
+        time_limit = 20.0,
+        cut_type = cut_type,
+    )
+    @test SDDP.calculate_bound(model) ≈ 4.04 atol = 0.05
+    results = SDDP.simulate(model, 500)
+    objectives =
+        [sum(s[:stage_objective] for s in simulation) for simulation in results]
+    @test round(Statistics.mean(objectives); digits = 2) ≈ 4.04 atol = 0.1
+    return
+end
+
+newsvendor_example(cut_type = SDDP.SINGLE_CUT)
+newsvendor_example(cut_type = SDDP.MULTI_CUT)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : 8.51840e+04
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 3]
+  AffExpr in MOI.LessThan{Float64}        : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [3, 4]
+  VariableRef in MOI.LessThan{Float64}    : [3, 3]
+numerical stability report
+  matrix range     [8e-01, 2e+00]
+  objective range  [1e+00, 2e+00]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [5e+01, 5e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   3.412500e+00  5.484827e+00  1.095819e-01      1650   1
+        20   4.406250e+00  4.472007e+00  2.233911e-01      3000   1
+        30   4.875000e+00  4.446365e+00  3.193910e-01      4350   1
+        40   3.975000e+00  4.440303e+00  4.247909e-01      5700   1
+        50   4.062500e+00  4.438364e+00  5.759690e-01      7350   1
+        60   4.162500e+00  4.096084e+00  7.250879e-01      8700   1
+        70   5.575000e+00  4.089659e+00  8.449440e-01     10050   1
+        80   4.612500e+00  4.089204e+00  1.014781e+00     11700   1
+        90   4.312500e+00  4.088025e+00  1.147382e+00     13050   1
+       100   2.775000e+00  4.086832e+00  1.356058e+00     14700   1
+       110   4.375000e+00  4.086730e+00  1.485377e+00     16050   1
+       120   4.350000e+00  4.086313e+00  1.621675e+00     17400   1
+       130   2.987500e+00  4.086047e+00  1.756984e+00     18750   1
+       140   4.268750e+00  4.085989e+00  1.901431e+00     20100   1
+       150   3.631250e+00  4.085945e+00  2.061166e+00     21450   1
+       160   4.475000e+00  4.085747e+00  2.203598e+00     22800   1
+       170   4.175000e+00  4.085718e+00  2.344675e+00     24150   1
+       180   4.662500e+00  4.085706e+00  2.490100e+00     25500   1
+       190   3.893750e+00  4.085706e+00  2.639551e+00     26850   1
+       200   3.068750e+00  4.085689e+00  2.861401e+00     28500   1
+       210   2.950000e+00  4.085670e+00  3.014443e+00     29850   1
+       220   4.312500e+00  4.085656e+00  3.175779e+00     31200   1
+       230   3.975000e+00  4.085385e+00  3.335948e+00     32550   1
+       240   5.112500e+00  4.085365e+00  3.529446e+00     33900   1
+       250   3.350000e+00  4.085331e+00  3.686196e+00     35250   1
+       260   2.812500e+00  4.085150e+00  3.847039e+00     36600   1
+       270   5.000000e+00  4.085119e+00  4.013808e+00     37950   1
+       280   4.781250e+00  4.085051e+00  4.186796e+00     39300   1
+       290   3.125000e+00  4.084915e+00  4.382784e+00     40650   1
+       300   4.875000e+00  4.084899e+00  4.607582e+00     42300   1
+       310   4.781250e+00  4.084887e+00  4.779787e+00     43650   1
+       320   3.093750e+00  4.084887e+00  4.959496e+00     45000   1
+       330   5.212500e+00  4.084874e+00  5.159378e+00     46350   1
+       340   4.375000e+00  4.084871e+00  5.337498e+00     47700   1
+       350   3.612500e+00  4.084867e+00  5.510089e+00     49050   1
+       360   5.125000e+00  4.084862e+00  5.693076e+00     50400   1
+       370   2.775000e+00  4.084862e+00  5.894694e+00     51750   1
+       380   4.375000e+00  4.084862e+00  6.077880e+00     53100   1
+       390   5.087500e+00  4.084862e+00  6.253514e+00     54450   1
+       400   2.925000e+00  4.084862e+00  6.490505e+00     56100   1
+       410   5.250000e+00  4.084862e+00  6.672731e+00     57450   1
+       420   3.862500e+00  4.084862e+00  6.875376e+00     58800   1
+       430   4.500000e+00  4.084862e+00  7.062051e+00     60150   1
+       440   2.737500e+00  4.084862e+00  7.249619e+00     61500   1
+       450   5.375000e+00  4.084862e+00  7.438569e+00     62850   1
+       460   3.125000e+00  4.084862e+00  7.649916e+00     64200   1
+       470   5.000000e+00  4.084832e+00  7.848563e+00     65550   1
+       480   5.000000e+00  4.084824e+00  8.033935e+00     66900   1
+       490   4.562500e+00  4.084824e+00  8.210217e+00     68250   1
+       500   4.500000e+00  4.084824e+00  8.489553e+00     69900   1
+       510   3.850000e+00  4.084824e+00  8.683385e+00     71250   1
+       520   3.493750e+00  4.084824e+00  8.874127e+00     72600   1
+       530   4.712500e+00  4.084819e+00  9.074423e+00     73950   1
+       540   5.100000e+00  4.084816e+00  9.301217e+00     75300   1
+       550   4.062500e+00  4.084816e+00  9.494293e+00     76650   1
+       560   4.412500e+00  4.084816e+00  9.697927e+00     78000   1
+       570   4.487500e+00  4.084816e+00  9.899612e+00     79350   1
+       580   4.862500e+00  4.084816e+00  1.009849e+01     80700   1
+       590   4.000000e+00  4.084816e+00  1.032410e+01     82050   1
+       600   2.950000e+00  4.084814e+00  1.058873e+01     83700   1
+       610   2.812500e+00  4.084812e+00  1.078666e+01     85050   1
+       620   4.425000e+00  4.084806e+00  1.099306e+01     86400   1
+       630   5.175000e+00  4.084804e+00  1.120989e+01     87750   1
+       640   4.556250e+00  4.084800e+00  1.140315e+01     89100   1
+       650   2.818750e+00  4.084796e+00  1.159881e+01     90450   1
+       660   3.187500e+00  4.084794e+00  1.179154e+01     91800   1
+       670   4.312500e+00  4.084765e+00  1.201115e+01     93150   1
+       680   5.750000e+00  4.084762e+00  1.220969e+01     94500   1
+       690   4.425000e+00  4.084754e+00  1.241105e+01     95850   1
+       700   3.975000e+00  4.084754e+00  1.269055e+01     97500   1
+       710   3.693750e+00  4.084754e+00  1.291091e+01     98850   1
+       720   2.600000e+00  4.084753e+00  1.310564e+01    100200   1
+       730   3.875000e+00  4.084743e+00  1.330983e+01    101550   1
+       740   4.387500e+00  4.084743e+00  1.352174e+01    102900   1
+       750   4.875000e+00  4.084743e+00  1.374022e+01    104250   1
+       760   4.675000e+00  4.084743e+00  1.393612e+01    105600   1
+       770   4.275000e+00  4.084743e+00  1.411802e+01    106950   1
+       780   3.512500e+00  4.084743e+00  1.430221e+01    108300   1
+       790   4.881250e+00  4.084743e+00  1.452900e+01    109650   1
+       800   5.225000e+00  4.084743e+00  1.479146e+01    111300   1
+       810   3.493750e+00  4.084743e+00  1.500614e+01    112650   1
+       820   4.875000e+00  4.084743e+00  1.522406e+01    114000   1
+       830   4.125000e+00  4.084743e+00  1.545790e+01    115350   1
+       840   3.925000e+00  4.084743e+00  1.566644e+01    116700   1
+       850   3.900000e+00  4.084743e+00  1.586636e+01    118050   1
+       860   3.450000e+00  4.084743e+00  1.607338e+01    119400   1
+       870   4.437500e+00  4.084743e+00  1.630323e+01    120750   1
+       880   4.106250e+00  4.084743e+00  1.650135e+01    122100   1
+       890   4.518750e+00  4.084743e+00  1.669549e+01    123450   1
+       900   3.750000e+00  4.084743e+00  1.698831e+01    125100   1
+       910   4.112500e+00  4.084743e+00  1.722704e+01    126450   1
+       920   4.762500e+00  4.084743e+00  1.744916e+01    127800   1
+       930   5.525000e+00  4.084743e+00  1.766577e+01    129150   1
+       940   3.325000e+00  4.084743e+00  1.788847e+01    130500   1
+       950   4.475000e+00  4.084743e+00  1.812614e+01    131850   1
+       960   4.918750e+00  4.084743e+00  1.834568e+01    133200   1
+       970   3.856250e+00  4.084743e+00  1.855355e+01    134550   1
+       980   3.131250e+00  4.084743e+00  1.877564e+01    135900   1
+       990   2.900000e+00  4.084743e+00  1.901825e+01    137250   1
+      1000   4.900000e+00  4.084743e+00  1.931438e+01    138900   1
+      1010   3.437500e+00  4.084743e+00  1.953393e+01    140250   1
+      1020   4.350000e+00  4.084743e+00  1.975708e+01    141600   1
+      1030   4.100000e+00  4.084743e+00  1.999438e+01    142950   1
+      1031   5.200000e+00  4.084743e+00  2.001940e+01    143085   1
+-------------------------------------------------------------------
+status         : time_limit
+total time (s) : 2.001940e+01
+total solves   : 143085
+best bound     :  4.084743e+00
+simulation ci  :  4.102492e+00 ± 4.516587e-02
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : 8.51840e+04
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 3]
+  AffExpr in MOI.LessThan{Float64}        : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [3, 4]
+  VariableRef in MOI.LessThan{Float64}    : [3, 3]
+numerical stability report
+  matrix range     [8e-01, 2e+00]
+  objective range  [1e+00, 2e+00]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [5e+01, 5e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   4.518750e+00  4.740254e+00  3.398509e-01      1650   1
+        20   3.437500e+00  4.051784e+00  7.721610e-01      3000   1
+        30   3.081250e+00  4.048491e+00  1.730276e+00      4650   1
+        40   4.375000e+00  4.045849e+00  2.532768e+00      6000   1
+        50   5.074432e+00  4.043337e+00  3.483475e+00      7350   1
+        60   5.556250e+00  4.042937e+00  5.139642e+00      9000   1
+        70   3.562500e+00  4.041456e+00  6.512522e+00     10350   1
+        80   4.500000e+00  4.039255e+00  8.620237e+00     12000   1
+        90   4.962500e+00  4.038745e+00  1.012396e+01     13350   1
+       100   3.525000e+00  4.038518e+00  1.251012e+01     15000   1
+       110   5.237500e+00  4.038247e+00  1.441519e+01     16350   1
+       120   5.375000e+00  4.038089e+00  1.640041e+01     17700   1
+       130   4.137500e+00  4.038005e+00  1.850929e+01     19050   1
+       137   3.668750e+00  4.037957e+00  2.016396e+01     19995   1
+-------------------------------------------------------------------
+status         : time_limit
+total time (s) : 2.016396e+01
+total solves   : 19995
+best bound     :  4.037957e+00
+simulation ci  :  4.154035e+00 ± 1.287518e-01
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../no_strong_duality/">« No strong duality</a><a class="docs-footer-nextpage" href="../sldp_example_one/">SLDP: example 1 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Monday 3 July 2023 00:10">Monday 3 July 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
