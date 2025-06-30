@@ -7,6 +7,34 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.12.0 (June 11, 2025)
+
+### Added
+
+ - Added [`FixedDiscreteDuality`](@ref) (#856)
+
+### Other
+
+ - Added the [Example: batteries](@ref) tutorial (#849)
+ - Improved various docstrings (#851), (#855)
+ - Updated to HiGHS v1.11 (#850)
+ - Skipped a failing test on 32-bit (#853)
+ - Added Oscar's Part IV report (#857)
+
+## v1.11.0 (April 16, 2025)
+
+### Added
+
+ - Added an `optimizer` argument to the various duality handlers to allow
+   different optimizers on the forward and backward passes (#846)
+
+### Other
+
+ - Updated `/papers` and their various citations (#841)
+ - Fixed environment loading in `test/plugins/parallel_schemes.jl` (#842)
+ - Fixed a bug in `/papers/msppy/msppy_hydro_thermal.jl` (#843)
+ - Rotated `DOCUMENTER_KEY` (#845)
+
 ## v1.10.5 (April 2, 2025)
 
 ### Fixed

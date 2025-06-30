@@ -18,13 +18,11 @@ procs = Distributed.addprocs(4)
 #    code loading.
 #
 # As hack, run the following script:
-@everywhere begin
-    import Pkg
-    # @__FILE__         := test/plugins/parallel_schemes.jl
-    # @__DIR__          := test/plugins
-    # dirname(@__DIR__) := test
-    Pkg.activate(joinpath(dirname(@__DIR__), "Project.toml"))
-    Pkg.instantiate()
+if VERSION < v"1.9"
+    @everywhere begin
+        import Pkg
+        Pkg.activate(joinpath(dirname(@__DIR__), "Project.toml"))
+    end
 end
 
 @everywhere begin

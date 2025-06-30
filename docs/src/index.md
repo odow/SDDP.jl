@@ -80,75 +80,101 @@ you know where to look for certain things.
 
 If you use `SDDP.jl`, we ask that you please cite the following:
 ```
-@article{dowson_sddp.jl,
-	title = {{SDDP}.jl: a {Julia} package for stochastic dual dynamic programming},
+@article{dowson_2021_sddp.jl,
+	title   = {{SDDP}.jl: a {Julia} package for stochastic dual dynamic programming},
 	journal = {INFORMS Journal on Computing},
-	author = {Dowson, O. and Kapelevich, L.},
-	doi = {https://doi.org/10.1287/ijoc.2020.0987},
-	year = {2021},
-	volume = {33},
-	issue = {1},
-	pages = {27-33},
+	author  = {Dowson, O. and Kapelevich, L.},
+	doi     = {https://doi.org/10.1287/ijoc.2020.0987},
+	year    = {2021},
+	volume  = {33},
+	issue   = {1},
+	pages   = {27-33},
 }
 ```
-Here is an earlier [preprint](http://www.optimization-online.org/DB_FILE/2017/12/6388.pdf).
+Here is an earlier [preprint](https://github.com/odow/SDDP.jl/blob/master/papers/other/dowson_kapelevich_2021.pdf).
+
+### Policy graphs
 
 If you use the infinite horizon functionality, we ask that you please cite the
 following:
 ```
-@article{dowson_policy_graph,
-	title = {The policy graph decomposition of multistage stochastic optimization problems},
-	doi = {https://doi.org/10.1002/net.21932},
+@article{dowson_2020_policy_graph,
+	title   = {The policy graph decomposition of multistage stochastic optimization problems},
 	journal = {Networks},
-	author = {Dowson, O.},
-	volume = {76},
-	issue = {1},
-	pages = {3-23},
-	year = {2020}
+	author  = {Dowson, O.},
+	doi     = {https://doi.org/10.1002/net.21932},
+	year    = {2020},
+	volume  = {76},
+	issue   = {1},
+	pages   = {3-23}
 }
 ```
-Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2018/11/6914.html).
+Here is an earlier [preprint](https://github.com/odow/SDDP.jl/blob/master/papers/policy_graph/preprint.pdf).
+
+### Partially observable
 
 If you use the partially observable functionality, we ask that you please cite
 the following:
 ```
-@article{dowson_pomsp,
-	title = {Partially observable multistage stochastic programming},
-	doi = {https://doi.org/10.1016/j.orl.2020.06.005},
+@article{dowson_2020_pomsp,
+	title   = {Partially observable multistage stochastic programming},
 	journal = {Operations Research Letters},
-	author = {Dowson, O. and Morton, D.P. and Pagnoncelli, B.K.},
-	volume = {48},
-	issue = {4},
-	pages = {505-512},
-	year = {2020}
+	author  = {Dowson, O. and Morton, D.P. and Pagnoncelli, B.K.},
+	doi     = {https://doi.org/10.1016/j.orl.2020.06.005},
+	year    = {2020},
+	volume  = {48},
+	issue   = {4},
+	pages   = {505-512}
 }
 ```
-Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2019/03/7141.html).
+Here is an earlier [preprint](https://github.com/odow/SDDP.jl/blob/master/papers/partially_observable/preprint.pdf).
+
+### Objective states
 
 If you use the objective state functionality, we ask that you please cite the
 following:
 ```
-@article{downward_objective,
-	title = {Stochastic dual dynamic programming with stagewise-dependent objective uncertainty},
-	doi = {https://doi.org/10.1016/j.orl.2019.11.002},
+@article{downward_2020_objective,
+	title   = {Stochastic dual dynamic programming with stagewise-dependent objective uncertainty},
 	journal = {Operations Research Letters},
-	author = {Downward, A. and Dowson, O. and Baucke, R.},
-	volume = {48},
-	issue = {1},
-	pages = {33-39},
-	year = {2020}
+	author  = {Downward, A. and Dowson, O. and Baucke, R.},
+	doi     = {https://doi.org/10.1016/j.orl.2019.11.002},
+	year    = {2020},
+	volume  = {48},
+	issue   = {1},
+	pages   = {33-39}
 }
 ```
-Here is an earlier [preprint](http://www.optimization-online.org/DB_FILE/2018/02/6454.pdf).
+Here is an earlier [preprint](https://github.com/odow/SDDP.jl/blob/master/papers/objective_uncertainty/preprint.pdf).
+
+### Entropic
 
 If you use the entropic risk measure, we ask that you please cite the following:
 ```
-@article{dowson_entropic,
-	title = {Incorporating convex risk measures into multistage stochastic programming algorithms},
-	doi = {https://doi.org/10.1007/s10479-022-04977-w},
+@article{dowson_2022_entropic,
+	title   = {Incorporating convex risk measures into multistage stochastic programming algorithms},
 	journal = {Annals of Operations Research},
-	author = {Dowson, O. and Morton, D.P. and Pagnoncelli, B.K.},
-	year = {2022},
+	author  = {Dowson, O. and Morton, D.P. and Pagnoncelli, B.K.},
+	doi     = {https://doi.org/10.1007/s10479-022-04977-w},
+	year    = {2022},
 }
 ```
-Here is an earlier [preprint](http://www.optimization-online.org/DB_HTML/2020/08/7984.html).
+Here is an earlier [preprint](https://github.com/odow/SDDP.jl/blob/master/papers/entropic/preprint.pdf).
+
+### Bi-objective
+
+If you use the bi-objective functionality, we ask that you please cite the
+following:
+```
+@article{dowson_2022_biobjective,
+	title   = {Bi-objective multistage stochastic linear programming},
+	journal = {Mathematical Programming},
+	author  = {Dowson, O. and Morton, D.P. and Downward, A.},
+	doi     = {https://doi.org/10.1007/s10107-022-01872-x},
+	year    = {2022},
+	volume  = {196},
+	pages   = {907–933}
+}
+```
+
+Here is an earlier [preprint](https://github.com/odow/SDDP.jl/blob/master/papers/biobjective_sddp/preprint.pdf).

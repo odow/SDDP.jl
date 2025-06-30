@@ -43,7 +43,7 @@ to this purpose:
 The default algorithm is a modified version of BFGS, with a specialized
 back-tracking inexact line-search.
 """
-function minnimize end
+function minimize end
 
 function minimize(f::Function, x₀::Vector{Float64}, lower_bound::Float64 = -Inf)
     return minimize(f, BFGS(100), x₀, lower_bound)

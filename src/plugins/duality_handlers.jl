@@ -68,11 +68,45 @@ end
 # ========================= Continuous relaxation ============================ #
 
 """
-    ContinuousConicDuality()
+    ContinuousConicDuality(optimizer = nothing)
 
 Compute dual variables in the backward pass using conic duality, relaxing any
 binary or integer restrictions as necessary.
 
+## Arguments
+
+ * `optimizer`: if  specified, SDDP.jl will call
+   `JuMP.set_optimizer(subproblem, optimizer)` before solving problems on the
+   backward pass. Use this option only if your default optimizer does not
+   support returning a dual solution after the integrality has been relaxed.
+
+## Example
+
+Train a model using `ContinuousConicDuality` by passing it to the
+`duality_handler` keyword argument of [`SDDP.train`](@ref):
+
+```jldoctest
+julia> import SDDP, HiGHS, Ipopt
+
+julia> duality_handler = SDDP.ContinuousConicDuality(Ipopt.Optimizer)
+SDDP.ContinuousConicDuality{DataType}(Ipopt.Optimizer)
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0.0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x, SDDP.State, Int, initial_value = 0)
+           @constraint(sp, x.out >= x.in + 0.5)
+           @stageobjective(sp, x.out)
+       end;
+
+julia> SDDP.train(
+           model;
+           duality_handler = SDDP.ContinuousConicDuality(),
+           print_level = 0,
+       )
+```
 ## Theory
 
 Given the problem
@@ -89,7 +123,13 @@ min Cᵢ(x̄, u, w) + θᵢ
     x̄ - x == 0          [λ]
 ```
 """
-struct ContinuousConicDuality <: AbstractDualityHandler end
+struct ContinuousConicDuality{O} <: AbstractDualityHandler
+    optimizer::O
+
+    function ContinuousConicDuality(optimizer = nothing)
+        return new{typeof(optimizer)}(optimizer)
+    end
+end
 
 function get_dual_solution(node::Node, ::ContinuousConicDuality)
     if !_has_dual_solution(node)
@@ -106,15 +146,27 @@ function get_dual_solution(node::Node, ::ContinuousConicDuality)
     return objective_value(node.subproblem), λ
 end
 
-function _relax_integrality(node::Node)
+function _relax_integrality(node::Node, optimizer)
     if !node.has_integrality
         return () -> nothing
+    elseif optimizer === nothing
+        return JuMP.relax_integrality(node.subproblem)
     end
-    return JuMP.relax_integrality(node.subproblem)
+    undo_relax = JuMP.relax_integrality(node.subproblem)
+    JuMP.set_optimizer(node.subproblem, optimizer)
+    return () -> begin
+        JuMP.set_optimizer(node.subproblem, node.optimizer)
+        undo_relax()
+        return
+    end
 end
 
-function prepare_backward_pass(node::Node, ::ContinuousConicDuality, ::Options)
-    return _relax_integrality(node)
+function prepare_backward_pass(
+    node::Node,
+    handler::ContinuousConicDuality,
+    ::Options,
+)
+    return _relax_integrality(node, handler.optimizer)
 end
 
 duality_log_key(::ContinuousConicDuality) = " "
@@ -122,7 +174,8 @@ duality_log_key(::ContinuousConicDuality) = " "
 # =========================== LagrangianDuality ============================== #
 
 """
-    LagrangianDuality(;
+    LagrangianDuality(
+        optimizer = nothing;
         method::LocalImprovementSearch.AbstractSearchMethod =
             LocalImprovementSearch.BFGS(100),
     )
@@ -131,8 +184,41 @@ Obtain dual variables in the backward pass using Lagrangian duality.
 
 ## Arguments
 
+ * `optimizer`: if  specified, SDDP.jl will call
+   `JuMP.set_optimizer(subproblem, optimizer)` before solving problems on the
+   backward pass. Use this option only if your default optimizer does not
+   support returning a dual solution after the integrality has been relaxed.
+
  * `method`: the `LocalImprovementSearch` method for maximizing the Lagrangian
    dual problem.
+
+## Example
+
+Train a model using `LagrangianDuality` by passing it to the `duality_handler`
+keyword argument of [`SDDP.train`](@ref):
+
+```jldoctest
+julia> import SDDP, HiGHS, Ipopt
+
+julia> duality_handler = SDDP.LagrangianDuality(Ipopt.Optimizer)
+SDDP.LagrangianDuality{DataType}(SDDP.LocalImprovementSearch.BFGS(100), Ipopt.Optimizer)
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0.0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x, SDDP.State, Int, initial_value = 0)
+           @constraint(sp, x.out >= x.in + 0.5)
+           @stageobjective(sp, x.out)
+       end;
+
+julia> SDDP.train(
+           model;
+           duality_handler = SDDP.LagrangianDuality(),
+           print_level = 0,
+       )
+```
 
 ## Theory
 
@@ -149,10 +235,12 @@ L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' h(x̄)
 ```
 and where `h(x̄) = x̄ - x`.
 """
-mutable struct LagrangianDuality <: AbstractDualityHandler
+mutable struct LagrangianDuality{O} <: AbstractDualityHandler
     method::LocalImprovementSearch.AbstractSearchMethod
+    optimizer::O
 
-    function LagrangianDuality(;
+    function LagrangianDuality(
+        optimizer = nothing;
         method = LocalImprovementSearch.BFGS(100),
         kwargs...,
     )
@@ -162,12 +250,14 @@ mutable struct LagrangianDuality <: AbstractDualityHandler
                 "See the documentation for details.",
             )
         end
-        return new(method)
+        return new{typeof(optimizer)}(method, optimizer)
     end
 end
 
+_sparsify(x::Float64) = ifelse(abs(x) < 1e-15, 0.0, x)
+
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
-    undo_relax = _relax_integrality(node)
+    undo_relax = _relax_integrality(node, lagrange.optimizer)
     optimize!(node.subproblem)
     conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_relax()
@@ -210,7 +300,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
         JuMP.fix(state.in, x_in_value[i]; force = true)
     end
     λ_solution = Dict{Symbol,Float64}(
-        name => λ_star[i] for (i, name) in enumerate(keys(node.states))
+        k => _sparsify(λ_star[i]) for (i, k) in enumerate(keys(node.states))
     )
     return s * L_star, λ_solution
 end
@@ -242,9 +332,46 @@ duality_log_key(::LagrangianDuality) = "L"
 # ==================== StrengthenedConicDuality ==================== #
 
 """
-    StrengthenedConicDuality()
+    StrengthenedConicDuality(optimizer = nothing)
 
 Obtain dual variables in the backward pass using strengthened conic duality.
+
+This method is also known in the literature as Strengthened Benders.
+
+## Arguments
+
+ * `optimizer`: if  specified, SDDP.jl will call
+   `JuMP.set_optimizer(subproblem, optimizer)` before solving problems on the
+   backward pass. Use this option only if your default optimizer does not
+   support returning a dual solution after the integrality has been relaxed.
+
+## Example
+
+Train a model using `StrengthenedConicDuality` by passing it to the
+`duality_handler` keyword argument of [`SDDP.train`](@ref):
+
+```jldoctest
+julia> import SDDP, HiGHS, Ipopt
+
+julia> duality_handler = SDDP.StrengthenedConicDuality(Ipopt.Optimizer)
+SDDP.StrengthenedConicDuality{DataType}(Ipopt.Optimizer)
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0.0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x, SDDP.State, Int, initial_value = 0)
+           @constraint(sp, x.out >= x.in + 0.5)
+           @stageobjective(sp, x.out)
+       end;
+
+julia> SDDP.train(
+           model;
+           duality_handler = SDDP.StrengthenedConicDuality(),
+           print_level = 0,
+       )
+```
 
 ## Theory
 
@@ -263,10 +390,16 @@ L(λ) = min Cᵢ(x̄, u, w) + θᵢ - λ' (x̄ - x`)
 ```
 to obtain a better estimate of the intercept.
 """
-mutable struct StrengthenedConicDuality <: AbstractDualityHandler end
+mutable struct StrengthenedConicDuality{O} <: AbstractDualityHandler
+    optimizer::O
 
-function get_dual_solution(node::Node, ::StrengthenedConicDuality)
-    undo_relax = _relax_integrality(node)
+    function StrengthenedConicDuality(optimizer = nothing)
+        return new{typeof(optimizer)}(optimizer)
+    end
+end
+
+function get_dual_solution(node::Node, handler::StrengthenedConicDuality)
+    undo_relax = _relax_integrality(node, handler.optimizer)
     optimize!(node.subproblem)
     conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_relax()
@@ -305,14 +438,60 @@ mutable struct _BanditArm{T}
 end
 
 """
-    BanditDuality()
+    BanditDuality(args::AbstractDualityHandler...)
 
 Formulates the problem of choosing a duality handler as a multi-armed bandit
-problem. The arms to choose between are:
+problem. The arms to choose between are given by `args`.
+
+    BanditDuality(optimizer::Any = nothing)
+
+The default implementation of `BanditDuality` that picks between the arms:
 
  * [`ContinuousConicDuality`](@ref)
  * [`StrengthenedConicDuality`](@ref)
- * [`LagrangianDuality`](@ref)
+
+If `optimizer` is specified, SDDP.jl will call
+`JuMP.set_optimizer(subproblem, optimizer)` before solving problems on the
+backward pass. Use this option only if your default optimizer does not support
+returning a dual solution after the integrality has been relaxed.
+
+## Example
+
+Train a model using `BanditDuality` by passing it to the `duality_handler`
+keyword argument of [`SDDP.train`](@ref):
+
+```jldoctest
+julia> import SDDP, HiGHS, Ipopt
+
+julia> SDDP.BanditDuality(Ipopt.Optimizer)
+BanditDuality with arms:
+ * SDDP.ContinuousConicDuality{DataType}(Ipopt.Optimizer)
+ * SDDP.StrengthenedConicDuality{DataType}(Ipopt.Optimizer)
+
+julia> duality_handler = SDDP.BanditDuality(
+           SDDP.ContinuousConicDuality(),
+           SDDP.StrengthenedConicDuality(),
+           SDDP.LagrangianDuality(),
+       )
+BanditDuality with arms:
+ * SDDP.ContinuousConicDuality{Nothing}(nothing)
+ * SDDP.StrengthenedConicDuality{Nothing}(nothing)
+ * SDDP.LagrangianDuality{Nothing}(SDDP.LocalImprovementSearch.BFGS(100), nothing)
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0.0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x, SDDP.State, Int, initial_value = 0)
+           @constraint(sp, x.out >= x.in + 0.5)
+           @stageobjective(sp, x.out)
+       end;
+
+julia> SDDP.train(model; duality_handler = duality_handler, print_level = 0)
+```
+
+## Theory
 
 Our problem isn't a typical multi-armed bandit for a two reasons:
 
@@ -338,6 +517,15 @@ mutable struct BanditDuality <: AbstractDualityHandler
     end
 end
 
+function Base.empty!(handler::BanditDuality)
+    for arm in handler.arms
+        empty!(arm.rewards)
+    end
+    handler.last_arm_index = 1
+    handler.logs_seen = 1
+    return
+end
+
 function Base.show(io::IO, handler::BanditDuality)
     print(io, "BanditDuality with arms:")
     for arm in handler.arms
@@ -346,8 +534,11 @@ function Base.show(io::IO, handler::BanditDuality)
     return
 end
 
-function BanditDuality()
-    return BanditDuality(ContinuousConicDuality(), StrengthenedConicDuality())
+function BanditDuality(optimizer = nothing)
+    return BanditDuality(
+        ContinuousConicDuality(optimizer),
+        StrengthenedConicDuality(optimizer),
+    )
 end
 
 function _update_arm(handler::BanditDuality)
@@ -385,7 +576,7 @@ function _update_arm(handler::BanditDuality)
 end
 
 function _update_rewards(handler::BanditDuality, log::Vector{Log})
-    # The bound is monotonic, so instead of worring about whether we are
+    # The bound is monotonic, so instead of worrying about whether we are
     # maximizing or minimizing, let's just compute:
     #          |bound_t - bound_{t-1}|
     # reward = -----------------------
@@ -407,6 +598,9 @@ function prepare_backward_pass(
     options::Options,
 )
     log = options.log
+    if isempty(log)
+        empty!(handler)
+    end
     if length(log) > handler.logs_seen
         _update_rewards(handler, log)
         handler.logs_seen = length(log)
@@ -429,3 +623,55 @@ end
 function duality_log_key(handler::BanditDuality)
     return duality_log_key(handler.arms[handler.last_arm_index].handler)
 end
+
+# ==================== FixedDiscreteDuality ==================== #
+
+"""
+    FixedDiscreteDuality()
+
+Obtain dual variables in the backward pass by solving the MIP, fixing the
+integrality, and then solving the continuous relaxation.
+
+## Warning
+
+This duality handler is experimental. It is not guaranteed to produce a valid
+bound on the optimal policy. Use it at your own risk.
+
+## Example
+
+Train a model using `FixedDiscreteDuality` by passing it to the
+`duality_handler` keyword argument of [`SDDP.train`](@ref):
+
+```jldoctest
+julia> using SDDP
+
+julia> import HiGHS, Ipopt
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0.0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x, SDDP.State, Int, initial_value = 0)
+           @constraint(sp, x.out >= x.in + 0.5)
+           @stageobjective(sp, x.out)
+       end;
+
+julia> SDDP.train(
+           model;
+           duality_handler = SDDP.FixedDiscreteDuality(),
+           print_level = 0,
+       )
+```
+"""
+mutable struct FixedDiscreteDuality <: AbstractDualityHandler end
+
+function get_dual_solution(node::Node, handler::FixedDiscreteDuality)
+    undo_fix = fix_discrete_variables(node.subproblem)
+    optimize!(node.subproblem)
+    ret = get_dual_solution(node, ContinuousConicDuality())
+    undo_fix()
+    return ret
+end
+
+duality_log_key(::FixedDiscreteDuality) = "F"

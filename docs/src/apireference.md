@@ -347,6 +347,11 @@ SDDP.StrengthenedConicDuality
 SDDP.BanditDuality
 ```
 
+## `FixedDiscreteDuality`
+```@docs
+SDDP.FixedDiscreteDuality
+```
+
 ## `simulate`
 ```@docs
 SDDP.simulate

@@ -8,6 +8,7 @@ module TestDualityHandlers
 using SDDP
 using Test
 import HiGHS
+import Ipopt
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -424,7 +425,7 @@ end
 
 function test_BanditDuality_show()
     @test sprint(show, SDDP.BanditDuality()) ==
-          "BanditDuality with arms:\n * SDDP.ContinuousConicDuality()\n * SDDP.StrengthenedConicDuality()"
+          "BanditDuality with arms:\n * SDDP.ContinuousConicDuality{Nothing}(nothing)\n * SDDP.StrengthenedConicDuality{Nothing}(nothing)"
     return
 end
 
@@ -474,6 +475,63 @@ function test_deprecate_integrality_handler()
     end
     @test_throws err SDDP.SDDiP()
     @test_throws err SDDP.ContinuousRelaxation()
+    return
+end
+
+function test_duality_handler_with_fallback_optimizer()
+    function _train_model_with_duality_handler(duality_handler)
+        model = SDDP.LinearPolicyGraph(;
+            stages = 3,
+            lower_bound = 0.0,
+            optimizer = HiGHS.Optimizer,
+        ) do sp, t
+            @variable(sp, 0 <= x <= 10, SDDP.State, Int, initial_value = 1)
+            @constraint(sp, x.out >= x.in)
+            @stageobjective(sp, x.out)
+        end
+        SDDP.train(model; print_level = 0, duality_handler)
+        return model
+    end
+    n_calls = Ref{Int}(0)
+    function my_optimizer()
+        n_calls[] += 1
+        return Ipopt.Optimizer()
+    end
+    for (duality_handler, keys) in (
+        SDDP.ContinuousConicDuality => (" ",),
+        SDDP.StrengthenedConicDuality => ("S",),
+        SDDP.LagrangianDuality => ("L",),
+        SDDP.BanditDuality => (" ", "S"),
+    )
+        n_calls[] = 0
+        handler = duality_handler(my_optimizer)
+        model = _train_model_with_duality_handler(handler)
+        @test isapprox(SDDP.calculate_bound(model), 3.0; atol = 1e-6)
+        @test n_calls[] > 0
+        for iteration in model.most_recent_training_results.log
+            @test iteration.duality_key in keys
+        end
+    end
+    return
+end
+
+function test_FixedDiscreteDuality()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, x, SDDP.State, Int, initial_value = 0)
+        @constraint(sp, x.out >= x.in + 0.5)
+        @stageobjective(sp, x.out)
+    end
+    SDDP.train(
+        model;
+        duality_handler = SDDP.FixedDiscreteDuality(),
+        print_level = 0,
+    )
+    @test SDDP.calculate_bound(model) ≈ 3.0
+    @test SDDP.duality_log_key(SDDP.FixedDiscreteDuality()) == "F"
     return
 end
 

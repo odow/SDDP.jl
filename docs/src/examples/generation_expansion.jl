@@ -90,4 +90,6 @@ function generation_expansion(duality_handler)
 end
 
 generation_expansion(SDDP.ContinuousConicDuality())
-generation_expansion(SDDP.LagrangianDuality())
+if Sys.WORD_SIZE == 64                                  #src
+    generation_expansion(SDDP.LagrangianDuality())      #src
+end                                                     #src

@@ -17,6 +17,7 @@ multistock
 parameteriz(es|ing)
 performant
 preprint
+presolve
 Rethrow
 src
 stagewise
@@ -34,6 +35,7 @@ Geilo
 Gurobi
 Ipopt
 Javascript
+Kvitfjell
 Louveaux
 Markovian
 [Ll]ipschitz
