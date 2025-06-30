@@ -95,7 +95,7 @@ function msppy_hydro_thermal()
             inflow[i = 1:4] == inflow_initial[i]
         end)
         @stageobjective(sp,
-            sum(deficit_obj[i] * sum(deficit[i, :]) for i in 1:4) +
+            sum(deficit_obj[j] * sum(deficit[:, j]) for j in 1:4) +
             sum(thermal_obj[i][j] * thermal[i, j] for i in 1:4 for j in 1:N_THERMAL[i]))
         @constraints(sp, begin
             [i = 1:4], sum(deficit[i, :]) + hydroGeneration[i] +
