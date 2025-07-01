@@ -665,7 +665,7 @@ mutable struct FixedDiscreteDuality <: AbstractDualityHandler end
 function get_dual_solution(node::Node, handler::FixedDiscreteDuality)
     undo_fix = fix_discrete_variables(node.subproblem)
     optimize!(node.subproblem)
-    conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
+    _, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_fix()
     num_states = length(node.states)
     λ_k, h_k, x = zeros(num_states), zeros(num_states), zeros(num_states)
@@ -680,13 +680,10 @@ function get_dual_solution(node::Node, handler::FixedDiscreteDuality)
     for (i, (_, state)) in enumerate(node.states)
         JuMP.fix(state.in, x[i]; force = true)
     end
-    # If lagrangian_obj is `nothing`, then the primal problem didn't solve
-    # correctly, probably because it was unbounded (i.e., the dual was
-    # infeasible.) But we got the dual from solving the LP relaxation so it must
-    # be feasible! Sometimes however, the dual from the LP solver might be
-    # numerically infeasible when solved in the primal. That's a shame :(
-    # If so, return the conic_obj instead.
-    return something(lagrangian_obj, conic_obj), conic_dual
+    # If the Lagrangian fails to solve, we can't do anything, because the
+    # conic_obj is not necessarily valid.
+    @assert !isnothing(lagrangian_obj)
+    return lagrangian_obj, conic_dual
 end
 
 duality_log_key(::FixedDiscreteDuality) = "F"
