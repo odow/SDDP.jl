@@ -680,10 +680,17 @@ function get_dual_solution(node::Node, handler::FixedDiscreteDuality)
     for (i, (_, state)) in enumerate(node.states)
         JuMP.fix(state.in, x[i]; force = true)
     end
-    # If the Lagrangian fails to solve, we can't do anything, because the
-    # conic_obj is not necessarily valid.
-    @assert !isnothing(lagrangian_obj)
-    return lagrangian_obj, conic_dual
+    if lagrangian_obj !== nothing
+        return lagrangian_obj, conic_dual
+    end
+    # The conic_dual is infeasible for the Lagrangian. We need to bail with
+    # _something_, but we can't use the conic_obj because it might cut off part
+    # of the true value function.
+    undo_relax = relax_integrality(node.subproblem)
+    optimize!(node.subproblem)
+    ret = get_dual_solution(node, ContinuousConicDuality())
+    undo_relax()
+    return ret
 end
 
 duality_log_key(::FixedDiscreteDuality) = "F"

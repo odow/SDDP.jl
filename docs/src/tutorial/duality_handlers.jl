@@ -269,7 +269,7 @@ train_and_evaluate_bounds(model_2, SDDP.FixedDiscreteDuality())
 
 train_and_evaluate_bounds(model_2, SDDP.StrengthenedConicDuality())
 
-# Othertimes, it is weaker:
+# Other times, it is weaker:
 
 train_and_evaluate_bounds(model_1, SDDP.FixedDiscreteDuality())
 
