@@ -500,6 +500,7 @@ function test_duality_handler_with_fallback_optimizer()
     for (duality_handler, keys) in (
         SDDP.ContinuousConicDuality => (" ",),
         SDDP.StrengthenedConicDuality => ("S",),
+        SDDP.FixedDiscreteDuality => ("F",),
         SDDP.LagrangianDuality => ("L",),
         SDDP.BanditDuality => (" ", "S"),
     )
