@@ -1109,8 +1109,8 @@ function train(
     time_limit::Union{Real,Nothing} = nothing,
     print_level::Int = 1,
     log_file::String = "SDDP.log",
-    log_frequency::Int = 1,
-    log_every_seconds::Float64 = log_frequency == 1 ? -1.0 : 0.0,
+    log_frequency::Union{Nothing,Int} = nothing,
+    log_every_seconds::Float64 = log_frequency === nothing ? -1.0 : 0.0,
     log_every_iteration::Bool = false,
     run_numerical_stability_report::Bool = true,
     stopping_rules = AbstractStoppingRule[],
@@ -1135,6 +1135,7 @@ function train(
         # FIXME(odow): Threaded is broken for objective states
         parallel_scheme = Serial()
     end
+    log_frequency = something(log_frequency, 1)
     if log_frequency <= 0
         msg = "`log_frequency` must be at least `1`. Got $log_frequency."
         throw(ArgumentError(msg))
