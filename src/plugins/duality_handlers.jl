@@ -668,12 +668,11 @@ mutable struct FixedDiscreteDuality{O} <: AbstractDualityHandler
     end
 end
 
+function _fix_integrality(node::Node, ::Nothing)
+    return JuMP.fix_discrete_variables(node.subproblem)
+end
+
 function _fix_integrality(node::Node, optimizer)
-    if !node.has_integrality
-        return () -> nothing
-    elseif optimizer === nothing
-        return JuMP.fix_discrete_variables(node.subproblem)
-    end
     undo_fix = JuMP.fix_discrete_variables(node.subproblem)
     JuMP.set_optimizer(node.subproblem, optimizer)
     return () -> begin
@@ -684,6 +683,9 @@ function _fix_integrality(node::Node, optimizer)
 end
 
 function get_dual_solution(node::Node, handler::FixedDiscreteDuality)
+    if !node.has_integrality
+        return get_dual_solution(node, ContinuousConicDuality())
+    end
     undo_fix = _fix_integrality(node, handler.optimizer)
     optimize!(node.subproblem)
     _, conic_dual = get_dual_solution(node, ContinuousConicDuality())
