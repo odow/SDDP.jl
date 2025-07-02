@@ -278,7 +278,7 @@ end
 
 """
     SimulationStoppingRule(;
-        sampling_scheme::AbstractSamplingScheme = SDDP.InSampleMonteCarlo(),
+        sampling_scheme::AbstractSamplingScheme = InSampleMonteCarlo(),
         replications::Int = -1,
         period::Int = -1,
         distance_tol::Float64 = 1e-2,
