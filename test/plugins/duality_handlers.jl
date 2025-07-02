@@ -515,7 +515,7 @@ function test_duality_handler_with_fallback_optimizer()
     return
 end
 
-function test_FixedDiscreteDuality()
+function test_FixedDiscreteDuality_infeasible_lagrangian()
     model = SDDP.LinearPolicyGraph(;
         stages = 2,
         lower_bound = 0.0,
@@ -530,7 +530,27 @@ function test_FixedDiscreteDuality()
         duality_handler = SDDP.FixedDiscreteDuality(),
         print_level = 0,
     )
-    @test SDDP.calculate_bound(model) ≈ 3.0
+    @test SDDP.calculate_bound(model) ≈ 2.5
+    @test SDDP.duality_log_key(SDDP.FixedDiscreteDuality()) == "F"
+    return
+end
+
+function test_FixedDiscreteDuality_feasible_lagrangian()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, -1 <= x <= 5, SDDP.State, Int, initial_value = 0)
+        @constraint(sp, x.out >= x.in + 0.5)
+        @stageobjective(sp, x.out)
+    end
+    SDDP.train(
+        model;
+        duality_handler = SDDP.FixedDiscreteDuality(),
+        print_level = 0,
+    )
+    @test SDDP.calculate_bound(model) ≈ 1.0
     @test SDDP.duality_log_key(SDDP.FixedDiscreteDuality()) == "F"
     return
 end

@@ -253,32 +253,14 @@ train_and_evaluate_bounds(model_3, duality_handler)
 
 # ## [`FixedDiscreteDuality`](@id section_fixed)
 
-# [`ContinuousConicDuality`](@ref), [`StrengthenedConicDuality`](@ref), and
-# [`LagrangianDuality`](@ref)) all have the useful feature that their cuts
-# produce valid lower bounds on the optimal policy cost.
-
-# [`FixedDiscreteDuality`](@ref) is a duality handler that does NOT guarantee
-# a valid lower bound.
+# An alternative to [`StrengthenedConicDuality`](@ref) is [`FixedDiscreteDuality`](@ref).
 
 # It works by first solving the mixed-integer problem, fixing the discrete
 # variables to their optimal value, and then solving the continuous relaxation.
-# This has the same computational cost as [`StrengthenedConicDuality`](@ref).
+# The cut from the continuous relaxation is then modified by solving another
+# mixed-integer problem to ensure that it remains globally valid.
 
-# The resulting cuts are not guaranteed to be globally valid, and they may cut
-# off part of the true value function. This means that the "lower" bound
-# (computed using [`calculate_bound`](@ref)) may be greater than the optimal
-# policy cost.
-
-# Sometimes [`FixedDiscreteDuality`](@ref) works and finds the same solutions as
-# [`StrengthenedConicDuality`](@ref):
-
-train_and_evaluate_bounds(model_1, SDDP.FixedDiscreteDuality())
-
-#-
-
-train_and_evaluate_bounds(model_1, SDDP.StrengthenedConicDuality())
-
-# For other models, [`FixedDiscreteDuality`](@ref) can find solutions that are
+# For some models, [`FixedDiscreteDuality`](@ref) can find solutions that are
 # tighter than [`StrengthenedConicDuality`](@ref):
 
 train_and_evaluate_bounds(model_2, SDDP.FixedDiscreteDuality())
@@ -287,24 +269,10 @@ train_and_evaluate_bounds(model_2, SDDP.FixedDiscreteDuality())
 
 train_and_evaluate_bounds(model_2, SDDP.StrengthenedConicDuality())
 
-# In other cases, [`FixedDiscreteDuality`](@ref) finds a solution that looks
-# optimal, but because the lower bound lies, we have no way of formally
-# verifying if the upper bound is optimal:
+# Other times, it is weaker:
 
-train_and_evaluate_bounds(model_3, SDDP.FixedDiscreteDuality())
+train_and_evaluate_bounds(model_1, SDDP.FixedDiscreteDuality())
 
-# As another example, here's a model that also appears to be optimal:
+#-
 
-train_and_evaluate_bounds(model_4, SDDP.FixedDiscreteDuality())
-
-# But [`LagrangianDuality`](@ref) can find (and prove) that there is a better
-# solution:
-
-train_and_evaluate_bounds(model_4, SDDP.LagrangianDuality())
-
-# We implemented [`FixedDiscreteDuality`](@ref) because it may be useful. In
-# some cases, it can find solutions that are tighter than
-# [`StrengthenedConicDuality`](@ref) for the same computational cost. However,
-# because the cuts are not guaranteed to be globally valid, you should exercise
-# great caution when interpreting the solution. It may be a useful heuristic,
-# or it may not. Use [`FixedDiscreteDuality`](@ref) at your own risk.
+train_and_evaluate_bounds(model_1, SDDP.StrengthenedConicDuality())

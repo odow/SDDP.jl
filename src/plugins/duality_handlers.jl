@@ -630,12 +630,8 @@ end
     FixedDiscreteDuality()
 
 Obtain dual variables in the backward pass by solving the MIP, fixing the
-integrality, and then solving the continuous relaxation.
-
-## Warning
-
-This duality handler is experimental. It is not guaranteed to produce a valid
-bound on the optimal policy. Use it at your own risk.
+integrality, and then solving the continuous relaxation. The intercept is then
+adjusted by evaluating the Lagrangian objective value.
 
 ## Example
 
@@ -669,8 +665,31 @@ mutable struct FixedDiscreteDuality <: AbstractDualityHandler end
 function get_dual_solution(node::Node, handler::FixedDiscreteDuality)
     undo_fix = fix_discrete_variables(node.subproblem)
     optimize!(node.subproblem)
-    ret = get_dual_solution(node, ContinuousConicDuality())
+    _, conic_dual = get_dual_solution(node, ContinuousConicDuality())
     undo_fix()
+    num_states = length(node.states)
+    λ_k, h_k, x = zeros(num_states), zeros(num_states), zeros(num_states)
+    h_expr = Vector{AffExpr}(undef, num_states)
+    for (i, (key, state)) in enumerate(node.states)
+        x[i] = JuMP.fix_value(state.in)
+        h_expr[i] = @expression(node.subproblem, state.in - x[i])
+        JuMP.unfix(state.in)
+        λ_k[i] = conic_dual[key]
+    end
+    lagrangian_obj = _solve_primal_problem(node.subproblem, λ_k, h_expr, h_k)
+    for (i, (_, state)) in enumerate(node.states)
+        JuMP.fix(state.in, x[i]; force = true)
+    end
+    if lagrangian_obj !== nothing
+        return lagrangian_obj, conic_dual
+    end
+    # The conic_dual is infeasible for the Lagrangian. We need to bail with
+    # _something_, but we can't use the conic_obj because it might cut off part
+    # of the true value function.
+    undo_relax = relax_integrality(node.subproblem)
+    optimize!(node.subproblem)
+    ret = get_dual_solution(node, ContinuousConicDuality())
+    undo_relax()
     return ret
 end
 
