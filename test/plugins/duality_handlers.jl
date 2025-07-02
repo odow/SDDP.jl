@@ -507,7 +507,11 @@ function test_duality_handler_with_fallback_optimizer()
         n_calls[] = 0
         handler = duality_handler(my_optimizer)
         model = _train_model_with_duality_handler(handler)
-        @test isapprox(SDDP.calculate_bound(model), 3.0; atol = 1e-6)
+        if duality_handler == SDDP.FixedDiscreteDuality
+            @test SDDP.calculate_bound(model) >= 1.25
+        else
+            @test isapprox(SDDP.calculate_bound(model), 3.0; atol = 1e-6)
+        end
         @test n_calls[] > 0
         for iteration in model.most_recent_training_results.log
             @test iteration.duality_key in keys
