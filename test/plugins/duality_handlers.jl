@@ -500,13 +500,18 @@ function test_duality_handler_with_fallback_optimizer()
     for (duality_handler, keys) in (
         SDDP.ContinuousConicDuality => (" ",),
         SDDP.StrengthenedConicDuality => ("S",),
+        SDDP.FixedDiscreteDuality => ("F",),
         SDDP.LagrangianDuality => ("L",),
         SDDP.BanditDuality => (" ", "S"),
     )
         n_calls[] = 0
         handler = duality_handler(my_optimizer)
         model = _train_model_with_duality_handler(handler)
-        @test isapprox(SDDP.calculate_bound(model), 3.0; atol = 1e-6)
+        if duality_handler == SDDP.FixedDiscreteDuality
+            @test SDDP.calculate_bound(model) >= 1.25
+        else
+            @test isapprox(SDDP.calculate_bound(model), 3.0; atol = 1e-6)
+        end
         @test n_calls[] > 0
         for iteration in model.most_recent_training_results.log
             @test iteration.duality_key in keys
@@ -551,6 +556,26 @@ function test_FixedDiscreteDuality_feasible_lagrangian()
         print_level = 0,
     )
     @test SDDP.calculate_bound(model) ≈ 1.0
+    @test SDDP.duality_log_key(SDDP.FixedDiscreteDuality()) == "F"
+    return
+end
+
+function test_FixedDiscreteDuality_continuous()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, -1 <= x <= 5, SDDP.State, initial_value = 0)
+        @constraint(sp, x.out >= x.in + 0.5)
+        @stageobjective(sp, x.out)
+    end
+    SDDP.train(
+        model;
+        duality_handler = SDDP.FixedDiscreteDuality(),
+        print_level = 0,
+    )
+    @test SDDP.calculate_bound(model) ≈ 1.5
     @test SDDP.duality_log_key(SDDP.FixedDiscreteDuality()) == "F"
     return
 end
