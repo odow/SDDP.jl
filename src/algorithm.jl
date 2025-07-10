@@ -236,6 +236,8 @@ end
 _value(x::Real) = x
 _value(x) = JuMP.value(x)
 
+stage_objective_value(::Node, x::Union{GenericVariableRef,Real}) = _value(x)
+
 function stage_objective_value(node::Node, stage_objective)
     if node.objective_state !== nothing || node.belief_state !== nothing
         return _value(stage_objective)
