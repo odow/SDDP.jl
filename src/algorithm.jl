@@ -233,8 +233,18 @@ end
 
 # Internal function: overload for the case where JuMP.value fails on a
 # Real number.
-stage_objective_value(stage_objective::Real) = stage_objective
-stage_objective_value(stage_objective) = JuMP.value(stage_objective)
+_value(x::Real) = x
+_value(x) = JuMP.value(x)
+
+stage_objective_value(::Node, x::Union{GenericVariableRef,Real}) = _value(x)
+
+function stage_objective_value(node::Node, stage_objective)
+    if node.objective_state !== nothing || node.belief_state !== nothing
+        return _value(stage_objective)
+    end
+    theta = bellman_term(node.bellman_function)
+    return JuMP.objective_value(node.subproblem) - JuMP.value(theta)
+end
 
 """
     write_subproblem_to_file(
@@ -520,7 +530,7 @@ function solve_subproblem(
         attempt_numerical_recovery(model, node)
     end
     state = get_outgoing_state(node)
-    stage_objective = stage_objective_value(node.stage_objective)
+    stage_objective = stage_objective_value(node, node.stage_objective)
     @_timeit_threadsafe model.timer_output "get_dual_solution" begin
         objective, dual_values = get_dual_solution(node, duality_handler)
     end
