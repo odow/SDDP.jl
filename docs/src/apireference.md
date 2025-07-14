@@ -267,6 +267,11 @@ SDDP.AlternativePostIterationCallback
 SDDP.RegularizedForwardPass
 ```
 
+## `ImportanceSamplingForwardPass`
+```@docs
+SDDP.ImportanceSamplingForwardPass
+```
+
 ## `AbstractRiskMeasure`
 ```@docs
 SDDP.AbstractRiskMeasure
