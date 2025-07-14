@@ -150,7 +150,6 @@ function test_Read_write_cuts_to_file()
         upper_bound = build_ub,
         vertex_type = SDDP.SINGLE_CUT,
     )
-
     # TODO: generalize other graphs, esp. regarding types
     for (T, graph) in graphs[1:1]
         model = _create_model(graph)
@@ -160,18 +159,17 @@ function test_Read_write_cuts_to_file()
         model_inner, ub = Inner.inner_dp(
             build,
             model;
-            nstages,
+            stages = nstages,
             sense = :Min,
             optimizer = HiGHS.Optimizer,
             lower_bound = 0.0,
             bellman_function = ibf,
-            risk_measures = SDDP.Expectation(),
+            risk_measure = SDDP.Expectation(),
             print_level = 1,
         )
         @test ub ≈ 45.833 atol = 0.1
         @test SDDP.calculate_bound(model_inner) ≈ ub
         SDDP.Inner.write_vertices_to_file(model_inner, "$(T).vertices.json")
-
         model_2 = _create_model(graph, ibf)
         for (k, node) in model_2.nodes
             SDDP.set_objective(node)
@@ -203,11 +201,9 @@ end
 function create_policy_graph_with_inner_approximation()
     nstages = 20
     graph = SDDP.LinearGraph(nstages)
-
     # for some reason, creating the model with the same
     # lipschitz estimates used in the test_Read_write_cuts_to_file
     # makes the test for calculating bound after training fails
-
     return SDDP.Inner.InnerPolicyGraph(
         build,
         graph;
@@ -221,7 +217,6 @@ end
 function test_InnerPolicyGraph_LinearGraph()
     nstages = 4
     graph = SDDP.LinearGraph(nstages)
-
     # missing lipschitz_constant
     @test_throws Exception SDDP.Inner.InnerPolicyGraph(
         build,
@@ -231,7 +226,6 @@ function test_InnerPolicyGraph_LinearGraph()
         upper_bound = 1000.0,
         optimizer = HiGHS.Optimizer,
     )
-
     # missing lower_bound
     @test_throws Exception SDDP.Inner.InnerPolicyGraph(
         build,
@@ -241,7 +235,6 @@ function test_InnerPolicyGraph_LinearGraph()
         optimizer = HiGHS.Optimizer,
         lipschitz_constant = 10.0,
     )
-
     # missing upper_bound
     @test_throws Exception SDDP.Inner.InnerPolicyGraph(
         build,
@@ -251,7 +244,6 @@ function test_InnerPolicyGraph_LinearGraph()
         optimizer = HiGHS.Optimizer,
         lipschitz_constant = 10.0,
     )
-
     # missing upper_bound even when sense = :Min
     @test_throws Exception SDDP.Inner.InnerPolicyGraph(
         build,
@@ -261,7 +253,6 @@ function test_InnerPolicyGraph_LinearGraph()
         optimizer = HiGHS.Optimizer,
         lipschitz_constant = 10.0,
     )
-
     # mising lower_bound even when sense = :Max
     @test_throws Exception SDDP.Inner.InnerPolicyGraph(
         build,
@@ -271,6 +262,7 @@ function test_InnerPolicyGraph_LinearGraph()
         optimizer = HiGHS.Optimizer,
         lipschitz_constant = 10.0,
     )
+    return
 end
 
 function test_InnerPolicyGraph_other_graphs()
@@ -281,7 +273,6 @@ function test_InnerPolicyGraph_other_graphs()
         [0.5 0.5; 0.3 0.4],
         [0.5 0.5; 0.3 0.4],
     ])
-
     # rejects MarkovianGraph
     @test_throws Exception SDDP.Inner.InnerPolicyGraph(
         build,
@@ -290,9 +281,7 @@ function test_InnerPolicyGraph_other_graphs()
         upper_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     )
-
     graph = SDDP.UnicyclicGraph(0.9; num_nodes = 4)
-
     # rejects UnicyclicGraph
     @test_throws Exception SDDP.Inner.InnerPolicyGraph(
         build,
@@ -301,6 +290,7 @@ function test_InnerPolicyGraph_other_graphs()
         upper_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     )
+    return
 end
 
 function test_InnerPolicyGraph_train()
@@ -313,16 +303,15 @@ function test_InnerPolicyGraph_train()
     model = create_policy_graph_with_inner_approximation()
     SDDP.train(model; iteration_limit = 200, print_level = 0)
     @test SDDP.calculate_bound(model) >= 250.0
+    return
 end
 
 function test_InnerPolicyGraph_train_max()
     nstages = 20
     graph = SDDP.LinearGraph(nstages)
-
     # for some reason, creating the model with the same
     # lipschitz estimates used in the test_Read_write_cuts_to_file
     # makes the test for calculating bound after training fails
-
     return SDDP.Inner.InnerPolicyGraph(
         build_max,
         graph;
@@ -334,6 +323,7 @@ function test_InnerPolicyGraph_train_max()
     )
     SDDP.train(model; iteration_limit = 200, print_level = 0)
     @test SDDP.calculate_bound(model) <= -250.0
+    return
 end
 
 function test_InnerPolicGraph_simulate()
@@ -342,6 +332,7 @@ function test_InnerPolicGraph_simulate()
     results = SDDP.simulate(model, 50, [:vertex_coverage_distance])
     # TODO(rjmalves) - make more meaningful tests with the simulation result
     @test typeof(results) === Vector{Vector{Dict{Symbol,Any}}}
+    return
 end
 
 function test_dp_vertices_from_visited_states()
@@ -415,7 +406,6 @@ function builder_with_objective_state(subproblem, t)
             hydro_generation + thermal_generation == demand
         end
     )
-
     SDDP.add_objective_state(
         subproblem;
         initial_value = 10.0,
@@ -423,18 +413,17 @@ function builder_with_objective_state(subproblem, t)
     ) do fuel_cost, ω
         return ω.fuel * fuel_cost
     end
-
     Ω = [
         (fuel = f, inflow = w, demand = d) for f in [0.75, 0.9, 1.1, 1.25]
         for w in [0.0, 5.0, 10.0] for d in [7.5, 5.0, 2.5]
     ]
-
     SDDP.parameterize(subproblem, Ω) do ω
         fuel_cost = SDDP.objective_state(subproblem)
         @stageobjective(subproblem, 10 * spill + fuel_cost * thermal_generation)
         JuMP.fix(inflow, ω.inflow)
         return JuMP.fix(demand, ω.demand)
     end
+    return
 end
 
 function test_error_objective_states()
@@ -487,8 +476,8 @@ function builder_without_noises(subproblem, t)
             hydro_generation + thermal_generation == demand
         end
     )
-
     @stageobjective(subproblem, 10 * spill + thermal_generation)
+    return
 end
 
 function test_without_noises()
@@ -538,6 +527,7 @@ function builder_violating_state_lower_bound(subproblem, t)
         JuMP.fix(inflow, ω.inflow)
         return JuMP.fix(demand, ω.demand)
     end
+    return
 end
 
 function test_violating_state_lower_bound()
@@ -586,6 +576,7 @@ function builder_violating_state_upper_bound(subproblem, t)
         JuMP.fix(inflow, ω.inflow)
         return JuMP.fix(demand, ω.demand)
     end
+    return
 end
 
 function test_violating_state_upper_bound()
@@ -598,10 +589,9 @@ function test_violating_state_upper_bound()
         optimizer = HiGHS.Optimizer,
         lipschitz_constant = 10.0,
     )
-
     return
 end
 
-end  # module
+end  # module TestInnerBellmanFunctions
 
 TestInnerBellmanFunctions.runtests()
