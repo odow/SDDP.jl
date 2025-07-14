@@ -797,7 +797,7 @@ end
     inner_dp(
         build::Function,
         pb::SDDP.PolicyGraph;
-        nstages::Int,
+        stages::Int,
         sense::Symbol = :Min,
         optimizer,
         lower_bound::Float64 = -Inf,
@@ -817,7 +817,7 @@ Currently, only supports LinearPolicyGraphs.
 
 ## Keyword arguments
 
- - `nstages::Int` number of stages in the policy graph.
+ - `stages::Int` number of stages in the policy graph.
 
  - `sense::Symbol` optimization sense of the problem.
 
@@ -830,26 +830,26 @@ Currently, only supports LinearPolicyGraphs.
  - `bellman_function` an InnerBellmanFunction object (including bounds
     and Lipschitz constant information).
 
- - `risk_measures::SDDP.AbstractRiskMeasure` risk measures for the problem.
+ - `risk_measure::SDDP.AbstractRiskMeasure` risk measures for the problem.
 
  - `print_level::Int` level of verbosity.
 """
 function inner_dp(
     build::Function,
     pb::SDDP.PolicyGraph;
-    nstages::Int,
+    stages::Int,
     sense::Symbol = :Min,
     optimizer,
     lower_bound::Float64 = -Inf,
     upper_bound::Float64 = Inf,
     bellman_function,
-    risk_measures::SDDP.AbstractRiskMeasure,
+    risk_measure::SDDP.AbstractRiskMeasure,
     print_level::Int = 1,
     vertex_selection_tol::Float64 = 1e-6,
 )
     pb_inner = SDDP.LinearPolicyGraph(
         build;
-        stages = nstages,
+        stages,
         sense,
         optimizer,
         lower_bound,
@@ -861,7 +861,11 @@ function inner_dp(
         SDDP.set_objective(node)
     end
 
-    opts = SDDP.Options(pb_inner, pb.initial_root_state; risk_measures)
+    opts = SDDP.Options(
+        pb_inner,
+        pb.initial_root_state;
+        risk_measures = risk_measure,
+    )
     T = model_type(pb_inner)
     total_dt = 0.0
     for node_index in sort(collect(keys(pb.nodes)); rev = true)[2:end]
@@ -913,7 +917,7 @@ function inner_dp(
         total_dt += dt + dt_vs
     end
 
-    ub = SDDP.calculate_bound(pb_inner; risk_measure = risk_measures)
+    ub = SDDP.calculate_bound(pb_inner; risk_measure)
     if print_level > 0
         println("First-stage upper bound: ", ub)
         println("Total time for upper bound: ", total_dt)

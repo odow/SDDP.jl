@@ -3,112 +3,81 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this  #src
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.             #src
 
-# # Hydro 1d
+# # Hydro-thermal with inner approximation
 
-# This is a simple version of the hydro-thermal scheduling problem.
-# The goal is # to operate one hydro-dam and two thermal plants over time
-# in the face of inflow uncertainty.
+# This is a simple version of the hydro-thermal scheduling problem. The goal is
+# to operate one hydro-dam and two thermal plants over time in the face of
+# inflow uncertainty.
 
-using SDDP, HiGHS, Test, Random, Statistics
-import SDDP: Inner
+# The purpose of this tutorial is to provide a demonstration of the experimental
+# `SDDP.Inner` submodule.
+#
+# !!! warning
+#     The `SDDP.Inner` code in this example is experimental and the API may
+#     change in any future release.
+
+using SDDP
+using Test
+
+import HiGHS
+import Random
 
 function test_inner_hydro_1d()
-    ## Parameters
-    ## Model
-    nstages = 4
-    inivol = 83.222
-
-    ## Uncertainty
-    nscen = 10
     Random.seed!(2)
-    inflows = max.(40 .+ 20 * randn(nscen), 0)
-
-    ## Risk aversion
-    ## EAVaR(;lambda=1.0, beta=1.0) corresponds to
-    ##   ρ = λ * E[x] + (1 - λ) * AV@R(β)[x]
-    ## and β = 1.0 makes AV@R = E
-    lambda = 0.5
-    beta = 0.20
-    rho = SDDP.EAVaR(; lambda, beta)
-
-    ## Solving
-    niters = 10
-    ub_step = 10
-    solver = HiGHS.Optimizer
-
-    ## The model
-    function build_hydro(sp, t)
-        @variable(sp, 0 <= vol <= 100, SDDP.State, initial_value = inivol)
-        @variable(sp, 0 <= gh <= 60)
-        @variable(sp, 0 <= spill <= 200)
-        @variable(sp, 0 <= gt[i = 1:2] <= 15)
-        @variable(sp, 0 <= def <= 75)
-        @variable(sp, inflow)
-
-        @constraint(sp, sum(gt) + gh + def == 75)
-        @constraint(sp, vol.in + inflow - gh - spill == vol.out)
-
-        if t == 1
-            JuMP.fix(inflow, 0.0)
-        else
-            SDDP.parameterize(sp, inflows) do observed_inflow
-                JuMP.fix(inflow, observed_inflow)
-                return
-            end
+    stages = 4
+    Ω = max.(40 .+ 20.0 * randn(10), 0.0)
+    risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.2)
+    function build_subproblem(sp::JuMP.Model, t::Int)
+        @variable(sp, 0 <= x_vol <= 100, SDDP.State, initial_value = 83.222)
+        @variable(sp, 0 <= u_gh <= 60)
+        @variable(sp, 0 <= u_spill <= 200)
+        @variable(sp, 0 <= u_gt[1:2] <= 15)
+        @variable(sp, 0 <= u_def <= 75)
+        @variable(sp, w_inflow == 0.0)
+        @constraint(sp, sum(u_gt) + u_gh + u_def == 75)
+        @constraint(sp, x_vol.in + w_inflow - u_gh - u_spill == x_vol.out)
+        if t > 1
+            SDDP.parameterize(w -> JuMP.fix(w_inflow, w), sp, Ω)
         end
-
-        @stageobjective(sp, spill + 5 * gt[1] + 10 * gt[2] + 50 * def)
+        @stageobjective(sp, u_spill + 5 * u_gt[1] + 10 * u_gt[2] + 50 * u_def)
     end
-
-    ## Lower bound via cuts
-    println("Build primal outer model")
-    pb = SDDP.LinearPolicyGraph(
-        build_hydro;
-        stages = nstages,
+    println("Building and solving primal outer model for lower bounds")
+    model = SDDP.LinearPolicyGraph(
+        build_subproblem;
+        stages,
         sense = :Min,
-        optimizer = solver,
+        optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
     )
+    SDDP.train(model; iteration_limit = 10, risk_measure)
+    lower_bound = SDDP.calculate_bound(model)
 
-    println("Solving primal outer model")
-    SDDP.train(pb; iteration_limit = niters, risk_measure = rho)
-    lb = SDDP.calculate_bound(pb; risk_measure = rho)
-    println("       Risk-adjusted lower bound: ", round(lb; digits = 2))
-
-    ## Monte-Carlo policy cost estimate; does not take risk_measure into account
-    simulations = SDDP.simulate(pb, 500, [:vol, :gh, :spill, :gt, :def])
-    objective_values =
-        [sum(stage[:stage_objective] for stage in sim) for sim in simulations]
-    μ = round(mean(objective_values); digits = 2)
-    ci = round(1.96 * std(objective_values) / sqrt(500); digits = 2)
-
-    println("Risk-neutral confidence interval: ", μ, " ± ", ci)
-
-    ## Upper bound via inner approximation
-    base_Lip = 50.0
-    base_ub = 75.0 * base_Lip
-    build_Lip(t) = base_Lip * (nstages - t)
-    build_ub(t) = base_ub * (nstages - t)
-    ibf = Inner.InnerBellmanFunction(
-        build_Lip;
-        upper_bound = build_ub,
-        vertex_type = SDDP.SINGLE_CUT,
-    )
-
-    println("\nBuilding and Solving inner model for upper bounds")
-    pb_inner, ub = Inner.inner_dp(
-        build_hydro,
-        pb;
-        nstages,
+    simulations =
+        SDDP.simulate(model, 500, [:x_vol, :u_gh, :u_spill, :u_gt, :u_def])
+    objs = [sum(data[:stage_objective] for data in sim) for sim in simulations]
+    μ, ci = round.(SDDP.confidence_interval(objs); digits = 2)
+    println("Building and solving inner model for upper bounds:")
+    inner_model, upper_bound = SDDP.Inner.inner_dp(
+        build_subproblem,
+        model;
+        stages,
         sense = :Min,
-        optimizer = solver,
+        optimizer = HiGHS.Optimizer,
         lower_bound = 0.0,
-        bellman_function = ibf,
-        risk_measures = rho,
-        print_level = 1,
+        risk_measure,
+        bellman_function = SDDP.Inner.InnerBellmanFunction(
+            t -> 50.0 * (stages - t);
+            upper_bound = t -> 75.0 * 50.0 * (stages - t),
+            vertex_type = SDDP.SINGLE_CUT,
+        ),
     )
-
-    @test lb <= ub
+    @test lower_bound <= upper_bound
+    println()
+    println("Bounds:")
+    println("  Risk-neutral confidence interval: ", μ, " ± ", ci)
+    println("  Risk-adjusted lower bound: ", round(lower_bound; digits = 2))
+    println("  Risk-adjusted upper bound: ", round(upper_bound; digits = 2))
+    return
 end
 
 test_inner_hydro_1d()
