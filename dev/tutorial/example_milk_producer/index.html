@@ -18,18 +18,18 @@ import Plots</code></pre><h2 id="Background"><a class="docs-heading-anchor" href
 end
 
 simulator()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">12-element Vector{Float64}:
- 4.38093205808231
- 4.539815619757443
- 4.558346975168049
- 4.06209976412762
- 3.9749135343477877
- 4.278450105769874
- 4.221536881570315
- 4.168170716932534
- 4.3301031889735215
- 4.223650399540587
- 4.023502380664933
- 4.540935724983106</code></pre><p>It may be helpful to visualize a number of simulations of the price process:</p><pre><code class="language-julia hljs">plot = Plots.plot(
+ 4.475246797112603
+ 4.681045108778648
+ 4.9974775860993
+ 5.043370510759959
+ 4.935524029791726
+ 4.665168176794524
+ 4.5832376719414425
+ 4.282227653278754
+ 4.44259053306359
+ 4.465556087161615
+ 4.177704930769215
+ 4.432935065962268</code></pre><p>It may be helpful to visualize a number of simulations of the price process:</p><pre><code class="language-julia hljs">plot = Plots.plot(
     [simulator() for _ in 1:500];
     color = &quot;gray&quot;,
     opacity = 0.2,
@@ -38,7 +38,7 @@ simulator()</code></pre><pre class="documenter-example-output"><code class="nohi
     ylabel = &quot;Price [\$/kg]&quot;,
     xlims = (1, 12),
     ylims = (3, 9),
-)</code></pre><img src="f672c490.svg" alt="Example block output"/><p>The prices gradually revert to the mean of <span>$</span>6/kg, and there is high volatility.</p><p>We can&#39;t incorporate this price process directly into SDDP.jl, but we can fit a <a href="../../apireference/#SDDP.MarkovianGraph"><code>SDDP.MarkovianGraph</code></a> directly from the simulator:</p><pre><code class="language-julia hljs">graph = SDDP.MarkovianGraph(simulator; budget = 30, scenarios = 10_000);</code></pre><p>Here <code>budget</code> is the number of nodes in the policy graph, and <code>scenarios</code> is the number of simulations to use when estimating the transition probabilities.</p><p>The graph contains too many nodes to be show, but we can plot it:</p><pre><code class="language-julia hljs">for ((t, price), edges) in graph.nodes
+)</code></pre><img src="62fbf311.svg" alt="Example block output"/><p>The prices gradually revert to the mean of <span>$</span>6/kg, and there is high volatility.</p><p>We can&#39;t incorporate this price process directly into SDDP.jl, but we can fit a <a href="../../apireference/#SDDP.MarkovianGraph"><code>SDDP.MarkovianGraph</code></a> directly from the simulator:</p><pre><code class="language-julia hljs">graph = SDDP.MarkovianGraph(simulator; budget = 30, scenarios = 10_000);</code></pre><p>Here <code>budget</code> is the number of nodes in the policy graph, and <code>scenarios</code> is the number of simulations to use when estimating the transition probabilities.</p><p>The graph contains too many nodes to be show, but we can plot it:</p><pre><code class="language-julia hljs">for ((t, price), edges) in graph.nodes
     for ((t′, price′), probability) in edges
         Plots.plot!(
             plot,
@@ -50,7 +50,7 @@ simulator()</code></pre><pre class="documenter-example-output"><code class="nohi
     end
 end
 
-plot</code></pre><img src="e26e2f7b.svg" alt="Example block output"/><p>That looks okay. Try changing <code>budget</code> and <code>scenarios</code> to see how different Markovian policy graphs can be created.</p><h2 id="Model"><a class="docs-heading-anchor" href="#Model">Model</a><a id="Model-1"></a><a class="docs-heading-anchor-permalink" href="#Model" title="Permalink"></a></h2><p>Now that we have a Markovian graph, we can build the model. See if you can work out how we arrived at this formulation by reading the background description. Do all the variables and constraints make sense?</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
+plot</code></pre><img src="47d399ee.svg" alt="Example block output"/><p>That looks okay. Try changing <code>budget</code> and <code>scenarios</code> to see how different Markovian policy graphs can be created.</p><h2 id="Model"><a class="docs-heading-anchor" href="#Model">Model</a><a id="Model-1"></a><a class="docs-heading-anchor-permalink" href="#Model" title="Permalink"></a></h2><p>Now that we have a Markovian graph, we can build the model. See if you can work out how we arrived at this formulation by reading the background description. Do all the variables and constraints make sense?</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
     graph;
     sense = :Max,
     upper_bound = 1e2,
@@ -111,7 +111,7 @@ plot</code></pre><img src="e26e2f7b.svg" alt="Example block output"/><p>That loo
     end
     return
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 30 nodes.
- Node indices: (1, 4.582341251341571), ..., (12, 7.560351157919159)
+ Node indices: (1, 4.582265312490528), ..., (12, 7.6672411523358335)
 </code></pre><h2 id="Training-a-policy"><a class="docs-heading-anchor" href="#Training-a-policy">Training a policy</a><a id="Training-a-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Training-a-policy" title="Permalink"></a></h2><p>Now we have a model, we train a policy. The <a href="../../apireference/#SDDP.SimulatorSamplingScheme"><code>SDDP.SimulatorSamplingScheme</code></a> is used in the forward pass. It generates an out-of-sample sequence of prices using <code>simulator</code> and traverses the closest sequence of nodes in the policy graph. When calling <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a> for each subproblem, it uses the new out-of-sample price instead of the price associated with the Markov node.</p><pre><code class="language-julia hljs">SDDP.train(
     model;
     time_limit = 20,
@@ -123,7 +123,7 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
 problem
   nodes           : 30
   state variables : 5
-  scenarios       : 8.53516e+11
+  scenarios       : 1.00781e+12
   existing cuts   : false
 options
   solver          : serial mode
@@ -143,31 +143,31 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1  -5.237527e+01  5.655331e+01  1.406190e+00       162   1
-        57   1.047175e+01  7.838813e+00  2.412157e+00      9234   1
-       104   9.368445e+00  7.836944e+00  3.421899e+00     16848   1
-       148   1.102662e+01  7.833746e+00  4.441634e+00     23976   1
-       187   1.110909e+01  7.832772e+00  5.469468e+00     30294   1
-       225   9.478638e+00  7.832175e+00  6.480948e+00     36450   1
-       260   8.292394e+00  7.832135e+00  7.504152e+00     42120   1
-       293   5.989573e+00  7.831624e+00  8.526847e+00     47466   1
-       325   7.730010e+00  7.831608e+00  9.538096e+00     52650   1
-       465   1.007765e+01  7.829807e+00  1.454130e+01     75330   1
-       590   7.518179e+00  7.829299e+00  1.957634e+01     95580   1
-       601   9.244226e+00  7.829299e+00  2.004183e+01     97362   1
+         1  -1.883677e+01  5.660203e+01  1.319464e+00       162   1
+        63   9.375537e+00  7.848529e+00  2.327833e+00     10206   1
+       118   9.687521e+00  7.843976e+00  3.339682e+00     19116   1
+       168   8.560987e+00  7.843580e+00  4.358898e+00     27216   1
+       214   9.883179e+00  7.843555e+00  5.369921e+00     34668   1
+       259   8.742283e+00  7.842256e+00  6.384119e+00     41958   1
+       300   9.916436e+00  7.842251e+00  7.391130e+00     48600   1
+       338   9.668653e+00  7.841965e+00  8.415852e+00     54756   1
+       375   8.389433e+00  7.841745e+00  9.431983e+00     60750   1
+       541   8.837374e+00  7.841651e+00  1.445574e+01     87642   1
+       684   1.195984e+01  7.841508e+00  1.947161e+01    110808   1
+       699   9.059373e+00  7.841506e+00  2.003752e+01    113238   1
 -------------------------------------------------------------------
 status         : time_limit
-total time (s) : 2.004183e+01
-total solves   : 97362
-best bound     :  7.829299e+00
-simulation ci  :  8.869267e+00 ± 3.360210e-01
+total time (s) : 2.003752e+01
+total solves   : 113238
+best bound     :  7.841506e+00
+simulation ci  :  8.998657e+00 ± 1.984015e-01
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><div class="admonition is-warning" id="Warning-377017f7ca411e5e"><header class="admonition-header">Warning<a class="admonition-anchor" href="#Warning-377017f7ca411e5e" title="Permalink"></a></header><div class="admonition-body"><p>We&#39;re intentionally terminating the training early so that the documentation doesn&#39;t take too long to build. If you run this example locally, increase the time limit.</p></div></div><h2 id="Simulating-the-policy"><a class="docs-heading-anchor" href="#Simulating-the-policy">Simulating the policy</a><a id="Simulating-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Simulating-the-policy" title="Permalink"></a></h2><p>When simulating the policy, we can also use the <a href="../../apireference/#SDDP.SimulatorSamplingScheme"><code>SDDP.SimulatorSamplingScheme</code></a>.</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
     model,
     200,
     Symbol[:x_stock, :u_forward_sell, :u_spot_sell, :u_spot_buy];
     sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
-);</code></pre><p>To show how the sampling scheme uses the new out-of-sample price instead of the price associated with the Markov node, compare the index of the Markov state visited in stage 12 of the first simulation:</p><pre><code class="language-julia hljs">simulations[1][12][:node_index]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(12, 4.906709426500642)</code></pre><p>to the realization of the noise <code>(price, ω)</code> passed to <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a>:</p><pre><code class="language-julia hljs">simulations[1][12][:noise_term]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(4.8732932931966, 0.15)</code></pre><h2 id="Visualizing-the-policy"><a class="docs-heading-anchor" href="#Visualizing-the-policy">Visualizing the policy</a><a id="Visualizing-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Visualizing-the-policy" title="Permalink"></a></h2><p>Finally, we can plot the policy to gain insight (although note that we terminated the training early, so we should run the re-train the policy for more iterations before making too many judgements).</p><pre><code class="language-julia hljs">plot = Plots.plot(
+);</code></pre><p>To show how the sampling scheme uses the new out-of-sample price instead of the price associated with the Markov node, compare the index of the Markov state visited in stage 12 of the first simulation:</p><pre><code class="language-julia hljs">simulations[1][12][:node_index]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(12, 4.924125859643376)</code></pre><p>to the realization of the noise <code>(price, ω)</code> passed to <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a>:</p><pre><code class="language-julia hljs">simulations[1][12][:noise_term]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(5.414465008141381, 0.1)</code></pre><h2 id="Visualizing-the-policy"><a class="docs-heading-anchor" href="#Visualizing-the-policy">Visualizing the policy</a><a id="Visualizing-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Visualizing-the-policy" title="Permalink"></a></h2><p>Finally, we can plot the policy to gain insight (although note that we terminated the training early, so we should run the re-train the policy for more iterations before making too many judgements).</p><pre><code class="language-julia hljs">plot = Plots.plot(
     SDDP.publication_plot(simulations; title = &quot;x_stock.out&quot;) do data
         return data[:x_stock].out
     end,
@@ -181,4 +181,4 @@ numeric issues : 0
         return data[:u_spot_sell]
     end;
     layout = (2, 2),
-)</code></pre><img src="53c20388.svg" alt="Example block output"/><h2 id="Next-steps"><a class="docs-heading-anchor" href="#Next-steps">Next steps</a><a id="Next-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-steps" title="Permalink"></a></h2><ul><li>Train the policy for longer. What do you observe?</li><li>Try creating different Markovian graphs. What happens if you add more nodes?</li><li>Try different risk measures</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_reservoir/">« Example: deterministic to stochastic</a><a class="docs-footer-nextpage" href="../inventory/">Example: inventory management »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Monday 14 July 2025 02:18">Monday 14 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+)</code></pre><img src="dcd40a77.svg" alt="Example block output"/><h2 id="Next-steps"><a class="docs-heading-anchor" href="#Next-steps">Next steps</a><a id="Next-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-steps" title="Permalink"></a></h2><ul><li>Train the policy for longer. What do you observe?</li><li>Try creating different Markovian graphs. What happens if you add more nodes?</li><li>Try different risk measures</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_reservoir/">« Example: deterministic to stochastic</a><a class="docs-footer-nextpage" href="../inventory/">Example: inventory management »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Monday 14 July 2025 04:11">Monday 14 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
