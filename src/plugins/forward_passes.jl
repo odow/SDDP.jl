@@ -399,6 +399,16 @@ function forward_pass(
     return pass
 end
 
+"""
+    ImportanceSamplingForwardPass()
+
+A forward pass that explores according to the risk adjusted sampling scheme
+proposed in:
+
+Dias Garcia, J., Leal, I., Chabar, R., and Pereira, M.V. (2023). A Multicut
+Approach to Compute Upper Bounds for Risk-Averse SDDP.
+https://arxiv.org/abs/2307.13190
+"""
 struct ImportanceSamplingForwardPass <: AbstractForwardPass end
 
 function forward_pass(
@@ -446,7 +456,10 @@ function forward_pass(
                 support = Any[]
                 for child in node.children
                     for noise in model[child.term].noise_terms
-                        push!(nominal_probability, child.probability * noise.probability)
+                        push!(
+                            nominal_probability,
+                            child.probability * noise.probability,
+                        )
                         push!(support, (child.term, noise.term))
                     end
                 end
