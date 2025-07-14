@@ -289,6 +289,7 @@ function test_ImportanceSamplingForwardPass()
             return JuMP.set_upper_bound(x.out, ω)
         end
     end
+    SDDP.train(model; cut_type = SDDP.MULTI_CUT, iteration_limit = 1)
     forward_trajectory = SDDP.forward_pass(
         model,
         SDDP.Options(model, Dict(:x => 1.0)),
@@ -301,6 +302,7 @@ function test_ImportanceSamplingForwardPass()
         simulated_value += noise
     end
     @test simulated_value == forward_trajectory.cumulative_value
+
     return
 end
 
