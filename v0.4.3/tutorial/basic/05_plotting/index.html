@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Plotting tools · SDDP.jl</title><script data-outdated-warner src="../../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../../assets/documenter.js"></script><script src="../../../siteinfo.js"></script><script src="../../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../../"><img src="../../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../../">SDDP.jl</a></span></div><form class="docs-search" action="../../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox" checked/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Basic</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../01_first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../03_objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../04_markov_uncertainty/">Markovian policy graphs</a></li><li class="is-active"><a class="tocitem" href>Plotting tools</a><ul class="internal"><li><a class="tocitem" href="#Preliminaries"><span>Preliminaries</span></a></li><li><a class="tocitem" href="#Spaghetti-plots"><span>Spaghetti plots</span></a></li><li><a class="tocitem" href="#Publication-plots"><span>Publication plots</span></a></li><li><a class="tocitem" href="#Plotting-the-value-function"><span>Plotting the value function</span></a></li><li><a class="tocitem" href="#Convergence-dashboard"><span>Convergence dashboard</span></a></li></ul></li><li><a class="tocitem" href="../06_warnings/">Words of warning</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-2" type="checkbox"/><label class="tocitem" for="menuitem-2-2"><span class="docs-label">Advanced</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../advanced/11_objective_states/">Objective states</a></li><li><a class="tocitem" href="../../advanced/12_belief_states/">Belief states</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-3" type="checkbox"/><label class="tocitem" for="menuitem-2-3"><span class="docs-label">Theory</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../theory/21_theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../theory/22_risk/">Risk aversion</a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../../guides/acess_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li><a class="is-disabled">Basic</a></li><li class="is-active"><a href>Plotting tools</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Plotting tools</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/basic/05_plotting.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Plotting-tools"><a class="docs-heading-anchor" href="#Plotting-tools">Plotting tools</a><a id="Plotting-tools-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-tools" title="Permalink"></a></h1><p>In our previous tutorials, we formulated, solved, and simulated multistage stochastic optimization problems. However, we haven&#39;t really investigated what the solution looks like. Luckily, <code>SDDP.jl</code> includes a number of plotting tools to help us do that. In this tutorial, we explain the tools and make some pretty pictures.</p><h2 id="Preliminaries"><a class="docs-heading-anchor" href="#Preliminaries">Preliminaries</a><a id="Preliminaries-1"></a><a class="docs-heading-anchor-permalink" href="#Preliminaries" title="Permalink"></a></h2><p>The next two plot types help visualize the policy. Thus, we first need to create a policy and simulate some trajectories. So, let&#39;s take the model from <a href="../04_markov_uncertainty/#Markovian-policy-graphs">Markovian policy graphs</a>, train it for 20 iterations, and then simulate 100 Monte Carlo realizations of the policy.</p><pre><code class="language-julia hljs">using SDDP, GLPK
+
+Ω = [
+    (inflow = 0.0, fuel_multiplier = 1.5),
+    (inflow = 50.0, fuel_multiplier = 1.0),
+    (inflow = 100.0, fuel_multiplier = 0.75),
+]
+
+model = SDDP.MarkovianPolicyGraph(
+    transition_matrices = Array{Float64,2}[
+        [1.0]&#39;,
+        [0.75 0.25],
+        [0.75 0.25; 0.25 0.75],
+    ],
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+) do subproblem, node
+    t, markov_state = node
+    @variable(subproblem, 0 &lt;= volume &lt;= 200, SDDP.State, initial_value = 200)
+    @variables(subproblem, begin
+        thermal_generation &gt;= 0
+        hydro_generation &gt;= 0
+        hydro_spill &gt;= 0
+        inflow
+    end)
+    @constraints(
+        subproblem,
+        begin
+            volume.out == volume.in + inflow - hydro_generation - hydro_spill
+            thermal_generation + hydro_generation == 150.0
+        end
+    )
+    probability =
+        markov_state == 1 ? [1 / 6, 1 / 3, 1 / 2] : [1 / 2, 1 / 3, 1 / 6]
+    fuel_cost = [50.0, 100.0, 150.0]
+    SDDP.parameterize(subproblem, Ω, probability) do ω
+        JuMP.fix(inflow, ω.inflow)
+        @stageobjective(
+            subproblem,
+            ω.fuel_multiplier * fuel_cost[t] * thermal_generation
+        )
+    end
+end
+
+SDDP.train(model, iteration_limit = 20, run_numerical_stability_report = false)
+
+simulations = SDDP.simulate(
+    model,
+    100,
+    [:volume, :thermal_generation, :hydro_generation, :hydro_spill],
+)
+
+println(&quot;Completed $(length(simulations)) simulations.&quot;)</code></pre><pre><code class="nohighlight hljs">------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 5
+  State variables : 1
+  Scenarios       : 1.08000e+02
+  Existing cuts   : false
+  Subproblem structure                      : (min, max)
+    Variables                               : (7, 7)
+    VariableRef in MOI.LessThan{Float64}    : (1, 2)
+    VariableRef in MOI.GreaterThan{Float64} : (5, 5)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 2)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    2.250000e+04   5.588397e+03   1.637387e-02          1         18
+        2    1.315909e+04   7.975336e+03   1.706982e-02          1         36
+        3    1.875000e+03   7.975336e+03   1.766086e-02          1         54
+        4    1.125000e+04   7.975336e+03   1.826882e-02          1         72
+        5    1.875000e+03   8.064005e+03   1.887202e-02          1         90
+        6    1.875000e+03   8.064005e+03   1.947284e-02          1        108
+        7    1.875000e+03   8.064005e+03   2.013683e-02          1        126
+        8    2.750000e+04   8.072917e+03   2.081299e-02          1        144
+        9    5.000000e+03   8.072917e+03   2.147794e-02          1        162
+       10    5.000000e+03   8.072917e+03   2.214599e-02          1        180
+       11    1.875000e+03   8.072917e+03   2.274895e-02          1        198
+       12    1.625000e+04   8.072917e+03   2.341795e-02          1        216
+       13    1.875000e+03   8.072917e+03   2.417803e-02          1        234
+       14    5.000000e+03   8.072917e+03   2.487683e-02          1        252
+       15    1.875000e+03   8.072917e+03   2.555299e-02          1        270
+       16    1.125000e+04   8.072917e+03   2.630997e-02          1        288
+       17    1.875000e+03   8.072917e+03   2.703285e-02          1        306
+       18    1.125000e+04   8.072917e+03   2.774096e-02          1        324
+       19    2.437500e+04   8.072917e+03   2.854085e-02          1        342
+       20    1.875000e+03   8.072917e+03   2.929091e-02          1        360
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 2.929091e-02
+  Total solves   : 360
+  Best bound     :  8.072917e+03
+  Simulation CI  :  8.470455e+03 ± 3.687747e+03
+------------------------------------------------------------------------------
+Completed 100 simulations.
+</code></pre><p>Great! Now we have some data in <code>simulations</code> to visualize.</p><h2 id="Spaghetti-plots"><a class="docs-heading-anchor" href="#Spaghetti-plots">Spaghetti plots</a><a id="Spaghetti-plots-1"></a><a class="docs-heading-anchor-permalink" href="#Spaghetti-plots" title="Permalink"></a></h2><p>The first plotting utility we discuss is a <em>spaghetti</em> plot (you&#39;ll understand the name when you see the graph).</p><p>To create a spaghetti plot, begin by creating a new <a href="../../../apireference/#SDDP.SpaghettiPlot"><code>SDDP.SpaghettiPlot</code></a> instance as follows:</p><pre><code class="language-julia hljs">plt = SDDP.SpaghettiPlot(simulations)</code></pre><pre><code class="nohighlight hljs">A spaghetti plot with 100 scenarios and 3 stages.</code></pre><p>We can add plots to <code>plt</code> using the <a href="../../../apireference/#SDDP.add_spaghetti"><code>SDDP.add_spaghetti</code></a> function.</p><pre><code class="language-julia hljs">SDDP.add_spaghetti(plt; title = &quot;Reservoir volume&quot;) do data
+    return data[:volume].out
+end</code></pre><p>In addition to returning values from the simulation, you can compute things:</p><pre><code class="language-julia hljs">SDDP.add_spaghetti(plt; title = &quot;Fuel cost&quot;, ymin = 0, ymax = 250) do data
+    if data[:thermal_generation] &gt; 0
+        return data[:stage_objective] / data[:thermal_generation]
+    else  # No thermal generation, so return 0.0.
+        return 0.0
+    end
+end</code></pre><p>Note that there are many keyword arguments in addition to <code>title</code>. For example, we fixed the minimum and maximum values of the y-axis using <code>ymin</code> and <code>ymax</code>. See the <a href="../../../apireference/#SDDP.add_spaghetti"><code>SDDP.add_spaghetti</code></a> documentation for all the arguments.</p><p>Having built the plot, we now need to display it using <a href="../../../apireference/#SDDP.plot"><code>SDDP.plot</code></a>.</p><pre><code class="language-julia hljs">SDDP.plot(plt, &quot;spaghetti_plot.html&quot;)</code></pre><p>This should open a webpage that looks like <a href="../../../assets/spaghetti_plot.html">this one</a>.</p><p>Using the mouse, you can highlight individual trajectories by hovering over them. This makes it possible to visualize a single trajectory across multiple dimensions.</p><p>If you click on the plot, then trajectories that are close to the mouse pointer are shown darker and those further away are shown lighter.</p><h2 id="Publication-plots"><a class="docs-heading-anchor" href="#Publication-plots">Publication plots</a><a id="Publication-plots-1"></a><a class="docs-heading-anchor-permalink" href="#Publication-plots" title="Permalink"></a></h2><p>Instead of the interactive Javascript plots, you can also create some publication ready plots using the <a href="../../../apireference/#SDDP.publication_plot"><code>SDDP.publication_plot</code></a> function.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>You need to install the <a href="https://github.com/JuliaPlots/Plots">Plots.jl</a> package for this to work. We used the <code>GR</code> backend (<code>gr()</code>), but any <code>Plots.jl</code> backend should work.</p></div></div><p><a href="../../../apireference/#SDDP.publication_plot"><code>SDDP.publication_plot</code></a> implements a plot recipe to create ribbon plots of each variable against the stages. The first argument is the vector of simulation dictionaries and the second argument is the dictionary key that you want to plot. Standard <code>Plots.jl</code> keyword arguments such as <code>title</code> and <code>xlabel</code> can be used to modify the look of each plot. By default, the plot displays ribbons of the 0-100, 10-90, and 25-75 percentiles. The dark, solid line in the middle is the median (i.e. 50&#39;th percentile).</p><pre><code class="language-julia hljs">using Plots
+plot(
+    SDDP.publication_plot(simulations, title = &quot;Outgoing volume&quot;) do data
+        return data[:volume].out
+    end,
+    SDDP.publication_plot(simulations, title = &quot;Thermal generation&quot;) do data
+        return data[:thermal_generation]
+    end,
+    xlabel = &quot;Stage&quot;,
+    ylims = (0, 200),
+    layout = (1, 2),
+    margin_bottom = 5,
+    size = (1000, 300)
+)</code></pre><p>This should open a plot window with a plot that looks like:</p><p><img src="../../../assets/publication_plot.png" alt="publication plot"/></p><p>You can save this plot as a PDF using the <code>Plots.jl</code> function <code>savefig</code>:</p><pre><code class="language-julia hljs">Plots.savefig(&quot;my_picture.pdf&quot;)</code></pre><h2 id="Plotting-the-value-function"><a class="docs-heading-anchor" href="#Plotting-the-value-function">Plotting the value function</a><a id="Plotting-the-value-function-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-the-value-function" title="Permalink"></a></h2><p>You can obtain an object representing the value function of a node using <a href="../../../apireference/#SDDP.ValueFunction"><code>SDDP.ValueFunction</code></a>.</p><pre><code class="language-julia hljs">V = SDDP.ValueFunction(model[(1, 1)])</code></pre><pre><code class="nohighlight hljs">A value function for node (1, 1)</code></pre><p>The value function can be evaluated using <a href="../../../apireference/#SDDP.evaluate"><code>SDDP.evaluate</code></a>.</p><pre><code class="language-julia hljs">SDDP.evaluate(V; volume = 1)</code></pre><pre><code class="nohighlight hljs">(21423.813388991963, Dict(:volume =&gt; -102.08333333333333))</code></pre><p><code>evaluate</code> returns the heigh of the value function, and a subgradient with respect to the convex state variables.</p><p>You can also plot the value function using <a href="../../../apireference/#SDDP.plot"><code>SDDP.plot</code></a></p><pre><code class="language-julia hljs">SDDP.plot(V, volume = 0:200, filename = &quot;value_function.html&quot;)</code></pre><p>This should open a webpage that looks like <a href="../../../assets/value_function.html">this one</a>.</p><h2 id="Convergence-dashboard"><a class="docs-heading-anchor" href="#Convergence-dashboard">Convergence dashboard</a><a id="Convergence-dashboard-1"></a><a class="docs-heading-anchor-permalink" href="#Convergence-dashboard" title="Permalink"></a></h2><p>If the text-based logging isn&#39;t to your liking, you can open a visualization of the training by passing  <code>dashboard = true</code> to <a href="../../../apireference/#SDDP.train"><code>SDDP.train</code></a>.</p><pre><code class="language-julia hljs">SDDP.train(model; dashboard = true)</code></pre><p>By default, <code>dashboard = false</code> because there is an initial overhead associated with opening and preparing the plot.</p><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>The dashboard is experimental. There are known bugs associated with it, e.g., <a href="https://github.com/odow/SDDP.jl/issues/226">SDDP.jl#226</a>.</p></div></div><p>This concludes our fifth tutorial for <code>SDDP.jl</code>. In our next tutorial, <a href="../06_warnings/#Words-of-warning">Words of warning</a> we discuss some of the issues that you should be aware of when creating your own models.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../04_markov_uncertainty/">« Markovian policy graphs</a><a class="docs-footer-nextpage" href="../06_warnings/">Words of warning »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 31 August 2021 11:06">Tuesday 31 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

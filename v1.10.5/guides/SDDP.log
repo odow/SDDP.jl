@@ -1,0 +1,45 @@
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-25
+-------------------------------------------------------------------
+problem
+  nodes           : 12
+  state variables : 1
+  scenarios       : 1.00000e+00
+  existing cuts   : false
+options
+  solver          : Threaded()
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [3, 3]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 2]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [0e+00, 0e+00]
+  objective range  [1e+00, 1e+00]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   0.000000e+00  0.000000e+00  1.261001e-01        54   1
+         2   0.000000e+00  0.000000e+00  1.309180e-01        89   4
+         3   0.000000e+00  0.000000e+00  1.322820e-01       112   3
+         4   0.000000e+00  0.000000e+00  1.334641e-01       138   4
+         5   0.000000e+00  0.000000e+00  1.337142e-01       143   2
+         6   0.000000e+00  0.000000e+00  1.342881e-01       171   2
+         7   0.000000e+00  0.000000e+00  1.358821e-01       204   4
+         8   0.000000e+00  0.000000e+00  1.373460e-01       245   4
+        10   0.000000e+00  0.000000e+00  1.385961e-01       264   3
+        11   0.000000e+00  0.000000e+00  1.387751e-01       266   3
+        12   0.000000e+00  0.000000e+00  1.407762e-01       310   4
+        13   0.000000e+00  0.000000e+00  1.410251e-01       312   2
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 1.410251e-01
+total solves   : 312
+best bound     :  0.000000e+00
+simulation ci  :  0.000000e+00 ± 0.000000e+00
+numeric issues : 0
+-------------------------------------------------------------------
+

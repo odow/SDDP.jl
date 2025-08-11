@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>The farmer&#39;s problem · SDDP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">SDDP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/01_first_steps/">Basic I: first steps</a></li><li><a class="tocitem" href="../../tutorial/02_adding_uncertainty/">Basic II: adding uncertainty</a></li><li><a class="tocitem" href="../../tutorial/03_objective_uncertainty/">Basic III: objective uncertainty</a></li><li><a class="tocitem" href="../../tutorial/04_markov_uncertainty/">Basic IV: Markov uncertainty</a></li><li><a class="tocitem" href="../../tutorial/05_plotting/">Basic V: plotting</a></li><li><a class="tocitem" href="../../tutorial/06_warnings/">Basic VI: words of warning</a></li><li><a class="tocitem" href="../../tutorial/11_objective_states/">Advanced I: objective states</a></li><li><a class="tocitem" href="../../tutorial/12_belief_states/">Advanced II: belief states</a></li><li><a class="tocitem" href="../../tutorial/13_integrality/">Advanced III: integrality</a></li><li><a class="tocitem" href="../../tutorial/21_theory_intro/">Theory I: an intro to SDDP</a></li><li><a class="tocitem" href="../../tutorial/22_risk/">Theory II: risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li class="is-active"><a class="tocitem" href>The farmer&#39;s problem</a><ul class="internal"><li><a class="tocitem" href="#Problem-description"><span>Problem description</span></a></li><li><a class="tocitem" href="#Problem-data"><span>Problem data</span></a></li><li><a class="tocitem" href="#Mathematical-formulation"><span>Mathematical formulation</span></a></li><li><a class="tocitem" href="#SDDP.jl-code"><span>SDDP.jl code</span></a></li><li><a class="tocitem" href="#Training-a-policy"><span>Training a policy</span></a></li><li><a class="tocitem" href="#Checking-the-policy"><span>Checking the policy</span></a></li></ul></li><li><a class="tocitem" href="../vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>The farmer&#39;s problem</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>The farmer&#39;s problem</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/the_farmers_problem.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="The-farmer&#39;s-problem"><a class="docs-heading-anchor" href="#The-farmer&#39;s-problem">The farmer&#39;s problem</a><a id="The-farmer&#39;s-problem-1"></a><a class="docs-heading-anchor-permalink" href="#The-farmer&#39;s-problem" title="Permalink"></a></h1><p><em>This problem is taken from Section 1.1 of the book Birge, J. R., &amp; Louveaux, F. (2011). Introduction to Stochastic Programming. New York, NY: Springer New York. Paragraphs in quotes are taken verbatim.</em></p><h2 id="Problem-description"><a class="docs-heading-anchor" href="#Problem-description">Problem description</a><a id="Problem-description-1"></a><a class="docs-heading-anchor-permalink" href="#Problem-description" title="Permalink"></a></h2><blockquote><p>Consider a European farmer who specializes in raising wheat, corn, and sugar beets on his 500 acres of land. During the winter, [they want] to decide how much land to devote to each crop.</p><p>The farmer knows that at least 200 tons (T) of wheat and 240 T of corn are needed for cattle feed. These amounts can be raised on the farm or bought from a wholesaler. Any production in excess of the feeding requirement would be sold.</p><p>Over the last decade, mean selling prices have been \$170 and \$150 per ton of wheat and corn, respectively. The purchase prices are 40% more than this due to the wholesaler’s margin and transportation costs.</p><p>Another profitable crop is sugar beet, which [they expect] to sell at \$36/T; however, the European Commission imposes a quota on sugar beet production. Any amount in excess of the quota can be sold only at \$10/T. The farmer’s quota for next year is 6000 T.&quot;</p><p>Based on past experience, the farmer knows that the mean yield on [their] land is roughly 2.5 T, 3 T, and 20 T per acre for wheat, corn, and sugar beets, respectively.</p><p>[To introduce uncertainty,] assume some correlation among the yields of the different crops. A very simplified representation of this would be to assume that years are good, fair, or bad for all crops, resulting in above average, average, or below average yields for all crops. To fix these ideas, <em>above</em> and <em>below</em> average indicate a yield 20% above or below the mean yield.</p></blockquote><h2 id="Problem-data"><a class="docs-heading-anchor" href="#Problem-data">Problem data</a><a id="Problem-data-1"></a><a class="docs-heading-anchor-permalink" href="#Problem-data" title="Permalink"></a></h2><p>The area of the farm.</p><pre><code class="language-julia">MAX_AREA = 500.0</code></pre><pre><code class="language-none">500.0</code></pre><p>There are three crops:</p><pre><code class="language-julia">CROPS = [:wheat, :corn, :sugar_beet]</code></pre><pre><code class="language-none">3-element Array{Symbol,1}:
+ :wheat     
+ :corn      
+ :sugar_beet</code></pre><p>Each of the crops has a different planting cost (\$/acre).</p><pre><code class="language-julia">PLANTING_COST = Dict(
+    :wheat      =&gt; 150.0,
+    :corn       =&gt; 230.0,
+    :sugar_beet =&gt; 260.0
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 3 entries:
+  :wheat =&gt; 150.0
+  :sugar_beet =&gt; 260.0
+  :corn =&gt; 230.0</code></pre><p>The farmer requires a minimum quantity of wheat and corn, but not of sugar beet (tonnes).</p><pre><code class="language-julia">MIN_QUANTITIES = Dict(
+    :wheat      =&gt; 200.0,
+    :corn       =&gt; 240.0,
+    :sugar_beet =&gt;   0.0
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 3 entries:
+  :wheat =&gt; 200.0
+  :sugar_beet =&gt; 0.0
+  :corn =&gt; 240.0</code></pre><p>In Europe, there is a quota system for producing crops. The farmer owns the following quota for each crop (tonnes):</p><pre><code class="language-julia">QUOTA_MAX = Dict(
+    :wheat      =&gt;     Inf,
+    :corn       =&gt;     Inf,
+    :sugar_beet =&gt; 6_000.0
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 3 entries:
+  :wheat =&gt; Inf
+  :sugar_beet =&gt; 6000.0
+  :corn =&gt; Inf</code></pre><p>The farmer can sell crops produced under the quota for the following amounts (\$/tonne):</p><pre><code class="language-julia">SELL_IN_QUOTA = Dict(
+    :wheat      =&gt; 170.0,
+    :corn       =&gt; 150.0,
+    :sugar_beet =&gt;  36.0
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 3 entries:
+  :wheat =&gt; 170.0
+  :sugar_beet =&gt; 36.0
+  :corn =&gt; 150.0</code></pre><p>If they sell more than their alloted quota, the farmer earns the following on each tonne of crop above the quota (\$/tonne):</p><pre><code class="language-julia">SELL_NO_QUOTA = Dict(
+    :wheat      =&gt;  0.0,
+    :corn       =&gt;  0.0,
+    :sugar_beet =&gt; 10.0
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 3 entries:
+  :wheat =&gt; 0.0
+  :sugar_beet =&gt; 10.0
+  :corn =&gt; 0.0</code></pre><p>The purchase prices for wheat and corn are 40% more than their sales price. However, the description does not address the purchase price of sugar beet. Therefore, we use a large value of \$1,000/tonne.</p><pre><code class="language-julia">BUY_PRICE = Dict(
+    :wheat      =&gt;   238.0,
+    :corn       =&gt;   210.0,
+    :sugar_beet =&gt; 1_000.0
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 3 entries:
+  :wheat =&gt; 238.0
+  :sugar_beet =&gt; 1000.0
+  :corn =&gt; 210.0</code></pre><p>On average, each crop has the following yield in tonnes/acre:</p><pre><code class="language-julia">MEAN_YIELD = Dict(
+    :wheat      =&gt;  2.5,
+    :corn       =&gt;  3.0,
+    :sugar_beet =&gt; 20.0
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 3 entries:
+  :wheat =&gt; 2.5
+  :sugar_beet =&gt; 20.0
+  :corn =&gt; 3.0</code></pre><p>However, the yield is random. In good years, the yield is +20% above average, and in bad years, the yield is -20% below average.</p><pre><code class="language-julia">YIELD_MULTIPLIER = Dict(
+    :good =&gt; 1.2,
+    :fair =&gt; 1.0,
+    :bad  =&gt; 0.8
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 3 entries:
+  :bad =&gt; 0.8
+  :good =&gt; 1.2
+  :fair =&gt; 1.0</code></pre><h2 id="Mathematical-formulation"><a class="docs-heading-anchor" href="#Mathematical-formulation">Mathematical formulation</a><a id="Mathematical-formulation-1"></a><a class="docs-heading-anchor-permalink" href="#Mathematical-formulation" title="Permalink"></a></h2><h2 id="SDDP.jl-code"><a class="docs-heading-anchor" href="#SDDP.jl-code">SDDP.jl code</a><a id="SDDP.jl-code-1"></a><a class="docs-heading-anchor-permalink" href="#SDDP.jl-code" title="Permalink"></a></h2><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>In what follows, we make heavy use of the fact that you can look up variables by their symbol name in a JuMP model as follows:</p><pre><code class="language-julia">@variable(model, x)
+model[:x]</code></pre><p>Read the <a href="http://www.juliaopt.org/JuMP.jl/v0.19/variables/">JuMP documentation</a> if this isn&#39;t familiar to you.</p></div></div><p>First up, load <code>SDDP.jl</code> and a solver. For this example, we use <a href="https://github.com/JuliaOpt/GLPK.jl"><code>GLPK.jl</code></a>.</p><pre><code class="language-julia">using SDDP, GLPK</code></pre><h3 id="State-variables"><a class="docs-heading-anchor" href="#State-variables">State variables</a><a id="State-variables-1"></a><a class="docs-heading-anchor-permalink" href="#State-variables" title="Permalink"></a></h3><p>State variables are the information that flows between stages. In our example, the state variables are the areas of land devoted to growing each crop.</p><pre><code class="language-julia">function add_state_variables(subproblem)
+    @variable(subproblem, area[c = CROPS] &gt;= 0, SDDP.State, initial_value=0)
+end</code></pre><pre><code class="language-none">add_state_variables (generic function with 1 method)</code></pre><h3 id="First-stage-problem"><a class="docs-heading-anchor" href="#First-stage-problem">First stage problem</a><a id="First-stage-problem-1"></a><a class="docs-heading-anchor-permalink" href="#First-stage-problem" title="Permalink"></a></h3><p>We can only plant a maximum of 500 acres, and we want to minimize the planting cost</p><pre><code class="language-julia">function create_first_stage_problem(subproblem)
+    @constraint(subproblem,
+        sum(subproblem[:area][c].out for c in CROPS) &lt;= MAX_AREA)
+    @stageobjective(subproblem,
+        -sum(PLANTING_COST[c] * subproblem[:area][c].out for c in CROPS))
+end</code></pre><pre><code class="language-none">create_first_stage_problem (generic function with 1 method)</code></pre><h3 id="Second-stage-problem"><a class="docs-heading-anchor" href="#Second-stage-problem">Second stage problem</a><a id="Second-stage-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Second-stage-problem" title="Permalink"></a></h3><p>Now let&#39;s consider the second stage problem. This is more complicated than the first stage, so we&#39;ve broken it down into four sections:</p><ol><li>control variables</li><li>constraints</li><li>the objective</li><li>the uncertainty</li></ol><p>First, let&#39;s add the second stage control variables.</p><h4 id="Variables"><a class="docs-heading-anchor" href="#Variables">Variables</a><a id="Variables-1"></a><a class="docs-heading-anchor-permalink" href="#Variables" title="Permalink"></a></h4><p>We add four types of control variables. Technically, the <code>yield</code> isn&#39;t a control variable. However, we add it as a dummy &quot;helper&quot; variable because it will be used when we add uncertainty.</p><pre><code class="language-julia">function second_stage_variables(subproblem)
+    @variables(subproblem, begin
+        0 &lt;= yield[c=CROPS]                          # tonnes/acre
+        0 &lt;= buy[c=CROPS]                            # tonnes
+        0 &lt;= sell_in_quota[c=CROPS] &lt;= QUOTA_MAX[c]  # tonnes
+        0 &lt;= sell_no_quota[c=CROPS]                  # tonnes
+    end)
+end</code></pre><pre><code class="language-none">second_stage_variables (generic function with 1 method)</code></pre><h4 id="Constraints"><a class="docs-heading-anchor" href="#Constraints">Constraints</a><a id="Constraints-1"></a><a class="docs-heading-anchor-permalink" href="#Constraints" title="Permalink"></a></h4><p>We need to define is the minimum quantity constraint. This ensures that <code>MIN_QUANTITIES[c]</code> of each crop is produced.</p><pre><code class="language-julia">function second_stage_constraint_min_quantity(subproblem)
+    @constraint(subproblem, [c=CROPS],
+        subproblem[:yield][c] + subproblem[:buy][c] -
+        subproblem[:sell_in_quota][c] - subproblem[:sell_no_quota][c] &gt;=
+        MIN_QUANTITIES[c])
+end</code></pre><pre><code class="language-none">second_stage_constraint_min_quantity (generic function with 1 method)</code></pre><h4 id="Objective"><a class="docs-heading-anchor" href="#Objective">Objective</a><a id="Objective-1"></a><a class="docs-heading-anchor-permalink" href="#Objective" title="Permalink"></a></h4><p>The objective of the second stage is to maximise revenue from selling crops, less the cost of buying corn and wheat if necessary to meet the minimum quantity constraint.</p><pre><code class="language-julia">function second_stage_objective(subproblem)
+    @stageobjective(subproblem,
+        sum(
+            SELL_IN_QUOTA[c] * subproblem[:sell_in_quota][c] +
+            SELL_NO_QUOTA[c] * subproblem[:sell_no_quota][c] -
+            BUY_PRICE[c] * subproblem[:buy][c]
+        for c in CROPS)
+    )
+end</code></pre><pre><code class="language-none">second_stage_objective (generic function with 1 method)</code></pre><h4 id="Random-variables"><a class="docs-heading-anchor" href="#Random-variables">Random variables</a><a id="Random-variables-1"></a><a class="docs-heading-anchor-permalink" href="#Random-variables" title="Permalink"></a></h4><p>Then, in the <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a> function, we set the coefficient using <code>JuMP.set_normalized_coefficient</code>.</p><pre><code class="language-julia">function second_stage_uncertainty(subproblem)
+    @constraint(subproblem, uncertainty[c=CROPS],
+        1.0 * subproblem[:area][c].in == subproblem[:yield][c])
+    SDDP.parameterize(subproblem, [:good, :fair, :bad]) do ω
+        for c in CROPS
+            JuMP.set_normalized_coefficient(
+                uncertainty[c],
+                subproblem[:area][c].in,
+                MEAN_YIELD[c] * YIELD_MULTIPLIER[ω]
+            )
+        end
+    end
+end</code></pre><pre><code class="language-none">second_stage_uncertainty (generic function with 1 method)</code></pre><h3 id="Putting-it-all-together"><a class="docs-heading-anchor" href="#Putting-it-all-together">Putting it all together</a><a id="Putting-it-all-together-1"></a><a class="docs-heading-anchor-permalink" href="#Putting-it-all-together" title="Permalink"></a></h3><p>Now we&#39;re ready to build the multistage stochastic programming model. In addition to the things already discussed, we need a few extra pieces of information.</p><p>First, we are maximizing, so we set <code>sense = :Max</code>. Second, we need to provide a valid upper bound. (See <a href="../../tutorial/06_warnings/#Choosing-an-initial-bound">Choosing an initial bound</a> for more on this.) We know from Birge and Louveaux that the optimal solution is \$108,390.  So, let&#39;s choose \$500,000 just to be safe.</p><p>Here is the full model.</p><pre><code class="language-julia">model = SDDP.LinearPolicyGraph(
+            stages = 2,
+            sense = :Max,
+            upper_bound = 500_000.0,
+            optimizer = GLPK.Optimizer,
+            direct_mode = false
+        ) do subproblem, stage
+    add_state_variables(subproblem)
+    if stage == 1
+        create_first_stage_problem(subproblem)
+    else
+        second_stage_variables(subproblem)
+        second_stage_constraint_min_quantity(subproblem)
+        second_stage_uncertainty(subproblem)
+        second_stage_objective(subproblem)
+    end
+end</code></pre><pre><code class="language-none">A policy graph with 2 nodes.
+ Node indices: 1, 2
+</code></pre><h2 id="Training-a-policy"><a class="docs-heading-anchor" href="#Training-a-policy">Training a policy</a><a id="Training-a-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Training-a-policy" title="Permalink"></a></h2><p>Now that we&#39;ve built a model, we need to train it using <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a>. The keyword <code>iteration_limit</code> stops the training after 20 iterations. See <a href="../../guides/choose_a_stopping_rule/#Choose-a-stopping-rule">Choose a stopping rule</a> for other ways to stop the training.</p><pre><code class="language-julia">SDDP.train(model; iteration_limit = 20)</code></pre><pre><code class="language-none">------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 2
+  State variables : 3
+  Scenarios       : 3.00000e+00
+  Solver          : serial mode
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 2e+01]
+  Non-zero Objective range  [1e+00, 1e+03]
+  Non-zero Bounds range     [6e+03, Inf]
+  Non-zero RHS range        [2e+02, 5e+02]
+WARNING: numerical stability issues detected
+  - Bounds range contains large coefficients
+Very large or small absolute values of coefficients
+can cause numerical stability issues. Consider
+reformulating the model.
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1   -9.800000e+04   1.320000e+05   1.399040e-03          1          6
+        2    4.800000e+04   1.290000e+05   1.778126e-03          1         12
+        3    1.086000e+05   1.268139e+05   2.170086e-03          1         18
+        4    8.163785e+04   1.219636e+05   2.536058e-03          1         24
+        5    1.550000e+05   1.121210e+05   2.890110e-03          1         30
+        6    1.121210e+05   1.104195e+05   3.273964e-03          1         36
+        7    1.047405e+05   1.095042e+05   3.637075e-03          1         42
+        8    5.125161e+04   1.088611e+05   3.978968e-03          1         48
+        9    1.088611e+05   1.088021e+05   4.387140e-03          1         54
+       10    1.093355e+05   1.084962e+05   4.873037e-03          1         60
+       11    4.823846e+04   1.083900e+05   5.429983e-03          1         66
+       12    1.093500e+05   1.083900e+05   5.961180e-03          1         72
+       13    1.093500e+05   1.083900e+05   6.410122e-03          1         78
+       14    1.670000e+05   1.083900e+05   6.814003e-03          1         84
+       15    1.093500e+05   1.083900e+05   7.220984e-03          1         90
+       16    4.882000e+04   1.083900e+05   7.596016e-03          1         96
+       17    4.882000e+04   1.083900e+05   7.940054e-03          1        102
+       18    1.093500e+05   1.083900e+05   8.342028e-03          1        108
+       19    1.093500e+05   1.083900e+05   8.748055e-03          1        114
+       20    4.882000e+04   1.083900e+05   9.086132e-03          1        120
+
+Terminating training with status: iteration_limit
+------------------------------------------------------------------------------
+</code></pre><h2 id="Checking-the-policy"><a class="docs-heading-anchor" href="#Checking-the-policy">Checking the policy</a><a id="Checking-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Checking-the-policy" title="Permalink"></a></h2><p>Birge and Louveaux report that the optimal objective value is \$108,390. Check that we got the correct solution using <a href="../../apireference/#SDDP.calculate_bound"><code>SDDP.calculate_bound</code></a>:</p><pre><code class="language-julia">@assert SDDP.calculate_bound(model) == 108_390.0</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../stochastic_all_blacks/">« Stochastic All Blacks</a><a class="docs-footer-nextpage" href="../vehicle_location/">Vehicle location »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 26 March 2021 23:40">Friday 26 March 2021</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
