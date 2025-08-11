@@ -7,6 +7,26 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.13.0 (August 11, 2025)
+
+### Added
+
+ - Added [`ImportanceSamplingForwardPass`](@ref) (#848)
+ - Added `.optimizer` to [`FixedDiscreteDuality`](@ref) (#868)
+ - Added the experimental `SDDP.Inner` submodule (#830)
+
+### Fixed
+
+ - Improved the performance of [`LagrangianDuality`](@ref) (861)
+ - Fixed [`FixedDiscreteDuality`](@ref) to be globbally valid (#865)
+ - Fixed `log_frequency=1` to override `log_every_seconds` (#867)
+ - Fixed a performance bug computing the stage objective value (#870)
+
+### Other
+
+ - Added the [Duality handlers](@ref) tutoriall (#860)
+ - Removed unnecessary `SDDP.` prefix (#866)
+
 ## v1.12.0 (June 11, 2025)
 
 ### Added
