@@ -41,7 +41,7 @@ import Statistics
 # the end of the stage, after demand is realized.
 
 # Following Chapter 19 of Introduction to Operations Research by Hillier and
-# Lieberman (7th edition), we use the following parameters: $c=15, h=1, p=15$.
+# Lieberman (7th edition), we use the following parameters: $c=35, h=1, p=15$.
 
 x_0 = 10        # initial inventory
 c = 35          # unit inventory cost
