@@ -11,7 +11,7 @@ import ..SDDP
 
 function _parse_lattice(filename::String)
     data = JuMP.MOI.FileFormats.compressed_open(
-        io -> JSON.parse(io; dictype = Dict{String,Any}),
+        io -> JSON.parse(io; dicttype = Dict{String,Any}),
         filename,
         "r",
         JuMP.MOI.FileFormats.AutomaticCompression(),
@@ -254,7 +254,7 @@ function read_from_file(
     bound::Float64 = 1e6,
 )
     graph, graph_data = _parse_lattice(lattice_filename)
-    problem = JSON.parsefile(problem_filename; dictype = Dict{String,Any})
+    problem = JSON.parsefile(problem_filename; dicttype = Dict{String,Any})
     state_variables = _state_variables(problem)
     initial_values = Dict{Symbol,Float64}()
     model = SDDP.PolicyGraph(
