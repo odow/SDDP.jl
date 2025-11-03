@@ -14,7 +14,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 HiGHS = "1"
 Ipopt = "1"
-JSON = "0.21"
+JSON = "1"
 JSONSchema = "1"
 Plots = "1"
 julia = "1.6"

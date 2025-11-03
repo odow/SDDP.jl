@@ -1048,7 +1048,7 @@ function read_vertices_from_file(
         @warn "You must select an optimizer for performing vertex selection."
         throw(JuMP.NoOptimizer())
     end
-    vertices = JSON.parsefile(filename; use_mmap = false)
+    vertices = JSON.parsefile(filename)
     for node_info in vertices
         node_name = node_name_parser(T, node_info["node"])::Union{Nothing,T}
         node = model[node_name]

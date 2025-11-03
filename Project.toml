@@ -20,7 +20,7 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
 HTTP = "1"
-JSON = "0.21"
+JSON = "0.21, 1"
 JuMP = "1"
 MutableArithmetics = "1"
 RecipesBase = "1"
