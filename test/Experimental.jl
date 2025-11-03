@@ -16,8 +16,7 @@ Downloads.download(
     "https://odow.github.io/StochOptFormat/schemas/sof-1.schema.json",
     "sof.schema.json",
 )
-const SCHEMA =
-    JSONSchema.Schema(JSON.parsefile("sof.schema.json"; use_mmap = false))
+const SCHEMA = JSONSchema.Schema(JSON.parsefile("sof.schema.json"))
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -187,7 +186,7 @@ function test_write_kwarg()
         author = "Oscar Dowson",
         date = "1234-56-78",
     )
-    data = JSON.parsefile("experimental.sof.json"; use_mmap = false)
+    data = JSON.parsefile("experimental.sof.json")
     @test data["description"] == "Experimental model"
     @test data["author"] == "Oscar Dowson"
     @test data["date"] == "1234-56-78"
