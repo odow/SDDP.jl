@@ -754,7 +754,7 @@ function read_cuts_from_file(
     node_name_parser::Function = _node_name_parser,
     cut_selection::Bool = true,
 ) where {T}
-    cuts = JSON.parsefile(filename)
+    cuts = JSON.parsefile(filename; dictype = Dict{String,Any})
     for node_cuts in cuts
         node_name = node_name_parser(T, node_cuts["node"])::Union{Nothing,T}
         if node_name === nothing
