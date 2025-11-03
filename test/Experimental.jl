@@ -16,8 +16,7 @@ Downloads.download(
     "https://odow.github.io/StochOptFormat/schemas/sof-1.schema.json",
     "sof.schema.json",
 )
-const SCHEMA =
-    JSONSchema.Schema(JSON.parsefile("sof.schema.json"))
+const SCHEMA = JSONSchema.Schema(JSON.parsefile("sof.schema.json"))
 
 function runtests()
     for name in names(@__MODULE__; all = true)
