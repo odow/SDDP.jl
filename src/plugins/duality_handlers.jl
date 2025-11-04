@@ -256,7 +256,7 @@ end
 
 _sparsify(x::Float64) = ifelse(abs(x) < 1e-15, 0.0, x)
 
-function _initialize_incoming_state_bounds(node::Node)
+function _initialize_incoming_state_bounds(node::Node{T}) where {T}
     policy_graph = get_policy_graph(node.subproblem)::PolicyGraph{T}
     _initialize_incoming_state_bounds(policy_graph)
     return
