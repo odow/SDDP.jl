@@ -930,6 +930,7 @@ function PolicyGraph(
     lower_bound = -Inf,
     upper_bound = Inf,
     optimizer = nothing,
+    save_incoming_state_bounds::Bool = true,
     # These arguments are deprecated
     bellman_function = nothing,
     direct_mode::Bool = false,
@@ -1035,12 +1036,15 @@ function PolicyGraph(
     if length(graph.belief_partition) > 0
         initialize_belief_states(policy_graph, graph)
     end
-    # domain = _get_incoming_domain(policy_graph)
-    # for (node_name, node) in policy_graph.nodes
-    #     for (k, v) in domain[node_name]
-    #         node.incoming_state_bounds[k] = something(v, (-Inf, Inf, false))
-    #     end
-    # end
+    if save_incoming_state_bounds
+        domain = _get_incoming_domain(policy_graph)
+        for (node_name, node) in policy_graph.nodes
+            for (k, v) in domain[node_name]
+                node.incoming_state_bounds[k] = something(v, (-Inf, Inf, false))
+            end
+        end
+    end
+
     return policy_graph
 end
 

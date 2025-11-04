@@ -257,6 +257,13 @@ end
 _sparsify(x::Float64) = ifelse(abs(x) < 1e-15, 0.0, x)
 
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
+    if isempty(node.incoming_state_bounds)
+        error(
+            "LagrangianDuality requires incoming state bounds to be set. " *
+            "Please set the `save_incoming_state_bounds` keyword argument to " *
+            "`true` when constructing the `PolicyGraph`.",
+        )
+    end
     undo_relax = _relax_integrality(node, lagrange.optimizer)
     optimize!(node.subproblem)
     conic_obj, conic_dual = get_dual_solution(node, ContinuousConicDuality())
