@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>SLDP: example 2 · SDDP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SDDP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/01_first_steps/">Basic I: first steps</a></li><li><a class="tocitem" href="../../tutorial/02_adding_uncertainty/">Basic II: adding uncertainty</a></li><li><a class="tocitem" href="../../tutorial/03_objective_uncertainty/">Basic III: objective uncertainty</a></li><li><a class="tocitem" href="../../tutorial/04_markov_uncertainty/">Basic IV: Markov uncertainty</a></li><li><a class="tocitem" href="../../tutorial/05_plotting/">Basic V: plotting</a></li><li><a class="tocitem" href="../../tutorial/06_warnings/">Basic VI: words of warning</a></li><li><a class="tocitem" href="../../tutorial/11_objective_states/">Advanced I: objective states</a></li><li><a class="tocitem" href="../../tutorial/12_belief_states/">Advanced II: belief states</a></li><li><a class="tocitem" href="../../tutorial/13_integrality/">Advanced III: integrality</a></li><li><a class="tocitem" href="../../tutorial/21_theory_intro/">Theory I: an intro to SDDP</a></li><li><a class="tocitem" href="../../tutorial/22_risk/">Theory II: risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/acess_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li class="is-active"><a class="tocitem" href>SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>SLDP: example 2</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>SLDP: example 2</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/sldp_example_two.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="SLDP:-example-2"><a class="docs-heading-anchor" href="#SLDP:-example-2">SLDP: example 2</a><a id="SLDP:-example-2-1"></a><a class="docs-heading-anchor-permalink" href="#SLDP:-example-2" title="Permalink"></a></h1><p>This example is derived from Section 4.3 of the paper: Ahmed, S., Cabral, F. G., &amp; da Costa, B. F. P. (2019). Stochastic Lipschitz Dynamic Programming. Optimization Online. <a href="http://www.optimization-online.org/DB_FILE/2019/05/7193.pdf">PDF</a></p><pre><code class="language-julia">using SDDP, GLPK, Test
+
+function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        lower_bound = -100.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        @variable(sp, 0 &lt;= x[1:2] &lt;= 5, SDDP.State, initial_value = 0.0)
+        if t == 1
+            if first_stage_integer
+                @variable(sp, 0 &lt;= u[1:2] &lt;= 5, Int)
+                @constraint(sp, [i = 1:2], u[i] == x[i].out)
+            end
+            @stageobjective(sp, -1.5 * x[1].out - 4 * x[2].out)
+        else
+            @variable(sp, 0 &lt;= y[1:4] &lt;= 1, Bin)
+            @variable(sp, ω[1:2])
+            @stageobjective(sp, -16 * y[1] - 19 * y[2] - 23 * y[3] - 28 * y[4])
+            @constraint(
+                sp,
+                2 * y[1] + 3 * y[2] + 4 * y[3] + 5 * y[4] &lt;= ω[1] - x[1].in
+            )
+            @constraint(
+                sp,
+                6 * y[1] + 1 * y[2] + 3 * y[3] + 2 * y[4] &lt;= ω[2] - x[2].in
+            )
+            steps = range(5, stop = 15, length = N)
+            SDDP.parameterize(sp, [[i, j] for i in steps for j in steps]) do φ
+                return JuMP.fix.(ω, φ)
+            end
+        end
+    end
+    SDDP.train(model, iteration_limit = 100, log_frequency = 10)
+    bound = SDDP.calculate_bound(model)
+
+    if N == 2
+        @test bound &lt;= -57.0
+    elseif N == 3
+        @test bound &lt;= -59.33
+    elseif N == 6
+        @test bound &lt;= -61.22
+    end
+    return
+end
+
+sldp_example_two(N = 2)
+sldp_example_two(N = 3)
+sldp_example_two(N = 6)</code></pre><pre><code class="nohighlight">------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 2
+  State variables : 2
+  Scenarios       : 4.00000e+00
+  Solver          : serial mode
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 6e+00]
+  Non-zero Objective range  [1e+00, 3e+01]
+  Non-zero Bounds range     [1e+00, 1e+02]
+  Non-zero RHS range        [0e+00, 0e+00]
+No problems detected
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+       10   -4.500000e+01  -5.809615e+01   2.712965e-03          1         70
+       20   -9.800000e+01  -5.809615e+01   5.063057e-03          1        140
+       30   -4.500000e+01  -5.809615e+01   7.448912e-03          1        210
+       40   -4.500000e+01  -5.809615e+01   9.901047e-03          1        280
+       50   -4.500000e+01  -5.809615e+01   1.236892e-02          1        350
+       60   -4.700000e+01  -5.809615e+01   1.552296e-02          1        420
+       70   -4.700000e+01  -5.809615e+01   1.813602e-02          1        490
+       80   -4.700000e+01  -5.809615e+01   2.148509e-02          1        560
+       90   -9.800000e+01  -5.809615e+01   2.526689e-02          1        630
+      100   -4.700000e+01  -5.809615e+01   2.949309e-02          1        700
+
+Terminating training with status: iteration_limit
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 2
+  State variables : 2
+  Scenarios       : 9.00000e+00
+  Solver          : serial mode
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 6e+00]
+  Non-zero Objective range  [1e+00, 3e+01]
+  Non-zero Bounds range     [1e+00, 1e+02]
+  Non-zero RHS range        [0e+00, 0e+00]
+No problems detected
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+       10   -4.700000e+01  -6.196125e+01   3.681898e-03          1        120
+       20   -4.238462e+01  -6.196125e+01   6.985903e-03          1        240
+       30   -4.238462e+01  -6.196125e+01   1.039791e-02          1        360
+       40   -4.500000e+01  -6.196125e+01   1.411891e-02          1        480
+       50   -7.560000e+01  -6.196125e+01   1.771688e-02          1        600
+       60   -9.800000e+01  -6.196125e+01   2.139688e-02          1        720
+       70   -9.800000e+01  -6.196125e+01   2.510095e-02          1        840
+       80   -4.500000e+01  -6.196125e+01   2.922797e-02          1        960
+       90   -4.700000e+01  -6.196125e+01   3.324699e-02          1       1080
+      100   -4.700000e+01  -6.196125e+01   3.741193e-02          1       1200
+
+Terminating training with status: iteration_limit
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 2
+  State variables : 2
+  Scenarios       : 3.60000e+01
+  Solver          : serial mode
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 6e+00]
+  Non-zero Objective range  [1e+00, 3e+01]
+  Non-zero Bounds range     [1e+00, 1e+02]
+  Non-zero RHS range        [0e+00, 0e+00]
+No problems detected
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+       10   -6.946154e+01  -6.554113e+01   8.621931e-03          1        390
+       20   -7.760000e+01  -6.554113e+01   1.724696e-02          1        780
+       30   -5.530769e+01  -6.554113e+01   2.635098e-02          1       1170
+       40   -7.071429e+01  -6.554113e+01   3.566098e-02          1       1560
+       50   -8.760000e+01  -6.554113e+01   4.450202e-02          1       1950
+       60   -4.300000e+01  -6.554113e+01   5.414104e-02          1       2340
+       70   -6.946154e+01  -6.554113e+01   6.317806e-02          1       2730
+       80   -4.780000e+01  -6.554113e+01   7.252598e-02          1       3120
+       90   -4.484615e+01  -6.554113e+01   8.178806e-02          1       3510
+      100   -4.300000e+01  -6.554113e+01   9.202886e-02          1       3900
+
+Terminating training with status: iteration_limit
+------------------------------------------------------------------------------
+</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../sldp_example_one/">« SLDP: example 1</a><a class="docs-footer-nextpage" href="../stochastic_all_blacks/">Stochastic All Blacks »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 17 June 2021 06:09">Thursday 17 June 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

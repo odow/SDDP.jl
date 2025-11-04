@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Auto-regressive stochastic processes · SDDP.jl</title><script data-outdated-warner src="../../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../../assets/documenter.js"></script><script src="../../../siteinfo.js"></script><script src="../../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../../"><img src="../../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../../">SDDP.jl</a></span></div><form class="docs-search" action="../../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox" checked/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Basic</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../01_first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../03_objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../04_markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../05_plotting/">Plotting tools</a></li><li><a class="tocitem" href="../06_warnings/">Words of warning</a></li><li class="is-active"><a class="tocitem" href>Auto-regressive stochastic processes</a><ul class="internal"><li><a class="tocitem" href="#state-space-expansion"><span>The state-space expansion trick</span></a></li><li><a class="tocitem" href="#The-Markov-chain-approach"><span>The Markov chain approach</span></a></li><li><a class="tocitem" href="#Vector-auto-regressive-models"><span>Vector auto-regressive models</span></a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-2" type="checkbox"/><label class="tocitem" for="menuitem-2-2"><span class="docs-label">Advanced</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../advanced/11_objective_states/">Objective states</a></li><li><a class="tocitem" href="../../advanced/12_belief_states/">Belief states</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-3" type="checkbox"/><label class="tocitem" for="menuitem-2-3"><span class="docs-label">Theory</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../theory/21_theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../theory/22_risk/">Risk aversion</a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../../guides/acess_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li><a class="is-disabled">Basic</a></li><li class="is-active"><a href>Auto-regressive stochastic processes</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Auto-regressive stochastic processes</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/basic/07_arma.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Auto-regressive-stochastic-processes"><a class="docs-heading-anchor" href="#Auto-regressive-stochastic-processes">Auto-regressive stochastic processes</a><a id="Auto-regressive-stochastic-processes-1"></a><a class="docs-heading-anchor-permalink" href="#Auto-regressive-stochastic-processes" title="Permalink"></a></h1><p>SDDP.jl assumes that the random variable in each node is independent of the random variables in all other nodes. However, a common request is to model the random variables by some auto-regressive process.</p><p>There are two ways to do this:</p><ol><li>model the random variable as a Markov chain</li><li>use the &quot;state-space expansion&quot; trick</li></ol><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>This tutorial is in the context of a hydro-thermal scheduling example, but it should be apparent how the ideas transfer to other applications.</p></div></div><pre><code class="language-julia hljs">using SDDP
+import GLPK</code></pre><h2 id="state-space-expansion"><a class="docs-heading-anchor" href="#state-space-expansion">The state-space expansion trick</a><a id="state-space-expansion-1"></a><a class="docs-heading-anchor-permalink" href="#state-space-expansion" title="Permalink"></a></h2><p>In <a href="../01_first_steps/#An-introduction-to-SDDP.jl">An introduction to SDDP.jl</a>, we assumed that the inflows were stagewise-independent. However, in many cases this is not correct, and inflow models are more accurately described by an autoregressive process such as:</p><p class="math-container">\[inflow_{t} = inflow_{t-1} + \varepsilon\]</p><p>Here <span>$\varepsilon$</span> is a random variable, and the inflow in stage <span>$t$</span> is the inflow in stage <span>$t-1$</span> plus <span>$\varepsilon$</span> (which might be negative).</p><p>For simplicitly, we omit any coefficients and other terms, but this could easily be extended to a model like</p><p class="math-container">\[inflow_{t} = a \times inflow_{t-1} + b + \varepsilon\]</p><p>In practice, you can estimate a distribution for <span>$\varepsilon$</span> by fitting the chosen statistical model to historical data, and then using the empirical residuals.</p><p>To implement the auto-regressive model in SDDP.jl, we introduce <code>inflow</code> as a state variable.</p><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>Our rule of thumb for &quot;when is something a state variable?&quot; is: if you need the value of a variable from a previous stage to compute something in stage <span>$t$</span>, then that variable is a state variable.</p></div></div><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(
+    stages = 3,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+) do sp, t
+    @variable(sp, 0 &lt;= x &lt;= 200, SDDP.State, initial_value = 200)
+    @variable(sp, g_t &gt;= 0)
+    @variable(sp, g_h &gt;= 0)
+    @variable(sp, s &gt;= 0)
+    @constraint(sp, g_h + g_t == 150)
+    c = [50, 100, 150]
+    @stageobjective(sp, c[t] * g_t)
+    # =========================================================================
+    # New stuff below Here
+    # Add inflow as a state
+    @variable(sp, inflow, SDDP.State, initial_value = 50.0)
+    # Add the random variable as a control variable
+    @variable(sp, ε)
+    # The equation describing our statistical model
+    @constraint(sp, inflow.out == inflow.in + ε)
+    # The new water balance constraint using the state variable
+    @constraint(sp, x.out == x.in - g_h - s + inflow.out)
+    # Assume we have some empirical residuals:
+    Ω = [-10.0, 0.1, 9.6]
+    SDDP.parameterize(sp, Ω) do ω
+        return JuMP.fix(ε, ω)
+    end
+end</code></pre><pre><code class="nohighlight hljs">A policy graph with 3 nodes.
+ Node indices: 1, 2, 3
+</code></pre><h3 id="When-can-this-trick-be-used?"><a class="docs-heading-anchor" href="#When-can-this-trick-be-used?">When can this trick be used?</a><a id="When-can-this-trick-be-used?-1"></a><a class="docs-heading-anchor-permalink" href="#When-can-this-trick-be-used?" title="Permalink"></a></h3><p>The state-space expansion trick should be used when:</p><ul><li>The random variable appears additively in the objective or in the constraints. Something like <code>inflow * decision_variable</code> will <em>not</em> work.</li><li>The statistical model is linear, or can be written using the JuMP <code>@constraint</code> macro.</li><li>The dimension of the random variable is small (see <a href="#Vector-auto-regressive-models">Vector auto-regressive models</a> for the multi-variate case).</li></ul><h2 id="The-Markov-chain-approach"><a class="docs-heading-anchor" href="#The-Markov-chain-approach">The Markov chain approach</a><a id="The-Markov-chain-approach-1"></a><a class="docs-heading-anchor-permalink" href="#The-Markov-chain-approach" title="Permalink"></a></h2><p>In the Markov chain approach, we model the stochastic process for inflow by a discrete Markov chain. Markov chains are nodes with transition probabilities between the nodes. SDDP.jl has good support for solving problems in which the uncertainty is formulated as a Markov chain.</p><p>The first step of the Markov chain approach is to write a function which simulates the stochastic process. Here is a simulator for our inflow model:</p><pre><code class="language-julia hljs">function simulator()
+    inflow = zeros(3)
+    current = 50.0
+    Ω = [-10.0, 0.1, 9.6]
+    for t in 1:3
+        current += rand(Ω)
+        inflow[t] = current
+    end
+    return inflow
+end</code></pre><pre><code class="nohighlight hljs">simulator (generic function with 1 method)</code></pre><p>When called with no arguments, it produces a vector of inflows:</p><pre><code class="language-julia hljs">simulator()</code></pre><pre><code class="nohighlight hljs">3-element Vector{Float64}:
+ 59.6
+ 69.2
+ 69.3</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>The <code>simulator</code> must return a <code>Vector{Float64}</code>, so it is limited to a uni-variate random variable. It is possible to do something similar for multi-variate random variable, but you&#39;ll have to manually construct the Markov transition matrix, and solution times scale poorly, even in the two-dimensional case.</p></div></div><p>The next step is to call <a href="../../../apireference/#SDDP.MarkovianGraph"><code>SDDP.MarkovianGraph</code></a> with our simulator. This function will attempt to fit a Markov chain to the stochastic process produced by your <code>simulator</code>. There are two key arguments:</p><ul><li><code>budget</code> is the total number of nodes we want in the Markov chain</li><li><code>scenarios</code> is a limit on the number of times we can call <code>simulator</code></li></ul><pre><code class="language-julia hljs">graph = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)</code></pre><pre><code class="nohighlight hljs">Root
+ (0, 0.0)
+Nodes
+ (1, 46.43994554246191)
+ (2, 47.494280578554424)
+ (2, 49.60439456096209)
+ (2, 67.3753651701158)
+ (3, 38.135607119164554)
+ (3, 39.6)
+ (3, 40.76445305537852)
+ (3, 72.11917271861748)
+Arcs
+ (0, 0.0) =&gt; (1, 46.43994554246191) w.p. 1.0
+ (1, 46.43994554246191) =&gt; (2, 67.3753651701158) w.p. 0.43333333333333335
+ (1, 46.43994554246191) =&gt; (2, 47.494280578554424) w.p. 0.13333333333333333
+ (1, 46.43994554246191) =&gt; (2, 49.60439456096209) w.p. 0.43333333333333335
+ (2, 47.494280578554424) =&gt; (3, 72.11917271861748) w.p. 0.0
+ (2, 47.494280578554424) =&gt; (3, 38.135607119164554) w.p. 1.0
+ (2, 47.494280578554424) =&gt; (3, 40.76445305537852) w.p. 0.0
+ (2, 47.494280578554424) =&gt; (3, 39.6) w.p. 0.0
+ (2, 49.60439456096209) =&gt; (3, 72.11917271861748) w.p. 0.23076923076923078
+ (2, 49.60439456096209) =&gt; (3, 38.135607119164554) w.p. 0.0
+ (2, 49.60439456096209) =&gt; (3, 40.76445305537852) w.p. 0.46153846153846156
+ (2, 49.60439456096209) =&gt; (3, 39.6) w.p. 0.3076923076923077
+ (2, 67.3753651701158) =&gt; (3, 72.11917271861748) w.p. 0.8461538461538461
+ (2, 67.3753651701158) =&gt; (3, 38.135607119164554) w.p. 0.0
+ (2, 67.3753651701158) =&gt; (3, 40.76445305537852) w.p. 0.15384615384615385
+ (2, 67.3753651701158) =&gt; (3, 39.6) w.p. 0.0
+</code></pre><p>Here we can see we have created a MarkovianGraph with nodes like <code>(2, 59.7)</code>. The first element of each node is the stage, and the second element is the inflow.</p><p>Create a <a href="../../../apireference/#SDDP.PolicyGraph"><code>SDDP.PolicyGraph</code></a> using <code>graph</code> as follows:</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
+    graph,  # &lt;--- New stuff
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+) do sp, node
+    t, inflow = node  # &lt;--- New stuff
+    @variable(sp, 0 &lt;= x &lt;= 200, SDDP.State, initial_value = 200)
+    @variable(sp, g_t &gt;= 0)
+    @variable(sp, g_h &gt;= 0)
+    @variable(sp, s &gt;= 0)
+    @constraint(sp, g_h + g_t == 150)
+    c = [50, 100, 150]
+    @stageobjective(sp, c[t] * g_t)
+    # The new water balance constraint using the node:
+    @constraint(sp, x.out == x.in - g_h - s + inflow)
+end</code></pre><pre><code class="nohighlight hljs">A policy graph with 8 nodes.
+ Node indices: (1, 46.43994554246191), (2, 47.494280578554424), (2, 49.60439456096209), (2, 67.3753651701158), (3, 38.135607119164554), (3, 39.6), (3, 40.76445305537852), (3, 72.11917271861748)
+</code></pre><h3 id="When-can-this-trick-be-used?-2"><a class="docs-heading-anchor" href="#When-can-this-trick-be-used?-2">When can this trick be used?</a><a class="docs-heading-anchor-permalink" href="#When-can-this-trick-be-used?-2" title="Permalink"></a></h3><p>The Markov chain approach should be used when:</p><ul><li>The random variable is uni-variate</li><li>The random variable appears in the objective function or as a variable coefficient in the constraint matrix</li><li>It&#39;s non-trivial to write the stochastic process as a series of constraints (for example, it uses nonlinear terms)</li><li>The number of nodes is modest (for example, a budget of hundreds, up to perhaps 1000)</li></ul><h2 id="Vector-auto-regressive-models"><a class="docs-heading-anchor" href="#Vector-auto-regressive-models">Vector auto-regressive models</a><a id="Vector-auto-regressive-models-1"></a><a class="docs-heading-anchor-permalink" href="#Vector-auto-regressive-models" title="Permalink"></a></h2><p>The <a href="#state-space-expansion">state-space expansion</a> section assumed that the random variable was uni-variate. However, the approach naturally extends to vector auto-regressive models. For example, if <code>inflow</code> is a 2-dimensional vector, then we can model a vector auto-regressive model to it as follows:</p><p class="math-container">\[inflow_{t} = A \times inflow_{t-1} + b + \varepsilon\]</p><p>Here <code>A</code> is a 2-by-2 matrix, and <code>b</code> and <span>$\varepsilon$</span> are 2-by-1 vectors.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(
+    stages = 3,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+) do sp, t
+    @variable(sp, 0 &lt;= x &lt;= 200, SDDP.State, initial_value = 200)
+    @variable(sp, g_t &gt;= 0)
+    @variable(sp, g_h &gt;= 0)
+    @variable(sp, s &gt;= 0)
+    @constraint(sp, g_h + g_t == 150)
+    c = [50, 100, 150]
+    @stageobjective(sp, c[t] * g_t)
+    # =========================================================================
+    # New stuff below Here
+    # Add inflow as a state
+    @variable(sp, inflow[1:2], SDDP.State, initial_value = 50.0)
+    # Add the random variable as a control variable
+    @variable(sp, ε[1:2])
+    # The equation describing our statistical model
+    A = [0.8 0.2; 0.2 0.8]
+    inflow_in = [inflow[i].in for i in 1:2]
+    inflow_out = [inflow[i].in for i in 1:2]
+    @constraint(sp, inflow_out .== A * inflow_in .+ ε)
+    # The new water balance constraint using the state variable
+    @constraint(sp, x.out == x.in - g_h - s + inflow[1].out + inflow[2].out)
+    # Assume we have some empirical residuals:
+    Ω₁ = [-10.0, 0.1, 9.6]
+    Ω₂ = [-10.0, 0.1, 9.6]
+    Ω = [(ω₁, ω₂) for ω₁ in Ω₁ for ω₂ in Ω₂]
+    SDDP.parameterize(sp, Ω) do ω
+        JuMP.fix(ε[1], ω[1])
+        JuMP.fix(ε[2], ω[2])
+        return
+    end
+end</code></pre><pre><code class="nohighlight hljs">A policy graph with 3 nodes.
+ Node indices: 1, 2, 3
+</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../06_warnings/">« Words of warning</a><a class="docs-footer-nextpage" href="../../advanced/11_objective_states/">Objective states »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.15 on <span class="colophon-date" title="Thursday 24 March 2022 21:35">Thursday 24 March 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

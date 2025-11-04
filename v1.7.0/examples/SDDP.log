@@ -1,0 +1,1571 @@
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 1
+  scenarios       : 2.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.GreaterThan{Float64}     : [1, 1]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.EqualTo{Float64}     : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [3, 4]
+  VariableRef in MOI.LessThan{Float64}    : [2, 2]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 5e+00]
+  bounds range     [8e+00, 8e+00]
+  rhs range        [6e+00, 6e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   0.000000e+00 -1.000000e+01  2.692938e-03         5   1
+        20   0.000000e+00 -1.000000e+01  1.499486e-02       104   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 1.499486e-02
+total solves   : 104
+best bound     : -1.000000e+01
+simulation ci  : -9.000000e+00 ± 4.474009e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 2
+  scenarios       : 4.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [8, 8]
+  AffExpr in MOI.LessThan{Float64}        : [3, 3]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [2e-01, 3e+00]
+  bounds range     [5e+01, 5e+01]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         5  -2.396000e+01 -2.396000e+01  7.429123e-03        52   1
+        10  -4.260000e+01 -2.396000e+01  1.116014e-02        92   1
+        15  -4.260000e+01 -2.396000e+01  1.516104e-02       132   1
+        20  -4.260000e+01 -2.396000e+01  1.940298e-02       172   1
+        25  -2.396000e+01 -2.396000e+01  2.481794e-02       224   1
+        30  -4.260000e+01 -2.396000e+01  2.972794e-02       264   1
+        35  -2.396000e+01 -2.396000e+01  3.488803e-02       304   1
+        40  -2.396000e+01 -2.396000e+01  4.035306e-02       344   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 4.035306e-02
+total solves   : 344
+best bound     : -2.396000e+01
+simulation ci  : -2.660914e+01 ± 3.908038e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+ ────────────────────────────────────────────────────────────────────────────────
+                                        Time                    Allocations      
+                               ───────────────────────   ────────────────────────
+       Tot / % measured:           49.4ms /  71.2%           49.3MiB /  15.9%    
+
+ Section               ncalls     time    %tot     avg     alloc    %tot      avg
+ ────────────────────────────────────────────────────────────────────────────────
+ backward_pass             40   22.2ms   63.2%   555μs   6.66MiB   85.1%   170KiB
+   solve_subproblem       160   11.9ms   33.8%  74.3μs    973KiB   12.1%  6.08KiB
+     get_dual_solution    160    663μs    1.9%  4.14μs    210KiB    2.6%  1.31KiB
+   prepare_backward...     80   45.7μs    0.1%   571ns   12.5KiB    0.2%     160B
+ forward_pass              40   7.76ms   22.1%   194μs    908KiB   11.3%  22.7KiB
+   solve_subproblem       120   6.89ms   19.6%  57.4μs    697KiB    8.7%  5.81KiB
+     get_dual_solution    120   91.8μs    0.3%   765ns   65.6KiB    0.8%     560B
+   sample_scenario         40    153μs    0.4%  3.83μs   37.0KiB    0.5%     948B
+ calculate_bound           40   5.14ms   14.6%   129μs    266KiB    3.3%  6.64KiB
+   get_dual_solution       40   40.8μs    0.1%  1.02μs   21.9KiB    0.3%     560B
+ get_dual_solution         36   27.3μs    0.1%   758ns   19.7KiB    0.2%     560B
+ ────────────────────────────────────────────────────────────────────────────────
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 2
+  scenarios       : 4.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [8, 8]
+  AffExpr in MOI.LessThan{Float64}        : [3, 3]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [2e-01, 3e+00]
+  bounds range     [5e+01, 5e+01]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         5  -5.320000e+00 -2.396000e+01  7.905960e-03        52   1
+        10  -5.320000e+00 -2.396000e+01  1.196504e-02        92   1
+        15  -2.396000e+01 -2.396000e+01  1.655412e-02       132   1
+        20  -5.320000e+00 -2.396000e+01  2.165508e-02       172   1
+        25  -4.260000e+01 -2.396000e+01  2.825212e-02       224   1
+        30  -2.396000e+01 -2.396000e+01  3.448105e-02       264   1
+        35  -2.396000e+01 -2.396000e+01  4.140902e-02       304   1
+        40  -2.396000e+01 -2.396000e+01  4.896712e-02       344   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 4.896712e-02
+total solves   : 344
+best bound     : -2.396000e+01
+simulation ci  : -1.957570e+01 ± 3.890802e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+ ────────────────────────────────────────────────────────────────────────────────
+                                        Time                    Allocations      
+                               ───────────────────────   ────────────────────────
+       Tot / % measured:           88.4ms /  49.3%           56.1MiB /  26.2%    
+
+ Section               ncalls     time    %tot     avg     alloc    %tot      avg
+ ────────────────────────────────────────────────────────────────────────────────
+ backward_pass             40   30.0ms   68.8%   750μs   13.5MiB   92.1%   346KiB
+   solve_subproblem       160   12.3ms   28.1%  76.6μs    975KiB    6.5%  6.09KiB
+     get_dual_solution    160    634μs    1.5%  3.96μs    210KiB    1.4%  1.31KiB
+   prepare_backward...     80   51.7μs    0.1%   646ns   12.5KiB    0.1%     160B
+ forward_pass              40   8.02ms   18.4%   200μs    908KiB    6.0%  22.7KiB
+   solve_subproblem       120   7.12ms   16.3%  59.4μs    697KiB    4.6%  5.81KiB
+     get_dual_solution    120   81.4μs    0.2%   678ns   65.6KiB    0.4%     560B
+   sample_scenario         40    156μs    0.4%  3.89μs   36.7KiB    0.2%     940B
+ calculate_bound           40   5.54ms   12.7%   139μs    267KiB    1.8%  6.68KiB
+   get_dual_solution       40   39.1μs    0.1%   977ns   21.9KiB    0.1%     560B
+ get_dual_solution         36   23.4μs    0.1%   651ns   19.7KiB    0.1%     560B
+ ────────────────────────────────────────────────────────────────────────────────
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 1
+  scenarios       : 2.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [3, 4]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 3]
+  VariableRef in MOI.LessThan{Float64}    : [2, 2]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 2e+00]
+  bounds range     [2e+00, 5e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   0.000000e+00 -2.500000e+00  2.054930e-03         5   1
+         2  -1.500000e+00 -2.000000e+00  3.109932e-03        14   1
+         3  -1.000000e+00 -2.000000e+00  3.710032e-03        19   1
+         4  -1.000000e+00 -2.000000e+00  4.380941e-03        24   1
+         5  -2.000000e+00 -2.000000e+00  5.082130e-03        29   1
+         6  -2.000000e+00 -2.000000e+00  5.739927e-03        34   1
+         7  -2.000000e+00 -2.000000e+00  6.392956e-03        39   1
+         8  -2.000000e+00 -2.000000e+00  7.044077e-03        44   1
+         9  -2.000000e+00 -2.000000e+00  7.694960e-03        49   1
+        10  -2.000000e+00 -2.000000e+00  8.409023e-03        54   1
+        11  -2.000000e+00 -2.000000e+00  9.086132e-03        59   1
+        12  -2.000000e+00 -2.000000e+00  9.747982e-03        64   1
+        13  -2.000000e+00 -2.000000e+00  1.052594e-02        69   1
+        14  -2.000000e+00 -2.000000e+00  1.119614e-02        74   1
+        15  -2.000000e+00 -2.000000e+00  1.199102e-02        79   1
+        16  -2.000000e+00 -2.000000e+00  1.273513e-02        84   1
+        17  -2.000000e+00 -2.000000e+00  1.344895e-02        89   1
+        18  -2.000000e+00 -2.000000e+00  1.416206e-02        94   1
+        19  -2.000000e+00 -2.000000e+00  1.490808e-02        99   1
+        20  -2.000000e+00 -2.000000e+00  1.562905e-02       104   1
+        21  -2.000000e+00 -2.000000e+00  1.672411e-02       113   1
+        22  -2.000000e+00 -2.000000e+00  1.745510e-02       118   1
+        23  -2.000000e+00 -2.000000e+00  1.822114e-02       123   1
+        24  -2.000000e+00 -2.000000e+00  1.896501e-02       128   1
+        25  -2.000000e+00 -2.000000e+00  1.973605e-02       133   1
+        26  -2.000000e+00 -2.000000e+00  2.055001e-02       138   1
+        27  -2.000000e+00 -2.000000e+00  2.133012e-02       143   1
+        28  -2.000000e+00 -2.000000e+00  2.212405e-02       148   1
+        29  -2.000000e+00 -2.000000e+00  2.289295e-02       153   1
+        30  -2.000000e+00 -2.000000e+00  2.367496e-02       158   1
+        31  -2.000000e+00 -2.000000e+00  2.454114e-02       163   1
+        32  -2.000000e+00 -2.000000e+00  2.536607e-02       168   1
+        33  -2.000000e+00 -2.000000e+00  2.618313e-02       173   1
+        34  -2.000000e+00 -2.000000e+00  2.705503e-02       178   1
+        35  -2.000000e+00 -2.000000e+00  2.787709e-02       183   1
+        36  -2.000000e+00 -2.000000e+00  2.876401e-02       188   1
+        37  -2.000000e+00 -2.000000e+00  2.958298e-02       193   1
+        38  -2.000000e+00 -2.000000e+00  3.048611e-02       198   1
+        39  -2.000000e+00 -2.000000e+00  3.134894e-02       203   1
+        40  -2.000000e+00 -2.000000e+00  3.223395e-02       208   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 3.223395e-02
+total solves   : 208
+best bound     : -2.000000e+00
+simulation ci  : -1.887500e+00 ± 1.189300e-01
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 3e+00]
+  bounds range     [5e+00, 2e+01]
+  rhs range        [2e+00, 1e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   2.390000e+02  6.304440e+01  9.616494e-02       183   1
+        33   9.486954e+02  2.352911e+02  1.223865e+00      8715   1
+        58   3.590389e+02  2.362865e+02  2.251487e+00     15078   1
+        74   9.520993e+02  2.364084e+02  3.372849e+00     21198   1
+        97   4.635087e+02  2.364284e+02  4.379635e+00     26115   1
+       100   1.135002e+02  2.364293e+02  4.485462e+00     26640   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 4.485462e+00
+total solves   : 26640
+best bound     :  2.364293e+02
+simulation ci  :  2.593398e+02 ± 5.186931e+01
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 5
+  state variables : 3
+  scenarios       : 1.43489e+07
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [13, 13]
+  AffExpr in MOI.EqualTo{Float64}         : [3, 3]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [7, 7]
+  VariableRef in MOI.LessThan{Float64}    : [6, 7]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [3e-01, 2e+00]
+  bounds range     [5e-01, 5e+00]
+  rhs range        [2e+00, 2e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10  -3.950563e+00 -4.425944e+00  2.284670e-01      1400   1
+        20  -4.274542e+00 -4.397454e+00  3.499298e-01      2800   1
+        30  -3.068570e+00 -4.380102e+00  4.788949e-01      4200   1
+        40  -3.786070e+00 -4.369668e+00  6.111798e-01      5600   1
+        50  -4.259563e+00 -4.362339e+00  7.489738e-01      7000   1
+        60  -3.647455e+00 -4.359239e+00  8.912089e-01      8400   1
+        70  -4.012512e+00 -4.357262e+00  1.036481e+00      9800   1
+        80  -4.293203e+00 -4.354708e+00  1.179969e+00     11200   1
+        90  -4.485010e+00 -4.352846e+00  1.328403e+00     12600   1
+       100  -4.178952e+00 -4.350527e+00  1.476779e+00     14000   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 1.476779e+00
+total solves   : 14000
+best bound     : -4.350527e+00
+simulation ci  : -4.259588e+00 ± 8.809614e-02
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 5
+  state variables : 1
+  scenarios       : 1.00000e+05
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [5, 5]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [3, 3]
+  VariableRef in MOI.LessThan{Float64}    : [2, 3]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [3e-01, 2e+00]
+  bounds range     [5e-01, 2e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10  -1.573154e+00 -1.474247e+00  7.026792e-02      1050   1
+        20  -1.346690e+00 -1.471483e+00  1.100869e-01      1600   1
+        30  -1.308031e+00 -1.471306e+00  2.293820e-01      2650   1
+        40  -1.401200e+00 -1.471167e+00  2.732480e-01      3200   1
+        50  -1.557483e+00 -1.471097e+00  3.626931e-01      4250   1
+        60  -1.534169e+00 -1.471075e+00  4.084239e-01      4800   1
+        65  -1.689864e+00 -1.471075e+00  4.319971e-01      5075   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 4.319971e-01
+total solves   : 5075
+best bound     : -1.471075e+00
+simulation ci  : -1.484084e+00 ± 4.058839e-02
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 4
+  scenarios       : 2.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [29, 29]
+  AffExpr in MOI.EqualTo{Float64}         : [4, 5]
+  AffExpr in MOI.GreaterThan{Float64}     : [3, 3]
+  AffExpr in MOI.LessThan{Float64}        : [4, 4]
+  VariableRef in MOI.GreaterThan{Float64} : [22, 22]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 1e+06]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   3.455904e+05  3.147347e+05  8.625984e-03        54   1
+        20   3.336455e+05  3.402383e+05  1.514506e-02       104   1
+        30   3.337559e+05  3.403155e+05  2.254009e-02       158   1
+        40   3.337559e+05  3.403155e+05  2.981496e-02       208   1
+        48   3.337559e+05  3.403155e+05  3.610301e-02       248   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 3.610301e-02
+total solves   : 248
+best bound     :  3.403155e+05
+simulation ci  :  1.351676e+08 ± 1.785770e+08
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 4
+  scenarios       : 4.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [29, 29]
+  AffExpr in MOI.EqualTo{Float64}         : [4, 5]
+  AffExpr in MOI.GreaterThan{Float64}     : [3, 3]
+  AffExpr in MOI.LessThan{Float64}        : [4, 4]
+  VariableRef in MOI.EqualTo{Float64}     : [3, 3]
+  VariableRef in MOI.GreaterThan{Float64} : [22, 22]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 1e+05]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   4.403329e+05  3.509666e+05  1.404285e-02        92   1
+        20   4.055335e+05  4.054833e+05  2.509189e-02       172   1
+        30   3.959476e+05  4.067125e+05  3.850007e-02       264   1
+        40   3.959476e+05  4.067125e+05  5.213594e-02       344   1
+        47   3.959476e+05  4.067125e+05  6.246400e-02       400   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 6.246400e-02
+total solves   : 400
+best bound     :  4.067125e+05
+simulation ci  :  2.695623e+07 ± 3.645336e+07
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 10
+  state variables : 4
+  scenarios       : 2.70000e+01
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [24, 24]
+  AffExpr in MOI.EqualTo{Float64}         : [3, 3]
+  AffExpr in MOI.GreaterThan{Float64}     : [1, 1]
+  AffExpr in MOI.LessThan{Float64}        : [1, 6]
+  VariableRef in MOI.GreaterThan{Float64} : [20, 20]
+  VariableRef in MOI.LessThan{Float64}    : [1, 2]
+numerical stability report
+  matrix range     [1e+00, 8e+01]
+  objective range  [1e+00, 1e+03]
+  bounds range     [6e+01, 6e+01]
+  rhs range        [2e+02, 3e+03]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   8.316000e+03  0.000000e+00  8.614016e-02        14   1
+        40   4.716000e+03  4.074139e+03  2.202001e-01       776   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 2.202001e-01
+total solves   : 776
+best bound     :  4.074139e+03
+simulation ci  :  4.477341e+03 ± 6.593738e+02
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : 4.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [4, 4]
+  VariableRef in MOI.Integer              : [3, 3]
+  VariableRef in MOI.LessThan{Float64}    : [2, 3]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 3e+02]
+  bounds range     [1e+02, 2e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1L  7.000000e+04  6.166667e+04  3.163030e-01         8   1
+        40L  5.500000e+04  6.250000e+04  5.539300e-01       344   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 5.539300e-01
+total solves   : 344
+best bound     :  6.250000e+04
+simulation ci  :  6.091250e+04 ± 6.325667e+03
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : 4.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [4, 4]
+  VariableRef in MOI.Integer              : [3, 3]
+  VariableRef in MOI.LessThan{Float64}    : [2, 3]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 3e+02]
+  bounds range     [1e+02, 2e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   3.000000e+04  6.250000e+04  3.816843e-03         8   1
+        20   4.000000e+04  6.250000e+04  4.364085e-02       172   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 4.364085e-02
+total solves   : 172
+best bound     :  6.250000e+04
+simulation ci  :  5.650000e+04 ± 6.785916e+03
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : 4.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [5, 5]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [4, 4]
+  VariableRef in MOI.LessThan{Float64}    : [2, 3]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 3e+02]
+  bounds range     [1e+02, 2e+02]
+  rhs range        [1e+02, 3e+02]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   7.000000e+04  6.250000e+04  5.573988e-03         5   1
+        10   6.000000e+04  6.250000e+04  2.078414e-02        50   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 2.078414e-02
+total solves   : 50
+best bound     :  6.250000e+04
+simulation ci  :  6.150000e+04 ± 1.265596e+04
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 2
+  scenarios       : 1.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 3]
+  VariableRef in MOI.LessThan{Float64}    : [3, 3]
+  VariableRef in MOI.ZeroOne              : [3, 3]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 6e+00]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1L  6.000000e+00  9.000000e+00  3.324699e-02         6   1
+        20L  9.000000e+00  9.000000e+00  7.298398e-02       123   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 7.298398e-02
+total solves   : 123
+best bound     :  9.000000e+00
+simulation ci  :  8.850000e+00 ± 2.940000e-01
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 7
+  state variables : 2
+  scenarios       : 8.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [5, 7]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [3, 5]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 4e+00]
+  bounds range     [1e+03, 1e+03]
+  rhs range        [6e+01, 8e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         5  -1.620000e+00 -8.522173e-01  1.387000e-02        87   1
+        10  -1.847411e-13  1.392784e+00  2.092218e-02       142   1
+        15  -6.963319e-13  1.514085e+00  2.852011e-02       197   1
+        20   1.136868e-13  1.514085e+00  3.643203e-02       252   1
+        25  -1.080025e-12  1.514085e+00  7.544017e-02       339   1
+        30   1.136868e-13  1.514085e+00  8.423805e-02       394   1
+        35  -2.479988e+01  1.514085e+00  9.354115e-02       449   1
+        40   1.136868e-13  1.514085e+00  1.033790e-01       504   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 1.033790e-01
+total solves   : 504
+best bound     :  1.514085e+00
+simulation ci  :  3.429060e+00 ± 6.665883e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 7
+  state variables : 2
+  scenarios       : 3.20000e+01
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : #4
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [5, 7]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 5]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [2e-02, 4e+00]
+  bounds range     [1e+03, 1e+03]
+  rhs range        [6e+01, 8e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   4.375000e+00  6.798204e+00  1.466281e-01       278   1
+        20   1.230957e+01  1.358825e+00  1.650751e-01       428   1
+        30   8.859026e+00  1.278410e+00  1.985130e-01       706   1
+        40  -2.315795e+01  1.278410e+00  2.224929e-01       856   1
+        49   3.014193e+01  1.278410e+00  2.449131e-01       991   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 2.449131e-01
+total solves   : 991
+best bound     :  1.278410e+00
+simulation ci  : -1.755629e+00 ± 5.526921e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 7
+  state variables : 2
+  scenarios       : 3.20000e+01
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : #4
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [5, 7]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 5]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [2e-02, 4e+00]
+  bounds range     [1e+03, 1e+03]
+  rhs range        [6e+01, 8e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10  -2.454000e+00  1.647363e+00  3.725791e-02       278   1
+        20  -3.575118e+00  1.278410e+00  6.712294e-02       428   1
+        30  -5.003795e+01  1.278410e+00  1.453290e-01       706   1
+        40   6.835609e+00  1.278410e+00  1.866570e-01       856   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 1.866570e-01
+total solves   : 856
+best bound     :  1.278410e+00
+simulation ci  :  4.369345e+00 ± 4.780393e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 4
+  state variables : 1
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 7]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  AffExpr in MOI.GreaterThan{Float64}     : [2, 2]
+  VariableRef in MOI.EqualTo{Float64}     : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [3, 3]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 2e+00]
+  bounds range     [2e+00, 1e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   4.787277e+00  9.346930e+00  9.593441e-01       900   1
+        20   6.374753e+00  1.361934e+01  1.128298e+00      1720   1
+        30   2.813321e+01  1.651297e+01  1.443493e+00      3036   1
+        40   1.654759e+01  1.632970e+01  1.804616e+00      4192   1
+        50   3.570941e+00  1.846889e+01  2.051410e+00      5020   1
+        60   1.087425e+01  1.890254e+01  2.314830e+00      5808   1
+        70   9.381610e+00  1.940320e+01  2.599015e+00      6540   1
+        80   5.648731e+01  1.962435e+01  2.839699e+00      7088   1
+        90   3.879273e+01  1.981008e+01  3.276614e+00      8180   1
+       100   7.870187e+00  1.997117e+01  3.476480e+00      8664   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 3.476480e+00
+total solves   : 8664
+best bound     :  1.997117e+01
+simulation ci  :  2.275399e+01 ± 4.541987e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 5
+  state variables : 2
+  scenarios       : 3.20000e+01
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [10, 10]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  AffExpr in MOI.GreaterThan{Float64}     : [2, 2]
+  AffExpr in MOI.LessThan{Float64}        : [6, 6]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 6]
+  VariableRef in MOI.LessThan{Float64}    : [6, 6]
+  VariableRef in MOI.ZeroOne              : [5, 5]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 6e+00]
+  bounds range     [1e+00, 1e+01]
+  rhs range        [1e+00, 1e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         5   9.000000e+00  9.002950e+00  1.271300e-01       235   1
+        10   4.000000e+00  9.002950e+00  1.510820e-01       310   1
+        15   4.000000e+00  9.002950e+00  1.722639e-01       385   1
+        20   4.000000e+00  9.002950e+00  1.937020e-01       460   1
+        25   1.000000e+01  9.002950e+00  2.701209e-01       695   1
+        30   5.000000e+00  9.002950e+00  2.924960e-01       770   1
+        35   1.000000e+01  9.002950e+00  3.162429e-01       845   1
+        40   5.000000e+00  9.002950e+00  3.401349e-01       920   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 3.401349e-01
+total solves   : 920
+best bound     :  9.002950e+00
+simulation ci  :  6.375000e+00 ± 7.930178e-01
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 4
+  scenarios       : 2.16000e+02
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [18, 18]
+  AffExpr in MOI.EqualTo{Float64}         : [4, 4]
+  AffExpr in MOI.GreaterThan{Float64}     : [4, 4]
+  AffExpr in MOI.LessThan{Float64}        : [12, 12]
+  VariableRef in MOI.GreaterThan{Float64} : [9, 10]
+  VariableRef in MOI.LessThan{Float64}    : [10, 10]
+  VariableRef in MOI.ZeroOne              : [9, 9]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 4e+00]
+  bounds range     [1e+00, 2e+01]
+  rhs range        [1e+00, 1e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   1.000000e+01  6.868919e+00  1.035361e-01       510   1
+        20   2.000000e+00  6.834387e+00  1.568220e-01       720   1
+        30   1.200000e+01  6.834387e+00  2.972770e-01      1230   1
+        40   7.000000e+00  6.823805e+00  3.508930e-01      1440   1
+        50   7.000000e+00  6.823805e+00  4.949381e-01      1950   1
+        60   5.000000e+00  6.823805e+00  5.497000e-01      2160   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 5.497000e-01
+total solves   : 2160
+best bound     :  6.823805e+00
+simulation ci  :  6.200000e+00 ± 6.281544e-01
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 5
+  state variables : 5
+  scenarios       : 3.27680e+04
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [14, 14]
+  AffExpr in MOI.GreaterThan{Float64}     : [7, 7]
+  AffExpr in MOI.LessThan{Float64}        : [4, 4]
+  VariableRef in MOI.GreaterThan{Float64} : [8, 8]
+  VariableRef in MOI.Integer              : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [5, 6]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 5e+05]
+  bounds range     [1e+00, 1e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   2.549668e+06  2.078257e+06  5.010200e-01       920   1
+        20   5.494568e+05  2.078257e+06  6.929219e-01      1340   1
+        30   4.985879e+04  2.078257e+06  1.237987e+00      2260   1
+        40   3.799447e+06  2.078257e+06  1.436607e+00      2680   1
+        50   1.049867e+06  2.078257e+06  1.980681e+00      3600   1
+        60   3.985191e+04  2.078257e+06  2.184889e+00      4020   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 2.184889e+00
+total solves   : 4020
+best bound     :  2.078257e+06
+simulation ci  :  2.031697e+06 ± 3.922745e+05
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 5
+  state variables : 5
+  scenarios       : 3.27680e+04
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [14, 14]
+  AffExpr in MOI.GreaterThan{Float64}     : [7, 7]
+  AffExpr in MOI.LessThan{Float64}        : [4, 4]
+  VariableRef in MOI.GreaterThan{Float64} : [8, 8]
+  VariableRef in MOI.Integer              : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [5, 6]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 5e+05]
+  bounds range     [1e+00, 1e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10L  4.986663e+04  2.079056e+06  9.649441e-01       920   1
+        20L  3.799878e+06  2.079267e+06  1.701433e+00      1340   1
+        30L  3.003923e+04  2.079457e+06  2.826505e+00      2260   1
+        40L  5.549882e+06  2.079457e+06  3.606830e+00      2680   1
+        50L  2.799466e+06  2.079457e+06  4.759449e+00      3600   1
+        60L  3.549880e+06  2.079457e+06  5.525239e+00      4020   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 5.525239e+00
+total solves   : 4020
+best bound     :  2.079457e+06
+simulation ci  :  2.352197e+06 ± 5.377546e+05
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 1
+  state variables : 1
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [8, 8]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 1e+01]
+  bounds range     [5e+00, 2e+01]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+       100   2.500000e+01  1.188965e+02  5.402200e-01      1946   1
+       200   2.500000e+01  1.191634e+02  7.438660e-01      3920   1
+       300   0.000000e+00  1.191666e+02  9.514990e-01      5902   1
+       330   2.500000e+01  1.191667e+02  9.926620e-01      6224   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 9.926620e-01
+total solves   : 6224
+best bound     :  1.191667e+02
+simulation ci  :  2.158333e+01 ± 3.290252e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 1
+  state variables : 1
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [8, 8]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 1e+01]
+  bounds range     [5e+00, 2e+01]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+       100   0.000000e+00  1.191285e+02  2.919941e-01      2874   1
+       200   2.500000e+00  1.191666e+02  5.567551e-01      4855   1
+       282   7.500000e+00  1.191667e+02  6.897030e-01      5733   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 6.897030e-01
+total solves   : 5733
+best bound     :  1.191667e+02
+simulation ci  :  2.104610e+01 ± 3.492245e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 1
+  state variables : 1
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [3, 3]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 1e+00]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   4.000000e+00  1.997089e+01  6.995893e-02      1204   1
+        20   8.000000e+00  2.000000e+01  9.140396e-02      1420   1
+        30   1.600000e+01  2.000000e+01  1.617930e-01      2628   1
+        40   8.000000e+00  2.000000e+01  1.838710e-01      2834   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 1.838710e-01
+total solves   : 2834
+best bound     :  2.000000e+01
+simulation ci  :  1.625000e+01 ± 4.766381e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 1
+  state variables : 1
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [3, 3]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 1e+00]
+  bounds range     [0e+00, 0e+00]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   1.000000e+00  1.500000e+00  1.730919e-03         3   1
+        40   4.000000e+00  2.000000e+00  4.424787e-02       578   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 4.424787e-02
+total solves   : 578
+best bound     :  2.000000e+00
+simulation ci  :  1.950000e+00 ± 5.568095e-01
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : 8.51840e+04
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 3]
+  AffExpr in MOI.LessThan{Float64}        : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [3, 4]
+  VariableRef in MOI.LessThan{Float64}    : [3, 3]
+numerical stability report
+  matrix range     [8e-01, 2e+00]
+  objective range  [1e+00, 2e+00]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [5e+01, 5e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   5.250000e+00  4.888669e+00  1.599860e-01      1350   1
+        20   4.350000e+00  4.105556e+00  2.812750e-01      2700   1
+        30   5.000000e+00  4.099889e+00  3.800409e-01      4050   1
+        40   3.500000e+00  4.096596e+00  4.896998e-01      5400   1
+        50   5.250000e+00  4.095112e+00  6.030419e-01      6750   1
+        60   3.643750e+00  4.092827e+00  7.193239e-01      8100   1
+        70   2.643750e+00  4.091514e+00  8.345840e-01      9450   1
+        80   5.087500e+00  4.091301e+00  9.519110e-01     10800   1
+        90   5.062500e+00  4.090986e+00  1.069322e+00     12150   1
+       100   4.843750e+00  4.086917e+00  1.196789e+00     13500   1
+       110   3.400000e+00  4.085985e+00  1.322771e+00     14850   1
+       120   3.375000e+00  4.085819e+00  1.454204e+00     16200   1
+       130   5.025000e+00  4.085765e+00  1.588912e+00     17550   1
+       140   5.000000e+00  4.085640e+00  1.719297e+00     18900   1
+       150   3.500000e+00  4.085560e+00  1.849419e+00     20250   1
+       160   4.281250e+00  4.085411e+00  1.974796e+00     21600   1
+       170   4.562500e+00  4.085379e+00  2.103837e+00     22950   1
+       180   5.768750e+00  4.085379e+00  2.231529e+00     24300   1
+       190   3.468750e+00  4.085337e+00  2.365959e+00     25650   1
+       200   4.131250e+00  4.085202e+00  2.501598e+00     27000   1
+       210   4.512500e+00  4.085132e+00  2.666742e+00     28350   1
+       220   4.900000e+00  4.085130e+00  2.800827e+00     29700   1
+       230   4.025000e+00  4.085111e+00  2.935114e+00     31050   1
+       240   4.468750e+00  4.085094e+00  3.074411e+00     32400   1
+       250   4.062500e+00  4.085056e+00  3.212317e+00     33750   1
+       260   4.875000e+00  4.085019e+00  3.352954e+00     35100   1
+       270   3.850000e+00  4.084990e+00  3.494743e+00     36450   1
+       280   4.912500e+00  4.084971e+00  3.639131e+00     37800   1
+       290   2.987500e+00  4.084965e+00  3.787091e+00     39150   1
+       300   3.825000e+00  4.084940e+00  3.936988e+00     40500   1
+       310   3.250000e+00  4.084900e+00  4.084737e+00     41850   1
+       320   3.537500e+00  4.084889e+00  4.235069e+00     43200   1
+       330   3.950000e+00  4.084889e+00  4.374470e+00     44550   1
+       340   4.500000e+00  4.084886e+00  4.521187e+00     45900   1
+       350   5.000000e+00  4.084886e+00  4.669863e+00     47250   1
+       360   3.075000e+00  4.084864e+00  4.817145e+00     48600   1
+       370   3.500000e+00  4.084859e+00  4.971704e+00     49950   1
+       380   3.356250e+00  4.084854e+00  5.122328e+00     51300   1
+       390   5.500000e+00  4.084839e+00  5.302720e+00     52650   1
+       400   4.475000e+00  4.084834e+00  5.451632e+00     54000   1
+       410   3.750000e+00  4.084832e+00  5.604215e+00     55350   1
+       420   3.687500e+00  4.084832e+00  5.761379e+00     56700   1
+       430   4.337500e+00  4.084811e+00  5.919417e+00     58050   1
+       440   5.750000e+00  4.084811e+00  6.061189e+00     59400   1
+       450   4.937500e+00  4.084776e+00  6.220326e+00     60750   1
+       460   3.600000e+00  4.084776e+00  6.371304e+00     62100   1
+       470   4.387500e+00  4.084776e+00  6.518357e+00     63450   1
+       480   4.000000e+00  4.084771e+00  6.677883e+00     64800   1
+       490   2.975000e+00  4.084769e+00  6.833350e+00     66150   1
+       500   3.125000e+00  4.084769e+00  6.986788e+00     67500   1
+       510   4.250000e+00  4.084769e+00  7.147667e+00     68850   1
+       520   4.525000e+00  4.084767e+00  7.298271e+00     70200   1
+       530   3.875000e+00  4.084767e+00  7.461776e+00     71550   1
+       540   4.387500e+00  4.084762e+00  7.629783e+00     72900   1
+       550   5.287500e+00  4.084762e+00  7.795615e+00     74250   1
+       560   4.650000e+00  4.084762e+00  7.972799e+00     75600   1
+       570   3.062500e+00  4.084762e+00  8.133008e+00     76950   1
+       580   3.187500e+00  4.084758e+00  8.286034e+00     78300   1
+       590   3.812500e+00  4.084758e+00  8.436430e+00     79650   1
+       600   3.637500e+00  4.084746e+00  8.596872e+00     81000   1
+       610   3.925000e+00  4.084746e+00  8.760391e+00     82350   1
+       620   4.625000e+00  4.084746e+00  8.926667e+00     83700   1
+       630   4.218750e+00  4.084746e+00  9.094058e+00     85050   1
+       640   3.025000e+00  4.084746e+00  9.264203e+00     86400   1
+       650   2.993750e+00  4.084746e+00  9.422707e+00     87750   1
+       660   3.262500e+00  4.084746e+00  9.587794e+00     89100   1
+       670   3.575000e+00  4.084746e+00  9.761969e+00     90450   1
+       680   2.981250e+00  4.084746e+00  9.930788e+00     91800   1
+       690   4.187500e+00  4.084746e+00  1.010207e+01     93150   1
+       700   4.500000e+00  4.084746e+00  1.026997e+01     94500   1
+       710   3.225000e+00  4.084746e+00  1.043839e+01     95850   1
+       720   4.375000e+00  4.084746e+00  1.061153e+01     97200   1
+       730   2.650000e+00  4.084746e+00  1.082169e+01     98550   1
+       740   3.250000e+00  4.084746e+00  1.099078e+01     99900   1
+       750   4.725000e+00  4.084746e+00  1.117014e+01    101250   1
+       760   3.375000e+00  4.084746e+00  1.134731e+01    102600   1
+       770   5.375000e+00  4.084746e+00  1.152072e+01    103950   1
+       780   4.068750e+00  4.084746e+00  1.169728e+01    105300   1
+       790   4.412500e+00  4.084746e+00  1.187875e+01    106650   1
+       800   4.350000e+00  4.084746e+00  1.206258e+01    108000   1
+       810   5.900000e+00  4.084746e+00  1.224386e+01    109350   1
+       820   4.912500e+00  4.084746e+00  1.242247e+01    110700   1
+       830   4.387500e+00  4.084746e+00  1.259790e+01    112050   1
+       840   3.712500e+00  4.084746e+00  1.278720e+01    113400   1
+       850   5.375000e+00  4.084746e+00  1.296587e+01    114750   1
+       860   3.562500e+00  4.084746e+00  1.314876e+01    116100   1
+       870   3.075000e+00  4.084746e+00  1.333768e+01    117450   1
+       880   3.625000e+00  4.084746e+00  1.352019e+01    118800   1
+       890   2.937500e+00  4.084746e+00  1.369944e+01    120150   1
+       900   4.450000e+00  4.084746e+00  1.392124e+01    121500   1
+       910   4.200000e+00  4.084746e+00  1.410829e+01    122850   1
+       920   3.687500e+00  4.084746e+00  1.429545e+01    124200   1
+       930   4.687500e+00  4.084746e+00  1.447706e+01    125550   1
+       940   4.018750e+00  4.084746e+00  1.465288e+01    126900   1
+       950   4.625000e+00  4.084746e+00  1.482745e+01    128250   1
+       960   3.375000e+00  4.084746e+00  1.500070e+01    129600   1
+       970   3.812500e+00  4.084746e+00  1.517151e+01    130950   1
+       980   3.112500e+00  4.084746e+00  1.534616e+01    132300   1
+       990   3.600000e+00  4.084746e+00  1.552896e+01    133650   1
+      1000   5.500000e+00  4.084746e+00  1.571279e+01    135000   1
+      1010   3.187500e+00  4.084746e+00  1.590468e+01    136350   1
+      1020   4.900000e+00  4.084746e+00  1.609019e+01    137700   1
+      1030   3.637500e+00  4.084746e+00  1.628240e+01    139050   1
+      1040   3.975000e+00  4.084746e+00  1.646649e+01    140400   1
+      1050   4.750000e+00  4.084746e+00  1.667610e+01    141750   1
+      1060   4.437500e+00  4.084746e+00  1.687521e+01    143100   1
+      1070   5.000000e+00  4.084746e+00  1.706214e+01    144450   1
+      1080   4.143750e+00  4.084746e+00  1.724309e+01    145800   1
+      1090   5.625000e+00  4.084746e+00  1.741424e+01    147150   1
+      1100   3.475000e+00  4.084746e+00  1.759654e+01    148500   1
+      1110   4.156250e+00  4.084746e+00  1.778297e+01    149850   1
+      1120   4.450000e+00  4.084746e+00  1.796854e+01    151200   1
+      1130   3.225000e+00  4.084741e+00  1.815556e+01    152550   1
+      1140   5.375000e+00  4.084741e+00  1.832637e+01    153900   1
+      1150   4.800000e+00  4.084737e+00  1.851195e+01    155250   1
+      1160   3.300000e+00  4.084737e+00  1.868899e+01    156600   1
+      1170   4.356250e+00  4.084737e+00  1.886120e+01    157950   1
+      1180   3.900000e+00  4.084737e+00  1.905428e+01    159300   1
+      1190   4.450000e+00  4.084737e+00  1.923889e+01    160650   1
+      1200   5.156250e+00  4.084737e+00  1.942427e+01    162000   1
+      1210   4.512500e+00  4.084737e+00  1.962332e+01    163350   1
+      1220   4.875000e+00  4.084737e+00  1.981368e+01    164700   1
+      1230   4.000000e+00  4.084737e+00  1.998790e+01    166050   1
+      1231   3.843750e+00  4.084737e+00  2.000647e+01    166185   1
+-------------------------------------------------------------------
+status         : time_limit
+total time (s) : 2.000647e+01
+total solves   : 166185
+best bound     :  4.084737e+00
+simulation ci  :  4.070674e+00 ± 4.047927e-02
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 1
+  scenarios       : 8.51840e+04
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6, 6]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 3]
+  AffExpr in MOI.LessThan{Float64}        : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [3, 4]
+  VariableRef in MOI.LessThan{Float64}    : [3, 3]
+numerical stability report
+  matrix range     [8e-01, 2e+00]
+  objective range  [1e+00, 2e+00]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [5e+01, 5e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   3.900000e+00  5.597900e+00  1.926131e-01      1350   1
+        20   4.875000e+00  4.736771e+00  5.295930e-01      2700   1
+        30   3.437500e+00  4.044812e+00  9.739120e-01      4050   1
+        40   3.937500e+00  4.040107e+00  1.503327e+00      5400   1
+        50   3.837500e+00  4.039206e+00  2.187651e+00      6750   1
+        60   3.500000e+00  4.039082e+00  3.030556e+00      8100   1
+        70   2.918750e+00  4.039035e+00  3.992202e+00      9450   1
+        80   3.225000e+00  4.038970e+00  5.092465e+00     10800   1
+        90   3.156250e+00  4.038914e+00  6.274352e+00     12150   1
+       100   3.862500e+00  4.038901e+00  7.545167e+00     13500   1
+       110   4.031250e+00  4.038839e+00  8.982830e+00     14850   1
+       120   4.987500e+00  4.038784e+00  1.045647e+01     16200   1
+       130   4.375000e+00  4.038784e+00  1.208890e+01     17550   1
+       140   3.625000e+00  4.038777e+00  1.382428e+01     18900   1
+       150   4.375000e+00  4.038777e+00  1.570956e+01     20250   1
+       160   4.500000e+00  4.038777e+00  1.781475e+01     21600   1
+       170   4.237500e+00  4.038770e+00  1.978165e+01     22950   1
+       172   4.043750e+00  4.038770e+00  2.023606e+01     23220   1
+-------------------------------------------------------------------
+status         : time_limit
+total time (s) : 2.023606e+01
+total solves   : 23220
+best bound     :  4.038770e+00
+simulation ci  :  4.105187e+00 ± 1.152341e-01
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 8
+  state variables : 1
+  scenarios       : 1.00000e+08
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 7]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  AffExpr in MOI.GreaterThan{Float64}     : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [4, 4]
+  VariableRef in MOI.LessThan{Float64}    : [1, 2]
+  VariableRef in MOI.ZeroOne              : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 2e+00]
+  objective range  [5e-01, 1e+00]
+  bounds range     [1e+00, 1e+00]
+  rhs range        [1e+00, 1e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10   3.028262e+00  1.160784e+00  4.119389e-01      1680   1
+        20   3.633327e+00  1.167299e+00  5.071728e-01      2560   1
+        30   4.219704e+00  1.167299e+00  8.837130e-01      4240   1
+        40   2.574580e+00  1.167299e+00  1.004050e+00      5120   1
+        50   4.027108e+00  1.167299e+00  1.394014e+00      6800   1
+        60   3.670912e+00  1.167299e+00  1.494491e+00      7680   1
+        70   2.725523e+00  1.167299e+00  1.878903e+00      9360   1
+        80   3.014574e+00  1.167299e+00  1.983410e+00     10240   1
+        90   2.526674e+00  1.167299e+00  2.380193e+00     11920   1
+       100   2.723628e+00  1.167299e+00  2.485756e+00     12800   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 2.485756e+00
+total solves   : 12800
+best bound     :  1.167299e+00
+simulation ci  :  3.235893e+00 ± 9.197918e-02
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 2
+  scenarios       : 4.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 11]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  AffExpr in MOI.LessThan{Float64}        : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 7]
+  VariableRef in MOI.Integer              : [2, 2]
+  VariableRef in MOI.LessThan{Float64}    : [4, 7]
+  VariableRef in MOI.ZeroOne              : [4, 4]
+numerical stability report
+  matrix range     [1e+00, 6e+00]
+  objective range  [1e+00, 3e+01]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10  -4.700000e+01 -5.809615e+01  3.204012e-02        78   1
+        20  -4.700000e+01 -5.809615e+01  6.487107e-02       148   1
+        30  -4.700000e+01 -5.809615e+01  1.039901e-01       226   1
+        40  -4.000000e+01 -5.809615e+01  1.364231e-01       296   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 1.364231e-01
+total solves   : 296
+best bound     : -5.809615e+01
+simulation ci  : -5.403750e+01 ± 7.408848e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 2
+  scenarios       : 9.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 11]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  AffExpr in MOI.LessThan{Float64}        : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 7]
+  VariableRef in MOI.Integer              : [2, 2]
+  VariableRef in MOI.LessThan{Float64}    : [4, 7]
+  VariableRef in MOI.ZeroOne              : [4, 4]
+numerical stability report
+  matrix range     [1e+00, 6e+00]
+  objective range  [1e+00, 3e+01]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10  -7.500000e+01 -6.196125e+01  3.946805e-02       138   1
+        20  -6.300000e+01 -6.196125e+01  7.498193e-02       258   1
+        30  -8.200000e+01 -6.196125e+01  1.218750e-01       396   1
+        40  -4.700000e+01 -6.196125e+01  1.579959e-01       516   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 1.579959e-01
+total solves   : 516
+best bound     : -6.196125e+01
+simulation ci  : -6.106250e+01 ± 6.640956e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 2
+  scenarios       : 3.60000e+01
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 11]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  AffExpr in MOI.LessThan{Float64}        : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 7]
+  VariableRef in MOI.Integer              : [2, 2]
+  VariableRef in MOI.LessThan{Float64}    : [4, 7]
+  VariableRef in MOI.ZeroOne              : [4, 4]
+numerical stability report
+  matrix range     [1e+00, 6e+00]
+  objective range  [1e+00, 3e+01]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+        10  -4.700000e+01 -6.546793e+01  7.485080e-02       462   1
+        20  -6.300000e+01 -6.546793e+01  1.323259e-01       852   1
+        30  -8.200000e+01 -6.546793e+01  2.796240e-01      1314   1
+        40  -8.200000e+01 -6.546793e+01  3.426919e-01      1704   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 3.426919e-01
+total solves   : 1704
+best bound     : -6.546793e+01
+simulation ci  : -6.073750e+01 ± 5.326576e+00
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 3
+  state variables : 2
+  scenarios       : 2.70000e+01
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [9, 9]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  AffExpr in MOI.LessThan{Float64}        : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 3]
+  VariableRef in MOI.LessThan{Float64}    : [3, 3]
+  VariableRef in MOI.ZeroOne              : [4, 4]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 6e+00]
+  bounds range     [1e+00, 1e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1L  6.000000e+00  1.414815e+01  3.653979e-02        11   1
+        40L  6.000000e+00  8.000000e+00  3.839178e-01       602   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 3.839178e-01
+total solves   : 602
+best bound     :  8.000000e+00
+simulation ci  :  7.125000e+00 ± 8.068707e-01
+numeric issues : 0
+-------------------------------------------------------------------
+
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 3
+  scenarios       : 3.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 19]
+  AffExpr in MOI.EqualTo{Float64}         : [3, 3]
+  AffExpr in MOI.GreaterThan{Float64}     : [3, 3]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [3, 16]
+  VariableRef in MOI.LessThan{Float64}    : [1, 2]
+numerical stability report
+  matrix range     [1e+00, 2e+01]
+  objective range  [1e+00, 1e+03]
+  bounds range     [6e+03, 5e+05]
+  rhs range        [2e+02, 5e+02]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1  -9.800000e+04  4.922260e+05  7.660413e-02         6   1
+        20   1.093500e+05  1.083900e+05  9.000611e-02       120   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 9.000611e-02
+total solves   : 120
+best bound     :  1.083900e+05
+simulation ci  :  7.691975e+04 ± 3.206974e+04
+numeric issues : 0
+-------------------------------------------------------------------
+

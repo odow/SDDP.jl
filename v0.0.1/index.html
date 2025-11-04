@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Manual · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/><link href="assets/custom.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href="index.html">Manual</a><ul class="internal"><li><a class="toctext" href="#Overview-1">Overview</a></li><li><a class="toctext" href="#Getting-started-1">Getting started</a></li><li><a class="toctext" href="#Formulating-the-problem-1">Formulating the problem</a></li><li><a class="toctext" href="#Communicating-the-problem-to-the-solver-1">Communicating the problem to the solver</a></li><li><a class="toctext" href="#Solving-the-problem-efficiently-1">Solving the problem efficiently</a></li><li><a class="toctext" href="#Understanding-the-solution-1">Understanding the solution</a></li><li><a class="toctext" href="#Saving-models-1">Saving models</a></li><li><a class="toctext" href="#Extras-for-experts-1">Extras for experts</a></li></ul></li><li><a class="toctext" href="examples.html">Examples</a></li><li><a class="toctext" href="readings.html">Readings</a></li><li><a class="toctext" href="apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="index.html">Manual</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Manual</span><a class="fa fa-bars" href="#"></a></div></header><h2><a class="nav-anchor" id="Overview-1" href="#Overview-1">Overview</a></h2><p><em>SDDP.jl - Stochastic Dual Dynamic Programming in Julia.</em></p><p>SDDP.jl is a package for solving large multi-stage convex stocastic optimization problems. In this manual, we&#39;re going to assume a reasonable amount of background knowledge about stochastic optimization, the SDDP algorithm, Julia, and JuMP.</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>If you don&#39;t have that background, you may want to brush up on some <a href="readings.html#Readings-1">Readings</a>.</p></div></div><h3><a class="nav-anchor" id="Types-of-problems-SDDP.jl-can-solve-1" href="#Types-of-problems-SDDP.jl-can-solve-1">Types of problems SDDP.jl can solve</a></h3><p>To start, lets discuss the types of problems SDDP.jl can solve, since it has a few features that are non-standard, and it is missing some features that are standard.</p><p>SDDP.jl can solve multi-stage convex stochastic optimizations problems with</p><ul><li><p>a finite discrete number of states;</p></li><li><p>continuous state and control variables;</p></li><li><p>Hazard-Decision (Wait-and-See) uncertainty realization;</p></li><li><p>stagewise independent uncertainty in the RHS of the constraints that is  drawn from a finite discrete distribution;</p></li><li><p>stagewise independent uncertainty in the objective function that is  drawn from a finite discrete distribution;</p></li><li><p>a markov chain for temporal dependence. The markov chain forms a directed,  acyclic, feed-forward graph with a finite (and at least one) number of  markov states in each stage.</p></li></ul><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>Stagewise independent uncertainty in the constraint coefficients is <strong>not</strong> supported. You should reformulate the problem, or model the uncertainty as a markov chain.</p></div></div><p>In this manual, we detail the many features of SDDP.jl through the classic example of balancing a portfolio of stocks and bonds over time.</p><h2><a class="nav-anchor" id="Getting-started-1" href="#Getting-started-1">Getting started</a></h2><p>This package is unregistered so you will need to <code>Pkg.clone</code> it as follows:</p><pre><code class="language-julia">Pkg.clone(&quot;https://github.com/odow/SDDP.jl.git&quot;)</code></pre><p>If you want to use the parallel features of SDDP.jl, you should start Julia with some worker processes (<code>julia -p N</code>), or add by running <code>julia&gt; addprocs(N)</code> in a running Julia session.</p><h2><a class="nav-anchor" id="Formulating-the-problem-1" href="#Formulating-the-problem-1">Formulating the problem</a></h2><p>... still to do ...</p><p>For now, go look at the examples.</p><h3><a class="nav-anchor" id="The-Asset-Management-Problem-1" href="#The-Asset-Management-Problem-1">The Asset Management Problem</a></h3><p>The goal of the asset management problem is to choose an investment portfolio that is composed of stocks and bonds in order to meet a target wealth goal at the end of the time horizon. After five, and ten years, the agent observes the portfolio and is able to re-balance their wealth between the two asset classes. As an extension to the original problem, we introduce two new random variables. The first that represents a source of additional wealth in years 5 and 10. The second is an immediate reward that the agent incurs for holding stocks at the end of years 5 and 10. This can be though of as a dividend that cannot be reinvested.</p><h2><a class="nav-anchor" id="Communicating-the-problem-to-the-solver-1" href="#Communicating-the-problem-to-the-solver-1">Communicating the problem to the solver</a></h2><p>The second step in the optimization process is communicating the problem to the solver. To do this, we are going to build each subproblem as a JuMP model, and provide some metadata that describes how the JuMP subproblems inter-relate.</p><h3><a class="nav-anchor" id="The-Model-Constructor-1" href="#The-Model-Constructor-1">The Model Constructor</a></h3><p>The core type of SDDP.jl is the <a href="apireference.html#SDDP.SDDPModel"><code>SDDPModel</code></a> object. It can be constructed with</p><pre><code class="language-julia">m = SDDPModel( ... metadata as keyword arguments ... ) do sp, t, i
+    ... JuMP subproblem definition ...
+end</code></pre><p>We draw the readers attention to three sections in the SDDPModel constructor.</p><h4><a class="nav-anchor" id="Keyword-Metadata-1" href="#Keyword-Metadata-1">Keyword Metadata</a></h4><p>For a comprehensive list of options, checkout <a href="apireference.html#SDDP.SDDPModel"><code>SDDPModel</code></a> or type <code>julia&gt; ? SDDPModel</code> into a Julia REPL. However, we&#39;ll briefly list the important ones here.</p><p><strong>Required Keyword arguments</strong></p><ul><li><p><code>stages::Int</code>: the number of stages in the problem. A stage is defined as  each step in time at which a decion can be made. Defaults to <code>1</code>.</p></li><li><p><code>objective_bound</code>: a valid bound on the initial value/cost to go. i.e. for maximisation this may be some large positive number, for minimisation this may be some large negative number. You can ether pass a single value (used for all stages), a vector of values (one for each stage), or a vector of vectors of values (one vector for each stage, containing a vector with one element for each markov stage). Another option is to pass a function that takes two inputs so that <code>f(t, i)</code> returns the valid bound for stage <code>t</code> and markov state <code>i</code>.</p></li><li><p><code>solver::MathProgBase.AbstractMathProgSolver</code>: any MathProgBase compliant solver that returns duals from a linear program. If this isn&#39;t specified then you must use <code>JuMP.setsolver(sp, solver)</code> in the stage definition.</p></li></ul><p><strong>Optional Keyword arguments</strong></p><ul><li><p><code>sense</code>: must be either <code>:Max</code> or <code>:Min</code>. Defaults to <code>:Min</code>.</p></li><li><p><code>cut_oracle</code>: the cut oracle is responsible for collecting and storing the cuts that define a value function. The cut oracle may decide that only a subset of the total discovered cuts are relevant, which improves solution speed by reducing the size of the subproblems that need solving. Currently must be one of</p><ul><li><p><code>DefaultCutOracle()</code> (see <a href="apireference.html#SDDP.DefaultCutOracle"><code>DefaultCutOracle</code></a> for explanation)</p></li><li><p><code>LevelOneCutOracle()</code>(see <a href="apireference.html#SDDP.LevelOneCutOracle"><code>LevelOneCutOracle</code></a> for explanation)</p></li></ul></li><li><p><code>risk_measure</code>: if a single risk measure is given (i.e.  <code>risk_measure = Expectation()</code>), then this measure will be applied to every  stage in the problem. Another option is to provide a vector of risk  measures. There must be one element for every stage. For example:</p></li></ul><pre><code class="language-julia">risk_measure = [ EAVaR(lambda=0.5, beta=0.25), Expectation() ]</code></pre><p>will apply the <code>i</code>&#39;th element of <code>risk_measure</code> to every Markov state in the    <code>i</code>&#39;th stage. The last option is to provide a vector (one element for each    stage) of vectors of risk measures (one for each Markov state in the stage).    For example:</p><pre><code class="language-julia">risk_measure = [
+# Stage 1 Markov 1 # Stage 1 Markov 2 #
+   [ Expectation(), Expectation() ],
+   # ------- Stage 2 Markov 1 ------- ## ------- Stage 2 Markov 2 ------- #
+   [ EAVaR(lambda=0.5, beta=0.25), EAVaR(lambda=0.25, beta=0.3) ]
+   ]</code></pre><pre><code class="language-none">Like the objective bound, another option is to pass a function that takes
+as arguments the stage and markov state and returns a risk measure:</code></pre><pre><code class="language-julia">function stagedependentrisk(stage, markov_state)
+    if state == 1
+        return Expectation()
+    else
+        if markov_state == 1
+            return EAVaR(lambda=0.5, beta=0.25)
+        else
+            return EAVaR(lambda=0.25, beta=0.3)
+        end
+    end
+end
+
+risk_measure = stagedependentrisk</code></pre><p>Note that even though the last stage does not have a future cost function    associated with it (as it has no children), we still have to specify a risk    measure. This is necessary to simplify the implementation of the algorithm.</p><p>For more help see <a href="apireference.html#SDDP.EAVaR"><code>EAVaR</code></a> or <a href="apireference.html#SDDP.Expectation"><code>Expectation</code></a>.</p><ul><li><p><code>markov_transition</code>: define the transition probabilties of the stage graph. If a single array is given, it is assumed that there is an equal number of Markov states in each stage and the transition probabilities are stage invariant. Row indices represent the Markov state in the previous stage. Column indices represent the Markov state in the current stage. Therefore:</p></li></ul><pre><code class="language-julia">markov_transition = [0.1 0.9; 0.8 0.2]</code></pre><p>is the transition matrix when there is 10% chance of transitioning from Markov    state 1 to Markov state 1, a 90% chance of transitioning from Markov state 1    to Markov state 2, an 80% chance of transitioning from Markov state 2 to Markov    state 1, and a 20% chance of transitioning from Markov state 2 to Markov state 2.</p><h4><a class="nav-anchor" id="do-sp,-t,-i-...-end-1" href="#do-sp,-t,-i-...-end-1">do sp, t, i ... end</a></h4><p>This constructor is just syntactic sugar to make the process of defining a model a little tidier. It&#39;s nothing special to SDDP.jl and many users will be familiar with it (for example, the <code>open(file, &quot;w&quot;) do io ... end</code> syntax for file IO).</p><p>An anonymous function with three arguments (<code>sp</code>, <code>t</code> and <code>i</code>, although these can be named arbitrarily) is constructed. The body of the function should build the subproblem as the JuMP model <code>sp</code> for stage <code>t</code> and markov state <code>i</code>. <code>t</code> is an integer that ranges from 1 to the number of stages. <code>i</code> is also an integer that ranges from 1 to the number of markov states in stage <code>t</code>.</p><p>Users are also free to explicitly construct a function that takes three arguments, and pass that as the first argument to <a href="apireference.html#SDDP.SDDPModel"><code>SDDPModel</code></a>, along with the keyword arguments. For example:</p><pre><code class="language-julia">function buildsubproblem!(sp::JuMP.Model, t::Int, i::Int)
+    ... define states etc. ...
+end
+m = SDDPModel(buildsubproblem!; ... metadata as keyword arguments ...)</code></pre><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>If you don&#39;t have any markov states in the model, you don&#39;t have to include the third argument in the constructor. <code>SDDPModel() do sp, t ... end</code> is also valid syntax.</p></div></div><h4><a class="nav-anchor" id="JuMP-Subproblem-1" href="#JuMP-Subproblem-1">JuMP Subproblem</a></h4><p>In the next sections, we explain in detail how for model state variables, constraints, the stage objective, and any uncertainties in the model. However, you should keep a few things in mind:</p><ol><li><p>the body of the <code>do sp, t, i ... end</code> block is just a normal Julia function body. As such, standard scoping rules apply.</p></li><li><p>you can use <code>t</code> and <code>i</code> whenever, and however, you like. For example:</p></li></ol><pre><code class="language-julia">m = SDDPModel() do sp, t, i
+    if t == 1
+        # do something in the first stage only
+    else
+        # do something in the other stages
+    end
+end</code></pre><ol><li><p><code>sp</code> is just a normal JuMP model. You could (if so desired), set the solve hook, or add quadratic constraints (provided you have a quadratic solver).</p></li></ol><h3><a class="nav-anchor" id="State-Variables-1" href="#State-Variables-1">State Variables</a></h3><p>We can define a new state variable in the stage problem <code>sp</code> using the <a href="apireference.html#SDDP.@state"><code>@state</code></a> macro:</p><pre><code class="language-julia">@state(sp, x &gt;= 0.5, x0==1)</code></pre><p>The second argument (<code>x</code>) refers to the outgoing state variable (i.e. the value at the end of the stage). The third argument (<code>x0</code>) refers to the incoming state variable (i.e. the value at the beginning of the stage). For users familiar with SDDP, SDDP.jl handles all the calculation of the dual variables needed to evaluate the cuts automatically behind the scenes.</p><p>The <a href="apireference.html#SDDP.@state"><code>@state</code></a> macro is just short-hand for writing:</p><pre><code class="language-julia">@variable(sp, x &gt;= 0.5)
+@variable(sp, x0, start=1)
+SDDP.statevariable!(sp, x0, x)</code></pre><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>The <code>start=1</code> is only every used behind the scenes by the first stage problem. It&#39;s really just a nice syntatic trick we use to make specifying the model a bit more compact.</p></div></div><p>This illustrates how we can use indexing just as we would in a JuMP <code>@variable</code> macro:</p><pre><code class="language-julia">X0 = [3.0, 2.0]
+@state(sp, x[i=1:2], x0==X0[i])</code></pre><p>In this case, both <code>x</code> and <code>x0</code> are JuMP dicts that can be indexed with the keys <code>1</code> and <code>2</code>. All the indices must be specified in the second argument, but they can be referred to in the third argument. The indexing of <code>x0</code> will be identical to that of <code>x.</code></p><p>There is also a plural version of the <a href="apireference.html#SDDP.@state"><code>@state</code></a> macro:</p><pre><code class="language-julia">@states(sp, begin
+    x &gt;= 0.0, x0==1
+    y &gt;= 0.0, y0==1
+end)</code></pre><h3><a class="nav-anchor" id="Standard-JuMP-machinery-1" href="#Standard-JuMP-machinery-1">Standard JuMP machinery</a></h3><p>Remember that <code>sp</code> is just a normal JuMP model, and so (almost) anything you can do in JuMP, you can do in SDDP.jl. The one exception is the objective, which we detail in the next section.</p><p>However, control variables are just normal JuMP variables and can be created using <code>@variable</code> or <code>@variables</code>. Dynamical constraints, and feasiblity sets can be specified using <code>@constraint</code> or <code>@constraints</code>.</p><h3><a class="nav-anchor" id="The-stage-objective-1" href="#The-stage-objective-1">The stage objective</a></h3><p>If there is no stagewise independent uncertainty in the objective, then the stage objective (i.e. ignoring the future cost) can be set via the <a href="apireference.html#SDDP.@stageobjective"><code>@stageobjective</code></a> macro. This is similar to the JuMP <code>@objective</code> macro, but without the sense argument. For example:</p><pre><code class="language-julia">@stageobjective(sp, obj)</code></pre><p>If there is stagewise independent noise in the objective, we add an additional argument to <a href="apireference.html#SDDP.@stageobjective"><code>@stageobjective</code></a> that has the form <code>kw=realizations</code>.</p><p><code>kw</code> is a symbol that can appear anywhere in <code>obj</code>, and <code>realizations</code> is a vector of realizations of the uncertainty. For example:</p><pre><code class="language-julia">@stageobjective(sp, kw=realizations, obj)
+setnoiseprobability!(sp, [0.2, 0.3, 0.5])</code></pre><p><a href="apireference.html#SDDP.setnoiseprobability!"><code>setnoiseprobability!</code></a> can be used to specify the finite discrete distribution of the realizations (it must sum to 1.0). If you don&#39;t explicitly call <a href="apireference.html#SDDP.setnoiseprobability!"><code>setnoiseprobability!</code></a>, the distribution is assumed to be uniform.</p><p>Other examples include:</p><pre><code class="language-julia"># noise is a coefficient
+@stageobjective(sp, c=[1.0, 2.0, 3.0], c * x)
+# noise is used to index a variable
+@stageobjective(sp, i=[1,2,3], 2 * x[i])</code></pre><h3><a class="nav-anchor" id="Dynamics-with-linear-noise-1" href="#Dynamics-with-linear-noise-1">Dynamics with linear noise</a></h3><p>SDDP.jl also supports uncertainty in the right-hand-side of constraints. Instead of using the JuMP <code>@constraint</code> macro, we need to use the <a href="apireference.html#SDDP.@rhsnoise"><code>@rhsnoise</code></a> macro:</p><pre><code class="language-julia">@rhsnoise(sp, w=[1,2,3], x &lt;= w)
+setnoiseprobability!(sp, [0.2, 0.3, 0.5])</code></pre><p>Compared to <code>@constraint</code>, there are a couple of notable differences:</p><ul><li><p>indexing is <strong>not</strong> supported;</p></li><li><p>the second argument is a <code>kw=realizations</code> key-value pair like the <code>@stageobjective</code>;</p></li><li><p>the <code>kw</code> can on either side of the constraint as written, but when normalised  to an Ax &lt;= b form, it must only appear in the b vector.</p></li></ul><p>Multiple <a href="apireference.html#SDDP.@rhsnoise"><code>@rhsnoise</code></a> constraints can be added, however they must have an identical number of elements in the <code>realizations</code> vector.</p><p>For example, the following are invalid in SDDP:</p><pre><code class="language-julia"># noise appears as a variable coefficient
+@rhsnoise(sp, w=[1,2,3], w * x &lt;= 1)
+
+# JuMP style indexing
+@rhsnoise(sp, w=[1,2,3], [i=1:10; mod(i, 2) == 0], x[i] &lt;= w)
+
+# noises have different number of realizations
+@rhsnoise(sp, w=[1,2,3], x &lt;= w)
+@rhsnoise(sp, w=[2,3],   x &gt;= w-1)</code></pre><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>Noises in the constraints are sampled with the noise in the objective. Therefore, there should be the same number of elements in the realizations for the stage objective, as there are in the constraint noise.</p></div></div><p>There is also a plural form of the <a href="apireference.html#SDDP.@rhsnoise"><code>@rhsnoise</code></a> macro:</p><pre><code class="language-julia">@rhsnoises(sp, w=[1,2,3], begin
+    x &lt;= w
+    x &gt;= w-1
+end)
+setnoiseprobability!(sp, [0.2, 0.3, 0.5])</code></pre><h3><a class="nav-anchor" id="Asset-Management-Example-1" href="#Asset-Management-Example-1">Asset Management Example</a></h3><p>We now have all the information necessary to define the Asset Management example in SDDP.jl:</p><pre><code class="language-julia">using SDDP, JuMP, Clp
+
+m = SDDPModel(
+               # we are minimizing
+                sense = :Min,
+               # there are 4 stages
+               stages = 4,
+               # a large negative value
+      objective_bound = -1000.0,
+               # a MathOptBase compatible solver
+               solver = ClpSolver(),
+               # transition probabilities of the lattice
+    markov_transition = Array{Float64, 2}[
+                        [1.0]&#39;,
+                        [0.5 0.5],
+                        [0.5 0.5; 0.5 0.5],
+                        [0.5 0.5; 0.5 0.5]
+                    ],
+               # risk measures for each stage
+         risk_measure = [
+                        Expectation(),
+                        Expectation(),
+                        EAVaR(lambda = 0.5, beta=0.5),
+                        Expectation()
+                    ]
+                            ) do sp, t, i
+    # Data used in the problem
+    ωs = [1.25, 1.06]
+    ωb = [1.14, 1.12]
+    Φ  = [-1, 5]
+    Ψ  = [0.02, 0.0]
+
+    # state variables
+    @states(sp, begin
+        xs &gt;= 0, xsbar==0
+        xb &gt;= 0, xbbar==0
+    end)
+
+    if t == 1 # we can switch based on the stage
+        # a constraint without noise
+        @constraint(sp, xs + xb == 55 + xsbar + xbbar)
+        # an objective without noise
+        @stageobjective(sp, 0)
+    elseif t == 2 || t == 3
+        # a constraint with noisein the RHS
+        @rhsnoise(sp, φ=Φ, ωs[i] * xsbar + ωb[i] * xbbar + φ == xs + xb)
+        # an objective with noise
+        @stageobjective(sp, ψ = Ψ, -ψ * xs)
+        # noise will be sampled as (Φ[1], Ψ[1]) w.p. 0.6, (Φ[2], Ψ[2]) w.p. 0.4
+        setnoiseprobability!(sp, [0.6, 0.4])
+    else # when t == 4
+        # some control variables
+        @variable(sp, u &gt;= 0)
+        @variable(sp, v &gt;= 0)
+        # dynamics constraint
+        @constraint(sp, ωs[i] * xsbar + ωb[i] * xbbar + u - v == 80)
+        # an objective without noise
+        @stageobjective(sp, 4u - v)
+    end
+end</code></pre><h2><a class="nav-anchor" id="Solving-the-problem-efficiently-1" href="#Solving-the-problem-efficiently-1">Solving the problem efficiently</a></h2><p>During the solution process, SDDP.jl outputs some logging information (an example of this is given below). We briefly describe the columns:</p><p>The first column (<code>Objective (Simulation)</code>) is either a single value or a confidence interval from a Monte Carlo simulation (see <a href="apireference.html#SDDP.MonteCarloSimulation"><code>MonteCarloSimulation</code></a>). When the entry is a single value, its is the objective from a single (and the most recent) forward pass in SDDP. The single value is not an average. The second column (<code>Objective (Bound)</code>) is the deterministic bound of the problem (lower if minimizing, upper if maximizing). This is calculated every iteration. If a Monte Carlo simulation has been conducted this iteration, then the <code>Objective (% Gap)</code> will also be display. The objective gap is the relative percentage gap between the closest edge of the confidence interval and the deterministic bound.</p><p>The next two columns relate to the number of iterations (<code>#</code>) and time spend conducting them (<code>Time</code>). This information is printed every iteration. It does not include the time spent simulating the policy as part of the Monte Carlo simulation (i.e. to estimate the upper bound), or the time spent initializing the model.</p><p>The sixth and seventh columns relate to the Monte Carlo simulations. Specifically the number (<code>#</code>) of replications conducted, and time spent conducting them (<code>Time</code>). You can use these data to determine how often to perform the Monte Carlo simulations. For example, if the time is high relative to the iteration <code>Cut Passes: Time</code>, then you should perform the simulations less frequently. </p><p>Finally, <code>Total (Time)</code> is the total time (in seconds) of the solution process (including initialization).</p><p>Logging can be turned off by setting print level to 0. It can also be written to the file specified by the log file keyword.</p><pre><code class="language-none">-------------------------------------------------------------------------------
+                      SDDP Solver. © Oscar Dowson, 2017.
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         4
+        States:         2
+        Subproblems:    7
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total    
+    Simulation        Bound   % Gap  |   #     Time     #    Time    Time     
+-------------------------------------------------------------------------------
+      -41.484         -9.722         |     1    0.0      0    0.0    0.0 
+       -2.172         -7.848         |     2    0.0      0    0.0    0.0 
+        4.284         -7.550         |     3    0.0      0    0.0    0.0 
+      -10.271         -6.398         |     4    0.0      0    0.0    0.0 
+  -7.782    -4.760    -6.346  -22.6  |     5    0.0    500    0.4    0.4 
+
+                        ... some lines omitted ...
+
+      -30.756         -5.570         |    29    0.1    1.9K   1.6    1.8 
+  -7.716    -4.601    -5.570  -38.5  |    30    0.1    2.4K   2.0    2.2
+  -------------------------------------------------------------------------------
+    Statistics:
+        Iterations:         30
+        Termination Status: max_iterations
+---------------------------------------------------------------------------------</code></pre><h2><a class="nav-anchor" id="Understanding-the-solution-1" href="#Understanding-the-solution-1">Understanding the solution</a></h2><p>... still to do ...</p><h3><a class="nav-anchor" id="Simulating-the-policy-1" href="#Simulating-the-policy-1">Simulating the policy</a></h3><p>You can perform a Monte-Carlo simulation of the policy using the <a href="apireference.html#SDDP.simulate"><code>simulate</code></a> function:</p><pre><code class="language-julia">simulationresults = simulate(m, 100, [:xs, :xb])</code></pre><p><code>simulationresults</code> is a vector of dictionaries (one for each simulation). It has, as keys, a vector (with one element for each stage) of the optimal solution of <code>xs</code> and <code>xb</code>. For example, to query the value of <code>xs</code> in the third stage of the tenth simulation, we can call:</p><pre><code class="language-julia">simulationresults[10][:xs][3]</code></pre><p>Alternatively, you can peform one simulation with a given realization for the Markov and stagewise independent noises:</p><pre><code class="language-julia">simulationresults = simulate(m, [:xs], markov=[1,2,1,1], noise=[1,2,2,3])</code></pre><h3><a class="nav-anchor" id="Visualizing-the-policy-simulation-1" href="#Visualizing-the-policy-simulation-1">Visualizing the policy simulation</a></h3><p>First, we create a new plotting object with <a href="apireference.html#SDDP.newplot"><code>SDDP.newplot()</code></a>. Next, we can add any number of subplots to the visualization via the <a href="apireference.html#SDDP.addplot!"><code>SDDP.addplot!</code></a> function. Finally, we can launch a web browser to display the plot with <a href="apireference.html#Base.show-Tuple{SDDP.SimulationPlot}"><code>SDDP.show</code></a>.</p><p>See the <a href="apireference.html#SDDP.addplot!"><code>SDDP.addplot!</code></a> documentation for more detail.</p><h3><a class="nav-anchor" id="Visualizing-the-Value-Function-1" href="#Visualizing-the-Value-Function-1">Visualizing the Value Function</a></h3><p>Another way to understand the solution is to project the value function into 3 dimensions. This can be done using the method <a href="apireference.html#SDDP.plotvaluefunction"><code>SDDP.plotvaluefunction</code></a>.</p><pre><code class="language-julia">SDDP.plotvaluefunction(m, 1, 1, 0:1.0:100, 0:1.0:100;
+    label1=&quot;Stocks&quot;, label2=&quot;Bonds&quot;)</code></pre><p>This will open up a web browser and display a Plotly figure that looks similar to <img src="assets/3d.gif" alt="3-Dimensional visualisation of Value Function"/></p><h2><a class="nav-anchor" id="Saving-models-1" href="#Saving-models-1">Saving models</a></h2><p>Saving a model is as simple as calling:</p><pre><code class="language-julia">SDDP.savemodel!(&quot;&lt;filename&gt;&quot;, m)</code></pre><p>Later, you can run:</p><pre><code class="language-julia">m = SDDP.loadmodel(&quot;&lt;filename&gt;&quot;)</code></pre><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p><a href="apireference.html#SDDP.savemodel!"><code>SDDP.savemodel!</code></a> relies on the base Julia <code>serialize</code> function. This is not backwards compatible with previous versions of Julia, or guaranteed to be forward compatible with future versions. You should only use this to save models for short periods of time. Don&#39;t save a model you want to come back to in a year.</p></div></div><p>Another (more persistent) method is to use the <code>cut_output_file</code> keyword option in <a href="apireference.html#JuMP.solve"><code>SDDP.solve</code></a>. This will create a csv file containing a list of all the cuts. These can be loaded at a later date using</p><pre><code class="language-julia">SDDP.loadcuts!(m, &quot;&lt;filename&gt;&quot;)</code></pre><h2><a class="nav-anchor" id="Extras-for-experts-1" href="#Extras-for-experts-1">Extras for experts</a></h2><h3><a class="nav-anchor" id="New-risk-measures-1" href="#New-risk-measures-1">New risk measures</a></h3><p>SDDP.jl makes it easy to create new risk measures. First, create a new subtype of the abstract type <a href="apireference.html#SDDP.AbstractRiskMeasure"><code>SDDP.AbstractRiskMeasure</code></a>:</p><pre><code class="language-julia">struct MyNewRiskMeasure &lt;: SDDP.AbstractRiskMeasure
+end</code></pre><p>Then, overload the method <a href="apireference.html#SDDP.modifyprobability!"><code>SDDP.modifyprobability!</code></a> for your new type. <a href="apireference.html#SDDP.modifyprobability!"><code>SDDP.modifyprobability!</code></a> has the following signature:</p><pre><code class="language-julia">SDDP.modifyprobability!(
+        measure::AbstractRiskMeasure,
+        riskadjusted_distribution,
+        original_distribution::Vector{Float64},
+        observations::Vector{Float64},
+        m::SDDPModel,
+        sp::JuMP.Model
+)</code></pre><p>where <code>original_distribution</code> contains the risk netural probability of each outcome in <code>observations</code> occurring (so that the probability of <code>observations[i]</code> is <code>original_distribution[i]</code>). The method should modify (in-place) the elements of <code>riskadjusted_distribution</code> to represent the risk-adjusted probabilities of the distribution.</p><p>To illustrate this, we shall define the worst-case riskmeasure (which places all the probability on the worst outcome):</p><pre><code class="language-julia">struct WorstCase &lt;: SDDP.AbstractRiskMeasure end
+function SDDP.modifyprobability!(measure::WorstCase,
+        riskadjusted_distribution,
+        original_distribution::Vector{Float64},
+        observations::Vector{Float64},
+        m::SDDPModel,
+        sp::JuMP.Model
+    )
+    if JuMP.getobjectivesense(sp) == :Min
+        # if minimizing, worst is the maximum outcome
+        idx = indmax(observations)
+    else
+        # if maximizing, worst is the minimum outcome
+        idx = indmin(observations)
+    end
+    # zero all probabilities
+    riskadjusted_distribution .= 0.0
+    # set worst to 1.0
+    riskadjusted_distribution[idx] = 1.0
+    # return
+    return nothing
+end</code></pre><p>The risk measure <code>WorstCase()</code> can now be used in any SDDP model.</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>This method gets called a lot, so the usual Julia performance tips apply.</p></div></div><h3><a class="nav-anchor" id="New-cut-oracles-1" href="#New-cut-oracles-1">New cut oracles</a></h3><p>SDDP.jl makes it easy to create new cut oracles. In the following example, we give the code to implmeent a cut-selection heuristic that only stores the <code>N</code> most recently discovered cuts. First, we define a new Julia type that is a sub-type of the abstract type <a href="apireference.html#SDDP.AbstractCutOracle"><code>SDDP.AbstractCutOracle</code></a> defined by SDDP.jl:</p><pre><code class="language-julia">struct LastCutOracle{N} &lt;: SDDP.AbstractCutOracle
+    cuts::Vector{SDDP.Cut}
+end
+LastCutOracle(N::Int) = LastCutOracle{N}(SDDP.Cut[])</code></pre><p><code>LastCutOracle</code> has the type parameter <code>N</code> to store the maximum number of most-recent cuts to return. The type has the field <code>cuts</code> to store a vector of discovered cuts. More elaborate cut-selection heuristics may need additional fields to store other information. Next, we overload the <a href="apireference.html#SDDP.storecut!"><code>SDDP.storecut!</code></a> method. This method should store the cut <code>c</code> in the oracle <code>o</code> so that it can be queried later. In our example, we append the cut to the list of discovered cuts inside the oracle:</p><pre><code class="language-julia">function SDDP.storecut!(o::LastCutOracle{N},
+        m::SDDPModel, sp::JuMP.Model, c::SDDP.Cut) where N
+    push!(o.cuts, c)
+end</code></pre><p>Lastly, we overload the <a href="apireference.html#SDDP.validcuts"><code>SDDP.validcuts</code></a> method. In our example, the strategy is to return the <code>N</code> most recent cuts. Therefore:</p><pre><code class="language-julia">function SDDP.validcuts(o::LastCutOracle{N}) where N
+    return o.cuts[max(1,end-N+1):end]
+end</code></pre><p>The cut oracle <code>LastCutOracle(N)</code> can now be used in any SDDP model.</p><footer><hr/><a class="next" href="examples.html"><span class="direction">Next</span><span class="title">Examples</span></a></footer></article></body></html>
