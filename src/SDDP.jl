@@ -11,6 +11,7 @@ Reexport.@reexport using JuMP
 import Distributed
 import HTTP
 import JSON
+import MathOptIIS
 import MutableArithmetics
 import Printf
 import Random

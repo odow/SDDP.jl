@@ -381,14 +381,66 @@ function attempt_numerical_recovery(
         # file, a second thread finds an infeasibility of the same node, it
         # doesn't matter if we over-write this file.
         filename = "model_infeasible_node_$(node.index).cuts.json"
-        @info "Writing cuts to the file `$filename`"
         write_cuts_to_file(model, filename)
+        write_iis_to_file(node, "subproblem_$(node.index)")
         write_subproblem_to_file(
             node,
             "subproblem_$(node.index).mof.json";
             throw_error = true,
         )
     end
+    return
+end
+
+function Base.getindex(map::JuMP.GenericReferenceMap, x::State)
+    return State(map[x.in], map[x.out])
+end
+
+_supports_iis(::Type{T}) where {T} = false
+_supports_iis(::Type{<:GenericVariableRef}) = true
+_supports_iis(::Type{<:GenericAffExpr}) = true
+_supports_iis(::Type{<:MOI.LessThan}) = true
+_supports_iis(::Type{<:MOI.GreaterThan}) = true
+_supports_iis(::Type{<:MOI.EqualTo}) = true
+_supports_iis(::Type{<:MOI.Interval}) = true
+_supports_iis(::Type{<:MOI.ZeroOne}) = true
+_supports_iis(::Type{<:MOI.Integer}) = true
+
+function write_iis_to_file(node, filename)
+    # For now, write out the IIS only if the subproblem is a MILP.
+    for (F, S) in list_of_constraint_types(node.subproblem)
+        if !_supports_iis(F) || !_supports_iis(S)
+            return
+        end
+    end
+    iis = MathOptIIS.Optimizer()
+    MOI.set(iis, MathOptIIS.InfeasibleModel(), backend(node.subproblem))
+    MOI.set(
+        iis,
+        MathOptIIS.InnerOptimizer(),
+        () -> MOI.instantiate(node.optimizer; with_cache_type = Float64),
+    )
+    MOI.compute_conflict!(iis)
+    @show MOI.get(iis, MOI.ConflictStatus())
+    if MOI.get(iis, MOI.ConflictStatus()) != MOI.CONFLICT_FOUND
+        return
+    end
+    # we need to cache the .ext dict, because JuMP doesn't know how to copy
+    # the elements.
+    ext_kwargs = [k => v for (k, v) in node.subproblem.ext]
+    empty!(node.subproblem.ext)
+    # Copy the model, filtering constraints which are not in the conflict
+    function filter_constraints(cref::ConstraintRef)
+        status = MOI.get(iis, MOI.ConstraintConflictStatus(), index(cref))
+        return status != MOI.NOT_IN_CONFLICT
+    end
+    new_model, _ = copy_model(node.subproblem; filter_constraints)
+    set_objective_sense(new_model, MOI.FEASIBILITY_SENSE)
+    # Restore the .ext dictionary
+    for (k, v) in ext_kwargs
+        node.subproblem.ext[k] = v
+    end
+    JuMP.write_to_file(new_model, "$(filename).iis.lp")
     return
 end
 
