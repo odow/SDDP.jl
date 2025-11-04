@@ -256,6 +256,33 @@ end
 
 _sparsify(x::Float64) = ifelse(abs(x) < 1e-15, 0.0, x)
 
+function _initialize_incoming_state_bounds(node::Node{T}) where {T}
+    policy_graph = get_policy_graph(node.subproblem)::PolicyGraph{T}
+    _initialize_incoming_state_bounds(policy_graph)
+    return
+end
+
+function _initialize_incoming_state_bounds(policy_graph::PolicyGraph)
+    domain = _get_incoming_domain(policy_graph)
+    for (node_name, node) in policy_graph.nodes
+        for (k, v) in domain[node_name]
+            node.incoming_state_bounds[k] = something(v, (-Inf, Inf, false))
+        end
+    end
+    return
+end
+
+function prepare_backward_pass(
+    node::Node{T},
+    ::LagrangianDuality,
+    ::Options,
+) where {T}
+    if isempty(node.incoming_state_bounds)
+        _initialize_incoming_state_bounds(node)
+    end
+    return () -> nothing
+end
+
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     undo_relax = _relax_integrality(node, lagrange.optimizer)
     optimize!(node.subproblem)
