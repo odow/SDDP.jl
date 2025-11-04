@@ -250,6 +250,7 @@ function test_kelleys_min()
         @constraint(sp, x.out == x.in)
     end
     set_optimizer(model, HiGHS.Optimizer)
+    SDDP._initialize_incoming_state_bounds(model)
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
@@ -283,6 +284,7 @@ function test_kelleys_max()
         @constraint(sp, x.out == x.in)
     end
     set_optimizer(model, HiGHS.Optimizer)
+    SDDP._initialize_incoming_state_bounds(model)
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.1))
@@ -318,6 +320,7 @@ function test_kelleys_abs_function()
         @stageobjective(sp, x.out)
     end
     set_optimizer(model, HiGHS.Optimizer)
+    SDDP._initialize_incoming_state_bounds(model)
     SDDP.parameterize(model[1], nothing)
     SDDP.set_incoming_state(model[1], Dict(:x => 0.5))
     JuMP.optimize!(model[1].subproblem)
@@ -345,6 +348,7 @@ function test_kelleys_abs_function_max()
         @stageobjective(sp, x.out)
     end
     set_optimizer(model, HiGHS.Optimizer)
+    SDDP._initialize_incoming_state_bounds(model)
     SDDP.parameterize(model[1], nothing)
     SDDP.set_incoming_state(model[1], Dict(:x => 0.5))
     JuMP.optimize!(model[1].subproblem)
@@ -374,6 +378,7 @@ function test_kelleys_ip_min()
         @constraint(sp, x.out == x.in)
     end
     set_optimizer(model, HiGHS.Optimizer)
+    SDDP._initialize_incoming_state_bounds(model)
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
         SDDP.set_incoming_state(model[t], Dict(:x => 1.0))
@@ -402,6 +407,7 @@ function test_kelleys_ip_max()
         @constraint(sp, x.out == x.in)
     end
     set_optimizer(model, HiGHS.Optimizer)
+    SDDP._initialize_incoming_state_bounds(model)
     l = SDDP.LagrangianDuality()
     for t in 1:10
         SDDP.parameterize(model[t], nothing)
