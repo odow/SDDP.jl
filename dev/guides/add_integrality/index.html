@@ -58,29 +58,29 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   9.000000e+02  9.000000e+02  1.054425e+00         6   1
-         2   9.000000e+02  9.000000e+02  1.202683e+00        15   1
-         3S  9.000000e+02  9.000000e+02  1.333880e+00        21   1
-         4   9.000000e+02  9.000000e+02  1.335718e+00        27   1
-         5S  9.000000e+02  9.000000e+02  1.338039e+00        33   1
-         6   9.000000e+02  9.000000e+02  1.339752e+00        39   1
-         7S  9.000000e+02  9.000000e+02  1.363710e+00        45   1
-         8   9.000000e+02  9.000000e+02  1.365636e+00        51   1
-         9S  9.000000e+02  9.000000e+02  1.368068e+00        57   1
-        10   9.000000e+02  9.000000e+02  1.369914e+00        63   1
-        11S  9.000000e+02  9.000000e+02  1.372344e+00        69   1
-        12   9.000000e+02  9.000000e+02  1.374187e+00        75   1
-        13S  9.000000e+02  9.000000e+02  1.376584e+00        81   1
-        14   9.000000e+02  9.000000e+02  1.378423e+00        87   1
-        15S  9.000000e+02  9.000000e+02  1.380811e+00        93   1
-        16   9.000000e+02  9.000000e+02  1.382633e+00        99   1
-        17S  9.000000e+02  9.000000e+02  1.385041e+00       105   1
-        18   9.000000e+02  9.000000e+02  1.386879e+00       111   1
-        19S  9.000000e+02  9.000000e+02  1.389281e+00       117   1
-        20   9.000000e+02  9.000000e+02  1.391158e+00       123   1
+         1   9.000000e+02  9.000000e+02  1.134190e+00         6   1
+         2   9.000000e+02  9.000000e+02  1.311764e+00        15   1
+         3S  9.000000e+02  9.000000e+02  1.453192e+00        21   1
+         4   9.000000e+02  9.000000e+02  1.455041e+00        27   1
+         5S  9.000000e+02  9.000000e+02  1.457395e+00        33   1
+         6   9.000000e+02  9.000000e+02  1.485682e+00        39   1
+         7S  9.000000e+02  9.000000e+02  1.488170e+00        45   1
+         8   9.000000e+02  9.000000e+02  1.489988e+00        51   1
+         9S  9.000000e+02  9.000000e+02  1.492420e+00        57   1
+        10   9.000000e+02  9.000000e+02  1.494288e+00        63   1
+        11S  9.000000e+02  9.000000e+02  1.496711e+00        69   1
+        12   9.000000e+02  9.000000e+02  1.498545e+00        75   1
+        13S  9.000000e+02  9.000000e+02  1.500982e+00        81   1
+        14   9.000000e+02  9.000000e+02  1.502808e+00        87   1
+        15S  9.000000e+02  9.000000e+02  1.505377e+00        93   1
+        16   9.000000e+02  9.000000e+02  1.507282e+00        99   1
+        17S  9.000000e+02  9.000000e+02  1.509759e+00       105   1
+        18   9.000000e+02  9.000000e+02  1.511670e+00       111   1
+        19S  9.000000e+02  9.000000e+02  1.514192e+00       117   1
+        20   9.000000e+02  9.000000e+02  1.516093e+00       123   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 1.391158e+00
+total time (s) : 1.516093e+00
 total solves   : 123
 best bound     :  9.000000e+02
 simulation ci  :  9.000000e+02 ± 0.000000e+00
@@ -126,11 +126,11 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   9.000000e+02  9.000000e+02  2.636631e-01         6   1
-        20   9.000000e+02  9.000000e+02  4.283609e-01       123   1
+         1   9.000000e+02  9.000000e+02  2.922142e-01         6   1
+        20   9.000000e+02  9.000000e+02  4.581370e-01       123   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 4.283609e-01
+total time (s) : 4.581370e-01
 total solves   : 123
 best bound     :  9.000000e+02
 simulation ci  :  9.000000e+02 ± 0.000000e+00
@@ -144,4 +144,4 @@ V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \
 \max\limits_{\lambda}\min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)] - \lambda^\top(\bar{x} - x)\\
 &amp; x^\prime = T_i(\bar{x}, u, \omega) \\
 &amp; u \in U_i(\bar{x}, \omega)
-\end{aligned}\]</p><p>You can use Lagrangian duality in SDDP.jl by passing <a href="../../apireference/#SDDP.LagrangianDuality"><code>SDDP.LagrangianDuality</code></a> to the <code>duality_handler</code> argument of <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a>.</p><p>Compared with linear programming duality, the Lagrangian problem is difficult to solve because it requires the solution of many mixed-integer programs instead of a single linear program. This is one reason why &quot;SDDiP&quot; has poor performance.</p><h3 id="Convergence-2"><a class="docs-heading-anchor" href="#Convergence-2">Convergence</a><a class="docs-heading-anchor-permalink" href="#Convergence-2" title="Permalink"></a></h3><p>The second part to SDDiP is a very tightly scoped claim: <em>if</em> all of the state variables are binary <em>and</em> the algorithm uses Lagrangian duality to compute a subgradient, <em>then</em> it will converge to an optimal policy.</p><p>In many cases, papers claim to &quot;do SDDiP,&quot; but they have state variables which are not binary. In these cases, the algorithm is not guaranteed to converge to a globally optimal policy.</p><p>One work-around that has been suggested is to discretize the state variables into a set of binary state variables. However, this leads to a large number of binary state variables, which is another reason why &quot;SDDiP&quot; has poor performance.</p><p>In general, we recommend that you introduce integer variables into your model without fear of the consequences, and that you treat the resulting policy as a good heuristic, rather than an attempt to find a globally optimal policy.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../add_a_risk_measure/">« Add a risk measure</a><a class="docs-footer-nextpage" href="../add_multidimensional_noise/">Add multi-dimensional noise terms »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Tuesday 4 November 2025 22:19">Tuesday 4 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+\end{aligned}\]</p><p>You can use Lagrangian duality in SDDP.jl by passing <a href="../../apireference/#SDDP.LagrangianDuality"><code>SDDP.LagrangianDuality</code></a> to the <code>duality_handler</code> argument of <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a>.</p><p>Compared with linear programming duality, the Lagrangian problem is difficult to solve because it requires the solution of many mixed-integer programs instead of a single linear program. This is one reason why &quot;SDDiP&quot; has poor performance.</p><h3 id="Convergence-2"><a class="docs-heading-anchor" href="#Convergence-2">Convergence</a><a class="docs-heading-anchor-permalink" href="#Convergence-2" title="Permalink"></a></h3><p>The second part to SDDiP is a very tightly scoped claim: <em>if</em> all of the state variables are binary <em>and</em> the algorithm uses Lagrangian duality to compute a subgradient, <em>then</em> it will converge to an optimal policy.</p><p>In many cases, papers claim to &quot;do SDDiP,&quot; but they have state variables which are not binary. In these cases, the algorithm is not guaranteed to converge to a globally optimal policy.</p><p>One work-around that has been suggested is to discretize the state variables into a set of binary state variables. However, this leads to a large number of binary state variables, which is another reason why &quot;SDDiP&quot; has poor performance.</p><p>In general, we recommend that you introduce integer variables into your model without fear of the consequences, and that you treat the resulting policy as a good heuristic, rather than an attempt to find a globally optimal policy.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../add_a_risk_measure/">« Add a risk measure</a><a class="docs-footer-nextpage" href="../add_multidimensional_noise/">Add multi-dimensional noise terms »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Tuesday 4 November 2025 22:58">Tuesday 4 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
