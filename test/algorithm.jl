@@ -8,6 +8,7 @@ module TestAlgorithm
 using SDDP
 using Test
 import HiGHS
+import Ipopt
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -469,6 +470,78 @@ function test_root_node_risk_measure()
         SDDP.calculate_bound(model; risk_measure = SDDP.Expectation()),
         85000.0,
     )
+    return
+end
+
+function test_iis_lp()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, stage
+        @variable(sp, 0 <= x <= 100, SDDP.State, initial_value = 0)
+        @variable(sp, 0 <= u_p <= 200)
+        @variable(sp, u_o >= 0)
+        @constraint(sp, x.out >= u_p)
+        @constraint(sp, u_p == 101)
+        @constraint(sp, x.out == x.in + u_p + 1.1 * u_o)
+        @stageobjective(sp, 100 * u_p + 300 * u_o + 50 * x.out)
+    end
+    root = pwd()
+    try
+        mktempdir() do path
+            cd(path)
+            try
+                SDDP.train(model)
+            catch
+            end
+            contents = read("subproblem_1.iis.lp", String)
+            @test occursin("u_p = 101", contents)
+            @test !occursin("300", contents)
+            @test !occursin("1.1", contents)
+        end
+    finally
+        cd(root)
+    end
+    return
+end
+
+function test_iis_nlp()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = Ipopt.Optimizer,
+    ) do sp, stage
+        @variable(sp, 0 <= x <= 1, SDDP.State, initial_value = 0)
+        @variable(sp, 0 <= u_p <= 200)
+        @variable(sp, u_o >= 0)
+        @constraint(sp, x.out >= u_p)
+        @constraint(sp, exp(u_p) == 101)
+        @constraint(sp, x.out == x.in + u_p + 1.1 * u_o)
+        @stageobjective(sp, 100 * u_p + 300 * u_o + 50 * x.out)
+    end
+    try
+        SDDP.train(model)
+    catch
+    end
+    @test !isfile("subproblem_1.iis.lp")
+    return
+end
+
+function test_iis_unbounded()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 3,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, stage
+        @variable(sp, 0 <= x, SDDP.State, initial_value = 0)
+        @stageobjective(sp, -x.out)
+    end
+    try
+        SDDP.train(model)
+    catch
+    end
+    @test !isfile("subproblem_3.iis.lp")
     return
 end
 
