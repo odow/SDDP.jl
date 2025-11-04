@@ -256,7 +256,6 @@ end
 
 _sparsify(x::Float64) = ifelse(abs(x) < 1e-15, 0.0, x)
 
-
 function prepare_backward_pass(
     node::Node{T},
     ::LagrangianDuality,
