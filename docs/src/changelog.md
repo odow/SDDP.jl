@@ -7,6 +7,18 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.13.1 (November 5, 2025)
+
+### Fixed
+
+ - Fixed `incoming_state_bounds` so that it is initialized only if
+   [`LagrangianDuality`](@ref) is called (#882)
+
+### Other
+
+ - Fixed a mistake in the documentation (#877)
+ - Updated to JSON@1 (#878)
+
 ## v1.13.0 (August 11, 2025)
 
 ### Added
