@@ -487,19 +487,20 @@ function test_numerical_stability_report()
 end
 
 function test_objective_state()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0,
+        optimizer = HiGHS.Optimizer,
+    ) do subproblem, t
+        @variable(subproblem, x, SDDP.State, initial_value = 0)
+        SDDP.parameterize(subproblem, [1, 2]) do ω
+            price = SDDP.objective_state(subproblem)
+            @stageobjective(subproblem, price * x.out)
+        end
+    end
     @test_throws(
         ErrorException("No objective state defined."),
-        SDDP.LinearPolicyGraph(;
-            stages = 2,
-            lower_bound = 0,
-            optimizer = HiGHS.Optimizer,
-        ) do subproblem, t
-            @variable(subproblem, x, SDDP.State, initial_value = 0)
-            SDDP.parameterize(subproblem, [1, 2]) do ω
-                price = SDDP.objective_state(subproblem)
-                @stageobjective(subproblem, price * x.out)
-            end
-        end,
+        SDDP.simulate(model, 1),
     )
     @test_throws(
         ErrorException("add_objective_state can only be called once."),
@@ -921,7 +922,11 @@ function test_incoming_state_bounds()
     SDDP.add_edge(graph, 2 => 3, 0.5)
     SDDP.add_edge(graph, 3 => 1, 0.5)
     SDDP.add_edge(graph, 3 => 4, 0.5)
-    model = SDDP.PolicyGraph(graph; lower_bound = 0.0) do sp, node
+    model = SDDP.PolicyGraph(
+        graph;
+        optimizer = HiGHS.Optimizer,
+        lower_bound = 0.0,
+    ) do sp, node
         @variable(sp, x, Int, SDDP.State, initial_value = 0)
         @variable(sp, y, SDDP.State, initial_value = -1)
         @variable(sp, z, SDDP.State, initial_value = 1)
@@ -953,6 +958,12 @@ function test_incoming_state_bounds()
         @stageobjective(sp, 0)
         return
     end
+    SDDP.train(
+        model;
+        iteration_limit = 1,
+        duality_handler = SDDP.LagrangianDuality(),
+        print_level = 0,
+    )
     @test model[1].incoming_state_bounds == Dict(
         :x => (0.0, 2.0, true),
         :y => (-1.0, 3.0, false),
