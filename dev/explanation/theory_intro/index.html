@@ -200,9 +200,9 @@ Arcs:
     return error(&quot;We should never get here because P should sum to 1.0.&quot;)
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">sample_uncertainty (generic function with 1 method)</code></pre><div class="admonition is-info" id="Note-957433cbda94ed91"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-957433cbda94ed91" title="Permalink"></a></header><div class="admonition-body"><p><code>rand()</code> samples a uniform random variable in <code>[0, 1)</code>.</p></div></div><p>For example:</p><pre><code class="language-julia hljs">for i in 1:3
     println(&quot;ω = &quot;, sample_uncertainty(model.nodes[1].uncertainty))
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ω = 0.0
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ω = 50.0
 ω = 100.0
-ω = 0.0</code></pre><p>It&#39;s also going to be useful to define a function that generates a random walk through the nodes of the graph:</p><pre><code class="language-julia hljs">function sample_next_node(model::PolicyGraph, current::Int)
+ω = 50.0</code></pre><p>It&#39;s also going to be useful to define a function that generates a random walk through the nodes of the graph:</p><pre><code class="language-julia hljs">function sample_next_node(model::PolicyGraph, current::Int)
     if length(model.arcs[current]) == 0
         # No outgoing arcs!
         return nothing
@@ -275,15 +275,15 @@ Next node from 3 = nothing</code></pre><p>This is a little boring, because our g
     return trajectory, simulation_cost
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">forward_pass (generic function with 2 methods)</code></pre><p>Let&#39;s take a look at one forward pass:</p><pre><code class="language-julia hljs">trajectory, simulation_cost = forward_pass(model);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">| Forward Pass
 | | Visiting node 1
-| | | ω = 0.0
+| | | ω = 50.0
 | | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 50.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 0.0
 | | Visiting node 2
-| | | ω = 0.0
-| | | x = Dict(:volume =&gt; 50.0)
+| | | ω = 100.0
+| | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 10000.0
+| | | C(x, u, ω) = 5000.0
 | | Visiting node 3
 | | | ω = 0.0
 | | | x = Dict(:volume =&gt; 0.0)
@@ -384,18 +384,18 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
 | | Visiting node 1
 | | | ω = 0.0
 | | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 50.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 0.0
 | | Visiting node 2
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 50.0)
+| | | ω = 100.0
+| | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 5000.0
 | | Visiting node 3
-| | | ω = 50.0
+| | | ω = 100.0
 | | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 15000.0
+| | | C(x, u, ω) = 7500.0
 | Backward pass
 | | Visiting node 3
 | | | Skipping node because the cost-to-go is 0
@@ -412,33 +412,33 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
 | | | Adding cut : 150 volume_out + cost_to_go ≥ 15000
 | | Visiting node 1
 | | | Solving φ = 0.0
-| | | | V = 22500.0
+| | | | V = 30000.0
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 50.0
-| | | | V = 15000.0
+| | | | V = 22500.0
 | | | | dVdx′ = Dict(:volume =&gt; -150.0)
 | | | Solving φ = 100.0
-| | | | V = 10000.0
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Adding cut : 133.33333333333331 volume_out + cost_to_go ≥ 22500
+| | | | V = 15000.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 22500
 | Finished iteration
-| | lower_bound = 3437.500000000001
+| | lower_bound = 2500.0
 Starting iteration 2
 | Forward Pass
 | | Visiting node 1
-| | | ω = 0.0
+| | | ω = 100.0
 | | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 168.75)
-| | | C(x, u, ω) = 5937.500000000001
+| | | x′ = Dict(:volume =&gt; 150.0)
+| | | C(x, u, ω) = 0.0
 | | Visiting node 2
 | | | ω = 50.0
-| | | x = Dict(:volume =&gt; 168.75)
+| | | x = Dict(:volume =&gt; 150.0)
 | | | x′ = Dict(:volume =&gt; 100.0)
-| | | C(x, u, ω) = 3125.0
+| | | C(x, u, ω) = 5000.0
 | | Visiting node 3
-| | | ω = 100.0
+| | | ω = 50.0
 | | | x = Dict(:volume =&gt; 100.0)
-| | | x′ = Dict(:volume =&gt; 50.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 0.0
 | Backward pass
 | | Visiting node 3
@@ -456,34 +456,34 @@ Starting iteration 2
 | | | Adding cut : 100 volume_out + cost_to_go ≥ 12500
 | | Visiting node 1
 | | | Solving φ = 0.0
-| | | | V = 10624.999999999998
+| | | | V = 12499.999999999998
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Solving φ = 50.0
-| | | | V = 5624.999999999998
+| | | | V = 7499.999999999998
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Solving φ = 100.0
-| | | | V = 625.0
+| | | | V = 2499.9999999999986
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Adding cut : 99.99999999999999 volume_out + cost_to_go ≥ 22499.999999999996
 | Finished iteration
-| | lower_bound = 7500.000000000004
+| | lower_bound = 7499.999999999998
 Starting iteration 3
 | Forward Pass
 | | Visiting node 1
-| | | ω = 0.0
+| | | ω = 100.0
 | | | x = Dict(:volume =&gt; 200.0)
 | | | x′ = Dict(:volume =&gt; 200.0)
-| | | C(x, u, ω) = 7499.999999999999
+| | | C(x, u, ω) = 2499.9999999999986
 | | Visiting node 2
-| | | ω = 50.0
+| | | ω = 0.0
 | | | x = Dict(:volume =&gt; 200.0)
 | | | x′ = Dict(:volume =&gt; 124.99999999999997)
-| | | C(x, u, ω) = 2499.9999999999986
+| | | C(x, u, ω) = 7499.999999999998
 | | Visiting node 3
-| | | ω = 50.0
+| | | ω = 0.0
 | | | x = Dict(:volume =&gt; 124.99999999999997)
 | | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 0.0
+| | | C(x, u, ω) = 3750.000000000004
 | Backward pass
 | | Visiting node 3
 | | | Skipping node because the cost-to-go is 0
@@ -512,7 +512,7 @@ Starting iteration 3
 | Finished iteration
 | | lower_bound = 8333.333333333332
 Termination status: iteration limit
-Upper bound = 7850.0 ± 815.2399659120019</code></pre><p>Success! We trained a policy for a finite horizon multistage stochastic program using stochastic dual dynamic programming.</p><h2 id="Implementation:-evaluating-the-policy"><a class="docs-heading-anchor" href="#Implementation:-evaluating-the-policy">Implementation: evaluating the policy</a><a id="Implementation:-evaluating-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-evaluating-the-policy" title="Permalink"></a></h2><p>A final step is the ability to evaluate the policy at a given point.</p><pre><code class="language-julia hljs">function evaluate_policy(
+Upper bound = 8000.0 ± 939.5700714645603</code></pre><p>Success! We trained a policy for a finite horizon multistage stochastic program using stochastic dual dynamic programming.</p><h2 id="Implementation:-evaluating-the-policy"><a class="docs-heading-anchor" href="#Implementation:-evaluating-the-policy">Implementation: evaluating the policy</a><a id="Implementation:-evaluating-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation:-evaluating-the-policy" title="Permalink"></a></h2><p>A final step is the ability to evaluate the policy at a given point.</p><pre><code class="language-julia hljs">function evaluate_policy(
     model::PolicyGraph;
     node::Int,
     incoming_state::Dict{Symbol,Float64},
@@ -556,20 +556,20 @@ Arcs:
 </code></pre><p>Then, train a policy:</p><pre><code class="language-julia hljs">train(model; iteration_limit = 3, replications = 100)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Starting iteration 1
 | Forward Pass
 | | Visiting node 1
-| | | ω = 100.0
+| | | ω = 50.0
 | | | x = Dict(:volume =&gt; 200.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
 | | | C(x, u, ω) = 0.0
 | | Visiting node 2
-| | | ω = 0.0
+| | | ω = 100.0
 | | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 15000.0
+| | | C(x, u, ω) = 5000.0
 | | Visiting node 3
-| | | ω = 0.0
+| | | ω = 100.0
 | | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; 0.0)
-| | | C(x, u, ω) = 22500.0
+| | | C(x, u, ω) = 7500.0
 | Backward pass
 | | Visiting node 3
 | | | Solving φ = 0.0
@@ -619,133 +619,197 @@ Starting iteration 2
 | | | x′ = Dict(:volume =&gt; 133.33333333333334)
 | | | C(x, u, ω) = -2.8421709430404007e-12
 | | Visiting node 3
-| | | ω = 50.0
+| | | ω = 0.0
 | | | x = Dict(:volume =&gt; 133.33333333333334)
-| | | x′ = Dict(:volume =&gt; 33.33333333333334)
-| | | C(x, u, ω) = 0.0
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 2499.999999999999
 | | Visiting node 2
 | | | ω = 100.0
-| | | x = Dict(:volume =&gt; 33.33333333333334)
-| | | x′ = Dict(:volume =&gt; 133.33333333333334)
-| | | C(x, u, ω) = 15000.0
-| | Visiting node 3
-| | | ω = 100.0
-| | | x = Dict(:volume =&gt; 133.33333333333334)
-| | | x′ = Dict(:volume =&gt; 83.33333333333334)
-| | | C(x, u, ω) = 0.0
-| Backward pass
-| | Visiting node 3
-| | | Solving φ = 0.0
-| | | | V = 22500.0
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 15000.0
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 100.0
-| | | | V = 10000.0
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Adding cut : 66.66666666666666 volume_out + cost_to_go ≥ 13472.222222222223
-| | Visiting node 2
-| | | Solving φ = 0.0
-| | | | V = 15972.22222222222
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 11250.0
-| | | | dVdx′ = Dict(:volume =&gt; -66.66666666666666)
-| | | Solving φ = 100.0
-| | | | V = 7916.666666666667
-| | | | dVdx′ = Dict(:volume =&gt; -66.66666666666666)
-| | | Adding cut : 94.44444444444443 volume_out + cost_to_go ≥ 24305.55555555555
-| | Visiting node 3
-| | | Solving φ = 0.0
-| | | | V = 35972.22222222222
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Solving φ = 50.0
-| | | | V = 30972.22222222222
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Solving φ = 100.0
-| | | | V = 25972.222222222215
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Adding cut : 49.99999999999999 volume_out + cost_to_go ≥ 17152.777777777777
-| | Visiting node 2
-| | | Solving φ = 0.0
-| | | | V = 19652.777777777777
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
-| | | Solving φ = 50.0
-| | | | V = 15486.11111111111
-| | | | dVdx′ = Dict(:volume =&gt; -49.99999999999999)
-| | | Solving φ = 100.0
-| | | | V = 12986.111111111113
-| | | | dVdx′ = Dict(:volume =&gt; -49.99999999999999)
-| | | Adding cut : 83.33333333333331 volume_out + cost_to_go ≥ 27152.777777777777
-| | Visiting node 1
-| | | Solving φ = 0.0
-| | | | V = 24375.0
-| | | | dVdx′ = Dict(:volume =&gt; -83.33333333333331)
-| | | Solving φ = 50.0
-| | | | V = 20208.333333333336
-| | | | dVdx′ = Dict(:volume =&gt; -83.33333333333331)
-| | | Solving φ = 100.0
-| | | | V = 16041.666666666664
-| | | | dVdx′ = Dict(:volume =&gt; -83.33333333333331)
-| | | Adding cut : 83.33333333333331 volume_out + cost_to_go ≥ 35486.1111111111
-| Finished iteration
-| | lower_bound = 23819.444444444434
-Starting iteration 3
-| Forward Pass
-| | Visiting node 1
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 200.0)
-| | | x′ = Dict(:volume =&gt; 200.0)
-| | | C(x, u, ω) = 5000.0
-| | Visiting node 2
-| | | ω = 50.0
-| | | x = Dict(:volume =&gt; 200.0)
+| | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; 100.0)
-| | | C(x, u, ω) = 0.0
+| | | C(x, u, ω) = 15000.0
 | | Visiting node 3
 | | | ω = 50.0
 | | | x = Dict(:volume =&gt; 100.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 2
+| | | ω = 100.0
+| | | x = Dict(:volume =&gt; 0.0)
+| | | x′ = Dict(:volume =&gt; 100.0)
+| | | C(x, u, ω) = 15000.0
+| | Visiting node 3
+| | | ω = 50.0
+| | | x = Dict(:volume =&gt; 100.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 2
+| | | ω = 0.0
+| | | x = Dict(:volume =&gt; 0.0)
 | | | x′ = Dict(:volume =&gt; -0.0)
+| | | C(x, u, ω) = 15000.0
+| | Visiting node 3
+| | | ω = 50.0
+| | | x = Dict(:volume =&gt; -0.0)
+| | | x′ = Dict(:volume =&gt; 0.0)
+| | | C(x, u, ω) = 15000.0
+| Backward pass
+| | Visiting node 3
+| | | Solving φ = 0.0
+| | | | V = 35000.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 27500.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 20000.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Adding cut : 75 volume_out + cost_to_go ≥ 13750
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 36250.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 28750.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 21250.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 28749.999999999996
+| | Visiting node 3
+| | | Solving φ = 0.0
+| | | | V = 43750.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 36250.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 28749.999999999996
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Adding cut : 75 volume_out + cost_to_go ≥ 18125
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 25625.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 18125.0
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 14375.0
+| | | | dVdx′ = Dict(:volume =&gt; -75.0)
+| | | Adding cut : 125 volume_out + cost_to_go ≥ 31875
+| | Visiting node 3
+| | | Solving φ = 0.0
+| | | | V = 46875.0
+| | | | dVdx′ = Dict(:volume =&gt; -125.0)
+| | | Solving φ = 50.0
+| | | | V = 40625.0
+| | | | dVdx′ = Dict(:volume =&gt; -125.0)
+| | | Solving φ = 100.0
+| | | | V = 34375.0
+| | | | dVdx′ = Dict(:volume =&gt; -125.0)
+| | | Adding cut : 62.5 volume_out + cost_to_go ≥ 20312.5
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 27812.5
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 20312.5
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 100.0
+| | | | V = 17187.5
+| | | | dVdx′ = Dict(:volume =&gt; -62.5)
+| | | Adding cut : 120.83333333333333 volume_out + cost_to_go ≥ 33854.166666666664
+| | Visiting node 3
+| | | Solving φ = 0.0
+| | | | V = 48854.166666666664
+| | | | dVdx′ = Dict(:volume =&gt; -120.83333333333333)
+| | | Solving φ = 50.0
+| | | | V = 42812.5
+| | | | dVdx′ = Dict(:volume =&gt; -120.83333333333333)
+| | | Solving φ = 100.0
+| | | | V = 36770.83333333333
+| | | | dVdx′ = Dict(:volume =&gt; -120.83333333333333)
+| | | Adding cut : 60.41666666666666 volume_out + cost_to_go ≥ 21406.25
+| | Visiting node 2
+| | | Solving φ = 0.0
+| | | | V = 23906.25
+| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | Solving φ = 50.0
+| | | | V = 19392.36111111111
+| | | | dVdx′ = Dict(:volume =&gt; -60.41666666666666)
+| | | Solving φ = 100.0
+| | | | V = 16371.52777777778
+| | | | dVdx′ = Dict(:volume =&gt; -60.41666666666666)
+| | | Adding cut : 90.27777777777777 volume_out + cost_to_go ≥ 31927.08333333333
+| | Visiting node 1
+| | | Solving φ = 0.0
+| | | | V = 29206.912878787873
+| | | | dVdx′ = Dict(:volume =&gt; -100.0)
+| | | Solving φ = 50.0
+| | | | V = 24403.935185185193
+| | | | dVdx′ = Dict(:volume =&gt; -90.27777777777777)
+| | | Solving φ = 100.0
+| | | | V = 19890.046296296277
+| | | | dVdx′ = Dict(:volume =&gt; -90.27777777777777)
+| | | Adding cut : 93.5185185185185 volume_out + cost_to_go ≥ 41645.35984848485
+| Finished iteration
+| | lower_bound = 27941.656144781147
+Starting iteration 3
+| Forward Pass
+| | Visiting node 1
+| | | ω = 100.0
+| | | x = Dict(:volume =&gt; 200.0)
+| | | x′ = Dict(:volume =&gt; 200.0)
+| | | C(x, u, ω) = 2499.9999999999964
+| | Visiting node 2
+| | | ω = 100.0
+| | | x = Dict(:volume =&gt; 200.0)
+| | | x′ = Dict(:volume =&gt; 149.99999999999991)
+| | | C(x, u, ω) = 0.0
+| | Visiting node 3
+| | | ω = 0.0
+| | | x = Dict(:volume =&gt; 149.99999999999991)
+| | | x′ = Dict(:volume =&gt; -8.526512829121202e-14)
 | | | C(x, u, ω) = 0.0
 | Backward pass
 | | Visiting node 3
 | | | Solving φ = 0.0
-| | | | V = 42152.77777777778
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
+| | | | V = 48854.16666666665
+| | | | dVdx′ = Dict(:volume =&gt; -120.83333333333333)
 | | | Solving φ = 50.0
-| | | | V = 37152.77777777778
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
+| | | | V = 42812.50000000001
+| | | | dVdx′ = Dict(:volume =&gt; -120.83333333333333)
 | | | Solving φ = 100.0
-| | | | V = 32152.777777777777
+| | | | V = 37540.246212121216
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
-| | | Adding cut : 49.99999999999999 volume_out + cost_to_go ≥ 18576.38888888889
+| | | Adding cut : 56.944444444444436 volume_out + cost_to_go ≥ 21534.485479797975
 | | Visiting node 2
 | | | Solving φ = 0.0
-| | | | V = 26076.38888888889
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | | V = 21534.48547979798
+| | | | dVdx′ = Dict(:volume =&gt; -56.944444444444436)
 | | | Solving φ = 50.0
-| | | | V = 18576.38888888889
-| | | | dVdx′ = Dict(:volume =&gt; -150.0)
+| | | | V = 18687.263257575756
+| | | | dVdx′ = Dict(:volume =&gt; -56.944444444444436)
 | | | Solving φ = 100.0
-| | | | V = 16076.38888888889
-| | | | dVdx′ = Dict(:volume =&gt; -49.99999999999999)
-| | | Adding cut : 116.66666666666666 volume_out + cost_to_go ≥ 31909.722222222223
+| | | | V = 15840.041035353537
+| | | | dVdx′ = Dict(:volume =&gt; -56.944444444444436)
+| | | Adding cut : 56.94444444444443 volume_out + cost_to_go ≥ 27228.929924242417
 | | Visiting node 1
 | | | Solving φ = 0.0
-| | | | V = 24531.25
+| | | | V = 27540.24621212121
 | | | | dVdx′ = Dict(:volume =&gt; -100.0)
 | | | Solving φ = 50.0
-| | | | V = 19531.25
-| | | | dVdx′ = Dict(:volume =&gt; -100.0)
+| | | | V = 22899.305555555555
+| | | | dVdx′ = Dict(:volume =&gt; -90.27777777777777)
 | | | Solving φ = 100.0
-| | | | V = 14652.777777777776
-| | | | dVdx′ = Dict(:volume =&gt; -83.33333333333331)
-| | | Adding cut : 94.44444444444443 volume_out + cost_to_go ≥ 38460.648148148146
+| | | | V = 18687.26325757576
+| | | | dVdx′ = Dict(:volume =&gt; -56.94444444444442)
+| | | Adding cut : 82.40740740740739 volume_out + cost_to_go ≥ 39523.75315656565
 | Finished iteration
-| | lower_bound = 24571.759259259263
+| | lower_bound = 28042.27167508417
 Termination status: iteration limit
-Upper bound = 26618.749999999996 ± 5096.063619913892</code></pre><p>Success! We trained a policy for an infinite horizon multistage stochastic program using stochastic dual dynamic programming. Note how some of the forward passes are different lengths!</p><pre><code class="language-julia hljs">evaluate_policy(
+Upper bound = 30473.57954545455 ± 5956.402687984564</code></pre><p>Success! We trained a policy for an infinite horizon multistage stochastic program using stochastic dual dynamic programming. Note how some of the forward passes are different lengths!</p><pre><code class="language-julia hljs">evaluate_policy(
     model;
     node = 3,
     incoming_state = Dict(:volume =&gt; 100.0),
@@ -758,4 +822,4 @@ Upper bound = 26618.749999999996 ± 5096.063619913892</code></pre><p>Success! We
   :volume_in          =&gt; 100.0
   :thermal_generation =&gt; 40.0
   :hydro_generation   =&gt; 110.0
-  :cost_to_go         =&gt; 18576.4</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../guides/create_a_belief_state/">« Create a belief state</a><a class="docs-footer-nextpage" href="../risk/">Risk aversion »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Tuesday 4 November 2025 22:58">Tuesday 4 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  :cost_to_go         =&gt; 21534.5</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../guides/create_a_belief_state/">« Create a belief state</a><a class="docs-footer-nextpage" href="../risk/">Risk aversion »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Wednesday 5 November 2025 00:04">Wednesday 5 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
