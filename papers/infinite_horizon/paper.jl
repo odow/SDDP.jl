@@ -4,9 +4,24 @@
 #  obtain one at http://mozilla.org/MPL/2.0/.
 
 using SDDP
+import Gurobi
 import HiGHS
 import Plots
 import StatsPlots
+
+GRB_ENV, PARALLEL_SCHEME = try
+    # If we can use Gurobi, it doesn't support multithreading
+    Gurobi.Env(), SDDP.Serial()
+catch
+    nothing, SDDP.Threaded()
+end
+
+function Optimizer()
+    if GRB_ENV === nothing
+        return HiGHS.Optimizer()
+    end
+    return Gurobi.Optimizer(GRB_ENV)
+end
 
 """
 This example is taken from MSPPy: https://github.com/lingquant/msppy/blob/dc85a2e8fa5243b3d5096d59085d9caad3ff2ede/examples/hydro_u_thermal/julia/test.jl
@@ -100,9 +115,9 @@ function _build_brazil_example(sp::JuMP.Model, t::Int)
     return
 end
 
-function example_brazil_120_stages(; annual_discount = 0.95)
+function example_brazil_n_stages(; years::Int, annual_discount = 0.95)
     graph = SDDP.Graph(0)
-    for i in 1:120
+    for i in 1:(12 * years)
         SDDP.add_node(graph, i)
         probability = mod(i, 12) == 0 ? annual_discount : 1.0
         SDDP.add_edge(graph, (i - 1) => i, probability)
@@ -111,17 +126,18 @@ function example_brazil_120_stages(; annual_discount = 0.95)
         _build_brazil_example,
         graph;
         lower_bound = 0.0,
-        optimizer = HiGHS.Optimizer,
+        optimizer = Optimizer,
     )
-    SDDP.train(model; time_limit = 300, parallel_scheme = SDDP.Threaded())
-    simulations = map(1:82) do i
-        return SDDP.simulate(
-            model,
-            1,
-            [:x_energy, :u_thermal];
-            sampling_scheme = SDDP.Historical([(60 + t, i) for t in 1:12])
-        )[1]
-    end
+    SDDP.train(model; time_limit = 300, parallel_scheme = PARALLEL_SCHEME)
+    offset = 12 * div(years - 1, 12)
+    simulation = SDDP.simulate(
+        model,
+        1,
+        [:x_energy, :u_thermal];
+        sampling_scheme =
+            SDDP.Historical([(offset+t, i) for t in 1:12 for i in 1:82]),
+    )[1]
+    simulations = [simulation[(12 * y).+(1:12)] for y in 0:81]
     return model, simulations
 end
 
@@ -136,41 +152,49 @@ function example_brazil_cyclic(; annual_discount = 0.95)
         _build_brazil_example,
         graph;
         lower_bound = 0.0,
-        optimizer = HiGHS.Optimizer,
+        optimizer = Optimizer,
     )
-    SDDP.train(model; time_limit = 300, parallel_scheme = SDDP.Threaded())
-    simulatons = map(1:82) do i
-        return SDDP.simulate(
-            model_cyclic,
-            1,
-            [:x_energy, :u_thermal];
-            sampling_scheme = SDDP.Historical([(t, i) for t in 1:12])
-        )[1]
-    end
+    SDDP.train(model; time_limit = 300, parallel_scheme = PARALLEL_SCHEME)
+    simulation = SDDP.simulate(
+        model,
+        1,
+        [:x_energy, :u_thermal];
+        sampling_scheme = SDDP.Historical([(t, i) for t in 1:12 for i in 1:82]),
+    )[1]
+    simulations = [simulation[(12 * y).+(1:12)] for y in 0:81]
     return model, simulations
 end
 
 # Build and train each model
-model_120, sim_120 = example_brazil_120_stages(; annual_discount = 0.95)
+model_120, sim_120 = example_brazil_n_stages(; years = 10, annual_discount = 0.95);
+model_36, sim_36 = example_brazil_n_stages(; years = 3, annual_discount = 0.95);
 model_cyclic, sim_cyclic = example_brazil_cyclic(; annual_discount = 0.95);
 
 # Plot the distribution of annual costs
 costs_120 = map(sim -> sum(d[:stage_objective] for d in sim), sim_120)
+costs_36 = map(sim -> sum(d[:stage_objective] for d in sim), sim_36)
 costs_cyclic = map(sim -> sum(d[:stage_objective] for d in sim), sim_cyclic)
 plt = Plots.plot(;
-    xlim = (0, max(maximum(costs_120), maximum(costs_cyclic))),
+    xlim = (0, maximum(maximum.([costs_120, costs_36, costs_cyclic]))),
     xlabel = "Annual cost",
     ylabel = "Density",
 )
 StatsPlots.density!(plt, costs_120; label = "120 stages")
+StatsPlots.density!(plt, costs_36; label = "36 stages")
 StatsPlots.density!(plt, costs_cyclic; label = "Infinite horizon")
 
 # Plot the state and control variables
 Plots.plot(
     SDDP.publication_plot(
         data -> sum(data[:x_energy][i].out for i in 1:4) / 1e3,
-        sim_120;
+        sim_36;
         ylabel = "Stored energy [TWh]",
+        title = "36 stages",
+        ylims = (0, 300),
+    ),
+    SDDP.publication_plot(
+        data -> sum(data[:x_energy][i].out for i in 1:4) / 1e3,
+        sim_120;
         title = "120 stages",
         ylims = (0, 300),
     ),
@@ -182,8 +206,13 @@ Plots.plot(
     ),
     SDDP.publication_plot(
         data -> sum(data[:u_thermal]) / 1e3,
-        sim_120;
+        sim_36;
         ylabel = "Thermal dispatch [TWh]",
+        ylims = (0, 25),
+    ),
+    SDDP.publication_plot(
+        data -> sum(data[:u_thermal]) / 1e3,
+        sim_120;
         ylims = (0, 25),
     ),
     SDDP.publication_plot(
@@ -191,8 +220,8 @@ Plots.plot(
         sim_cyclic;
         ylims = (0, 25),
     );
-    layout = (2, 2),
-    size = (800, 600),
+    layout = (2, 3),
+    size = (1200, 600),
     xlims = (0, 12),
     xticks = ([1, 4, 7, 10], ["Jan", "Apr", "Jul", "Oct"]),
     margin = 5 * Plots.mm,
