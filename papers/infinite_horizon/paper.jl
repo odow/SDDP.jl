@@ -135,7 +135,7 @@ function example_brazil_n_stages(; years::Int, annual_discount = 0.95)
         1,
         [:x_energy, :u_thermal];
         sampling_scheme =
-            SDDP.Historical([(offset+t, i) for t in 1:12 for i in 1:82]),
+            SDDP.Historical([(offset+t, i) for i in 1:82 for t in 1:12]),
     )[1]
     simulations = [simulation[(12 * y).+(1:12)] for y in 0:81]
     return model, simulations
@@ -159,7 +159,7 @@ function example_brazil_cyclic(; annual_discount = 0.95)
         model,
         1,
         [:x_energy, :u_thermal];
-        sampling_scheme = SDDP.Historical([(t, i) for t in 1:12 for i in 1:82]),
+        sampling_scheme = SDDP.Historical([(t, i) for i in 1:82 for t in 1:12]),
     )[1]
     simulations = [simulation[(12 * y).+(1:12)] for y in 0:81]
     return model, simulations
@@ -183,8 +183,17 @@ StatsPlots.density!(plt, costs_120; label = "120 stages")
 StatsPlots.density!(plt, costs_36; label = "36 stages")
 StatsPlots.density!(plt, costs_cyclic; label = "Infinite horizon")
 
+# Boxplot of distributions
+StatsPlots.boxplot(
+    hcat(costs_36, costs_120, costs_cyclic);
+    ylabel = "Annual cost",
+    legend = false,
+    outliers = false,
+    xticks = ([1, 2, 3], ["36 stages", "120 stages", "infinite"]),
+)
+
 # Plot the state and control variables
-Plots.plot(
+plt_distribution = Plots.plot(
     SDDP.publication_plot(
         data -> sum(data[:x_energy][i].out for i in 1:4) / 1e3,
         sim_36;
