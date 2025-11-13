@@ -102,11 +102,11 @@ HighsMipSolverData::transformNewIntegerFeasibleSolution tmpSolver.run();
 HighsMipSolverData::transformNewIntegerFeasibleSolution tmpSolver.run();
 HighsMipSolverData::transformNewIntegerFeasibleSolution tmpSolver.run();
 HighsMipSolverData::transformNewIntegerFeasibleSolution tmpSolver.run();
-         1   2.499895e+01  1.562631e+00  1.635790e-02         6   1
-        40   8.333333e+00  8.333333e+00  6.577780e-01       246   1
+         1   2.499895e+01  1.562631e+00  1.621985e-02         6   1
+        40   8.333333e+00  8.333333e+00  6.663358e-01       246   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 6.577780e-01
+total time (s) : 6.663358e-01
 total solves   : 246
 best bound     :  8.333333e+00
 simulation ci  :  8.810723e+00 ± 8.167195e-01
@@ -195,14 +195,14 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   0.000000e+00  7.217100e+00  1.103687e-02        15   1
-        40   1.200000e+01  6.561000e+00  1.001386e+00      2584   1
+         1   0.000000e+00  7.290000e+00  5.965948e-03         7   1
+        40   1.300000e+01  6.561000e+00  1.017516e+00      2718   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 1.001386e+00
-total solves   : 2584
+total time (s) : 1.017516e+00
+total solves   : 2718
 best bound     :  6.561000e+00
-simulation ci  :  5.550000e+00 ± 2.082977e+00
+simulation ci  :  5.025000e+00 ± 2.531796e+00
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><p>Simulating a cyclic policy graph requires an explicit <code>sampling_scheme</code> that does not terminate early based on the cycle probability:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
     model,
@@ -220,4 +220,4 @@ end
 
 print(join([join(path[i, :], &#39; &#39;) for i in 1:size(path, 1)], &#39;\n&#39;))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1 2 3 ⋅
 ⋅ ▩ 4 †
-† ⋅ 5 *</code></pre><div class="admonition is-success" id="Tip-dc12055df69fc2d"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-dc12055df69fc2d" title="Permalink"></a></header><div class="admonition-body"><p>This formulation will likely struggle as the number of cells in the maze increases. Can you think of an equivalent formulation that uses fewer state variables?</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pglib_opf/">« Alternative forward models</a><a class="docs-footer-nextpage" href="../example_newsvendor/">Example: two-stage newsvendor »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Thursday 13 November 2025 21:42">Thursday 13 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+† ⋅ 5 *</code></pre><div class="admonition is-success" id="Tip-dc12055df69fc2d"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-dc12055df69fc2d" title="Permalink"></a></header><div class="admonition-body"><p>This formulation will likely struggle as the number of cells in the maze increases. Can you think of an equivalent formulation that uses fewer state variables?</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pglib_opf/">« Alternative forward models</a><a class="docs-footer-nextpage" href="../example_newsvendor/">Example: two-stage newsvendor »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Thursday 13 November 2025 23:02">Thursday 13 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
