@@ -128,7 +128,7 @@ function example_brazil_n_stages(; years::Int, annual_discount = 0.95)
         lower_bound = 0.0,
         optimizer = Optimizer,
     )
-    SDDP.train(model; time_limit = 300, parallel_scheme = PARALLEL_SCHEME)
+    SDDP.train(model; time_limit = 600, parallel_scheme = PARALLEL_SCHEME)
     offset = 12 * div(years - 1, 12)
     simulation = SDDP.simulate(
         model,
@@ -154,7 +154,7 @@ function example_brazil_cyclic(; annual_discount = 0.95)
         lower_bound = 0.0,
         optimizer = Optimizer,
     )
-    SDDP.train(model; time_limit = 300, parallel_scheme = PARALLEL_SCHEME)
+    SDDP.train(model; time_limit = 600, parallel_scheme = PARALLEL_SCHEME)
     simulation = SDDP.simulate(
         model,
         1,
@@ -191,6 +191,17 @@ StatsPlots.boxplot(
     outliers = false,
     xticks = ([1, 2, 3], ["36 stages", "120 stages", "infinite"]),
 )
+
+
+function plot_training!(plt, model; scale, kwargs...)
+    bound = map(data -> data.bound * scale / 1e6, model.most_recent_training_results.log)
+    time = map(data -> data.time, model.most_recent_training_results.log)
+    Plots.plot!(plt, time, bound; kwargs...)
+end
+plt = Plots.plot(;ylims = (2e1, 3e1), xlabel = "Run time [s]", ylabel = "Annualized lower bound [\$10^6\$]")
+plot_training!(plt, model_36; label = "36 stages", scale = 1 / sum(0.95^t for t in 0:2))
+plot_training!(plt, model_120; label = "120 stages", scale = 1 / sum(0.95^t for t in 0:9))
+plot_training!(plt, model_cyclic; label = "Infinite horizon", scale = 0.05)
 
 # Plot the state and control variables
 plt_distribution = Plots.plot(
