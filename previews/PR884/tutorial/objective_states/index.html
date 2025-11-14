@@ -79,24 +79,25 @@ subproblem structure
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   7.562500e+03  4.408308e+03  6.488731e-01        39   1
-        60   3.140625e+03  5.092593e+03  9.449420e-01      3240   1
+         1   1.361250e+04  4.408308e+03  6.480410e-01        39   1
+       213   5.906250e+03  5.092593e+03  1.649867e+00     10107   1
+       283   5.156250e+03  5.092593e+03  1.934860e+00     12837   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 9.449420e-01
-total solves   : 3240
+total time (s) : 1.934860e+00
+total solves   : 12837
 best bound     :  5.092593e+03
-simulation ci  :  5.011004e+03 ± 8.965137e+02
+simulation ci  :  5.150470e+03 ± 4.580938e+02
 numeric issues : 0
 -------------------------------------------------------------------
 
 Finished training and simulating.</code></pre><p>To demonstrate how the objective states are updated, consider the sequence of noise observations:</p><pre><code class="language-julia hljs">[stage[:noise_term] for stage in simulations[1]]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{@NamedTuple{fuel::Float64, inflow::Float64}}:
- (fuel = 1.25, inflow = 100.0)
- (fuel = 1.25, inflow = 50.0)
- (fuel = 0.75, inflow = 100.0)</code></pre><p>This, the fuel cost in the first stage should be <code>0.75 * 50 = 37.5</code>. The fuel cost in the second stage should be <code>1.1 * 37.5 = 41.25</code>. The fuel cost in the third stage should be <code>0.75 * 41.25 = 30.9375</code>.</p><p>To confirm this, the values of the objective state in a simulation can be queried using the <code>:objective_state</code> key.</p><pre><code class="language-julia hljs">[stage[:objective_state] for stage in simulations[1]]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Float64}:
- 62.5
- 78.125
- 58.59375</code></pre><h2 id="Multi-dimensional-objective-states"><a class="docs-heading-anchor" href="#Multi-dimensional-objective-states">Multi-dimensional objective states</a><a id="Multi-dimensional-objective-states-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-dimensional-objective-states" title="Permalink"></a></h2><p>You can construct multi-dimensional price processes using <code>NTuple</code>s. Just replace every scalar value associated with the objective state by a tuple. For example, <code>initial_value = 1.0</code> becomes <code>initial_value = (1.0, 2.0)</code>.</p><p>Here is an example:</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
+ (fuel = 0.9, inflow = 0.0)
+ (fuel = 0.75, inflow = 0.0)
+ (fuel = 1.1, inflow = 100.0)</code></pre><p>This, the fuel cost in the first stage should be <code>0.75 * 50 = 37.5</code>. The fuel cost in the second stage should be <code>1.1 * 37.5 = 41.25</code>. The fuel cost in the third stage should be <code>0.75 * 41.25 = 30.9375</code>.</p><p>To confirm this, the values of the objective state in a simulation can be queried using the <code>:objective_state</code> key.</p><pre><code class="language-julia hljs">[stage[:objective_state] for stage in simulations[1]]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Float64}:
+ 45.0
+ 33.75
+ 37.125</code></pre><h2 id="Multi-dimensional-objective-states"><a class="docs-heading-anchor" href="#Multi-dimensional-objective-states">Multi-dimensional objective states</a><a id="Multi-dimensional-objective-states-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-dimensional-objective-states" title="Permalink"></a></h2><p>You can construct multi-dimensional price processes using <code>NTuple</code>s. Just replace every scalar value associated with the objective state by a tuple. For example, <code>initial_value = 1.0</code> becomes <code>initial_value = (1.0, 2.0)</code>.</p><p>Here is an example:</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
     stages = 3,
     sense = :Min,
     lower_bound = 0.0,
@@ -170,19 +171,18 @@ subproblem structure
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   1.462500e+04  2.869318e+03  5.870841e-01        39   1
-       192   4.750000e+03  5.135984e+03  1.590995e+00      9288   1
-       288   5.500000e+03  5.135984e+03  2.049640e+00     13032   1
+         1   2.500000e+03  1.479266e+03  5.698171e-01        39   1
+        40   9.000000e+03  5.135984e+03  7.805231e-01      2160   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 2.049640e+00
-total solves   : 13032
+total time (s) : 7.805231e-01
+total solves   : 2160
 best bound     :  5.135984e+03
-simulation ci  :  5.123203e+03 ± 4.593750e+02
+simulation ci  :  4.827808e+03 ± 1.410448e+03
 numeric issues : 0
 -------------------------------------------------------------------
 
 Finished training and simulating.</code></pre><p>This time, since our objective state is two-dimensional, the objective states are tuples with two elements:</p><pre><code class="language-julia hljs">[stage[:objective_state] for stage in simulations[1]]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Tuple{Float64, Float64}}:
- (40.0, 50.0)
- (45.0, 40.0)
- (57.5, 45.0)</code></pre><h2 id="objective_state_warnings"><a class="docs-heading-anchor" href="#objective_state_warnings">Warnings</a><a id="objective_state_warnings-1"></a><a class="docs-heading-anchor-permalink" href="#objective_state_warnings" title="Permalink"></a></h2><p>There are number of things to be aware of when using objective states.</p><ul><li><p>The key assumption is that price is independent of the states and actions in the model.</p><p>That means that the price cannot appear in any <code>@constraint</code>s. Nor can you use any <code>@variable</code>s in the update function.</p></li><li><p>Choosing an appropriate Lipschitz constant is difficult.</p><p>The points discussed in <a href="../warnings/#Choosing-an-initial-bound">Choosing an initial bound</a> are relevant. The Lipschitz constant should not be chosen as large as possible (since this will help with convergence and the numerical issues discussed above), but if chosen to small, it may cut of the feasible region and lead to a sub-optimal solution.</p></li><li><p>You need to ensure that the cost-to-go function is concave with respect to the objective state <em>before</em> the update.</p><p>If the update function is linear, this is always the case. In some situations, the update function can be nonlinear (e.g., multiplicative as we have above). In general, placing constraints on the price (e.g., <code>clamp(price, 0, 1)</code>) will destroy concavity. <a href="https://en.wikipedia.org/wiki/Caveat_emptor">Caveat emptor</a>. It&#39;s up to you if this is a problem. If it isn&#39;t you&#39;ll get a good heuristic with no guarantee of global optimality.</p></li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../decision_hazard/">« Here-and-now and hazard-decision</a><a class="docs-footer-nextpage" href="../pglib_opf/">Alternative forward models »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Friday 14 November 2025 00:06">Friday 14 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ (55.0, 50.0)
+ (62.5, 55.0)
+ (61.25, 62.5)</code></pre><h2 id="objective_state_warnings"><a class="docs-heading-anchor" href="#objective_state_warnings">Warnings</a><a id="objective_state_warnings-1"></a><a class="docs-heading-anchor-permalink" href="#objective_state_warnings" title="Permalink"></a></h2><p>There are number of things to be aware of when using objective states.</p><ul><li><p>The key assumption is that price is independent of the states and actions in the model.</p><p>That means that the price cannot appear in any <code>@constraint</code>s. Nor can you use any <code>@variable</code>s in the update function.</p></li><li><p>Choosing an appropriate Lipschitz constant is difficult.</p><p>The points discussed in <a href="../warnings/#Choosing-an-initial-bound">Choosing an initial bound</a> are relevant. The Lipschitz constant should not be chosen as large as possible (since this will help with convergence and the numerical issues discussed above), but if chosen to small, it may cut of the feasible region and lead to a sub-optimal solution.</p></li><li><p>You need to ensure that the cost-to-go function is concave with respect to the objective state <em>before</em> the update.</p><p>If the update function is linear, this is always the case. In some situations, the update function can be nonlinear (e.g., multiplicative as we have above). In general, placing constraints on the price (e.g., <code>clamp(price, 0, 1)</code>) will destroy concavity. <a href="https://en.wikipedia.org/wiki/Caveat_emptor">Caveat emptor</a>. It&#39;s up to you if this is a problem. If it isn&#39;t you&#39;ll get a good heuristic with no guarantee of global optimality.</p></li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../decision_hazard/">« Here-and-now and hazard-decision</a><a class="docs-footer-nextpage" href="../pglib_opf/">Alternative forward models »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Friday 14 November 2025 00:22">Friday 14 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

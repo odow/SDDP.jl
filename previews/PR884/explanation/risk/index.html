@@ -512,18 +512,18 @@ Starting iteration 3
 | | Visiting node 2
 | | | Z = [1.0, 2.0, 3.0, 4.0]
 | | | p = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
-| | | q = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
-| | | α = 5.551115123125783e-17
-| | | Adding cut : cost_to_go ≥ -5.551115123125783e-17
+| | | q = [0.8432391442060109, 0.07838042789699455, 0.07838042789699455]
+| | | α = 0.5556945523744657
+| | | Adding cut : 126.48587163090163 volume_out + cost_to_go ≥ 18972.32505008287
 | | Visiting node 1
 | | | Z = [1.0, 2.0, 3.0, 4.0]
 | | | p = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
 | | | q = [1.0, 0.0, 0.0]
 | | | α = 1.0986122886681098
-| | | Adding cut : 100 volume_out + cost_to_go ≥ 29998.594667538695
+| | | Adding cut : 100 volume_out + cost_to_go ≥ 29998.641399238186
 | Finished iteration
-| | lower_bound = 14998.594667538693
-Upper bound = 9499.690158407373 ± 959.945990323204</code></pre><p>Finally, evaluate the decision rule:</p><pre><code class="language-julia hljs">evaluate_policy(
+| | lower_bound = 14998.641399238184
+Upper bound = 10699.67494927882 ± 875.6075228169726</code></pre><p>Finally, evaluate the decision rule:</p><pre><code class="language-julia hljs">evaluate_policy(
     model;
     node = 1,
     incoming_state = Dict(:volume =&gt; 150.0),
@@ -536,4 +536,4 @@ Upper bound = 9499.690158407373 ± 959.945990323204</code></pre><p>Finally, eval
   :volume_in          =&gt; 150.0
   :thermal_generation =&gt; 125.0
   :hydro_generation   =&gt; 25.0
-  :cost_to_go         =&gt; 9998.59</code></pre><div class="admonition is-info" id="Info-36bdd5f5fca0618e"><header class="admonition-header">Info<a class="admonition-anchor" href="#Info-36bdd5f5fca0618e" title="Permalink"></a></header><div class="admonition-body"><p>For this trivial example, the risk-averse policy isn&#39;t very different from the policy obtained using the expectation risk-measure. If you try it on some bigger/more interesting problems, you should see the expected cost increase, and the upper tail of the policy decrease.</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../theory_intro/">« Introductory theory</a><a class="docs-footer-nextpage" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Friday 14 November 2025 00:06">Friday 14 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  :cost_to_go         =&gt; 9998.64</code></pre><div class="admonition is-info" id="Info-36bdd5f5fca0618e"><header class="admonition-header">Info<a class="admonition-anchor" href="#Info-36bdd5f5fca0618e" title="Permalink"></a></header><div class="admonition-body"><p>For this trivial example, the risk-averse policy isn&#39;t very different from the policy obtained using the expectation risk-measure. If you try it on some bigger/more interesting problems, you should see the expected cost increase, and the upper tail of the policy decrease.</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../theory_intro/">« Introductory theory</a><a class="docs-footer-nextpage" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Friday 14 November 2025 00:22">Friday 14 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
