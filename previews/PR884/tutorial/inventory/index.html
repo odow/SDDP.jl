@@ -72,20 +72,19 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   3.494579e+05  4.573582e+04  2.194500e-02       212   1
-        51   1.296711e+05  1.443373e+05  1.024826e+00     14112   1
-        65   1.839026e+05  1.443373e+05  1.242244e+00     17080   1
+         1   2.652474e+05  4.573582e+04  2.175999e-02       212   1
+        46   1.078395e+05  1.443371e+05  9.108579e-01     11952   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 1.242244e+00
-total solves   : 17080
-best bound     :  1.443373e+05
-simulation ci  :  1.481606e+05 ± 9.113933e+03
+total time (s) : 9.108579e-01
+total solves   : 11952
+best bound     :  1.443371e+05
+simulation ci  :  1.471492e+05 ± 9.123588e+03
 numeric issues : 0
 -------------------------------------------------------------------
 
-Confidence interval: 144906.42 ± 3511.7
-Lower bound: 144337.34</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
+Confidence interval: 141448.95 ± 3609.51
+Lower bound: 144337.12</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
     simulations;
     title = &quot;x_inventory.out + u_buy.out&quot;,
     xlabel = &quot;Stage&quot;,
@@ -93,7 +92,7 @@ Lower bound: 144337.34</code></pre><p>Plot the optimal inventory levels:</p><pre
     ylims = (0, 1_000),
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
-end</code></pre><img src="c49a2418.svg" alt="Example block output"/><p>In the early stages, we indeed recover an order-up-to policy. However, there are end-of-horizon effects as the agent tries to optimize their decision making knowing that they have 10 realizations of demand.</p><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>We can remove the end-of-horizonn effects by considering an infinite horizon model. We assume a discount factor <span>$\alpha=0.95$</span>:</p><pre><code class="language-julia hljs">α = 0.95
+end</code></pre><img src="5ec54181.svg" alt="Example block output"/><p>In the early stages, we indeed recover an order-up-to policy. However, there are end-of-horizon effects as the agent tries to optimize their decision making knowing that they have 10 realizations of demand.</p><h2 id="Infinite-horizon"><a class="docs-heading-anchor" href="#Infinite-horizon">Infinite horizon</a><a id="Infinite-horizon-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon" title="Permalink"></a></h2><p>We can remove the end-of-horizonn effects by considering an infinite horizon model. We assume a discount factor <span>$\alpha=0.95$</span>:</p><pre><code class="language-julia hljs">α = 0.95
 graph = SDDP.LinearGraph(2)
 SDDP.add_edge(graph, 2 =&gt; 2, α)
 graph</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Root
@@ -163,30 +162,30 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   1.186000e+04  2.795477e+04  6.592035e-03        64   1
-        29   1.618913e+06  3.027020e+05  1.240241e+00     15548   1
-        50   3.569034e+05  3.107076e+05  2.543358e+00     26384   1
-        75   7.176365e+05  3.124276e+05  3.635410e+00     37203   1
-        93   1.191492e+06  3.126229e+05  4.784518e+00     47616   1
-       112   1.020524e+06  3.126569e+05  5.883995e+00     56791   1
-       131   6.286274e+05  3.126638e+05  6.934270e+00     65084   1
-       146   3.212511e+05  3.126648e+05  8.002601e+00     72827   1
-       165   1.716919e+05  3.126650e+05  9.018774e+00     79524   1
-       237   2.963237e+05  3.126650e+05  1.405339e+01    108366   1
-       281   2.344289e+05  3.126650e+05  1.912841e+01    126953   1
-       310   6.127026e+05  3.126650e+05  2.422989e+01    140674   1
-       332   3.228500e+05  3.126650e+05  2.924903e+01    150083   1
-       350   5.709342e+05  3.126650e+05  3.486910e+01    158102   1
-       368   1.460921e+05  3.126650e+05  3.995957e+01    164147   1
-       383   7.572921e+05  3.126650e+05  4.580911e+01    170441   1
-       398   1.153553e+05  3.126650e+05  5.091399e+01    175265   1
-       400   4.546053e+04  3.126650e+05  5.177595e+01    176002   1
+         1   1.787708e+06  4.706461e+04  3.382802e-02       505   1
+        38   5.738520e+05  3.045503e+05  1.097901e+00     14612   1
+        72   1.087714e+06  3.122279e+05  2.194219e+00     26238   1
+        89   9.718237e+05  3.125754e+05  3.336436e+00     36566   1
+       106   7.635136e+05  3.126461e+05  4.409618e+00     45928   1
+       132   5.574689e+05  3.126627e+05  5.491615e+00     54711   1
+       151   7.749804e+05  3.126646e+05  6.515610e+00     61534   1
+       159   8.511057e+05  3.126649e+05  7.595075e+00     67653   1
+       175   4.063868e+05  3.126650e+05  8.626215e+00     73885   1
+       186   1.138394e+05  3.126650e+05  9.648820e+00     79461   1
+       237   3.913132e+05  3.126650e+05  1.475060e+01    102486   1
+       272   1.234345e+06  3.126650e+05  2.039346e+01    120938   1
+       303   8.707237e+05  3.126650e+05  2.556760e+01    134556   1
+       327   7.711868e+05  3.126650e+05  3.064636e+01    144114   1
+       345   2.864711e+05  3.126650e+05  3.576849e+01    152133   1
+       371   5.843237e+05  3.126650e+05  4.135656e+01    160328   1
+       392   8.289553e+05  3.126650e+05  4.686293e+01    167615   1
+       400   6.760789e+04  3.126650e+05  4.928464e+01    170542   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 5.177595e+01
-total solves   : 176002
+total time (s) : 4.928464e+01
+total solves   : 170542
 best bound     :  3.126650e+05
-simulation ci  :  3.225115e+05 ± 3.321309e+04
+simulation ci  :  3.110876e+05 ± 3.106304e+04
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><p>Plot the optimal inventory levels:</p><pre><code class="language-julia hljs">plt = SDDP.publication_plot(
     simulations;
@@ -197,4 +196,4 @@ numeric issues : 0
 ) do data
     return data[:x_inventory].out + data[:u_buy].out
 end
-Plots.hline!(plt, [662]; label = &quot;Analytic solution&quot;)</code></pre><img src="9eaf9d68.svg" alt="Example block output"/><p>We again recover an order-up-to policy. The analytic solution is to order-up-to 662 units. We do not precisely recover this solution because we used a sample average approximation of 20 elements. If we increased the number of samples, our solution would approach the analytic solution.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../batteries/">Example: batteries »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Thursday 13 November 2025 23:02">Thursday 13 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Plots.hline!(plt, [662]; label = &quot;Analytic solution&quot;)</code></pre><img src="721dfeea.svg" alt="Example block output"/><p>We again recover an order-up-to policy. The analytic solution is to order-up-to 662 units. We do not precisely recover this solution because we used a sample average approximation of 20 elements. If we increased the number of samples, our solution would approach the analytic solution.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_milk_producer/">« Example: the milk producer</a><a class="docs-footer-nextpage" href="../batteries/">Example: batteries »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Friday 14 November 2025 00:06">Friday 14 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
