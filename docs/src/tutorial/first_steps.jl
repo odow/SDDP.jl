@@ -483,7 +483,7 @@ function subproblem_builder(subproblem::Model, node::Int)
     Ω = [0.0, 50.0, 100.0]
     P = [1 / 3, 1 / 3, 1 / 3]
     SDDP.parameterize(subproblem, Ω, P) do ω
-        JuMP.fix(inflow, ω)
+        fix(inflow, ω)
         return
     end
     return subproblem
@@ -529,7 +529,7 @@ function subproblem_builder(subproblem::Model, node::Int)
     Ω = [0.0, 50.0, 100.0]
     P = [1 / 3, 1 / 3, 1 / 3]
     SDDP.parameterize(subproblem, Ω, P) do ω
-        JuMP.fix(inflow, ω)
+        fix(inflow, ω)
         return
     end
     ## Transition function and constraints
@@ -566,7 +566,7 @@ function subproblem_builder(subproblem::Model, node::Int)
     Ω = [0.0, 50.0, 100.0]
     P = [1 / 3, 1 / 3, 1 / 3]
     SDDP.parameterize(subproblem, Ω, P) do ω
-        JuMP.fix(inflow, ω)
+        fix(inflow, ω)
         return
     end
     ## Transition function and constraints
@@ -606,7 +606,7 @@ function subproblem_builder(subproblem::Model, node::Int)
     Ω = [0.0, 50.0, 100.0]
     P = [1 / 3, 1 / 3, 1 / 3]
     SDDP.parameterize(subproblem, Ω, P) do ω
-        JuMP.fix(inflow, ω)
+        fix(inflow, ω)
         return
     end
     ## Transition function and constraints
@@ -687,7 +687,7 @@ model = SDDP.LinearPolicyGraph(;
     Ω = [0.0, 50.0, 100.0]
     P = [1 / 3, 1 / 3, 1 / 3]
     SDDP.parameterize(subproblem, Ω, P) do ω
-        JuMP.fix(inflow, ω)
+        fix(inflow, ω)
         return
     end
     ## Transition function and constraints
@@ -885,7 +885,7 @@ simulations = SDDP.simulate(
     model,
     1;  ## Perform a single simulation
     custom_recorders = Dict{Symbol,Function}(
-        :price => (sp::JuMP.Model) -> JuMP.dual(sp[:demand_constraint]),
+        :price => (sp::Model) -> dual(sp[:demand_constraint]),
     ),
 )
 

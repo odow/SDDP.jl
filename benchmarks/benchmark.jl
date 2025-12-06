@@ -7,7 +7,7 @@ import PrettyTables
 
 function benchmark_file(filename::String; kwargs...)
     model, _ = SDDP.read_from_file(filename)
-    JuMP.set_optimizer(model, GLPK.Optimizer)
+    set_optimizer(model, GLPK.Optimizer)
     SDDP.train(model; kwargs...)
     log = model.most_recent_training_results.log
     time_weighted_bound = log[1].bound * log[1].time

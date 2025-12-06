@@ -28,7 +28,7 @@ function fast_hydro_thermal()
         end)
         RAINFALL = (t == 1 ? [6] : [2, 10])
         SDDP.parameterize(sp, RAINFALL) do ω
-            JuMP.fix(ξ, ω)
+            fix(ξ, ω)
             return
         end
         @stageobjective(sp, -5 * p)
@@ -36,9 +36,9 @@ function fast_hydro_thermal()
 
     det = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
     set_silent(det)
-    JuMP.optimize!(det)
-    @test JuMP.objective_sense(det) == MOI.MAX_SENSE
-    @test JuMP.objective_value(det) == -10
+    optimize!(det)
+    @test objective_sense(det) == MAX_SENSE
+    @test objective_value(det) == -10
     SDDP.train(model)
     @test SDDP.calculate_bound(model) == -10
     return

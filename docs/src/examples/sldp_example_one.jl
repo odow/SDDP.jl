@@ -37,7 +37,7 @@ function sldp_example_one()
             0.24645863921577763,
             0.5204224537256875,
         ]
-        SDDP.parameterize(φ -> JuMP.fix(ω, φ), sp, [points; -points])
+        SDDP.parameterize(φ -> fix(ω, φ), sp, [points; -points])
         return
     end
     SDDP.train(model; log_frequency = 10)

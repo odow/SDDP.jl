@@ -176,7 +176,7 @@ function hydro_valley_model(;
                 ],
             ) do ω
                 for i in 1:N
-                    JuMP.fix(rainfall[i], ω[i])
+                    fix(rainfall[i], ω[i])
                 end
             end
         else # in the first stage deterministic inflow

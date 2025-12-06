@@ -90,10 +90,10 @@ model = SDDP.LinearPolicyGraph(;
     elseif t == T + 1
         fix(u_buy.out, 0; force = true)
         @stageobjective(sp, -c * x_inventory.out + c * x_demand.out)
-        SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
+        SDDP.parameterize(ω -> fix(w_demand, ω), sp, Ω)
     else
         @stageobjective(sp, c * u_buy.out + h * x_inventory.out + p * x_demand.out)
-        SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
+        SDDP.parameterize(ω -> fix(w_demand, ω), sp, Ω)
     end
     return
 end
@@ -157,7 +157,7 @@ model = SDDP.PolicyGraph(
         @stageobjective(sp, c * u_buy.out)
     else
         @stageobjective(sp, c * u_buy.out + h * x_inventory.out + p * x_demand.out)
-        SDDP.parameterize(ω -> JuMP.fix(w_demand, ω), sp, Ω)
+        SDDP.parameterize(ω -> fix(w_demand, ω), sp, Ω)
     end
     return
 end

@@ -24,7 +24,7 @@ julia> function create_model()
         @constraint(sp, x.out == x.in + u_p + u_o - w)
         @stageobjective(sp, 100 * u_p + 300 * u_o + 50 * x.out)
         Ω = [[100.0], [100.0, 300.0], [100.0, 300.0]]
-        SDDP.parameterize(ω -> JuMP.fix(w, ω), sp, Ω[t])
+        SDDP.parameterize(ω -> fix(w, ω), sp, Ω[t])
            end
        end
 create_model (generic function with 1 method)

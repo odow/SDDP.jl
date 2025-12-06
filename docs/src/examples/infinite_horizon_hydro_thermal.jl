@@ -45,8 +45,8 @@ function infinite_hydro_thermal(; cut_type)
         )
         @stageobjective(subproblem, 10 * spill + thermal_generation)
         SDDP.parameterize(subproblem, Ω) do ω
-            JuMP.fix(inflow, ω.inflow)
-            JuMP.fix(demand, ω.demand)
+            fix(inflow, ω.inflow)
+            fix(demand, ω.demand)
             return
         end
     end

@@ -31,7 +31,7 @@ model = SDDP.LinearPolicyGraph(
     @constraint(subproblem, balance, x.in == x.out + y)
     SDDP.parameterize(subproblem, [1.1, 2.2]) do ω
         @stageobjective(subproblem, ω * x.out)
-        JuMP.fix(y, ω)
+        fix(y, ω)
     end
 end
 

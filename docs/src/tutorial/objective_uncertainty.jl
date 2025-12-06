@@ -64,7 +64,7 @@ model = SDDP.LinearPolicyGraph(;
         (inflow = 100.0, fuel_multiplier = 0.75),
     ]
     SDDP.parameterize(subproblem, Ω, [1 / 3, 1 / 3, 1 / 3]) do ω
-        JuMP.fix(inflow, ω.inflow)
+        fix(inflow, ω.inflow)
         @stageobjective(
             subproblem,
             ω.fuel_multiplier * fuel_cost[t] * thermal_generation

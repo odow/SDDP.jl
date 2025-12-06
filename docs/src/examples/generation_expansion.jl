@@ -59,7 +59,7 @@ function generation_expansion(duality_handler)
             end
         )
         ## Demand is uncertain
-        SDDP.parameterize(ω -> JuMP.fix(demand, ω), sp, demand_vals[stage, :])
+        SDDP.parameterize(ω -> fix(demand, ω), sp, demand_vals[stage, :])
 
         @expression(
             sp,

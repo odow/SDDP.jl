@@ -66,7 +66,7 @@ model = SDDP.LinearPolicyGraph(;
         [40, 41, 42, 43, 35, 40, 40, 25, 10, 8, 6, 5],  # Hours 01-12
         [5, 6, 8, 10, 20, 30, 55, 72, 75, 70, 64, 60],  # Hours 13-24
     )
-    SDDP.parameterize(ω -> JuMP.fix(w_load, d[t] + ω), sp, Ω)
+    SDDP.parameterize(ω -> fix(w_load, d[t] + ω), sp, Ω)
     ## Objective function
     @stageobjective(sp, 70 * x_thermal.out + 500 * u_slack)
     ## Constraints
@@ -91,7 +91,7 @@ results = SDDP.simulate(
     model,
     100,
     [:x_soc, :x_thermal, :u_slack, :w_load];
-    custom_recorders = Dict{Symbol,Function}(:λ => sp -> JuMP.dual(sp[:λ])),
+    custom_recorders = Dict{Symbol,Function}(:λ => sp -> dual(sp[:λ])),
 );
 
 # ## Analyzing the solution

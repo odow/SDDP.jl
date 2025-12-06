@@ -58,7 +58,7 @@ function newsvendor_example(; cut_type)
             price_noise = [-0.25, -0.125, 0.125, 0.25],
         )
         SDDP.parameterize(subproblem, noise_terms) do ω
-            JuMP.fix(w, ω.demand)
+            fix(w, ω.demand)
             price = SDDP.objective_state(subproblem)
             @stageobjective(subproblem, price * u)
         end

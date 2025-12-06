@@ -96,7 +96,7 @@ model = SDDP.MarkovianPolicyGraph(;
 
     fuel_cost = [50.0, 100.0, 150.0]
     SDDP.parameterize(subproblem, Ω, probability) do ω
-        JuMP.fix(inflow, ω.inflow)
+        fix(inflow, ω.inflow)
         @stageobjective(
             subproblem,
             ω.fuel_multiplier * fuel_cost[t] * thermal_generation
