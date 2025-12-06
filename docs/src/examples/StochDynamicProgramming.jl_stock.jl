@@ -20,7 +20,8 @@ function stock_example()
         @variable(sp, ξ)
         @constraint(sp, state.out == state.in - control + ξ)
         SDDP.parameterize(sp, 0.0:1/30:0.3) do ω
-            return JuMP.fix(ξ, ω)
+            JuMP.fix(ξ, ω)
+            return
         end
         @stageobjective(sp, (sin(3 * stage) - 1) * control)
     end

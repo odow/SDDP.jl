@@ -31,7 +31,8 @@ function test_DefaultForwardPass()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
     end
     forward_trajectory = SDDP.forward_pass(
@@ -59,7 +60,8 @@ function test_RevisitingForwardPass()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
     end
     fp = SDDP.RevisitingForwardPass(2; sub_pass = SDDP.DefaultForwardPass())
@@ -95,7 +97,8 @@ function test_RiskAdjustedForwardPass()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
     end
     @test_throws ArgumentError SDDP.train(
@@ -143,7 +146,8 @@ function test_DefaultForwardPass_cyclic()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
     end
     pass = SDDP.DefaultForwardPass()
@@ -174,7 +178,8 @@ function test_DefaultForwardPass_cyclic_include_last_node()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
     end
     pass = SDDP.DefaultForwardPass(; include_last_node = false)
@@ -204,7 +209,8 @@ function test_DefaultForwardPass_acyclic_include_last_node()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
     end
     pass = SDDP.DefaultForwardPass(; include_last_node = false)
@@ -286,7 +292,8 @@ function test_ImportanceSamplingForwardPass()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
     end
     forward_trajectory = SDDP.forward_pass(

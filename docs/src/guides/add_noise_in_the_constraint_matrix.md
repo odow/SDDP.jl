@@ -19,6 +19,7 @@ julia> model = SDDP.LinearPolicyGraph(
            SDDP.parameterize(subproblem, [0.2, 0.5, 1.0]) do ω
                ## rewrite 1 * x.out <= 1 to ω * x.out <= 1
                JuMP.set_normalized_coefficient(emissions, x.out, ω)
+               return
            end
            @stageobjective(subproblem, -x.out)
        end

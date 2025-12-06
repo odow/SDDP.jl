@@ -75,7 +75,8 @@ model = SDDP.LinearPolicyGraph(;
     ## Assume we have some empirical residuals:
     Ω = [-10.0, 0.1, 9.6]
     SDDP.parameterize(sp, Ω) do ω
-        return JuMP.fix(ε, ω)
+        JuMP.fix(ε, ω)
+        return
     end
 end
 

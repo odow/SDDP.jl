@@ -25,7 +25,7 @@ function create_air_conditioning_model(; convex::Bool)
         end
         @constraint(sp, demand, x.in - x.out + u_production + u_overtime == 0)
         Ω = [[100.0], [100.0, 300.0], [100.0, 300.0]]
-        SDDP.parameterize(ω -> JuMP.set_normalized_rhs(demand, ω), sp, Ω[t])
+        SDDP.parameterize(ω -> set_normalized_rhs(demand, ω), sp, Ω[t])
         @stageobjective(sp, 100 * u_production + 300 * u_overtime + 50 * x.out)
     end
 end

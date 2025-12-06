@@ -46,7 +46,8 @@ function inventory_management_problem()
             @stageobjective(subproblem, buy)
         else
             SDDP.parameterize(subproblem, demand_values, demand_prob[node]) do ω
-                return JuMP.fix(demand, ω)
+                JuMP.fix(demand, ω)
+                return
             end
             @stageobjective(subproblem, 2 * buy + inventory.out)
         end

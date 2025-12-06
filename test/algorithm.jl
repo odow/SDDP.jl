@@ -29,7 +29,8 @@ function test_to_nodal_forms()
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_lower_bound(x.out, ω)
+            JuMP.set_lower_bound(x.out, ω)
+            return
         end
     end
     SDDP.train(
@@ -65,7 +66,8 @@ function test_solve()
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_lower_bound(x.out, ω)
+            JuMP.set_lower_bound(x.out, ω)
+            return
         end
     end
     SDDP.train(model; iteration_limit = 4, print_level = 0)
@@ -317,7 +319,8 @@ function test_write_log_to_csv()
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, [stage], [1.0]) do ω
-            return JuMP.set_lower_bound(x.out, ω)
+            JuMP.set_lower_bound(x.out, ω)
+            return
         end
     end
     @test_throws ErrorException SDDP.write_log_to_csv(model, "sddp.csv")

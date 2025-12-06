@@ -910,7 +910,8 @@ model = PolicyGraph(;
     JuMP.@objective(subproblem, Min, fuel_cost[t] * thermal_generation)
     uncertainty =
         Uncertainty([0.0, 50.0, 100.0], [1 / 3, 1 / 3, 1 / 3]) do ω
-            return JuMP.fix(inflow, ω)
+            JuMP.fix(inflow, ω)
+            return
         end
     return states, uncertainty
 end

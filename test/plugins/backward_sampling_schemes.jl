@@ -28,7 +28,8 @@ function test_CompleteSampler()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     terms = SDDP.sample_backward_noise_terms(SDDP.CompleteSampler(), model[1])
@@ -44,7 +45,8 @@ function test_MonteCarloSampler_1()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, [1, 3], [0.9, 0.1]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     term_count = 0
@@ -72,7 +74,8 @@ function test_MonteCarloSampler_100()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, [1, 3], [0.9, 0.1]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     terms =
@@ -121,7 +124,8 @@ function test_WithStateSampler()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @variable(node, ϵ)
         SDDP.parameterize(node, stage * [1, 3], [0.9, 0.1]) do ω
-            return JuMP.fix(ϵ, ω)
+            JuMP.fix(ϵ, ω)
+            return
         end
         @constraint(node, x.out == ϵ)
     end

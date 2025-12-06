@@ -300,7 +300,8 @@ function test_parameterize()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, [1, 2, 3], [0.4, 0.5, 0.1]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     node = model[2]

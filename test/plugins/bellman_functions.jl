@@ -57,7 +57,8 @@ function _create_model(graph)
             ],
         ) do ω
             JuMP.fix(inflow, ω.inflow)
-            return JuMP.fix(demand, ω.demand)
+            JuMP.fix(demand, ω.demand)
+            return
         end
     end
 end
@@ -297,7 +298,8 @@ function test_belief_state_cut_selection()
             @stageobjective(subproblem, buy)
         else
             SDDP.parameterize(subproblem, demand_values, demand_prob[node]) do ω
-                return JuMP.fix(demand, ω)
+                JuMP.fix(demand, ω)
+                return
             end
             @stageobjective(subproblem, 2 * buy + inventory.out)
         end
@@ -355,11 +357,8 @@ function test_biobjective_cut_selection()
             JuMP.set_normalized_rhs(inflow_constraint, ω)
             ## You must call `set_biobjective_functions` from within
             ## `SDDP.parameterize`.
-            return SDDP.set_biobjective_functions(
-                subproblem,
-                objective_1,
-                objective_2,
-            )
+            SDDP.set_biobjective_functions(subproblem, objective_1, objective_2)
+            return
         end
     end
     ret = SDDP.train_biobjective(
