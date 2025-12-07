@@ -49,7 +49,7 @@ function test_prob52_2stages()
         if stage != 1 # no uncertainty in first stage
             SDDP.parameterize(subproblem, 1:size(D2, 2), p2) do ω
                 for j in 1:m
-                    JuMP.fix(rhs_noise[j], D2[j, ω])
+                    fix(rhs_noise[j], D2[j, ω])
                 end
             end
         end

@@ -42,11 +42,12 @@ function inventory_management_problem()
         )
         @constraint(subproblem, demand == inventory.in - inventory.out + buy)
         if node == :Ad || node == :Bd || node == :D
-            JuMP.fix(demand, 0)
+            fix(demand, 0)
             @stageobjective(subproblem, buy)
         else
             SDDP.parameterize(subproblem, demand_values, demand_prob[node]) do ω
-                return JuMP.fix(demand, ω)
+                fix(demand, ω)
+                return
             end
             @stageobjective(subproblem, 2 * buy + inventory.out)
         end

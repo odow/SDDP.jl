@@ -34,14 +34,11 @@ function biobjective_example()
         ## You must call this for a biobjective problem!
         SDDP.initialize_biobjective_subproblem(subproblem)
         SDDP.parameterize(subproblem, 0.0:5:50.0) do ω
-            JuMP.set_normalized_rhs(inflow_constraint, ω)
+            set_normalized_rhs(inflow_constraint, ω)
             ## You must call `set_biobjective_functions` from within
             ## `SDDP.parameterize`.
-            return SDDP.set_biobjective_functions(
-                subproblem,
-                objective_1,
-                objective_2,
-            )
+            SDDP.set_biobjective_functions(subproblem, objective_1, objective_2)
+            return
         end
     end
     pareto_weights =

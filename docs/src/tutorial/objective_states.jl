@@ -129,7 +129,8 @@ model = SDDP.LinearPolicyGraph(;
         ## Query the current fuel cost.
         fuel_cost = SDDP.objective_state(subproblem)
         @stageobjective(subproblem, fuel_cost * thermal_generation)
-        return JuMP.fix(inflow, ω.inflow)
+        fix(inflow, ω.inflow)
+        return
     end
 end
 
@@ -208,7 +209,8 @@ model = SDDP.LinearPolicyGraph(;
     SDDP.parameterize(subproblem, Ω) do ω
         fuel_cost, _ = SDDP.objective_state(subproblem)
         @stageobjective(subproblem, fuel_cost * thermal_generation)
-        return JuMP.fix(inflow, ω.inflow)
+        fix(inflow, ω.inflow)
+        return
     end
 end
 

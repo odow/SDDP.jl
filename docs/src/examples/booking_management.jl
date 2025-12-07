@@ -74,7 +74,8 @@ function booking_management_model(num_days, num_rooms, num_requests)
             )
         end
         SDDP.parameterize(sp, booking_requests) do request
-            return JuMP.fix.(req, request)
+            fix.(req, request)
+            return
         end
         @stageobjective(
             sp,

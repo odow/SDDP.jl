@@ -27,7 +27,7 @@ function test_inner_hydro_1d()
     stages = 4
     Ω = max.(40 .+ 20.0 * randn(10), 0.0)
     risk_measure = SDDP.EAVaR(; lambda = 0.5, beta = 0.2)
-    function build_subproblem(sp::JuMP.Model, t::Int)
+    function build_subproblem(sp::Model, t::Int)
         @variable(sp, 0 <= x_vol <= 100, SDDP.State, initial_value = 83.222)
         @variable(sp, 0 <= u_gh <= 60)
         @variable(sp, 0 <= u_spill <= 200)
@@ -37,7 +37,7 @@ function test_inner_hydro_1d()
         @constraint(sp, sum(u_gt) + u_gh + u_def == 75)
         @constraint(sp, x_vol.in + w_inflow - u_gh - u_spill == x_vol.out)
         if t > 1
-            SDDP.parameterize(w -> JuMP.fix(w_inflow, w), sp, Ω)
+            SDDP.parameterize(w -> fix(w_inflow, w), sp, Ω)
         end
         @stageobjective(sp, u_spill + 5 * u_gt[1] + 10 * u_gt[2] + 50 * u_def)
     end

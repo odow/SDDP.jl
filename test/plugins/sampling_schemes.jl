@@ -27,7 +27,8 @@ function test_InSampleMonteCarlo_Acyclic()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     @test_throws ErrorException SDDP.InSampleMonteCarlo(
@@ -56,7 +57,8 @@ function test_InSampleMonteCarlo_Cyclic()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     scenario, terminated_due_to_cycle = SDDP.sample_scenario(
@@ -84,7 +86,8 @@ function test_OutOfSampleMonteCarlo_Acyclic()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     @test_throws ErrorException SDDP.OutOfSampleMonteCarlo(
@@ -137,7 +140,8 @@ function test_OutOfSampleMonteCarlo_Cyclic()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     sampler = SDDP.OutOfSampleMonteCarlo(
@@ -177,7 +181,8 @@ function test_Historical_SingleTrajectory()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     sampling_scheme = SDDP.Historical([(1, 0.1), (2, 0.2), (1, 0.3)])
@@ -199,7 +204,8 @@ function test_Historical_SingleTrajectory_terminate_on_cycle()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     scenario, terminated_due_to_cycle = SDDP.sample_scenario(
@@ -223,7 +229,8 @@ function test_Historical_multiple()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     scenario_A = [(1, 0.1), (2, 0.2), (1, 0.3)]
@@ -252,7 +259,8 @@ function test_PSR()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     scheme = SDDP.PSRSamplingScheme(2)
@@ -284,7 +292,8 @@ function test_InSampleMonteCarlo_initial_node()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     for (start, node) in (nothing => 1, 1 => 1, 2 => 2)
@@ -309,7 +318,8 @@ function test_OutOfSampleMonteCarlo_initial_node()
     ) do node, stage
         @variable(node, 0 <= x <= 1)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x, ω)
+            JuMP.set_upper_bound(x, ω)
+            return
         end
     end
     for (start, node) in (nothing => 1, 1 => 1, 2 => 2)
@@ -349,7 +359,8 @@ function test_SimulatorSamplingScheme()
         t, price = node
         @variable(sp, 0 <= x <= 1, SDDP.State, initial_value = 0)
         SDDP.parameterize(sp, [(price,)]) do ω
-            return SDDP.@stageobjective(sp, price * x.out)
+            @stageobjective(sp, price * x.out)
+            return
         end
     end
     sampler = SDDP.SimulatorSamplingScheme(simulator)
@@ -381,7 +392,8 @@ function test_SimulatorSamplingScheme_with_noise()
         t, price = node
         @variable(sp, 0 <= x <= 1, SDDP.State, initial_value = 0)
         SDDP.parameterize(sp, [(price, i) for i in 1:2]) do (p, i)
-            return SDDP.@stageobjective(sp, p * x.out + i)
+            @stageobjective(sp, p * x.out + i)
+            return
         end
     end
     sampler = SDDP.SimulatorSamplingScheme(simulator)

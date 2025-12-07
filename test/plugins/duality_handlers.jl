@@ -458,7 +458,8 @@ function test_BanditDuality_eval()
             )
             steps = range(5; stop = 15, length = 10)
             SDDP.parameterize(sp, [[i, j] for i in steps for j in steps]) do φ
-                return JuMP.fix.(ω, φ)
+                JuMP.fix.(ω, φ)
+                return
             end
         end
     end

@@ -24,7 +24,7 @@ julia> model = SDDP.LinearPolicyGraph(
            Ω = [(value = v, coefficient = c) for v in [1, 2] for c in [3, 4, 5]]
            P = [v * c for v in [0.5, 0.5] for c in [0.3, 0.5, 0.2]]
            SDDP.parameterize(subproblem, Ω, P) do ω
-               JuMP.fix(x.out, ω.value)
+               fix(x.out, ω.value)
                @stageobjective(subproblem, ω.coefficient * x.out)
            end
        end;
@@ -74,7 +74,7 @@ julia> model = SDDP.LinearPolicyGraph(
        ) do subproblem, t
            @variable(subproblem, x, SDDP.State, initial_value = 0.0)
            SDDP.parameterize(subproblem, Ω, P) do ω
-               JuMP.fix(x.out, ω[1])
+               fix(x.out, ω[1])
                @stageobjective(subproblem, ω[2] * x.out + ω[3])
            end
        end;
@@ -117,7 +117,7 @@ julia> model = SDDP.LinearPolicyGraph(
        ) do subproblem, t
            @variable(subproblem, x, SDDP.State, initial_value = 0.0)
            SDDP.parameterize(subproblem, Ω, P) do ω
-               JuMP.fix(x.out, ω[1])
+               fix(x.out, ω[1])
                @stageobjective(subproblem, ω[2] * x.out + ω[3])
            end
        end;

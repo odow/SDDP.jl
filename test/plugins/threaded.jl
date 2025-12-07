@@ -58,7 +58,8 @@ function test_threaded()
             sum(u_x) + sum(u_u) - sum(u_v) + u_slack == df_demand[t] + w_noise,
         )
         SDDP.parameterize(subproblem, [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]) do w
-            return JuMP.fix(w_noise, w)
+            JuMP.fix(w_noise, w)
+            return
         end
         @stageobjective(subproblem, c_pt' * u_x + 35 * u_slack)
         return

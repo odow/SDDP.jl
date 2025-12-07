@@ -79,7 +79,8 @@ function test_Statistical()
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_lower_bound(x.out, ω)
+            JuMP.set_lower_bound(x.out, ω)
+            return
         end
         @stageobjective(node, x.out)
     end
@@ -111,7 +112,8 @@ function test_Statistical()
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0.0)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
         @stageobjective(node, x.out)
     end
@@ -324,7 +326,8 @@ function test_FirstStageStoppingRule()
     ) do node, stage
         @variable(node, x >= 0, SDDP.State, initial_value = 0)
         SDDP.parameterize(node, 1:2) do w
-            return @stageobjective(node, w * x.out)
+            @stageobjective(node, w * x.out)
+            return
         end
         return
     end

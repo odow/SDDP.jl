@@ -18,7 +18,8 @@ julia> model = SDDP.LinearPolicyGraph(
            @constraint(subproblem, emissions, 1 * x.out <= 1)
            SDDP.parameterize(subproblem, [0.2, 0.5, 1.0]) do ω
                ## rewrite 1 * x.out <= 1 to ω * x.out <= 1
-               JuMP.set_normalized_coefficient(emissions, x.out, ω)
+               set_normalized_coefficient(emissions, x.out, ω)
+               return
            end
            @stageobjective(subproblem, -x.out)
        end
@@ -29,5 +30,5 @@ A policy graph with 3 nodes.
 !!! note
     JuMP will normalize constraints by moving all variables to the left-hand
     side. Thus, `@constraint(model, 0 <= 1 - x.out)` becomes `x.out <= 1`.
-    `JuMP.set_normalized_coefficient` sets the coefficient on the _normalized_
+    `set_normalized_coefficient` sets the coefficient on the _normalized_
     constraint.

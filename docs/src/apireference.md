@@ -404,7 +404,7 @@ SDDP.publication_plot
 SDDP.ValueFunction
 ```
 
-## `evaluate`
+## [`evaluate`](@id evaluate_value_function)
 ```@docs
 SDDP.evaluate(::SDDP.ValueFunction, ::Dict{Symbol,Float64})
 ```
@@ -444,7 +444,7 @@ Base.write(::IO, ::SDDP.PolicyGraph)
 Base.read(::IO, ::Type{SDDP.PolicyGraph})
 ```
 
-## `evaluate`
+## [`evaluate`](@id evaluate_validation_scenarios)
 ```@docs
 SDDP.evaluate(::SDDP.PolicyGraph{T}, ::SDDP.ValidationScenarios{T}) where {T}
 ```

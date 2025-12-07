@@ -203,7 +203,7 @@ function second_stage_uncertainty(subproblem)
     )
     SDDP.parameterize(subproblem, [:good, :fair, :bad]) do ω
         for c in CROPS
-            JuMP.set_normalized_coefficient(
+            set_normalized_coefficient(
                 uncertainty[c],
                 subproblem[:area][c].in,
                 MEAN_YIELD[c] * YIELD_MULTIPLIER[ω],

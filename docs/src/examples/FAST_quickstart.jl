@@ -22,7 +22,8 @@ function fast_quickstart()
             @variable(sp, s >= 0)
             @constraint(sp, s <= x.in)
             SDDP.parameterize(sp, [2, 3]) do ω
-                return JuMP.set_upper_bound(s, ω)
+                set_upper_bound(s, ω)
+                return
             end
             @stageobjective(sp, -2s)
         end
@@ -30,8 +31,8 @@ function fast_quickstart()
 
     det = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
     set_silent(det)
-    JuMP.optimize!(det)
-    @test JuMP.objective_value(det) == -2
+    optimize!(det)
+    @test objective_value(det) == -2
 
     SDDP.train(model; log_every_iteration = true)
     @test SDDP.calculate_bound(model) == -2

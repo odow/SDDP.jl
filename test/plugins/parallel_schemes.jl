@@ -94,7 +94,8 @@ function test_slave_update()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_upper_bound(x.out, ω)
+            JuMP.set_upper_bound(x.out, ω)
+            return
         end
     end
     result = SDDP.IterationResult(
@@ -160,7 +161,8 @@ function test_async_solve()
         @variable(node, x, SDDP.State, initial_value = 0.0)
         @stageobjective(node, x.out)
         SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
-            return JuMP.set_lower_bound(x.out, ω)
+            JuMP.set_lower_bound(x.out, ω)
+            return
         end
     end
     solver =

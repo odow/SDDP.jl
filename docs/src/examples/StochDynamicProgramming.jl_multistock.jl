@@ -36,7 +36,8 @@ function test_multistock_example()
             Base.product((0.0, 0.15, 0.3), (0.0, 0.15, 0.3), (0.0, 0.15, 0.3)),
         )[:]
         SDDP.parameterize(subproblem, Ξ) do ω
-            return JuMP.fix.(ξ, ω)
+            fix.(ξ, ω)
+            return
         end
         @stageobjective(subproblem, (sin(3 * stage) - 1) * sum(control))
     end

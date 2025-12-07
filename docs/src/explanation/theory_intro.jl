@@ -362,7 +362,8 @@ function subproblem_builder(subproblem::JuMP.Model, t::Int)
     ## constraints, and not the objective function! (Not that it changes the
     ## algorithm, we just have to add more information to keep track of things.)
     uncertainty = Uncertainty([0.0, 50.0, 100.0], [1 / 3, 1 / 3, 1 / 3]) do ω
-        return JuMP.fix(inflow, ω)
+        JuMP.fix(inflow, ω)
+        return
     end
     return states, uncertainty
 end

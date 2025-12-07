@@ -53,7 +53,8 @@ function build(subproblem, t)
         ],
     ) do ω
         JuMP.fix(inflow, ω.inflow)
-        return JuMP.fix(demand, ω.demand)
+        JuMP.fix(demand, ω.demand)
+        return
     end
 end
 
@@ -88,7 +89,8 @@ function build_max(subproblem, t)
         ],
     ) do ω
         JuMP.fix(inflow, ω.inflow)
-        return JuMP.fix(demand, ω.demand)
+        JuMP.fix(demand, ω.demand)
+        return
     end
 end
 
@@ -421,7 +423,8 @@ function builder_with_objective_state(subproblem, t)
         fuel_cost = SDDP.objective_state(subproblem)
         @stageobjective(subproblem, 10 * spill + fuel_cost * thermal_generation)
         JuMP.fix(inflow, ω.inflow)
-        return JuMP.fix(demand, ω.demand)
+        JuMP.fix(demand, ω.demand)
+        return
     end
     return
 end
@@ -525,7 +528,8 @@ function builder_violating_state_lower_bound(subproblem, t)
         ],
     ) do ω
         JuMP.fix(inflow, ω.inflow)
-        return JuMP.fix(demand, ω.demand)
+        JuMP.fix(demand, ω.demand)
+        return
     end
     return
 end
@@ -574,7 +578,8 @@ function builder_violating_state_upper_bound(subproblem, t)
         ],
     ) do ω
         JuMP.fix(inflow, ω.inflow)
-        return JuMP.fix(demand, ω.demand)
+        JuMP.fix(demand, ω.demand)
+        return
     end
     return
 end

@@ -128,7 +128,8 @@ function Asynchronous(
     use_master::Bool = true,
 )
     return Asynchronous(slave_ids; use_master = use_master) do model
-        return JuMP.set_optimizer(model, solver)
+        JuMP.set_optimizer(model, solver)
+        return
     end
 end
 

@@ -42,7 +42,7 @@ function asset_management_stagewise(; cut_type)
                 w_s[i] * xs.in + w_b[i] * xb.in + phi == xs.out + xb.out
             )
             SDDP.parameterize(subproblem, [1, 2], [0.6, 0.4]) do ω
-                JuMP.fix(phi, Phi[ω])
+                fix(phi, Phi[ω])
                 @stageobjective(subproblem, Psi[ω] * xs.out)
             end
         else

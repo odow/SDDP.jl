@@ -40,7 +40,8 @@ function sldp_example_two(; first_stage_integer::Bool = true, N = 2)
             )
             steps = range(5; stop = 15, length = N)
             SDDP.parameterize(sp, [[i, j] for i in steps for j in steps]) do φ
-                return JuMP.fix.(ω, φ)
+                fix.(ω, φ)
+                return
             end
         end
     end

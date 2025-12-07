@@ -42,7 +42,8 @@ function stochastic_all_blacks()
         )
         @stageobjective(sp, sum(R[i, stage] * accept_offer[i] for i in 1:N))
         SDDP.parameterize(sp, offers[stage]) do o
-            return JuMP.fix.(offers_made, o)
+            fix.(offers_made, o)
+            return
         end
         @constraint(sp, accept_offer .<= offers_made)
     end

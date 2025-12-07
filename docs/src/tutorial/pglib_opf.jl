@@ -49,7 +49,8 @@ function build_model(model_type)
         @constraint(sp, balance, x.out == x.in - pg + deficit)
         @stageobjective(sp, objective_function(sp) + 1e6 * deficit)
         SDDP.parameterize(sp, [0, 2, 5]) do ω
-            return SDDP.set_normalized_rhs(balance, ω)
+            set_normalized_rhs(balance, ω)
+            return
         end
         return
     end

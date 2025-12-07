@@ -30,7 +30,8 @@ function fast_production_management(; cut_type)
             sum(s) <= d
         end)
         SDDP.parameterize(sp, t == 1 ? [0] : DEMAND) do ω
-            return JuMP.fix(d, ω)
+            fix(d, ω)
+            return
         end
         @stageobjective(sp, sum(C[i] * x[i].out for i in 1:N) - S's)
     end

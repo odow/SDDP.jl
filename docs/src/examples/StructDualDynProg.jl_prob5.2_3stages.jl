@@ -38,7 +38,7 @@ function test_prob52_3stages()
         if t != 1 # no uncertainty in first stage
             SDDP.parameterize(sp, 1:size(D2, 2), p2) do ω
                 for j in 1:m
-                    JuMP.fix(ξ[j], D2[j, ω])
+                    fix(ξ[j], D2[j, ω])
                 end
             end
         end
@@ -49,8 +49,8 @@ function test_prob52_3stages()
 
     det = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
     set_silent(det)
-    JuMP.optimize!(det)
-    @test JuMP.objective_value(det) ≈ 406712.49 atol = 0.1
+    optimize!(det)
+    @test objective_value(det) ≈ 406712.49 atol = 0.1
 
     SDDP.train(model; log_frequency = 10)
     @test SDDP.calculate_bound(model) ≈ 406712.49 atol = 0.1

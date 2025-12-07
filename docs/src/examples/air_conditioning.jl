@@ -43,7 +43,7 @@ function air_conditioning_model(duality_handler)
         @variable(sp, overtime >= 0, Int)
         @variable(sp, demand)
         DEMAND = [[100.0], [100.0, 300.0], [100.0, 300.0]]
-        SDDP.parameterize(ω -> JuMP.fix(demand, ω), sp, DEMAND[stage])
+        SDDP.parameterize(ω -> fix(demand, ω), sp, DEMAND[stage])
         @constraint(
             sp,
             stored_production.out ==

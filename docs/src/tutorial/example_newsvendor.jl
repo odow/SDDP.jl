@@ -103,23 +103,23 @@ function kelleys_cutting_plane(
 )
     ## Step (1):
     K = 1
-    model = JuMP.Model(HiGHS.Optimizer)
-    JuMP.set_silent(model)
-    JuMP.@variable(model, θ <= upper_bound)
-    JuMP.@variable(model, x[1:input_dimension])
-    JuMP.@objective(model, Max, θ)
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+    @variable(model, θ <= upper_bound)
+    @variable(model, x[1:input_dimension])
+    @objective(model, Max, θ)
     x_k = fill(NaN, input_dimension)
     lower_bound, upper_bound = -Inf, Inf
     while true
         ## Step (2):
-        JuMP.optimize!(model)
-        x_k .= JuMP.value.(x)
+        optimize!(model)
+        x_k .= value.(x)
         ## Step (3):
-        upper_bound = JuMP.objective_value(model)
+        upper_bound = objective_value(model)
         lower_bound = min(upper_bound, f(x_k))
         println("K = $K : $(lower_bound) <= f(x*) <= $(upper_bound)")
         ## Step (4):
-        JuMP.@constraint(model, θ <= f(x_k) + ∇f(x_k)' * (x .- x_k))
+        @constraint(model, θ <= f(x_k) + ∇f(x_k)' * (x .- x_k))
         ## Step (5):
         K = K + 1
         ## Step (6):
@@ -305,7 +305,7 @@ model = SDDP.LinearPolicyGraph(;
     sense = :Max,
     upper_bound = 5 * maximum(d),  # The `M` in θ <= M
     optimizer = HiGHS.Optimizer,
-) do subproblem::JuMP.Model, stage::Int
+) do subproblem::Model, stage::Int
     @variable(subproblem, x >= 0, SDDP.State, initial_value = 0)
     if stage == 1
         @variable(subproblem, u_make >= 0)
