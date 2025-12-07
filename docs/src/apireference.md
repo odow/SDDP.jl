@@ -404,7 +404,7 @@ SDDP.publication_plot
 SDDP.ValueFunction
 ```
 
-## `evaluate`
+## [`evaluate`](@id evaluate_value_function)
 ```@docs
 SDDP.evaluate(::SDDP.ValueFunction, ::Dict{Symbol,Float64})
 ```

@@ -182,7 +182,7 @@ function primal_risk end
 #     We want `Vector{<:Real}` instead of `Vector{Float64}` because we're going
 #     to automatically differentiate this function in the next section.
 
-# ### Expectation
+# ### [Expectation](@id explanation_primal_expectation)
 
 # The expectation, $\mathbb{E}$, also called the mean or the average, is the
 # most widely used convex risk measure. The expectation of a random variable is
@@ -201,7 +201,7 @@ end
 
 primal_risk(Expectation(), Z, p)
 
-# ### WorstCase
+# ### [WorstCase](@id explanation_primal_worstcase)
 
 # The worst-case risk measure, also called the maximum, is another widely used
 # convex risk measure. This risk measure doesn't care about the probability
@@ -314,7 +314,7 @@ function dual_risk(
     return sum(q[i] * Z[i] for i in 1:length(q)) - α
 end
 
-# ### Expectation
+# ### [Expectation](@id explanation_dual_expectation)
 
 # For the expectation risk measure, $\mathcal{M}(p) = \{p\}$, and
 # $\alpha(\cdot, \cdot) = 0$. Therefore:
