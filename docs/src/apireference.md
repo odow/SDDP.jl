@@ -444,7 +444,7 @@ Base.write(::IO, ::SDDP.PolicyGraph)
 Base.read(::IO, ::Type{SDDP.PolicyGraph})
 ```
 
-## `evaluate`
+## [`evaluate`](@id evaluate_validation_scenarios)
 ```@docs
 SDDP.evaluate(::SDDP.PolicyGraph{T}, ::SDDP.ValidationScenarios{T}) where {T}
 ```
