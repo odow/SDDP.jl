@@ -188,9 +188,9 @@ end
 # $V_i(x, \omega)$ can be formulated as a linear program (this also works for
 # convex programs, but the math is more involved), then we can make some
 # progress by noticing that $x$ only appears as a right-hand side term of the
-# fishing constraint $\bar{x} = x$. Therefore, $V_i(x, \cdot)$ is convex with
-# respect to $x$ for fixed $\omega$. (If you have not seen this result before,
-# try to prove it.)
+# fishing constraint $\bar{x} = x$. Therefore, $V_i(x, \omega)$ is convex
+# with respect to $x$ for a fixed $\omega$. (If you have not seen this
+# result before, try to prove it.)
 
 # The fishing constraint $\bar{x} = x$ has an associated dual variable. The
 # economic interpretation of this dual variable is that it represents the change
