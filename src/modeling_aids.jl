@@ -1,10 +1,5 @@
-# The function `_lattice_approximation` is derived from a function of the same name in the
-# `ScenTrees.jl` package by Kipngeno Kirui and released under the MIT license.
-# The reproduced function, and other functions contained only in this file, are also
-# released under MIT.
-#
-# Copyright (c) 2019 Kipngeno Kirui <kipngenokirui1993@gmail.com>
-# Copyright (c) 2019 Oscar Dowson <o.dowson@gmail.com>
+# Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.
+# Copyright (c) 2019: Kipngeno Kirui <kipngenokirui1993@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +18,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
+# The function `_lattice_approximation` is derived from a function of the same
+# name in the `ScenTrees.jl` package by Kipngeno Kirui and released under the
+# MIT license. The reproduced function, and other functions contained only in
+# this file, are also released under MIT.
 
 function find_min(x::Vector{T}, y::T) where {T<:Real}
     best_i = 0
