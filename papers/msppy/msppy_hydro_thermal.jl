@@ -1,8 +1,9 @@
-#  Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.
-#  Copyright (c) 2019: Lingquan Ding (@lingquant).
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.
+# Copyright (c) 2019: Lingquan Ding (@lingquant).
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v2.0. If a copy of the MPL was not distributed with this file, You can obtain
+# one at http://mozilla.org/MPL/2.0/.
 
 # This example is taken from MSPPy: https://github.com/lingquant/msppy/blob/dc85a2e8fa5243b3d5096d59085d9caad3ff2ede/examples/hydro_thermal/julia/test.jl
 #
