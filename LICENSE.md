@@ -1,5 +1,6 @@
 SDDP.jl is licensed under the Mozilla Public License, Version 2.0.
-Copyright (c) 2017-2023: Oscar Dowson and SDDP.jl contributors.
+
+Copyright (c) 2017-2026: Oscar Dowson and SDDP.jl contributors.
 
 Mozilla Public License Version 2.0
 ==================================
