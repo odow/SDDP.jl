@@ -1,4 +1,4 @@
-# Create a general policy graph
+# How to create a general policy graph
 
 ```@meta
 DocTestSetup = quote
@@ -186,7 +186,7 @@ simulations = SDDP.simulate(
 Here, `max_depth` controls the number of stages, and `terminate_on_dummy_leaf = false` stops
 us from terminating early.
 
-See also [Simulate using a different sampling scheme](@ref).
+See also [How to simulate using a different sampling scheme](@ref).
 
 ## Creating a Markovian graph automatically
 

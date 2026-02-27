@@ -9,7 +9,7 @@
 # The purpose of this tutorial is to demonstrate trivial examples that expose
 # the strengths and weaknesses of each duality handler.
 
-# For more information on SDDP.jl's duality handlers, see [Integrality](@ref).
+# For more information on SDDP.jl's duality handlers, see [How to add integrality](@ref).
 
 # This tutorial uses the following packages:
 

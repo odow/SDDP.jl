@@ -63,7 +63,7 @@ you know where to look for certain things.
   you've got `SDDP.jl` installed, start by reading [An introduction to SDDP.jl](@ref).
 
 * **Guides** contains "how-to" snippets that demonstrate specific topics within
-  SDDP.jl. A good one to get started on is [Debug a model](@ref).
+  SDDP.jl. A good one to get started on is [How to add a risk measure](@ref).
 
 * **Explanation** contains step-by-step explanations of the theory and
   algorithms that underpin SDDP.jl. If you want a basic understanding of the

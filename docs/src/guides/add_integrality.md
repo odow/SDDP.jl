@@ -2,7 +2,7 @@
 CurrentModule = SDDP
 ```
 
-# Integrality
+# How to add integrality
 
 There's nothing special about binary and integer variables in SDDP.jl. Your
 models may contain a mix of binary, integer, and continuous state and control

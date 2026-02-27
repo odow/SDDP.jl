@@ -387,7 +387,7 @@ end
 #     This method of solving the dual problem "on-the-side" is used by SDDP.jl
 #     for a number of risk measures, including a distributionally robust risk
 #     measure with the Wasserstein distance. Check out all the risk measures
-#     that SDDP.jl supports in [Add a risk measure](@ref).
+#     that SDDP.jl supports in [How to add a risk measure](@ref).
 
 # The "on-the-side" method is very general, and it lets us incorporate any
 # convex risk measure into SDDP. However, this comes at an increased

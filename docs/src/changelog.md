@@ -76,8 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
- - Added documentation [Add a custom cut](@ref) (#832)
- - Added documentation [Use multithreading](@ref) (#833)
+ - Added documentation [How to add a custom cut](@ref) (#832)
+ - Added documentation [How to use multithreading](@ref) (#833)
  - Fixed a typo in [Risk aversion](@ref) (#835)
  - Changed to use `test/Project.toml` (#837)
  - Debug and work around a bug in `HiGHS_jll@1.10` (#836), (#839)

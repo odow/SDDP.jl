@@ -1,4 +1,4 @@
-# Simulate using a different sampling scheme
+# How to simulate using a different sampling scheme
 
 ```@meta
 DocTestSetup = quote

@@ -1,13 +1,4 @@
-# Debug a model
-
-Building multistage stochastic programming models is hard. There are a lot of
-different pieces that need to be put together, and we typically have no idea of
-the optimal policy, so it can be hard (impossible?) to validate the solution.
-
-That said, here are a few tips to verify and validate models built using
-`SDDP.jl`.
-
-## Writing subproblems to file
+# How to write subproblems to file
 
 The first step to debug a model is to write out the subproblems to a file in
 order to check that you are actually building what you think you are building.
@@ -92,37 +83,3 @@ End
 
 julia> rm("subproblem.lp")  # Clean up.
 ```
-
-## Solve the deterministic equivalent
-
-Sometimes, it can be helpful to solve the deterministic equivalent of a
-problem in order to obtain an exact solution to the problem. To obtain a JuMP
-model that represents the deterministic equivalent, use [`SDDP.deterministic_equivalent`](@ref).
-The returned model is just a normal JuMP model. Use JuMP to optimize it and
-query the solution.
-
-```jldoctest tutorial_eight; filter=r"5.4725[0]+[0-9]"
-julia> det_equiv = SDDP.deterministic_equivalent(model, HiGHS.Optimizer)
-A JuMP Model
-├ solver: HiGHS
-├ objective_sense: MIN_SENSE
-│ └ objective_function_type: AffExpr
-├ num_variables: 24
-├ num_constraints: 28
-│ ├ AffExpr in MOI.EqualTo{Float64}: 10
-│ ├ VariableRef in MOI.EqualTo{Float64}: 8
-│ ├ VariableRef in MOI.GreaterThan{Float64}: 6
-│ └ VariableRef in MOI.LessThan{Float64}: 4
-└ Names registered in the model: none
-
-julia> set_silent(det_equiv)
-
-julia> optimize!(det_equiv)
-
-julia> objective_value(det_equiv)
--5.472500000000001
-```
-
-!!! warning
-    The deterministic equivalent scales poorly with problem size. Only use this
-    on small problems!

@@ -1,4 +1,4 @@
-# Add a custom cut
+# How to add a custom cut
 
 Sometimes you may want to add a set of cuts to the value function that you have
 computed outside of SDDP.jl. The easiest way to achieve this is via the

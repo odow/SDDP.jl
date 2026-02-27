@@ -1,4 +1,4 @@
-# Add noise in the constraint matrix
+# How to add noise in the constraint matrix
 
 ```@meta
 DocTestSetup = quote

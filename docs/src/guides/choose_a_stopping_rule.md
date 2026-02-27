@@ -1,4 +1,4 @@
-# Choose a stopping rule
+# How to choose a stopping rule
 
 The theory of SDDP tells us that the algorithm converges to an optimal policy
 almost surely in a finite number of iterations. In practice, this number is very
