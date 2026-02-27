@@ -164,6 +164,7 @@ Documenter.makedocs(;
         ],
         "How-to guides" => [
             "guides/use_multithreading.md",
+            "guides/implement_a_par_model.md",
             "guides/access_previous_variables.md",
             "guides/add_a_multidimensional_state_variable.md",
             "guides/add_a_risk_measure.md",
