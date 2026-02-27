@@ -247,7 +247,7 @@ end
 
 # Now that we've built a model, we need to train it using [`SDDP.train`](@ref).
 # The keyword `iteration_limit` stops the training after 40 iterations. See
-# [Choose a stopping rule](@ref) for other ways to stop the training.
+# [How to choose a stopping rule](@ref) for other ways to stop the training.
 
 SDDP.train(model; iteration_limit = 40)
 

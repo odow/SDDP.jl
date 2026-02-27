@@ -497,7 +497,7 @@ end
 # !!! warning
 #     [`SDDP.parameterize`](@ref) can only be called once in each subproblem
 #     definition! If your random variable is multi-variate, read
-#     [Add multi-dimensional noise terms](@ref).
+#     [How to add multi-dimensional noise terms](@ref).
 
 # #### Transition function and constraints
 

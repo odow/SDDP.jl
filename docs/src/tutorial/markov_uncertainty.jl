@@ -107,7 +107,7 @@ end
 
 # !!! tip
 #     For more information on [`SDDP.MarkovianPolicyGraph`](@ref)s, read
-#     [Create a general policy graph](@ref).
+#     [How to create a general policy graph](@ref).
 
 # ## Training and simulating the policy
 
