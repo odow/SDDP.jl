@@ -1,4 +1,4 @@
-# Access variables from a previous stage
+# How to access variables from a previous stage
 
 A common question is "how do I use a variable from a previous stage in a
 constraint?"
@@ -55,8 +55,8 @@ end
 ## Access a decision from N stages ago
 
 This is often useful if you have some inventory problem with a lead time on orders.
-In the code below, we assume that the product has a lead time of 5 stages, and we 
-use a state variable to track the decisions on the production for the last 5 stages. 
+In the code below, we assume that the product has a lead time of 5 stages, and we
+use a state variable to track the decisions on the production for the last 5 stages.
 The decisions are passed to the next stage by shifting them by one stage.
 
 ```@repl
@@ -129,7 +129,7 @@ model = SDDP.LinearPolicyGraph(
     fix(x_pipeline[T+1].out, 0)
     @stageobjective(sp, u_sell)
     @constraints(sp, begin
-        # Shift the orders one stage 
+        # Shift the orders one stage
         c_pipeline[i=1:T], x_pipeline[i].out == x_pipeline[i+1].in + 1 * u_buy
         # x_pipeline[1].in are arriving on the inventory
         x_inventory.out == x_inventory.in - u_sell + x_pipeline[1].in

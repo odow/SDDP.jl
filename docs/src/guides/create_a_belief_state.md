@@ -4,13 +4,13 @@ DocTestSetup = quote
 end
 ```
 
-# Create a belief state
+# How to create a belief state
 
 `SDDP.jl` includes an implementation of the algorithm described in Dowson, O.,
 Morton, D.P., & Pagnoncelli, B.K. (2020). Partially observable multistage
 stochastic optimization. _Operations Research Letters_, 48(4), 505--512.
 
-Given a [`SDDP.Graph`](@ref) object (see [Create a general policy graph](@ref)
+Given a [`SDDP.Graph`](@ref) object (see [How to create a general policy graph](@ref)
 for details), we can define the ambiguity partition using
 [`SDDP.add_ambiguity_set`](@ref).
 

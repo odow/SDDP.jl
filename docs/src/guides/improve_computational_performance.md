@@ -1,4 +1,4 @@
-# Improve computational performance
+# How to improve computational performance
 
 SDDP is a computationally intensive algorithm. Here are some suggestions for
 how the computational performance can be improved.

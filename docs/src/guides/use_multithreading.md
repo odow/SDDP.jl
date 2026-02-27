@@ -1,4 +1,4 @@
-# Use multithreading
+# How to use multithreading
 
 SDDP.jl can take advantage of the parallel nature of modern computers to solve
 problems across multiple threads.

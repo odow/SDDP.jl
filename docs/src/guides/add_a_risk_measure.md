@@ -1,4 +1,4 @@
-# Add a risk measure
+# How to add a risk measure
 
 ```@meta
 DocTestSetup = quote

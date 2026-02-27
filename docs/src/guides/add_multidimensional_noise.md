@@ -1,4 +1,4 @@
-# Add multi-dimensional noise terms
+# How to add multi-dimensional noise terms
 
 ```@meta
 DocTestSetup = quote
