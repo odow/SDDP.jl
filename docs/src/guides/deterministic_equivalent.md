@@ -1,4 +1,4 @@
-## How to solve the deterministic equivalent
+# How to solve the deterministic equivalent
 
 Sometimes, it can be helpful to solve the deterministic equivalent of a
 problem in order to obtain an exact solution to the problem. To obtain a JuMP
