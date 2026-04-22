@@ -45,16 +45,10 @@ function test_SpaghettiPlot()
     SDDP.plot(plt, "test.html"; open = false)
     @test sprint(show, plt) == "A spaghetti plot with 2 scenarios and 3 stages."
     control = joinpath(@__DIR__, "control.html")
-    if Sys.WORD_SIZE == 64
-        # This fails on 32-bit machines.
-        @test read("test.html", String) == read(control, String)
-    end
+    @test read("test.html", String) == read(control, String)
     SDDP.save(plt, "test.html"; open = false)
     @test sprint(show, plt) == "A spaghetti plot with 2 scenarios and 3 stages."
-    if Sys.WORD_SIZE == 64
-        # This fails on 32-bit machines.
-        @test read("test.html", String) == read(control, String)
-    end
+    @test read("test.html", String) == read(control, String)
     rm("test.html")
     @test SDDP.launch_file("test.html", identity) isa Cmd
     return
