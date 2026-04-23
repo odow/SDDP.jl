@@ -423,7 +423,7 @@ function test_issue_892()
     SDDP.add_ambiguity_set(graph, [:Ad, :Bd], 1e2)
     SDDP.add_ambiguity_set(graph, [:Ah, :Bh], 1e2)
     model = SDDP.PolicyGraph(
-        graph,
+        graph;
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, node
@@ -448,9 +448,9 @@ function test_issue_892()
             terminate_on_dummy_leaf = false,
         ),
     )
-    function calculate_objective(simulation)
+    function calculate_objective(sim)
         ρ(t) = 0.9^div(t - 1, 2)
-        return sum(ρ(t) * s[:stage_objective] for (t, s) in enumerate(simulation))
+        return sum(ρ(t) * s[:stage_objective] for (t, s) in enumerate(sim))
     end
     objectives = calculate_objective.(simulations)
     @test minimum(objectives) < 12
