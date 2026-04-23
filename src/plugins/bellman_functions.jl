@@ -480,7 +480,7 @@ function _refine_bellman_function_no_lock(
 end
 
 _copy_value(::Nothing) = nothing
-_copy_value(state::ObjectiveState) = copy(state.state)
+_copy_value(state::ObjectiveState) = state.state
 _copy_value(state::BeliefState) = copy(state.belief)
 
 function _add_average_cut(
