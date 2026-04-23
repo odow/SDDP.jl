@@ -407,6 +407,57 @@ function test_cut_selection_flags()
     return
 end
 
+function test_issue_892()
+    graph = SDDP.Graph(
+        :root_node,
+        [:Ad, :Ah, :Bd, :Bh],
+        [
+            (:root_node => :Ad, 0.5),
+            (:root_node => :Bd, 0.5),
+            (:Ad => :Ah, 1.0),
+            (:Ah => :Ad, 0.9),
+            (:Bd => :Bh, 1.0),
+            (:Bh => :Bd, 0.9),
+        ],
+    )
+    SDDP.add_ambiguity_set(graph, [:Ad, :Bd], 1e2)
+    SDDP.add_ambiguity_set(graph, [:Ah, :Bh], 1e2)
+    model = SDDP.PolicyGraph(
+        graph;
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, node
+        @variable(sp, 0 <= x <= 2, SDDP.State, initial_value = 0.0)
+        @variable(sp, u >= 0)
+        @variable(sp, w == 0)
+        @constraint(sp, w == x.in - x.out + u)
+        if node == :Ad || node == :Bd
+            @stageobjective(sp, u)
+        else
+            P = Dict(:Ah => [0.2, 0.8], :Bh => [0.8, 0.2])
+            SDDP.parameterize(ω -> fix(w, ω), sp, 1:2, P[node])
+            @stageobjective(sp, 2 * u + x.out)
+        end
+    end
+    SDDP.train(model; iteration_limit = 200, print_level = 0)
+    simulations = SDDP.simulate(
+        model,
+        100;
+        sampling_scheme = SDDP.InSampleMonteCarlo(;
+            max_depth = 50,
+            terminate_on_dummy_leaf = false,
+        ),
+    )
+    function calculate_objective(sim)
+        ρ(t) = 0.9^div(t - 1, 2)
+        return sum(ρ(t) * s[:stage_objective] for (t, s) in enumerate(sim))
+    end
+    objectives = calculate_objective.(simulations)
+    @test minimum(objectives) < 12
+    @test SDDP.calculate_bound(model) < 19
+    return
+end
+
 end  # module
 
 TestBellmanFunctions.runtests()

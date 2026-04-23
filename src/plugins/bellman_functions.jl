@@ -479,6 +479,10 @@ function _refine_bellman_function_no_lock(
     end
 end
 
+_copy_value(::Nothing) = nothing
+_copy_value(state::ObjectiveState) = state.state
+_copy_value(state::BeliefState) = copy(state.belief)
+
 function _add_average_cut(
     node::Node,
     outgoing_state::Dict{Symbol,Float64},
@@ -502,10 +506,8 @@ function _add_average_cut(
     end
     # Now add the average-cut to the subproblem. We include the objective-state
     # component μᵀy and the belief state (if it exists).
-    obj_y =
-        node.objective_state === nothing ? nothing : node.objective_state.state
-    belief_y =
-        node.belief_state === nothing ? nothing : node.belief_state.belief
+    obj_y = _copy_value(node.objective_state)
+    belief_y = _copy_value(node.belief_state)
     _add_cut(
         node.bellman_function.global_theta,
         θᵏ,
@@ -542,9 +544,8 @@ function _add_multi_cut(
             objective_realizations[i],
             dual_variables[i],
             outgoing_state,
-            node.objective_state === nothing ? nothing :
-            node.objective_state.state,
-            node.belief_state === nothing ? nothing : node.belief_state.belief,
+            _copy_value(node.objective_state),
+            _copy_value(node.belief_state),
         )
     end
     model = JuMP.owner_model(bellman_function.global_theta.theta)
