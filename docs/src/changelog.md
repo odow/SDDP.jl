@@ -7,6 +7,18 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.13.2 (April 23, 2026)
+
+### Fixed
+
+ - Fixed cut selection with belief and objective states (#893)
+
+### Other
+
+ - Added explicit returns to `SDDP.parameterize` functions (#885)
+ - Various documentation updates (#886), (#887), (#888), (#889), (#890)
+ - Fixed tests now that JSON is alphabetically sorted (#891)
+
 ## v1.13.1 (November 5, 2025)
 
 ### Fixed
