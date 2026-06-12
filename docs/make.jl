@@ -161,6 +161,7 @@ Documenter.makedocs(;
             "tutorial/inventory.md",
             "tutorial/batteries.md",
             "tutorial/duality_handlers.md",
+            "tutorial/production_planning.md",
         ],
         "How-to guides" => [
             "guides/use_multithreading.md",
