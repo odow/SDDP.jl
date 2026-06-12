@@ -36,7 +36,7 @@ julia> SDDP.train(model; iteration_limit = 1, print_level = 0)
 julia> SDDP.write_cuts_to_file(model, "cuts.json")
 
 julia> print(read("cuts.json", String))
-[{"risk_set_cuts":[],"node":"2","single_cuts":[{"state":{"x":0.0},"intercept":30000.0,"coefficients":{"x":-200.0}}],"multi_cuts":[]},{"risk_set_cuts":[],"node":"3","single_cuts":[],"multi_cuts":[]},{"risk_set_cuts":[],"node":"1","single_cuts":[{"state":{"x":0.0},"intercept":57500.0,"coefficients":{"x":-200.0}}],"multi_cuts":[]}]
+[{"multi_cuts":[],"node":"2","risk_set_cuts":[],"single_cuts":[{"coefficients":{"x":-200.0},"intercept":30000.0,"state":{"x":0.0}}]},{"multi_cuts":[],"node":"3","risk_set_cuts":[],"single_cuts":[]},{"multi_cuts":[],"node":"1","risk_set_cuts":[],"single_cuts":[{"coefficients":{"x":-200.0},"intercept":57500.0,"state":{"x":0.0}}]}]
 ```
 
 Then create a new file containing the cut. The formula for the cut is
