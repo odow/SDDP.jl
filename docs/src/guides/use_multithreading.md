@@ -180,7 +180,6 @@ status         : simulation_stopping
 total time (s) : 2.469422e+00
 total solves   : 30472
 best bound     :  1.432500e+06
-simulation ci  :  1.430250e+06 ± 3.113414e+04
 numeric issues : 0
 -------------------------------------------------------------------
 ```
