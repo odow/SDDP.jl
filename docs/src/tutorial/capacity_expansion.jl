@@ -1,4 +1,3 @@
-
 # Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.          #src
 #                                                                        #src
 # This Source Code Form is subject to the terms of the Mozilla Public    #src
@@ -214,8 +213,8 @@ Plots.plot(
 # ## Invest-operate-invest-operate
 
 # Now we present a model where we get to change our investments after one year.
-# We now have two operational years, each of which is preceeded by an investment
-# node. We need to think carefuly about the dynamics and cost of the second
+# We now have two operational years, each of which is preceded by an investment
+# node. We need to think carefully about the dynamics and cost of the second
 # investment node.
 
 model = SDDP.LinearPolicyGraph(;
@@ -285,7 +284,7 @@ Plots.plot(
 
 # ## Invest-operate-invest-operate-loop
 
-# Now we present a model where we enter an infinite horizion operational problem
+# Now we present a model where we enter an infinite horizon operational problem
 # after being able to update our investments the second time. For this, we need
 # a specialized policy graph:
 
