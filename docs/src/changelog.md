@@ -7,6 +7,18 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.13.3 (July 26, 2026)
+
+### Fixed
+
+ - Removed `simulation ci` from the log footer. This was misleading to anyone
+   that paid attention to it. (#900)
+
+### Other
+
+ - Added a production planning tutorial (#899)
+ - Added a capacity expansion tutorial (#901)
+
 ## v1.13.2 (April 23, 2026)
 
 ### Fixed
