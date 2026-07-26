@@ -162,6 +162,7 @@ Documenter.makedocs(;
             "tutorial/batteries.md",
             "tutorial/duality_handlers.md",
             "tutorial/production_planning.md",
+            "tutorial/capacity_expansion.md",
         ],
         "How-to guides" => [
             "guides/use_multithreading.md",
