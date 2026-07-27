@@ -197,6 +197,14 @@ end
 #   `x_storage[t+1]` respectively.
 # * We need to use `@stageobjective` instead of `@objective`.
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_hydro.html"; open = false)
+# ```@raw html
+# <iframe src="../model_hydro.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # Instead of calling `JuMP.optimize!`, SDDP.jl uses a `train` method. With our
 # machine learning hat on, you can think of SDDP.jl as training a function for
 # each stage that accepts the current reservoir state as input and returns the
@@ -287,6 +295,14 @@ model = SDDP.LinearPolicyGraph(;
 end
 
 # Can you see the differences?
+
+# Here's the new graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_hydro2.html"; open = false)
+# ```@raw html
+# <iframe src="../model_hydro2.html" style="width:100%;height:500px;"></iframe>
+# ```
 
 # Let's train our new model. We need more iterations because of the
 # stochasticity:
@@ -382,6 +398,14 @@ end
 
 # Notice how the only thing that has changed is our graph; the subproblems
 # remain the same.
+
+# Here's the new graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_hydro_cyclic.html"; open = false)
+# ```@raw html
+# <iframe src="../model_hydro_cyclic.html" style="width:100%;height:500px;"></iframe>
+# ```
 
 # Let's train a policy:
 

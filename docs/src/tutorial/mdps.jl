@@ -174,6 +174,14 @@ model = SDDP.PolicyGraph(
     return
 end
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_mdp.html"; open = false)
+# ```@raw html
+# <iframe src="../model_mdp.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # The upper bound is obtained by assuming that we reach the reward square in one
 # move and stay there.
 

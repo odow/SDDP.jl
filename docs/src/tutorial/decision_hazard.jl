@@ -56,6 +56,14 @@ hazard_decision = SDDP.LinearPolicyGraph(;
     @stageobjective(sp, 500 * u_unmet_demand + 20 * u_thermal)
 end
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(hazard_decision, "model_hazard_decision.html"; open = false)
+# ```@raw html
+# <iframe src="../model_hazard_decision.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # ## Decision-hazard formulation
 
 # In the wait-and-see formulation, we get to decide the generation variables
@@ -96,6 +104,14 @@ end
 
 # (If you can spot a "mistake" with this model, don't worry, we'll fix it below.
 # Presenting it like this simplifies the exposition.)
+
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(decision_hazard, "model_decision_hazard.html"; open = false)
+# ```@raw html
+# <iframe src="../model_decision_hazard.html" style="width:100%;height:500px;"></iframe>
+# ```
 
 # ## Comparison
 
@@ -156,6 +172,14 @@ decision_hazard_2 = SDDP.LinearPolicyGraph(;
         @stageobjective(sp, 500 * u_unmet_demand + 20 * u_thermal.in)
     end
 end
+
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(decision_hazard_2, "model_decision_hazard2.html"; open = false)
+# ```@raw html
+# <iframe src="../model_decision_hazard2.html" style="width:100%;height:500px;"></iframe>
+# ```
 
 train_and_compute_cost(decision_hazard_2)
 

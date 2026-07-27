@@ -4,16 +4,27 @@
 # v2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
-_randstring() = joinpath(tempdir(), string(Random.randstring(), ".html"))
-
 """
     plot(model::PolicyGraph[, filename::String]; open::Bool = true)
 
-This is an experimental function that plots the graph using Javascript.
+This is an experimental function that plots the structure of the policy graph
+`model` using Javascript.
+
+If `filename` is not given, it will be saved to a temporary directory.
+
+If `open = true`, then a browser window will be opened to display the resulting
+HTML file.
+
+## How the layout is decided.
+
+This function uses Cytoscape.js to layout the graph. Graph layout is a
+notoriously tricky problem. If you have an example where the layout is poor,
+please open a GitHub issue and we can experiment with different options in
+Cytoscape.
 """
 function plot(
     model::PolicyGraph,
-    filename::String = _randstring();
+    filename::String = joinpath(tempdir(), Random.randstring() * ".html");
     open::Bool = true,
 )
     data = Any[]
