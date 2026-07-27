@@ -23,7 +23,10 @@ function plot(
         n_terms = length(model[name].noise_terms)
         meta = "Node: $(name)\\nNoise terms: $(n_terms)"
         if n_terms > 1
-            push!(data, "{data: {id: '$(name)', meta: '$meta', has_noise: true}}")
+            push!(
+                data,
+                "{data: {id: '$(name)', meta: '$meta', has_noise: true}}",
+            )
         else
             push!(data, "{data: {id: '$(name)', meta: '$meta'}}")
         end

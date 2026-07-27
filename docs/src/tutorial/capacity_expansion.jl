@@ -83,15 +83,11 @@ end
 
 # Here's the graph:
 
-SDDP.plot(
-    model,
-    "model_1.html";
-    ## We need this to build the documentation. Set to true if running locally.
-    open = false,
-)
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_1.html"; open = false)
 
 # ```@raw html
-# <iframe src="../model_1.html" style="width:100%;height:500px;"></iframe>
+# <iframe src="../model_capex_1.html" style="width:100%;height:500px;"></iframe>
 # ```
 
 # Let's train and simulate:
@@ -149,15 +145,11 @@ end
 
 # Here's the graph:
 
-SDDP.plot(
-    model,
-    "model_2.html";
-    ## We need this to build the documentation. Set to true if running locally.
-    open = false,
-)
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_2.html"; open = false)
 
 # ```@raw html
-# <iframe src="../model_2.html" style="width:100%;height:500px;"></iframe>
+# <iframe src="../model_capex_2.html" style="width:100%;height:500px;"></iframe>
 # ```
 
 # Let's train and simulate:
@@ -223,15 +215,11 @@ end
 
 # Here's the graph:
 
-SDDP.plot(
-    model,
-    "model_3.html";
-    ## We need this to build the documentation. Set to true if running locally.
-    open = false,
-)
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_3.html"; open = false)
 
 # ```@raw html
-# <iframe src="../model_3.html" style="width:100%;height:500px;"></iframe>
+# <iframe src="../model_capex_3.html" style="width:100%;height:500px;"></iframe>
 # ```
 
 # Let's train and simulate:
@@ -311,15 +299,11 @@ end
 
 # Here's the graph:
 
-SDDP.plot(
-    model,
-    "model_4.html";
-    ## We need this to build the documentation. Set to true if running locally.
-    open = false,
-)
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_4.html"; open = false)
 
 # ```@raw html
-# <iframe src="../model_4.html" style="width:100%;height:500px;"></iframe>
+# <iframe src="../model_capex_4.html" style="width:100%;height:500px;"></iframe>
 # ```
 
 # Let's train and simulate:
@@ -400,15 +384,11 @@ end
 
 # Here's the graph:
 
-SDDP.plot(
-    model,
-    "model_5.html";
-    ## We need this to build the documentation. Set to true if running locally.
-    open = false,
-)
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_5.html"; open = false)
 
 # ```@raw html
-# <iframe src="../model_5.html" style="width:100%;height:500px;"></iframe>
+# <iframe src="../model_capex_5.html" style="width:100%;height:500px;"></iframe>
 # ```
 
 # Let's train and simulate:
