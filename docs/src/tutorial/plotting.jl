@@ -78,7 +78,7 @@ println("Completed $(length(simulations)) simulations.")
 
 # ## Plotting the graph
 
-# WVisualize the graph structure using [`SDDP.plot`](@ref).
+# Visualize the graph structure using [`SDDP.plot`](@ref).
 
 ## We need `open = false` to build the documentation. Remove if running locally.
 SDDP.plot(model, "model_plotting.html"; open = false)
