@@ -17,7 +17,11 @@ function plot(
     open::Bool = true,
 )
     data = Any[]
-    push!(data, "{data: {id: '$(model.root_node)', shape: 'ellipse'}}")
+    meta = join(("$k = $v" for (k, v) in model.initial_root_state), "\\n")
+    push!(
+        data,
+        "{data: {id: '$(model.root_node)', shape: 'ellipse', meta: '$meta'}}",
+    )
     names = sort(collect(keys(model.nodes)))
     for name in names
         n_terms = length(model[name].noise_terms)
