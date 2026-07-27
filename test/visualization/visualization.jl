@@ -107,7 +107,7 @@ function test_plot_graph()
     SDDP.plot(model, filename; open = false)
     contents = read(filename, String)
     for line in [
-        "{data: {id: '0', shape: 'ellipse'}},",
+        "{data: {id: '0', shape: 'ellipse', meta: 'x = 0.0'}},",
         "{data: {id: '1', meta: 'Node: 1\\nNoise terms: 1'}},",
         "{data: {id: '2', meta: 'Node: 2\\nNoise terms: 2', has_noise: true}},",
         "{data: {id: '3', meta: 'Node: 3\\nNoise terms: 2', has_noise: true}},",
