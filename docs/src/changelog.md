@@ -7,6 +7,13 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.14.0 (July 27, 2026)
+
+### Added
+
+ - Added [`SDDP.plot(::PolicyGraph)`](@ref) for visualizing the graph layout
+   (#903)
+
 ## v1.13.3 (July 26, 2026)
 
 ### Fixed
