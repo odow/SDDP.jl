@@ -59,6 +59,7 @@ include("visualization/publication_plot.jl")
 include("visualization/spaghetti_plot.jl")
 include("visualization/dashboard.jl")
 include("visualization/value_functions.jl")
+include("visualization/plot_graph.jl")
 
 # Other solvers.
 include("deterministic_equivalent.jl")
