@@ -92,10 +92,7 @@ function test_PublicationPlot_different_lengths()
 end
 
 function test_plot_graph()
-    model = SDDP.LinearPolicyGraph(;
-        stages = 3,
-        lower_bound = 0.0,
-    ) do sp, t
+    model = SDDP.LinearPolicyGraph(; stages = 3, lower_bound = 0.0) do sp, t
         @variable(sp, 0 <= x <= 100, SDDP.State, initial_value = 0)
         @variable(sp, 0 <= u_production <= 200)
         @variable(sp, u_overtime >= 0)
@@ -111,12 +108,12 @@ function test_plot_graph()
     contents = read(filename, String)
     for line in [
         "{data: {id: '0', shape: 'ellipse'}},",
-        "{data: {id: '1', meta: 'Node: 1\nNoise terms: 1'}},",
-        "{data: {id: '2', meta: 'Node: 2\nNoise terms: 2', has_noise: true}},",
-        "{data: {id: '3', meta: 'Node: 3\nNoise terms: 2', has_noise: true}},",
-        "{data: {id: 'edge_1', source: '0', target: '1', meta: 'From: 0\nTo: 1\nProbablity: 1.0'}},",
-        "{data: {id: 'edge_2', source: '1', target: '2', meta: 'From: 1\nTo: 2\nProbablity: 1.0'}},",
-        "{data: {id: 'edge_3', source: '2', target: '3', meta: 'From: 2\nTo: 3\nProbablity: 1.0'}},",
+        "{data: {id: '1', meta: 'Node: 1\\nNoise terms: 1'}},",
+        "{data: {id: '2', meta: 'Node: 2\\nNoise terms: 2', has_noise: true}},",
+        "{data: {id: '3', meta: 'Node: 3\\nNoise terms: 2', has_noise: true}},",
+        "{data: {id: 'edge_1', source: '0', target: '1', meta: 'From: 0\\nTo: 1\\nProbablity: 1.0'}},",
+        "{data: {id: 'edge_2', source: '1', target: '2', meta: 'From: 1\\nTo: 2\\nProbablity: 1.0'}},",
+        "{data: {id: 'edge_3', source: '2', target: '3', meta: 'From: 2\\nTo: 3\\nProbablity: 1.0'}},",
     ]
         @test occursin(line, contents)
     end
