@@ -99,6 +99,14 @@ model = SDDP.LinearPolicyGraph(;
     return
 end
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_inventory.html"; open = false)
+# ```@raw html
+# <iframe src="../model_inventory.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # Train and simulate the policy:
 
 SDDP.train(model)
@@ -162,6 +170,14 @@ model = SDDP.PolicyGraph(
     end
     return
 end
+
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_inventory_cyclic.html"; open = false)
+# ```@raw html
+# <iframe src="../model_inventory_cyclic.html" style="width:100%;height:500px;"></iframe>
+# ```
 
 SDDP.train(model; iteration_limit = 400)
 simulations = SDDP.simulate(

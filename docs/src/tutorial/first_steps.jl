@@ -730,6 +730,14 @@ end
 #     For our purpose, `inner` is `subproblem_builder`, and `outer` is
 #     [`SDDP.PolicyGraph`](@ref).
 
+# Use [`SDDP.plot`](@ref) to visualize the structure of the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_first_steps.html"; open = false)
+# ```@raw html
+# <iframe src="../model_first_steps.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # ## Training a policy
 
 # Now we have a model, which is a description of the policy graph, we need to

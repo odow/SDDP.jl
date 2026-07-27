@@ -109,6 +109,14 @@ end
 #     For more information on [`SDDP.MarkovianPolicyGraph`](@ref)s, read
 #     [How to create a general policy graph](@ref).
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_markov.html"; open = false)
+# ```@raw html
+# <iframe src="../model_markov.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # ## Training and simulating the policy
 
 # As in the previous three tutorials, we train the policy:

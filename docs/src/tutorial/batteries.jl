@@ -81,6 +81,14 @@ model = SDDP.LinearPolicyGraph(;
     return
 end
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_batteries.html"; open = false)
+# ```@raw html
+# <iframe src="../model_batteries.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # ## Training
 
 # We train the model for 500 iterations using the [`SDDP.Threaded`](@ref)

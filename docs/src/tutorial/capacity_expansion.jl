@@ -80,6 +80,18 @@ model = SDDP.LinearPolicyGraph(;
     @stageobjective(sp, data[t, :cost] * u_thermal)
     return
 end
+
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_1.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_1.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+# Let's train and simulate:
+
 SDDP.train(model; iteration_limit = 100)
 simulations = SDDP.simulate(model, 100, [:x_storage, :u_flow])
 Plots.plot(
@@ -130,6 +142,18 @@ model = SDDP.LinearPolicyGraph(;
     end
     return
 end
+
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_2.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_2.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+# Let's train and simulate:
+
 SDDP.train(model; iteration_limit = 100)
 simulations = SDDP.simulate(model, 100, [:x_storage, :u_flow, :x_reservoir_max])
 Plots.plot(
@@ -188,6 +212,18 @@ model = SDDP.LinearPolicyGraph(;
     end
     return
 end
+
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_3.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_3.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+# Let's train and simulate:
+
 SDDP.train(model; iteration_limit = 100)
 simulations = SDDP.simulate(
     model,
@@ -260,6 +296,18 @@ model = SDDP.LinearPolicyGraph(;
     end
     return
 end
+
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_4.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_4.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+# Let's train and simulate:
+
 SDDP.train(model; iteration_limit = 100)
 simulations = SDDP.simulate(
     model,
@@ -333,6 +381,18 @@ model = SDDP.PolicyGraph(
     end
     return
 end
+
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_5.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_5.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+# Let's train and simulate:
+
 SDDP.train(model; iteration_limit = 100)
 simulations = SDDP.simulate(
     model,

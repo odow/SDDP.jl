@@ -76,10 +76,20 @@ println("Completed $(length(simulations)) simulations.")
 
 # Great! Now we have some data in `simulations` to visualize.
 
+# ## Plotting the graph
+
+# Visualize the graph structure using [`SDDP.plot`](@ref).
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_plotting.html"; open = false)
+# ```@raw html
+# <iframe src="../model_plotting.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # ## Spaghetti plots
 
-# The first plotting utility we discuss is a _spaghetti_ plot (you'll understand
-# the name when you see the graph).
+# The first solution plotting utility we discuss is a _spaghetti_ plot (you'll
+# understand the name when you see the graph).
 
 # To create a spaghetti plot, begin by creating a new
 # [`SDDP.SpaghettiPlot`](@ref) instance as follows:
@@ -109,15 +119,11 @@ end
 
 # Having built the plot, we now need to display it using [`SDDP.plot`](@ref).
 
-# ```julia
-# SDDP.plot(plt, "spaghetti_plot.html")
-# ```
-#
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(plt, "spaghetti_plot.html"; open = false)
 # ```@raw html
-# <embed type="text/html" src="../../assets/spaghetti_plot.html" width="100%">
+# <embed type="text/html" src="../spaghetti_plot.html" width="100%;height:500px;">
 # ```
-#
-# This should open a webpage that looks like [this one](../assets/spaghetti_plot.html).
 
 # Using the mouse, you can highlight individual trajectories by hovering over
 # them. This makes it possible to visualize a single trajectory across multiple
@@ -176,16 +182,13 @@ SDDP.evaluate(V; volume = 1)
 # `evaluate` returns the height of the value function, and a subgradient with respect to the
 # convex state variables.
 
-# You can also plot the value function using [`SDDP.plot`](@ref)
-# ```julia
-# SDDP.plot(V, volume = 0:200, filename = "value_function.html")
-# ```
-#
+# You can also plot the value function using [`SDDP.plot`](@ref):
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(V; volume = 0:200, filename = "value_function.html", open = false)
 # ```@raw html
-# <embed type="text/html" src="../../assets/value_function.html" width="100%">
+# <embed type="text/html" src="../value_function" width="100%;height:500px;">
 # ```
-#
-# This should open a webpage that looks like [this one](../assets/value_function.html).
 
 # ## Convergence dashboard
 

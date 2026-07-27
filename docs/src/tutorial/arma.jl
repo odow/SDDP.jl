@@ -156,6 +156,14 @@ model = SDDP.PolicyGraph(
     @constraint(sp, x.out == x.in - g_h - s + inflow)
 end
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_arma.html"; open = false)
+# ```@raw html
+# <iframe src="../model_arma.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # ### When can this trick be used?
 
 # The Markov chain approach should be used when:

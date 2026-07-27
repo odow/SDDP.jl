@@ -325,6 +325,14 @@ model = SDDP.LinearPolicyGraph(;
     return
 end
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_newsvendor.html"; open = false)
+# ```@raw html
+# <iframe src="../model_newsvendor.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 SDDP.train(model; log_every_iteration = true)
 
 # One way to query the optimal policy is with [`SDDP.DecisionRule`](@ref):
