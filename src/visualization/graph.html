@@ -10,6 +10,10 @@ one at http://mozilla.org/MPL/2.0/.
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/cytoscape-elk@2.1.0/dist/cytoscape-elk.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/layout-base/layout-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cose-base/cose-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose/cytoscape-fcose.js"></script>
   <style>
     #cy {width: 100vw; height: 100vh;}
     #tooltip {
@@ -47,8 +51,13 @@ one at http://mozilla.org/MPL/2.0/.
         layout: {
           name: 'elk',
           elk: {
-            'elk.layered.spacing.nodeNodeBetweenLayers': 50,
-            'elk.spacing.nodeNode': 50,
+            'algorithm': 'layered',
+            'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+            'elk.layered.cycleBreaking.strategy': 'MODEL_ORDER',
+            'elk.aspectRatio': 2,
+            'elk.layered.spacing.nodeNodeBetweenLayers': 30,
+            'elk.spacing.nodeNode': 100,
+            'elk.spacing.edgeEdge': 20,
             'elk.spacing.edgeNode': 50
           }
         },
