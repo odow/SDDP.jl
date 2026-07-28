@@ -430,22 +430,22 @@ graph = SDDP.Graph((:root, 0))
 SDDP.add_node(graph, (:invest_1, 0))  # First investment
 SDDP.add_node(graph, (:invest_2, 0))  # Second investment
 for t in 1:52
-    SDDP.add_node(graph, (:year_1, t))
-    SDDP.add_node(graph, (:year_2_normal, t))
-    SDDP.add_node(graph, (:year_2_high, t))
-    if t > 1
-        SDDP.add_edge(graph, (:year_1, t - 1) => (:year_1, t), 1.0)
-        SDDP.add_edge(graph, (:year_2_normal, t-1) => (:year_2_normal, t), 1.0)
-        SDDP.add_edge(graph, (:year_2_high, t-1) => (:year_2_high, t), 1.0)
-    end
+    SDDP.add_node(graph, (:op_initial, t))
+    SDDP.add_node(graph, (:op_normal, t))
+    SDDP.add_node(graph, (:op_high, t))
+end
+for t in 2:52
+    SDDP.add_edge(graph, (:op_initial, t - 1) => (:op_initial, t), 1.0)
+    SDDP.add_edge(graph, (:op_normal, t - 1) => (:op_normal, t), 1.0)
+    SDDP.add_edge(graph, (:op_high, t - 1) => (:op_high, t), 1.0)
 end
 SDDP.add_edge(graph, (:root, 0) => (:invest_1, 0), 1.0)
-SDDP.add_edge(graph, (:invest_1, 0) => (:year_1, 1), 1.0)
-SDDP.add_edge(graph, (:invest_2, 0) => (:year_2_normal, 1), 0.5)
-SDDP.add_edge(graph, (:invest_2, 0) => (:year_2_high, 1), 0.5)
-SDDP.add_edge(graph, (:year_1, 52) => (:invest_2, 0), 1.0)
-SDDP.add_edge(graph, (:year_2_normal, 52) => (:year_2_normal, 1), 0.9)
-SDDP.add_edge(graph, (:year_2_high, 52) => (:year_2_high, 1), 0.9)
+SDDP.add_edge(graph, (:invest_1, 0) => (:op_initial, 1), 1.0)
+SDDP.add_edge(graph, (:op_initial, 52) => (:invest_2, 0), 0.9)
+SDDP.add_edge(graph, (:invest_2, 0) => (:op_normal, 1), 0.5)
+SDDP.add_edge(graph, (:invest_2, 0) => (:op_high, 1), 0.5)
+SDDP.add_edge(graph, (:op_normal, 52) => (:op_normal, 1), 0.9)
+SDDP.add_edge(graph, (:op_high, 52) => (:op_high, 1), 0.9)
 model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
@@ -475,7 +475,7 @@ model = SDDP.PolicyGraph(
         @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
         @constraint(sp, x_flow_max.out == x_flow_max.in)
         Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
-        scale = node == :year_2_high ? 1.5 : 1.0
+        scale = node == :op_high ? 1.5 : 1.0
         SDDP.parameterize(sp, Ω, P) do ω
             fix(ω_inflow, scale * data[t, :inflow] + ω)
             return
