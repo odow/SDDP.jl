@@ -418,3 +418,113 @@ Plots.plot(
     end;
     layout = (2, 2),
 )
+
+# ## Invest-operate-invest-operate-loop with strategic uncertainty
+
+# Now we present a model where we enter an infinite horizon operational problem
+# after being able to update our investments the second time, but there are two
+# possible cycles: one with regular inflows, and one with 50% high inflows and
+# 50% higher demand.
+
+graph = SDDP.Graph((:root, 0))
+SDDP.add_node(graph, (:invest_1, 0))  # First investment
+SDDP.add_node(graph, (:invest_2, 0))  # Second investment
+for t in 1:52
+    SDDP.add_node(graph, (:Y1, t))
+    SDDP.add_node(graph, (:Y2_normal, t))
+    SDDP.add_node(graph, (:Y2_high, t))
+end
+for t in 2:52
+    SDDP.add_edge(graph, (:Y1, t - 1) => (:Y1, t), 1.0)
+    SDDP.add_edge(graph, (:Y2_normal, t - 1) => (:Y2_normal, t), 1.0)
+    SDDP.add_edge(graph, (:Y2_high, t - 1) => (:Y2_high, t), 1.0)
+end
+SDDP.add_edge(graph, (:root, 0) => (:invest_1, 0), 1.0)
+SDDP.add_edge(graph, (:invest_1, 0) => (:Y1, 1), 1.0)
+SDDP.add_edge(graph, (:Y1, 52) => (:invest_2, 0), 0.9)
+SDDP.add_edge(graph, (:invest_2, 0) => (:Y2_normal, 1), 0.5)
+SDDP.add_edge(graph, (:invest_2, 0) => (:Y2_high, 1), 0.5)
+SDDP.add_edge(graph, (:Y2_normal, 52) => (:Y2_normal, 1), 0.9)
+SDDP.add_edge(graph, (:Y2_high, 52) => (:Y2_high, 1), 0.9)
+model = SDDP.PolicyGraph(
+    graph;
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, (node, t)
+    @variable(sp, x_reservoir_max >= 0, SDDP.State, initial_value = 0)
+    @variable(sp, 0 <= x_flow_max <= 20, SDDP.State, initial_value = 0)
+    @variable(sp, x_storage >= 0, SDDP.State, initial_value = 0)
+    @constraint(sp, x_storage.out <= x_reservoir_max.out)
+    @variable(sp, 0 <= u_flow)
+    @constraint(sp, u_flow <= x_flow_max.out)
+    @variable(sp, 0 <= u_thermal)
+    @variable(sp, 0 <= u_spill)
+    @variable(sp, ω_inflow)
+    if node == :invest_1  # First investment node
+        @stageobjective(sp, x_reservoir_max.out + x_flow_max.out)
+        @constraint(sp, x_storage.out <= reservoir_initial)
+    elseif node == :invest_2  # Second investment node
+        @stageobjective(
+            sp,
+            (x_reservoir_max.out - x_reservoir_max.in) +
+            (x_flow_max.out - x_flow_max.in),
+        )
+        @constraint(sp, x_storage.out == x_storage.in)
+    else  # Operational node
+        @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
+        @constraint(sp, x_flow_max.out == x_flow_max.in)
+        Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
+        scale = node == :Y2_high ? 1.5 : 1.0
+        SDDP.parameterize(sp, Ω, P) do ω
+            fix(ω_inflow, scale * data[t, :inflow] + ω)
+            return
+        end
+        @constraint(
+            sp,
+            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow
+        )
+        @constraint(sp, u_flow + u_thermal == scale * data[t, :demand])
+        @stageobjective(sp, data[t, :cost] * u_thermal)
+    end
+    return
+end
+
+# Here's the graph. The library we use for the node layout struggles here, but
+# you should still be able to find the two separate loops in the second
+# operational year.
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(model, "model_capex_6.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_6.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+# Let's train and simulate:
+
+SDDP.train(model; iteration_limit = 100)
+simulations = SDDP.simulate(
+    model,
+    100,
+    [:x_storage, :u_flow, :x_reservoir_max, :x_flow_max];
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        max_depth = 5 * 52 + 2,
+        terminate_on_dummy_leaf = false,
+    ),
+)
+Plots.plot(
+    SDDP.publication_plot(simulations; ylabel = "Storage") do sim
+        return sim[:x_storage].out
+    end,
+    SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
+        return sim[:u_flow]
+    end,
+    SDDP.publication_plot(simulations; ylabel = "Reservoir Max") do sim
+        return sim[:x_reservoir_max].out
+    end,
+    SDDP.publication_plot(simulations; ylabel = "Flow Max") do sim
+        return sim[:x_flow_max].out
+    end;
+    layout = (2, 2),
+)
