@@ -82,13 +82,13 @@ function plot(
 )
     data = Any[]
     push!(data, "{data: {id: '$(graph.root_node)', shape: 'ellipse'}}")
-    names = sort(collect(keys(model.nodes)))
+    names = sort(collect(keys(graph.nodes)))
     for name in names
         push!(data, "{data: {id: '$(name)', meta: 'Node: $name'}}")
     end
     edge_id = 0
     for name in vcat(graph.root_node, names)
-        for (child, probability) in model[name]
+        for (child, probability) in graph.nodes[name]
             edge_id += 1
             meta = "From: $(name)\\nTo: $child\\nProbablity: $probability"
             push!(
