@@ -6,6 +6,7 @@
 
 """
     plot(model::PolicyGraph[, filename::String]; open::Bool = true)
+    plot(model::Graph[, filename::String]; open::Bool = true)
 
 This is an experimental function that plots the structure of the policy graph
 `model` using Javascript.
@@ -62,6 +63,37 @@ function plot(
             push!(
                 data,
                 "{data: {id: 'edge_$(edge_id)', source: '$name', target: '$(child.term)', meta: '$meta'}}",
+            )
+        end
+    end
+    fill_template(
+        filename,
+        "<!--DATA-->" => join(data, ",\n");
+        template = joinpath(dirname(@__FILE__), "graph.html"),
+        launch = open,
+    )
+    return
+end
+
+function plot(
+    graph::Graph,
+    filename::String = joinpath(tempdir(), Random.randstring() * ".html");
+    open::Bool = true,
+)
+    data = Any[]
+    push!(data, "{data: {id: '$(graph.root_node)', shape: 'ellipse'}}",)
+    names = sort(collect(keys(model.nodes)))
+    for name in names
+        push!(data, "{data: {id: '$(name)', meta: 'Node: $name'}}")
+    end
+    edge_id = 0
+    for name in vcat(graph.root_node, names)
+        for (child, probability) in model[name]
+            edge_id += 1
+            meta = "From: $(name)\\nTo: $child\\nProbablity: $probability"
+            push!(
+                data,
+                "{data: {id: 'edge_$(edge_id)', source: '$name', target: '$child', meta: '$meta'}}",
             )
         end
     end

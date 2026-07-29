@@ -380,6 +380,15 @@ using SDDP
 
 graph = SDDP.LinearGraph(3)
 
+# Here's the graph:
+
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(graph, "model_graph.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_graph.html" style="width:100%;height:500px;"></iframe>
+# ```
+
 # #### Building the subproblem
 
 # Next, we need to construct the associated subproblem for each node in `graph`.
