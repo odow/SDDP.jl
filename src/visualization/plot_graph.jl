@@ -81,7 +81,7 @@ function plot(
     open::Bool = true,
 )
     data = Any[]
-    push!(data, "{data: {id: '$(graph.root_node)', shape: 'ellipse'}}",)
+    push!(data, "{data: {id: '$(graph.root_node)', shape: 'ellipse'}}")
     names = sort(collect(keys(model.nodes)))
     for name in names
         push!(data, "{data: {id: '$(name)', meta: 'Node: $name'}}")
