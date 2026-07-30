@@ -476,6 +476,46 @@ function test_root_node_risk_measure()
     return
 end
 
+function test_decision_rule()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, x[i in 1:2] >= i, SDDP.State, initial_value = 5)
+        @variable(sp, y >= 3, SDDP.State, initial_value = 4)
+        @variable(sp, u[1:2])
+        @constraint(sp, [i in 1:2], u[i] == x[i].out - x[i].in)
+        SDDP.parameterize(sp, [:a, :b]) do w
+            if w == :a
+                @stageobjective(sp, x[1].out + y.out)
+            else
+                @stageobjective(sp, x[2].out + y.out)
+            end
+            return
+        end
+        return
+    end
+    SDDP.train(model; print_level = 0)
+    pi = SDDP.DecisionRule(model; node = 1)
+    ret = SDDP.evaluate(
+        pi;
+        incoming_state = Dict{Union{String,Symbol},Real}(
+            "x[1]" => 2,
+            "x[2]" => 2.5,
+            Symbol("y") => 3,
+        ),
+        controls_to_record = [:u],
+        noise = :a,
+    )
+    @test isapprox(ret.stage_objective, 4; atol = 1e-5)
+    @test isapprox(ret.outgoing_state[:y], 3.0; atol = 1e-5)
+    @test isapprox(ret.outgoing_state[Symbol("x[1]")], 1.0; atol = 1e-5)
+    @test isapprox(ret.outgoing_state[Symbol("x[2]")], 2.0; atol = 1e-5)
+    @test isapprox(ret.controls[:u], [-1.0, -0.5])
+    return
+end
+
 end  # module
 
 TestAlgorithm.runtests()

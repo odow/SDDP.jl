@@ -1728,7 +1728,7 @@ end
 function evaluate(
     rule::DecisionRule;
     incoming_state::Dict{<:Union{Symbol,String},<:Real},
-    kwargs...
+    kwargs...,
 )
     x = Dict(Symbol(k) => convert(Float64, v) for (k, v) in incoming_state)
     return evaluate(rule, x; kwargs...)
