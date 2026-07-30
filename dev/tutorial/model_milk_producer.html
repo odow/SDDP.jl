@@ -1,0 +1,232 @@
+<!--
+Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.
+
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v2.0. If a copy of the MPL was not distributed with this file, You can obtain
+one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-elk@2.1.0/dist/cytoscape-elk.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/layout-base/layout-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cose-base/cose-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose/cytoscape-fcose.js"></script>
+  <style>
+    #cy {width: 100vw; height: 100vh;}
+    #tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(30, 30, 30, 0.9);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      pointer-events: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div id="cy"></div>
+  <div id="tooltip"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const tooltip = document.getElementById('tooltip');
+      const squigglyPhotonSvg = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+          <path d="M 5,5 Q 15,2 20,12 T 35,20 L 44,32" fill="none" stroke="#000" stroke-width="2"/>
+          <polygon points="48,36 38,33 44,25" fill="#000"/>
+        </svg>
+      `);
+      const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: [
+          {data: {id: '(0, 0.0)', shape: 'ellipse', meta: 'x_forward[2] = 0.0\nx_forward[1] = 0.0\nx_stock = 0.0\nx_forward[3] = 0.0\nx_forward[4] = 0.0'}},
+{data: {id: '(1, 4.584729374929437)', meta: 'Node: (1, 4.584729374929437)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(2, 4.676071727606748)', meta: 'Node: (2, 4.676071727606748)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(3, 4.7687863036713205)', meta: 'Node: (3, 4.7687863036713205)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(4, 4.423582993665789)', meta: 'Node: (4, 4.423582993665789)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(4, 5.613418216485897)', meta: 'Node: (4, 5.613418216485897)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(5, 4.4841353801067765)', meta: 'Node: (5, 4.4841353801067765)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(5, 5.827906320837055)', meta: 'Node: (5, 5.827906320837055)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(6, 4.521183546439268)', meta: 'Node: (6, 4.521183546439268)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(6, 5.994373007060705)', meta: 'Node: (6, 5.994373007060705)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(7, 4.114760499400974)', meta: 'Node: (7, 4.114760499400974)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(7, 5.21672541327229)', meta: 'Node: (7, 5.21672541327229)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(7, 6.685023795510993)', meta: 'Node: (7, 6.685023795510993)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(8, 4.061682875451386)', meta: 'Node: (8, 4.061682875451386)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(8, 5.260566853592981)', meta: 'Node: (8, 5.260566853592981)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(8, 6.848532715139601)', meta: 'Node: (8, 6.848532715139601)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(9, 4.187120713835474)', meta: 'Node: (9, 4.187120713835474)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(9, 5.39913423440166)', meta: 'Node: (9, 5.39913423440166)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(9, 7.054933671062942)', meta: 'Node: (9, 7.054933671062942)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(10, 4.23265208562135)', meta: 'Node: (10, 4.23265208562135)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(10, 5.284064090096367)', meta: 'Node: (10, 5.284064090096367)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(10, 6.171336906769263)', meta: 'Node: (10, 6.171336906769263)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(10, 7.530479417252443)', meta: 'Node: (10, 7.530479417252443)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(11, 4.0950310434421375)', meta: 'Node: (11, 4.0950310434421375)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(11, 4.864865387142927)', meta: 'Node: (11, 4.864865387142927)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(11, 5.8431968815123865)', meta: 'Node: (11, 5.8431968815123865)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(11, 7.4370541591947505)', meta: 'Node: (11, 7.4370541591947505)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(12, 4.116305846232381)', meta: 'Node: (12, 4.116305846232381)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(12, 4.922309185637815)', meta: 'Node: (12, 4.922309185637815)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(12, 5.946016613483292)', meta: 'Node: (12, 5.946016613483292)\nNoise terms: 5', has_noise: true}},
+{data: {id: '(12, 7.589581911552588)', meta: 'Node: (12, 7.589581911552588)\nNoise terms: 5', has_noise: true}},
+{data: {id: 'edge_1', source: '(0, 0.0)', target: '(1, 4.584729374929437)', meta: 'From: (0, 0.0)\nTo: (1, 4.584729374929437)\nProbablity: 1.0'}},
+{data: {id: 'edge_2', source: '(1, 4.584729374929437)', target: '(2, 4.676071727606748)', meta: 'From: (1, 4.584729374929437)\nTo: (2, 4.676071727606748)\nProbablity: 1.0'}},
+{data: {id: 'edge_3', source: '(2, 4.676071727606748)', target: '(3, 4.7687863036713205)', meta: 'From: (2, 4.676071727606748)\nTo: (3, 4.7687863036713205)\nProbablity: 1.0'}},
+{data: {id: 'edge_4', source: '(3, 4.7687863036713205)', target: '(4, 4.423582993665789)', meta: 'From: (3, 4.7687863036713205)\nTo: (4, 4.423582993665789)\nProbablity: 0.6873'}},
+{data: {id: 'edge_5', source: '(3, 4.7687863036713205)', target: '(4, 5.613418216485897)', meta: 'From: (3, 4.7687863036713205)\nTo: (4, 5.613418216485897)\nProbablity: 0.3127'}},
+{data: {id: 'edge_6', source: '(4, 4.423582993665789)', target: '(5, 4.4841353801067765)', meta: 'From: (4, 4.423582993665789)\nTo: (5, 4.4841353801067765)\nProbablity: 0.9189582423977884'}},
+{data: {id: 'edge_7', source: '(4, 4.423582993665789)', target: '(5, 5.827906320837055)', meta: 'From: (4, 4.423582993665789)\nTo: (5, 5.827906320837055)\nProbablity: 0.08104175760221155'}},
+{data: {id: 'edge_8', source: '(4, 5.613418216485897)', target: '(5, 4.4841353801067765)', meta: 'From: (4, 5.613418216485897)\nTo: (5, 4.4841353801067765)\nProbablity: 0.31116085705148705'}},
+{data: {id: 'edge_9', source: '(4, 5.613418216485897)', target: '(5, 5.827906320837055)', meta: 'From: (4, 5.613418216485897)\nTo: (5, 5.827906320837055)\nProbablity: 0.688839142948513'}},
+{data: {id: 'edge_10', source: '(5, 4.4841353801067765)', target: '(6, 4.521183546439268)', meta: 'From: (5, 4.4841353801067765)\nTo: (6, 4.521183546439268)\nProbablity: 0.9196048840718891'}},
+{data: {id: 'edge_11', source: '(5, 4.4841353801067765)', target: '(6, 5.994373007060705)', meta: 'From: (5, 4.4841353801067765)\nTo: (6, 5.994373007060705)\nProbablity: 0.08039511592811086'}},
+{data: {id: 'edge_12', source: '(5, 5.827906320837055)', target: '(6, 4.521183546439268)', meta: 'From: (5, 5.827906320837055)\nTo: (6, 4.521183546439268)\nProbablity: 0.25378089265953524'}},
+{data: {id: 'edge_13', source: '(5, 5.827906320837055)', target: '(6, 5.994373007060705)', meta: 'From: (5, 5.827906320837055)\nTo: (6, 5.994373007060705)\nProbablity: 0.7462191073404648'}},
+{data: {id: 'edge_14', source: '(6, 4.521183546439268)', target: '(7, 4.114760499400974)', meta: 'From: (6, 4.521183546439268)\nTo: (7, 4.114760499400974)\nProbablity: 0.45690704911378704'}},
+{data: {id: 'edge_15', source: '(6, 4.521183546439268)', target: '(7, 5.21672541327229)', meta: 'From: (6, 4.521183546439268)\nTo: (7, 5.21672541327229)\nProbablity: 0.5383574617778379'}},
+{data: {id: 'edge_16', source: '(6, 4.521183546439268)', target: '(7, 6.685023795510993)', meta: 'From: (6, 4.521183546439268)\nTo: (7, 6.685023795510993)\nProbablity: 0.004735489108375051'}},
+{data: {id: 'edge_17', source: '(6, 5.994373007060705)', target: '(7, 4.114760499400974)', meta: 'From: (6, 5.994373007060705)\nTo: (7, 4.114760499400974)\nProbablity: 0.0003832886163280951'}},
+{data: {id: 'edge_18', source: '(6, 5.994373007060705)', target: '(7, 5.21672541327229)', meta: 'From: (6, 5.994373007060705)\nTo: (7, 5.21672541327229)\nProbablity: 0.5975469528555002'}},
+{data: {id: 'edge_19', source: '(6, 5.994373007060705)', target: '(7, 6.685023795510993)', meta: 'From: (6, 5.994373007060705)\nTo: (7, 6.685023795510993)\nProbablity: 0.40206975852817173'}},
+{data: {id: 'edge_20', source: '(7, 4.114760499400974)', target: '(8, 4.061682875451386)', meta: 'From: (7, 4.114760499400974)\nTo: (8, 4.061682875451386)\nProbablity: 0.7679100059206632'}},
+{data: {id: 'edge_21', source: '(7, 4.114760499400974)', target: '(8, 5.260566853592981)', meta: 'From: (7, 4.114760499400974)\nTo: (8, 5.260566853592981)\nProbablity: 0.2320899940793369'}},
+{data: {id: 'edge_22', source: '(7, 4.114760499400974)', target: '(8, 6.848532715139601)', meta: 'From: (7, 4.114760499400974)\nTo: (8, 6.848532715139601)\nProbablity: 0.0'}},
+{data: {id: 'edge_23', source: '(7, 5.21672541327229)', target: '(8, 4.061682875451386)', meta: 'From: (7, 5.21672541327229)\nTo: (8, 4.061682875451386)\nProbablity: 0.08577103647526182'}},
+{data: {id: 'edge_24', source: '(7, 5.21672541327229)', target: '(8, 5.260566853592981)', meta: 'From: (7, 5.21672541327229)\nTo: (8, 5.260566853592981)\nProbablity: 0.8530155290718671'}},
+{data: {id: 'edge_25', source: '(7, 5.21672541327229)', target: '(8, 6.848532715139601)', meta: 'From: (7, 5.21672541327229)\nTo: (8, 6.848532715139601)\nProbablity: 0.06121343445287107'}},
+{data: {id: 'edge_26', source: '(7, 6.685023795510993)', target: '(8, 4.061682875451386)', meta: 'From: (7, 6.685023795510993)\nTo: (8, 4.061682875451386)\nProbablity: 0.0'}},
+{data: {id: 'edge_27', source: '(7, 6.685023795510993)', target: '(8, 5.260566853592981)', meta: 'From: (7, 6.685023795510993)\nTo: (8, 5.260566853592981)\nProbablity: 0.3053505535055351'}},
+{data: {id: 'edge_28', source: '(7, 6.685023795510993)', target: '(8, 6.848532715139601)', meta: 'From: (7, 6.685023795510993)\nTo: (8, 6.848532715139601)\nProbablity: 0.6946494464944649'}},
+{data: {id: 'edge_29', source: '(8, 4.061682875451386)', target: '(9, 4.187120713835474)', meta: 'From: (8, 4.061682875451386)\nTo: (9, 4.187120713835474)\nProbablity: 0.8830237862495927'}},
+{data: {id: 'edge_30', source: '(8, 4.061682875451386)', target: '(9, 5.39913423440166)', meta: 'From: (8, 4.061682875451386)\nTo: (9, 5.39913423440166)\nProbablity: 0.1169762137504073'}},
+{data: {id: 'edge_31', source: '(8, 4.061682875451386)', target: '(9, 7.054933671062942)', meta: 'From: (8, 4.061682875451386)\nTo: (9, 7.054933671062942)\nProbablity: 0.0'}},
+{data: {id: 'edge_32', source: '(8, 5.260566853592981)', target: '(9, 4.187120713835474)', meta: 'From: (8, 5.260566853592981)\nTo: (9, 4.187120713835474)\nProbablity: 0.17091967802705943'}},
+{data: {id: 'edge_33', source: '(8, 5.260566853592981)', target: '(9, 5.39913423440166)', meta: 'From: (8, 5.260566853592981)\nTo: (9, 5.39913423440166)\nProbablity: 0.7891762288063024'}},
+{data: {id: 'edge_34', source: '(8, 5.260566853592981)', target: '(9, 7.054933671062942)', meta: 'From: (8, 5.260566853592981)\nTo: (9, 7.054933671062942)\nProbablity: 0.03990409316663812'}},
+{data: {id: 'edge_35', source: '(8, 6.848532715139601)', target: '(9, 4.187120713835474)', meta: 'From: (8, 6.848532715139601)\nTo: (9, 4.187120713835474)\nProbablity: 0.0'}},
+{data: {id: 'edge_36', source: '(8, 6.848532715139601)', target: '(9, 5.39913423440166)', meta: 'From: (8, 6.848532715139601)\nTo: (9, 5.39913423440166)\nProbablity: 0.32234432234432236'}},
+{data: {id: 'edge_37', source: '(8, 6.848532715139601)', target: '(9, 7.054933671062942)', meta: 'From: (8, 6.848532715139601)\nTo: (9, 7.054933671062942)\nProbablity: 0.6776556776556777'}},
+{data: {id: 'edge_38', source: '(9, 4.187120713835474)', target: '(10, 6.171336906769263)', meta: 'From: (9, 4.187120713835474)\nTo: (10, 6.171336906769263)\nProbablity: 0.00026968716289104636'}},
+{data: {id: 'edge_39', source: '(9, 4.187120713835474)', target: '(10, 4.23265208562135)', meta: 'From: (9, 4.187120713835474)\nTo: (10, 4.23265208562135)\nProbablity: 0.8670442286947141'}},
+{data: {id: 'edge_40', source: '(9, 4.187120713835474)', target: '(10, 5.284064090096367)', meta: 'From: (9, 4.187120713835474)\nTo: (10, 5.284064090096367)\nProbablity: 0.13268608414239483'}},
+{data: {id: 'edge_41', source: '(9, 4.187120713835474)', target: '(10, 7.530479417252443)', meta: 'From: (9, 4.187120713835474)\nTo: (10, 7.530479417252443)\nProbablity: 0.0'}},
+{data: {id: 'edge_42', source: '(9, 5.39913423440166)', target: '(10, 6.171336906769263)', meta: 'From: (9, 5.39913423440166)\nTo: (10, 6.171336906769263)\nProbablity: 0.25117503290092125'}},
+{data: {id: 'edge_43', source: '(9, 5.39913423440166)', target: '(10, 4.23265208562135)', meta: 'From: (9, 5.39913423440166)\nTo: (10, 4.23265208562135)\nProbablity: 0.15886444820454973'}},
+{data: {id: 'edge_44', source: '(9, 5.39913423440166)', target: '(10, 5.284064090096367)', meta: 'From: (9, 5.39913423440166)\nTo: (10, 5.284064090096367)\nProbablity: 0.5856363978191389'}},
+{data: {id: 'edge_45', source: '(9, 5.39913423440166)', target: '(10, 7.530479417252443)', meta: 'From: (9, 5.39913423440166)\nTo: (10, 7.530479417252443)\nProbablity: 0.004324121075390111'}},
+{data: {id: 'edge_46', source: '(9, 7.054933671062942)', target: '(10, 6.171336906769263)', meta: 'From: (9, 7.054933671062942)\nTo: (10, 6.171336906769263)\nProbablity: 0.5673175745118191'}},
+{data: {id: 'edge_47', source: '(9, 7.054933671062942)', target: '(10, 4.23265208562135)', meta: 'From: (9, 7.054933671062942)\nTo: (10, 4.23265208562135)\nProbablity: 0.0'}},
+{data: {id: 'edge_48', source: '(9, 7.054933671062942)', target: '(10, 5.284064090096367)', meta: 'From: (9, 7.054933671062942)\nTo: (10, 5.284064090096367)\nProbablity: 0.02877697841726619'}},
+{data: {id: 'edge_49', source: '(9, 7.054933671062942)', target: '(10, 7.530479417252443)', meta: 'From: (9, 7.054933671062942)\nTo: (10, 7.530479417252443)\nProbablity: 0.4039054470709147'}},
+{data: {id: 'edge_50', source: '(10, 4.23265208562135)', target: '(11, 4.0950310434421375)', meta: 'From: (10, 4.23265208562135)\nTo: (11, 4.0950310434421375)\nProbablity: 0.5926108374384237'}},
+{data: {id: 'edge_51', source: '(10, 4.23265208562135)', target: '(11, 4.864865387142927)', meta: 'From: (10, 4.23265208562135)\nTo: (11, 4.864865387142927)\nProbablity: 0.3770935960591133'}},
+{data: {id: 'edge_52', source: '(10, 4.23265208562135)', target: '(11, 5.8431968815123865)', meta: 'From: (10, 4.23265208562135)\nTo: (11, 5.8431968815123865)\nProbablity: 0.030295566502463053'}},
+{data: {id: 'edge_53', source: '(10, 4.23265208562135)', target: '(11, 7.4370541591947505)', meta: 'From: (10, 4.23265208562135)\nTo: (11, 7.4370541591947505)\nProbablity: 0.0'}},
+{data: {id: 'edge_54', source: '(10, 5.284064090096367)', target: '(11, 4.0950310434421375)', meta: 'From: (10, 5.284064090096367)\nTo: (11, 4.0950310434421375)\nProbablity: 0.020357634112792296'}},
+{data: {id: 'edge_55', source: '(10, 5.284064090096367)', target: '(11, 4.864865387142927)', meta: 'From: (10, 5.284064090096367)\nTo: (11, 4.864865387142927)\nProbablity: 0.4651994497936726'}},
+{data: {id: 'edge_56', source: '(10, 5.284064090096367)', target: '(11, 5.8431968815123865)', meta: 'From: (10, 5.284064090096367)\nTo: (11, 5.8431968815123865)\nProbablity: 0.5144429160935351'}},
+{data: {id: 'edge_57', source: '(10, 5.284064090096367)', target: '(11, 7.4370541591947505)', meta: 'From: (10, 5.284064090096367)\nTo: (11, 7.4370541591947505)\nProbablity: 0.0'}},
+{data: {id: 'edge_58', source: '(10, 6.171336906769263)', target: '(11, 4.0950310434421375)', meta: 'From: (10, 6.171336906769263)\nTo: (11, 4.0950310434421375)\nProbablity: 0.0005293806246691371'}},
+{data: {id: 'edge_59', source: '(10, 6.171336906769263)', target: '(11, 4.864865387142927)', meta: 'From: (10, 6.171336906769263)\nTo: (11, 4.864865387142927)\nProbablity: 0.028057173107464268'}},
+{data: {id: 'edge_60', source: '(10, 6.171336906769263)', target: '(11, 5.8431968815123865)', meta: 'From: (10, 6.171336906769263)\nTo: (11, 5.8431968815123865)\nProbablity: 0.76071995764955'}},
+{data: {id: 'edge_61', source: '(10, 6.171336906769263)', target: '(11, 7.4370541591947505)', meta: 'From: (10, 6.171336906769263)\nTo: (11, 7.4370541591947505)\nProbablity: 0.21069348861831658'}},
+{data: {id: 'edge_62', source: '(10, 7.530479417252443)', target: '(11, 4.0950310434421375)', meta: 'From: (10, 7.530479417252443)\nTo: (11, 4.0950310434421375)\nProbablity: 0.0'}},
+{data: {id: 'edge_63', source: '(10, 7.530479417252443)', target: '(11, 4.864865387142927)', meta: 'From: (10, 7.530479417252443)\nTo: (11, 4.864865387142927)\nProbablity: 0.0'}},
+{data: {id: 'edge_64', source: '(10, 7.530479417252443)', target: '(11, 5.8431968815123865)', meta: 'From: (10, 7.530479417252443)\nTo: (11, 5.8431968815123865)\nProbablity: 0.16826923076923078'}},
+{data: {id: 'edge_65', source: '(10, 7.530479417252443)', target: '(11, 7.4370541591947505)', meta: 'From: (10, 7.530479417252443)\nTo: (11, 7.4370541591947505)\nProbablity: 0.8317307692307693'}},
+{data: {id: 'edge_66', source: '(11, 4.0950310434421375)', target: '(12, 4.116305846232381)', meta: 'From: (11, 4.0950310434421375)\nTo: (12, 4.116305846232381)\nProbablity: 0.814993954050786'}},
+{data: {id: 'edge_67', source: '(11, 4.0950310434421375)', target: '(12, 4.922309185637815)', meta: 'From: (11, 4.0950310434421375)\nTo: (12, 4.922309185637815)\nProbablity: 0.1841999193873438'}},
+{data: {id: 'edge_68', source: '(11, 4.0950310434421375)', target: '(12, 5.946016613483292)', meta: 'From: (11, 4.0950310434421375)\nTo: (12, 5.946016613483292)\nProbablity: 0.0008061265618702137'}},
+{data: {id: 'edge_69', source: '(11, 4.0950310434421375)', target: '(12, 7.589581911552588)', meta: 'From: (11, 4.0950310434421375)\nTo: (12, 7.589581911552588)\nProbablity: 0.0'}},
+{data: {id: 'edge_70', source: '(11, 4.864865387142927)', target: '(12, 4.116305846232381)', meta: 'From: (11, 4.864865387142927)\nTo: (12, 4.116305846232381)\nProbablity: 0.1633587786259542'}},
+{data: {id: 'edge_71', source: '(11, 4.864865387142927)', target: '(12, 4.922309185637815)', meta: 'From: (11, 4.864865387142927)\nTo: (12, 4.922309185637815)\nProbablity: 0.6601526717557252'}},
+{data: {id: 'edge_72', source: '(11, 4.864865387142927)', target: '(12, 5.946016613483292)', meta: 'From: (11, 4.864865387142927)\nTo: (12, 5.946016613483292)\nProbablity: 0.1764885496183206'}},
+{data: {id: 'edge_73', source: '(11, 4.864865387142927)', target: '(12, 7.589581911552588)', meta: 'From: (11, 4.864865387142927)\nTo: (12, 7.589581911552588)\nProbablity: 0.0'}},
+{data: {id: 'edge_74', source: '(11, 5.8431968815123865)', target: '(12, 4.116305846232381)', meta: 'From: (11, 5.8431968815123865)\nTo: (12, 4.116305846232381)\nProbablity: 0.001142857142857143'}},
+{data: {id: 'edge_75', source: '(11, 5.8431968815123865)', target: '(12, 4.922309185637815)', meta: 'From: (11, 5.8431968815123865)\nTo: (12, 4.922309185637815)\nProbablity: 0.19628571428571429'}},
+{data: {id: 'edge_76', source: '(11, 5.8431968815123865)', target: '(12, 5.946016613483292)', meta: 'From: (11, 5.8431968815123865)\nTo: (12, 5.946016613483292)\nProbablity: 0.7528571428571429'}},
+{data: {id: 'edge_77', source: '(11, 5.8431968815123865)', target: '(12, 7.589581911552588)', meta: 'From: (11, 5.8431968815123865)\nTo: (12, 7.589581911552588)\nProbablity: 0.04971428571428571'}},
+{data: {id: 'edge_78', source: '(11, 7.4370541591947505)', target: '(12, 4.116305846232381)', meta: 'From: (11, 7.4370541591947505)\nTo: (12, 4.116305846232381)\nProbablity: 0.0'}},
+{data: {id: 'edge_79', source: '(11, 7.4370541591947505)', target: '(12, 4.922309185637815)', meta: 'From: (11, 7.4370541591947505)\nTo: (12, 4.922309185637815)\nProbablity: 0.0'}},
+{data: {id: 'edge_80', source: '(11, 7.4370541591947505)', target: '(12, 5.946016613483292)', meta: 'From: (11, 7.4370541591947505)\nTo: (12, 5.946016613483292)\nProbablity: 0.3064516129032258'}},
+{data: {id: 'edge_81', source: '(11, 7.4370541591947505)', target: '(12, 7.589581911552588)', meta: 'From: (11, 7.4370541591947505)\nTo: (12, 7.589581911552588)\nProbablity: 0.6935483870967742'}},
+        ],
+        layout: {
+          name: 'elk',
+          elk: {
+            'algorithm': 'layered',
+            'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+            'elk.layered.cycleBreaking.strategy': 'MODEL_ORDER',
+            'elk.aspectRatio': 2,
+            'elk.layered.spacing.nodeNodeBetweenLayers': 30,
+            'elk.spacing.nodeNode': 100,
+            'elk.spacing.edgeEdge': 20,
+            'elk.spacing.edgeNode': 50
+          }
+        },
+        style: [{
+          selector: 'node',
+          style: {
+            'shape': 'rectangle',
+            'background-color': '#fff',
+            'border-width': 1,
+            'text-valign': 'center',
+            'text-halign': 'center',
+          }
+        }, {
+          selector: 'edge',
+          style: {
+            'width': 1,
+            'line-color': '#000',
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle',
+            'target-arrow-color': '#000',
+          },
+        }, {
+          selector: 'node[shape]', style: {'shape': 'data(shape)'}
+        }, {
+          selector: 'node[?has_noise]',
+          style: {
+            'background-image': squigglyPhotonSvg,
+            'background-clip': 'none',
+            'bounds-expansion': 30,
+            'background-position-x': '-30px',
+            'background-position-y': '-25px',
+            'background-width': '45px',
+            'background-height': '45px',
+            'background-repeat': 'no-repeat'
+          }
+        }]
+      });
+      function showTooltip(evt) {
+        if (evt.target.data('meta')) {
+          tooltip.innerText = evt.target.data('meta');
+          tooltip.style.display = 'block';
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function moveTooltip(evt) {
+        if (tooltip.style.display === 'block') {
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function hideTooltip() {
+        tooltip.style.display = 'none';
+      }
+      cy.on('mouseover', 'node, edge', showTooltip);
+      cy.on('mousemove', 'node, edge', moveTooltip);
+      cy.on('mouseout', 'node, edge', hideTooltip);
+    });
+  </script>
+</body>
+</html>

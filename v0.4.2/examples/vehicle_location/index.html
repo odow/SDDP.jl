@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Vehicle location · SDDP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SDDP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox"/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Basic</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/basic/01_first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../../tutorial/basic/03_objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../../tutorial/basic/04_markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../../tutorial/basic/05_plotting/">Plotting tools</a></li><li><a class="tocitem" href="../../tutorial/basic/06_warnings/">Words of warning</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-2" type="checkbox"/><label class="tocitem" for="menuitem-2-2"><span class="docs-label">Advanced</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/advanced/11_objective_states/">Objective states</a></li><li><a class="tocitem" href="../../tutorial/advanced/12_belief_states/">Belief states</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-3" type="checkbox"/><label class="tocitem" for="menuitem-2-3"><span class="docs-label">Theory</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/theory/21_theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../tutorial/theory/22_risk/">Risk aversion</a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/acess_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../the_farmers_problem/">The farmer&#39;s problem</a></li><li class="is-active"><a class="tocitem" href>Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Vehicle location</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Vehicle location</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/vehicle_location.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Vehicle-location"><a class="docs-heading-anchor" href="#Vehicle-location">Vehicle location</a><a id="Vehicle-location-1"></a><a class="docs-heading-anchor-permalink" href="#Vehicle-location" title="Permalink"></a></h1><p>This problem is a version of the Ambulance dispatch problem. A hospital is located at 0 on the number line that stretches from 0 to 100. Ambulance bases are located at points 20, 40, 60, 80, and 100. When not responding to a call, Ambulances must be located at a base, or the hospital. In this example there are three ambulances.</p><p>Example location:</p><pre><code class="nohighlight hljs">H       B       B       B       B       B
+0 ---- 20 ---- 40 ---- 60 ---- 80 ---- 100</code></pre><p>Each stage, a call comes in from somewhere on the number line. The agent must decide which ambulance to dispatch. They pay the cost of twice the driving distance. If an ambulance is not dispatched in a stage, the ambulance can be relocated to a different base in preparation for future calls. This incurrs a cost of the driving distance.</p><pre><code class="language-julia hljs">using SDDP, GLPK, Test
+
+function vehicle_location_model(duality_handler)
+    hospital_location = 0
+    bases = vcat(hospital_location, [20, 40, 60, 80, 100])
+    vehicles = [1, 2, 3]
+    requests = 0:2:100
+    shift_cost(src, dest) = abs(src - dest)
+    function dispatch_cost(base, request)
+        return 2 * (abs(request - hospital_location) + abs(request - base))
+    end
+    # Initial state of emergency vehicles at bases. All ambulances start at the
+    # hospital.
+    initial_state(b, v) = b == hospital_location ? 1.0 : 0.0
+    model = SDDP.LinearPolicyGraph(
+        stages = 10,
+        lower_bound = 0.0,
+        optimizer = GLPK.Optimizer,
+    ) do sp, t
+        # Current location of each vehicle at each base.
+        @variable(
+            sp,
+            0 &lt;= location[b = bases, v = vehicles] &lt;= 1,
+            SDDP.State,
+            initial_value = initial_state(b, v)
+        )
+        @variables(sp, begin
+            # Which vehicle is dipatched?
+            0 &lt;= dispatch[bases, vehicles] &lt;= 1, Bin
+            # Shifting vehicles between bases: [src, dest, vehicle]
+            0 &lt;= shift[bases, bases, vehicles] &lt;= 1, Bin
+        end)
+        # Flow of vehicles in and out of bases:
+        @expression(
+            sp,
+            base_balance[b in bases, v in vehicles],
+            location[b, v].in - dispatch[b, v] - sum(shift[b, :, v]) +
+            sum(shift[:, b, v])
+        )
+        @constraints(
+            sp,
+            begin
+                # Only one vehicle dispatched to call.
+                sum(dispatch) == 1
+                # Can only dispatch vehicle from base if vehicle is at that base.
+                [b in bases, v in vehicles],
+                dispatch[b, v] &lt;= location[b, v].in
+                # Can only shift vehicle if vehicle is at that src base.
+                [b in bases, v in vehicles],
+                sum(shift[b, :, v]) &lt;= location[b, v].in
+                # Can only shift vehicle if vehicle is not being dispatched.
+                [b in bases, v in vehicles],
+                sum(shift[b, :, v]) + dispatch[b, v] &lt;= 1
+                # Can&#39;t shift to same base.
+                [b in bases, v in vehicles], shift[b, b, v] == 0
+                # Update states for non-home/non-hospital bases.
+                [b in bases[2:end], v in vehicles],
+                location[b, v].out == base_balance[b, v]
+                # Update states for home/hospital bases.
+                [v in vehicles],
+                location[hospital_location, v].out ==
+                base_balance[hospital_location, v] + sum(dispatch[:, v])
+            end
+        )
+        SDDP.parameterize(sp, requests) do request
+            @stageobjective(
+                sp,
+                sum(
+                    # Distance to travel from base to emergency and then to hospital.
+                    dispatch[b, v] * dispatch_cost(b, request) +
+                    # Distance travelled by vehicles relocating bases.
+                    sum(
+                        shift_cost(b, dest) * shift[b, dest, v] for
+                        dest in bases
+                    ) for b in bases, v in vehicles
+                )
+            )
+        end
+    end
+    SDDP.train(
+        model;
+        iteration_limit = 50,
+        log_frequency = 10,
+        cut_deletion_minimum = 100,
+        duality_handler = duality_handler,
+    )
+    @test SDDP.calculate_bound(model) &gt;= 1000
+    return
+end</code></pre><pre><code class="nohighlight hljs">vehicle_location_model (generic function with 1 method)</code></pre><p>Solve a continuous relaxation only, tough for LagrangianDuality</p><pre><code class="language-julia hljs">vehicle_location_model(SDDP.ContinuousConicDuality())</code></pre><pre><code class="nohighlight hljs">------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 10
+  State variables : 18
+  Scenarios       : 1.19042e+17
+  Existing cuts   : false
+  Subproblem structure                      : (min, max)
+    Variables                               : (163, 163)
+    VariableRef in MOI.LessThan{Float64}    : (144, 145)
+    VariableRef in MOI.ZeroOne              : (126, 126)
+    AffExpr in MOI.LessThan{Float64}        : (54, 54)
+    VariableRef in MOI.GreaterThan{Float64} : (145, 145)
+    AffExpr in MOI.EqualTo{Float64}         : (37, 37)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+00]
+  Non-zero Objective range  [1e+00, 4e+02]
+  Non-zero Bounds range     [1e+00, 1e+00]
+  Non-zero RHS range        [1e+00, 1e+00]
+No problems detected
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+       10    1.508000e+03   1.364000e+03   2.591023e+00          1       5200
+       20    1.884000e+03   1.436897e+03   5.739773e+00          1      10400
+       30    2.044000e+03   1.490915e+03   9.627306e+00          1      15600
+       40    2.496000e+03   1.510796e+03   1.644845e+01          1      20800
+       50    1.172000e+03   1.517125e+03   2.701435e+01          1      26000
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 2.701435e+01
+  Total solves   : 26000
+  Best bound     :  1.517125e+03
+  Simulation CI  :  1.863200e+03 ± 7.360266e+01
+------------------------------------------------------------------------------
+</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../the_farmers_problem/">« The farmer&#39;s problem</a><a class="docs-footer-nextpage" href="../../apireference/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Monday 23 August 2021 21:33">Monday 23 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

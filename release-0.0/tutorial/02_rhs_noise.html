@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial Two: RHS noise · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="01_first_steps.html">Tutorial One: first steps</a></li><li class="current"><a class="toctext" href="02_rhs_noise.html">Tutorial Two: RHS noise</a><ul class="internal"><li><a class="toctext" href="#Formulating-the-problem-1">Formulating the problem</a></li><li><a class="toctext" href="#Solving-the-problem-1">Solving the problem</a></li><li><a class="toctext" href="#Understanding-the-solution-1">Understanding the solution</a></li></ul></li><li><a class="toctext" href="03_objective_noise.html">Tutorial Three: objective noise</a></li><li><a class="toctext" href="04_markovian_policygraphs.html">Tutorial Four: Markovian policy graphs</a></li><li><a class="toctext" href="05_risk.html">Tutorial Five: risk</a></li><li><a class="toctext" href="06_cut_selection.html">Tutorial Six: cut selection</a></li><li><a class="toctext" href="07_plotting.html">Tutorial Seven: plotting</a></li><li><a class="toctext" href="08_odds_and_ends.html">Tutorial Eight: odds and ends</a></li><li><a class="toctext" href="09_nonlinear.html">Tutorial Nine: nonlinear models</a></li><li><a class="toctext" href="10_parallel.html">Tutorial Ten: parallelism</a></li><li><a class="toctext" href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a></li><li><a class="toctext" href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a></li><li><a class="toctext" href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a></li></ul></li><li><a class="toctext" href="../readings.html">Readings</a></li><li><a class="toctext" href="../apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href="02_rhs_noise.html">Tutorial Two: RHS noise</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/02_rhs_noise.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorial Two: RHS noise</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-Two:-RHS-noise-1" href="#Tutorial-Two:-RHS-noise-1">Tutorial Two: RHS noise</a></h1><p>In <a href="01_first_steps.html#Tutorial-One:-first-steps-1">Tutorial One: first steps</a>, we formulated a simple hydrothermal scheduling problem. In this tutorial, we extend the model to include stagewise-independent noise in the right-hand side of the constraints.</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>Notably, SDDP.jl does not allow stagewise-independent noise terms in the constraint matrix. However, this can be modelled using a Markovian policy graph like the one in <a href="04_markovian_policygraphs.html#Tutorial-Four:-Markovian-policy-graphs-1">Tutorial Four: Markovian policy graphs</a>.</p></div></div><p>Recall that our model for the hydrothermal scheduling problem  from <a href="01_first_steps.html#Tutorial-One:-first-steps-1">Tutorial One: first steps</a> is:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0
+                                        ) do sp, t
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+     end)
+    inflow = [50.0, 50.0, 50.0]
+    @constraints(sp, begin
+        incoming_volume + inflow[t] - hydro_generation - hydro_spill == outgoing_volume
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, fuel_cost[t] * thermal_generation )
+end</code></pre><h2><a class="nav-anchor" id="Formulating-the-problem-1" href="#Formulating-the-problem-1">Formulating the problem</a></h2><p>In this tutorial, we are going to model inflows that are stagewise-independent. Specifically, we assume that in each stage, there is an even probability of sampling an inflow of <code>0.0</code>, <code>50.0</code>, or <code>100.0</code>. To add this noise term to the model, we need to use the <a href="../apireference.html#SDDP.@rhsnoise"><code>@rhsnoise</code></a> macro provided by SDDP.jl.</p><p><a href="../apireference.html#SDDP.@rhsnoise"><code>@rhsnoise</code></a> is similar to the JuMP <code>@constraint</code> macro. It takes three arguments. The first is the subproblem <code>sp</code>. The second argument is of the form <code>name=[realizations]</code>, where <code>name</code> is a descriptive name, and <code>realizations</code> is a vector of elements in the sample space. The third argument is any valid JuMP constraint that utilizes <code>name</code> in the right-hand side. For our example, we have:</p><pre><code class="language-julia">@rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+    outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+)</code></pre><p>However, the realizations do not have to be the full right-hand side term. The following is also valid:</p><pre><code class="language-julia">inflows = [0.0, 50.0, 100.0]
+@rhsnoise(sp, i = [1,2,3],
+    outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflows[i]
+)</code></pre><p>We can set the probability of sampling each element in the sample space using the <a href="../apireference.html#SDDP.setnoiseprobability!"><code>setnoiseprobability!</code></a> function. If <code>setnoiseprobability!</code> isn&#39;t called, the distribution is assumed to be uniform. Despite this, for the sake of completeness, we set the probability for our example as:</p><pre><code class="language-julia">setnoiseprobability!(sp, [1/3, 1/3, 1/3])</code></pre><p>Our model is now:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0
+                                        ) do sp, t
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+        outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+    )
+    setnoiseprobability!(sp, [1/3, 1/3, 1/3])
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, fuel_cost[t] * thermal_generation )
+end</code></pre><h2><a class="nav-anchor" id="Solving-the-problem-1" href="#Solving-the-problem-1">Solving the problem</a></h2><p>Now we need to solve the problem. As in <a href="01_first_steps.html#Tutorial-One:-first-steps-1">Tutorial One: first steps</a>, we use the <a href="../apireference.html#JuMP.solve"><code>solve</code></a> function. However, this time we utilize some additional arguments.</p><p>Since our problem is stochastic, we often want to simulate the policy in order to estimate the upper (lower if maximizing) bound. This can be controlled via the <code>simulation</code> keyword to <a href="../apireference.html#JuMP.solve"><code>solve</code></a>. The syntax has a lot going on so we&#39;re going to give an example of how it is used, and then walk through the different components.</p><pre><code class="language-julia">status = solve(m,
+    simulation = MonteCarloSimulation(
+        frequency  = 2,
+        confidence = 0.95,
+        terminate  = true
+        min        = 50,
+        step       = 50,
+        max        = 100,
+    )
+)</code></pre><p>First, the <code>frequency</code> argument specifies how often the  Monte Carlo simulation is conducted (iterations/simulation). For this example, we conduct a Monte Carlo simulation every two iterations. Second, the <code>confidence</code> specifies the level at which to conduct the confidence interval. In this example, we construct a 95% confidence interval. Third, the <code>terminate</code> argument is a Boolean defining if we should terminate the method if the lower limit of the confidence interval is less than the lower bound (upper limit and bound for maximization problems). The final three arguments implement the method of <em>sequential sampling</em>: <code>min</code> gives the minimum number of replications to conduct before the construction of a confidence interval. If there is evidence of convergence, another <code>step</code> replications are conducted. This continues until either: (1) <code>max</code> number of replications have been conducted; or (2) there is no evidence of convergence. For our example, we conduct 50 replications, and if there is no evidence of convergence, we conduct another 50 replications.</p><p>The output from the log is now:</p><pre><code class="language-none">-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         3
+        States:         1
+        Subproblems:    3
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+       17.500K         3.438K        |     1    0.0      0    0.0    0.0
+   7.606K   10.894K    7.500K   1.4  |     2    0.0     50    0.0    0.0
+        7.500K         8.333K        |     3    0.0     50    0.0    0.0
+   7.399K    9.651K    8.333K -11.2  |     4    0.0    150    0.1    0.1
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         4
+        Termination Status: converged
+===============================================================================</code></pre><p>Compared with the log of a solve without using the <code>simulation</code> keyword, a few things have changed. First, in the second and fourth rows (i.e. the iterations in which a Monte Carlo simulation was conducted) the <em>Simulation</em> column now gives two values. This pair is the confidence interval for the estimate of the upper bound.</p><p>Second, in iterations in which a Monte Carlo simulation is conducted, there is an entry in the <em>% Gap</em> column. This gaps measures the difference between the lower limit of the simulated confidence interval and the lower bound (given in the <em>Bound</em>) column. If the gap is positive, there is evidence that the model has not converged. Once the gap is negative, the lower bound lies above the lower limit of the confidence interval and we can terminate the algorithm.</p><p>The third difference is that the <em>Simulations</em> column now records the number of Monte Replications conducted to estimate the upper bound (in <em>#</em>) and time performing those Monte Carlo replications (in <em>Time</em>). You can use this information to tune the frequency at which the policy is tested for convergence.</p><p>Also observe that the first time we performed the Monte Carlo simulation, we only conducted 50 replications; however, the second time we conducted 100. This demonstrates the <em>sequential sampling</em> method at work.</p><p>Finally, the termination status is now <code>:converged</code> instead of <code>:iteration_limit</code>.</p><h2><a class="nav-anchor" id="Understanding-the-solution-1" href="#Understanding-the-solution-1">Understanding the solution</a></h2><p>The first thing we want to do is to query the lower (upper if maximizing) bound of the solution. This can be done via the <a href="../apireference.html#SDDP.getbound"><code>getbound</code></a> function:</p><pre><code class="language-julia">getbound(m)</code></pre><p>This returns the value of the <em>Bound</em> column in the last row in the output table above. In this example, the bound is <code>8333.0</code>.</p><p>Then, we can perform a Monte Carlo simulation of the policy using the <a href="../apireference.html#SDDP.simulate"><code>simulate</code></a> function. We perform 500 replications and record the same variables as we did in <a href="01_first_steps.html#Tutorial-One:-first-steps-1">Tutorial One: first steps</a>.</p><pre><code class="language-julia">simulation_result = simulate(m,
+    500,
+    [:outgoing_volume, :thermal_generation, :hydro_generation, :hydro_spill]
+)</code></pre><p>This time, <code>length(simulation_result) = 500</code>. In addition to the variables, we also record some additional fields. This includes <code>:stageobjective</code>, the value of the stage-objective in each stage. We can calculate the cumulative objective of each replication by summing the stage-objectives as follows:</p><pre><code class="language-julia">julia&gt; sum(simulation_result[100][:stageobjective])
+2500.0</code></pre><p>We can calculate the objective of all of each replication using Julia&#39;s generator syntax:</p><pre><code class="language-julia">julia&gt; objectives = [sum(replication[:stageobjective]) for replication in simulation_result]
+500-element Array{Float64, 1}:
+  5000.0
+ 20000.0
+ 15000.0
+ ⋮</code></pre><p>Then, we can calculate the mean and standard deviation of these objectives:</p><pre><code class="language-julia">julia&gt; mean(objectives), std(objectives)
+(8025.0, 5567.66)</code></pre><p>We can query the noise that was sampled in each stage using the <code>:noise</code> key. This returns the index of the noise from the vector of <code>realizations</code>. For example:</p><pre><code class="language-julia">julia&gt; simulation_result[100][:noise]
+3-element Array{Int, 1}:
+ 1
+ 3
+ 2</code></pre><p>This concludes our second tutorial for SDDP.jl. In the next tutorial, <a href="03_objective_noise.html#Tutorial-Three:-objective-noise-1">Tutorial Three: objective noise</a>, we introduce stagewise-independent noise into the objective function.</p><footer><hr/><a class="previous" href="01_first_steps.html"><span class="direction">Previous</span><span class="title">Tutorial One: first steps</span></a><a class="next" href="03_objective_noise.html"><span class="direction">Next</span><span class="title">Tutorial Three: objective noise</span></a></footer></article></body></html>

@@ -1,0 +1,94 @@
+{
+  "name": "MathOptFormat Model",
+  "version": {
+    "major": 1,
+    "minor": 2
+  },
+  "variables": [
+    {
+      "name": "x_in"
+    },
+    {
+      "name": "x_out"
+    },
+    {
+      "name": "x3"
+    }
+  ],
+  "objective": {
+    "sense": "min",
+    "function": {
+      "type": "ScalarAffineFunction",
+      "terms": [
+        {
+          "coefficient": 1.0,
+          "variable": "x_out"
+        },
+        {
+          "coefficient": 1.0,
+          "variable": "x3"
+        }
+      ],
+      "constant": 0.0
+    }
+  },
+  "constraints": [
+    {
+      "name": "c1",
+      "function": {
+        "type": "ScalarAffineFunction",
+        "terms": [
+          {
+            "coefficient": 1.0,
+            "variable": "x_in"
+          }
+        ],
+        "constant": 0.0
+      },
+      "set": {
+        "type": "GreaterThan",
+        "lower": 1.0
+      }
+    },
+    {
+      "function": {
+        "type": "Variable",
+        "name": "x_in"
+      },
+      "set": {
+        "type": "EqualTo",
+        "value": 0.0
+      }
+    },
+    {
+      "function": {
+        "type": "Variable",
+        "name": "x_out"
+      },
+      "set": {
+        "type": "GreaterThan",
+        "lower": 0.0
+      }
+    },
+    {
+      "function": {
+        "type": "Variable",
+        "name": "x3"
+      },
+      "set": {
+        "type": "GreaterThan",
+        "lower": 0.0
+      }
+    },
+    {
+      "function": {
+        "type": "Variable",
+        "name": "x3"
+      },
+      "set": {
+        "type": "LessThan",
+        "upper": 0.0
+      }
+    }
+  ]
+}
