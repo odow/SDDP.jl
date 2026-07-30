@@ -90,14 +90,15 @@ numerical stability report
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   8.620000e+04  1.741050e+04  8.809400e-02        56   1
-        76   2.358490e+04  2.400807e+04  1.094552e+00      8256   1
-        94   2.506330e+04  2.400874e+04  1.229529e+00      9264   1
+         1   8.280000e+04  1.741050e+04  8.862305e-02        56   1
+        92   2.495180e+04  2.400810e+04  1.093454e+00      9152   1
+       199   2.342700e+04  2.400968e+04  2.205754e+00     17144   1
+       298   2.378650e+04  2.400983e+04  3.125884e+00     22688   1
 -------------------------------------------------------------------
 status         : simulation_stopping
-total time (s) : 1.229529e+00
-total solves   : 9264
-best bound     :  2.400874e+04
+total time (s) : 3.125884e+00
+total solves   : 22688
+best bound     :  2.400983e+04
 numeric issues : 0
 -------------------------------------------------------------------</code></pre><pre><code class="language-julia hljs">simulations = SDDP.simulate(model, 50, [:x, :u_prod]);</code></pre><pre><code class="language-julia hljs">Plots.plot(
     SDDP.publication_plot(
@@ -116,4 +117,4 @@ numeric issues : 0
     SDDP.publication_plot(simulations; xlabel = &quot;Week&quot;) do data
         return data[:x][&quot;Seattle&quot;].out
     end,
-)</code></pre><img src="72515bd3.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../duality_handlers/">« Duality handlers</a><a class="docs-footer-nextpage" href="../capacity_expansion/">Example: capacity expansion models »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 July 2026 02:17">Thursday 30 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+)</code></pre><img src="efe25c8b.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../duality_handlers/">« Duality handlers</a><a class="docs-footer-nextpage" href="../capacity_expansion/">Example: capacity expansion models »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 July 2026 08:28">Thursday 30 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

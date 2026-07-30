@@ -46,35 +46,35 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
     return inflow
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">simulator (generic function with 1 method)</code></pre><p>When called with no arguments, it produces a vector of inflows:</p><pre><code class="language-julia hljs">simulator()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Float64}:
  59.6
- 59.7
- 59.800000000000004</code></pre><div class="admonition is-warning" id="Warning-66f4b71d877db259"><header class="admonition-header">Warning<a class="admonition-anchor" href="#Warning-66f4b71d877db259" title="Permalink"></a></header><div class="admonition-body"><p>The <code>simulator</code> must return a <code>Vector{Float64}</code>, so it is limited to a uni-variate random variable. It is possible to do something similar for multi-variate random variable, but you&#39;ll have to manually construct the Markov transition matrix, and solution times scale poorly, even in the two-dimensional case.</p></div></div><p>The next step is to call <a href="../../apireference/#SDDP.MarkovianGraph"><code>SDDP.MarkovianGraph</code></a> with our simulator. This function will attempt to fit a Markov chain to the stochastic process produced by your <code>simulator</code>. There are two key arguments:</p><ul><li><code>budget</code> is the total number of nodes we want in the Markov chain</li><li><code>scenarios</code> is a limit on the number of times we can call <code>simulator</code></li></ul><pre><code class="language-julia hljs">graph = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Root
+ 49.6
+ 39.6</code></pre><div class="admonition is-warning" id="Warning-66f4b71d877db259"><header class="admonition-header">Warning<a class="admonition-anchor" href="#Warning-66f4b71d877db259" title="Permalink"></a></header><div class="admonition-body"><p>The <code>simulator</code> must return a <code>Vector{Float64}</code>, so it is limited to a uni-variate random variable. It is possible to do something similar for multi-variate random variable, but you&#39;ll have to manually construct the Markov transition matrix, and solution times scale poorly, even in the two-dimensional case.</p></div></div><p>The next step is to call <a href="../../apireference/#SDDP.MarkovianGraph"><code>SDDP.MarkovianGraph</code></a> with our simulator. This function will attempt to fit a Markov chain to the stochastic process produced by your <code>simulator</code>. There are two key arguments:</p><ul><li><code>budget</code> is the total number of nodes we want in the Markov chain</li><li><code>scenarios</code> is a limit on the number of times we can call <code>simulator</code></li></ul><pre><code class="language-julia hljs">graph = SDDP.MarkovianGraph(simulator; budget = 8, scenarios = 30)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Root
  (0, 0.0)
 Nodes
- (1, 51.02901305752114)
- (2, 48.26373871666859)
- (2, 59.7)
+ (1, 44.19658096158833)
+ (2, 39.73162218663101)
+ (2, 68.0106396497293)
  (2, 69.2)
- (3, 47.385661957627285)
- (3, 49.701761493103376)
- (3, 59.202646725313286)
- (3, 75.84320200023627)
+ (3, 38.21406182408044)
+ (3, 50.893125810302806)
+ (3, 78.36724680404112)
+ (3, 78.8)
 Arcs
- (0, 0.0) =&gt; (1, 51.02901305752114) w.p. 1.0
- (1, 51.02901305752114) =&gt; (2, 59.7) w.p. 0.3
- (1, 51.02901305752114) =&gt; (2, 48.26373871666859) w.p. 0.6
- (1, 51.02901305752114) =&gt; (2, 69.2) w.p. 0.1
- (2, 48.26373871666859) =&gt; (3, 47.385661957627285) w.p. 0.5
- (2, 48.26373871666859) =&gt; (3, 49.701761493103376) w.p. 0.2222222222222222
- (2, 48.26373871666859) =&gt; (3, 59.202646725313286) w.p. 0.2777777777777778
- (2, 48.26373871666859) =&gt; (3, 75.84320200023627) w.p. 0.0
- (2, 59.7) =&gt; (3, 47.385661957627285) w.p. 0.1111111111111111
- (2, 59.7) =&gt; (3, 49.701761493103376) w.p. 0.5555555555555556
- (2, 59.7) =&gt; (3, 59.202646725313286) w.p. 0.1111111111111111
- (2, 59.7) =&gt; (3, 75.84320200023627) w.p. 0.2222222222222222
- (2, 69.2) =&gt; (3, 47.385661957627285) w.p. 0.0
- (2, 69.2) =&gt; (3, 49.701761493103376) w.p. 0.0
- (2, 69.2) =&gt; (3, 59.202646725313286) w.p. 0.6666666666666666
- (2, 69.2) =&gt; (3, 75.84320200023627) w.p. 0.3333333333333333</code></pre><p>Here we can see we have created a MarkovianGraph with nodes like <code>(2, 59.7)</code>. The first element of each node is the stage, and the second element is the inflow.</p><p>Create a <a href="../../apireference/#SDDP.PolicyGraph"><code>SDDP.PolicyGraph</code></a> using <code>graph</code> as follows:</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
+ (0, 0.0) =&gt; (1, 44.19658096158833) w.p. 1.0
+ (1, 44.19658096158833) =&gt; (2, 68.0106396497293) w.p. 0.26666666666666666
+ (1, 44.19658096158833) =&gt; (2, 39.73162218663101) w.p. 0.7333333333333333
+ (1, 44.19658096158833) =&gt; (2, 69.2) w.p. 0.0
+ (2, 39.73162218663101) =&gt; (3, 78.36724680404112) w.p. 0.0
+ (2, 39.73162218663101) =&gt; (3, 38.21406182408044) w.p. 0.6818181818181818
+ (2, 39.73162218663101) =&gt; (3, 50.893125810302806) w.p. 0.3181818181818182
+ (2, 39.73162218663101) =&gt; (3, 78.8) w.p. 0.0
+ (2, 68.0106396497293) =&gt; (3, 78.36724680404112) w.p. 0.5
+ (2, 68.0106396497293) =&gt; (3, 38.21406182408044) w.p. 0.0
+ (2, 68.0106396497293) =&gt; (3, 50.893125810302806) w.p. 0.5
+ (2, 68.0106396497293) =&gt; (3, 78.8) w.p. 0.0
+ (2, 69.2) =&gt; (3, 78.36724680404112) w.p. 0.0
+ (2, 69.2) =&gt; (3, 38.21406182408044) w.p. 0.0
+ (2, 69.2) =&gt; (3, 50.893125810302806) w.p. 0.0
+ (2, 69.2) =&gt; (3, 78.8) w.p. 0.0</code></pre><p>Here we can see we have created a MarkovianGraph with nodes like <code>(2, 59.7)</code>. The first element of each node is the stage, and the second element is the inflow.</p><p>Create a <a href="../../apireference/#SDDP.PolicyGraph"><code>SDDP.PolicyGraph</code></a> using <code>graph</code> as follows:</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
     graph;  # &lt;--- New stuff
     sense = :Min,
     lower_bound = 0.0,
@@ -91,7 +91,7 @@ Arcs
     # The new water balance constraint using the node:
     @constraint(sp, x.out == x.in - g_h - s + inflow)
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 8 nodes.
- Node indices: (1, 51.02901305752114), (2, 48.26373871666859), (2, 59.7), (2, 69.2), (3, 47.385661957627285), (3, 49.701761493103376), (3, 59.202646725313286), (3, 75.84320200023627)
+ Node indices: (1, 44.19658096158833), (2, 39.73162218663101), (2, 68.0106396497293), (2, 69.2), (3, 38.21406182408044), (3, 50.893125810302806), (3, 78.36724680404112), (3, 78.8)
 </code></pre><p>Here&#39;s the graph:</p><pre><code class="language-julia hljs"># We need `open = false` to build the documentation. Remove if running locally.
 SDDP.plot(model, &quot;model_arma.html&quot;; open = false)</code></pre><iframe src="../model_arma.html" style="width:100%;height:500px;"></iframe><h3 id="When-can-this-trick-be-used?-2"><a class="docs-heading-anchor" href="#When-can-this-trick-be-used?-2">When can this trick be used?</a><a class="docs-heading-anchor-permalink" href="#When-can-this-trick-be-used?-2" title="Permalink"></a></h3><p>The Markov chain approach should be used when:</p><ul><li>The random variable is uni-variate</li><li>The random variable appears in the objective function or as a variable coefficient in the constraint matrix</li><li>It&#39;s non-trivial to write the stochastic process as a series of constraints (for example, it uses nonlinear terms)</li><li>The number of nodes is modest (for example, a budget of hundreds, up to perhaps 1000)</li></ul><h2 id="Vector-auto-regressive-models"><a class="docs-heading-anchor" href="#Vector-auto-regressive-models">Vector auto-regressive models</a><a id="Vector-auto-regressive-models-1"></a><a class="docs-heading-anchor-permalink" href="#Vector-auto-regressive-models" title="Permalink"></a></h2><p>The <a href="#state-space-expansion">state-space expansion</a> section assumed that the random variable was uni-variate. However, the approach naturally extends to vector auto-regressive models. For example, if <code>inflow</code> is a 2-dimensional vector, then we can model a vector auto-regressive model to it as follows:</p><p class="math-container">\[inflow_{t} = A \times inflow_{t-1} + b + \varepsilon\]</p><p>Here <code>A</code> is a 2-by-2 matrix, and <code>b</code> and <span>$\varepsilon$</span> are 2-by-1 vectors.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
     stages = 3,
@@ -132,4 +132,4 @@ SDDP.plot(model, &quot;model_arma.html&quot;; open = false)</code></pre><iframe 
     end
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 3 nodes.
  Node indices: 1, 2, 3
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../warnings/">« Words of warning</a><a class="docs-footer-nextpage" href="../decision_hazard/">Here-and-now and hazard-decision »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 July 2026 02:17">Thursday 30 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../warnings/">« Words of warning</a><a class="docs-footer-nextpage" href="../decision_hazard/">Here-and-now and hazard-decision »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 July 2026 08:28">Thursday 30 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
