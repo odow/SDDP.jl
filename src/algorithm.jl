@@ -1567,10 +1567,35 @@ end
 
 Create a decision rule for node `node` in `model`.
 
+Use [`SDDP.evaluate`](@ref) to query it.
+
 ## Example
 
-```julia
-rule = SDDP.DecisionRule(model; node = 1)
+```jldoctest
+julia> using SDDP, HiGHS
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x[i in 1:2] >= i, SDDP.State, initial_value = 5)
+           @variable(sp, y >= 3, SDDP.State, initial_value = 4)
+           @variable(sp, u[1:2])
+           @constraint(sp, [i in 1:2], u[i] == x[i].out - x[i].in)
+           SDDP.parameterize(sp, [:a, :b]) do w
+                if w == :a
+                    @stageobjective(sp, x[1].out + y.out)
+                else
+                    @stageobjective(sp, x[2].out + y.out)
+                end
+           end
+       end;
+
+julia> SDDP.train(model; print_level = 0)
+
+julia> pi = SDDP.DecisionRule(model; node = 1)
+A decision rule for node 1
 ```
 """
 struct DecisionRule{T}
@@ -1597,14 +1622,89 @@ end
 Evalute the decision rule `rule` at the point described by the `incoming_state`
 and `noise`.
 
-If the node is deterministic, omit the `noise` argument.
+## Keyword arguments
+
+The `incoming_state` argument is a dictionary that maps state variables to their
+primal value. The keys of the dictionary must be the corresponding names used by
+SDDP.jl. To see what these are, use `model.initial_root_state`, where
+`model::SDDP.PolicyGraph`.
+
+`noise` will be the value passed as the noise to the `SDDP.parameterize`
+callback. If the node is deterministic, omit the `noise` argument.
 
 Pass a list of symbols to `controls_to_record` to save the optimal primal
-solution corresponding to the names registered in the model.
+solution corresponding to the names registered in the subproblem.
+
+## Returns
+
+Returns a named tuple comprising:
+
+ * `.stage_objective`: the cost of the subproblem
+ * `.outgoing_state`: the value of the outgoing state variables
+ * `.controls`: the primal value associated with the names in `controls_to_record`
+
+## Example
+
+```jldoctest
+julia> using SDDP, HiGHS
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x[i in 1:2] >= i, SDDP.State, initial_value = 5)
+           @variable(sp, y >= 3, SDDP.State, initial_value = 4)
+           @variable(sp, u[1:2])
+           @constraint(sp, [i in 1:2], u[i] == x[i].out - x[i].in)
+           SDDP.parameterize(sp, [:a, :b]) do w
+                if w == :a
+                    @stageobjective(sp, x[1].out + y.out)
+                else
+                    @stageobjective(sp, x[2].out + y.out)
+                end
+           end
+       end;
+
+julia> SDDP.train(model; print_level = 0)
+
+julia> pi = SDDP.DecisionRule(model; node = 1)
+A decision rule for node 1
+
+julia> model.initial_root_state
+Dict{Symbol, Float64} with 3 entries:
+  :y             => 4.0
+  Symbol("x[1]") => 5.0
+  Symbol("x[2]") => 5.0
+
+julia> ret = SDDP.evaluate(
+           pi;
+           incoming_state = Dict(
+               Symbol("x[1]") => 2,
+               Symbol("x[2]") => 2.5,
+               Symbol("y") => 3,
+           ),
+           controls_to_record = [:u],
+           noise = :a,
+       );
+
+julia> ret.stage_objective
+4.0
+
+julia> ret.outgoing_state
+Dict{Symbol, Float64} with 3 entries:
+  :y             => 3.0
+  Symbol("x[1]") => 1.0
+  Symbol("x[2]") => 2.0
+
+julia> ret.controls
+Dict{Symbol, Vector{Float64}} with 1 entry:
+  :u => [-1.0, -0.5]
+```
 """
 function evaluate(
-    rule::DecisionRule{T};
-    incoming_state::Dict{Symbol,Float64},
+    rule::DecisionRule{T},
+    incoming_state::Dict{Symbol,Float64};
     noise = nothing,
     controls_to_record = Symbol[],
 ) where {T}
@@ -1623,4 +1723,13 @@ function evaluate(
             c => value.(rule.node.subproblem[c]) for c in controls_to_record
         ),
     )
+end
+
+function evaluate(
+    rule::DecisionRule;
+    incoming_state::Dict{<:Union{Symbol,String},<:Real},
+    kwargs...,
+)
+    x = Dict(Symbol(k) => convert(Float64, v) for (k, v) in incoming_state)
+    return evaluate(rule, x; kwargs...)
 end

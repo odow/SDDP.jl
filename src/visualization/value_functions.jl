@@ -4,36 +4,6 @@
 # v2.0. If a copy of the MPL was not distributed with this file, You can obtain
 # one at http://mozilla.org/MPL/2.0/.
 
-"""
-    ValueFunction
-
-A representation of the value function. SDDP.jl uses the following unique representation of
-the value function that is undocumented in the literature.
-
-It supports three types of state variables:
-
- 1) x - convex "resource" states
- 2) b - concave "belief" states
- 3) y - concave "objective" states
-
-In addition, we have three types of cuts:
-
- 1) Single-cuts (also called "average" cuts in the literature), which involve the
-    risk-adjusted expectation of the cost-to-go.
- 2) Multi-cuts, which use a different cost-to-go term for each realization w.
- 3) Risk-cuts, which correspond to the facets of the dual interpretation of a coherent risk
-    measure.
-
-Therefore, ValueFunction returns a JuMP model of the following form:
-
-    V(x, b, y) = min: μᵀb + νᵀy + θ
-                 s.t. # "Single" / "Average" cuts
-                      μᵀb(j) + νᵀy(j) + θ >= α(j) + xᵀβ(j), ∀ j ∈ J
-                      # "Multi" cuts
-                      μᵀb(k) + νᵀy(k) + φ(w) >= α(k, w) + xᵀβ(k, w), ∀w ∈ Ω, k ∈ K
-                      # "Risk-set" cuts
-                      θ ≥ Σ{p(k, w) * φ(w)}_w - μᵀb(k) - νᵀy(k), ∀ k ∈ K
-"""
 struct ValueFunction{
     O<:Union{Nothing,NTuple{N,JuMP.VariableRef} where {N}},
     B<:Union{Nothing,Dict{T,JuMP.VariableRef} where {T}},
@@ -102,6 +72,70 @@ function _add_to_value_function(
     return theta
 end
 
+"""
+    ValueFunction(model::PolicyGraph{T}; node::T) where {T}
+
+Create a representation of the value function by copying the value function from
+the policy graph into a new JuMP model.
+
+Use [`SDDP.evaluate`](@ref) to query it.
+
+## Computational cost
+
+This function's computational cost scales as O(N) where N is the number of cuts
+in the model. If you want to evaluate the value function at multiple points,
+create the value function once and then query it repeatedly.
+
+## Example
+
+```jldoctest
+julia> using SDDP, HiGHS
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x[i in 1:2] >= i, SDDP.State, initial_value = 3)
+           @variable(sp, y >= 3, SDDP.State, initial_value = 4)
+           @stageobjective(sp, sum(x[i].out for i in 1:2) + y.out)
+       end;
+
+julia> SDDP.train(model; print_level = 0)
+
+julia> V = SDDP.ValueFunction(model; node = 1)
+A value function for node 1
+```
+
+## Background
+
+SDDP.jl uses the following unique representation of the value function that is
+undocumented in the literature.
+
+It supports three types of state variables:
+
+ 1) x - convex "resource" states
+ 2) b - concave "belief" states
+ 3) y - concave "objective" states
+
+In addition, we have three types of cuts:
+
+ 1) Single-cuts (also called "average" cuts in the literature), which involve the
+    risk-adjusted expectation of the cost-to-go.
+ 2) Multi-cuts, which use a different cost-to-go term for each realization w.
+ 3) Risk-cuts, which correspond to the facets of the dual interpretation of a coherent risk
+    measure.
+
+Therefore, ValueFunction returns a JuMP model of the following form:
+
+    V(x, b, y) = min: μᵀb + νᵀy + θ
+                 s.t. # "Single" / "Average" cuts
+                      μᵀb(j) + νᵀy(j) + θ >= α(j) + xᵀβ(j), ∀ j ∈ J
+                      # "Multi" cuts
+                      μᵀb(k) + νᵀy(k) + φ(w) >= α(k, w) + xᵀβ(k, w), ∀w ∈ Ω, k ∈ K
+                      # "Risk-set" cuts
+                      θ ≥ Σ{p(k, w) * φ(w)}_w - μᵀb(k) - νᵀy(k), ∀ k ∈ K
+"""
 function ValueFunction(model::PolicyGraph{T}; node::T) where {T}
     return ValueFunction(model[node])
 end
@@ -187,32 +221,60 @@ end
 """
     evaluate(
         V::ValueFunction,
-        point::Dict{Union{Symbol,String},<:Real}
-        objective_state = nothing,
-        belief_state = nothing
+        point::Dict{Union{Symbol,String},<:Real},
     )
 
 Evaluate the value function `V` at `point` in the state-space.
 
-Returns a tuple containing the height of the function, and the subgradient
-w.r.t. the convex state-variables.
+## `point`
 
-## Examples
+The `point` argument is a dictionary that maps state variables to their primal
+value. The keys of the dictionary must be the corresponding names used by
+SDDP.jl.
 
-```julia
-evaluate(V, Dict(:volume => 1.0))
-```
+To see what these are, use `model.initial_root_state`, where
+`model::SDDP.PolicyGraph`.
 
-If the state variable is constructed like
-`@variable(sp, volume[1:4] >= 0, SDDP.State, initial_value = 0.0)`, use `[i]` to
-index the state variable:
-```julia
-evaluate(V, Dict(Symbol("volume[1]") => 1.0))
-```
+## Returns
 
-You can also use strings or symbols for the keys.
-```julia
-evaluate(V, Dict("volume[1]" => 1))
+Returns a `Tuple{Float64,Dict{Symbol,Float64}}` containing:
+
+ * the height of the function
+ * a dictionary mapping the state variables to their subgradient
+
+## Example
+
+```jldoctest
+julia> using SDDP, HiGHS
+
+julia> model = SDDP.LinearPolicyGraph(;
+           stages = 2,
+           lower_bound = 0,
+           optimizer = HiGHS.Optimizer,
+       ) do sp, t
+           @variable(sp, x[i in 1:2] >= i, SDDP.State, initial_value = 3)
+           @variable(sp, y >= 3, SDDP.State, initial_value = 4)
+           @stageobjective(sp, sum(x[i].out for i in 1:2) + y.out)
+       end;
+
+julia> SDDP.train(model; print_level = 0)
+
+julia> V = SDDP.ValueFunction(model; node = 1)
+A value function for node 1
+
+julia> v, dv = SDDP.evaluate(
+           V,
+           Dict(Symbol("x[1]") => 1, Symbol("x[2]") => 2, Symbol("y") => 3),
+       );
+
+julia> v
+6.0
+
+julia> dv
+Dict{Symbol, Float64} with 3 entries:
+  :y             => 0.0
+  Symbol("x[1]") => 0.0
+  Symbol("x[2]") => 0.0
 ```
 """
 function evaluate(
@@ -257,16 +319,6 @@ function evaluate(V::ValueFunction, point; kwargs...)
     )
 end
 
-"""
-    evalute(V::ValueFunction{Nothing, Nothing}; kwargs...)
-
-Evalute the value function `V` at the point in the state-space specified by
-`kwargs`.
-
-## Examples
-
-    evaluate(V; volume = 1)
-"""
 function evaluate(V::ValueFunction{Nothing,Nothing}; kwargs...)
     return evaluate(V, Dict(k => float(v) for (k, v) in kwargs))
 end
