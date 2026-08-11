@@ -201,6 +201,13 @@ function get_outgoing_state(node::Node)
                 outgoing_value = current_bound
             end
         end
+        # Round integers to their exact value: this idea was suggested by
+        # @akulbansal5. It has all of the usual issues associated with
+        # feasibility tolerances (the rounded state + controls may not be
+        # feasible), but it seems pretty reasonable for the forward pass.
+        if JuMP.is_integer(state.out) || JuMP.is_binary(state.out)
+            outgoing_value = Float64(round(Int, state.out))
+        end
         values[name] = outgoing_value
     end
     return values
