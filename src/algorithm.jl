@@ -206,7 +206,7 @@ function get_outgoing_state(node::Node)
         # feasibility tolerances (the rounded state + controls may not be
         # feasible), but it seems pretty reasonable for the forward pass.
         if JuMP.is_integer(state.out) || JuMP.is_binary(state.out)
-            outgoing_value = Float64(round(Int, state.out))
+            outgoing_value = Float64(round(Int, outgoing_value))
         end
         values[name] = outgoing_value
     end
