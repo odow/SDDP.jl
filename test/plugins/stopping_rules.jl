@@ -155,29 +155,32 @@ function test_BoundStalling()
         @variable(node, x, SDDP.State, initial_value = 0)
     end
     rule = SDDP.BoundStalling(3, 1.0)
+    @test rule == SDDP.BoundStalling(3; atol = 1.0)
+    @test rule != SDDP.BoundStalling(3; atol = 2.0)
+    @test rule != SDDP.BoundStalling(3; atol = 1.0, rtol = 1e-2)
     @test SDDP.stopping_rule_status(rule) == :bound_stalling
     # Not enough iterations to terminate.
     @test !SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " ", false),
-            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1, " ", false),
-            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1, " ", false),
-            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1, " ", false),
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 2, " ", false),
+            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 4, " ", false),
+            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 6, " ", false),
+            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 8, " ", false),
         ],
-        rule,
+        SDDP.BoundStalling(3; atol = 1.0),
     )
     # Now there is. But only just...
     @test SDDP.convergence_test(
         graph,
         [
-            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 1, " ", false),
-            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 1, " ", false),
-            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 1, " ", false),
-            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 1, " ", false),
-            SDDP.Log(5, 2.9, 0.0, 1.0, 1, 1, " ", false),
+            SDDP.Log(1, 0.0, 0.0, 1.0, 1, 2, " ", false),
+            SDDP.Log(2, 1.9, 0.0, 1.0, 1, 4, " ", false),
+            SDDP.Log(3, 2.0, 0.0, 1.0, 1, 6, " ", false),
+            SDDP.Log(4, 2.0, 0.0, 1.0, 1, 8, " ", false),
+            SDDP.Log(5, 2.9, 0.0, 1.0, 1, 10, " ", false),
         ],
-        rule,
+        SDDP.BoundStalling(3; atol = 1.0),
     )
     # This also meets the test, but we don't terminate because it hasn't
     # differed from the initial bound.
@@ -189,7 +192,7 @@ function test_BoundStalling()
             SDDP.Log(3, 0.0, 0.1, 1.2, 1, 3, " ", false),
             SDDP.Log(4, 0.0, 0.0, 1.3, 1, 4, " ", false),
         ],
-        rule,
+        SDDP.BoundStalling(3; atol = 1e-6),
     )
     # This also meets the test, because it looks like a deterministic
     # policy
@@ -201,9 +204,8 @@ function test_BoundStalling()
             SDDP.Log(3, 0.0, 0.0, 1.0, 1, 1, " ", false),
             SDDP.Log(4, 0.0, 0.0, 1.0, 1, 1, " ", false),
         ],
-        rule,
+        SDDP.BoundStalling(3, 1.0),
     )
-    rule = SDDP.BoundStalling(5, 1.0)
     @test !SDDP.convergence_test(
         graph,
         [
@@ -212,7 +214,7 @@ function test_BoundStalling()
             SDDP.Log(3, 0.0, 0.0, 1.0, 1, 1, " ", false),
             SDDP.Log(4, 0.0, 0.0, 1.0, 1, 1, " ", false),
         ],
-        rule,
+        SDDP.BoundStalling(5, 1.0),
     )
     return
 end
