@@ -181,22 +181,59 @@ end
 # ======================= Bound-stalling Stopping Rule ======================= #
 
 """
-    BoundStalling(num_previous_iterations::Int, tolerance::Float64)
+    BoundStalling(
+        num_previous_iterations::Int;
+        atol::Float64 = 0.0,
+        rtol::Float64 = 0.0,
+    )
 
 Teriminate the algorithm once the deterministic bound (lower if minimizing,
-upper if maximizing) fails to improve by more than `tolerance` in absolute terms
-for more than `num_previous_iterations` consecutve iterations, provided it has
-improved relative to the bound after the first iteration.
+upper if maximizing) fails to improve by more than `atol` in absolute terms or
+`rtol` in relative terms for more than `num_previous_iterations` consecutve
+iterations, provided it has improved relative to the bound after the first
+iteration.
+
+## Why the first iteration
 
 Checking for an improvement relative to the first iteration avoids early
 termination in a situation where the bound fails to improve for the first `N`
 iterations. This frequently happens in models with a large number of stages,
 where it takes time for the cuts to propogate backward enough to modify the
 bound of the root node.
+
+## Example
+
+```jldoctest
+julia> using SDDP
+
+julia> SDDP.BoundStalling(3; atol = 1e-5)
+SDDP.BoundStalling(3, 1.0e-5, 0.0)
+
+julia> SDDP.BoundStalling(10; rtol = 1e-2)
+SDDP.BoundStalling(10, 0.0, 0.01)
+```
 """
 struct BoundStalling <: AbstractStoppingRule
     num_previous_iterations::Int
-    tolerance::Float64
+    atol::Float64
+    rtol::Float64
+
+    function BoundStalling(
+        num_previous_iterations::Int;
+        atol::Float64 = 0.0,
+        rtol::Float64 = 0.0,
+    )
+        return new(num_previous_iterations, atol, rtol)
+    end
+end
+
+# A fallback for backwards compatibility.
+function BoundStalling(num_previous_iterations::Int, tolerance::Float64)
+    return BoundStalling(num_previous_iterations; atol = tolerance, rtol = 0.0)
+end
+
+function Base.isapprox(x::Float64, y::Float64, rule::BoundStalling)
+    return isapprox(x, y; atol = rule.atol, rtol = rule.rtol)
 end
 
 stopping_rule_status(::BoundStalling) = :bound_stalling
@@ -206,24 +243,30 @@ function convergence_test(
     log::Vector{Log},
     rule::BoundStalling,
 ) where {T}
+    # Bail early if we haven't completed enough iterations.
     if length(log) < rule.num_previous_iterations + 1
         return false
     end
-    # No change in the bound. There are three possibilities:
-    #  1) we haven't added enough cuts
-    #  2) the problem was deterministic or myopic
-    #  3) there were existing cuts
-    existing_solves = log[1].total_solves > log[end].total_solves / length(log)
-    if !existing_solves && isapprox(log[1].bound, log[end].bound; atol = 1e-6)
-        return all(l -> isapprox(l.bound, l.simulation_value; atol = 1e-6), log)
-    end
+    # Check change in bound for the last `num_previous_iterations` iterations.
     for i in 1:rule.num_previous_iterations
-        if abs(log[end-i].bound - log[end-i+1].bound) > rule.tolerance
+        if !isapprox(log[end-i].bound, log[end-i+1].bound, rule)
+            # The bound has changed by more than the tolerance, so we can't have
+            # converged.
             return false
         end
     end
+    # If the bound hasn't changed from the first iteration...
+    if isapprox(log[1].bound, log[end].bound, rule)
+        # ... and all simulations are the bound, then the myopic policy is
+        # optimal and we have converged. If the simulations are moving around,
+        # then don't terminate because we probably need more cuts.
+        return all(l -> isapprox(l.bound, l.simulation_value, rule), log)
+    end
+    # We have converged.
     return true
 end
+
+# =============================== StoppingChain ============================== #
 
 """
     StoppingChain(rules::AbstractStoppingRule...)
@@ -236,8 +279,14 @@ previous pass.
 ## Examples
 
 A stopping rule that runs 100 iterations, then checks for the bound stalling:
-```julia
-StoppingChain(IterationLimit(100), BoundStalling(5, 0.1))
+```jldoctest
+julia> using SDDP
+
+julia> rule = SDDP.StoppingChain(
+           SDDP.IterationLimit(100),
+           SDDP.BoundStalling(5; atol = 0.1),
+       )
+SDDP.StoppingChain(SDDP.AbstractStoppingRule[SDDP.IterationLimit(100), SDDP.BoundStalling(5, 0.1, 0.0)])
 ```
 """
 struct StoppingChain <: AbstractStoppingRule

@@ -30,24 +30,34 @@ as a vector to the `stopping_rules` keyword.  Training stops if any of the rules
 becomes active. To stop when all of the rules become active, use
 [`SDDP.StoppingChain`](@ref). For example:
 
+Terminate if BoundStalling becomes true:
 ```julia
-# Terminate if BoundStalling becomes true
 SDDP.train(
     model;
-    stopping_rules = [SDDP.BoundStalling(10, 1e-4)],
+    stopping_rules = [SDDP.BoundStalling(10; rtol = 1e-4)],
 )
+```
 
-# Terminate if BoundStalling OR TimeLimit becomes true
-SDDP.train(
-    model;
-    stopping_rules = [SDDP.BoundStalling(10, 1e-4), SDDP.TimeLimit(100.0)],
-)
-
-# Terminate if BoundStalling AND TimeLimit becomes true
+Terminate if TimeLimit OR BoundStalling becomes true:
+```julia
 SDDP.train(
     model;
     stopping_rules = [
-        SDDP.StoppingChain(SDDP.BoundStalling(10, 1e-4), SDDP.TimeLimit(100.0)),
+        SDDP.TimeLimit(100.0),
+        SDDP.BoundStalling(10; rtol = 1e-4),
+    ],
+)
+```
+
+Terminate if TimeLimit AND BoundStalling becomes true:
+```julia
+SDDP.train(
+    model;
+    stopping_rules = [
+        SDDP.StoppingChain(
+            SDDP.TimeLimit(100.0),
+            SDDP.BoundStalling(10; rtol = 1e-4),
+        ),
     ],
 )
 ```
