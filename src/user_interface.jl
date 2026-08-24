@@ -108,10 +108,10 @@ function _validate_graph(graph::Graph)
     for (node, children) in graph.nodes
         if length(children) > 0
             probability = sum(child[2] for child in children)
-            if !(-1e-8 <= probability <= 1.0 + 1e-8)
+            if !(-1e-8 <= probability)
                 error(
                     "Probability on edges leaving node $(node) sum to " *
-                    "$(probability), but this must be in [0.0, 1.0]",
+                    "$(probability), but this must be `>= 0.0`",
                 )
             end
         end

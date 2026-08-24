@@ -558,8 +558,8 @@ for t in 2:52
     SDDP.add_node(graph, (:op, t))
     SDDP.add_edge(graph, (:op, t - 1) => (:op, t), 1.0)
 end
-SDDP.add_edge(graph, (:op, 52) => (:op, 1), 1 - (1 - p^T) / T)
-SDDP.add_edge(graph, (:inv, 0) => (:op, 1), 1 - p^T)
+SDDP.add_edge(graph, (:op, 52) => (:op, 1), p)
+SDDP.add_edge(graph, (:inv, 0) => (:op, 1), T * (1 - p))
 SDDP.add_edge(graph, (:inv_h, 0) => (:op, 1), 1.0)
 SDDP.add_edge(graph, (:inv_l, 0) => (:op, 1), 1.0)
 ## We need `open = false` to build the documentation. Remove if running locally.
