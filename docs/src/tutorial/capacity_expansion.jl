@@ -560,8 +560,8 @@ for t in 2:52
 end
 SDDP.add_edge(graph, (:op, 52) => (:op, 1), 1 - (1 - p^T) / T)
 SDDP.add_edge(graph, (:inv, 0) => (:op, 1), 1 - p^T)
-SDDP.add_edge(graph, (:inv_h, 0) => (:op, 1), 1 - p^T)
-SDDP.add_edge(graph, (:inv_l, 0) => (:op, 1), 1 - p^T)
+SDDP.add_edge(graph, (:inv_h, 0) => (:op, 1), 1.0)
+SDDP.add_edge(graph, (:inv_l, 0) => (:op, 1), 1.0)
 ## We need `open = false` to build the documentation. Remove if running locally.
 SDDP.plot(graph, "model_capex_8.html"; open = false)
 
@@ -624,14 +624,14 @@ simulations = SDDP.simulate(
     model,
     100,
     [:x_storage, :u_flow, :x_reservoir_max, :x_flow_max];
-    sampling_scheme =  sampling_scheme = SDDP.Historical([
+    sampling_scheme = SDDP.Historical([
         vcat(
             ((:inv, 0), nothing),
             [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
             ((rand([:inv_l, :inv_h]), 0), nothing),
             [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
         ) for _ in 1:100
-    ]) ,
+    ]),
 )
 Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Storage") do sim
