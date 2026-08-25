@@ -7,6 +7,20 @@ CurrentModule = SDDP
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.15.0 (August 25, 2026)
+
+### Added
+
+ - Added `SDDP.plot(::Graph[, filename::String]; open::Bool = true)` (#906)
+ - Impove numerics by polishing integer variables in `get_outgoing_state` (#909)
+ - Added `atol` and `rtol` arguments to [`BoundStalling`](@ref) (#910)
+ - Added support for nodes which sum to `> 1` (#911)
+ - Added [`LoggingForwardPass`](@ref) (#913)
+
+### Other
+
+ - Documentation improvements (#905), (#907)
+
 ## v1.14.0 (July 27, 2026)
 
 ### Added
