@@ -325,6 +325,35 @@ function test_ImportanceSamplingForwardPass()
     return
 end
 
+function test_LoggingForwardPass()
+    model = SDDP.PolicyGraph(
+        SDDP.UnicyclicGraph(0.5; num_nodes = 5);
+        sense = :Max,
+        upper_bound = 100.0,
+        optimizer = HiGHS.Optimizer,
+    ) do node, stage
+        @variable(node, x, SDDP.State, initial_value = 3.0)
+        @variable(node, y, SDDP.State, initial_value = 3.0)
+        @stageobjective(node, x.out + 2 * y.out)
+        @constraint(node, x.out + y.out <= x.in + y.in)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            set_upper_bound(x.out, ω)
+            set_upper_bound(y.out, 4 - ω)
+            return
+        end
+    end
+    filename = joinpath(mktempdir(), "states.csv")
+    SDDP.train(model; forward_pass = SDDP.LoggingForwardPass(; filename))
+    contents = read(filename, String)
+    @test occursin("iteration,index,x,y\n", contents)
+    for iteration in 1:length(model.most_recent_training_results.log)
+        for t in 1:5
+            @test occursin("$iteration,$t,", contents)
+        end
+    end
+    return
+end
+
 end  # module
 
 TestForwardPasses.runtests()
