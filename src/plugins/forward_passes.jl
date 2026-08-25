@@ -488,3 +488,55 @@ function forward_pass(
         cumulative_value = cumulative_value,
     )
 end
+
+"""
+    LoggingForwardPass(
+        inner::AbstractForwardPass = DefaultForwardPass();
+        filename::String,
+    )
+
+A forward pass that logs the state variables to a CSV file at `filename`.
+"""
+mutable struct LoggingForwardPass{F<:AbstractForwardPass} <: AbstractForwardPass
+    filename::String
+    inner::F
+    iteration::Int
+
+    function LoggingForwardPass(
+        inner::AbstractForwardPass = DefaultForwardPass();
+        filename::String,
+    )
+        return new{typeof(inner)}(filename, inner, 0)
+    end
+end
+
+function forward_pass(
+    model::PolicyGraph{T},
+    options::Options,
+    pass::LoggingForwardPass,
+) where {T}
+    ret = forward_pass(model, options, pass.inner)
+    lock(options.lock) do
+        pass.iteration += 1
+        open(pass.filename, "a") do io
+            for (index, state) in enumerate(ret.sampled_states)
+                ordered_keys = sort(collect(keys(state)))
+                if pass.iteration == index == 1
+                    print(io, "iteration,index")
+                    for key in ordered_keys
+                        print(io, ",", key)
+                    end
+                    println(io)
+                end
+                print(io, pass.iteration, ",", index)
+                for key in ordered_keys
+                    print(io, ",", state[key])
+                end
+                println(io)
+            end
+            return
+        end
+        return
+    end
+    return ret
+end
