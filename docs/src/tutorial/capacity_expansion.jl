@@ -624,7 +624,7 @@ model = SDDP.PolicyGraph(
     else  # Investment node
         @stageobjective(
             sp,
-            (x_reservoir_max.out - x_reservoir_max.in) +
+            12 * (x_reservoir_max.out - x_reservoir_max.in) +
             (x_flow_max.out - x_flow_max.in),
         )
         ## Assume reservoir starts out at 80% full
