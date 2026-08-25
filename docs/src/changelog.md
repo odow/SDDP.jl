@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
  - Added `SDDP.plot(::Graph[, filename::String]; open::Bool = true)` (#906)
- - Impove numerics by polishing integer variables in `get_outgoing_state` (#909)
+ - Improve numerical stability by polishing integer variables in
+   `get_outgoing_state` (#909)
  - Added `atol` and `rtol` arguments to [`BoundStalling`](@ref) (#910)
  - Added support for nodes which sum to `> 1` (#911)
  - Added [`LoggingForwardPass`](@ref) (#913)
