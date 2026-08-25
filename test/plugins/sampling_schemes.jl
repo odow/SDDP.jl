@@ -409,10 +409,7 @@ end
 
 function test_sample_noise()
     @test SDDP.sample_noise(SDDP.Noise{Int}[]) === nothing
-    @test_throws(
-        ErrorException("Cumulative probability cannot be greater than 1.0."),
-        SDDP.sample_noise(SDDP.Noise.([1, 2], [0.5, 0.6])),
-    )
+    @test SDDP.sample_noise(SDDP.Noise.([1, 2], [0.5, 0.6])) in (1, 2)
     return
 end
 

@@ -248,11 +248,7 @@ function sample_noise(noise_terms::Vector{<:Noise})
     if length(noise_terms) == 0
         return nothing
     end
-    cumulative_probability = sum(noise.probability for noise in noise_terms)
-    if cumulative_probability > 1.0 + 1e-6
-        error("Cumulative probability cannot be greater than 1.0.")
-    end
-    rnd = rand() * cumulative_probability
+    rnd = rand() * sum(noise.probability for noise in noise_terms)
     for noise in noise_terms
         rnd -= noise.probability
         if rnd <= 0.0

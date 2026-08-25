@@ -501,7 +501,8 @@ SDDP.plot(model, "model_capex_6.html"; open = false)
 # <iframe src="../model_capex_6.html" style="width:100%;height:500px;"></iframe>
 # ```
 
-# Let's train and simulate:
+# Let's train and simulate (note that the results look bad because we haven't
+# trained this to optimality in order for the documentation to build quickly).
 
 SDDP.train(model; iteration_limit = 100)
 simulations = SDDP.simulate(
@@ -512,6 +513,156 @@ simulations = SDDP.simulate(
         max_depth = 5 * 52 + 2,
         terminate_on_dummy_leaf = false,
     ),
+)
+Plots.plot(
+    SDDP.publication_plot(simulations; ylabel = "Storage") do sim
+        return sim[:x_storage].out
+    end,
+    SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
+        return sim[:u_flow]
+    end,
+    SDDP.publication_plot(simulations; ylabel = "Reservoir Max") do sim
+        return sim[:x_reservoir_max].out
+    end,
+    SDDP.publication_plot(simulations; ylabel = "Flow Max") do sim
+        return sim[:x_flow_max].out
+    end;
+    layout = (2, 2),
+)
+
+# ## Epicycles
+
+# Now we consider strategic level uncertainty as a scenario tree, each of which
+# contains an infinite horizon subproblem. The strategic graph is:
+
+T, p = 3, 0.9
+graph = SDDP.Graph((:root, 0))
+SDDP.add_node(graph, (:inv, 0))
+SDDP.add_node(graph, (:inv_h, 0))
+SDDP.add_node(graph, (:inv_l, 0))
+SDDP.add_node(graph, (:inv_hh, 0))
+SDDP.add_node(graph, (:inv_hl, 0))
+SDDP.add_node(graph, (:inv_lh, 0))
+SDDP.add_node(graph, (:inv_ll, 0))
+SDDP.add_edge(graph, (:root, 0) => (:inv, 0), 1.0)
+SDDP.add_edge(graph, (:inv, 0) => (:inv_h, 0), p^T / 2)
+SDDP.add_edge(graph, (:inv, 0) => (:inv_l, 0), p^T / 2)
+SDDP.add_edge(graph, (:inv_h, 0) => (:inv_hh, 0), p^T / 2)
+SDDP.add_edge(graph, (:inv_h, 0) => (:inv_hl, 0), p^T / 2)
+SDDP.add_edge(graph, (:inv_l, 0) => (:inv_lh, 0), p^T / 2)
+SDDP.add_edge(graph, (:inv_l, 0) => (:inv_ll, 0), p^T / 2)
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(graph, "model_capex_7.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_7.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+# To that we add an operational subproblem. We leave it as an exercise to the
+# reader to understand the probabilities on the arcs.
+
+SDDP.add_node(graph, (:op, 1))
+for t in 2:52
+    SDDP.add_node(graph, (:op, t))
+    SDDP.add_edge(graph, (:op, t - 1) => (:op, t), 1.0)
+end
+SDDP.add_edge(graph, (:op, 52) => (:op, 1), p)
+SDDP.add_edge(graph, (:inv, 0) => (:op, 1), T * (1 - p))
+SDDP.add_edge(graph, (:inv_h, 0) => (:op, 1), T * (1 - p))
+SDDP.add_edge(graph, (:inv_l, 0) => (:op, 1), T * (1 - p))
+SDDP.add_edge(graph, (:inv_hh, 0) => (:op, 1), 1.0)
+SDDP.add_edge(graph, (:inv_hl, 0) => (:op, 1), 1.0)
+SDDP.add_edge(graph, (:inv_lh, 0) => (:op, 1), 1.0)
+SDDP.add_edge(graph, (:inv_ll, 0) => (:op, 1), 1.0)
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(graph, "model_capex_8.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_8.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+model = SDDP.PolicyGraph(
+    graph;
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, (node, t)
+    ## Investment state variables
+    @variable(sp, x_reservoir_max >= 0, SDDP.State, initial_value = 0)
+    @variable(sp, 0 <= x_flow_max <= 20, SDDP.State, initial_value = 0)
+    ## Reservoir state variables
+    @variable(sp, x_storage >= 0, SDDP.State, initial_value = 0)
+    ## Demand state variables
+    @variable(sp, x_scale, SDDP.State, initial_value = 1)
+    ## Control variables
+    @variable(sp, u_flow >= 0)
+    @variable(sp, u_thermal >= 0)
+    @variable(sp, u_spill >= 0)
+    ## Random variables
+    @variable(sp, ω_inflow)
+    if t > 0  # Operational node
+        @stageobjective(sp, data[t, :cost] * u_thermal)
+        ## Investment and demand states are fixed
+        @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
+        @constraint(sp, x_flow_max.out == x_flow_max.in)
+        @constraint(sp, x_scale.out == x_scale.in)
+        ## Investments impact current decisions
+        @constraint(sp, x_storage.out <= x_reservoir_max.out)
+        @constraint(sp, u_flow <= x_flow_max.out)
+        @constraint(
+            sp,
+            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow
+        )
+        @constraint(sp, u_flow + u_thermal == x_scale.in * data[t, :demand])
+        ## Random variable
+        @constraint(sp, c_ω, ω_inflow - x_scale.in * data[t, :inflow] == 0)
+        Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
+        SDDP.parameterize(sp, Ω, P) do ω
+            set_normalized_coefficient(c_ω, x_scale.in, -(data[t, :inflow] + ω))
+            return
+        end
+    else  # Investment node
+        @stageobjective(
+            sp,
+            12 * (x_reservoir_max.out - x_reservoir_max.in) +
+            (x_flow_max.out - x_flow_max.in),
+        )
+        ## Assume reservoir starts out at 80% full
+        @constraint(sp, x_storage.out == 0.8 * x_reservoir_max.out)
+        ## Update scale factors based on scenario tree
+        if endswith("$node", "h")
+            @constraint(sp, x_scale.out == 1.5 * x_scale.in)
+        elseif endswith("$node", "l")
+            @constraint(sp, x_scale.out == 0.8 * x_scale.in)
+        else
+            @constraint(sp, x_scale.out == x_scale.in)
+        end
+    end
+    return
+end
+
+# Let's train and simulate (note that the results look bad because we haven't
+# trained this to optimality in order for the documentation to build quickly).
+
+SDDP.train(model; iteration_limit = 200)
+function sample_scenario()
+    D = SDDP.Noise.([-2, 0, 5], [0.3, 0.4, 0.3])
+    inv_1 = Symbol("inv_$(rand((:l, :h)))")
+    inv_2 = Symbol("$(inv_1)$(rand((:l, :h)))")
+    return vcat(
+        ((:inv, 0), nothing),
+        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+        ((inv_1, 0), nothing),
+        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+        ((inv_2, 0), nothing),
+        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+    )
+end
+simulations = SDDP.simulate(
+    model,
+    100,
+    [:x_storage, :u_flow, :x_reservoir_max, :x_flow_max];
+    sampling_scheme = SDDP.Historical([sample_scenario() for _ in 1:100]),
 )
 Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Storage") do sim
