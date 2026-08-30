@@ -5,6 +5,7 @@
 # one at http://mozilla.org/MPL/2.0/.
 
 import Documenter
+import DocumenterCodeBlocks
 import Literate
 import Random
 import Test
@@ -188,6 +189,7 @@ Documenter.makedocs(;
         "Release notes" => "release_notes.md",
     ],
     doctestfilters = [r"[\s\-]?\d\.\d{6}e[\+\-]\d{2}"],
+    plugins = [DocumenterCodeBlocks.CodeBlocks(; line_counter = :named)],
 )
 
 Documenter.deploydocs(;
