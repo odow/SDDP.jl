@@ -541,15 +541,9 @@ primal_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)
 # version:
 
 for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
-    dual =
-        dual_risk_averse_subgradient(V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃)
-    primal = primal_risk_averse_subgradient(
-        V;
-        F = Entropic(γ),
-        Ω = Ω,
-        p = p,
-        x̃ = x̃,
-    )
+    dual = dual_risk_averse_subgradient(V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃)
+    primal =
+        primal_risk_averse_subgradient(V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃)
     success = primal ≈ dual ? "✓" : "×"
     println("$(success) γ = $(γ), primal = $(primal), dual = $(dual)")
 end

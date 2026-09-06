@@ -423,7 +423,7 @@ function _chunk_split(num_items, num_chunks)
     w = div(num_items, num_chunks)
     chunks = UnitRange{Int}[]
     offset = 0
-    for i in 1:num_chunks-1
+    for i in 1:(num_chunks-1)
         push!(chunks, (offset+1):(offset+w))
         offset += w
     end

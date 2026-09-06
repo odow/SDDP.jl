@@ -114,7 +114,7 @@ using SDDP, HiGHS
 # the state variables are the areas of land devoted to growing each crop.
 
 function add_state_variables(subproblem)
-    @variable(subproblem, area[c = CROPS] >= 0, SDDP.State, initial_value = 0)
+    @variable(subproblem, area[c=CROPS] >= 0, SDDP.State, initial_value = 0)
 end
 
 # ### First stage problem
@@ -152,10 +152,10 @@ end
 
 function second_stage_variables(subproblem)
     @variables(subproblem, begin
-        0 <= yield[c = CROPS]                          # tonnes/acre
-        0 <= buy[c = CROPS]                            # tonnes
-        0 <= sell_in_quota[c = CROPS] <= QUOTA_MAX[c]  # tonnes
-        0 <= sell_no_quota[c = CROPS]                  # tonnes
+        0 <= yield[c=CROPS]                          # tonnes/acre
+        0 <= buy[c=CROPS]                            # tonnes
+        0 <= sell_in_quota[c=CROPS] <= QUOTA_MAX[c]  # tonnes
+        0 <= sell_no_quota[c=CROPS]                  # tonnes
     end)
 end
 
@@ -199,7 +199,7 @@ end
 function second_stage_uncertainty(subproblem)
     @constraint(
         subproblem,
-        uncertainty[c = CROPS],
+        uncertainty[c=CROPS],
         1.0 * subproblem[:area][c].in == subproblem[:yield][c]
     )
     SDDP.parameterize(subproblem, [:good, :fair, :bad]) do ω

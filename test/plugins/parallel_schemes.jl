@@ -199,7 +199,7 @@ function test_simulate_parallel()
         sense = :Min,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
-        @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
+        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
         @stageobjective(sp, x[1].out + x[2].out)
     end
     simulations = SDDP.simulate(

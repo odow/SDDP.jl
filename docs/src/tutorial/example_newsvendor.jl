@@ -360,8 +360,10 @@ solution = SDDP.evaluate(
 
 simulations = SDDP.simulate(
     model,
-    10,  #= number of replications =#
-    [:x, :u_sell, :u_make];  #= variables to record =#
+    10,
+    #= number of replications =#
+    [:x, :u_sell, :u_make];
+    #= variables to record =#
     skip_undefined_variables = true,
 );
 

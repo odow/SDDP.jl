@@ -105,7 +105,7 @@ function hydro_valley_model(;
         ## Level of upper reservoir
         @variable(
             subproblem,
-            valley_chain[r].min <= reservoir[r = 1:N] <= valley_chain[r].max,
+            valley_chain[r].min <= reservoir[r=1:N] <= valley_chain[r].max,
             SDDP.State,
             initial_value = valley_chain[r].initial
         )
@@ -115,15 +115,13 @@ function hydro_valley_model(;
         @variables(
             subproblem,
             begin
-                outflow[r = 1:N] >= 0
-                spill[r = 1:N] >= 0
-                inflow[r = 1:N] >= 0
+                outflow[r=1:N] >= 0
+                spill[r=1:N] >= 0
+                inflow[r=1:N] >= 0
                 generation_quantity >= 0 # Total quantity of water
                 ## Proportion of levels to dispatch on
-                0 <=
-                dispatch[r = 1:N, level = 1:length(turbine(r).flowknots)] <=
-                1
-                rainfall[i = 1:N]
+                0 <= dispatch[r=1:N, level=1:length(turbine(r).flowknots)] <= 1
+                rainfall[i=1:N]
             end
         )
 
@@ -137,7 +135,7 @@ function hydro_valley_model(;
                 reservoir[1].in + inflow[1] - outflow[1] - spill[1]
 
                 ## other flows
-                flow[i = 2:N],
+                flow[i=2:N],
                 reservoir[i].out ==
                 reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
                 outflow[i-1] +
@@ -151,14 +149,14 @@ function hydro_valley_model(;
 
                 ## ------------------------------------------------------------------
                 ## Flow out
-                turbineflow[r = 1:N],
+                turbineflow[r=1:N],
                 outflow[r] == sum(
                     turbine(r).flowknots[level] * dispatch[r, level] for
                     level in 1:length(turbine(r).flowknots)
                 )
 
                 ## Dispatch combination of levels
-                dispatched[r = 1:N],
+                dispatched[r=1:N],
                 sum(
                     dispatch[r, level] for
                     level in 1:length(turbine(r).flowknots)
@@ -168,7 +166,7 @@ function hydro_valley_model(;
 
         ## rainfall noises
         if hasstagewiseinflows && t > 1 # in future stages random inflows
-            @constraint(subproblem, inflow_noise[i = 1:N], inflow[i] <= rainfall[i])
+            @constraint(subproblem, inflow_noise[i=1:N], inflow[i] <= rainfall[i])
 
             SDDP.parameterize(
                 subproblem,
@@ -183,7 +181,7 @@ function hydro_valley_model(;
         else # in the first stage deterministic inflow
             @constraint(
                 subproblem,
-                initial_inflow_noise[i = 1:N],
+                initial_inflow_noise[i=1:N],
                 inflow[i] <= valley_chain[i].inflows[1]
             )
         end

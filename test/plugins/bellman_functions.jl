@@ -336,7 +336,7 @@ function test_biobjective_cut_selection()
     ) do subproblem, _
         @variable(subproblem, 0 <= v <= 200, SDDP.State, initial_value = 50)
         @variables(subproblem, begin
-            0 <= g[i = 1:2] <= 100
+            0 <= g[i=1:2] <= 100
             0 <= u <= 150
             s >= 0
             shortage_cost >= 0

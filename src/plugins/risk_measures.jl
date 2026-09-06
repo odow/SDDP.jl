@@ -645,7 +645,7 @@ function _non_uniform_dro(
 
         # find i(K)
         # find the list of indexes for which p is less than 0
-        negative_p = K[p[K].<0]
+        negative_p = K[p[K] .< 0]
         computed_r = zeros(0)
         sum_qj = 0
         sum_qj_squared = 0
@@ -692,7 +692,7 @@ function _uniform_dro(
     # Compute the new probabilities according to Algorithm (2) of the Philpott
     # et al. paper.
     # Step (1):
-    @inbounds for k in 0:m-2
+    @inbounds for k in 0:(m-2)
         # Step (1a):
         z_bar = sum(z[i] for i in (k+1):m) / (m - k)
         s² = sum(z[i]^2 - z_bar^2 for i in (k+1):m) / (m - k)

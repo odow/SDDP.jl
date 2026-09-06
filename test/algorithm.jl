@@ -98,7 +98,7 @@ function test_simulate()
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
-        @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
+        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
         @stageobjective(sp, x[1].out + x[2].out)
     end
     simulations = SDDP.simulate(model, 1, [:x])
@@ -112,7 +112,7 @@ function test_simulate_incoming_state()
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
-        @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
+        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
         @constraint(sp, [i = 1:2], x[i].out == x[i].in)
         @stageobjective(sp, x[1].out + x[2].out)
     end
@@ -134,7 +134,7 @@ function test_simulate_missing()
         lower_bound = 0.0,
         optimizer = HiGHS.Optimizer,
     ) do sp, t
-        @variable(sp, x[i = 1:2] >= i, SDDP.State, initial_value = 2i)
+        @variable(sp, x[i=1:2] >= i, SDDP.State, initial_value = 2i)
         if t == 1
             @variable(sp, y >= 0)
         end

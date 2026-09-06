@@ -67,7 +67,7 @@ function test_mccardle_farm_model()
         @variable(subproblem, 0 <= acres <= M, SDDP.State, initial_value = M)
         @variable(
             subproblem,
-            bales[i = 1:3] >= 0,
+            bales[i=1:3] >= 0,
             SDDP.State,
             initial_value = (i == 1 ? H : 0)
         )
@@ -86,7 +86,7 @@ function test_mccardle_farm_model()
         else
             @expression(
                 subproblem,
-                cut_ex[c = 1:3],
+                cut_ex[c=1:3],
                 bales[c].in + buy[c] - eat[c] - sell[c] + pen_p[c] - pen_n[c]
             )
             @constraints(

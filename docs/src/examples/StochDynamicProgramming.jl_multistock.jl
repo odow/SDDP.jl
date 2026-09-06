@@ -18,13 +18,13 @@ function test_multistock_example()
     ) do subproblem, stage
         @variable(
             subproblem,
-            0 <= stock[i = 1:3] <= 1,
+            0 <= stock[i=1:3] <= 1,
             SDDP.State,
             initial_value = 0.5
         )
         @variables(subproblem, begin
-            0 <= control[i = 1:3] <= 0.5
-            ξ[i = 1:3]  # Dummy for RHS noise.
+            0 <= control[i=1:3] <= 0.5
+            ξ[i=1:3]  # Dummy for RHS noise.
         end)
         @constraints(
             subproblem,

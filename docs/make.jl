@@ -56,7 +56,7 @@ end
 function _link_example(content, filename)
     title_line = findfirst(r"\n# .+?\n", content)
     line = content[title_line]
-    ipynb = filename[1:end-3] * ".ipynb"
+    ipynb = filename[1:(end-3)] * ".ipynb"
     new_title = string(
         line,
         "\n",

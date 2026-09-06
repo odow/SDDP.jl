@@ -80,7 +80,7 @@ set_silent(model)
 # `x_storage[t]`: the amount of water in the reservoir at the start of stage `t`:
 
 reservoir_max = 320.0
-@variable(model, 0 <= x_storage[1:T+1] <= reservoir_max)
+@variable(model, 0 <= x_storage[1:(T+1)] <= reservoir_max)
 
 # We need an initial condition for `x_storage[1]`. Fix it to 300 units:
 

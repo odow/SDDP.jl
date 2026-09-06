@@ -23,12 +23,12 @@ function test_prob52_3stages()
         T = [8760, 7000, 1500] / 8760
         D2 = [diff([0, 3919, 7329, 10315]) diff([0, 7086, 9004, 11169])]
         p2 = [0.9, 0.1]
-        @variable(sp, x[i = 1:n] >= 0, SDDP.State, initial_value = 0.0)
+        @variable(sp, x[i=1:n] >= 0, SDDP.State, initial_value = 0.0)
         @variables(sp, begin
             y[1:n, 1:m] >= 0
             v[1:n] >= 0
             penalty >= 0
-            ξ[j = 1:m]
+            ξ[j=1:m]
         end)
         @constraints(sp, begin
             [i = 1:n], x[i].out == x[i].in + v[i]
