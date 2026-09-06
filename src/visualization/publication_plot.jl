@@ -71,7 +71,7 @@ RecipesBase.@recipe function f(
     dataset, stage_function = publication_plot.args
     size --> (500, 300)
     data_matrix = publication_data(dataset, sort(quantile), stage_function)
-    for i in 1:floor(Int, size(data_matrix, 1) / 2)
+    for i in 1:floor(Int, size(data_matrix, 1)/2)
         μ = 0.5 * (data_matrix[i, :] + data_matrix[end-i+1, :])
         r = data_matrix[end-i+1, :] - μ
         RecipesBase.@series begin

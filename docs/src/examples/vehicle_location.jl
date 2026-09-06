@@ -47,7 +47,7 @@ function vehicle_location_model(duality_handler)
         ## Current location of each vehicle at each base.
         @variable(
             sp,
-            0 <= location[b = bases, v = vehicles] <= 1,
+            0 <= location[b=bases, v=vehicles] <= 1,
             SDDP.State,
             initial_value = initial_state(b, v)
         )

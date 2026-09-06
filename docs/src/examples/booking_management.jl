@@ -26,7 +26,7 @@ function booking_management_model(num_days, num_rooms, num_requests)
             ## on the indexing
             for length_of_stay in 0:(num_days-day)
                 req = zeros(Int, (num_rooms, num_days))
-                req[room:room, day.+(0:length_of_stay)] .= 1
+                req[room:room, day .+ (0:length_of_stay)] .= 1
                 push!(booking_requests, req)
             end
         end
@@ -40,7 +40,7 @@ function booking_management_model(num_days, num_rooms, num_requests)
     ) do sp, stage
         @variable(
             sp,
-            0 <= vacancy[room = 1:num_rooms, day = 1:num_days] <= 1,
+            0 <= vacancy[room=1:num_rooms, day=1:num_days] <= 1,
             SDDP.State,
             Bin,
             initial_value = 1

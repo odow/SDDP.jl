@@ -23,7 +23,7 @@ function fast_production_management(; cut_type)
     ) do sp, t
         @variable(sp, x[1:N] >= 0, SDDP.State, initial_value = 0.0)
         @variables(sp, begin
-            s[i = 1:N] >= 0
+            s[i=1:N] >= 0
             d
         end)
         @constraints(sp, begin

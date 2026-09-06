@@ -151,7 +151,7 @@ model = SDDP.PolicyGraph(
     ## Our state is a binary variable for each square
     @variable(
         sp,
-        x[i = 1:M, j = 1:N],
+        x[i=1:M, j=1:N],
         Bin,
         SDDP.State,
         initial_value = (i, j) == initial_square,

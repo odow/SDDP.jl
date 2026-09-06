@@ -25,7 +25,7 @@ function test_prob52_2stages()
         D2 = [diff([0, 3919, 7329, 10315]) diff([0, 7086, 9004, 11169])]
         p2 = [0.9, 0.1]
         ## ========== State Variables ==========
-        @variable(subproblem, x[i = 1:n] >= 0, SDDP.State, initial_value = 0.0)
+        @variable(subproblem, x[i=1:n] >= 0, SDDP.State, initial_value = 0.0)
         ## ========== Variables ==========
         @variables(subproblem, begin
             y[1:n, 1:m] >= 0

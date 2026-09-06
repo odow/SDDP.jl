@@ -710,7 +710,7 @@ _node_name_parser(::Type{Int}, name::String) = parse(Int, name)
 _node_name_parser(::Type{Symbol}, name::String) = Symbol(name)
 
 function _node_name_parser(::Type{NTuple{N,Int}}, name::String) where {N}
-    keys = parse.(Int, strip.(split(name[2:end-1], ",")))
+    keys = parse.(Int, strip.(split(name[2:(end-1)], ",")))
     if length(keys) != N
         error("Unable to parse node called $(name). Expected $N elements.")
     end
