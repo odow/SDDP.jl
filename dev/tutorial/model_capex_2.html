@@ -1,0 +1,227 @@
+<!--
+Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.
+
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v2.0. If a copy of the MPL was not distributed with this file, You can obtain
+one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-elk@2.1.0/dist/cytoscape-elk.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/layout-base/layout-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cose-base/cose-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose/cytoscape-fcose.js"></script>
+  <style>
+    #cy {width: 100vw; height: 100vh;}
+    #tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(30, 30, 30, 0.9);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      pointer-events: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div id="cy"></div>
+  <div id="tooltip"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const tooltip = document.getElementById('tooltip');
+      const squigglyPhotonSvg = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+          <path d="M 5,5 Q 15,2 20,12 T 35,20 L 44,32" fill="none" stroke="#000" stroke-width="2"/>
+          <polygon points="48,36 38,33 44,25" fill="#000"/>
+        </svg>
+      `);
+      const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: [
+          {data: {id: '0', shape: 'ellipse', meta: 'x_reservoir_max = 0.0\nx_storage = 0.0'}},
+{data: {id: '1', meta: 'Node: 1\nNoise terms: 1'}},
+{data: {id: '2', meta: 'Node: 2\nNoise terms: 3', has_noise: true}},
+{data: {id: '3', meta: 'Node: 3\nNoise terms: 3', has_noise: true}},
+{data: {id: '4', meta: 'Node: 4\nNoise terms: 3', has_noise: true}},
+{data: {id: '5', meta: 'Node: 5\nNoise terms: 3', has_noise: true}},
+{data: {id: '6', meta: 'Node: 6\nNoise terms: 3', has_noise: true}},
+{data: {id: '7', meta: 'Node: 7\nNoise terms: 3', has_noise: true}},
+{data: {id: '8', meta: 'Node: 8\nNoise terms: 3', has_noise: true}},
+{data: {id: '9', meta: 'Node: 9\nNoise terms: 3', has_noise: true}},
+{data: {id: '10', meta: 'Node: 10\nNoise terms: 3', has_noise: true}},
+{data: {id: '11', meta: 'Node: 11\nNoise terms: 3', has_noise: true}},
+{data: {id: '12', meta: 'Node: 12\nNoise terms: 3', has_noise: true}},
+{data: {id: '13', meta: 'Node: 13\nNoise terms: 3', has_noise: true}},
+{data: {id: '14', meta: 'Node: 14\nNoise terms: 3', has_noise: true}},
+{data: {id: '15', meta: 'Node: 15\nNoise terms: 3', has_noise: true}},
+{data: {id: '16', meta: 'Node: 16\nNoise terms: 3', has_noise: true}},
+{data: {id: '17', meta: 'Node: 17\nNoise terms: 3', has_noise: true}},
+{data: {id: '18', meta: 'Node: 18\nNoise terms: 3', has_noise: true}},
+{data: {id: '19', meta: 'Node: 19\nNoise terms: 3', has_noise: true}},
+{data: {id: '20', meta: 'Node: 20\nNoise terms: 3', has_noise: true}},
+{data: {id: '21', meta: 'Node: 21\nNoise terms: 3', has_noise: true}},
+{data: {id: '22', meta: 'Node: 22\nNoise terms: 3', has_noise: true}},
+{data: {id: '23', meta: 'Node: 23\nNoise terms: 3', has_noise: true}},
+{data: {id: '24', meta: 'Node: 24\nNoise terms: 3', has_noise: true}},
+{data: {id: '25', meta: 'Node: 25\nNoise terms: 3', has_noise: true}},
+{data: {id: '26', meta: 'Node: 26\nNoise terms: 3', has_noise: true}},
+{data: {id: '27', meta: 'Node: 27\nNoise terms: 3', has_noise: true}},
+{data: {id: '28', meta: 'Node: 28\nNoise terms: 3', has_noise: true}},
+{data: {id: '29', meta: 'Node: 29\nNoise terms: 3', has_noise: true}},
+{data: {id: '30', meta: 'Node: 30\nNoise terms: 3', has_noise: true}},
+{data: {id: '31', meta: 'Node: 31\nNoise terms: 3', has_noise: true}},
+{data: {id: '32', meta: 'Node: 32\nNoise terms: 3', has_noise: true}},
+{data: {id: '33', meta: 'Node: 33\nNoise terms: 3', has_noise: true}},
+{data: {id: '34', meta: 'Node: 34\nNoise terms: 3', has_noise: true}},
+{data: {id: '35', meta: 'Node: 35\nNoise terms: 3', has_noise: true}},
+{data: {id: '36', meta: 'Node: 36\nNoise terms: 3', has_noise: true}},
+{data: {id: '37', meta: 'Node: 37\nNoise terms: 3', has_noise: true}},
+{data: {id: '38', meta: 'Node: 38\nNoise terms: 3', has_noise: true}},
+{data: {id: '39', meta: 'Node: 39\nNoise terms: 3', has_noise: true}},
+{data: {id: '40', meta: 'Node: 40\nNoise terms: 3', has_noise: true}},
+{data: {id: '41', meta: 'Node: 41\nNoise terms: 3', has_noise: true}},
+{data: {id: '42', meta: 'Node: 42\nNoise terms: 3', has_noise: true}},
+{data: {id: '43', meta: 'Node: 43\nNoise terms: 3', has_noise: true}},
+{data: {id: '44', meta: 'Node: 44\nNoise terms: 3', has_noise: true}},
+{data: {id: '45', meta: 'Node: 45\nNoise terms: 3', has_noise: true}},
+{data: {id: '46', meta: 'Node: 46\nNoise terms: 3', has_noise: true}},
+{data: {id: '47', meta: 'Node: 47\nNoise terms: 3', has_noise: true}},
+{data: {id: '48', meta: 'Node: 48\nNoise terms: 3', has_noise: true}},
+{data: {id: '49', meta: 'Node: 49\nNoise terms: 3', has_noise: true}},
+{data: {id: '50', meta: 'Node: 50\nNoise terms: 3', has_noise: true}},
+{data: {id: '51', meta: 'Node: 51\nNoise terms: 3', has_noise: true}},
+{data: {id: '52', meta: 'Node: 52\nNoise terms: 3', has_noise: true}},
+{data: {id: '53', meta: 'Node: 53\nNoise terms: 3', has_noise: true}},
+{data: {id: 'edge_1', source: '0', target: '1', meta: 'From: 0\nTo: 1\nProbablity: 1.0'}},
+{data: {id: 'edge_2', source: '1', target: '2', meta: 'From: 1\nTo: 2\nProbablity: 1.0'}},
+{data: {id: 'edge_3', source: '2', target: '3', meta: 'From: 2\nTo: 3\nProbablity: 1.0'}},
+{data: {id: 'edge_4', source: '3', target: '4', meta: 'From: 3\nTo: 4\nProbablity: 1.0'}},
+{data: {id: 'edge_5', source: '4', target: '5', meta: 'From: 4\nTo: 5\nProbablity: 1.0'}},
+{data: {id: 'edge_6', source: '5', target: '6', meta: 'From: 5\nTo: 6\nProbablity: 1.0'}},
+{data: {id: 'edge_7', source: '6', target: '7', meta: 'From: 6\nTo: 7\nProbablity: 1.0'}},
+{data: {id: 'edge_8', source: '7', target: '8', meta: 'From: 7\nTo: 8\nProbablity: 1.0'}},
+{data: {id: 'edge_9', source: '8', target: '9', meta: 'From: 8\nTo: 9\nProbablity: 1.0'}},
+{data: {id: 'edge_10', source: '9', target: '10', meta: 'From: 9\nTo: 10\nProbablity: 1.0'}},
+{data: {id: 'edge_11', source: '10', target: '11', meta: 'From: 10\nTo: 11\nProbablity: 1.0'}},
+{data: {id: 'edge_12', source: '11', target: '12', meta: 'From: 11\nTo: 12\nProbablity: 1.0'}},
+{data: {id: 'edge_13', source: '12', target: '13', meta: 'From: 12\nTo: 13\nProbablity: 1.0'}},
+{data: {id: 'edge_14', source: '13', target: '14', meta: 'From: 13\nTo: 14\nProbablity: 1.0'}},
+{data: {id: 'edge_15', source: '14', target: '15', meta: 'From: 14\nTo: 15\nProbablity: 1.0'}},
+{data: {id: 'edge_16', source: '15', target: '16', meta: 'From: 15\nTo: 16\nProbablity: 1.0'}},
+{data: {id: 'edge_17', source: '16', target: '17', meta: 'From: 16\nTo: 17\nProbablity: 1.0'}},
+{data: {id: 'edge_18', source: '17', target: '18', meta: 'From: 17\nTo: 18\nProbablity: 1.0'}},
+{data: {id: 'edge_19', source: '18', target: '19', meta: 'From: 18\nTo: 19\nProbablity: 1.0'}},
+{data: {id: 'edge_20', source: '19', target: '20', meta: 'From: 19\nTo: 20\nProbablity: 1.0'}},
+{data: {id: 'edge_21', source: '20', target: '21', meta: 'From: 20\nTo: 21\nProbablity: 1.0'}},
+{data: {id: 'edge_22', source: '21', target: '22', meta: 'From: 21\nTo: 22\nProbablity: 1.0'}},
+{data: {id: 'edge_23', source: '22', target: '23', meta: 'From: 22\nTo: 23\nProbablity: 1.0'}},
+{data: {id: 'edge_24', source: '23', target: '24', meta: 'From: 23\nTo: 24\nProbablity: 1.0'}},
+{data: {id: 'edge_25', source: '24', target: '25', meta: 'From: 24\nTo: 25\nProbablity: 1.0'}},
+{data: {id: 'edge_26', source: '25', target: '26', meta: 'From: 25\nTo: 26\nProbablity: 1.0'}},
+{data: {id: 'edge_27', source: '26', target: '27', meta: 'From: 26\nTo: 27\nProbablity: 1.0'}},
+{data: {id: 'edge_28', source: '27', target: '28', meta: 'From: 27\nTo: 28\nProbablity: 1.0'}},
+{data: {id: 'edge_29', source: '28', target: '29', meta: 'From: 28\nTo: 29\nProbablity: 1.0'}},
+{data: {id: 'edge_30', source: '29', target: '30', meta: 'From: 29\nTo: 30\nProbablity: 1.0'}},
+{data: {id: 'edge_31', source: '30', target: '31', meta: 'From: 30\nTo: 31\nProbablity: 1.0'}},
+{data: {id: 'edge_32', source: '31', target: '32', meta: 'From: 31\nTo: 32\nProbablity: 1.0'}},
+{data: {id: 'edge_33', source: '32', target: '33', meta: 'From: 32\nTo: 33\nProbablity: 1.0'}},
+{data: {id: 'edge_34', source: '33', target: '34', meta: 'From: 33\nTo: 34\nProbablity: 1.0'}},
+{data: {id: 'edge_35', source: '34', target: '35', meta: 'From: 34\nTo: 35\nProbablity: 1.0'}},
+{data: {id: 'edge_36', source: '35', target: '36', meta: 'From: 35\nTo: 36\nProbablity: 1.0'}},
+{data: {id: 'edge_37', source: '36', target: '37', meta: 'From: 36\nTo: 37\nProbablity: 1.0'}},
+{data: {id: 'edge_38', source: '37', target: '38', meta: 'From: 37\nTo: 38\nProbablity: 1.0'}},
+{data: {id: 'edge_39', source: '38', target: '39', meta: 'From: 38\nTo: 39\nProbablity: 1.0'}},
+{data: {id: 'edge_40', source: '39', target: '40', meta: 'From: 39\nTo: 40\nProbablity: 1.0'}},
+{data: {id: 'edge_41', source: '40', target: '41', meta: 'From: 40\nTo: 41\nProbablity: 1.0'}},
+{data: {id: 'edge_42', source: '41', target: '42', meta: 'From: 41\nTo: 42\nProbablity: 1.0'}},
+{data: {id: 'edge_43', source: '42', target: '43', meta: 'From: 42\nTo: 43\nProbablity: 1.0'}},
+{data: {id: 'edge_44', source: '43', target: '44', meta: 'From: 43\nTo: 44\nProbablity: 1.0'}},
+{data: {id: 'edge_45', source: '44', target: '45', meta: 'From: 44\nTo: 45\nProbablity: 1.0'}},
+{data: {id: 'edge_46', source: '45', target: '46', meta: 'From: 45\nTo: 46\nProbablity: 1.0'}},
+{data: {id: 'edge_47', source: '46', target: '47', meta: 'From: 46\nTo: 47\nProbablity: 1.0'}},
+{data: {id: 'edge_48', source: '47', target: '48', meta: 'From: 47\nTo: 48\nProbablity: 1.0'}},
+{data: {id: 'edge_49', source: '48', target: '49', meta: 'From: 48\nTo: 49\nProbablity: 1.0'}},
+{data: {id: 'edge_50', source: '49', target: '50', meta: 'From: 49\nTo: 50\nProbablity: 1.0'}},
+{data: {id: 'edge_51', source: '50', target: '51', meta: 'From: 50\nTo: 51\nProbablity: 1.0'}},
+{data: {id: 'edge_52', source: '51', target: '52', meta: 'From: 51\nTo: 52\nProbablity: 1.0'}},
+{data: {id: 'edge_53', source: '52', target: '53', meta: 'From: 52\nTo: 53\nProbablity: 1.0'}},
+        ],
+        layout: {
+          name: 'elk',
+          elk: {
+            'algorithm': 'layered',
+            'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+            'elk.layered.cycleBreaking.strategy': 'MODEL_ORDER',
+            'elk.aspectRatio': 2,
+            'elk.layered.spacing.nodeNodeBetweenLayers': 30,
+            'elk.spacing.nodeNode': 100,
+            'elk.spacing.edgeEdge': 20,
+            'elk.spacing.edgeNode': 50
+          }
+        },
+        style: [{
+          selector: 'node',
+          style: {
+            'shape': 'rectangle',
+            'background-color': '#fff',
+            'border-width': 1,
+            'text-valign': 'center',
+            'text-halign': 'center',
+          }
+        }, {
+          selector: 'edge',
+          style: {
+            'width': 1,
+            'line-color': '#000',
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle',
+            'target-arrow-color': '#000',
+          },
+        }, {
+          selector: 'node[shape]', style: {'shape': 'data(shape)'}
+        }, {
+          selector: 'node[?has_noise]',
+          style: {
+            'background-image': squigglyPhotonSvg,
+            'background-clip': 'none',
+            'bounds-expansion': 30,
+            'background-position-x': '-30px',
+            'background-position-y': '-25px',
+            'background-width': '45px',
+            'background-height': '45px',
+            'background-repeat': 'no-repeat'
+          }
+        }]
+      });
+      function showTooltip(evt) {
+        if (evt.target.data('meta')) {
+          tooltip.innerText = evt.target.data('meta');
+          tooltip.style.display = 'block';
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function moveTooltip(evt) {
+        if (tooltip.style.display === 'block') {
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function hideTooltip() {
+        tooltip.style.display = 'none';
+      }
+      cy.on('mouseover', 'node, edge', showTooltip);
+      cy.on('mousemove', 'node, edge', moveTooltip);
+      cy.on('mouseout', 'node, edge', hideTooltip);
+    });
+  </script>
+</body>
+</html>

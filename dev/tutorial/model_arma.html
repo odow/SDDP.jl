@@ -1,0 +1,143 @@
+<!--
+Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.
+
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v2.0. If a copy of the MPL was not distributed with this file, You can obtain
+one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-elk@2.1.0/dist/cytoscape-elk.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/layout-base/layout-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cose-base/cose-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose/cytoscape-fcose.js"></script>
+  <style>
+    #cy {width: 100vw; height: 100vh;}
+    #tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(30, 30, 30, 0.9);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      pointer-events: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div id="cy"></div>
+  <div id="tooltip"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const tooltip = document.getElementById('tooltip');
+      const squigglyPhotonSvg = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+          <path d="M 5,5 Q 15,2 20,12 T 35,20 L 44,32" fill="none" stroke="#000" stroke-width="2"/>
+          <polygon points="48,36 38,33 44,25" fill="#000"/>
+        </svg>
+      `);
+      const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: [
+          {data: {id: '(0, 0.0)', shape: 'ellipse', meta: 'x = 200.0'}},
+{data: {id: '(1, 48.42566096136798)', meta: 'Node: (1, 48.42566096136798)\nNoise terms: 1'}},
+{data: {id: '(1, 59.6)', meta: 'Node: (1, 59.6)\nNoise terms: 1'}},
+{data: {id: '(2, 41.24486583807571)', meta: 'Node: (2, 41.24486583807571)\nNoise terms: 1'}},
+{data: {id: '(2, 65.58116514654046)', meta: 'Node: (2, 65.58116514654046)\nNoise terms: 1'}},
+{data: {id: '(3, 39.06243353414241)', meta: 'Node: (3, 39.06243353414241)\nNoise terms: 1'}},
+{data: {id: '(3, 41.721951442661904)', meta: 'Node: (3, 41.721951442661904)\nNoise terms: 1'}},
+{data: {id: '(3, 59.203524623456296)', meta: 'Node: (3, 59.203524623456296)\nNoise terms: 1'}},
+{data: {id: '(3, 75.63819354898943)', meta: 'Node: (3, 75.63819354898943)\nNoise terms: 1'}},
+{data: {id: 'edge_1', source: '(0, 0.0)', target: '(1, 48.42566096136798)', meta: 'From: (0, 0.0)\nTo: (1, 48.42566096136798)\nProbablity: 0.6333333333333333'}},
+{data: {id: 'edge_2', source: '(0, 0.0)', target: '(1, 59.6)', meta: 'From: (0, 0.0)\nTo: (1, 59.6)\nProbablity: 0.36666666666666664'}},
+{data: {id: 'edge_3', source: '(1, 48.42566096136798)', target: '(2, 41.24486583807571)', meta: 'From: (1, 48.42566096136798)\nTo: (2, 41.24486583807571)\nProbablity: 0.7368421052631579'}},
+{data: {id: 'edge_4', source: '(1, 48.42566096136798)', target: '(2, 65.58116514654046)', meta: 'From: (1, 48.42566096136798)\nTo: (2, 65.58116514654046)\nProbablity: 0.2631578947368421'}},
+{data: {id: 'edge_5', source: '(1, 59.6)', target: '(2, 41.24486583807571)', meta: 'From: (1, 59.6)\nTo: (2, 41.24486583807571)\nProbablity: 0.5454545454545454'}},
+{data: {id: 'edge_6', source: '(1, 59.6)', target: '(2, 65.58116514654046)', meta: 'From: (1, 59.6)\nTo: (2, 65.58116514654046)\nProbablity: 0.45454545454545453'}},
+{data: {id: 'edge_7', source: '(2, 41.24486583807571)', target: '(3, 39.06243353414241)', meta: 'From: (2, 41.24486583807571)\nTo: (3, 39.06243353414241)\nProbablity: 0.55'}},
+{data: {id: 'edge_8', source: '(2, 41.24486583807571)', target: '(3, 41.721951442661904)', meta: 'From: (2, 41.24486583807571)\nTo: (3, 41.721951442661904)\nProbablity: 0.35'}},
+{data: {id: 'edge_9', source: '(2, 41.24486583807571)', target: '(3, 59.203524623456296)', meta: 'From: (2, 41.24486583807571)\nTo: (3, 59.203524623456296)\nProbablity: 0.1'}},
+{data: {id: 'edge_10', source: '(2, 41.24486583807571)', target: '(3, 75.63819354898943)', meta: 'From: (2, 41.24486583807571)\nTo: (3, 75.63819354898943)\nProbablity: 0.0'}},
+{data: {id: 'edge_11', source: '(2, 65.58116514654046)', target: '(3, 39.06243353414241)', meta: 'From: (2, 65.58116514654046)\nTo: (3, 39.06243353414241)\nProbablity: 0.0'}},
+{data: {id: 'edge_12', source: '(2, 65.58116514654046)', target: '(3, 41.721951442661904)', meta: 'From: (2, 65.58116514654046)\nTo: (3, 41.721951442661904)\nProbablity: 0.1'}},
+{data: {id: 'edge_13', source: '(2, 65.58116514654046)', target: '(3, 59.203524623456296)', meta: 'From: (2, 65.58116514654046)\nTo: (3, 59.203524623456296)\nProbablity: 0.4'}},
+{data: {id: 'edge_14', source: '(2, 65.58116514654046)', target: '(3, 75.63819354898943)', meta: 'From: (2, 65.58116514654046)\nTo: (3, 75.63819354898943)\nProbablity: 0.5'}},
+        ],
+        layout: {
+          name: 'elk',
+          elk: {
+            'algorithm': 'layered',
+            'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+            'elk.layered.cycleBreaking.strategy': 'MODEL_ORDER',
+            'elk.aspectRatio': 2,
+            'elk.layered.spacing.nodeNodeBetweenLayers': 30,
+            'elk.spacing.nodeNode': 100,
+            'elk.spacing.edgeEdge': 20,
+            'elk.spacing.edgeNode': 50
+          }
+        },
+        style: [{
+          selector: 'node',
+          style: {
+            'shape': 'rectangle',
+            'background-color': '#fff',
+            'border-width': 1,
+            'text-valign': 'center',
+            'text-halign': 'center',
+          }
+        }, {
+          selector: 'edge',
+          style: {
+            'width': 1,
+            'line-color': '#000',
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle',
+            'target-arrow-color': '#000',
+          },
+        }, {
+          selector: 'node[shape]', style: {'shape': 'data(shape)'}
+        }, {
+          selector: 'node[?has_noise]',
+          style: {
+            'background-image': squigglyPhotonSvg,
+            'background-clip': 'none',
+            'bounds-expansion': 30,
+            'background-position-x': '-30px',
+            'background-position-y': '-25px',
+            'background-width': '45px',
+            'background-height': '45px',
+            'background-repeat': 'no-repeat'
+          }
+        }]
+      });
+      function showTooltip(evt) {
+        if (evt.target.data('meta')) {
+          tooltip.innerText = evt.target.data('meta');
+          tooltip.style.display = 'block';
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function moveTooltip(evt) {
+        if (tooltip.style.display === 'block') {
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function hideTooltip() {
+        tooltip.style.display = 'none';
+      }
+      cy.on('mouseover', 'node, edge', showTooltip);
+      cy.on('mousemove', 'node, edge', moveTooltip);
+      cy.on('mouseout', 'node, edge', hideTooltip);
+    });
+  </script>
+</body>
+</html>

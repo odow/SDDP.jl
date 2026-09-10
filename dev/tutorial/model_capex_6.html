@@ -1,0 +1,439 @@
+<!--
+Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.
+
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v2.0. If a copy of the MPL was not distributed with this file, You can obtain
+one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-elk@2.1.0/dist/cytoscape-elk.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/layout-base/layout-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cose-base/cose-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose/cytoscape-fcose.js"></script>
+  <style>
+    #cy {width: 100vw; height: 100vh;}
+    #tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(30, 30, 30, 0.9);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      pointer-events: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div id="cy"></div>
+  <div id="tooltip"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const tooltip = document.getElementById('tooltip');
+      const squigglyPhotonSvg = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+          <path d="M 5,5 Q 15,2 20,12 T 35,20 L 44,32" fill="none" stroke="#000" stroke-width="2"/>
+          <polygon points="48,36 38,33 44,25" fill="#000"/>
+        </svg>
+      `);
+      const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: [
+          {data: {id: '(:root, 0)', shape: 'ellipse', meta: 'x_reservoir_max = 0.0\nx_storage = 0.0\nx_flow_max = 0.0'}},
+{data: {id: '(:Y1, 1)', meta: 'Node: (:Y1, 1)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 2)', meta: 'Node: (:Y1, 2)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 3)', meta: 'Node: (:Y1, 3)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 4)', meta: 'Node: (:Y1, 4)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 5)', meta: 'Node: (:Y1, 5)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 6)', meta: 'Node: (:Y1, 6)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 7)', meta: 'Node: (:Y1, 7)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 8)', meta: 'Node: (:Y1, 8)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 9)', meta: 'Node: (:Y1, 9)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 10)', meta: 'Node: (:Y1, 10)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 11)', meta: 'Node: (:Y1, 11)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 12)', meta: 'Node: (:Y1, 12)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 13)', meta: 'Node: (:Y1, 13)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 14)', meta: 'Node: (:Y1, 14)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 15)', meta: 'Node: (:Y1, 15)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 16)', meta: 'Node: (:Y1, 16)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 17)', meta: 'Node: (:Y1, 17)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 18)', meta: 'Node: (:Y1, 18)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 19)', meta: 'Node: (:Y1, 19)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 20)', meta: 'Node: (:Y1, 20)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 21)', meta: 'Node: (:Y1, 21)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 22)', meta: 'Node: (:Y1, 22)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 23)', meta: 'Node: (:Y1, 23)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 24)', meta: 'Node: (:Y1, 24)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 25)', meta: 'Node: (:Y1, 25)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 26)', meta: 'Node: (:Y1, 26)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 27)', meta: 'Node: (:Y1, 27)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 28)', meta: 'Node: (:Y1, 28)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 29)', meta: 'Node: (:Y1, 29)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 30)', meta: 'Node: (:Y1, 30)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 31)', meta: 'Node: (:Y1, 31)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 32)', meta: 'Node: (:Y1, 32)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 33)', meta: 'Node: (:Y1, 33)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 34)', meta: 'Node: (:Y1, 34)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 35)', meta: 'Node: (:Y1, 35)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 36)', meta: 'Node: (:Y1, 36)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 37)', meta: 'Node: (:Y1, 37)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 38)', meta: 'Node: (:Y1, 38)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 39)', meta: 'Node: (:Y1, 39)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 40)', meta: 'Node: (:Y1, 40)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 41)', meta: 'Node: (:Y1, 41)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 42)', meta: 'Node: (:Y1, 42)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 43)', meta: 'Node: (:Y1, 43)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 44)', meta: 'Node: (:Y1, 44)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 45)', meta: 'Node: (:Y1, 45)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 46)', meta: 'Node: (:Y1, 46)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 47)', meta: 'Node: (:Y1, 47)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 48)', meta: 'Node: (:Y1, 48)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 49)', meta: 'Node: (:Y1, 49)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 50)', meta: 'Node: (:Y1, 50)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 51)', meta: 'Node: (:Y1, 51)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y1, 52)', meta: 'Node: (:Y1, 52)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 1)', meta: 'Node: (:Y2_high, 1)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 2)', meta: 'Node: (:Y2_high, 2)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 3)', meta: 'Node: (:Y2_high, 3)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 4)', meta: 'Node: (:Y2_high, 4)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 5)', meta: 'Node: (:Y2_high, 5)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 6)', meta: 'Node: (:Y2_high, 6)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 7)', meta: 'Node: (:Y2_high, 7)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 8)', meta: 'Node: (:Y2_high, 8)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 9)', meta: 'Node: (:Y2_high, 9)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 10)', meta: 'Node: (:Y2_high, 10)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 11)', meta: 'Node: (:Y2_high, 11)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 12)', meta: 'Node: (:Y2_high, 12)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 13)', meta: 'Node: (:Y2_high, 13)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 14)', meta: 'Node: (:Y2_high, 14)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 15)', meta: 'Node: (:Y2_high, 15)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 16)', meta: 'Node: (:Y2_high, 16)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 17)', meta: 'Node: (:Y2_high, 17)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 18)', meta: 'Node: (:Y2_high, 18)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 19)', meta: 'Node: (:Y2_high, 19)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 20)', meta: 'Node: (:Y2_high, 20)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 21)', meta: 'Node: (:Y2_high, 21)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 22)', meta: 'Node: (:Y2_high, 22)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 23)', meta: 'Node: (:Y2_high, 23)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 24)', meta: 'Node: (:Y2_high, 24)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 25)', meta: 'Node: (:Y2_high, 25)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 26)', meta: 'Node: (:Y2_high, 26)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 27)', meta: 'Node: (:Y2_high, 27)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 28)', meta: 'Node: (:Y2_high, 28)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 29)', meta: 'Node: (:Y2_high, 29)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 30)', meta: 'Node: (:Y2_high, 30)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 31)', meta: 'Node: (:Y2_high, 31)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 32)', meta: 'Node: (:Y2_high, 32)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 33)', meta: 'Node: (:Y2_high, 33)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 34)', meta: 'Node: (:Y2_high, 34)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 35)', meta: 'Node: (:Y2_high, 35)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 36)', meta: 'Node: (:Y2_high, 36)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 37)', meta: 'Node: (:Y2_high, 37)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 38)', meta: 'Node: (:Y2_high, 38)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 39)', meta: 'Node: (:Y2_high, 39)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 40)', meta: 'Node: (:Y2_high, 40)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 41)', meta: 'Node: (:Y2_high, 41)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 42)', meta: 'Node: (:Y2_high, 42)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 43)', meta: 'Node: (:Y2_high, 43)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 44)', meta: 'Node: (:Y2_high, 44)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 45)', meta: 'Node: (:Y2_high, 45)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 46)', meta: 'Node: (:Y2_high, 46)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 47)', meta: 'Node: (:Y2_high, 47)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 48)', meta: 'Node: (:Y2_high, 48)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 49)', meta: 'Node: (:Y2_high, 49)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 50)', meta: 'Node: (:Y2_high, 50)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 51)', meta: 'Node: (:Y2_high, 51)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_high, 52)', meta: 'Node: (:Y2_high, 52)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 1)', meta: 'Node: (:Y2_normal, 1)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 2)', meta: 'Node: (:Y2_normal, 2)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 3)', meta: 'Node: (:Y2_normal, 3)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 4)', meta: 'Node: (:Y2_normal, 4)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 5)', meta: 'Node: (:Y2_normal, 5)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 6)', meta: 'Node: (:Y2_normal, 6)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 7)', meta: 'Node: (:Y2_normal, 7)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 8)', meta: 'Node: (:Y2_normal, 8)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 9)', meta: 'Node: (:Y2_normal, 9)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 10)', meta: 'Node: (:Y2_normal, 10)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 11)', meta: 'Node: (:Y2_normal, 11)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 12)', meta: 'Node: (:Y2_normal, 12)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 13)', meta: 'Node: (:Y2_normal, 13)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 14)', meta: 'Node: (:Y2_normal, 14)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 15)', meta: 'Node: (:Y2_normal, 15)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 16)', meta: 'Node: (:Y2_normal, 16)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 17)', meta: 'Node: (:Y2_normal, 17)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 18)', meta: 'Node: (:Y2_normal, 18)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 19)', meta: 'Node: (:Y2_normal, 19)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 20)', meta: 'Node: (:Y2_normal, 20)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 21)', meta: 'Node: (:Y2_normal, 21)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 22)', meta: 'Node: (:Y2_normal, 22)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 23)', meta: 'Node: (:Y2_normal, 23)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 24)', meta: 'Node: (:Y2_normal, 24)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 25)', meta: 'Node: (:Y2_normal, 25)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 26)', meta: 'Node: (:Y2_normal, 26)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 27)', meta: 'Node: (:Y2_normal, 27)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 28)', meta: 'Node: (:Y2_normal, 28)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 29)', meta: 'Node: (:Y2_normal, 29)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 30)', meta: 'Node: (:Y2_normal, 30)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 31)', meta: 'Node: (:Y2_normal, 31)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 32)', meta: 'Node: (:Y2_normal, 32)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 33)', meta: 'Node: (:Y2_normal, 33)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 34)', meta: 'Node: (:Y2_normal, 34)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 35)', meta: 'Node: (:Y2_normal, 35)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 36)', meta: 'Node: (:Y2_normal, 36)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 37)', meta: 'Node: (:Y2_normal, 37)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 38)', meta: 'Node: (:Y2_normal, 38)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 39)', meta: 'Node: (:Y2_normal, 39)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 40)', meta: 'Node: (:Y2_normal, 40)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 41)', meta: 'Node: (:Y2_normal, 41)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 42)', meta: 'Node: (:Y2_normal, 42)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 43)', meta: 'Node: (:Y2_normal, 43)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 44)', meta: 'Node: (:Y2_normal, 44)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 45)', meta: 'Node: (:Y2_normal, 45)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 46)', meta: 'Node: (:Y2_normal, 46)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 47)', meta: 'Node: (:Y2_normal, 47)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 48)', meta: 'Node: (:Y2_normal, 48)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 49)', meta: 'Node: (:Y2_normal, 49)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 50)', meta: 'Node: (:Y2_normal, 50)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 51)', meta: 'Node: (:Y2_normal, 51)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:Y2_normal, 52)', meta: 'Node: (:Y2_normal, 52)\nNoise terms: 3', has_noise: true}},
+{data: {id: '(:invest_1, 0)', meta: 'Node: (:invest_1, 0)\nNoise terms: 1'}},
+{data: {id: '(:invest_2, 0)', meta: 'Node: (:invest_2, 0)\nNoise terms: 1'}},
+{data: {id: 'edge_1', source: '(:root, 0)', target: '(:invest_1, 0)', meta: 'From: (:root, 0)\nTo: (:invest_1, 0)\nProbablity: 1.0'}},
+{data: {id: 'edge_2', source: '(:Y1, 1)', target: '(:Y1, 2)', meta: 'From: (:Y1, 1)\nTo: (:Y1, 2)\nProbablity: 1.0'}},
+{data: {id: 'edge_3', source: '(:Y1, 2)', target: '(:Y1, 3)', meta: 'From: (:Y1, 2)\nTo: (:Y1, 3)\nProbablity: 1.0'}},
+{data: {id: 'edge_4', source: '(:Y1, 3)', target: '(:Y1, 4)', meta: 'From: (:Y1, 3)\nTo: (:Y1, 4)\nProbablity: 1.0'}},
+{data: {id: 'edge_5', source: '(:Y1, 4)', target: '(:Y1, 5)', meta: 'From: (:Y1, 4)\nTo: (:Y1, 5)\nProbablity: 1.0'}},
+{data: {id: 'edge_6', source: '(:Y1, 5)', target: '(:Y1, 6)', meta: 'From: (:Y1, 5)\nTo: (:Y1, 6)\nProbablity: 1.0'}},
+{data: {id: 'edge_7', source: '(:Y1, 6)', target: '(:Y1, 7)', meta: 'From: (:Y1, 6)\nTo: (:Y1, 7)\nProbablity: 1.0'}},
+{data: {id: 'edge_8', source: '(:Y1, 7)', target: '(:Y1, 8)', meta: 'From: (:Y1, 7)\nTo: (:Y1, 8)\nProbablity: 1.0'}},
+{data: {id: 'edge_9', source: '(:Y1, 8)', target: '(:Y1, 9)', meta: 'From: (:Y1, 8)\nTo: (:Y1, 9)\nProbablity: 1.0'}},
+{data: {id: 'edge_10', source: '(:Y1, 9)', target: '(:Y1, 10)', meta: 'From: (:Y1, 9)\nTo: (:Y1, 10)\nProbablity: 1.0'}},
+{data: {id: 'edge_11', source: '(:Y1, 10)', target: '(:Y1, 11)', meta: 'From: (:Y1, 10)\nTo: (:Y1, 11)\nProbablity: 1.0'}},
+{data: {id: 'edge_12', source: '(:Y1, 11)', target: '(:Y1, 12)', meta: 'From: (:Y1, 11)\nTo: (:Y1, 12)\nProbablity: 1.0'}},
+{data: {id: 'edge_13', source: '(:Y1, 12)', target: '(:Y1, 13)', meta: 'From: (:Y1, 12)\nTo: (:Y1, 13)\nProbablity: 1.0'}},
+{data: {id: 'edge_14', source: '(:Y1, 13)', target: '(:Y1, 14)', meta: 'From: (:Y1, 13)\nTo: (:Y1, 14)\nProbablity: 1.0'}},
+{data: {id: 'edge_15', source: '(:Y1, 14)', target: '(:Y1, 15)', meta: 'From: (:Y1, 14)\nTo: (:Y1, 15)\nProbablity: 1.0'}},
+{data: {id: 'edge_16', source: '(:Y1, 15)', target: '(:Y1, 16)', meta: 'From: (:Y1, 15)\nTo: (:Y1, 16)\nProbablity: 1.0'}},
+{data: {id: 'edge_17', source: '(:Y1, 16)', target: '(:Y1, 17)', meta: 'From: (:Y1, 16)\nTo: (:Y1, 17)\nProbablity: 1.0'}},
+{data: {id: 'edge_18', source: '(:Y1, 17)', target: '(:Y1, 18)', meta: 'From: (:Y1, 17)\nTo: (:Y1, 18)\nProbablity: 1.0'}},
+{data: {id: 'edge_19', source: '(:Y1, 18)', target: '(:Y1, 19)', meta: 'From: (:Y1, 18)\nTo: (:Y1, 19)\nProbablity: 1.0'}},
+{data: {id: 'edge_20', source: '(:Y1, 19)', target: '(:Y1, 20)', meta: 'From: (:Y1, 19)\nTo: (:Y1, 20)\nProbablity: 1.0'}},
+{data: {id: 'edge_21', source: '(:Y1, 20)', target: '(:Y1, 21)', meta: 'From: (:Y1, 20)\nTo: (:Y1, 21)\nProbablity: 1.0'}},
+{data: {id: 'edge_22', source: '(:Y1, 21)', target: '(:Y1, 22)', meta: 'From: (:Y1, 21)\nTo: (:Y1, 22)\nProbablity: 1.0'}},
+{data: {id: 'edge_23', source: '(:Y1, 22)', target: '(:Y1, 23)', meta: 'From: (:Y1, 22)\nTo: (:Y1, 23)\nProbablity: 1.0'}},
+{data: {id: 'edge_24', source: '(:Y1, 23)', target: '(:Y1, 24)', meta: 'From: (:Y1, 23)\nTo: (:Y1, 24)\nProbablity: 1.0'}},
+{data: {id: 'edge_25', source: '(:Y1, 24)', target: '(:Y1, 25)', meta: 'From: (:Y1, 24)\nTo: (:Y1, 25)\nProbablity: 1.0'}},
+{data: {id: 'edge_26', source: '(:Y1, 25)', target: '(:Y1, 26)', meta: 'From: (:Y1, 25)\nTo: (:Y1, 26)\nProbablity: 1.0'}},
+{data: {id: 'edge_27', source: '(:Y1, 26)', target: '(:Y1, 27)', meta: 'From: (:Y1, 26)\nTo: (:Y1, 27)\nProbablity: 1.0'}},
+{data: {id: 'edge_28', source: '(:Y1, 27)', target: '(:Y1, 28)', meta: 'From: (:Y1, 27)\nTo: (:Y1, 28)\nProbablity: 1.0'}},
+{data: {id: 'edge_29', source: '(:Y1, 28)', target: '(:Y1, 29)', meta: 'From: (:Y1, 28)\nTo: (:Y1, 29)\nProbablity: 1.0'}},
+{data: {id: 'edge_30', source: '(:Y1, 29)', target: '(:Y1, 30)', meta: 'From: (:Y1, 29)\nTo: (:Y1, 30)\nProbablity: 1.0'}},
+{data: {id: 'edge_31', source: '(:Y1, 30)', target: '(:Y1, 31)', meta: 'From: (:Y1, 30)\nTo: (:Y1, 31)\nProbablity: 1.0'}},
+{data: {id: 'edge_32', source: '(:Y1, 31)', target: '(:Y1, 32)', meta: 'From: (:Y1, 31)\nTo: (:Y1, 32)\nProbablity: 1.0'}},
+{data: {id: 'edge_33', source: '(:Y1, 32)', target: '(:Y1, 33)', meta: 'From: (:Y1, 32)\nTo: (:Y1, 33)\nProbablity: 1.0'}},
+{data: {id: 'edge_34', source: '(:Y1, 33)', target: '(:Y1, 34)', meta: 'From: (:Y1, 33)\nTo: (:Y1, 34)\nProbablity: 1.0'}},
+{data: {id: 'edge_35', source: '(:Y1, 34)', target: '(:Y1, 35)', meta: 'From: (:Y1, 34)\nTo: (:Y1, 35)\nProbablity: 1.0'}},
+{data: {id: 'edge_36', source: '(:Y1, 35)', target: '(:Y1, 36)', meta: 'From: (:Y1, 35)\nTo: (:Y1, 36)\nProbablity: 1.0'}},
+{data: {id: 'edge_37', source: '(:Y1, 36)', target: '(:Y1, 37)', meta: 'From: (:Y1, 36)\nTo: (:Y1, 37)\nProbablity: 1.0'}},
+{data: {id: 'edge_38', source: '(:Y1, 37)', target: '(:Y1, 38)', meta: 'From: (:Y1, 37)\nTo: (:Y1, 38)\nProbablity: 1.0'}},
+{data: {id: 'edge_39', source: '(:Y1, 38)', target: '(:Y1, 39)', meta: 'From: (:Y1, 38)\nTo: (:Y1, 39)\nProbablity: 1.0'}},
+{data: {id: 'edge_40', source: '(:Y1, 39)', target: '(:Y1, 40)', meta: 'From: (:Y1, 39)\nTo: (:Y1, 40)\nProbablity: 1.0'}},
+{data: {id: 'edge_41', source: '(:Y1, 40)', target: '(:Y1, 41)', meta: 'From: (:Y1, 40)\nTo: (:Y1, 41)\nProbablity: 1.0'}},
+{data: {id: 'edge_42', source: '(:Y1, 41)', target: '(:Y1, 42)', meta: 'From: (:Y1, 41)\nTo: (:Y1, 42)\nProbablity: 1.0'}},
+{data: {id: 'edge_43', source: '(:Y1, 42)', target: '(:Y1, 43)', meta: 'From: (:Y1, 42)\nTo: (:Y1, 43)\nProbablity: 1.0'}},
+{data: {id: 'edge_44', source: '(:Y1, 43)', target: '(:Y1, 44)', meta: 'From: (:Y1, 43)\nTo: (:Y1, 44)\nProbablity: 1.0'}},
+{data: {id: 'edge_45', source: '(:Y1, 44)', target: '(:Y1, 45)', meta: 'From: (:Y1, 44)\nTo: (:Y1, 45)\nProbablity: 1.0'}},
+{data: {id: 'edge_46', source: '(:Y1, 45)', target: '(:Y1, 46)', meta: 'From: (:Y1, 45)\nTo: (:Y1, 46)\nProbablity: 1.0'}},
+{data: {id: 'edge_47', source: '(:Y1, 46)', target: '(:Y1, 47)', meta: 'From: (:Y1, 46)\nTo: (:Y1, 47)\nProbablity: 1.0'}},
+{data: {id: 'edge_48', source: '(:Y1, 47)', target: '(:Y1, 48)', meta: 'From: (:Y1, 47)\nTo: (:Y1, 48)\nProbablity: 1.0'}},
+{data: {id: 'edge_49', source: '(:Y1, 48)', target: '(:Y1, 49)', meta: 'From: (:Y1, 48)\nTo: (:Y1, 49)\nProbablity: 1.0'}},
+{data: {id: 'edge_50', source: '(:Y1, 49)', target: '(:Y1, 50)', meta: 'From: (:Y1, 49)\nTo: (:Y1, 50)\nProbablity: 1.0'}},
+{data: {id: 'edge_51', source: '(:Y1, 50)', target: '(:Y1, 51)', meta: 'From: (:Y1, 50)\nTo: (:Y1, 51)\nProbablity: 1.0'}},
+{data: {id: 'edge_52', source: '(:Y1, 51)', target: '(:Y1, 52)', meta: 'From: (:Y1, 51)\nTo: (:Y1, 52)\nProbablity: 1.0'}},
+{data: {id: 'edge_53', source: '(:Y1, 52)', target: '(:invest_2, 0)', meta: 'From: (:Y1, 52)\nTo: (:invest_2, 0)\nProbablity: 0.9'}},
+{data: {id: 'edge_54', source: '(:Y2_high, 1)', target: '(:Y2_high, 2)', meta: 'From: (:Y2_high, 1)\nTo: (:Y2_high, 2)\nProbablity: 1.0'}},
+{data: {id: 'edge_55', source: '(:Y2_high, 2)', target: '(:Y2_high, 3)', meta: 'From: (:Y2_high, 2)\nTo: (:Y2_high, 3)\nProbablity: 1.0'}},
+{data: {id: 'edge_56', source: '(:Y2_high, 3)', target: '(:Y2_high, 4)', meta: 'From: (:Y2_high, 3)\nTo: (:Y2_high, 4)\nProbablity: 1.0'}},
+{data: {id: 'edge_57', source: '(:Y2_high, 4)', target: '(:Y2_high, 5)', meta: 'From: (:Y2_high, 4)\nTo: (:Y2_high, 5)\nProbablity: 1.0'}},
+{data: {id: 'edge_58', source: '(:Y2_high, 5)', target: '(:Y2_high, 6)', meta: 'From: (:Y2_high, 5)\nTo: (:Y2_high, 6)\nProbablity: 1.0'}},
+{data: {id: 'edge_59', source: '(:Y2_high, 6)', target: '(:Y2_high, 7)', meta: 'From: (:Y2_high, 6)\nTo: (:Y2_high, 7)\nProbablity: 1.0'}},
+{data: {id: 'edge_60', source: '(:Y2_high, 7)', target: '(:Y2_high, 8)', meta: 'From: (:Y2_high, 7)\nTo: (:Y2_high, 8)\nProbablity: 1.0'}},
+{data: {id: 'edge_61', source: '(:Y2_high, 8)', target: '(:Y2_high, 9)', meta: 'From: (:Y2_high, 8)\nTo: (:Y2_high, 9)\nProbablity: 1.0'}},
+{data: {id: 'edge_62', source: '(:Y2_high, 9)', target: '(:Y2_high, 10)', meta: 'From: (:Y2_high, 9)\nTo: (:Y2_high, 10)\nProbablity: 1.0'}},
+{data: {id: 'edge_63', source: '(:Y2_high, 10)', target: '(:Y2_high, 11)', meta: 'From: (:Y2_high, 10)\nTo: (:Y2_high, 11)\nProbablity: 1.0'}},
+{data: {id: 'edge_64', source: '(:Y2_high, 11)', target: '(:Y2_high, 12)', meta: 'From: (:Y2_high, 11)\nTo: (:Y2_high, 12)\nProbablity: 1.0'}},
+{data: {id: 'edge_65', source: '(:Y2_high, 12)', target: '(:Y2_high, 13)', meta: 'From: (:Y2_high, 12)\nTo: (:Y2_high, 13)\nProbablity: 1.0'}},
+{data: {id: 'edge_66', source: '(:Y2_high, 13)', target: '(:Y2_high, 14)', meta: 'From: (:Y2_high, 13)\nTo: (:Y2_high, 14)\nProbablity: 1.0'}},
+{data: {id: 'edge_67', source: '(:Y2_high, 14)', target: '(:Y2_high, 15)', meta: 'From: (:Y2_high, 14)\nTo: (:Y2_high, 15)\nProbablity: 1.0'}},
+{data: {id: 'edge_68', source: '(:Y2_high, 15)', target: '(:Y2_high, 16)', meta: 'From: (:Y2_high, 15)\nTo: (:Y2_high, 16)\nProbablity: 1.0'}},
+{data: {id: 'edge_69', source: '(:Y2_high, 16)', target: '(:Y2_high, 17)', meta: 'From: (:Y2_high, 16)\nTo: (:Y2_high, 17)\nProbablity: 1.0'}},
+{data: {id: 'edge_70', source: '(:Y2_high, 17)', target: '(:Y2_high, 18)', meta: 'From: (:Y2_high, 17)\nTo: (:Y2_high, 18)\nProbablity: 1.0'}},
+{data: {id: 'edge_71', source: '(:Y2_high, 18)', target: '(:Y2_high, 19)', meta: 'From: (:Y2_high, 18)\nTo: (:Y2_high, 19)\nProbablity: 1.0'}},
+{data: {id: 'edge_72', source: '(:Y2_high, 19)', target: '(:Y2_high, 20)', meta: 'From: (:Y2_high, 19)\nTo: (:Y2_high, 20)\nProbablity: 1.0'}},
+{data: {id: 'edge_73', source: '(:Y2_high, 20)', target: '(:Y2_high, 21)', meta: 'From: (:Y2_high, 20)\nTo: (:Y2_high, 21)\nProbablity: 1.0'}},
+{data: {id: 'edge_74', source: '(:Y2_high, 21)', target: '(:Y2_high, 22)', meta: 'From: (:Y2_high, 21)\nTo: (:Y2_high, 22)\nProbablity: 1.0'}},
+{data: {id: 'edge_75', source: '(:Y2_high, 22)', target: '(:Y2_high, 23)', meta: 'From: (:Y2_high, 22)\nTo: (:Y2_high, 23)\nProbablity: 1.0'}},
+{data: {id: 'edge_76', source: '(:Y2_high, 23)', target: '(:Y2_high, 24)', meta: 'From: (:Y2_high, 23)\nTo: (:Y2_high, 24)\nProbablity: 1.0'}},
+{data: {id: 'edge_77', source: '(:Y2_high, 24)', target: '(:Y2_high, 25)', meta: 'From: (:Y2_high, 24)\nTo: (:Y2_high, 25)\nProbablity: 1.0'}},
+{data: {id: 'edge_78', source: '(:Y2_high, 25)', target: '(:Y2_high, 26)', meta: 'From: (:Y2_high, 25)\nTo: (:Y2_high, 26)\nProbablity: 1.0'}},
+{data: {id: 'edge_79', source: '(:Y2_high, 26)', target: '(:Y2_high, 27)', meta: 'From: (:Y2_high, 26)\nTo: (:Y2_high, 27)\nProbablity: 1.0'}},
+{data: {id: 'edge_80', source: '(:Y2_high, 27)', target: '(:Y2_high, 28)', meta: 'From: (:Y2_high, 27)\nTo: (:Y2_high, 28)\nProbablity: 1.0'}},
+{data: {id: 'edge_81', source: '(:Y2_high, 28)', target: '(:Y2_high, 29)', meta: 'From: (:Y2_high, 28)\nTo: (:Y2_high, 29)\nProbablity: 1.0'}},
+{data: {id: 'edge_82', source: '(:Y2_high, 29)', target: '(:Y2_high, 30)', meta: 'From: (:Y2_high, 29)\nTo: (:Y2_high, 30)\nProbablity: 1.0'}},
+{data: {id: 'edge_83', source: '(:Y2_high, 30)', target: '(:Y2_high, 31)', meta: 'From: (:Y2_high, 30)\nTo: (:Y2_high, 31)\nProbablity: 1.0'}},
+{data: {id: 'edge_84', source: '(:Y2_high, 31)', target: '(:Y2_high, 32)', meta: 'From: (:Y2_high, 31)\nTo: (:Y2_high, 32)\nProbablity: 1.0'}},
+{data: {id: 'edge_85', source: '(:Y2_high, 32)', target: '(:Y2_high, 33)', meta: 'From: (:Y2_high, 32)\nTo: (:Y2_high, 33)\nProbablity: 1.0'}},
+{data: {id: 'edge_86', source: '(:Y2_high, 33)', target: '(:Y2_high, 34)', meta: 'From: (:Y2_high, 33)\nTo: (:Y2_high, 34)\nProbablity: 1.0'}},
+{data: {id: 'edge_87', source: '(:Y2_high, 34)', target: '(:Y2_high, 35)', meta: 'From: (:Y2_high, 34)\nTo: (:Y2_high, 35)\nProbablity: 1.0'}},
+{data: {id: 'edge_88', source: '(:Y2_high, 35)', target: '(:Y2_high, 36)', meta: 'From: (:Y2_high, 35)\nTo: (:Y2_high, 36)\nProbablity: 1.0'}},
+{data: {id: 'edge_89', source: '(:Y2_high, 36)', target: '(:Y2_high, 37)', meta: 'From: (:Y2_high, 36)\nTo: (:Y2_high, 37)\nProbablity: 1.0'}},
+{data: {id: 'edge_90', source: '(:Y2_high, 37)', target: '(:Y2_high, 38)', meta: 'From: (:Y2_high, 37)\nTo: (:Y2_high, 38)\nProbablity: 1.0'}},
+{data: {id: 'edge_91', source: '(:Y2_high, 38)', target: '(:Y2_high, 39)', meta: 'From: (:Y2_high, 38)\nTo: (:Y2_high, 39)\nProbablity: 1.0'}},
+{data: {id: 'edge_92', source: '(:Y2_high, 39)', target: '(:Y2_high, 40)', meta: 'From: (:Y2_high, 39)\nTo: (:Y2_high, 40)\nProbablity: 1.0'}},
+{data: {id: 'edge_93', source: '(:Y2_high, 40)', target: '(:Y2_high, 41)', meta: 'From: (:Y2_high, 40)\nTo: (:Y2_high, 41)\nProbablity: 1.0'}},
+{data: {id: 'edge_94', source: '(:Y2_high, 41)', target: '(:Y2_high, 42)', meta: 'From: (:Y2_high, 41)\nTo: (:Y2_high, 42)\nProbablity: 1.0'}},
+{data: {id: 'edge_95', source: '(:Y2_high, 42)', target: '(:Y2_high, 43)', meta: 'From: (:Y2_high, 42)\nTo: (:Y2_high, 43)\nProbablity: 1.0'}},
+{data: {id: 'edge_96', source: '(:Y2_high, 43)', target: '(:Y2_high, 44)', meta: 'From: (:Y2_high, 43)\nTo: (:Y2_high, 44)\nProbablity: 1.0'}},
+{data: {id: 'edge_97', source: '(:Y2_high, 44)', target: '(:Y2_high, 45)', meta: 'From: (:Y2_high, 44)\nTo: (:Y2_high, 45)\nProbablity: 1.0'}},
+{data: {id: 'edge_98', source: '(:Y2_high, 45)', target: '(:Y2_high, 46)', meta: 'From: (:Y2_high, 45)\nTo: (:Y2_high, 46)\nProbablity: 1.0'}},
+{data: {id: 'edge_99', source: '(:Y2_high, 46)', target: '(:Y2_high, 47)', meta: 'From: (:Y2_high, 46)\nTo: (:Y2_high, 47)\nProbablity: 1.0'}},
+{data: {id: 'edge_100', source: '(:Y2_high, 47)', target: '(:Y2_high, 48)', meta: 'From: (:Y2_high, 47)\nTo: (:Y2_high, 48)\nProbablity: 1.0'}},
+{data: {id: 'edge_101', source: '(:Y2_high, 48)', target: '(:Y2_high, 49)', meta: 'From: (:Y2_high, 48)\nTo: (:Y2_high, 49)\nProbablity: 1.0'}},
+{data: {id: 'edge_102', source: '(:Y2_high, 49)', target: '(:Y2_high, 50)', meta: 'From: (:Y2_high, 49)\nTo: (:Y2_high, 50)\nProbablity: 1.0'}},
+{data: {id: 'edge_103', source: '(:Y2_high, 50)', target: '(:Y2_high, 51)', meta: 'From: (:Y2_high, 50)\nTo: (:Y2_high, 51)\nProbablity: 1.0'}},
+{data: {id: 'edge_104', source: '(:Y2_high, 51)', target: '(:Y2_high, 52)', meta: 'From: (:Y2_high, 51)\nTo: (:Y2_high, 52)\nProbablity: 1.0'}},
+{data: {id: 'edge_105', source: '(:Y2_high, 52)', target: '(:Y2_high, 1)', meta: 'From: (:Y2_high, 52)\nTo: (:Y2_high, 1)\nProbablity: 0.9'}},
+{data: {id: 'edge_106', source: '(:Y2_normal, 1)', target: '(:Y2_normal, 2)', meta: 'From: (:Y2_normal, 1)\nTo: (:Y2_normal, 2)\nProbablity: 1.0'}},
+{data: {id: 'edge_107', source: '(:Y2_normal, 2)', target: '(:Y2_normal, 3)', meta: 'From: (:Y2_normal, 2)\nTo: (:Y2_normal, 3)\nProbablity: 1.0'}},
+{data: {id: 'edge_108', source: '(:Y2_normal, 3)', target: '(:Y2_normal, 4)', meta: 'From: (:Y2_normal, 3)\nTo: (:Y2_normal, 4)\nProbablity: 1.0'}},
+{data: {id: 'edge_109', source: '(:Y2_normal, 4)', target: '(:Y2_normal, 5)', meta: 'From: (:Y2_normal, 4)\nTo: (:Y2_normal, 5)\nProbablity: 1.0'}},
+{data: {id: 'edge_110', source: '(:Y2_normal, 5)', target: '(:Y2_normal, 6)', meta: 'From: (:Y2_normal, 5)\nTo: (:Y2_normal, 6)\nProbablity: 1.0'}},
+{data: {id: 'edge_111', source: '(:Y2_normal, 6)', target: '(:Y2_normal, 7)', meta: 'From: (:Y2_normal, 6)\nTo: (:Y2_normal, 7)\nProbablity: 1.0'}},
+{data: {id: 'edge_112', source: '(:Y2_normal, 7)', target: '(:Y2_normal, 8)', meta: 'From: (:Y2_normal, 7)\nTo: (:Y2_normal, 8)\nProbablity: 1.0'}},
+{data: {id: 'edge_113', source: '(:Y2_normal, 8)', target: '(:Y2_normal, 9)', meta: 'From: (:Y2_normal, 8)\nTo: (:Y2_normal, 9)\nProbablity: 1.0'}},
+{data: {id: 'edge_114', source: '(:Y2_normal, 9)', target: '(:Y2_normal, 10)', meta: 'From: (:Y2_normal, 9)\nTo: (:Y2_normal, 10)\nProbablity: 1.0'}},
+{data: {id: 'edge_115', source: '(:Y2_normal, 10)', target: '(:Y2_normal, 11)', meta: 'From: (:Y2_normal, 10)\nTo: (:Y2_normal, 11)\nProbablity: 1.0'}},
+{data: {id: 'edge_116', source: '(:Y2_normal, 11)', target: '(:Y2_normal, 12)', meta: 'From: (:Y2_normal, 11)\nTo: (:Y2_normal, 12)\nProbablity: 1.0'}},
+{data: {id: 'edge_117', source: '(:Y2_normal, 12)', target: '(:Y2_normal, 13)', meta: 'From: (:Y2_normal, 12)\nTo: (:Y2_normal, 13)\nProbablity: 1.0'}},
+{data: {id: 'edge_118', source: '(:Y2_normal, 13)', target: '(:Y2_normal, 14)', meta: 'From: (:Y2_normal, 13)\nTo: (:Y2_normal, 14)\nProbablity: 1.0'}},
+{data: {id: 'edge_119', source: '(:Y2_normal, 14)', target: '(:Y2_normal, 15)', meta: 'From: (:Y2_normal, 14)\nTo: (:Y2_normal, 15)\nProbablity: 1.0'}},
+{data: {id: 'edge_120', source: '(:Y2_normal, 15)', target: '(:Y2_normal, 16)', meta: 'From: (:Y2_normal, 15)\nTo: (:Y2_normal, 16)\nProbablity: 1.0'}},
+{data: {id: 'edge_121', source: '(:Y2_normal, 16)', target: '(:Y2_normal, 17)', meta: 'From: (:Y2_normal, 16)\nTo: (:Y2_normal, 17)\nProbablity: 1.0'}},
+{data: {id: 'edge_122', source: '(:Y2_normal, 17)', target: '(:Y2_normal, 18)', meta: 'From: (:Y2_normal, 17)\nTo: (:Y2_normal, 18)\nProbablity: 1.0'}},
+{data: {id: 'edge_123', source: '(:Y2_normal, 18)', target: '(:Y2_normal, 19)', meta: 'From: (:Y2_normal, 18)\nTo: (:Y2_normal, 19)\nProbablity: 1.0'}},
+{data: {id: 'edge_124', source: '(:Y2_normal, 19)', target: '(:Y2_normal, 20)', meta: 'From: (:Y2_normal, 19)\nTo: (:Y2_normal, 20)\nProbablity: 1.0'}},
+{data: {id: 'edge_125', source: '(:Y2_normal, 20)', target: '(:Y2_normal, 21)', meta: 'From: (:Y2_normal, 20)\nTo: (:Y2_normal, 21)\nProbablity: 1.0'}},
+{data: {id: 'edge_126', source: '(:Y2_normal, 21)', target: '(:Y2_normal, 22)', meta: 'From: (:Y2_normal, 21)\nTo: (:Y2_normal, 22)\nProbablity: 1.0'}},
+{data: {id: 'edge_127', source: '(:Y2_normal, 22)', target: '(:Y2_normal, 23)', meta: 'From: (:Y2_normal, 22)\nTo: (:Y2_normal, 23)\nProbablity: 1.0'}},
+{data: {id: 'edge_128', source: '(:Y2_normal, 23)', target: '(:Y2_normal, 24)', meta: 'From: (:Y2_normal, 23)\nTo: (:Y2_normal, 24)\nProbablity: 1.0'}},
+{data: {id: 'edge_129', source: '(:Y2_normal, 24)', target: '(:Y2_normal, 25)', meta: 'From: (:Y2_normal, 24)\nTo: (:Y2_normal, 25)\nProbablity: 1.0'}},
+{data: {id: 'edge_130', source: '(:Y2_normal, 25)', target: '(:Y2_normal, 26)', meta: 'From: (:Y2_normal, 25)\nTo: (:Y2_normal, 26)\nProbablity: 1.0'}},
+{data: {id: 'edge_131', source: '(:Y2_normal, 26)', target: '(:Y2_normal, 27)', meta: 'From: (:Y2_normal, 26)\nTo: (:Y2_normal, 27)\nProbablity: 1.0'}},
+{data: {id: 'edge_132', source: '(:Y2_normal, 27)', target: '(:Y2_normal, 28)', meta: 'From: (:Y2_normal, 27)\nTo: (:Y2_normal, 28)\nProbablity: 1.0'}},
+{data: {id: 'edge_133', source: '(:Y2_normal, 28)', target: '(:Y2_normal, 29)', meta: 'From: (:Y2_normal, 28)\nTo: (:Y2_normal, 29)\nProbablity: 1.0'}},
+{data: {id: 'edge_134', source: '(:Y2_normal, 29)', target: '(:Y2_normal, 30)', meta: 'From: (:Y2_normal, 29)\nTo: (:Y2_normal, 30)\nProbablity: 1.0'}},
+{data: {id: 'edge_135', source: '(:Y2_normal, 30)', target: '(:Y2_normal, 31)', meta: 'From: (:Y2_normal, 30)\nTo: (:Y2_normal, 31)\nProbablity: 1.0'}},
+{data: {id: 'edge_136', source: '(:Y2_normal, 31)', target: '(:Y2_normal, 32)', meta: 'From: (:Y2_normal, 31)\nTo: (:Y2_normal, 32)\nProbablity: 1.0'}},
+{data: {id: 'edge_137', source: '(:Y2_normal, 32)', target: '(:Y2_normal, 33)', meta: 'From: (:Y2_normal, 32)\nTo: (:Y2_normal, 33)\nProbablity: 1.0'}},
+{data: {id: 'edge_138', source: '(:Y2_normal, 33)', target: '(:Y2_normal, 34)', meta: 'From: (:Y2_normal, 33)\nTo: (:Y2_normal, 34)\nProbablity: 1.0'}},
+{data: {id: 'edge_139', source: '(:Y2_normal, 34)', target: '(:Y2_normal, 35)', meta: 'From: (:Y2_normal, 34)\nTo: (:Y2_normal, 35)\nProbablity: 1.0'}},
+{data: {id: 'edge_140', source: '(:Y2_normal, 35)', target: '(:Y2_normal, 36)', meta: 'From: (:Y2_normal, 35)\nTo: (:Y2_normal, 36)\nProbablity: 1.0'}},
+{data: {id: 'edge_141', source: '(:Y2_normal, 36)', target: '(:Y2_normal, 37)', meta: 'From: (:Y2_normal, 36)\nTo: (:Y2_normal, 37)\nProbablity: 1.0'}},
+{data: {id: 'edge_142', source: '(:Y2_normal, 37)', target: '(:Y2_normal, 38)', meta: 'From: (:Y2_normal, 37)\nTo: (:Y2_normal, 38)\nProbablity: 1.0'}},
+{data: {id: 'edge_143', source: '(:Y2_normal, 38)', target: '(:Y2_normal, 39)', meta: 'From: (:Y2_normal, 38)\nTo: (:Y2_normal, 39)\nProbablity: 1.0'}},
+{data: {id: 'edge_144', source: '(:Y2_normal, 39)', target: '(:Y2_normal, 40)', meta: 'From: (:Y2_normal, 39)\nTo: (:Y2_normal, 40)\nProbablity: 1.0'}},
+{data: {id: 'edge_145', source: '(:Y2_normal, 40)', target: '(:Y2_normal, 41)', meta: 'From: (:Y2_normal, 40)\nTo: (:Y2_normal, 41)\nProbablity: 1.0'}},
+{data: {id: 'edge_146', source: '(:Y2_normal, 41)', target: '(:Y2_normal, 42)', meta: 'From: (:Y2_normal, 41)\nTo: (:Y2_normal, 42)\nProbablity: 1.0'}},
+{data: {id: 'edge_147', source: '(:Y2_normal, 42)', target: '(:Y2_normal, 43)', meta: 'From: (:Y2_normal, 42)\nTo: (:Y2_normal, 43)\nProbablity: 1.0'}},
+{data: {id: 'edge_148', source: '(:Y2_normal, 43)', target: '(:Y2_normal, 44)', meta: 'From: (:Y2_normal, 43)\nTo: (:Y2_normal, 44)\nProbablity: 1.0'}},
+{data: {id: 'edge_149', source: '(:Y2_normal, 44)', target: '(:Y2_normal, 45)', meta: 'From: (:Y2_normal, 44)\nTo: (:Y2_normal, 45)\nProbablity: 1.0'}},
+{data: {id: 'edge_150', source: '(:Y2_normal, 45)', target: '(:Y2_normal, 46)', meta: 'From: (:Y2_normal, 45)\nTo: (:Y2_normal, 46)\nProbablity: 1.0'}},
+{data: {id: 'edge_151', source: '(:Y2_normal, 46)', target: '(:Y2_normal, 47)', meta: 'From: (:Y2_normal, 46)\nTo: (:Y2_normal, 47)\nProbablity: 1.0'}},
+{data: {id: 'edge_152', source: '(:Y2_normal, 47)', target: '(:Y2_normal, 48)', meta: 'From: (:Y2_normal, 47)\nTo: (:Y2_normal, 48)\nProbablity: 1.0'}},
+{data: {id: 'edge_153', source: '(:Y2_normal, 48)', target: '(:Y2_normal, 49)', meta: 'From: (:Y2_normal, 48)\nTo: (:Y2_normal, 49)\nProbablity: 1.0'}},
+{data: {id: 'edge_154', source: '(:Y2_normal, 49)', target: '(:Y2_normal, 50)', meta: 'From: (:Y2_normal, 49)\nTo: (:Y2_normal, 50)\nProbablity: 1.0'}},
+{data: {id: 'edge_155', source: '(:Y2_normal, 50)', target: '(:Y2_normal, 51)', meta: 'From: (:Y2_normal, 50)\nTo: (:Y2_normal, 51)\nProbablity: 1.0'}},
+{data: {id: 'edge_156', source: '(:Y2_normal, 51)', target: '(:Y2_normal, 52)', meta: 'From: (:Y2_normal, 51)\nTo: (:Y2_normal, 52)\nProbablity: 1.0'}},
+{data: {id: 'edge_157', source: '(:Y2_normal, 52)', target: '(:Y2_normal, 1)', meta: 'From: (:Y2_normal, 52)\nTo: (:Y2_normal, 1)\nProbablity: 0.9'}},
+{data: {id: 'edge_158', source: '(:invest_1, 0)', target: '(:Y1, 1)', meta: 'From: (:invest_1, 0)\nTo: (:Y1, 1)\nProbablity: 1.0'}},
+{data: {id: 'edge_159', source: '(:invest_2, 0)', target: '(:Y2_normal, 1)', meta: 'From: (:invest_2, 0)\nTo: (:Y2_normal, 1)\nProbablity: 0.5'}},
+{data: {id: 'edge_160', source: '(:invest_2, 0)', target: '(:Y2_high, 1)', meta: 'From: (:invest_2, 0)\nTo: (:Y2_high, 1)\nProbablity: 0.5'}},
+        ],
+        layout: {
+          name: 'elk',
+          elk: {
+            'algorithm': 'layered',
+            'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+            'elk.layered.cycleBreaking.strategy': 'MODEL_ORDER',
+            'elk.aspectRatio': 2,
+            'elk.layered.spacing.nodeNodeBetweenLayers': 30,
+            'elk.spacing.nodeNode': 100,
+            'elk.spacing.edgeEdge': 20,
+            'elk.spacing.edgeNode': 50
+          }
+        },
+        style: [{
+          selector: 'node',
+          style: {
+            'shape': 'rectangle',
+            'background-color': '#fff',
+            'border-width': 1,
+            'text-valign': 'center',
+            'text-halign': 'center',
+          }
+        }, {
+          selector: 'edge',
+          style: {
+            'width': 1,
+            'line-color': '#000',
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle',
+            'target-arrow-color': '#000',
+          },
+        }, {
+          selector: 'node[shape]', style: {'shape': 'data(shape)'}
+        }, {
+          selector: 'node[?has_noise]',
+          style: {
+            'background-image': squigglyPhotonSvg,
+            'background-clip': 'none',
+            'bounds-expansion': 30,
+            'background-position-x': '-30px',
+            'background-position-y': '-25px',
+            'background-width': '45px',
+            'background-height': '45px',
+            'background-repeat': 'no-repeat'
+          }
+        }]
+      });
+      function showTooltip(evt) {
+        if (evt.target.data('meta')) {
+          tooltip.innerText = evt.target.data('meta');
+          tooltip.style.display = 'block';
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function moveTooltip(evt) {
+        if (tooltip.style.display === 'block') {
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function hideTooltip() {
+        tooltip.style.display = 'none';
+      }
+      cy.on('mouseover', 'node, edge', showTooltip);
+      cy.on('mousemove', 'node, edge', moveTooltip);
+      cy.on('mouseout', 'node, edge', hideTooltip);
+    });
+  </script>
+</body>
+</html>

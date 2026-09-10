@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Hydro-thermal scheduling · SDDP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SDDP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox"/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Basic</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/basic/01_first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../../tutorial/basic/03_objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../../tutorial/basic/04_markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../../tutorial/basic/05_plotting/">Plotting tools</a></li><li><a class="tocitem" href="../../tutorial/basic/06_warnings/">Words of warning</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-2" type="checkbox"/><label class="tocitem" for="menuitem-2-2"><span class="docs-label">Advanced</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/advanced/11_objective_states/">Objective states</a></li><li><a class="tocitem" href="../../tutorial/advanced/12_belief_states/">Belief states</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-3" type="checkbox"/><label class="tocitem" for="menuitem-2-3"><span class="docs-label">Theory</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/theory/21_theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../tutorial/theory/22_risk/">Risk aversion</a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/acess_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li class="is-active"><a class="tocitem" href>Hydro-thermal scheduling</a><ul class="internal"><li><a class="tocitem" href="#Problem-Description"><span>Problem Description</span></a></li><li><a class="tocitem" href="#Importing-packages"><span>Importing packages</span></a></li><li><a class="tocitem" href="#Constructing-the-policy-graph"><span>Constructing the policy graph</span></a></li><li><a class="tocitem" href="#Constructing-the-model"><span>Constructing the model</span></a></li><li><a class="tocitem" href="#Training-the-policy"><span>Training the policy</span></a></li><li><a class="tocitem" href="#Simulating-the-policy"><span>Simulating the policy</span></a></li><li><a class="tocitem" href="#Extracting-the-water-values"><span>Extracting the water values</span></a></li></ul></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Hydro-thermal scheduling</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Hydro-thermal scheduling</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/Hydro_thermal.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Hydro-thermal-scheduling"><a class="docs-heading-anchor" href="#Hydro-thermal-scheduling">Hydro-thermal scheduling</a><a id="Hydro-thermal-scheduling-1"></a><a class="docs-heading-anchor-permalink" href="#Hydro-thermal-scheduling" title="Permalink"></a></h1><h2 id="Problem-Description"><a class="docs-heading-anchor" href="#Problem-Description">Problem Description</a><a id="Problem-Description-1"></a><a class="docs-heading-anchor-permalink" href="#Problem-Description" title="Permalink"></a></h2><p>In a hydro-thermal problem, the agent controls a hydro-electric generator and reservoir. Each time period, they need to choose a generation quantity from thermal <code>g_t</code>, and hydro <code>g_h</code>, in order to meed demand <code>w_d</code>, which is a stagewise-independent random variable. The state variable, <code>x</code>, is the quantity of water in the reservoir at the start of each time period, and it has a minimum level of 5 units and a maximum level of 15 units. We assume that there are 10 units of water in the reservoir at the start of time, so that <code>x_0 = 10</code>. The state-variable is connected through time by the water balance constraint: <code>x.out = x.in - g_t - s + w_i,</code> where <code>x.out</code> is the quantity of water at the end of the time period, <code>x.in</code> is the quantity of water at the start of the time period, <code>s</code> is the quantity of water spilled from the reservoir, and <code>w_i</code> is a stagewise-independent random variable that represents the inflow into the reservoir during the time period.</p><p>We assume that there are three stages, <code>t=1, 2, 3</code>, representing summer-fall, winter, and spring, and that we are solving this problem in an infinite-horizon setting with a discount factor of <code>0.95</code>.</p><p>In each stage, the agent incurs the cost of spillage, plus the cost of thermal generation. We assume that the cost of thermal generation is dependent on the stage <code>t = 1, 2, 3</code>, and that in each stage, <code>w</code> is drawn from the set <code>(w_i, w_d) = {(0, 7.5), (3, 5), (10, 2.5)}</code> with equal probability.</p><h2 id="Importing-packages"><a class="docs-heading-anchor" href="#Importing-packages">Importing packages</a><a id="Importing-packages-1"></a><a class="docs-heading-anchor-permalink" href="#Importing-packages" title="Permalink"></a></h2><p>For this example, in addition to <code>SDDP</code>, we need <code>GLPK</code> as a solver and <code>Statisitics</code> to compute the mean of our simulations.</p><pre><code class="language-julia">using GLPK
+using SDDP
+using Statistics</code></pre><h2 id="Constructing-the-policy-graph"><a class="docs-heading-anchor" href="#Constructing-the-policy-graph">Constructing the policy graph</a><a id="Constructing-the-policy-graph-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-the-policy-graph" title="Permalink"></a></h2><p>There are three stages in our problem, so we construct a linear policy graph with three stages using <a href="../../apireference/#SDDP.LinearGraph"><code>SDDP.LinearGraph</code></a>:</p><pre><code class="language-julia">graph = SDDP.LinearGraph(3)</code></pre><pre><code class="nohighlight">Root
+ 0
+Nodes
+ 1
+ 2
+ 3
+Arcs
+ 0 =&gt; 1 w.p. 1.0
+ 1 =&gt; 2 w.p. 1.0
+ 2 =&gt; 3 w.p. 1.0
+</code></pre><p>Then, because we want to solve an infinite-horizon problem, we add an additional edge between node <code>3</code> and node <code>1</code> with probability <code>0.95</code>:</p><pre><code class="language-julia">SDDP.add_edge(graph, 3 =&gt; 1, 0.95)</code></pre><h2 id="Constructing-the-model"><a class="docs-heading-anchor" href="#Constructing-the-model">Constructing the model</a><a id="Constructing-the-model-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-the-model" title="Permalink"></a></h2><p>Much of the macro code (i.e., lines starting with <code>@</code>) in the first part of the following should be familiar to users of JuMP.</p><p>Inside the <code>do-end</code> block, <code>sp</code> is a standard JuMP model, and <code>t</code> is an index for the state variable that will be called with <code>t = 1, 2, 3</code>.</p><p>The state variable <code>x</code>, constructed by passing the <code>SDDP.State</code> tag to <code>@variable</code> is actually a Julia struct with two fields: <code>x.in</code> and <code>x.out</code> corresponding to the incoming and outgoing state variables respectively. Both <code>x.in</code> and <code>x.out</code> are standard JuMP variables. The <code>initial_value</code> keyword provides the value of the state variable in the root node (i.e., <code>x_0</code>).</p><p>Compared to a JuMP model, one key difference is that we use <a href="../../apireference/#SDDP.@stageobjective"><code>@stageobjective</code></a> instead of <code>@objective</code>. The <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a> function takes a list of supports for <code>w</code> and parameterizes the JuMP model <code>sp</code> by setting the right-hand sides of the appropriate constraints (note how the constraints initially have a right-hand side of <code>0</code>). By default, it is assumed that the realizations have uniform probability, but a probability mass vector can also be provided.</p><pre><code class="language-julia">model = SDDP.PolicyGraph(
+    graph,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+) do sp, t
+    @variable(sp, 5 &lt;= x &lt;= 15, SDDP.State, initial_value = 10)
+    @variable(sp, g_t &gt;= 0)
+    @variable(sp, g_h &gt;= 0)
+    @variable(sp, s &gt;= 0)
+    @constraint(sp, balance, x.out - x.in + g_h + s == 0)
+    @constraint(sp, demand, g_h + g_t == 0)
+    @stageobjective(sp, s + t * g_t)
+    SDDP.parameterize(sp, [[0, 7.5], [3, 5], [10, 2.5]]) do w
+        set_normalized_rhs(balance, w[1])
+        return set_normalized_rhs(demand, w[2])
+    end
+end</code></pre><pre><code class="nohighlight">A policy graph with 3 nodes.
+ Node indices: 1, 2, 3
+</code></pre><h2 id="Training-the-policy"><a class="docs-heading-anchor" href="#Training-the-policy">Training the policy</a><a id="Training-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Training-the-policy" title="Permalink"></a></h2><p>Once a model has been constructed, the next step is to train the policy. This can be achieved using <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a>. There are many options that can be passed, but <code>iteration_limit</code> terminates the training after the prescribed number of SDDP iterations.</p><pre><code class="language-julia">SDDP.train(model, iteration_limit = 100)</code></pre><pre><code class="nohighlight">------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : Inf
+  Existing cuts   : false
+  Subproblem structure                      : (min, max)
+    Variables                               : (6, 6)
+    VariableRef in MOI.LessThan{Float64}    : (1, 1)
+    VariableRef in MOI.GreaterThan{Float64} : (5, 5)
+    AffExpr in MOI.EqualTo{Float64}         : (2, 2)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+00]
+  Non-zero Objective range  [1e+00, 3e+00]
+  Non-zero Bounds range     [5e+00, 2e+01]
+  Non-zero RHS range        [2e+00, 1e+01]
+No problems detected
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    6.150000e+01   2.887652e+01   3.834012e-01          1         75
+        2    1.449669e+02   7.608300e+01   3.898160e-01          1        246
+        3    2.050000e+01   8.073466e+01   3.908842e-01          1        273
+        4    1.872207e+02   1.066419e+02   3.965750e-01          1        408
+        5    2.950000e+01   1.133084e+02   3.982911e-01          1        447
+        6    4.545914e+01   1.188873e+02   4.003379e-01          1        498
+        7    5.843433e+02   1.833509e+02   4.394860e-01          1       1329
+        8    1.576828e+02   1.900028e+02   4.510829e-01          1       1536
+        9    2.846617e+02   1.985914e+02   4.658241e-01          1       1803
+       10    4.799673e+01   2.003678e+02   4.689791e-01          1       1854
+       11    3.585548e+02   2.095325e+02   4.896700e-01          1       2229
+       12    7.923240e+01   2.113305e+02   4.947720e-01          1       2316
+       13    4.574087e+02   2.190355e+02   5.293682e-01          1       2883
+       14    1.677303e+02   2.217032e+02   5.412531e-01          1       3066
+       15    2.257704e+02   2.229001e+02   5.534730e-01          1       3261
+       16    4.488564e+02   2.254794e+02   5.777590e-01          1       3624
+       17    7.606693e+02   2.283348e+02   6.439760e-01          1       4515
+       18    6.577244e+02   2.309584e+02   6.965170e-01          1       5190
+       19    6.003918e+02   2.315732e+02   7.472169e-01          1       5793
+       20    1.007824e+03   2.332881e+02   8.201370e-01          1       6612
+       21    2.179058e+02   2.336243e+02   8.383071e-01          1       6819
+       22    8.946599e+01   2.336243e+02   8.468680e-01          1       6906
+       23    2.526157e+02   2.339302e+02   8.761489e-01          1       7233
+       24    1.350000e+01   2.339329e+02   8.785381e-01          1       7260
+       25    3.342227e+01   2.339329e+02   8.812551e-01          1       7287
+       26    2.229390e+01   2.340446e+02   8.835831e-01          1       7314
+       27    6.964429e+02   2.347029e+02   9.456990e-01          1       7965
+       28    1.291217e+02   2.349059e+02   9.636540e-01          1       8148
+       29    3.296336e+02   2.350345e+02   9.918411e-01          1       8427
+       30    7.773635e+01   2.350638e+02   9.969411e-01          1       8478
+       31    7.251843e+02   2.354592e+02   1.083937e+00          1       9273
+       32    3.757739e+01   2.354854e+02   1.094137e+00          1       9360
+       33    2.891399e+01   2.354905e+02   1.099534e+00          1       9411
+       34    4.936242e+02   2.356243e+02   1.147678e+00          1       9846
+       35    8.767806e+01   2.356689e+02   1.156000e+00          1       9921
+       36    6.984279e+01   2.357013e+02   1.168350e+00          1      10032
+       37    2.779357e+02   2.357740e+02   1.199217e+00          1      10287
+       38    7.764053e+02   2.358597e+02   1.291520e+00          1      11082
+       39    7.319628e+02   2.360150e+02   1.416893e+00          1      11769
+       40    2.323489e+01   2.360228e+02   1.421600e+00          1      11808
+       41    5.597978e+02   2.361129e+02   1.483455e+00          1      12315
+       42    4.190755e+02   2.361483e+02   1.526206e+00          1      12654
+       43    7.995642e+02   2.361996e+02   1.622291e+00          1      13401
+       44    7.621038e+02   2.362632e+02   1.738460e+00          1      14280
+       45    1.686389e+02   2.362755e+02   1.762558e+00          1      14463
+       46    8.297754e+01   2.362762e+02   1.770982e+00          1      14526
+       47    1.884426e+02   2.362933e+02   1.806653e+00          1      14781
+       48    2.938877e+02   2.363031e+02   1.849567e+00          1      15084
+       49    9.436302e+00   2.363080e+02   1.854827e+00          1      15123
+       50    1.400054e+01   2.363080e+02   1.858928e+00          1      15150
+       51    1.224534e+02   2.363136e+02   1.874375e+00          1      15261
+       52    5.940325e+02   2.363345e+02   1.962963e+00          1      15876
+       53    3.809286e+01   2.363345e+02   1.968182e+00          1      15915
+       54    1.320175e+02   2.363384e+02   1.981026e+00          1      16002
+       55    2.475680e+02   2.363414e+02   2.021289e+00          1      16269
+       56    1.464980e+02   2.363496e+02   2.050836e+00          1      16452
+       57    2.605985e+02   2.363537e+02   2.091650e+00          1      16719
+       58    5.484972e+02   2.363731e+02   2.188199e+00          1      17334
+       59    1.504028e+02   2.363751e+02   2.214233e+00          1      17505
+       60    3.590326e+02   2.363829e+02   2.269300e+00          1      17856
+       61    1.000000e+01   2.363830e+02   2.271518e+00          1      17871
+       62    6.441379e+01   2.363841e+02   2.277272e+00          1      17910
+       63    6.299928e+01   2.363847e+02   2.283450e+00          1      17949
+       64    2.845575e+02   2.363861e+02   2.332062e+00          1      18264
+       65    2.914766e+02   2.363932e+02   2.388150e+00          1      18603
+       66    1.028181e+02   2.363938e+02   2.406424e+00          1      18714
+       67    6.124868e+02   2.364019e+02   2.519275e+00          1      19401
+       68    5.947040e+01   2.364029e+02   2.527473e+00          1      19452
+       69    1.229988e+02   2.364034e+02   2.535176e+00          1      19503
+       70    1.675040e+02   2.364057e+02   2.566544e+00          1      19686
+       71    3.075450e+02   2.364082e+02   2.620493e+00          1      20013
+       72    7.648705e+01   2.364082e+02   2.635223e+00          1      20100
+       73    1.679902e+02   2.364112e+02   2.665385e+00          1      20271
+       74    2.019978e+02   2.364121e+02   2.692178e+00          1      20430
+       75    9.050268e+01   2.364133e+02   2.710113e+00          1      20541
+       76    2.500000e+00   2.364137e+02   2.712480e+00          1      20556
+       77    6.503006e+00   2.364137e+02   2.715056e+00          1      20571
+       78    1.650008e+02   2.364143e+02   2.734351e+00          1      20682
+       79    2.500000e+00   2.364143e+02   2.736912e+00          1      20697
+       80    1.575332e+02   2.364147e+02   2.779602e+00          1      20940
+       81    1.000000e+01   2.364148e+02   2.781982e+00          1      20955
+       82    1.184951e+02   2.364170e+02   2.806279e+00          1      21090
+       83    3.249437e+01   2.364170e+02   2.811678e+00          1      21117
+       84    5.539938e+02   2.364184e+02   2.897692e+00          1      21600
+       85    1.685165e+02   2.364196e+02   2.924238e+00          1      21747
+       86    1.875204e+02   2.364199e+02   2.960327e+00          1      21942
+       87    1.175043e+02   2.364211e+02   2.985694e+00          1      22077
+       88    1.129946e+02   2.364211e+02   2.995137e+00          1      22128
+       89    1.169508e+03   2.364264e+02   3.210121e+00          1      23271
+       90    6.457586e+01   2.364267e+02   3.221872e+00          1      23334
+       91    2.300045e+01   2.364270e+02   3.228769e+00          1      23373
+       92    4.520071e+02   2.364280e+02   3.317859e+00          1      23832
+       93    2.230041e+02   2.364286e+02   3.346376e+00          1      23979
+       94    3.920006e+02   2.364291e+02   3.412545e+00          1      24330
+       95    3.444957e+02   2.364301e+02   3.478849e+00          1      24681
+       96    2.650256e+02   2.364304e+02   3.549828e+00          1      25020
+       97    1.140023e+02   2.364308e+02   3.569161e+00          1      25119
+       98    1.564964e+02   2.364308e+02   3.607877e+00          1      25314
+       99    4.130029e+02   2.364317e+02   3.669282e+00          1      25641
+      100    3.154948e+02   2.364320e+02   3.737006e+00          1      25968
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 3.737006e+00
+  Total solves   : 25968
+  Best bound     :  2.364320e+02
+  Simulation CI  :  2.553103e+02 ± 4.875757e+01
+------------------------------------------------------------------------------
+</code></pre><h2 id="Simulating-the-policy"><a class="docs-heading-anchor" href="#Simulating-the-policy">Simulating the policy</a><a id="Simulating-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Simulating-the-policy" title="Permalink"></a></h2><p>After training, we can simulate the policy using <a href="../../apireference/#SDDP.simulate"><code>SDDP.simulate</code></a>.</p><pre><code class="language-julia">sims = SDDP.simulate(model, 100, [:g_t])
+mu = round(mean([s[1][:g_t] for s in sims]), digits = 2)
+println(&quot;On average, $(mu) units of thermal are used in the first stage.&quot;)</code></pre><pre><code class="nohighlight">On average, 2.31 units of thermal are used in the first stage.
+</code></pre><h2 id="Extracting-the-water-values"><a class="docs-heading-anchor" href="#Extracting-the-water-values">Extracting the water values</a><a id="Extracting-the-water-values-1"></a><a class="docs-heading-anchor-permalink" href="#Extracting-the-water-values" title="Permalink"></a></h2><p>Finally, we can use <a href="../../apireference/#SDDP.ValueFunction"><code>SDDP.ValueFunction</code></a> and <a href="../../apireference/#SDDP.evaluate"><code>SDDP.evaluate</code></a> to obtain and evaluate the value function at different points in the state-space. Note that since we are minimizing, the price has a negative sign: each additional unit of water leads to a decrease in the the expected long-run cost.</p><pre><code class="language-julia">V = SDDP.ValueFunction(model[1])
+cost, price = SDDP.evaluate(V, x = 10)</code></pre><pre><code class="nohighlight">(233.55642210730966, Dict(:x =&gt; -0.6600103149383989))</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../FAST_quickstart/">« FAST: the quickstart problem</a><a class="docs-footer-nextpage" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.3 on <span class="colophon-date" title="Tuesday 6 July 2021 02:15">Tuesday 6 July 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

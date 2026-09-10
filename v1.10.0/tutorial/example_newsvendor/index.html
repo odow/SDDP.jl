@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example: two-stage newsvendor · SDDP.jl</title><meta name="title" content="Example: two-stage newsvendor · SDDP.jl"/><meta property="og:title" content="Example: two-stage newsvendor · SDDP.jl"/><meta property="twitter:title" content="Example: two-stage newsvendor · SDDP.jl"/><meta name="description" content="Documentation for SDDP.jl."/><meta property="og:description" content="Documentation for SDDP.jl."/><meta property="twitter:description" content="Documentation for SDDP.jl."/><script async src="https://www.googletagmanager.com/gtag/js?id=G-HZQQDVMPZW"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HZQQDVMPZW', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="SDDP.jl logo"/></a><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../plotting/">Plotting tools</a></li><li><a class="tocitem" href="../warnings/">Words of warning</a></li><li><a class="tocitem" href="../arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../objective_states/">Objective states</a></li><li><a class="tocitem" href="../pglib_opf/">Alternative forward models</a></li><li><a class="tocitem" href="../mdps/">Example: Markov Decision Processes</a></li><li class="is-active"><a class="tocitem" href>Example: two-stage newsvendor</a><ul class="internal"><li><a class="tocitem" href="#Background"><span>Background</span></a></li><li><a class="tocitem" href="#Kelley&#39;s-cutting-plane-algorithm"><span>Kelley&#39;s cutting plane algorithm</span></a></li><li><a class="tocitem" href="#L-Shaped-theory"><span>L-Shaped theory</span></a></li><li><a class="tocitem" href="#L-Shaped-implementation"><span>L-Shaped implementation</span></a></li><li><a class="tocitem" href="#Policy-Graph"><span>Policy Graph</span></a></li><li><a class="tocitem" href="#Simulation"><span>Simulation</span></a></li><li><a class="tocitem" href="#Risk-aversion-revisited"><span>Risk aversion revisited</span></a></li><li><a class="tocitem" href="#Things-to-try"><span>Things to try</span></a></li></ul></li><li><a class="tocitem" href="../example_reservoir/">Example: deterministic to stochastic</a></li><li><a class="tocitem" href="../example_milk_producer/">Example: the milk producer</a></li><li><a class="tocitem" href="../inventory/">Example: inventory management</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../explanation/theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../explanation/risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Example: two-stage newsvendor</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example: two-stage newsvendor</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/example_newsvendor.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Example:-two-stage-newsvendor"><a class="docs-heading-anchor" href="#Example:-two-stage-newsvendor">Example: two-stage newsvendor</a><a id="Example:-two-stage-newsvendor-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-two-stage-newsvendor" title="Permalink"></a></h1><p><em>This tutorial was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em> <a href="../example_newsvendor.jl"><em>Download the source as a <code>.jl</code> file</em></a>. <a href="../example_newsvendor.ipynb"><em>Download the source as a <code>.ipynb</code> file</em></a>.</p><p>The purpose of this tutorial is to demonstrate how to model and solve a two-stage stochastic program.</p><p>It is based on the <a href="https://jump.dev/JuMP.jl/dev/tutorials/applications/two_stage_stochastic/">Two stage stochastic programs</a> tutorial in JuMP.</p><p>This tutorial uses the following packages</p><pre><code class="language-julia hljs">using JuMP
+using SDDP
+import Distributions
+import ForwardDiff
+import HiGHS
+import Plots
+import StatsPlots
+import Statistics</code></pre><h2 id="Background"><a class="docs-heading-anchor" href="#Background">Background</a><a id="Background-1"></a><a class="docs-heading-anchor-permalink" href="#Background" title="Permalink"></a></h2><p>The data for this problem is:</p><pre><code class="language-julia hljs">D = Distributions.TriangularDist(150.0, 250.0, 200.0)
+N = 100
+d = sort!(rand(D, N));
+Ω = 1:N
+P = fill(1 / N, N);
+StatsPlots.histogram(d; bins = 20, label = &quot;&quot;, xlabel = &quot;Demand&quot;)</code></pre><img src="3b5f67a3.svg" alt="Example block output"/><h2 id="Kelley&#39;s-cutting-plane-algorithm"><a class="docs-heading-anchor" href="#Kelley&#39;s-cutting-plane-algorithm">Kelley&#39;s cutting plane algorithm</a><a id="Kelley&#39;s-cutting-plane-algorithm-1"></a><a class="docs-heading-anchor-permalink" href="#Kelley&#39;s-cutting-plane-algorithm" title="Permalink"></a></h2><p>Kelley&#39;s cutting plane algorithm is an iterative method for maximizing concave functions. Given a concave function <span>$f(x)$</span>, Kelley&#39;s constructs an outer-approximation of the function at the minimum by a set of first-order Taylor series approximations (called <strong>cuts</strong>) constructed at a set of points <span>$k = 1,\ldots,K$</span>:</p><p class="math-container">\[\begin{aligned}
+f^K = \max\limits_{\theta \in \mathbb{R}, x \in \mathbb{R}^N} \;\; &amp; \theta\\
+&amp; \theta \le f(x_k) + \nabla f(x_k)^\top (x - x_k),\quad k=1,\ldots,K\\
+&amp; \theta \le M,
+\end{aligned}\]</p><p>where <span>$M$</span> is a sufficiently large number that is an upper bound for <span>$f$</span> over the domain of <span>$x$</span>.</p><p>Kelley&#39;s cutting plane algorithm is a structured way of choosing points <span>$x_k$</span> to visit, so that as more cuts are added:</p><p class="math-container">\[\lim_{K \rightarrow \infty} f^K = \max\limits_{x \in \mathbb{R}^N} f(x)\]</p><p>However, before we introduce the algorithm, we need to introduce some bounds.</p><h3 id="Bounds"><a class="docs-heading-anchor" href="#Bounds">Bounds</a><a id="Bounds-1"></a><a class="docs-heading-anchor-permalink" href="#Bounds" title="Permalink"></a></h3><p>By convexity, <span>$f(x) \le f^K$</span> for all <span>$x$</span>. Thus, if <span>$x^*$</span> is a maximizer of <span>$f$</span>, then at any point in time we can construct an upper bound for <span>$f(x^*)$</span> by solving <span>$f^K$</span>.</p><p>Moreover, we can use the primal solutions <span>$x_k^*$</span> returned by solving <span>$f^k$</span> to evaluate <span>$f(x_k^*)$</span> to generate a lower bound.</p><p>Therefore, <span>$\max\limits_{k=1,\ldots,K} f(x_k^*) \le f(x^*) \le f^K$</span>.</p><p>When the lower bound is sufficiently close to the upper bound, we can terminate the algorithm and declare that we have found an solution that is close to optimal.</p><h3 id="Implementation"><a class="docs-heading-anchor" href="#Implementation">Implementation</a><a id="Implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation" title="Permalink"></a></h3><p>Here is pseudo-code fo the Kelley algorithm:</p><ol><li>Take as input a convex function <span>$f(x)$</span> and a iteration limit <span>$K_{max}$</span>. Set <span>$K = 1$</span>, and initialize <span>$f^{K-1}$</span>. Set <span>$lb = -\infty$</span> and <span>$ub = \infty$</span>.</li><li>Solve <span>$f^{K-1}$</span> to obtain a candidate solution <span>$x_{K}$</span>.</li><li>Update <span>$ub = f^{K-1}$</span> and <span>$lb = \max\{lb, f(x_{K})\}$</span>.</li><li>Add a cut <span>$\theta \ge f(x_{K}) + \nabla f\left(x_{K}\right)^\top (x - x_{K})$</span> to form <span>$f^{K}$</span>.</li><li>Increment <span>$K$</span>.</li><li>If <span>$K &gt; K_{max}$</span> or <span>$|ub - lb| &lt; \epsilon$</span>, STOP, otherwise, go to step 2.</li></ol><p>And here&#39;s a complete implementation:</p><pre><code class="language-julia hljs">function kelleys_cutting_plane(
+    # The function to be minimized.
+    f::Function,
+    # The gradient of `f`. By default, we use automatic differentiation to
+    # compute the gradient of f so the user doesn&#39;t have to!
+    ∇f::Function = x -&gt; ForwardDiff.gradient(f, x);
+    # The number of arguments to `f`.
+    input_dimension::Int,
+    # An upper bound for the function `f` over its domain.
+    upper_bound::Float64,
+    # The number of iterations to run Kelley&#39;s algorithm for before stopping.
+    iteration_limit::Int,
+    # The absolute tolerance ϵ to use for convergence.
+    tolerance::Float64 = 1e-6,
+)
+    # Step (1):
+    K = 1
+    model = JuMP.Model(HiGHS.Optimizer)
+    JuMP.set_silent(model)
+    JuMP.@variable(model, θ &lt;= upper_bound)
+    JuMP.@variable(model, x[1:input_dimension])
+    JuMP.@objective(model, Max, θ)
+    x_k = fill(NaN, input_dimension)
+    lower_bound, upper_bound = -Inf, Inf
+    while true
+        # Step (2):
+        JuMP.optimize!(model)
+        x_k .= JuMP.value.(x)
+        # Step (3):
+        upper_bound = JuMP.objective_value(model)
+        lower_bound = min(upper_bound, f(x_k))
+        println(&quot;K = $K : $(lower_bound) &lt;= f(x*) &lt;= $(upper_bound)&quot;)
+        # Step (4):
+        JuMP.@constraint(model, θ &lt;= f(x_k) + ∇f(x_k)&#39; * (x .- x_k))
+        # Step (5):
+        K = K + 1
+        # Step (6):
+        if K &gt; iteration_limit
+            println(&quot;-- Termination status: iteration limit --&quot;)
+            break
+        elseif abs(upper_bound - lower_bound) &lt; tolerance
+            println(&quot;-- Termination status: converged --&quot;)
+            break
+        end
+    end
+    println(&quot;Found solution: x_K = &quot;, x_k)
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">kelleys_cutting_plane (generic function with 2 methods)</code></pre><p>Let&#39;s run our algorithm to see what happens:</p><pre><code class="language-julia hljs">kelleys_cutting_plane(;
+    input_dimension = 2,
+    upper_bound = 10.0,
+    iteration_limit = 20,
+) do x
+    return -(x[1] - 1)^2 + -(x[2] + 2)^2 + 1.0
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">K = 1 : -4.0 &lt;= f(x*) &lt;= 10.0
+K = 2 : -2.25 &lt;= f(x*) &lt;= 10.0
+K = 3 : -5.3125 &lt;= f(x*) &lt;= 10.0
+K = 4 : 0.83984375 &lt;= f(x*) &lt;= 5.625
+K = 5 : -1.3438585069444455 &lt;= f(x*) &lt;= 1.9791666666666667
+K = 6 : 0.4532453748914933 &lt;= f(x*) &lt;= 1.7513020833333333
+K = 7 : -2.794810401068801 &lt;= f(x*) &lt;= 1.3444010416666663
+K = 8 : 0.19507712328139326 &lt;= f(x*) &lt;= 1.3179100884331594
+K = 9 : 0.9073862122310157 &lt;= f(x*) &lt;= 1.3022015061077878
+K = 10 : 0.7292616273896162 &lt;= f(x*) &lt;= 1.2835882279084943
+K = 11 : 0.9856775767620292 &lt;= f(x*) &lt;= 1.1542808575464905
+K = 12 : 0.9521967150117504 &lt;= f(x*) &lt;= 1.0538679846579115
+K = 13 : 0.9907765147617908 &lt;= f(x*) &lt;= 1.0341945633777465
+K = 14 : 0.990619313815891 &lt;= f(x*) &lt;= 1.0168012962055821
+K = 15 : 0.9997569528573889 &lt;= f(x*) &lt;= 1.010937796651451
+K = 16 : 0.9955736574995747 &lt;= f(x*) &lt;= 1.0023159378334365
+K = 17 : 0.9981907645826057 &lt;= f(x*) &lt;= 1.001070011161672
+K = 18 : 0.999293284088297 &lt;= f(x*) &lt;= 1.0010295293971427
+K = 19 : 0.9997619192401398 &lt;= f(x*) &lt;= 1.0005033714074143
+K = 20 : 0.9999234387181322 &lt;= f(x*) &lt;= 1.0003705497285347
+-- Termination status: iteration limit --
+Found solution: x_K = [1.0074056501552666, -1.9953397824465389]</code></pre><h2 id="L-Shaped-theory"><a class="docs-heading-anchor" href="#L-Shaped-theory">L-Shaped theory</a><a id="L-Shaped-theory-1"></a><a class="docs-heading-anchor-permalink" href="#L-Shaped-theory" title="Permalink"></a></h2><p>The L-Shaped method is a way of solving two-stage stochastic programs by Benders&#39; decomposition. It takes the problem:</p><p class="math-container">\[\begin{aligned}
+V = \max\limits_{x,y_\omega} \;\; &amp; -2x + \mathbb{E}_\omega[5y_\omega - 0.1(x - y_\omega)] \\
+  &amp; y_\omega \le x              &amp; \quad \forall \omega \in \Omega \\
+  &amp; 0 \le y_\omega \le d_\omega &amp; \quad \forall \omega \in \Omega \\
+  &amp; x \ge 0.
+\end{aligned}\]</p><p>and decomposes it into a second-stage problem:</p><p class="math-container">\[\begin{aligned}
+V_2(\bar{x}, d_\omega) = \max\limits_{x,x^\prime,y_\omega} \;\; &amp; 5y_\omega - x^\prime \\
+  &amp; y_\omega \le x \\
+  &amp; x^\prime = x - y_\omega \\
+  &amp; 0 \le y_\omega \le d_\omega \\
+  &amp; x = \bar{x} &amp; [\lambda]
+\end{aligned}\]</p><p>and a first-stage problem:</p><p class="math-container">\[\begin{aligned}
+V = \max\limits_{x,\theta} \;\; &amp; -2x + \theta \\
+  &amp; \theta \le \mathbb{E}_\omega[V_2(x, \omega)] \\
+  &amp; x \ge 0
+\end{aligned}\]</p><p>Then, because <span>$V_2$</span> is convex with respect to <span>$\bar{x}$</span> for fixed <span>$\omega$</span>, we can use a set of feasible points <span>$\{x^k\}$</span> construct an outer approximation:</p><p class="math-container">\[\begin{aligned}
+V^K = \max\limits_{x,\theta} \;\; &amp; -2x + \theta \\
+  &amp; \theta \le \mathbb{E}_\omega[V_2(x^k, \omega) + \nabla V_2(x^k, \omega)^\top(x - x^k)] &amp; \quad k = 1,\ldots,K\\
+  &amp; x \ge 0 \\
+  &amp; \theta \le M
+\end{aligned}\]</p><p>where <span>$M$</span> is an upper bound on possible values of <span>$V_2$</span> so that the problem has a bounded solution.</p><p>It is also useful to see that because <span>$\bar{x}$</span> appears only on the right-hand side of a linear program, <span>$\nabla V_2(x^k, \omega) = \lambda^k$</span>.</p><p>Ignoring how we choose <span>$x^k$</span> for now, we can construct a lower and upper bound on the optimal solution:</p><p class="math-container">\[-2x^K + \mathbb{E}_\omega[V_2(x^K, \omega)] = \underbar{V} \le V \le \overline{V} = V^K\]</p><p>Thus, we need some way of cleverly choosing a sequence of <span>$x^k$</span> so that the lower bound converges to the upper bound.</p><ol><li>Start with <span>$K=1$</span></li><li>Solve <span>$V^{K-1}$</span> to get <span>$x^K$</span></li><li>Set <span>$\overline{V} = V^k$</span></li><li>Solve <span>$V_2(x^K, \omega)$</span> for all <span>$\omega$</span> and store the optimal objective value and dual solution <span>$\lambda^K$</span></li><li>Set <span>$\underbar{V} = -2x^K + \mathbb{E}_\omega[V_2(x^k, \omega)]$</span></li><li>If <span>$\underbar{V} \approx \overline{V}$</span>, STOP</li><li>Add new constraint <span>$\theta \le \mathbb{E}_\omega[V_2(x^K, \omega) +\lambda^K (x - x^K)]$</span></li><li>Increment <span>$K$</span>, GOTO 2</li></ol><p>The next section implements this algorithm in Julia.</p><h2 id="L-Shaped-implementation"><a class="docs-heading-anchor" href="#L-Shaped-implementation">L-Shaped implementation</a><a id="L-Shaped-implementation-1"></a><a class="docs-heading-anchor-permalink" href="#L-Shaped-implementation" title="Permalink"></a></h2><p>Here&#39;s a function to compute the second-stage problem;</p><pre><code class="language-julia hljs">function solve_second_stage(x̅, d_ω)
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+    @variable(model, x_in)
+    @variable(model, x_out &gt;= 0)
+    fix(x_in, x̅)
+    @variable(model, 0 &lt;= u_sell &lt;= d_ω)
+    @constraint(model, x_out == x_in - u_sell)
+    @constraint(model, u_sell &lt;= x_in)
+    @objective(model, Max, 5 * u_sell - 0.1 * x_out)
+    optimize!(model)
+    return (
+        V = objective_value(model),
+        λ = reduced_cost(x_in),
+        x = value(x_out),
+        u = value(u_sell),
+    )
+end
+
+solve_second_stage(200, 170)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(V = 847.0, λ = -0.1, x = 30.0, u = 170.0)</code></pre><p>Here&#39;s the first-stage subproblem:</p><pre><code class="language-julia hljs">model = Model(HiGHS.Optimizer)
+set_silent(model)
+@variable(model, x_in == 0)
+@variable(model, x_out &gt;= 0)
+@variable(model, u_make &gt;= 0)
+@constraint(model, x_out == x_in + u_make)
+M = 5 * maximum(d)
+@variable(model, θ &lt;= M)
+@objective(model, Max, -2 * u_make + θ)</code></pre><p class="math-container">\[ -2 u\_make + θ \]</p><p>Importantly, to ensure we have a bounded solution, we need to add an upper bound to the variable <code>θ</code>.</p><pre><code class="language-julia hljs">kIterationLimit = 100
+for k in 1:kIterationLimit
+    println(&quot;Solving iteration k = $k&quot;)
+    # Step 2
+    optimize!(model)
+    xᵏ = value(x_out)
+    println(&quot;  xᵏ = $xᵏ&quot;)
+    # Step 3
+    ub = objective_value(model)
+    println(&quot;  V̅ = $ub&quot;)
+    # Step 4
+    ret = [solve_second_stage(xᵏ, d[ω]) for ω in Ω]
+    # Step 5
+    lb = value(-2 * u_make) + sum(p * r.V for (p, r) in zip(P, ret))
+    println(&quot;  V̲ = $lb&quot;)
+    # Step 6
+    if ub - lb &lt; 1e-6
+        println(&quot;Terminating with near-optimal solution&quot;)
+        break
+    end
+    # Step 7
+    c = @constraint(
+        model,
+        θ &lt;= sum(p * (r.V + r.λ * (x_out - xᵏ)) for (p, r) in zip(P, ret)),
+    )
+    println(&quot;  Added cut: $c&quot;)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Solving iteration k = 1
+  xᵏ = -0.0
+  V̅ = 1213.4729158321243
+  V̲ = 0.0
+  Added cut: -4.99999999999999 x_out + θ ≤ 0
+Solving iteration k = 2
+  xᵏ = 242.69458316642533
+  V̅ = 728.0837494992736
+  V̲ = 501.40140899824405
+  Added cut: 0.10000000000000007 x_out + θ ≤ 1011.0600336477376
+Solving iteration k = 3
+  xᵏ = 198.2470654211254
+  V̅ = 594.7411962633743
+  V̲ = 552.1957352618741
+  Added cut: -2.399 x_out + θ ≤ 473.09515615884374
+Solving iteration k = 4
+  xᵏ = 215.27205981948535
+  V̅ = 558.9887080268181
+  V̲ = 546.9708383130628
+  Added cut: -1.1240000000000003 x_out + θ ≤ 735.549162714932
+Solving iteration k = 5
+  xᵏ = 205.84627965183392
+  V̅ = 555.2278217399255
+  V̲ = 552.8920162128899
+  Added cut: -1.685000000000001 x_out + θ ≤ 617.7335943032163
+Solving iteration k = 6
+  xᵏ = 202.57484333945757
+  V̅ = 553.9225186512873
+  V̲ = 553.2571572724692
+  Added cut: -1.940000000000001 x_out + θ ≤ 565.4116478728369
+Solving iteration k = 7
+  xᵏ = 201.12525427885248
+  V̅ = 553.3441326161059
+  V̲ = 553.1035749581341
+  Added cut: -2.2460000000000004 x_out + θ ≤ 503.6267624055374
+Solving iteration k = 8
+  xᵏ = 201.91139041601193
+  V̅ = 553.2969644478762
+  V̲ = 553.236178705781
+  Added cut: -2.093000000000001 x_out + θ ≤ 534.4584193970913
+Solving iteration k = 9
+  xᵏ = 202.3086828480091
+  V̅ = 553.2731269019566
+  V̲ = 553.2628952792838
+  Added cut: -1.9910000000000012 x_out + θ ≤ 555.0836734249172
+Solving iteration k = 10
+  xᵏ = 202.20837282181816
+  V̅ = 553.2637980695206
+  V̲ = 553.2627418311824
+  Added cut: -2.042000000000001 x_out + θ ≤ 544.769990172668
+Solving iteration k = 11
+  xᵏ = 202.22908337742217
+  V̅ = 553.2636116745206
+  V̲ = 553.2636116745196
+Terminating with near-optimal solution</code></pre><p>To get the first-stage solution, we do:</p><pre><code class="language-julia hljs">optimize!(model)
+xᵏ = value(x_out)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">202.22908337742217</code></pre><p>To compute a second-stage solution, we do:</p><pre><code class="language-julia hljs">solve_second_stage(xᵏ, 170.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(V = 846.7770916622578, λ = -0.1, x = 32.22908337742217, u = 170.0)</code></pre><h2 id="Policy-Graph"><a class="docs-heading-anchor" href="#Policy-Graph">Policy Graph</a><a id="Policy-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Policy-Graph" title="Permalink"></a></h2><p>Now let&#39;s see how we can formulate and train a policy for the two-stage newsvendor problem using <code>SDDP.jl</code>. Under the hood, <code>SDDP.jl</code> implements the exact algorithm that we just wrote by hand.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
+    stages = 2,
+    sense = :Max,
+    upper_bound = 5 * maximum(d),  # The `M` in θ &lt;= M
+    optimizer = HiGHS.Optimizer,
+) do subproblem::JuMP.Model, stage::Int
+    @variable(subproblem, x &gt;= 0, SDDP.State, initial_value = 0)
+    if stage == 1
+        @variable(subproblem, u_make &gt;= 0)
+        @constraint(subproblem, x.out == x.in + u_make)
+        @stageobjective(subproblem, -2 * u_make)
+    else
+        @variable(subproblem, u_sell &gt;= 0)
+        @constraint(subproblem, u_sell &lt;= x.in)
+        @constraint(subproblem, x.out == x.in - u_sell)
+        SDDP.parameterize(subproblem, d, P) do ω
+            set_upper_bound(u_sell, ω)
+            return
+        end
+        @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out)
+    end
+    return
+end
+
+SDDP.train(model; log_every_iteration = true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-24
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 1
+  scenarios       : 1.00000e+02
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [4, 4]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 3]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e-01, 5e+00]
+  bounds range     [2e+02, 1e+03]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   0.000000e+00  7.280837e+02  6.415129e-03       103   1
+         2   4.055470e+02  5.947412e+02  2.316213e-02       406   1
+         3   5.947412e+02  5.589887e+02  2.788210e-02       509   1
+         4   5.807261e+02  5.552278e+02  3.246403e-02       612   1
+         5   6.175388e+02  5.539225e+02  3.706813e-02       715   1
+         6   6.077245e+02  5.533441e+02  4.158902e-02       818   1
+         7   5.067479e+02  5.532970e+02  4.625010e-02       921   1
+         8   6.037803e+02  5.532731e+02  5.087113e-02      1024   1
+         9   4.929001e+02  5.532638e+02  5.554605e-02      1127   1
+        10   6.066251e+02  5.532636e+02  6.011009e-02      1230   1
+        11   4.217689e+02  5.532636e+02  6.490111e-02      1333   1
+        12   6.066873e+02  5.532636e+02  6.966019e-02      1436   1
+        13   3.992063e+02  5.532636e+02  7.448816e-02      1539   1
+        14   5.750462e+02  5.532636e+02  7.921100e-02      1642   1
+        15   4.274792e+02  5.532636e+02  8.403802e-02      1745   1
+        16   6.066873e+02  5.532636e+02  8.881712e-02      1848   1
+        17   5.841125e+02  5.532636e+02  9.355903e-02      1951   1
+        18   5.468577e+02  5.532636e+02  9.833217e-02      2054   1
+        19   5.742471e+02  5.532636e+02  1.030741e-01      2157   1
+        20   3.917188e+02  5.532636e+02  1.078582e-01      2260   1
+        21   4.605557e+02  5.532636e+02  1.265640e-01      2563   1
+        22   5.514938e+02  5.532636e+02  1.313231e-01      2666   1
+        23   5.249043e+02  5.532636e+02  1.360321e-01      2769   1
+        24   6.066873e+02  5.532636e+02  1.407812e-01      2872   1
+        25   4.488704e+02  5.532636e+02  1.455350e-01      2975   1
+        26   6.066873e+02  5.532636e+02  1.504030e-01      3078   1
+        27   6.066873e+02  5.532636e+02  1.551602e-01      3181   1
+        28   6.066873e+02  5.532636e+02  1.599011e-01      3284   1
+        29   6.066873e+02  5.532636e+02  1.646991e-01      3387   1
+        30   6.066873e+02  5.532636e+02  1.694591e-01      3490   1
+        31   6.066873e+02  5.532636e+02  1.742442e-01      3593   1
+        32   6.066873e+02  5.532636e+02  1.790462e-01      3696   1
+        33   6.066873e+02  5.532636e+02  1.838071e-01      3799   1
+        34   6.066873e+02  5.532636e+02  1.887372e-01      3902   1
+        35   5.468577e+02  5.532636e+02  1.935492e-01      4005   1
+        36   6.066873e+02  5.532636e+02  2.909710e-01      4108   1
+        37   6.066873e+02  5.532636e+02  2.960660e-01      4211   1
+        38   6.066873e+02  5.532636e+02  3.010802e-01      4314   1
+        39   5.586560e+02  5.532636e+02  3.061452e-01      4417   1
+        40   5.586560e+02  5.532636e+02  3.111892e-01      4520   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 3.111892e-01
+total solves   : 4520
+best bound     :  5.532636e+02
+simulation ci  :  5.421768e+02 ± 3.480225e+01
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><p>One way to query the optimal policy is with <a href="../../apireference/#SDDP.DecisionRule"><code>SDDP.DecisionRule</code></a>:</p><pre><code class="language-julia hljs">first_stage_rule = SDDP.DecisionRule(model; node = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A decision rule for node 1</code></pre><pre><code class="language-julia hljs">solution_1 = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x =&gt; 0.0))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(stage_objective = -404.45816675481, outgoing_state = Dict(:x =&gt; 202.229083377405), controls = Dict{Any, Any}())</code></pre><p>Here&#39;s the second stage:</p><pre><code class="language-julia hljs">second_stage_rule = SDDP.DecisionRule(model; node = 2)
+solution = SDDP.evaluate(
+    second_stage_rule;
+    incoming_state = Dict(:x =&gt; solution_1.outgoing_state[:x]),
+    noise = 170.0,  # A value of d[ω], can be out-of-sample.
+    controls_to_record = [:u_sell],
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(stage_objective = 846.7770916622595, outgoing_state = Dict(:x =&gt; 32.229083377405004), controls = Dict(:u_sell =&gt; 170.0))</code></pre><h2 id="Simulation"><a class="docs-heading-anchor" href="#Simulation">Simulation</a><a id="Simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Simulation" title="Permalink"></a></h2><p>Querying the decision rules is tedious. It&#39;s often more useful to simulate the policy:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
+    model,
+    10,  #= number of replications =#
+    [:x, :u_sell, :u_make];  #= variables to record =#
+    skip_undefined_variables = true,
+);</code></pre><p><code>simulations</code> is a vector with 10 elements</p><pre><code class="language-julia hljs">length(simulations)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">10</code></pre><p>and each element is a vector with two elements (one for each stage)</p><pre><code class="language-julia hljs">length(simulations[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2</code></pre><p>The first stage contains:</p><pre><code class="language-julia hljs">simulations[1][1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :u_make          =&gt; 202.229
+  :bellman_term    =&gt; 957.722
+  :noise_term      =&gt; nothing
+  :node_index      =&gt; 1
+  :stage_objective =&gt; -404.458
+  :objective_state =&gt; nothing
+  :u_sell          =&gt; NaN
+  :belief          =&gt; Dict(1=&gt;1.0)
+  :x               =&gt; State{Float64}(0.0, 202.229)</code></pre><p>The second stage contains:</p><pre><code class="language-julia hljs">simulations[1][2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :u_make          =&gt; NaN
+  :bellman_term    =&gt; 0.0
+  :noise_term      =&gt; 201.67
+  :node_index      =&gt; 2
+  :stage_objective =&gt; 1008.29
+  :objective_state =&gt; nothing
+  :u_sell          =&gt; 201.67
+  :belief          =&gt; Dict(2=&gt;1.0)
+  :x               =&gt; State{Float64}(202.229, 0.559534)</code></pre><p>We can compute aggregated statistics across the simulations:</p><pre><code class="language-julia hljs">objectives = map(simulations) do simulation
+    return sum(data[:stage_objective] for data in simulation)
+end
+μ, t = SDDP.confidence_interval(objectives)
+println(&quot;Simulation ci : $μ ± $t&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Simulation ci : 549.8905807929784 ± 40.30426836713124</code></pre><h2 id="Risk-aversion-revisited"><a class="docs-heading-anchor" href="#Risk-aversion-revisited">Risk aversion revisited</a><a id="Risk-aversion-revisited-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-aversion-revisited" title="Permalink"></a></h2><p>SDDP.jl contains a number of risk measures. One example is:</p><pre><code class="language-julia hljs">0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()</code></pre><p>You can construct a risk-averse policy by passing a risk measure to the <code>risk_measure</code> keyword argument of <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a>.</p><p>We can explore how the optimal decision changes with risk by creating a function:</p><pre><code class="language-julia hljs">function solve_newsvendor(risk_measure::SDDP.AbstractRiskMeasure)
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        sense = :Max,
+        upper_bound = 5 * maximum(d),
+        optimizer = HiGHS.Optimizer,
+    ) do subproblem, node
+        @variable(subproblem, x &gt;= 0, SDDP.State, initial_value = 0)
+        if node == 1
+            @stageobjective(subproblem, -2 * x.out)
+        else
+            @variable(subproblem, u_sell &gt;= 0)
+            @constraint(subproblem, u_sell &lt;= x.in)
+            @constraint(subproblem, x.out == x.in - u_sell)
+            SDDP.parameterize(subproblem, d, P) do ω
+                set_upper_bound(u_sell, ω)
+                return
+            end
+            @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out)
+        end
+        return
+    end
+    SDDP.train(model; risk_measure = risk_measure, print_level = 0)
+    first_stage_rule = SDDP.DecisionRule(model; node = 1)
+    solution = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x =&gt; 0.0))
+    return solution.outgoing_state[:x]
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_newsvendor (generic function with 1 method)</code></pre><p>Now we can see how many units a decision maker would order using <code>CVaR</code>:</p><pre><code class="language-julia hljs">solve_newsvendor(SDDP.CVaR(0.4))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">182.17860665923672</code></pre><p>as well as a decision-maker who cares only about the worst-case outcome:</p><pre><code class="language-julia hljs">solve_newsvendor(SDDP.WorstCase())</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">156.78434244660437</code></pre><p>In general, the decision-maker will be somewhere between the two extremes. The <a href="../../guides/add_a_risk_measure/#SDDP.Entropic"><code>SDDP.Entropic</code></a> risk measure is a risk measure that has a single parameter that lets us explore the space of policies between the two extremes. When the parameter is small, the measure acts like <a href="../../guides/add_a_risk_measure/#SDDP.Expectation"><code>SDDP.Expectation</code></a>, and when it is large, it acts like <a href="../../guides/add_a_risk_measure/#SDDP.WorstCase"><code>SDDP.WorstCase</code></a>.</p><p>Here is what we get if we solve our problem multiple times for different values of the risk aversion parameter <span>$\gamma$</span>:</p><pre><code class="language-julia hljs">Γ = [10^i for i in -4:0.5:1]
+buy = [solve_newsvendor(SDDP.Entropic(γ)) for γ in Γ]
+Plots.plot(
+    Γ,
+    buy;
+    xaxis = :log,
+    xlabel = &quot;Risk aversion parameter γ&quot;,
+    ylabel = &quot;Number of pies to make&quot;,
+    legend = false,
+)</code></pre><img src="9a53f3de.svg" alt="Example block output"/><h2 id="Things-to-try"><a class="docs-heading-anchor" href="#Things-to-try">Things to try</a><a id="Things-to-try-1"></a><a class="docs-heading-anchor-permalink" href="#Things-to-try" title="Permalink"></a></h2><p>There are a number of things you can try next:</p><ul><li>Experiment with different buy and sales prices</li><li>Experiment with different distributions of demand</li><li>Explore how the optimal policy changes if you use a different risk measure</li><li>What happens if you can only buy and sell integer numbers of newspapers? Try this by adding <code>Int</code> to the variable definitions: <code>@variable(subproblem, buy &gt;= 0, Int)</code></li><li>What happens if you use a different upper bound? Try an invalid one like <code>-100</code>, and a very large one like <code>1e12</code>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mdps/">« Example: Markov Decision Processes</a><a class="docs-footer-nextpage" href="../example_reservoir/">Example: deterministic to stochastic »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Tuesday 19 November 2024 00:58">Tuesday 19 November 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

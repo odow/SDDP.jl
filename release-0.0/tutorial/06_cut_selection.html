@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial Six: cut selection · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="01_first_steps.html">Tutorial One: first steps</a></li><li><a class="toctext" href="02_rhs_noise.html">Tutorial Two: RHS noise</a></li><li><a class="toctext" href="03_objective_noise.html">Tutorial Three: objective noise</a></li><li><a class="toctext" href="04_markovian_policygraphs.html">Tutorial Four: Markovian policy graphs</a></li><li><a class="toctext" href="05_risk.html">Tutorial Five: risk</a></li><li class="current"><a class="toctext" href="06_cut_selection.html">Tutorial Six: cut selection</a><ul class="internal"><li><a class="toctext" href="#Solving-the-problem-1">Solving the problem</a></li><li><a class="toctext" href="#Extra-for-experts:-new-cut-selection-heurisitics-1">Extra for experts: new cut selection heurisitics</a></li></ul></li><li><a class="toctext" href="07_plotting.html">Tutorial Seven: plotting</a></li><li><a class="toctext" href="08_odds_and_ends.html">Tutorial Eight: odds and ends</a></li><li><a class="toctext" href="09_nonlinear.html">Tutorial Nine: nonlinear models</a></li><li><a class="toctext" href="10_parallel.html">Tutorial Ten: parallelism</a></li><li><a class="toctext" href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a></li><li><a class="toctext" href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a></li><li><a class="toctext" href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a></li></ul></li><li><a class="toctext" href="../readings.html">Readings</a></li><li><a class="toctext" href="../apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href="06_cut_selection.html">Tutorial Six: cut selection</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/06_cut_selection.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorial Six: cut selection</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-Six:-cut-selection-1" href="#Tutorial-Six:-cut-selection-1">Tutorial Six: cut selection</a></h1><p>Over the previous five tutorials, we formulated a simple risk-averse hydrothermal scheduling problem. Now, in this tutorial, we improve the computational performance of the solution process using <em>cut selection</em>.</p><p>As the SDDP algorithm progresses, many cuts (typically thousands) are added to each subproblem. This increases the computational effort required to solve each subproblem. In addition, many of the cuts created early in the solution process may be redundant once additional cuts are added. This issue has spurred a vein of research into heuristics for choosing cuts to keep or remove (this is referred to as <em>cut selection</em>). To facilitate the development of cut selection heuristics, SDDP.jl features the concept of a cut oracle associated with each subproblem. A cut oracle has two jobs: it should store the complete list of cuts created for that subproblem; and when asked, it should provide a subset of those cuts to retain in the subproblem.</p><p>So far, only the Level One cut selection method is implemented. It can be constructed using <a href="../apireference.html#SDDP.LevelOneCutOracle"><code>LevelOneCutOracle</code></a>. Cut selection can be added to a model using the <code>cut_oracle</code> keyword argument to the <a href="../apireference.html#SDDP.SDDPModel"><code>SDDPModel</code></a> constructor.</p><p>Therefore, our risk-averse multistage stochastic optimization problem with cut selection can be formulated in SDDP.jl as:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0,
+      markov_transition = Array{Float64, 2}[
+          [ 1.0 ]&#39;,
+          [ 0.75 0.25 ],
+          [ 0.75 0.25 ; 0.25 0.75 ]
+      ],
+           risk_measure = EAVaR(lambda=0.5, beta=0.1),
+             cut_oracle = LevelOneCutOracle()
+                                        ) do sp, t, i
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+        outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+    )
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, mupliplier = [1.2, 1.0, 0.8],
+        mupliplier * fuel_cost[t] * thermal_generation
+    )
+    if i == 1  # wet climate state
+        setnoiseprobability!(sp, [1/6, 1/3, 0.5])
+    else       # dry climate state
+        setnoiseprobability!(sp, [0.5, 1/3, 1/6])
+    end
+end</code></pre><h2><a class="nav-anchor" id="Solving-the-problem-1" href="#Solving-the-problem-1">Solving the problem</a></h2><div class="admonition info"><div class="admonition-title">Info</div><div class="admonition-text"><p>This will change once JuMP 0.19 lands.</p></div></div><p>Due to the design of JuMP, we are unable to delete cuts from the model. Therefore, selecting a subset of cuts involves rebuilding the subproblems from scratch. The user can control the frequency by which the cuts are selected and the subproblems rebuilt with the <code>cut_selection_frequency</code> keyword argument of the <a href="../apireference.html#JuMP.solve"><code>solve</code></a> method. Frequent cut selection (i.e. when <code>cut_selection_frequency</code> is small) reduces the size of the subproblems that are solved but incurs the overhead of rebuilding the subproblems. However, infrequent cut selection (i.e. when <code>cut_selection_frequency</code> is large) allows the subproblems to grow large (by adding many constraints), leading to an increase in the solve time of individual subproblems. Ultimately, this will be a model-specific trade-off. As a rule of thumb, simpler (i.e. few variables and constraints) models benefit from more frequent cut selection compared with complicated (i.e. many variables and constraints) models.</p><pre><code class="language-julia">status = solve(m,
+    iteration_limit         = 10,
+    cut_selection_frequency = 5
+)</code></pre><p>We can get the subproblem from a <a href="../apireference.html#SDDP.SDDPModel"><code>SDDPModel</code></a> using <a href="../apireference.html#SDDP.getsubproblem"><code>SDDP.getsubproblem</code></a>. For example, the subproblem in the first stage and first Markov state is:</p><pre><code class="language-julia">sp = SDDP.getsubproblem(m, 1, 1)</code></pre><p>Then, given a subproblem <code>sp</code>, we can get the cut oracle as follows:</p><pre><code class="language-julia">oracle = SDDP.cutoracle(sp)</code></pre><p>Finally, we can query the list of valid cuts in the oracle using <a href="../apireference.html#SDDP.validcuts"><code>SDDP.validcuts</code></a>:</p><pre><code class="language-julia">julia&gt; SDDP.validcuts(oracle)
+1-element Array{Cut, 1}:
+ SDDP.Cut(29964.8, [-108.333])</code></pre><p>Whereas we can query all of the cuts in the oracle using <a href="../apireference.html#SDDP.allcuts"><code>SDDP.allcuts</code></a>:</p><pre><code class="language-julia">julia&gt; SDDP.allcuts(oracle)
+10-element Array{Cut, 1}:
+ SDDP.Cut(29548.2, [-108.229])
+ SDDP.Cut(29548.2, [-108.229])
+ SDDP.Cut(29964.8, [-108.333])
+ SDDP.Cut(29964.8, [-108.333])
+ SDDP.Cut(29964.8, [-108.333])
+ ⋮</code></pre><p>So, despite performing 10 SDDP iterations, only one cut is needed to approximate the cost-to-go function! A similar result can be found in the wet Markov state in the second stage:</p><pre><code class="language-julia">julia&gt; SDDP.validcuts(SDDP.cutoracle(SDDP.getsubproblem(m, 2 1)))
+3-element Array{Cut, 1}:
+ SDDP.Cut(20625.0, [-162.5])
+ SDDP.Cut(16875.0, [-112.5])
+ SDDP.Cut(19375.0, [-137.5])</code></pre><h2><a class="nav-anchor" id="Extra-for-experts:-new-cut-selection-heurisitics-1" href="#Extra-for-experts:-new-cut-selection-heurisitics-1">Extra for experts: new cut selection heurisitics</a></h2><p>One of the cool features of SDDP.jl is how easy it is to create new cut selection heuristics.</p><p>To illustrate this, we implement the <em>Last Cuts</em> strategy. This heuristic selects the last <code>N</code> discovered cuts to keep in each subproblem. First, we need to create a new concrete subtype of the abstract type <code>AbstractCutOracle</code> defined by SDDP.jl:</p><pre><code class="language-julia">&quot;&quot;&quot;
+    LastCuts(N::Int)
+
+Create a cut oracle that keeps the last `N` discovered cuts.
+&quot;&quot;&quot;
+struct LastCuts &lt;: SDDP.AbstractCutOracle
+    cuts::Vector{SDDP.Cut}
+    N::Int
+    LastCuts(N::Int) = new(SDDP.Cut[], N)
+end</code></pre><p>Then, we need to overload three methods: <code>SDDP.storecut!</code>, <code>SDDP.validcuts</code>, and <code>SDDP.allcuts</code>.</p><p><code>SDDP.storecut</code> takes four arguments. The first is an instance of the cut oracle. The second and third arguments are the SDDPModel <code>m</code> and the JuMP subproblem <code>sp</code>. The fourth argument is the cut itself. For our example, we store all the cuts that have been discovered:</p><pre><code class="language-julia">function SDDP.storecut!(oracle::LastCuts, m::SDDPModel, sp::JuMP.Model, cut::SDDP.Cut)
+    push!(oracle.cuts, cut)
+end</code></pre><p><code>SDDP.validcuts</code> returns a list of all of the cuts that are valid cuts to keep in the subproblem. The <code>LastCuts</code> oracle returns the most recent <code>N</code> discovered cuts:</p><pre><code class="language-julia">function SDDP.validcuts(oracle::LastCuts)
+    oracle.cuts[max(1, end - oracle.N + 1):end]
+end</code></pre><p>Finally, <code>SDDP.allcuts</code> returns a list of all of the cuts that have been discovered:</p><pre><code class="language-julia">function SDDP.allcuts(oracle::LastCuts)
+    oracle.cuts
+end</code></pre><p>Now, the cut oracle <code>LastCuts(500)</code> can be used just like any other cut oracle defined by SDDP.jl.</p><p>This concludes our sixth tutorial for SDDP.jl. In our next tutorial, <a href="07_plotting.html#Tutorial-Seven:-plotting-1">Tutorial Seven: plotting</a>, we discuss some of the plotting utilities of SDDP.jl</p><footer><hr/><a class="previous" href="05_risk.html"><span class="direction">Previous</span><span class="title">Tutorial Five: risk</span></a><a class="next" href="07_plotting.html"><span class="direction">Next</span><span class="title">Tutorial Seven: plotting</span></a></footer></article></body></html>

@@ -1,0 +1,246 @@
+<!--
+Copyright (c) 2017-26: Oscar Dowson and SDDP.jl contributors.
+
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v2.0. If a copy of the MPL was not distributed with this file, You can obtain
+one at http://mozilla.org/MPL/2.0/.
+-->
+<!DOCTYPE html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-elk@2.1.0/dist/cytoscape-elk.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/layout-base/layout-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cose-base/cose-base.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose/cytoscape-fcose.js"></script>
+  <style>
+    #cy {width: 100vw; height: 100vh;}
+    #tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(30, 30, 30, 0.9);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      pointer-events: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div id="cy"></div>
+  <div id="tooltip"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const tooltip = document.getElementById('tooltip');
+      const squigglyPhotonSvg = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+          <path d="M 5,5 Q 15,2 20,12 T 35,20 L 44,32" fill="none" stroke="#000" stroke-width="2"/>
+          <polygon points="48,36 38,33 44,25" fill="#000"/>
+        </svg>
+      `);
+      const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: [
+          {data: {id: '(:root, 0)', shape: 'ellipse'}},
+{data: {id: '(:inv, 0)', meta: 'Node: (:inv, 0)'}},
+{data: {id: '(:inv_h, 0)', meta: 'Node: (:inv_h, 0)'}},
+{data: {id: '(:inv_hh, 0)', meta: 'Node: (:inv_hh, 0)'}},
+{data: {id: '(:inv_hl, 0)', meta: 'Node: (:inv_hl, 0)'}},
+{data: {id: '(:inv_l, 0)', meta: 'Node: (:inv_l, 0)'}},
+{data: {id: '(:inv_lh, 0)', meta: 'Node: (:inv_lh, 0)'}},
+{data: {id: '(:inv_ll, 0)', meta: 'Node: (:inv_ll, 0)'}},
+{data: {id: '(:op, 1)', meta: 'Node: (:op, 1)'}},
+{data: {id: '(:op, 2)', meta: 'Node: (:op, 2)'}},
+{data: {id: '(:op, 3)', meta: 'Node: (:op, 3)'}},
+{data: {id: '(:op, 4)', meta: 'Node: (:op, 4)'}},
+{data: {id: '(:op, 5)', meta: 'Node: (:op, 5)'}},
+{data: {id: '(:op, 6)', meta: 'Node: (:op, 6)'}},
+{data: {id: '(:op, 7)', meta: 'Node: (:op, 7)'}},
+{data: {id: '(:op, 8)', meta: 'Node: (:op, 8)'}},
+{data: {id: '(:op, 9)', meta: 'Node: (:op, 9)'}},
+{data: {id: '(:op, 10)', meta: 'Node: (:op, 10)'}},
+{data: {id: '(:op, 11)', meta: 'Node: (:op, 11)'}},
+{data: {id: '(:op, 12)', meta: 'Node: (:op, 12)'}},
+{data: {id: '(:op, 13)', meta: 'Node: (:op, 13)'}},
+{data: {id: '(:op, 14)', meta: 'Node: (:op, 14)'}},
+{data: {id: '(:op, 15)', meta: 'Node: (:op, 15)'}},
+{data: {id: '(:op, 16)', meta: 'Node: (:op, 16)'}},
+{data: {id: '(:op, 17)', meta: 'Node: (:op, 17)'}},
+{data: {id: '(:op, 18)', meta: 'Node: (:op, 18)'}},
+{data: {id: '(:op, 19)', meta: 'Node: (:op, 19)'}},
+{data: {id: '(:op, 20)', meta: 'Node: (:op, 20)'}},
+{data: {id: '(:op, 21)', meta: 'Node: (:op, 21)'}},
+{data: {id: '(:op, 22)', meta: 'Node: (:op, 22)'}},
+{data: {id: '(:op, 23)', meta: 'Node: (:op, 23)'}},
+{data: {id: '(:op, 24)', meta: 'Node: (:op, 24)'}},
+{data: {id: '(:op, 25)', meta: 'Node: (:op, 25)'}},
+{data: {id: '(:op, 26)', meta: 'Node: (:op, 26)'}},
+{data: {id: '(:op, 27)', meta: 'Node: (:op, 27)'}},
+{data: {id: '(:op, 28)', meta: 'Node: (:op, 28)'}},
+{data: {id: '(:op, 29)', meta: 'Node: (:op, 29)'}},
+{data: {id: '(:op, 30)', meta: 'Node: (:op, 30)'}},
+{data: {id: '(:op, 31)', meta: 'Node: (:op, 31)'}},
+{data: {id: '(:op, 32)', meta: 'Node: (:op, 32)'}},
+{data: {id: '(:op, 33)', meta: 'Node: (:op, 33)'}},
+{data: {id: '(:op, 34)', meta: 'Node: (:op, 34)'}},
+{data: {id: '(:op, 35)', meta: 'Node: (:op, 35)'}},
+{data: {id: '(:op, 36)', meta: 'Node: (:op, 36)'}},
+{data: {id: '(:op, 37)', meta: 'Node: (:op, 37)'}},
+{data: {id: '(:op, 38)', meta: 'Node: (:op, 38)'}},
+{data: {id: '(:op, 39)', meta: 'Node: (:op, 39)'}},
+{data: {id: '(:op, 40)', meta: 'Node: (:op, 40)'}},
+{data: {id: '(:op, 41)', meta: 'Node: (:op, 41)'}},
+{data: {id: '(:op, 42)', meta: 'Node: (:op, 42)'}},
+{data: {id: '(:op, 43)', meta: 'Node: (:op, 43)'}},
+{data: {id: '(:op, 44)', meta: 'Node: (:op, 44)'}},
+{data: {id: '(:op, 45)', meta: 'Node: (:op, 45)'}},
+{data: {id: '(:op, 46)', meta: 'Node: (:op, 46)'}},
+{data: {id: '(:op, 47)', meta: 'Node: (:op, 47)'}},
+{data: {id: '(:op, 48)', meta: 'Node: (:op, 48)'}},
+{data: {id: '(:op, 49)', meta: 'Node: (:op, 49)'}},
+{data: {id: '(:op, 50)', meta: 'Node: (:op, 50)'}},
+{data: {id: '(:op, 51)', meta: 'Node: (:op, 51)'}},
+{data: {id: '(:op, 52)', meta: 'Node: (:op, 52)'}},
+{data: {id: 'edge_1', source: '(:inv, 0)', target: '(:inv_h, 0)', meta: 'From: (:inv, 0)\nTo: (:inv_h, 0)\nProbablity: 0.36450000000000005'}},
+{data: {id: 'edge_2', source: '(:inv, 0)', target: '(:inv_l, 0)', meta: 'From: (:inv, 0)\nTo: (:inv_l, 0)\nProbablity: 0.36450000000000005'}},
+{data: {id: 'edge_3', source: '(:inv, 0)', target: '(:op, 1)', meta: 'From: (:inv, 0)\nTo: (:op, 1)\nProbablity: 0.29999999999999993'}},
+{data: {id: 'edge_4', source: '(:inv_h, 0)', target: '(:inv_hh, 0)', meta: 'From: (:inv_h, 0)\nTo: (:inv_hh, 0)\nProbablity: 0.36450000000000005'}},
+{data: {id: 'edge_5', source: '(:inv_h, 0)', target: '(:inv_hl, 0)', meta: 'From: (:inv_h, 0)\nTo: (:inv_hl, 0)\nProbablity: 0.36450000000000005'}},
+{data: {id: 'edge_6', source: '(:inv_h, 0)', target: '(:op, 1)', meta: 'From: (:inv_h, 0)\nTo: (:op, 1)\nProbablity: 0.29999999999999993'}},
+{data: {id: 'edge_7', source: '(:inv_hh, 0)', target: '(:op, 1)', meta: 'From: (:inv_hh, 0)\nTo: (:op, 1)\nProbablity: 1.0'}},
+{data: {id: 'edge_8', source: '(:inv_hl, 0)', target: '(:op, 1)', meta: 'From: (:inv_hl, 0)\nTo: (:op, 1)\nProbablity: 1.0'}},
+{data: {id: 'edge_9', source: '(:inv_l, 0)', target: '(:inv_lh, 0)', meta: 'From: (:inv_l, 0)\nTo: (:inv_lh, 0)\nProbablity: 0.36450000000000005'}},
+{data: {id: 'edge_10', source: '(:inv_l, 0)', target: '(:inv_ll, 0)', meta: 'From: (:inv_l, 0)\nTo: (:inv_ll, 0)\nProbablity: 0.36450000000000005'}},
+{data: {id: 'edge_11', source: '(:inv_l, 0)', target: '(:op, 1)', meta: 'From: (:inv_l, 0)\nTo: (:op, 1)\nProbablity: 0.29999999999999993'}},
+{data: {id: 'edge_12', source: '(:inv_lh, 0)', target: '(:op, 1)', meta: 'From: (:inv_lh, 0)\nTo: (:op, 1)\nProbablity: 1.0'}},
+{data: {id: 'edge_13', source: '(:inv_ll, 0)', target: '(:op, 1)', meta: 'From: (:inv_ll, 0)\nTo: (:op, 1)\nProbablity: 1.0'}},
+{data: {id: 'edge_14', source: '(:op, 1)', target: '(:op, 2)', meta: 'From: (:op, 1)\nTo: (:op, 2)\nProbablity: 1.0'}},
+{data: {id: 'edge_15', source: '(:op, 2)', target: '(:op, 3)', meta: 'From: (:op, 2)\nTo: (:op, 3)\nProbablity: 1.0'}},
+{data: {id: 'edge_16', source: '(:op, 3)', target: '(:op, 4)', meta: 'From: (:op, 3)\nTo: (:op, 4)\nProbablity: 1.0'}},
+{data: {id: 'edge_17', source: '(:op, 4)', target: '(:op, 5)', meta: 'From: (:op, 4)\nTo: (:op, 5)\nProbablity: 1.0'}},
+{data: {id: 'edge_18', source: '(:op, 5)', target: '(:op, 6)', meta: 'From: (:op, 5)\nTo: (:op, 6)\nProbablity: 1.0'}},
+{data: {id: 'edge_19', source: '(:op, 6)', target: '(:op, 7)', meta: 'From: (:op, 6)\nTo: (:op, 7)\nProbablity: 1.0'}},
+{data: {id: 'edge_20', source: '(:op, 7)', target: '(:op, 8)', meta: 'From: (:op, 7)\nTo: (:op, 8)\nProbablity: 1.0'}},
+{data: {id: 'edge_21', source: '(:op, 8)', target: '(:op, 9)', meta: 'From: (:op, 8)\nTo: (:op, 9)\nProbablity: 1.0'}},
+{data: {id: 'edge_22', source: '(:op, 9)', target: '(:op, 10)', meta: 'From: (:op, 9)\nTo: (:op, 10)\nProbablity: 1.0'}},
+{data: {id: 'edge_23', source: '(:op, 10)', target: '(:op, 11)', meta: 'From: (:op, 10)\nTo: (:op, 11)\nProbablity: 1.0'}},
+{data: {id: 'edge_24', source: '(:op, 11)', target: '(:op, 12)', meta: 'From: (:op, 11)\nTo: (:op, 12)\nProbablity: 1.0'}},
+{data: {id: 'edge_25', source: '(:op, 12)', target: '(:op, 13)', meta: 'From: (:op, 12)\nTo: (:op, 13)\nProbablity: 1.0'}},
+{data: {id: 'edge_26', source: '(:op, 13)', target: '(:op, 14)', meta: 'From: (:op, 13)\nTo: (:op, 14)\nProbablity: 1.0'}},
+{data: {id: 'edge_27', source: '(:op, 14)', target: '(:op, 15)', meta: 'From: (:op, 14)\nTo: (:op, 15)\nProbablity: 1.0'}},
+{data: {id: 'edge_28', source: '(:op, 15)', target: '(:op, 16)', meta: 'From: (:op, 15)\nTo: (:op, 16)\nProbablity: 1.0'}},
+{data: {id: 'edge_29', source: '(:op, 16)', target: '(:op, 17)', meta: 'From: (:op, 16)\nTo: (:op, 17)\nProbablity: 1.0'}},
+{data: {id: 'edge_30', source: '(:op, 17)', target: '(:op, 18)', meta: 'From: (:op, 17)\nTo: (:op, 18)\nProbablity: 1.0'}},
+{data: {id: 'edge_31', source: '(:op, 18)', target: '(:op, 19)', meta: 'From: (:op, 18)\nTo: (:op, 19)\nProbablity: 1.0'}},
+{data: {id: 'edge_32', source: '(:op, 19)', target: '(:op, 20)', meta: 'From: (:op, 19)\nTo: (:op, 20)\nProbablity: 1.0'}},
+{data: {id: 'edge_33', source: '(:op, 20)', target: '(:op, 21)', meta: 'From: (:op, 20)\nTo: (:op, 21)\nProbablity: 1.0'}},
+{data: {id: 'edge_34', source: '(:op, 21)', target: '(:op, 22)', meta: 'From: (:op, 21)\nTo: (:op, 22)\nProbablity: 1.0'}},
+{data: {id: 'edge_35', source: '(:op, 22)', target: '(:op, 23)', meta: 'From: (:op, 22)\nTo: (:op, 23)\nProbablity: 1.0'}},
+{data: {id: 'edge_36', source: '(:op, 23)', target: '(:op, 24)', meta: 'From: (:op, 23)\nTo: (:op, 24)\nProbablity: 1.0'}},
+{data: {id: 'edge_37', source: '(:op, 24)', target: '(:op, 25)', meta: 'From: (:op, 24)\nTo: (:op, 25)\nProbablity: 1.0'}},
+{data: {id: 'edge_38', source: '(:op, 25)', target: '(:op, 26)', meta: 'From: (:op, 25)\nTo: (:op, 26)\nProbablity: 1.0'}},
+{data: {id: 'edge_39', source: '(:op, 26)', target: '(:op, 27)', meta: 'From: (:op, 26)\nTo: (:op, 27)\nProbablity: 1.0'}},
+{data: {id: 'edge_40', source: '(:op, 27)', target: '(:op, 28)', meta: 'From: (:op, 27)\nTo: (:op, 28)\nProbablity: 1.0'}},
+{data: {id: 'edge_41', source: '(:op, 28)', target: '(:op, 29)', meta: 'From: (:op, 28)\nTo: (:op, 29)\nProbablity: 1.0'}},
+{data: {id: 'edge_42', source: '(:op, 29)', target: '(:op, 30)', meta: 'From: (:op, 29)\nTo: (:op, 30)\nProbablity: 1.0'}},
+{data: {id: 'edge_43', source: '(:op, 30)', target: '(:op, 31)', meta: 'From: (:op, 30)\nTo: (:op, 31)\nProbablity: 1.0'}},
+{data: {id: 'edge_44', source: '(:op, 31)', target: '(:op, 32)', meta: 'From: (:op, 31)\nTo: (:op, 32)\nProbablity: 1.0'}},
+{data: {id: 'edge_45', source: '(:op, 32)', target: '(:op, 33)', meta: 'From: (:op, 32)\nTo: (:op, 33)\nProbablity: 1.0'}},
+{data: {id: 'edge_46', source: '(:op, 33)', target: '(:op, 34)', meta: 'From: (:op, 33)\nTo: (:op, 34)\nProbablity: 1.0'}},
+{data: {id: 'edge_47', source: '(:op, 34)', target: '(:op, 35)', meta: 'From: (:op, 34)\nTo: (:op, 35)\nProbablity: 1.0'}},
+{data: {id: 'edge_48', source: '(:op, 35)', target: '(:op, 36)', meta: 'From: (:op, 35)\nTo: (:op, 36)\nProbablity: 1.0'}},
+{data: {id: 'edge_49', source: '(:op, 36)', target: '(:op, 37)', meta: 'From: (:op, 36)\nTo: (:op, 37)\nProbablity: 1.0'}},
+{data: {id: 'edge_50', source: '(:op, 37)', target: '(:op, 38)', meta: 'From: (:op, 37)\nTo: (:op, 38)\nProbablity: 1.0'}},
+{data: {id: 'edge_51', source: '(:op, 38)', target: '(:op, 39)', meta: 'From: (:op, 38)\nTo: (:op, 39)\nProbablity: 1.0'}},
+{data: {id: 'edge_52', source: '(:op, 39)', target: '(:op, 40)', meta: 'From: (:op, 39)\nTo: (:op, 40)\nProbablity: 1.0'}},
+{data: {id: 'edge_53', source: '(:op, 40)', target: '(:op, 41)', meta: 'From: (:op, 40)\nTo: (:op, 41)\nProbablity: 1.0'}},
+{data: {id: 'edge_54', source: '(:op, 41)', target: '(:op, 42)', meta: 'From: (:op, 41)\nTo: (:op, 42)\nProbablity: 1.0'}},
+{data: {id: 'edge_55', source: '(:op, 42)', target: '(:op, 43)', meta: 'From: (:op, 42)\nTo: (:op, 43)\nProbablity: 1.0'}},
+{data: {id: 'edge_56', source: '(:op, 43)', target: '(:op, 44)', meta: 'From: (:op, 43)\nTo: (:op, 44)\nProbablity: 1.0'}},
+{data: {id: 'edge_57', source: '(:op, 44)', target: '(:op, 45)', meta: 'From: (:op, 44)\nTo: (:op, 45)\nProbablity: 1.0'}},
+{data: {id: 'edge_58', source: '(:op, 45)', target: '(:op, 46)', meta: 'From: (:op, 45)\nTo: (:op, 46)\nProbablity: 1.0'}},
+{data: {id: 'edge_59', source: '(:op, 46)', target: '(:op, 47)', meta: 'From: (:op, 46)\nTo: (:op, 47)\nProbablity: 1.0'}},
+{data: {id: 'edge_60', source: '(:op, 47)', target: '(:op, 48)', meta: 'From: (:op, 47)\nTo: (:op, 48)\nProbablity: 1.0'}},
+{data: {id: 'edge_61', source: '(:op, 48)', target: '(:op, 49)', meta: 'From: (:op, 48)\nTo: (:op, 49)\nProbablity: 1.0'}},
+{data: {id: 'edge_62', source: '(:op, 49)', target: '(:op, 50)', meta: 'From: (:op, 49)\nTo: (:op, 50)\nProbablity: 1.0'}},
+{data: {id: 'edge_63', source: '(:op, 50)', target: '(:op, 51)', meta: 'From: (:op, 50)\nTo: (:op, 51)\nProbablity: 1.0'}},
+{data: {id: 'edge_64', source: '(:op, 51)', target: '(:op, 52)', meta: 'From: (:op, 51)\nTo: (:op, 52)\nProbablity: 1.0'}},
+{data: {id: 'edge_65', source: '(:op, 52)', target: '(:op, 1)', meta: 'From: (:op, 52)\nTo: (:op, 1)\nProbablity: 0.9'}},
+{data: {id: 'edge_66', source: '(:root, 0)', target: '(:inv, 0)', meta: 'From: (:root, 0)\nTo: (:inv, 0)\nProbablity: 1.0'}},
+        ],
+        layout: {
+          name: 'elk',
+          elk: {
+            'algorithm': 'layered',
+            'elk.layered.wrapping.strategy': 'MULTI_EDGE',
+            'elk.layered.cycleBreaking.strategy': 'MODEL_ORDER',
+            'elk.aspectRatio': 2,
+            'elk.layered.spacing.nodeNodeBetweenLayers': 30,
+            'elk.spacing.nodeNode': 100,
+            'elk.spacing.edgeEdge': 20,
+            'elk.spacing.edgeNode': 50
+          }
+        },
+        style: [{
+          selector: 'node',
+          style: {
+            'shape': 'rectangle',
+            'background-color': '#fff',
+            'border-width': 1,
+            'text-valign': 'center',
+            'text-halign': 'center',
+          }
+        }, {
+          selector: 'edge',
+          style: {
+            'width': 1,
+            'line-color': '#000',
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle',
+            'target-arrow-color': '#000',
+          },
+        }, {
+          selector: 'node[shape]', style: {'shape': 'data(shape)'}
+        }, {
+          selector: 'node[?has_noise]',
+          style: {
+            'background-image': squigglyPhotonSvg,
+            'background-clip': 'none',
+            'bounds-expansion': 30,
+            'background-position-x': '-30px',
+            'background-position-y': '-25px',
+            'background-width': '45px',
+            'background-height': '45px',
+            'background-repeat': 'no-repeat'
+          }
+        }]
+      });
+      function showTooltip(evt) {
+        if (evt.target.data('meta')) {
+          tooltip.innerText = evt.target.data('meta');
+          tooltip.style.display = 'block';
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function moveTooltip(evt) {
+        if (tooltip.style.display === 'block') {
+          tooltip.style.left = evt.renderedPosition.x + 15 + 'px';
+          tooltip.style.top = evt.renderedPosition.y + 15 + 'px';
+        }
+      }
+      function hideTooltip() {
+        tooltip.style.display = 'none';
+      }
+      cy.on('mouseover', 'node, edge', showTooltip);
+      cy.on('mousemove', 'node, edge', moveTooltip);
+      cy.on('mouseout', 'node, edge', hideTooltip);
+    });
+  </script>
+</body>
+</html>

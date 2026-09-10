@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial Seven: plotting · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="01_first_steps.html">Tutorial One: first steps</a></li><li><a class="toctext" href="02_rhs_noise.html">Tutorial Two: RHS noise</a></li><li><a class="toctext" href="03_objective_noise.html">Tutorial Three: objective noise</a></li><li><a class="toctext" href="04_markovian_policygraphs.html">Tutorial Four: Markovian policy graphs</a></li><li><a class="toctext" href="05_risk.html">Tutorial Five: risk</a></li><li><a class="toctext" href="06_cut_selection.html">Tutorial Six: cut selection</a></li><li class="current"><a class="toctext" href="07_plotting.html">Tutorial Seven: plotting</a><ul class="internal"><li><a class="toctext" href="#Plotting-the-simulated-trajectories-1">Plotting the simulated trajectories</a></li><li><a class="toctext" href="#Publication-quality-plots-1">Publication quality plots</a></li><li><a class="toctext" href="#Plotting-the-value-function-1">Plotting the value function</a></li></ul></li><li><a class="toctext" href="08_odds_and_ends.html">Tutorial Eight: odds and ends</a></li><li><a class="toctext" href="09_nonlinear.html">Tutorial Nine: nonlinear models</a></li><li><a class="toctext" href="10_parallel.html">Tutorial Ten: parallelism</a></li><li><a class="toctext" href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a></li><li><a class="toctext" href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a></li><li><a class="toctext" href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a></li></ul></li><li><a class="toctext" href="../readings.html">Readings</a></li><li><a class="toctext" href="../apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href="07_plotting.html">Tutorial Seven: plotting</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/07_plotting.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorial Seven: plotting</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-Seven:-plotting-1" href="#Tutorial-Seven:-plotting-1">Tutorial Seven: plotting</a></h1><p>In our previous tutorial, we have formulated, solved, and simulated a multistage stochastic optimization problem. However, we haven&#39;t really investigated what the solution looks like. Luckily, SDDP.jl includes a number of plotting tools to help us do that. In this tutorial, we explain the tools and make some pretty pictures.</p><p>First, recall from <a href="06_cut_selection.html#Tutorial-Six:-cut-selection-1">Tutorial Six: cut selection</a> that our model is:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0,
+      markov_transition = Array{Float64, 2}[
+          [ 1.0 ]&#39;,
+          [ 0.75 0.25 ],
+          [ 0.75 0.25 ; 0.25 0.75 ]
+      ],
+           risk_measure = EAVaR(lambda=0.5, beta=0.1),
+             cut_oracle = LevelOneCutOracle()
+                                        ) do sp, t, i
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+        outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+    )
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, mupliplier = [1.2, 1.0, 0.8],
+        mupliplier * fuel_cost[t] * thermal_generation
+    )
+    if i == 1  # wet climate state
+        setnoiseprobability!(sp, [1/6, 1/3, 0.5])
+    else       # dry climate state
+        setnoiseprobability!(sp, [0.5, 1/3, 1/6])
+    end
+end</code></pre><p>We&#39;re going to solve this for 20 iterations and then simulate 100 Monte Carlo realizations of the solution.</p><pre><code class="language-julia">status = solve(m, iteration_limit = 20)
+simulation_result = simulate(m,
+    100,
+    [:outgoing_volume, :thermal_generation, :hydro_generation, :hydro_spill]
+)</code></pre><h2><a class="nav-anchor" id="Plotting-the-simulated-trajectories-1" href="#Plotting-the-simulated-trajectories-1">Plotting the simulated trajectories</a></h2><pre><code class="language-julia">inflows = [0.0, 50.0, 100.0]
+plt = SDDP.newplot()
+SDDP.addplot!(plt,
+    1:100, 1:3,
+    (i, t)-&gt;simulation_result[i][:thermal_generation][t],
+    title  = &quot;Thermal Generation&quot;,
+    ylabel = &quot;MWh&quot;
+)
+SDDP.addplot!(plt,
+    1:100, 1:3,
+    (i, t)-&gt;inflows[simulation_result[i][:noise][t]],
+    title  = &quot;Inflows&quot;,
+    ylabel = &quot;MWh&quot;
+)
+SDDP.show(plt)</code></pre><p>This should open a plot window with a plot that looks like:</p><p><img src="../assets/single_trajectory.png" alt="single_trajectory"/></p><p>Using the mouse, you can highlight individual trajectories by hovering over them. This makes it possible to visualize a single trajectory across multiple dimensions. In the above plot, we are hovering over the highest thermal generation trajectory. As could be expected, this occurs when the inflow is 0 in every stage.</p><p>If you click on the plot, then trajectories that are close to the mouse pointer are shown darker and those further away are shown lighter. In the following image, we clicked on the high thermal generation point in the first stage. This shows that thermal generation is high when inflows are low.</p><p><img src="../assets/clicked_trajectory.png" alt="clicked_trajectory"/></p><h2><a class="nav-anchor" id="Publication-quality-plots-1" href="#Publication-quality-plots-1">Publication quality plots</a></h2><p>Instead of the interactive Javascript plots, you can also create some publication ready plots using the <code>SDDP.publicationplot</code> function.</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>You need to install the <a href="https://github.com/JuliaPlots/Plots">Plots.jl</a> package for this to work. We used the <code>GR</code> backend (<code>gr()</code>), but any Plots.jl backend should work.</p></div></div><p>This function implements a plot recipe to create ribbon plots of each variable against the stages. The first argument is the vector of simulation dictionaries and the second argument is the dictionary key that you want to plot. Standard Plots.jl keyword arguments such as <code>title</code> and <code>xlabel</code> can be used to modify the look of each plot. By default, the plot displays ribbons of the 0-100, 10-90, and 25-75 percentiles. The dark, solid line in the middle is the median (i.e. 50&#39;th percentile).</p><pre><code class="language-julia">using Plots
+gr()
+plot(
+    SDDP.publicationplot(simulation_result, :outgoing_volume, title=&quot;Volume&quot;),
+    SDDP.publicationplot(simulation_result, :thermal_generation, title=&quot;Thermal Generation&quot;),
+    SDDP.publicationplot(simulation_result, :hydro_generation, title=&quot;Hydro Generation&quot;),
+    SDDP.publicationplot(simulation_result, :hydro_spill, title=&quot;Hydro Spill&quot;),
+    layout        = (2,2),
+    size          = (1000, 600),
+    titlefont     = Plots.font(&quot;times&quot;, 14),
+    guidefont     = Plots.font(&quot;times&quot;, 14),
+    tickfont      = Plots.font(&quot;times&quot;, 14),
+    bottom_margin = 7.5Plots.mm,
+    left_margin   = 5Plots.mm,
+    xlabel        = &quot;Stage\n&quot;,
+    xticks        = [1,2,3]
+)</code></pre><p>This should open a plot window with a plot that looks like:</p><p><img src="../assets/publication_plot.png" alt="publication plot"/></p><p>You can save this to a PDF using Plots.jl</p><pre><code class="language-julia">savefig(&quot;my_picture.pdf&quot;)</code></pre><h2><a class="nav-anchor" id="Plotting-the-value-function-1" href="#Plotting-the-value-function-1">Plotting the value function</a></h2><p>It is often of interest to examine the shape of the cost-to-go function. SDDP.jl facilitates this with <a href="../apireference.html#SDDP.plotvaluefunction"><code>SDDP.plotvaluefunction</code></a>. It requires at least four inputs. The first is the SDDPModel <code>m</code>, the second is the index of the stage, and the third is the index of the Markov state. The remaining arguments define a set of discretized points at which to evaluate the cost-to-go function. The fourth argument gives the set of points at which to evaluate the first state variable, the fifth argument gives the points for the second state variable (if one exists), and so on.</p><p>For our example, there is only one state variable, so to visualize it over the range of <code>0:200</code> in the wet Markov state in the second stage, we call:</p><pre><code class="language-julia">SDDP.plotvaluefunction(m, 2, 1, 0.0:200.0; label1=&quot;Volume&quot;)</code></pre><p>This should open a browser window with a plot that looks like: <img src="../assets/plot_value_function.png" alt="value function"/></p><p><a href="../apireference.html#SDDP.plotvaluefunction"><code>SDDP.plotvaluefunction</code></a> can also be used to visualize problems with multiple state dimensions. For example, if we had three reservoirs, we can fix the second reservoir to <code>100.0</code> units and then visualize the cost-to-go surface with respect to the two free dimensions:</p><pre><code class="language-julia">SDDP.plotvaluefunction(m, 2, 1,
+    0.0:1:200.0,
+    100.0,
+    0.0:1:200.0;
+    label1=&quot;First State&quot;,
+    label2=&quot;Third State&quot;
+)</code></pre><p>That concludes our seventh tutorial for SDDP.jl. In our next tutorial, <a href="08_odds_and_ends.html#Tutorial-Eight:-odds-and-ends-1">Tutorial Eight: odds and ends</a>, we  discuss some odds and ends relating to SDDP now that we have a basic  understanding of it&#39;s functionality.</p><footer><hr/><a class="previous" href="06_cut_selection.html"><span class="direction">Previous</span><span class="title">Tutorial Six: cut selection</span></a><a class="next" href="08_odds_and_ends.html"><span class="direction">Next</span><span class="title">Tutorial Eight: odds and ends</span></a></footer></article></body></html>
