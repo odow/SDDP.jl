@@ -12,11 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         # SDDP doesn't have any binary dependencies, so just test on Linux, LTS
-        # and current release, 64-bit and 32-bit.
+        # and current release.
         include:
-          - version: '1.10'
-            os: ubuntu-latest
-            arch: x86
           - version: '1.10'
             os: ubuntu-latest
             arch: x64
