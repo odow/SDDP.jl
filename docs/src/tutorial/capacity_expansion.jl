@@ -21,8 +21,10 @@ using JuMP
 using SDDP
 import CSV
 import DataFrames
+import Gurobi
 import HiGHS
 import Plots
+import Statistics
 
 # ## Data
 
@@ -45,10 +47,18 @@ io = IOBuffer(
     """,
 )
 data = CSV.read(io, DataFrames.DataFrame)
+## Aggregate the data into 4-week blocks
+data.month = div.(data.week .- 1, 4)
+data = DataFrames.combine(
+    DataFrames.groupby(data, :month),
+    :demand => sum => :demand,
+    :cost => Statistics.mean => :cost,
+    :inflow => sum => :inflow,
+)
 T = size(data, 1)
 reservoir_max = 350.0
 reservoir_initial = 300
-flow_max = 9
+flow_max = 36
 
 # ## The operational model
 
@@ -70,7 +80,7 @@ model = SDDP.LinearPolicyGraph(;
     @variable(sp, 0 <= u_thermal)
     @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
-    Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
+    Ω, P = [-8, 0, 20], [0.3, 0.4, 0.3]
     SDDP.parameterize(sp, Ω, P) do ω
         fix(ω_inflow, data[t, :inflow] + ω)
         return
@@ -106,8 +116,7 @@ Plots.plot(
 
 # ## Invest then operate
 
-# Our operational model assumes a fixed `reservoir_max`. Let's change this to an
-# investment decision that we make before we operate the system.
+# Let's add the ability to invest in a wind farm.
 
 model = SDDP.LinearPolicyGraph(;
     stages = T + 1,
@@ -115,30 +124,41 @@ model = SDDP.LinearPolicyGraph(;
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, node
-    @variable(sp, x_reservoir_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, x_storage >= 0, SDDP.State, initial_value = 0)
-    @constraint(sp, x_storage.out <= x_reservoir_max.out)
+    @variable(
+        sp,
+        0 <= x_storage <= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, x_wind >= 0, SDDP.State, initial_value = 0)
     @variable(sp, 0 <= u_flow <= flow_max)
     @variable(sp, 0 <= u_thermal)
+    @variable(sp, 0 <= u_wind)
     @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
     if node == 1  # Investment node
-        @stageobjective(sp, x_reservoir_max.out)
-        @constraint(sp, x_storage.out <= reservoir_initial)
+        @stageobjective(sp, x_wind.out)
+        @constraint(sp, x_storage.out == x_storage.in)
     else  # Operational node
-        t = mod(node - 1, T + 1)
-        @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
-        Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
-        SDDP.parameterize(sp, Ω, P) do ω
-            fix(ω_inflow, data[t, :inflow] + ω)
-            return
-        end
+        t = node - 1
+        @constraint(sp, x_wind.out == x_wind.in)
+        @constraint(sp, c_wind, x_wind.in >= u_wind)
         @constraint(
             sp,
-            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow
+            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow,
         )
-        @constraint(sp, u_flow + u_thermal == data[t, :demand])
+        @constraint(sp, u_flow + u_thermal + u_wind == data[t, :demand])
         @stageobjective(sp, data[t, :cost] * u_thermal)
+        ΩP = [
+            (; inflow, wind) => p_inflow * p_wind
+            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
+            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+        ]
+        SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
+            set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
+            fix(ω_inflow, data[t, :inflow] + ω.inflow)
+            return
+        end
     end
     return
 end
@@ -155,7 +175,7 @@ SDDP.plot(model, "model_capex_2.html"; open = false)
 # Let's train and simulate:
 
 SDDP.train(model; iteration_limit = 100)
-simulations = SDDP.simulate(model, 100, [:x_storage, :u_flow, :x_reservoir_max])
+simulations = SDDP.simulate(model, 100, [:x_storage, :u_flow, :x_wind, :u_wind])
 Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Storage") do sim
         return sim[:x_storage].out
@@ -163,52 +183,67 @@ Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
         return sim[:u_flow]
     end,
-    SDDP.publication_plot(simulations; ylabel = "Reservoir Max") do sim
-        return sim[:x_reservoir_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind Investment") do sim
+        return sim[:x_wind].out
+    end,
+    SDDP.publication_plot(simulations; ylabel = "Wind") do sim
+        return sim[:u_wind]
     end;
     layout = (2, 2),
 )
 
-# ## Multiple investments
+# ## Invest-operate-invest-operate
 
-# We can also make the `flow_max` an investment option. In general, any bound
-# can be made into an investment decision. Add a new state variable. Penalize
-# the cost of investment in a new node, and write appropriate constraints for
-# the dynamics of the other state variables.
+# Now we present a model where we get to change our investment after one year.
+# We now have two operational years, each of which is preceded by an investment
+# node. We need to think carefully about the dynamics and cost of the second
+# investment node.
 
 model = SDDP.LinearPolicyGraph(;
-    stages = T + 1,
+    stages = 2 * T + 1,
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, node
-    @variable(sp, x_reservoir_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, x_flow_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, x_storage >= 0, SDDP.State, initial_value = 0)
-    @constraint(sp, x_storage.out <= x_reservoir_max.out)
-    @variable(sp, 0 <= u_flow)
-    @constraint(sp, u_flow <= x_flow_max.out)
+    @variable(
+        sp,
+        0 <= x_storage <= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, x_wind >= 0, SDDP.State, initial_value = 0)
+    @variable(sp, 0 <= u_flow <= flow_max)
     @variable(sp, 0 <= u_thermal)
+    @variable(sp, 0 <= u_wind)
     @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
     if node == 1  # Investment node
-        @stageobjective(sp, x_reservoir_max.out + x_flow_max.out)
-        @constraint(sp, x_storage.out <= reservoir_initial)
+        @stageobjective(sp, x_wind.out)
+        @constraint(sp, x_storage.out == x_storage.in)
+    elseif node == T + 2  # Second investment node
+        @stageobjective(sp, x_wind.out - x_wind.in)
+        @constraint(sp, x_wind.out >= x_wind.in)
+        @constraint(sp, x_storage.out == x_storage.in)
     else  # Operational node
         t = mod(node - 1, T + 1)
-        @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
-        @constraint(sp, x_flow_max.out == x_flow_max.in)
-        Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
-        SDDP.parameterize(sp, Ω, P) do ω
-            fix(ω_inflow, data[t, :inflow] + ω)
-            return
-        end
+        @constraint(sp, x_wind.out == x_wind.in)
+        @constraint(sp, c_wind, x_wind.in >= u_wind)
         @constraint(
             sp,
-            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow
+            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow,
         )
-        @constraint(sp, u_flow + u_thermal == data[t, :demand])
+        @constraint(sp, u_flow + u_thermal + u_wind == data[t, :demand])
         @stageobjective(sp, data[t, :cost] * u_thermal)
+        ΩP = [
+            (; inflow, wind) => p_inflow * p_wind
+            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
+            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+        ]
+        SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
+            set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
+            fix(ω_inflow, data[t, :inflow] + ω.inflow)
+            return
+        end
     end
     return
 end
@@ -225,11 +260,7 @@ SDDP.plot(model, "model_capex_3.html"; open = false)
 # Let's train and simulate:
 
 SDDP.train(model; iteration_limit = 100)
-simulations = SDDP.simulate(
-    model,
-    100,
-    [:x_storage, :u_flow, :x_reservoir_max, :x_flow_max],
-)
+simulations = SDDP.simulate(model, 100, [:x_storage, :u_flow, :x_wind, :u_wind])
 Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Storage") do sim
         return sim[:x_storage].out
@@ -237,62 +268,68 @@ Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
         return sim[:u_flow]
     end,
-    SDDP.publication_plot(simulations; ylabel = "Reservoir Max") do sim
-        return sim[:x_reservoir_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind Investment") do sim
+        return sim[:x_wind].out
     end,
-    SDDP.publication_plot(simulations; ylabel = "Flow Max") do sim
-        return sim[:x_flow_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind") do sim
+        return sim[:u_wind]
     end;
     layout = (2, 2),
 )
 
-# ## Invest-operate-invest-operate
+# ## Invest-operate-invest-operate-loop
 
-# Now we present a model where we get to change our investments after one year.
-# We now have two operational years, each of which is preceded by an investment
-# node. We need to think carefully about the dynamics and cost of the second
-# investment node.
+# Now we present a model where we enter an infinite horizon operational problem
+# after being able to update our investments the second time. For this, we need
+# a specialized policy graph:
 
-model = SDDP.LinearPolicyGraph(;
-    stages = 2 * T + 2,
+graph = SDDP.LinearGraph(2 * T + 2)
+SDDP.add_edge(graph, 2 * T + 2 => T + 3, 0.95)
+model = SDDP.PolicyGraph(
+    graph;
     sense = :Min,
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, node
-    @variable(sp, x_reservoir_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, x_flow_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, x_storage >= 0, SDDP.State, initial_value = 0)
-    @constraint(sp, x_storage.out <= x_reservoir_max.out)
-    @variable(sp, 0 <= u_flow)
-    @constraint(sp, u_flow <= x_flow_max.out)
+   @variable(
+        sp,
+        0 <= x_storage <= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, x_wind >= 0, SDDP.State, initial_value = 0)
+    @variable(sp, 0 <= u_flow <= flow_max)
     @variable(sp, 0 <= u_thermal)
+    @variable(sp, 0 <= u_wind)
     @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
-    if node == 1  # First investment node
-        @stageobjective(sp, x_reservoir_max.out + x_flow_max.out)
-        @constraint(sp, x_storage.out <= reservoir_initial)
+    if node == 1  # Investment node
+        @stageobjective(sp, x_wind.out)
+        @constraint(sp, x_storage.out == x_storage.in)
     elseif node == T + 2  # Second investment node
-        @stageobjective(
-            sp,
-            (x_reservoir_max.out - x_reservoir_max.in) +
-            (x_flow_max.out - x_flow_max.in),
-        )
+        @stageobjective(sp, x_wind.out - x_wind.in)
+        @constraint(sp, x_wind.out >= x_wind.in)
         @constraint(sp, x_storage.out == x_storage.in)
     else  # Operational node
         t = mod(node - 1, T + 1)
-        @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
-        @constraint(sp, x_flow_max.out == x_flow_max.in)
-        Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
-        SDDP.parameterize(sp, Ω, P) do ω
-            fix(ω_inflow, data[t, :inflow] + ω)
-            return
-        end
+        @constraint(sp, x_wind.out == x_wind.in)
+        @constraint(sp, c_wind, x_wind.in >= u_wind)
         @constraint(
             sp,
-            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow
+            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow,
         )
-        @constraint(sp, u_flow + u_thermal == data[t, :demand])
+        @constraint(sp, u_flow + u_thermal + u_wind == data[t, :demand])
         @stageobjective(sp, data[t, :cost] * u_thermal)
+        ΩP = [
+            (; inflow, wind) => p_inflow * p_wind
+            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
+            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+        ]
+        SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
+            set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
+            fix(ω_inflow, data[t, :inflow] + ω.inflow)
+            return
+        end
     end
     return
 end
@@ -312,92 +349,7 @@ SDDP.train(model; iteration_limit = 100)
 simulations = SDDP.simulate(
     model,
     100,
-    [:x_storage, :u_flow, :x_reservoir_max, :x_flow_max],
-)
-Plots.plot(
-    SDDP.publication_plot(simulations; ylabel = "Storage") do sim
-        return sim[:x_storage].out
-    end,
-    SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
-        return sim[:u_flow]
-    end,
-    SDDP.publication_plot(simulations; ylabel = "Reservoir Max") do sim
-        return sim[:x_reservoir_max].out
-    end,
-    SDDP.publication_plot(simulations; ylabel = "Flow Max") do sim
-        return sim[:x_flow_max].out
-    end;
-    layout = (2, 2),
-)
-
-# ## Invest-operate-invest-operate-loop
-
-# Now we present a model where we enter an infinite horizon operational problem
-# after being able to update our investments the second time. For this, we need
-# a specialized policy graph:
-
-graph = SDDP.LinearGraph(2 * T + 2)
-SDDP.add_edge(graph, 2 * T + 2 => T + 3, 0.95)
-model = SDDP.PolicyGraph(
-    graph;
-    sense = :Min,
-    lower_bound = 0.0,
-    optimizer = HiGHS.Optimizer,
-) do sp, node
-    @variable(sp, x_reservoir_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, x_flow_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, x_storage >= 0, SDDP.State, initial_value = 0)
-    @constraint(sp, x_storage.out <= x_reservoir_max.out)
-    @variable(sp, 0 <= u_flow)
-    @constraint(sp, u_flow <= x_flow_max.out)
-    @variable(sp, 0 <= u_thermal)
-    @variable(sp, 0 <= u_spill)
-    @variable(sp, ω_inflow)
-    if node == 1  # First investment node
-        @stageobjective(sp, x_reservoir_max.out + x_flow_max.out)
-        @constraint(sp, x_storage.out <= reservoir_initial)
-    elseif node == T + 2  # Second investment node
-        @stageobjective(
-            sp,
-            (x_reservoir_max.out - x_reservoir_max.in) +
-            (x_flow_max.out - x_flow_max.in),
-        )
-        @constraint(sp, x_storage.out == x_storage.in)
-    else  # Operational node
-        t = mod(node - 1, T + 1)
-        @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
-        @constraint(sp, x_flow_max.out == x_flow_max.in)
-        Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
-        SDDP.parameterize(sp, Ω, P) do ω
-            fix(ω_inflow, data[t, :inflow] + ω)
-            return
-        end
-        @constraint(
-            sp,
-            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow
-        )
-        @constraint(sp, u_flow + u_thermal == data[t, :demand])
-        @stageobjective(sp, data[t, :cost] * u_thermal)
-    end
-    return
-end
-
-# Here's the graph:
-
-## We need `open = false` to build the documentation. Remove if running locally.
-SDDP.plot(model, "model_capex_5.html"; open = false)
-
-# ```@raw html
-# <iframe src="../model_capex_5.html" style="width:100%;height:500px;"></iframe>
-# ```
-
-# Let's train and simulate:
-
-SDDP.train(model; iteration_limit = 100)
-simulations = SDDP.simulate(
-    model,
-    100,
-    [:x_storage, :u_flow, :x_reservoir_max, :x_flow_max];
+    [:x_storage, :u_flow, :x_wind, :u_wind];
     sampling_scheme = SDDP.InSampleMonteCarlo(;
         max_depth = 5 * T + 2,
         terminate_on_dummy_leaf = false,
@@ -410,11 +362,11 @@ Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
         return sim[:u_flow]
     end,
-    SDDP.publication_plot(simulations; ylabel = "Reservoir Max") do sim
-        return sim[:x_reservoir_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind Investment") do sim
+        return sim[:x_wind].out
     end,
-    SDDP.publication_plot(simulations; ylabel = "Flow Max") do sim
-        return sim[:x_flow_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind") do sim
+        return sim[:u_wind]
     end;
     layout = (2, 2),
 )
@@ -423,69 +375,70 @@ Plots.plot(
 
 # Now we present a model where we enter an infinite horizon operational problem
 # after being able to update our investments the second time, but there are two
-# possible cycles: one with regular inflows, and one with 50% high inflows and
-# 50% higher demand.
+# possible cycles: one with regular demands, and one with 50% higher demand.
 
 graph = SDDP.Graph((:root, 0))
 SDDP.add_node(graph, (:invest_1, 0))  # First investment
 SDDP.add_node(graph, (:invest_2, 0))  # Second investment
-for t in 1:52
+for t in 1:T
     SDDP.add_node(graph, (:Y1, t))
     SDDP.add_node(graph, (:Y2_normal, t))
     SDDP.add_node(graph, (:Y2_high, t))
 end
-for t in 2:52
+for t in 2:T
     SDDP.add_edge(graph, (:Y1, t - 1) => (:Y1, t), 1.0)
     SDDP.add_edge(graph, (:Y2_normal, t - 1) => (:Y2_normal, t), 1.0)
     SDDP.add_edge(graph, (:Y2_high, t - 1) => (:Y2_high, t), 1.0)
 end
 SDDP.add_edge(graph, (:root, 0) => (:invest_1, 0), 1.0)
 SDDP.add_edge(graph, (:invest_1, 0) => (:Y1, 1), 1.0)
-SDDP.add_edge(graph, (:Y1, 52) => (:invest_2, 0), 0.9)
+SDDP.add_edge(graph, (:Y1, T) => (:invest_2, 0), 0.9)
 SDDP.add_edge(graph, (:invest_2, 0) => (:Y2_normal, 1), 0.5)
 SDDP.add_edge(graph, (:invest_2, 0) => (:Y2_high, 1), 0.5)
-SDDP.add_edge(graph, (:Y2_normal, 52) => (:Y2_normal, 1), 0.9)
-SDDP.add_edge(graph, (:Y2_high, 52) => (:Y2_high, 1), 0.9)
+SDDP.add_edge(graph, (:Y2_normal, T) => (:Y2_normal, 1), 0.9)
+SDDP.add_edge(graph, (:Y2_high, T) => (:Y2_high, 1), 0.9)
 model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = HiGHS.Optimizer,
+    optimizer = Gurobi.Optimizer,
 ) do sp, (node, t)
-    @variable(sp, x_reservoir_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, 0 <= x_flow_max <= 20, SDDP.State, initial_value = 0)
-    @variable(sp, x_storage >= 0, SDDP.State, initial_value = 0)
-    @constraint(sp, x_storage.out <= x_reservoir_max.out)
-    @variable(sp, 0 <= u_flow)
-    @constraint(sp, u_flow <= x_flow_max.out)
+    @variable(
+        sp,
+        0 <= x_storage <= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, x_wind >= 0, SDDP.State, initial_value = 0)
+    @variable(sp, 0 <= u_flow <= flow_max)
     @variable(sp, 0 <= u_thermal)
+    @variable(sp, 0 <= u_wind)
     @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
-    if node == :invest_1  # First investment node
-        @stageobjective(sp, x_reservoir_max.out + x_flow_max.out)
-        @constraint(sp, x_storage.out <= reservoir_initial)
-    elseif node == :invest_2  # Second investment node
-        @stageobjective(
-            sp,
-            (x_reservoir_max.out - x_reservoir_max.in) +
-            (x_flow_max.out - x_flow_max.in),
-        )
+    if node == :invest_1 || node == :invest_2
+        @stageobjective(sp, x_wind.out - x_wind.in)
+        @constraint(sp, x_wind.out >= x_wind.in)
         @constraint(sp, x_storage.out == x_storage.in)
     else  # Operational node
-        @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
-        @constraint(sp, x_flow_max.out == x_flow_max.in)
-        Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
-        scale = node == :Y2_high ? 1.5 : 1.0
-        SDDP.parameterize(sp, Ω, P) do ω
-            fix(ω_inflow, scale * data[t, :inflow] + ω)
-            return
-        end
+        @constraint(sp, x_wind.out == x_wind.in)
+        @constraint(sp, c_wind, x_wind.in >= u_wind)
         @constraint(
             sp,
-            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow
+            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow,
         )
-        @constraint(sp, u_flow + u_thermal == scale * data[t, :demand])
+        scale = node == :Y2_high ? 1.5 : 1.0
+        @constraint(sp, u_flow + u_thermal + u_wind == scale * data[t, :demand])
         @stageobjective(sp, data[t, :cost] * u_thermal)
+        ΩP = [
+            (; inflow, wind) => p_inflow * p_wind
+            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
+            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+        ]
+        SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
+            set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
+            fix(ω_inflow, data[t, :inflow] + ω.inflow)
+            return
+        end
     end
     return
 end
@@ -495,10 +448,10 @@ end
 # operational year.
 
 ## We need `open = false` to build the documentation. Remove if running locally.
-SDDP.plot(model, "model_capex_6.html"; open = false)
+SDDP.plot(model, "model_capex_5.html"; open = false)
 
 # ```@raw html
-# <iframe src="../model_capex_6.html" style="width:100%;height:500px;"></iframe>
+# <iframe src="../model_capex_5.html" style="width:100%;height:500px;"></iframe>
 # ```
 
 # Let's train and simulate (note that the results look bad because we haven't
@@ -508,9 +461,9 @@ SDDP.train(model; iteration_limit = 100)
 simulations = SDDP.simulate(
     model,
     100,
-    [:x_storage, :u_flow, :x_reservoir_max, :x_flow_max];
+    [:x_storage, :u_flow, :x_wind, :u_wind];
     sampling_scheme = SDDP.InSampleMonteCarlo(;
-        max_depth = 5 * 52 + 2,
+        max_depth = 5 * T + 2,
         terminate_on_dummy_leaf = false,
     ),
 )
@@ -521,11 +474,11 @@ Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
         return sim[:u_flow]
     end,
-    SDDP.publication_plot(simulations; ylabel = "Reservoir Max") do sim
-        return sim[:x_reservoir_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind Investment") do sim
+        return sim[:x_wind].out
     end,
-    SDDP.publication_plot(simulations; ylabel = "Flow Max") do sim
-        return sim[:x_flow_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind") do sim
+        return sim[:u_wind]
     end;
     layout = (2, 2),
 )
@@ -535,7 +488,7 @@ Plots.plot(
 # Now we consider strategic level uncertainty as a scenario tree, each of which
 # contains an infinite horizon subproblem. The strategic graph is:
 
-T, p = 3, 0.9
+NT, p = 3, 0.9
 graph = SDDP.Graph((:root, 0))
 SDDP.add_node(graph, (:inv, 0))
 SDDP.add_node(graph, (:inv_h, 0))
@@ -545,12 +498,35 @@ SDDP.add_node(graph, (:inv_hl, 0))
 SDDP.add_node(graph, (:inv_lh, 0))
 SDDP.add_node(graph, (:inv_ll, 0))
 SDDP.add_edge(graph, (:root, 0) => (:inv, 0), 1.0)
-SDDP.add_edge(graph, (:inv, 0) => (:inv_h, 0), p^T / 2)
-SDDP.add_edge(graph, (:inv, 0) => (:inv_l, 0), p^T / 2)
-SDDP.add_edge(graph, (:inv_h, 0) => (:inv_hh, 0), p^T / 2)
-SDDP.add_edge(graph, (:inv_h, 0) => (:inv_hl, 0), p^T / 2)
-SDDP.add_edge(graph, (:inv_l, 0) => (:inv_lh, 0), p^T / 2)
-SDDP.add_edge(graph, (:inv_l, 0) => (:inv_ll, 0), p^T / 2)
+SDDP.add_edge(graph, (:inv, 0) => (:inv_h, 0), p^NT / 2)
+SDDP.add_edge(graph, (:inv, 0) => (:inv_l, 0), p^NT / 2)
+SDDP.add_edge(graph, (:inv_h, 0) => (:inv_hh, 0), p^NT / 2)
+SDDP.add_edge(graph, (:inv_h, 0) => (:inv_hl, 0), p^NT / 2)
+SDDP.add_edge(graph, (:inv_l, 0) => (:inv_lh, 0), p^NT / 2)
+SDDP.add_edge(graph, (:inv_l, 0) => (:inv_ll, 0), p^NT / 2)
+## We need `open = false` to build the documentation. Remove if running locally.
+SDDP.plot(graph, "model_capex_6.html"; open = false)
+
+# ```@raw html
+# <iframe src="../model_capex_6.html" style="width:100%;height:500px;"></iframe>
+# ```
+
+# To that we add an operational subproblem. We leave it as an exercise to the
+# reader to understand the probabilities on the arcs.
+
+SDDP.add_node(graph, (:op, 1))
+for t in 2:T
+    SDDP.add_node(graph, (:op, t))
+    SDDP.add_edge(graph, (:op, t - 1) => (:op, t), 1.0)
+end
+SDDP.add_edge(graph, (:op, T) => (:op, 1), p)
+SDDP.add_edge(graph, (:inv, 0) => (:op, 1), NT * (1 - p))
+SDDP.add_edge(graph, (:inv_h, 0) => (:op, 1), NT * (1 - p))
+SDDP.add_edge(graph, (:inv_l, 0) => (:op, 1), NT * (1 - p))
+SDDP.add_edge(graph, (:inv_hh, 0) => (:op, 1), 1.0)
+SDDP.add_edge(graph, (:inv_hl, 0) => (:op, 1), 1.0)
+SDDP.add_edge(graph, (:inv_lh, 0) => (:op, 1), 1.0)
+SDDP.add_edge(graph, (:inv_ll, 0) => (:op, 1), 1.0)
 ## We need `open = false` to build the documentation. Remove if running locally.
 SDDP.plot(graph, "model_capex_7.html"; open = false)
 
@@ -558,82 +534,56 @@ SDDP.plot(graph, "model_capex_7.html"; open = false)
 # <iframe src="../model_capex_7.html" style="width:100%;height:500px;"></iframe>
 # ```
 
-# To that we add an operational subproblem. We leave it as an exercise to the
-# reader to understand the probabilities on the arcs.
-
-SDDP.add_node(graph, (:op, 1))
-for t in 2:52
-    SDDP.add_node(graph, (:op, t))
-    SDDP.add_edge(graph, (:op, t - 1) => (:op, t), 1.0)
-end
-SDDP.add_edge(graph, (:op, 52) => (:op, 1), p)
-SDDP.add_edge(graph, (:inv, 0) => (:op, 1), T * (1 - p))
-SDDP.add_edge(graph, (:inv_h, 0) => (:op, 1), T * (1 - p))
-SDDP.add_edge(graph, (:inv_l, 0) => (:op, 1), T * (1 - p))
-SDDP.add_edge(graph, (:inv_hh, 0) => (:op, 1), 1.0)
-SDDP.add_edge(graph, (:inv_hl, 0) => (:op, 1), 1.0)
-SDDP.add_edge(graph, (:inv_lh, 0) => (:op, 1), 1.0)
-SDDP.add_edge(graph, (:inv_ll, 0) => (:op, 1), 1.0)
-## We need `open = false` to build the documentation. Remove if running locally.
-SDDP.plot(graph, "model_capex_8.html"; open = false)
-
-# ```@raw html
-# <iframe src="../model_capex_8.html" style="width:100%;height:500px;"></iframe>
-# ```
-
 model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = HiGHS.Optimizer,
+    optimizer = Gurobi.Optimizer,
 ) do sp, (node, t)
-    ## Investment state variables
-    @variable(sp, x_reservoir_max >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, 0 <= x_flow_max <= 20, SDDP.State, initial_value = 0)
-    ## Reservoir state variables
-    @variable(sp, x_storage >= 0, SDDP.State, initial_value = 0)
-    ## Demand state variables
+    @variable(
+        sp,
+        0 <= x_storage <= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, x_wind >= 0, SDDP.State, initial_value = 0)
     @variable(sp, x_scale, SDDP.State, initial_value = 1)
-    ## Control variables
-    @variable(sp, u_flow >= 0)
-    @variable(sp, u_thermal >= 0)
-    @variable(sp, u_spill >= 0)
-    ## Random variables
+    @variable(sp, 0 <= u_flow <= flow_max)
+    @variable(sp, 0 <= u_thermal)
+    @variable(sp, 0 <= u_wind)
+    @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
-    if t > 0  # Operational node
-        @stageobjective(sp, data[t, :cost] * u_thermal)
-        ## Investment and demand states are fixed
-        @constraint(sp, x_reservoir_max.out == x_reservoir_max.in)
-        @constraint(sp, x_flow_max.out == x_flow_max.in)
+    if t > 0
+        @constraint(sp, x_wind.out == x_wind.in)
         @constraint(sp, x_scale.out == x_scale.in)
-        ## Investments impact current decisions
-        @constraint(sp, x_storage.out <= x_reservoir_max.out)
-        @constraint(sp, u_flow <= x_flow_max.out)
+        @constraint(sp, c_wind, x_wind.in >= u_wind)
         @constraint(
             sp,
-            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow
+            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow,
         )
-        @constraint(sp, u_flow + u_thermal == x_scale.in * data[t, :demand])
-        ## Random variable
-        @constraint(sp, c_ω, ω_inflow - x_scale.in * data[t, :inflow] == 0)
-        Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
-        SDDP.parameterize(sp, Ω, P) do ω
-            set_normalized_coefficient(c_ω, x_scale.in, -(data[t, :inflow] + ω))
+        @constraint(
+            sp,
+            u_flow + u_thermal + u_wind == x_scale.in * data[t, :demand],
+        )
+        @stageobjective(sp, data[t, :cost] * u_thermal)
+        ΩP = [
+            (; inflow, wind) => p_inflow * p_wind
+            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
+            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+        ]
+        SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
+            set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
+            fix(ω_inflow, data[t, :inflow] + ω.inflow)
             return
         end
-    else  # Investment node
-        @stageobjective(
-            sp,
-            12 * (x_reservoir_max.out - x_reservoir_max.in) +
-            (x_flow_max.out - x_flow_max.in),
-        )
-        ## Assume reservoir starts out at 80% full
-        @constraint(sp, x_storage.out == 0.8 * x_reservoir_max.out)
-        ## Update scale factors based on scenario tree
+    else
+        @stageobjective(sp, x_wind.out - x_wind.in)
+        @constraint(sp, x_wind.out >= x_wind.in)
+        @constraint(sp, x_storage.out == x_storage.in)
         if endswith("$node", "h")
-            @constraint(sp, x_scale.out == 1.5 * x_scale.in)
+            @constraint(sp, x_scale.out == 1.05 * x_scale.in)
         elseif endswith("$node", "l")
-            @constraint(sp, x_scale.out == 0.8 * x_scale.in)
+            @constraint(sp, x_scale.out == 0.95 * x_scale.in)
         else
             @constraint(sp, x_scale.out == x_scale.in)
         end
@@ -646,22 +596,27 @@ end
 
 SDDP.train(model; iteration_limit = 200)
 function sample_scenario()
-    D = SDDP.Noise.([-2, 0, 5], [0.3, 0.4, 0.3])
+    ΩP = [
+        (; inflow, wind) => p_inflow * p_wind
+        for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
+        for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+    ]
+    D = SDDP.Noise.(first.(ΩP), last.(ΩP))
     inv_1 = Symbol("inv_$(rand((:l, :h)))")
     inv_2 = Symbol("$(inv_1)$(rand((:l, :h)))")
     return vcat(
         ((:inv, 0), nothing),
-        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+        [((:op, t), SDDP.sample_noise(D)) for t in 1:T for year in 1:NT],
         ((inv_1, 0), nothing),
-        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+        [((:op, t), SDDP.sample_noise(D)) for t in 1:T for year in 1:NT],
         ((inv_2, 0), nothing),
-        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+        [((:op, t), SDDP.sample_noise(D)) for t in 1:T for year in 1:NT],
     )
 end
 simulations = SDDP.simulate(
     model,
     100,
-    [:x_storage, :u_flow, :x_reservoir_max, :x_flow_max];
+    [:x_storage, :u_flow, :x_wind, :u_wind];
     sampling_scheme = SDDP.Historical([sample_scenario() for _ in 1:100]),
 )
 Plots.plot(
@@ -671,11 +626,11 @@ Plots.plot(
     SDDP.publication_plot(simulations; ylabel = "Hydro") do sim
         return sim[:u_flow]
     end,
-    SDDP.publication_plot(simulations; ylabel = "Reservoir Max") do sim
-        return sim[:x_reservoir_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind Investment") do sim
+        return sim[:x_wind].out
     end,
-    SDDP.publication_plot(simulations; ylabel = "Flow Max") do sim
-        return sim[:x_flow_max].out
+    SDDP.publication_plot(simulations; ylabel = "Wind") do sim
+        return sim[:u_wind]
     end;
     layout = (2, 2),
 )
