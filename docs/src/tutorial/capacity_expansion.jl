@@ -21,7 +21,6 @@ using JuMP
 using SDDP
 import CSV
 import DataFrames
-import Gurobi
 import HiGHS
 import Plots
 import Statistics
@@ -401,7 +400,7 @@ model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = Gurobi.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do sp, (node, t)
     @variable(
         sp,
@@ -409,11 +408,10 @@ model = SDDP.PolicyGraph(
         SDDP.State,
         initial_value = reservoir_initial,
     )
-    @variable(sp, x_wind >= 0, SDDP.State, initial_value = 0)
+    @variable(sp, 0 <= x_wind <= 100, SDDP.State, initial_value = 0)
     @variable(sp, 0 <= u_flow <= flow_max)
     @variable(sp, 0 <= u_thermal)
     @variable(sp, 0 <= u_wind)
-    @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
     if node == :invest_1 || node == :invest_2
         @stageobjective(sp, x_wind.out - x_wind.in)
@@ -424,7 +422,7 @@ model = SDDP.PolicyGraph(
         @constraint(sp, c_wind, x_wind.in >= u_wind)
         @constraint(
             sp,
-            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow,
+            x_storage.out <= x_storage.in - u_flow + ω_inflow,
         )
         scale = node == :Y2_high ? 1.5 : 1.0
         @constraint(sp, u_flow + u_thermal + u_wind == scale * data[t, :demand])
@@ -538,7 +536,7 @@ model = SDDP.PolicyGraph(
     graph;
     sense = :Min,
     lower_bound = 0.0,
-    optimizer = Gurobi.Optimizer,
+    optimizer = HiGHS.Optimizer,
 ) do sp, (node, t)
     @variable(
         sp,
@@ -546,21 +544,17 @@ model = SDDP.PolicyGraph(
         SDDP.State,
         initial_value = reservoir_initial,
     )
-    @variable(sp, x_wind >= 0, SDDP.State, initial_value = 0)
-    @variable(sp, x_scale, SDDP.State, initial_value = 1)
+    @variable(sp, 0 <= x_wind <= 100, SDDP.State, initial_value = 0)
+    @variable(sp, x_scale >= 0, SDDP.State, initial_value = 1)
     @variable(sp, 0 <= u_flow <= flow_max)
     @variable(sp, 0 <= u_thermal)
     @variable(sp, 0 <= u_wind)
-    @variable(sp, 0 <= u_spill)
     @variable(sp, ω_inflow)
     if t > 0
         @constraint(sp, x_wind.out == x_wind.in)
         @constraint(sp, x_scale.out == x_scale.in)
         @constraint(sp, c_wind, x_wind.in >= u_wind)
-        @constraint(
-            sp,
-            x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow,
-        )
+        @constraint(sp, x_storage.out <= x_storage.in - u_flow  + ω_inflow)
         @constraint(
             sp,
             u_flow + u_thermal + u_wind == x_scale.in * data[t, :demand],
