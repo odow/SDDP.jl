@@ -70,7 +70,7 @@ function _add_cut(
         θᵏ -= πᵏ[key] * x
     end
     cut = Cut(θᵏ, πᵏ, obj_y, belief_y, 1, nothing)
-    if _worst_coefficient(cut) > 1e10
+    if _worst_coefficient(cut) > 1e9
         return # Skip this cut
     end
     _add_cut_constraint_to_model(V, cut)
