@@ -149,9 +149,9 @@ model = SDDP.LinearPolicyGraph(;
         @constraint(sp, u_flow + u_thermal + u_wind == data[t, :demand])
         @stageobjective(sp, data[t, :cost] * u_thermal)
         ΩP = [
-            (; inflow, wind) => p_inflow * p_wind
-            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
-            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+            (; inflow, wind) => p_inflow * p_wind for
+            (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4] for
+            (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
         ]
         SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
             set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
@@ -234,9 +234,9 @@ model = SDDP.LinearPolicyGraph(;
         @constraint(sp, u_flow + u_thermal + u_wind == data[t, :demand])
         @stageobjective(sp, data[t, :cost] * u_thermal)
         ΩP = [
-            (; inflow, wind) => p_inflow * p_wind
-            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
-            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+            (; inflow, wind) => p_inflow * p_wind for
+            (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4] for
+            (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
         ]
         SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
             set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
@@ -290,7 +290,7 @@ model = SDDP.PolicyGraph(
     lower_bound = 0.0,
     optimizer = HiGHS.Optimizer,
 ) do sp, node
-   @variable(
+    @variable(
         sp,
         0 <= x_storage <= reservoir_max,
         SDDP.State,
@@ -320,9 +320,9 @@ model = SDDP.PolicyGraph(
         @constraint(sp, u_flow + u_thermal + u_wind == data[t, :demand])
         @stageobjective(sp, data[t, :cost] * u_thermal)
         ΩP = [
-            (; inflow, wind) => p_inflow * p_wind
-            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
-            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+            (; inflow, wind) => p_inflow * p_wind for
+            (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4] for
+            (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
         ]
         SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
             set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
@@ -420,17 +420,14 @@ model = SDDP.PolicyGraph(
     else  # Operational node
         @constraint(sp, x_wind.out == x_wind.in)
         @constraint(sp, c_wind, x_wind.in >= u_wind)
-        @constraint(
-            sp,
-            x_storage.out <= x_storage.in - u_flow + ω_inflow,
-        )
+        @constraint(sp, x_storage.out <= x_storage.in - u_flow + ω_inflow)
         scale = node == :Y2_high ? 1.5 : 1.0
         @constraint(sp, u_flow + u_thermal + u_wind == scale * data[t, :demand])
         @stageobjective(sp, data[t, :cost] * u_thermal)
         ΩP = [
-            (; inflow, wind) => p_inflow * p_wind
-            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
-            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+            (; inflow, wind) => p_inflow * p_wind for
+            (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4] for
+            (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
         ]
         SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
             set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
@@ -554,16 +551,16 @@ model = SDDP.PolicyGraph(
         @constraint(sp, x_wind.out == x_wind.in)
         @constraint(sp, x_scale.out == x_scale.in)
         @constraint(sp, c_wind, x_wind.in >= u_wind)
-        @constraint(sp, x_storage.out <= x_storage.in - u_flow  + ω_inflow)
+        @constraint(sp, x_storage.out <= x_storage.in - u_flow + ω_inflow)
         @constraint(
             sp,
             u_flow + u_thermal + u_wind == x_scale.in * data[t, :demand],
         )
         @stageobjective(sp, data[t, :cost] * u_thermal)
         ΩP = [
-            (; inflow, wind) => p_inflow * p_wind
-            for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
-            for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+            (; inflow, wind) => p_inflow * p_wind for
+            (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4] for
+            (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
         ]
         SDDP.parameterize(sp, first.(ΩP), last.(ΩP)) do ω
             set_normalized_coefficient(c_wind, x_wind.in, ω.wind)
@@ -575,9 +572,9 @@ model = SDDP.PolicyGraph(
         @constraint(sp, x_wind.out >= x_wind.in)
         @constraint(sp, x_storage.out == x_storage.in)
         if endswith("$node", "h")
-            @constraint(sp, x_scale.out == 1.05 * x_scale.in)
+            @constraint(sp, x_scale.out == 1.1 * x_scale.in)
         elseif endswith("$node", "l")
-            @constraint(sp, x_scale.out == 0.95 * x_scale.in)
+            @constraint(sp, x_scale.out == x_scale.in / 1.1)
         else
             @constraint(sp, x_scale.out == x_scale.in)
         end
@@ -591,9 +588,9 @@ end
 SDDP.train(model; iteration_limit = 200)
 function sample_scenario()
     ΩP = [
-        (; inflow, wind) => p_inflow * p_wind
-        for (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4]
-        for (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
+        (; inflow, wind) => p_inflow * p_wind for
+        (inflow, p_inflow) in [-8 => 0.3, 0 => 0.4, 20 => 0.4] for
+        (wind, p_wind) in [0.5 => 0.5, 0.8 => 0.5]
     ]
     D = SDDP.Noise.(first.(ΩP), last.(ΩP))
     inv_1 = Symbol("inv_$(rand((:l, :h)))")
