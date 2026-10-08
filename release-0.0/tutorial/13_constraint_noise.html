@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial Thirteen: constraint noise · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="01_first_steps.html">Tutorial One: first steps</a></li><li><a class="toctext" href="02_rhs_noise.html">Tutorial Two: RHS noise</a></li><li><a class="toctext" href="03_objective_noise.html">Tutorial Three: objective noise</a></li><li><a class="toctext" href="04_markovian_policygraphs.html">Tutorial Four: Markovian policy graphs</a></li><li><a class="toctext" href="05_risk.html">Tutorial Five: risk</a></li><li><a class="toctext" href="06_cut_selection.html">Tutorial Six: cut selection</a></li><li><a class="toctext" href="07_plotting.html">Tutorial Seven: plotting</a></li><li><a class="toctext" href="08_odds_and_ends.html">Tutorial Eight: odds and ends</a></li><li><a class="toctext" href="09_nonlinear.html">Tutorial Nine: nonlinear models</a></li><li><a class="toctext" href="10_parallel.html">Tutorial Ten: parallelism</a></li><li><a class="toctext" href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a></li><li><a class="toctext" href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a></li><li class="current"><a class="toctext" href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a><ul class="internal"></ul></li></ul></li><li><a class="toctext" href="../readings.html">Readings</a></li><li><a class="toctext" href="../apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/13_constraint_noise.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorial Thirteen: constraint noise</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-Thirteen:-constraint-noise-1" href="#Tutorial-Thirteen:-constraint-noise-1">Tutorial Thirteen: constraint noise</a></h1><p>In previous tutorials (e.g., <a href="03_objective_noise.html#Tutorial-Three:-objective-noise-1">Tutorial Three: objective noise</a>), we explicitly noted that SDDP.jl does not support noise in the constraint matrix. However, we have recently developed a hack that works around this. It should not be considered stable, and is an imperfect solution. The new version of JuMP will enable native support for these modifications instead of the current hack.</p><p>!!!note     This may break SDDP extensions such as <a href="https://github.com/lkapelevich/SDDiP.jl">SDDiP.jl</a>.     It may also break some features of JuMP.</p><p>If <code>w ∈ [1,2,3]</code> with equal probability, and we want to add the constraint:</p><pre><code class="language-julia">@constraint(sp, 2x + w*x &lt;= 1)</code></pre><p>Then in the subproblem definition, we can use the un-exported <a href="../apireference.html#SDDP.addconstraintnoise!"><code>SDDP.addconstraintnoise!</code></a> method:</p><pre><code class="language-julia">wx = SDDP.addconstraintnoise!(sp, x, [1,2,3])
+@constraint(m, 2x + wx &lt;= 1)</code></pre><p>The first line introduces a new JuMP variable named <code>wx</code>. Depending on the realization of the noise, this will take the value of <code>w*x</code>. Note that we named the variable <code>wx</code>, but this decision was arbitrary. <a href="../apireference.html#SDDP.addconstraintnoise!"><code>SDDP.addconstraintnoise!</code></a> is purposefully not exported to show that it is an experimental feature.</p><p>!!!note     This requires a solver that implements the <a href="http://mathprogbasejl.readthedocs.io/en/latest/lpqcqp.html#changecoeffs!">MathProgBase.changecoeffs!</a>     method.</p><p>To give a full example:</p><pre><code class="language-julia">using SDDP, JuMP, Gurobi
+m = SDDPModel(
+        sense           = :Min,
+        stages          = 2,
+        objective_bound = 0.0,
+        solver          = GurobiSolver(OutputFlag=0) ) do sp, t
+    @state(sp, x&gt;=0, x0==1.0)
+    @stageobjective(sp, x)
+    # instead of @constraint(sp, x == w * x0) where w ∈ [1,2], we write:
+    r_x = SDDP.addconstraintnoise!(sp, x0, [1,2])
+    @constraint(sp, x == r_x)
+end</code></pre><p>There are four possible scenarios that can be realized in this model:</p><ol><li><p><code>(x₁, x₂) = (1, 1)</code> with total cost of <code>1+1=2</code></p></li><li><p><code>(x₁, x₂) = (1, 2)</code> with total cost of <code>1+2=3</code></p></li><li><p><code>(x₁, x₂) = (2, 2)</code> with total cost of <code>2+2=4</code></p></li><li><p><code>(x₁, x₂) = (2, 4)</code> with total cost of <code>2+4=6</code></p></li></ol><p>Therefore, the expected cost is <code>mean([2,3,4,6]) = 3.75</code>. If we solve the model  for five iterations, we can confirm that the model converges to this bound:</p><pre><code class="language-julia">julia&gt; solve(m, iteration_limit=5)
+ ... log omitted ...
+julia&gt; getbound(m)
+ 3.75</code></pre><p>The log is:</p><pre><code class="language-none">-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         2
+        States:         1
+        Subproblems:    2
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+        4.000          3.750         |     1    1.0      0    0.0    1.0
+        3.000          3.750         |     2    1.0      0    0.0    1.3
+        4.000          3.750         |     3    1.0      0    0.0    1.3
+        2.000          3.750         |     4    1.0      0    0.0    1.3
+        2.000          3.750         |     5    1.0      0    0.0    1.3
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         5
+        Termination Status: iteration_limit
+===============================================================================</code></pre><p>Each uncertain term in the constraint matrix must be added using the <a href="../apireference.html#SDDP.addconstraintnoise!"><code>SDDP.addconstraintnoise!</code></a> method. These terms can be used in conjunction with right-hand side and  objective noise. In which case there must be the same number of realizations in the constraint noise as there are in the right-hand side noise terms. For example: To give a full example:</p><pre><code class="language-julia">using SDDP, JuMP, Gurobi
+m = SDDPModel(
+        sense           = :Min,
+        stages          = 2,
+        objective_bound = 0.0,
+        solver          = GurobiSolver(OutputFlag=0) ) do sp, t
+    @states(sp, begin
+        x&gt;=0, x0==1.0
+        y&gt;=0, y0==1.0
+    end)
+    # noise in the constraint matrix
+    r_x = SDDP.addconstraintnoise!(sp, x0, [0.9,1.1])
+    r_y = SDDP.addconstraintnoise!(sp, y0, [0.8,1.2])
+    @constraint(sp, x == 0.9r_x + 0.1r_y)
+
+    # noise in the right-hand side term
+    @rhsnoise(sp, w=[0.0, 0.1], y == 0.9r_y + 0.1r_x + w)
+
+    # noise in the objective function
+    @stageobjective(sp, w=[1,2], w * x + y)
+end</code></pre><p>This concludes our thirteenth tutorial for SDDP.jl.</p><footer><hr/><a class="previous" href="12_price_interpolation.html"><span class="direction">Previous</span><span class="title">Tutorial Twelve: price interpolation</span></a><a class="next" href="../readings.html"><span class="direction">Next</span><span class="title">Readings</span></a></footer></article></body></html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Hydro valleys · SDDP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">SDDP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/01_first_steps/">Basic I: first steps</a></li><li><a class="tocitem" href="../../tutorial/02_adding_uncertainty/">Basic II: adding uncertainty</a></li><li><a class="tocitem" href="../../tutorial/03_objective_uncertainty/">Basic III: objective uncertainty</a></li><li><a class="tocitem" href="../../tutorial/04_markov_uncertainty/">Basic IV: Markov uncertainty</a></li><li><a class="tocitem" href="../../tutorial/05_plotting/">Basic V: plotting</a></li><li><a class="tocitem" href="../../tutorial/06_warnings/">Basic VI: words of warning</a></li><li><a class="tocitem" href="../../tutorial/11_objective_states/">Advanced I: objective states</a></li><li><a class="tocitem" href="../../tutorial/12_belief_states/">Advanced II: belief states</a></li><li><a class="tocitem" href="../../tutorial/13_integrality/">Advanced III: integrality</a></li><li><a class="tocitem" href="../../tutorial/21_theory_intro/">Theory I: an intro to SDDP</a></li><li><a class="tocitem" href="../../tutorial/22_risk/">Theory II: risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li class="is-active"><a class="tocitem" href>Hydro valleys</a></li><li><a class="tocitem" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Hydro valleys</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Hydro valleys</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/hydro_valley.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Hydro-valleys"><a class="docs-heading-anchor" href="#Hydro-valleys">Hydro valleys</a><a id="Hydro-valleys-1"></a><a class="docs-heading-anchor-permalink" href="#Hydro-valleys" title="Permalink"></a></h1><p>This problem is a version of the hydro-thermal scheduling problem. The goal is to operate two hydro-dams in a valley chain over time in the face of inflow and price uncertainty.</p><p>Turbine response curves are modelled by piecewise linear functions which map the flow rate into a power. These can be controlled by specifying the breakpoints in the piecewise linear function as the knots in the Turbine struct.</p><p>The model can be created using the hydrovalleymodel function. It has a few keyword arguments to allow automated testing of the library. <code>hasstagewiseinflows</code> determines if the RHS noise constraint should be added. <code>hasmarkovprice</code> determines if the price uncertainty (modelled by a markov chain) should be added.</p><p>In the third stage, the markov chain has some unreachable states to test some code-paths in the library.</p><p>We can also set the sense to :Min or :Max (the objective and bound are flipped appropriately).</p><pre><code class="language-julia">using SDDP, GLPK, Test, Random
+
+struct Turbine
+    flowknots::Vector{Float64}
+    powerknots::Vector{Float64}
+end
+
+struct Reservoir
+    min::Float64
+    max::Float64
+    initial::Float64
+    turbine::Turbine
+    spill_cost::Float64
+    inflows::Vector{Float64}
+end
+
+function hydrovalleymodel(;
+    hasstagewiseinflows::Bool = true,
+    hasmarkovprice::Bool = true,
+    sense::Symbol = :Max,
+)
+
+    valley_chain = [
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0, 20, 50]),
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0, 0, 20]),
+    ]
+
+    turbine(i) = valley_chain[i].turbine
+
+    # Prices[t, markov state]
+    prices = [
+        1 2 0
+        2 1 0
+        3 4 0
+    ]
+
+    # Transition matrix
+    if hasmarkovprice
+        transition = Array{Float64,2}[[1.0]&#39;, [0.6 0.4], [0.6 0.4 0.0; 0.3 0.7 0.0]]
+    else
+        transition = [ones(Float64, (1, 1)) for t = 1:3]
+    end
+
+    flipobj = (sense == :Max) ? 1.0 : -1.0
+    lower = (sense == :Max) ? -Inf : -1e6
+    upper = (sense == :Max) ? 1e6 : Inf
+
+    N = length(valley_chain)
+
+    # Initialise SDDP Model
+    m = SDDP.MarkovianPolicyGraph(
+        sense = sense,
+        lower_bound = lower,
+        upper_bound = upper,
+        transition_matrices = transition,
+        optimizer = GLPK.Optimizer,
+    ) do subproblem, node
+        t, markov_state = node
+
+        # ------------------------------------------------------------------
+        #   SDDP State Variables
+        # Level of upper reservoir
+        @variable(
+            subproblem,
+            valley_chain[r].min &lt;= reservoir[r = 1:N] &lt;= valley_chain[r].max,
+            SDDP.State,
+            initial_value = valley_chain[r].initial
+        )
+
+        # ------------------------------------------------------------------
+        #   Additional variables
+        @variables(
+            subproblem,
+            begin
+                outflow[r = 1:N] &gt;= 0
+                spill[r = 1:N] &gt;= 0
+                inflow[r = 1:N] &gt;= 0
+                generation_quantity &gt;= 0 # Total quantity of water
+                # Proportion of levels to dispatch on
+                0 &lt;= dispatch[r = 1:N, level = 1:length(turbine(r).flowknots)] &lt;= 1
+                rainfall[i = 1:N]
+            end
+        )
+
+        # ------------------------------------------------------------------
+        # Constraints
+        @constraints(
+            subproblem,
+            begin
+                # flow from upper reservoir
+                reservoir[1].out == reservoir[1].in + inflow[1] - outflow[1] - spill[1]
+
+                # other flows
+                flow[i = 2:N],
+                reservoir[i].out ==
+                reservoir[i].in + inflow[i] - outflow[i] - spill[i] +
+                outflow[i-1] +
+                spill[i-1]
+
+                # Total quantity generated
+                generation_quantity == sum(
+                    turbine(r).powerknots[level] * dispatch[r, level] for r = 1:N
+                    for level = 1:length(turbine(r).powerknots)
+                )
+
+                # ------------------------------------------------------------------
+                # Flow out
+                turbineflow[r = 1:N],
+                outflow[r] == sum(
+                    turbine(r).flowknots[level] * dispatch[r, level]
+                    for level = 1:length(turbine(r).flowknots)
+                )
+
+                # Dispatch combination of levels
+                dispatched[r = 1:N],
+                sum(dispatch[r, level] for level = 1:length(turbine(r).flowknots)) &lt;= 1
+            end
+        )
+
+        # rainfall noises
+        if hasstagewiseinflows &amp;&amp; t &gt; 1 # in future stages random inflows
+            @constraint(subproblem, inflow_noise[i = 1:N], inflow[i] &lt;= rainfall[i])
+
+            SDDP.parameterize(
+                subproblem,
+                [
+                    (valley_chain[1].inflows[i], valley_chain[2].inflows[i])
+                    for i = 1:length(transition)
+                ],
+            ) do ω
+                for i = 1:N
+                    JuMP.fix(rainfall[i], ω[i])
+                end
+            end
+        else # in the first stage deterministic inflow
+            @constraint(
+                subproblem,
+                initial_inflow_noise[i = 1:N],
+                inflow[i] &lt;= valley_chain[i].inflows[1]
+            )
+        end
+
+        # ------------------------------------------------------------------
+        #   Objective Function
+        if hasmarkovprice
+            @stageobjective(
+                subproblem,
+                flipobj * (
+                    prices[t, markov_state] * generation_quantity -
+                    sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
+                )
+            )
+        else
+            @stageobjective(
+                subproblem,
+                flipobj * (
+                    prices[t, 1] * generation_quantity -
+                    sum(valley_chain[i].spill_cost * spill[i] for i = 1:N)
+                )
+            )
+        end
+    end
+end
+
+function test_hydro_valley_model()
+
+    # For repeatability
+    Random.seed!(11111)
+
+    # deterministic
+    deterministic_model =
+        hydrovalleymodel(hasmarkovprice = false, hasstagewiseinflows = false)
+    SDDP.train(
+        deterministic_model,
+        iteration_limit = 10,
+        cut_deletion_minimum = 1,
+        print_level = 0,
+    )
+    @test SDDP.calculate_bound(deterministic_model) ≈ 835.0 atol = 1e-3
+
+    # stagewise inflows
+    stagewise_model = hydrovalleymodel(hasmarkovprice = false)
+    SDDP.train(stagewise_model, iteration_limit = 20, print_level = 0)
+    @test SDDP.calculate_bound(stagewise_model) ≈ 838.33 atol = 1e-2
+
+    # markov prices
+    markov_model = hydrovalleymodel(hasstagewiseinflows = false)
+    SDDP.train(markov_model, iteration_limit = 10, print_level = 0)
+    @test SDDP.calculate_bound(markov_model) ≈ 851.8 atol = 1e-2
+
+    # stagewise inflows and markov prices
+    markov_stagewise_model =
+        hydrovalleymodel(hasstagewiseinflows = true, hasmarkovprice = true)
+    SDDP.train(markov_stagewise_model, iteration_limit = 10, print_level = 0)
+    @test SDDP.calculate_bound(markov_stagewise_model) ≈ 855.0 atol = 1.0
+
+    # risk averse stagewise inflows and markov prices
+    riskaverse_model = hydrovalleymodel()
+    SDDP.train(
+        riskaverse_model,
+        risk_measure = SDDP.EAVaR(lambda = 0.5, beta = 0.66),
+        iteration_limit = 10,
+        print_level = 0,
+    )
+    @test SDDP.calculate_bound(riskaverse_model) ≈ 828.157 atol = 1.0
+
+    # stagewise inflows and markov prices
+    worst_case_model = hydrovalleymodel(sense = :Min)
+    SDDP.train(
+        worst_case_model,
+        risk_measure = SDDP.EAVaR(lambda = 0.5, beta = 0.0),
+        iteration_limit = 10,
+        print_level = 0,
+    )
+    @test SDDP.calculate_bound(worst_case_model) ≈ -780.867 atol = 1.0
+
+    # stagewise inflows and markov prices
+    cutselection_model = hydrovalleymodel()
+    SDDP.train(
+        cutselection_model,
+        iteration_limit = 10,
+        print_level = 0,
+        cut_deletion_minimum = 2,
+    )
+    @test SDDP.calculate_bound(cutselection_model) ≈ 855.0 atol = 1.0
+
+    # Distributionally robust Optimization
+    dro_model = hydrovalleymodel(hasmarkovprice = false)
+    SDDP.train(
+        dro_model,
+        risk_measure = SDDP.ModifiedChiSquared(sqrt(2 / 3) - 1e-6),
+        iteration_limit = 10,
+        print_level = 0,
+    )
+    @test SDDP.calculate_bound(dro_model) ≈ 835.0 atol = 1.0
+
+    dro_model = hydrovalleymodel(hasmarkovprice = false)
+    SDDP.train(
+        dro_model,
+        risk_measure = SDDP.ModifiedChiSquared(1 / 6),
+        iteration_limit = 20,
+        print_level = 0,
+    )
+    @test SDDP.calculate_bound(dro_model) ≈ 836.695 atol = 1.0
+    # (Note) radius ≈ sqrt(2/3), will set all noise probabilities to zero except the worst case noise
+    # (Why?):
+    # The distance from the uniform distribution (the assumed &quot;true&quot; distribution)
+    # to a corner of a unit simplex is sqrt(S-1)/sqrt(S) if we have S scenarios. The corner
+    # of a unit simplex is just a unit vector, i.e.: [0 ... 0 1 0 ... 0]. With this probability
+    # vector, only one noise has a non-zero probablity.
+    # In the worst case rhsnoise (0 inflows) the profit is:
+    #  Reservoir1: 70 * $3 + 70 * $2 + 65 * $1 +
+    #  Reservoir2: 70 * $3 + 70 * $2 + 70 * $1
+    ###  = $835
+end
+
+test_hydro_valley_model()</code></pre><pre><code class="language-none">Test Passed</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../generation_expansion/">« Generation expansion</a><a class="docs-footer-nextpage" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 21 March 2021 22:45">Sunday 21 March 2021</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

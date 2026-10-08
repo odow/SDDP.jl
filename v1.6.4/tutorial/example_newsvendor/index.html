@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example: Two-stage Newsvendor · SDDP.jl</title><meta name="title" content="Example: Two-stage Newsvendor · SDDP.jl"/><meta property="og:title" content="Example: Two-stage Newsvendor · SDDP.jl"/><meta property="twitter:title" content="Example: Two-stage Newsvendor · SDDP.jl"/><meta name="description" content="Documentation for SDDP.jl."/><meta property="og:description" content="Documentation for SDDP.jl."/><meta property="twitter:description" content="Documentation for SDDP.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SDDP.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../plotting/">Plotting tools</a></li><li><a class="tocitem" href="../warnings/">Words of warning</a></li><li><a class="tocitem" href="../arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../objective_states/">Objective states</a></li><li><a class="tocitem" href="../pglib_opf/">Alternative forward models</a></li><li><a class="tocitem" href="../mdps/">Example: Markov Decision Processes</a></li><li class="is-active"><a class="tocitem" href>Example: Two-stage Newsvendor</a><ul class="internal"><li><a class="tocitem" href="#Background"><span>Background</span></a></li><li><a class="tocitem" href="#Policy-Graph"><span>Policy Graph</span></a></li><li><a class="tocitem" href="#Simulation"><span>Simulation</span></a></li><li><a class="tocitem" href="#Risk-aversion-revisited"><span>Risk aversion revisited</span></a></li><li><a class="tocitem" href="#Things-to-try"><span>Things to try</span></a></li><li><a class="tocitem" href="#Other-graphs"><span>Other graphs</span></a></li></ul></li><li><a class="tocitem" href="../example_reservoir/">Example: deterministic to stochastic</a></li><li><a class="tocitem" href="../example_milk_producer/">Example: the milk producer</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../explanation/theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../explanation/risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Example: Two-stage Newsvendor</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example: Two-stage Newsvendor</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/example_newsvendor.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Example:-Two-stage-Newsvendor"><a class="docs-heading-anchor" href="#Example:-Two-stage-Newsvendor">Example: Two-stage Newsvendor</a><a id="Example:-Two-stage-Newsvendor-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-Two-stage-Newsvendor" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/odow/SDDP.jl/gh-pages?filepath=v1.6.4/tutorial/example_newsvendor.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a> <a href="https://nbviewer.jupyter.org/github/odow/SDDP.jl/blob/gh-pages/v1.6.4/tutorial/example_newsvendor.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><p>The purpose of this tutorial is to demonstrate how to model and solve a two-stage stochastic program.</p><p>It is based on the <a href="https://jump.dev/JuMP.jl/dev/tutorials/applications/two_stage_stochastic/">Two stage stochastic programs</a> tutorial in JuMP.</p><p>This tutorial uses the following packages</p><pre><code class="language-julia hljs">using JuMP
+using SDDP
+import Distributions
+import HiGHS
+import Plots
+import StatsPlots
+import Statistics</code></pre><h2 id="Background"><a class="docs-heading-anchor" href="#Background">Background</a><a id="Background-1"></a><a class="docs-heading-anchor-permalink" href="#Background" title="Permalink"></a></h2><p>The data for this problem is:</p><pre><code class="language-julia hljs">D = Distributions.TriangularDist(150.0, 250.0, 200.0)
+N = 100
+d = sort!(rand(D, N));
+Ω = 1:N
+P = fill(1 / N, N);
+StatsPlots.histogram(d; bins = 20, label = &quot;&quot;, xlabel = &quot;Demand&quot;)</code></pre><img src="4d5b39d0.svg" alt="Example block output"/><h2 id="Policy-Graph"><a class="docs-heading-anchor" href="#Policy-Graph">Policy Graph</a><a id="Policy-Graph-1"></a><a class="docs-heading-anchor-permalink" href="#Policy-Graph" title="Permalink"></a></h2><p>Now we can formulate and train a policy for the two-stage newsvendor problem.</p><p>First, we need to construct the graph:</p><pre><code class="language-julia hljs">graph = SDDP.LinearGraph(2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Root
+ 0
+Nodes
+ 1
+ 2
+Arcs
+ 0 =&gt; 1 w.p. 1.0
+ 1 =&gt; 2 w.p. 1.0</code></pre><p>Then, we need to write a function which builds a JuMP model for each node in the graph:</p><pre><code class="language-julia hljs">function build_subproblem(subproblem::JuMP.Model, stage::Int)
+    @variable(subproblem, x &gt;= 0, SDDP.State, initial_value = 0)
+    if stage == 1
+        @variable(subproblem, u_make &gt;= 0)
+        @constraint(subproblem, x.out == x.in + u_make)
+        @stageobjective(subproblem, -2 * u_make)
+    else
+        @variable(subproblem, u_sell &gt;= 0)
+        @constraint(subproblem, u_sell &lt;= x.in)
+        @constraint(subproblem, x.out == x.in - u_sell)
+        SDDP.parameterize(subproblem, d, P) do ω
+            set_upper_bound(u_sell, ω)
+            return
+        end
+        @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out)
+    end
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">build_subproblem (generic function with 1 method)</code></pre><p>Then, we can combine the graph and the subproblem builder into a policy graph:</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
+    build_subproblem,
+    graph;
+    sense = :Max,
+    upper_bound = 5 * maximum(d), #= some large upper bound =#
+    optimizer = HiGHS.Optimizer,
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 2 nodes.
+ Node indices: 1, 2
+</code></pre><p>Use <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a> to construct the policy:</p><pre><code class="language-julia hljs">SDDP.train(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 1
+  scenarios       : 1.00000e+02
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [4, 4]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 3]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e-01, 5e+00]
+  bounds range     [2e+02, 1e+03]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   0.000000e+00  7.151439e+02  6.553888e-03       103   1
+        40   5.983961e+02  5.500505e+02  2.860329e-01      4520   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 2.860329e-01
+total solves   : 4520
+best bound     :  5.500505e+02
+simulation ci  :  5.466921e+02 ± 3.209783e+01
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><p>To check the first-stage buy decision, we need to obtain a decision rule for the first-stage node <code>1</code>:</p><pre><code class="language-julia hljs">first_stage_rule = SDDP.DecisionRule(model, node = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A decision rule for node 1</code></pre><p>Then we can evaluate it, passing in a starting point for the incoming state:</p><pre><code class="language-julia hljs">solution = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x =&gt; 0.0))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(stage_objective = -398.93075104279103, outgoing_state = Dict(:x =&gt; 199.46537552139552), controls = Dict{Any, Any}())</code></pre><p>The optimal value of the state variable is stored here:</p><pre><code class="language-julia hljs">solution.outgoing_state[:x]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">199.46537552139552</code></pre><p>We can simplify the model construction by using <a href="../../apireference/#SDDP.LinearPolicyGraph"><code>SDDP.LinearPolicyGraph</code></a>:</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(
+    build_subproblem;
+    stages = 2,
+    sense = :Max,
+    upper_bound = 5 * maximum(d),
+    optimizer = HiGHS.Optimizer,
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 2 nodes.
+ Node indices: 1, 2
+</code></pre><p>and we can use Julia&#39;s <code>do</code> syntax to avoid writing a separate function:</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(;
+    stages = 2,
+    sense = :Max,
+    upper_bound = 5 * maximum(d),
+    optimizer = HiGHS.Optimizer,
+) do subproblem::JuMP.Model, stage::Int
+    @variable(subproblem, x &gt;= 0, SDDP.State, initial_value = 0)
+    if stage == 1
+        @variable(subproblem, u_make &gt;= 0)
+        @constraint(subproblem, x.out == x.in + u_make)
+        @stageobjective(subproblem, -2 * u_make)
+    else
+        @variable(subproblem, u_sell &gt;= 0)
+        @constraint(subproblem, u_sell &lt;= x.in)
+        @constraint(subproblem, x.out == x.in - u_sell)
+        SDDP.parameterize(subproblem, d, P) do ω
+            set_upper_bound(u_sell, ω)
+            return
+        end
+        @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out)
+    end
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 2 nodes.
+ Node indices: 1, 2
+</code></pre><h2 id="Simulation"><a class="docs-heading-anchor" href="#Simulation">Simulation</a><a id="Simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Simulation" title="Permalink"></a></h2><p>Querying the decision rules is tedious. It&#39;s often more useful to simulate the policy:</p><pre><code class="language-julia hljs">SDDP.train(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 2
+  state variables : 1
+  scenarios       : 1.00000e+02
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [4, 4]
+  AffExpr in MOI.EqualTo{Float64}         : [1, 1]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [2, 3]
+  VariableRef in MOI.LessThan{Float64}    : [1, 1]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e-01, 5e+00]
+  bounds range     [2e+02, 1e+03]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   0.000000e+00  7.151439e+02  6.528139e-03       103   1
+        40   5.983961e+02  5.500505e+02  2.785671e-01      4520   1
+-------------------------------------------------------------------
+status         : simulation_stopping
+total time (s) : 2.785671e-01
+total solves   : 4520
+best bound     :  5.500505e+02
+simulation ci  :  5.319490e+02 ± 3.327529e+01
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><pre><code class="language-julia hljs">simulations = SDDP.simulate(
+    model,
+    10,  #= number of replications =#
+    [:x, :u_sell, :u_make];  #= variables to record =#
+    skip_undefined_variables = true,
+);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">10-element Vector{Vector{Dict{Symbol, Any}}}:
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 170.65177583198036, :node_index =&gt; 2, :stage_objective =&gt; 850.3775191909602, :objective_state =&gt; nothing, :u_sell =&gt; 170.65177583198036, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, 28.813599689415156))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 212.05769390622356, :node_index =&gt; 2, :stage_objective =&gt; 997.3268776069776, :objective_state =&gt; nothing, :u_sell =&gt; 199.46537552139552, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, -0.0))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 199.46537552140646, :node_index =&gt; 2, :stage_objective =&gt; 997.3268776069776, :objective_state =&gt; nothing, :u_sell =&gt; 199.46537552139552, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, -0.0))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 199.2526431724736, :node_index =&gt; 2, :stage_objective =&gt; 996.2419426274759, :objective_state =&gt; nothing, :u_sell =&gt; 199.2526431724736, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, 0.21273234892191795))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 190.34646300322686, :node_index =&gt; 2, :stage_objective =&gt; 950.8204237643174, :objective_state =&gt; nothing, :u_sell =&gt; 190.34646300322686, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, 9.118912518168656))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 171.58778281532443, :node_index =&gt; 2, :stage_objective =&gt; 855.151154806015, :objective_state =&gt; nothing, :u_sell =&gt; 171.58778281532443, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, 27.877592706071084))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 173.69425302239875, :node_index =&gt; 2, :stage_objective =&gt; 865.8941528620941, :objective_state =&gt; nothing, :u_sell =&gt; 173.69425302239875, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, 25.77112249899676))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 216.57274410012397, :node_index =&gt; 2, :stage_objective =&gt; 997.3268776069776, :objective_state =&gt; nothing, :u_sell =&gt; 199.46537552139552, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, -0.0))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 217.9754891476558, :node_index =&gt; 2, :stage_objective =&gt; 997.3268776069776, :objective_state =&gt; nothing, :u_sell =&gt; 199.46537552139552, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, -0.0))]
+ [Dict(:u_make =&gt; 199.46537552139552, :bellman_term =&gt; 948.9812190794157, :noise_term =&gt; nothing, :node_index =&gt; 1, :stage_objective =&gt; -398.93075104279103, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(1 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 199.46537552139552)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 179.37631625464064, :node_index =&gt; 2, :stage_objective =&gt; 894.8726753465277, :objective_state =&gt; nothing, :u_sell =&gt; 179.37631625464064, :belief =&gt; Dict(2 =&gt; 1.0), :x =&gt; SDDP.State{Float64}(199.46537552139552, 20.089059266754873))]</code></pre><p><code>simulations</code> is a vector with 10 elements</p><pre><code class="language-julia hljs">length(simulations)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">10</code></pre><p>and each element is a vector with two elements (one for each stage)</p><pre><code class="language-julia hljs">length(simulations[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2</code></pre><p>The first stage contains:</p><pre><code class="language-julia hljs">simulations[1][1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :u_make          =&gt; 199.465
+  :bellman_term    =&gt; 948.981
+  :noise_term      =&gt; nothing
+  :node_index      =&gt; 1
+  :stage_objective =&gt; -398.931
+  :objective_state =&gt; nothing
+  :u_sell          =&gt; NaN
+  :belief          =&gt; Dict(1=&gt;1.0)
+  :x               =&gt; State{Float64}(0.0, 199.465)</code></pre><p>The second stage contains:</p><pre><code class="language-julia hljs">simulations[1][2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :u_make          =&gt; NaN
+  :bellman_term    =&gt; 0.0
+  :noise_term      =&gt; 170.652
+  :node_index      =&gt; 2
+  :stage_objective =&gt; 850.378
+  :objective_state =&gt; nothing
+  :u_sell          =&gt; 170.652
+  :belief          =&gt; Dict(2=&gt;1.0)
+  :x               =&gt; State{Float64}(199.465, 28.8136)</code></pre><p>We can compute aggregated statistics across the simulations:</p><pre><code class="language-julia hljs">objectives = map(simulations) do simulation
+    return sum(data[:stage_objective] for data in simulation)
+end
+μ, t = SDDP.confidence_interval(objectives)
+println(&quot;Simulation ci : $μ ± $t&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Simulation ci : 541.335786859739 ± 40.897142080014326</code></pre><h2 id="Risk-aversion-revisited"><a class="docs-heading-anchor" href="#Risk-aversion-revisited">Risk aversion revisited</a><a id="Risk-aversion-revisited-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-aversion-revisited" title="Permalink"></a></h2><p>SDDP.jl contains a number of risk measures. One example is:</p><pre><code class="language-julia hljs">0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.WorstCase()</code></pre><p>You can construct a risk-averse policy by passing a risk measure to the <code>risk_measure</code> keyword argument of <a href="../../apireference/#SDDP.train"><code>SDDP.train</code></a>.</p><p>We can explore how the optimal decision changes with risk by creating a function:</p><pre><code class="language-julia hljs">function solve_newsvendor(risk_measure::SDDP.AbstractRiskMeasure)
+    model = SDDP.LinearPolicyGraph(
+        stages = 2,
+        sense = :Max,
+        upper_bound = 5 * maximum(d),
+        optimizer = HiGHS.Optimizer,
+    ) do subproblem, node
+        @variable(subproblem, x &gt;= 0, SDDP.State, initial_value = 0)
+        if node == 1
+            @stageobjective(subproblem, -2 * x.out)
+        else
+            @variable(subproblem, u_sell &gt;= 0)
+            @constraint(subproblem, u_sell &lt;= x.in)
+            @constraint(subproblem, x.out == x.in - u_sell)
+            SDDP.parameterize(subproblem, d, P) do ω
+                set_upper_bound(u_sell, ω)
+                return
+            end
+            @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out)
+        end
+        return
+    end
+    SDDP.train(model; risk_measure = risk_measure, print_level = 0)
+    first_stage_rule = SDDP.DecisionRule(model; node = 1)
+    solution = SDDP.evaluate(first_stage_rule; incoming_state = Dict(:x =&gt; 0.0))
+    return solution.outgoing_state[:x]
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_newsvendor (generic function with 1 method)</code></pre><p>Now we can see how many units a decision maker would order using <code>CVaR</code>:</p><pre><code class="language-julia hljs">solve_newsvendor(SDDP.CVaR(0.4))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">182.0532263383865</code></pre><p>as well as a decision-maker who cares only about the worst-case outcome:</p><pre><code class="language-julia hljs">solve_newsvendor(SDDP.WorstCase())</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">158.55154070606315</code></pre><p>In general, the decision-maker will be somewhere between the two extremes. The <a href="../../guides/add_a_risk_measure/#SDDP.Entropic"><code>SDDP.Entropic</code></a> risk measure is a risk measure that has a single parameter that lets us explore the space of policies between the two extremes. When the parameter is small, the measure acts like <a href="../../guides/add_a_risk_measure/#SDDP.Expectation"><code>SDDP.Expectation</code></a>, and when it is large, it acts like <a href="../../guides/add_a_risk_measure/#SDDP.WorstCase"><code>SDDP.WorstCase</code></a>.</p><p>Here is what we get if we solve our problem multiple times for different values of the risk aversion parameter <span>$\gamma$</span>:</p><pre><code class="language-julia hljs">Γ = [10^i for i in -4:0.5:1]
+buy = [solve_newsvendor(SDDP.Entropic(γ)) for γ in Γ]
+Plots.plot(
+    Γ,
+    buy;
+    xaxis = :log,
+    xlabel = &quot;Risk aversion parameter γ&quot;,
+    ylabel = &quot;Number of pies to make&quot;,
+    legend = false,
+)</code></pre><img src="62ad2514.svg" alt="Example block output"/><h2 id="Things-to-try"><a class="docs-heading-anchor" href="#Things-to-try">Things to try</a><a id="Things-to-try-1"></a><a class="docs-heading-anchor-permalink" href="#Things-to-try" title="Permalink"></a></h2><p>There are a number of things you can try next:</p><ul><li>Experiment with different buy and sales prices</li><li>Experiment with different distributions of demand</li><li>Explore how the optimal policy changes if you use a different risk measure</li><li>What happens if you can only buy and sell integer numbers of newspapers? Try this by adding <code>Int</code> to the variable definitions: <code>@variable(subproblem, buy &gt;= 0, Int)</code></li><li>What happens if you use a different upper bound? Try an invalid one like <code>-100</code>, and a very large one like <code>1e12</code>.</li></ul><h2 id="Other-graphs"><a class="docs-heading-anchor" href="#Other-graphs">Other graphs</a><a id="Other-graphs-1"></a><a class="docs-heading-anchor-permalink" href="#Other-graphs" title="Permalink"></a></h2><p>The two-stage newsvendor problem can be extended to other graphs. For example, here is a three-stage graph:</p><pre><code class="language-julia hljs">graph = SDDP.Graph(:root)
+SDDP.add_node(graph, :make_only)
+SDDP.add_node(graph, :sell_only)
+SDDP.add_node(graph, :make_and_sell)
+SDDP.add_edge(graph, :root =&gt; :make_only, 1.0)
+SDDP.add_edge(graph, :make_only =&gt; :make_and_sell, 1.0)
+SDDP.add_edge(graph, :make_and_sell =&gt; :sell_only, 1.0)
+graph</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Root
+ root
+Nodes
+ make_and_sell
+ make_only
+ sell_only
+Arcs
+ root =&gt; make_only w.p. 1.0
+ make_and_sell =&gt; sell_only w.p. 1.0
+ make_only =&gt; make_and_sell w.p. 1.0</code></pre><p>with the model formulation:</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
+    graph;
+    sense = :Max,
+    upper_bound = 2 * 5 * maximum(d),
+    optimizer = HiGHS.Optimizer,
+) do subproblem::JuMP.Model, node::Symbol
+    @variable(subproblem, x &gt;= 0, SDDP.State, initial_value = 0)
+    if node == :make_only
+        @variable(subproblem, u_make &gt;= 0)
+        @constraint(subproblem, x.out == x.in + u_make)
+        @stageobjective(subproblem, -2 * u_make)
+    elseif node == :sell_only
+        @variable(subproblem, u_sell &gt;= 0)
+        @constraint(subproblem, u_sell &lt;= x.in)
+        @constraint(subproblem, x.out == x.in - u_sell)
+        SDDP.parameterize(subproblem, d, P) do ω
+            set_upper_bound(u_sell, ω)
+            return
+        end
+        @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out)
+    else
+        @assert node == :make_and_sell
+        @variable(subproblem, u_sell &gt;= 0)
+        @variable(subproblem, u_make &gt;= 0)
+        @constraint(subproblem, u_sell &lt;= x.in)
+        @constraint(subproblem, x.out == x.in - u_sell + u_make)
+        SDDP.parameterize(subproblem, d, P) do ω
+            set_upper_bound(u_sell, ω)
+            return
+        end
+        @stageobjective(subproblem, 5 * u_sell - 0.1 * x.out - 2 * u_make)
+    end
+    return
+end
+
+SDDP.train(model)
+simulations = SDDP.simulate(
+    model,
+    10,  #= number of replications =#
+    [:x, :u_sell, :u_make];  #= variables to record =#
+    skip_undefined_variables = true,
+);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">10-element Vector{Vector{Dict{Symbol, Any}}}:
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 49.58895734332211, :bellman_term =&gt; 945.9984668185698, :noise_term =&gt; 208.14049803608188, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 921.7210671633475, :objective_state =&gt; nothing, :u_sell =&gt; 208.14049803608188, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 218.57412693525777, :node_index =&gt; :sell_only, :stage_objective =&gt; 990.1754165208814, :objective_state =&gt; nothing, :u_sell =&gt; 198.03508330417628, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 0.0))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 75.86049872146239, :bellman_term =&gt; 945.9984668185698, :noise_term =&gt; 234.41203941422216, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 1000.5356912977686, :objective_state =&gt; nothing, :u_sell =&gt; 234.41203941422216, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 189.1011348971835, :node_index =&gt; :sell_only, :stage_objective =&gt; 944.6122796452182, :objective_state =&gt; nothing, :u_sell =&gt; 189.1011348971835, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 8.933948406992783))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 66.2888738782465, :bellman_term =&gt; 945.9984668185698, :noise_term =&gt; 224.84041457100628, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 971.820816768121, :objective_state =&gt; nothing, :u_sell =&gt; 224.84041457100628, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 218.57412693525777, :node_index =&gt; :sell_only, :stage_objective =&gt; 990.1754165208814, :objective_state =&gt; nothing, :u_sell =&gt; 198.03508330417628, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 0.0))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 44.41511752682297, :bellman_term =&gt; 945.99846681857, :noise_term =&gt; 202.96665821958274, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 906.19954771385, :objective_state =&gt; nothing, :u_sell =&gt; 202.96665821958274, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 162.02463315980086, :node_index =&gt; :sell_only, :stage_objective =&gt; 806.5221207845667, :objective_state =&gt; nothing, :u_sell =&gt; 162.02463315980086, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 36.010450144375426))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 32.76831398007485, :bellman_term =&gt; 945.9984668185698, :noise_term =&gt; 191.31985467283462, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 871.2591370736059, :objective_state =&gt; nothing, :u_sell =&gt; 191.31985467283462, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 190.67858440995283, :node_index =&gt; :sell_only, :stage_objective =&gt; 952.6572721603418, :objective_state =&gt; nothing, :u_sell =&gt; 190.67858440995283, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 7.356498894223449))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 35.54862638215462, :bellman_term =&gt; 945.9984668185697, :noise_term =&gt; 194.1001670749144, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 879.6000742798452, :objective_state =&gt; nothing, :u_sell =&gt; 194.1001670749144, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 205.93520833608935, :node_index =&gt; :sell_only, :stage_objective =&gt; 990.1754165208814, :objective_state =&gt; nothing, :u_sell =&gt; 198.03508330417628, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 0.0))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 57.53127309503651, :bellman_term =&gt; 945.9984668185697, :noise_term =&gt; 216.08281378779628, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 945.5480144184909, :objective_state =&gt; nothing, :u_sell =&gt; 216.08281378779628, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 217.9342172728171, :node_index =&gt; :sell_only, :stage_objective =&gt; 990.1754165208814, :objective_state =&gt; nothing, :u_sell =&gt; 198.03508330417628, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 0.0))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 22.866102374853654, :bellman_term =&gt; 945.9984668185698, :noise_term =&gt; 181.41764306761343, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 841.5525022579423, :objective_state =&gt; nothing, :u_sell =&gt; 181.41764306761343, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 222.56685290007493, :node_index =&gt; :sell_only, :stage_objective =&gt; 990.1754165208814, :objective_state =&gt; nothing, :u_sell =&gt; 198.03508330417628, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 0.0))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 47.383667643329574, :bellman_term =&gt; 945.9984668185698, :noise_term =&gt; 205.93520833608935, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 915.1051980633702, :objective_state =&gt; nothing, :u_sell =&gt; 205.93520833608935, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 181.41764306761343, :node_index =&gt; :sell_only, :stage_objective =&gt; 905.4264713144108, :objective_state =&gt; nothing, :u_sell =&gt; 181.41764306761343, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 16.617440236562857))]
+ [Dict(:u_make =&gt; 356.58662399693605, :bellman_term =&gt; 1832.093818083235, :noise_term =&gt; nothing, :node_index =&gt; :make_only, :stage_objective =&gt; -713.1732479938721, :objective_state =&gt; nothing, :u_sell =&gt; NaN, :belief =&gt; Dict(:make_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(0.0, 356.58662399693605)), Dict(:u_make =&gt; 18.022677796731557, :bellman_term =&gt; 945.9984668185697, :noise_term =&gt; 176.57421848949133, :node_index =&gt; :make_and_sell, :stage_objective =&gt; 827.022228523576, :objective_state =&gt; nothing, :u_sell =&gt; 176.57421848949133, :belief =&gt; Dict(:make_and_sell =&gt; 1.0), :x =&gt; SDDP.State{Float64}(356.58662399693605, 198.03508330417628)), Dict(:u_make =&gt; NaN, :bellman_term =&gt; 0.0, :noise_term =&gt; 173.69425302239875, :node_index =&gt; :sell_only, :stage_objective =&gt; 866.037182083816, :objective_state =&gt; nothing, :u_sell =&gt; 173.69425302239875, :belief =&gt; Dict(:sell_only =&gt; 1.0), :x =&gt; SDDP.State{Float64}(198.03508330417628, 24.340830281777528))]</code></pre><pre><code class="language-julia hljs">simulations[1][1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :u_make          =&gt; 356.587
+  :bellman_term    =&gt; 1832.09
+  :noise_term      =&gt; nothing
+  :node_index      =&gt; :make_only
+  :stage_objective =&gt; -713.173
+  :objective_state =&gt; nothing
+  :u_sell          =&gt; NaN
+  :belief          =&gt; Dict(:make_only=&gt;1.0)
+  :x               =&gt; State{Float64}(0.0, 356.587)</code></pre><pre><code class="language-julia hljs">simulations[1][2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :u_make          =&gt; 49.589
+  :bellman_term    =&gt; 945.998
+  :noise_term      =&gt; 208.14
+  :node_index      =&gt; :make_and_sell
+  :stage_objective =&gt; 921.721
+  :objective_state =&gt; nothing
+  :u_sell          =&gt; 208.14
+  :belief          =&gt; Dict(:make_and_sell=&gt;1.0)
+  :x               =&gt; State{Float64}(356.587, 198.035)</code></pre><pre><code class="language-julia hljs">simulations[1][3]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :u_make          =&gt; NaN
+  :bellman_term    =&gt; 0.0
+  :noise_term      =&gt; 218.574
+  :node_index      =&gt; :sell_only
+  :stage_objective =&gt; 990.175
+  :objective_state =&gt; nothing
+  :u_sell          =&gt; 198.035
+  :belief          =&gt; Dict(:sell_only=&gt;1.0)
+  :x               =&gt; State{Float64}(198.035, 0.0)</code></pre><p>Try changing the graph. What happens if you add a cycle?</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mdps/">« Example: Markov Decision Processes</a><a class="docs-footer-nextpage" href="../example_reservoir/">Example: deterministic to stochastic »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.0.1 on <span class="colophon-date" title="Saturday 23 September 2023 02:18">Saturday 23 September 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

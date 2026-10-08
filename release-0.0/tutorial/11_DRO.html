@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial Eleven: distributionally robust SDDP · SDDP.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>SDDP.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Home</a></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="01_first_steps.html">Tutorial One: first steps</a></li><li><a class="toctext" href="02_rhs_noise.html">Tutorial Two: RHS noise</a></li><li><a class="toctext" href="03_objective_noise.html">Tutorial Three: objective noise</a></li><li><a class="toctext" href="04_markovian_policygraphs.html">Tutorial Four: Markovian policy graphs</a></li><li><a class="toctext" href="05_risk.html">Tutorial Five: risk</a></li><li><a class="toctext" href="06_cut_selection.html">Tutorial Six: cut selection</a></li><li><a class="toctext" href="07_plotting.html">Tutorial Seven: plotting</a></li><li><a class="toctext" href="08_odds_and_ends.html">Tutorial Eight: odds and ends</a></li><li><a class="toctext" href="09_nonlinear.html">Tutorial Nine: nonlinear models</a></li><li><a class="toctext" href="10_parallel.html">Tutorial Ten: parallelism</a></li><li class="current"><a class="toctext" href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a><ul class="internal"><li><a class="toctext" href="#A-little-motivation-on-the-concept-1">A little motivation on the concept</a></li><li><a class="toctext" href="#Formulating-the-problem-1">Formulating the problem</a></li><li><a class="toctext" href="#Solving-the-problem-1">Solving the problem</a></li></ul></li><li><a class="toctext" href="12_price_interpolation.html">Tutorial Twelve: price interpolation</a></li><li><a class="toctext" href="13_constraint_noise.html">Tutorial Thirteen: constraint noise</a></li></ul></li><li><a class="toctext" href="../readings.html">Readings</a></li><li><a class="toctext" href="../apireference.html">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href="11_DRO.html">Tutorial Eleven: distributionally robust SDDP</a></li></ul><a class="edit-page" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/11_DRO.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Tutorial Eleven: distributionally robust SDDP</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Tutorial-Eleven:-distributionally-robust-SDDP-1" href="#Tutorial-Eleven:-distributionally-robust-SDDP-1">Tutorial Eleven: distributionally robust SDDP</a></h1><p>In <a href="05_risk.html#Tutorial-Five:-risk-1">Tutorial Five: risk</a>, we saw how risk measures can be used within our model. In this tutorial we will learn how to incorporate a distributionally robust optimization approach to SDDP in <code>SDDP.jl</code>.</p><p>Distributionally robust optimization (DRO) is a modelling approach for optimization under uncertainty. In our setup, DRO is equivalent to a coherent risk measure, and we can apply DRO by using the <code>risk_measure</code> keyword we saw previously.</p><h2><a class="nav-anchor" id="A-little-motivation-on-the-concept-1" href="#A-little-motivation-on-the-concept-1">A little motivation on the concept</a></h2><p>When we build a policy using SDDP, we use a model to represent uncertain parameters. When we come to use or evaluate our policy, the realized scenarios may not actually behave in the way we modelled our uncertainty. For example, the hydrothermal scheduling model from the previous tutorials assumed that inflows are independent between stages. However, a real sequence of inflows is likely to exhibit correlation between stages. Furthermore, we may wish to hold out a set of historical inflow sequences other than those included while generating the policy, and evaluate the performance of the policy based on its performance in the held out set. The held out set may also correspond to inflows that are not stagewise independent. With a distributionally robust approach, we avoid assuming an explicit model on the probabilities of the scenarios we consider. Instead, each time we come to add a cut, we assume that the probabilities associated with each noise are the worst case probabilities possible (with respect to our objective) within some ambiguity set.</p><p>The implementation of distributionally robust SDDP here comes from the paper: <em>A.B. Philpott, V.L. de Matos, L. Kapelevich</em> (2018): Distributionally Robust SDDP, Computational Management Science, <a href="http://link.springer.com/article/10.1007/s10287-018-0314-0">(link)</a> where the details of the approach are described.</p><h2><a class="nav-anchor" id="Formulating-the-problem-1" href="#Formulating-the-problem-1">Formulating the problem</a></h2><p>In <a href="02_rhs_noise.html#Tutorial-Two:-RHS-noise-1">Tutorial Two: RHS noise</a>, we formulated a hydrothermal scheduling problem with uncertainty in the right hand-side of the constraints. In the following, we present a similar model; however, we have set the inflow in the first stage to deterministic and equal to 50.0. The model is:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0
+                                        ) do sp, t
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    if t == 1
+        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == 50.0)
+    else
+        @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+            outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+        )
+      setnoiseprobability!(sp, [1/3, 1/3, 1/3])
+    end
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, fuel_cost[t] * thermal_generation )
+end</code></pre><p>This model assumed that the probability of each inflow is equally likely, with probability <code>1/3</code>. The lower bound we converged to was 8.33k.</p><p>To describe a distributionally robust version of this problem, we need to choose a <em>radius of uncertainty</em>. This is the maximum distance around the default probability vector (<code>[1/3, 1/3, 1/3]</code>) we will consider in our ambiguity set. For a problem with S noises, this radius should be less than $\sqrt{(S-1)/S}$ (which would be the same as <code>TheWorstCase()</code> from <a href="05_risk.html#Tutorial-Five:-risk-1">Tutorial Five: risk</a>).</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>We currently assume our uncertainty set is a ball centered around the probability vector assigning equal probabilities to all noises. We could generalize the algorithm to alter the center of the ball, but this is not currently implemented (see <a href="https://github.com/odow/SDDP.jl/issues/117">this issue</a>).</p></div></div><p>Suppose, for example, we choose the radius of uncertainty to be <code>1/6</code>. Intuitively, this means we can decrease the risk-adjusted probability of each noise by almost <code>1/6</code> at the most. We can implement this by inserting a <code>DRO(1/6)</code> object for the keyword argument <code>risk_measure</code> we saw earlier.</p><p>This gives the new model:</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0,
+           risk_measure = DRO(1/6)
+                                        ) do sp, t
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    if t == 1
+        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == 50.0)
+    else
+        @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+            outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+        )
+      setnoiseprobability!(sp, [1/3, 1/3, 1/3])
+    end
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, fuel_cost[t] * thermal_generation )
+end</code></pre><h2><a class="nav-anchor" id="Solving-the-problem-1" href="#Solving-the-problem-1">Solving the problem</a></h2><p>We can solve the above problem, terminating at our choice of <code>iteration_limit</code>. For example,</p><pre><code class="language-julia">solve(m, iteration_limit = 10)</code></pre><p>gives the following output log:</p><pre><code class="language-none">-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         3
+        States:         1
+        Subproblems:    3
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+       10.000K        10.023K        |     1    0.0      0    0.0    0.0
+        5.000K        10.023K        |     2    0.0      0    0.0    0.0
+       12.500K        10.023K        |     3    0.0      0    0.0    0.0
+       10.000K        10.023K        |     4    0.0      0    0.0    0.0
+        5.000K        10.023K        |     5    0.0      0    0.0    0.0
+        5.000K        10.023K        |     6    0.0      0    0.0    0.0
+       17.500K        10.023K        |     7    0.0      0    0.0    0.0
+       10.000K        10.023K        |     8    0.0      0    0.0    0.0
+       12.500K        10.023K        |     9    0.0      0    0.0    0.0
+        5.000K        10.023K        |    10    0.0      0    0.0    0.0
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         10
+        Termination Status: iteration_limit
+===============================================================================</code></pre><p>We have converged to a lower bound of roughly \$10.023k. One can check that this is a little lower than the bound from the worst case measure, which is \$15k, but greater than the lower bound using the expectation risk measure of \$8.33k.</p><p>To run a sanity check, let us set the radius to be sufficiently large in order to match <a href="../apireference.html#SDDP.WorstCase"><code>WorstCase()</code></a>. Since we have S=3 scenarios, any radius larger than $\sqrt{(3-1)/3} = \sqrt(2/3)$ will do. (This is large enough to move from the default probability vector <code>[0.33, 0.33, 0.33]</code> to the worst case probability vector <code>[1.0, 0.0, 0.0]</code>.)</p><pre><code class="language-julia">m = SDDPModel(
+                  sense = :Min,
+                 stages = 3,
+                 solver = ClpSolver(),
+        objective_bound = 0.0,
+           risk_measure = DRO(sqrt(2/3))
+                                        ) do sp, t
+    @state(sp, 0 &lt;= outgoing_volume &lt;= 200, incoming_volume == 200)
+    @variables(sp, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+    end)
+    if t == 1
+        @constraint(sp, outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == 50.0)
+    else
+        @rhsnoise(sp, inflow = [0.0, 50.0, 100.0],
+            outgoing_volume - (incoming_volume - hydro_generation - hydro_spill) == inflow
+        )
+      setnoiseprobability!(sp, [1/3, 1/3, 1/3])
+    end
+    @constraints(sp, begin
+        thermal_generation + hydro_generation == 150
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    @stageobjective(sp, fuel_cost[t] * thermal_generation )
+end</code></pre><p>Indeed, solving the model like we did above provides us with a lower bound of \$15k.</p><pre><code class="language-none">-------------------------------------------------------------------------------
+                          SDDP.jl © Oscar Dowson, 2017-2018
+-------------------------------------------------------------------------------
+    Solver:
+        Serial solver
+    Model:
+        Stages:         3
+        States:         1
+        Subproblems:    3
+        Value Function: Default
+-------------------------------------------------------------------------------
+              Objective              |  Cut  Passes    Simulations   Total
+     Simulation       Bound   % Gap  |   #     Time     #    Time    Time
+-------------------------------------------------------------------------------
+       20.000K        12.500K        |     1    0.0      0    0.0    0.0
+        5.000K        15.000K        |     2    0.0      0    0.0    0.0
+       10.000K        15.000K        |     3    0.0      0    0.0    0.0
+       15.000K        15.000K        |     4    0.0      0    0.0    0.0
+        5.000K        15.000K        |     5    0.0      0    0.0    0.0
+        5.000K        15.000K        |     6    0.0      0    0.0    0.0
+       15.000K        15.000K        |     7    0.0      0    0.0    0.0
+       15.000K        15.000K        |     8    0.0      0    0.0    0.0
+       10.000K        15.000K        |     9    0.0      0    0.0    0.0
+       10.000K        15.000K        |    10    0.0      0    0.0    0.0
+-------------------------------------------------------------------------------
+    Other Statistics:
+        Iterations:         10
+        Termination Status: iteration_limit
+===============================================================================</code></pre><p>That concludes our eleventh tutorial for <code>SDDP.jl</code>. In the next tutorial, <a href="12_price_interpolation.html#Tutorial-Twelve:-price-interpolation-1">Tutorial Twelve: price interpolation</a>, we discuss an extension of SDDP to models with stagewise-dependent objective uncertainty.</p><footer><hr/><a class="previous" href="10_parallel.html"><span class="direction">Previous</span><span class="title">Tutorial Ten: parallelism</span></a><a class="next" href="12_price_interpolation.html"><span class="direction">Next</span><span class="title">Tutorial Twelve: price interpolation</span></a></footer></article></body></html>

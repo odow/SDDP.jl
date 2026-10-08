@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example: the milk producer · SDDP.jl</title><meta name="title" content="Example: the milk producer · SDDP.jl"/><meta property="og:title" content="Example: the milk producer · SDDP.jl"/><meta property="twitter:title" content="Example: the milk producer · SDDP.jl"/><meta name="description" content="Documentation for SDDP.jl."/><meta property="og:description" content="Documentation for SDDP.jl."/><meta property="twitter:description" content="Documentation for SDDP.jl."/><script async src="https://www.googletagmanager.com/gtag/js?id=G-HZQQDVMPZW"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HZQQDVMPZW', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="SDDP.jl logo"/></a><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../plotting/">Plotting tools</a></li><li><a class="tocitem" href="../warnings/">Words of warning</a></li><li><a class="tocitem" href="../arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../objective_states/">Objective states</a></li><li><a class="tocitem" href="../pglib_opf/">Alternative forward models</a></li><li><a class="tocitem" href="../mdps/">Example: Markov Decision Processes</a></li><li><a class="tocitem" href="../example_newsvendor/">Example: two-stage newsvendor</a></li><li><a class="tocitem" href="../example_reservoir/">Example: deterministic to stochastic</a></li><li class="is-active"><a class="tocitem" href>Example: the milk producer</a><ul class="internal"><li><a class="tocitem" href="#Background"><span>Background</span></a></li><li><a class="tocitem" href="#A-stochastic-process-for-price"><span>A stochastic process for price</span></a></li><li><a class="tocitem" href="#Model"><span>Model</span></a></li><li><a class="tocitem" href="#Training-a-policy"><span>Training a policy</span></a></li><li><a class="tocitem" href="#Simulating-the-policy"><span>Simulating the policy</span></a></li><li><a class="tocitem" href="#Visualizing-the-policy"><span>Visualizing the policy</span></a></li><li><a class="tocitem" href="#Next-steps"><span>Next steps</span></a></li></ul></li><li><a class="tocitem" href="../inventory/">Example: inventory management</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../explanation/theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../explanation/risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Example: the milk producer</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example: the milk producer</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/example_milk_producer.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Example:-the-milk-producer"><a class="docs-heading-anchor" href="#Example:-the-milk-producer">Example: the milk producer</a><a id="Example:-the-milk-producer-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-the-milk-producer" title="Permalink"></a></h1><p><em>This tutorial was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em> <a href="../example_milk_producer.jl"><em>Download the source as a <code>.jl</code> file</em></a>. <a href="../example_milk_producer.ipynb"><em>Download the source as a <code>.ipynb</code> file</em></a>.</p><p>The purpose of this tutorial is to demonstrate how to fit a Markovian policy graph to a univariate stochastic process.</p><p>This tutorial uses the following packages:</p><pre><code class="language-julia hljs">using SDDP
+import HiGHS
+import Plots</code></pre><h2 id="Background"><a class="docs-heading-anchor" href="#Background">Background</a><a id="Background-1"></a><a class="docs-heading-anchor-permalink" href="#Background" title="Permalink"></a></h2><p>A company produces milk for sale on a spot market each month. The quantity of milk they produce is uncertain, and so too is the price on the spot market. The company can store unsold milk in a stockpile of dried milk powder.</p><p>The spot price is determined by an auction system, and so varies from month to month, but demonstrates serial correlation. In each auction, there is sufficient demand that the milk producer finds a buyer for all their milk, regardless of the quantity they supply. Furthermore, the spot price is independent of the milk producer (they are a small player in the market).</p><p>The spot price is highly volatile, and is the result of a process that is out of the control of the company. To counteract their price risk, the company engages in a forward contracting programme.</p><p>The forward contracting programme is a deal for physical milk four months in the future.</p><p>The futures price is the current spot price, plus some forward contango (the buyers gain certainty that they will receive the milk in the future).</p><p>In general, the milk company should forward contract (since they reduce their price risk), however they also have production risk. Therefore, it may be the case that they forward contract a fixed amount, but find that they do not produce enough milk to meet the fixed demand. They are then forced to buy additional milk on the spot market.</p><p>The goal of the milk company is to choose the extent to which they forward contract in order to maximise (risk-adjusted) revenues, whilst managing their production risk.</p><h2 id="A-stochastic-process-for-price"><a class="docs-heading-anchor" href="#A-stochastic-process-for-price">A stochastic process for price</a><a id="A-stochastic-process-for-price-1"></a><a class="docs-heading-anchor-permalink" href="#A-stochastic-process-for-price" title="Permalink"></a></h2><p>It is outside the scope of this tutorial, but assume that we have gone away and analysed historical data to fit a stochastic process to the sequence of monthly auction spot prices.</p><p>One plausible model is a multiplicative auto-regressive model of order one, where the white noise term is modeled by a finite distribution of empirical residuals. We can simulate this stochastic process as follows:</p><pre><code class="language-julia hljs">function simulator()
+    residuals = [0.0987, 0.199, 0.303, 0.412, 0.530, 0.661, 0.814, 1.010, 1.290]
+    residuals = 0.1 * vcat(-residuals, 0.0, residuals)
+    scenario = zeros(12)
+    y, μ, α = 4.5, 6.0, 0.05
+    for t in 1:12
+        y = exp((1 - α) * log(y) + α * log(μ) + rand(residuals))
+        scenario[t] = clamp(y, 3.0, 9.0)
+    end
+    return scenario
+end
+
+simulator()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">12-element Vector{Float64}:
+ 4.20831150857578
+ 4.283611228597147
+ 4.31360746281015
+ 4.624063195867865
+ 5.004803152152017
+ 5.100487641440329
+ 5.493454634173554
+ 5.6286376062937125
+ 5.95399264251864
+ 5.7785159807903845
+ 5.616605778800047
+ 5.344292262554027</code></pre><p>It may be helpful to visualize a number of simulations of the price process:</p><pre><code class="language-julia hljs">plot = Plots.plot(
+    [simulator() for _ in 1:500];
+    color = &quot;gray&quot;,
+    opacity = 0.2,
+    legend = false,
+    xlabel = &quot;Month&quot;,
+    ylabel = &quot;Price [\$/kg]&quot;,
+    xlims = (1, 12),
+    ylims = (3, 9),
+)</code></pre><img src="79b698c4.svg" alt="Example block output"/><p>The prices gradually revert to the mean of <span>$</span>6/kg, and there is high volatility.</p><p>We can&#39;t incorporate this price process directly into SDDP.jl, but we can fit a <a href="../../apireference/#SDDP.MarkovianGraph"><code>SDDP.MarkovianGraph</code></a> directly from the simulator:</p><pre><code class="language-julia hljs">graph = SDDP.MarkovianGraph(simulator; budget = 30, scenarios = 10_000);</code></pre><p>Here <code>budget</code> is the number of nodes in the policy graph, and <code>scenarios</code> is the number of simulations to use when estimating the transition probabilities.</p><p>The graph contains too many nodes to be show, but we can plot it:</p><pre><code class="language-julia hljs">for ((t, price), edges) in graph.nodes
+    for ((t′, price′), probability) in edges
+        Plots.plot!(
+            plot,
+            [t, t′],
+            [price, price′];
+            color = &quot;red&quot;,
+            width = 3 * probability,
+        )
+    end
+end
+
+plot</code></pre><img src="73cfdc19.svg" alt="Example block output"/><p>That looks okay. Try changing <code>budget</code> and <code>scenarios</code> to see how different Markovian policy graphs can be created.</p><h2 id="Model"><a class="docs-heading-anchor" href="#Model">Model</a><a id="Model-1"></a><a class="docs-heading-anchor-permalink" href="#Model" title="Permalink"></a></h2><p>Now that we have a Markovian graph, we can build the model. See if you can work out how we arrived at this formulation by reading the background description. Do all the variables and constraints make sense?</p><pre><code class="language-julia hljs">model = SDDP.PolicyGraph(
+    graph;
+    sense = :Max,
+    upper_bound = 1e2,
+    optimizer = HiGHS.Optimizer,
+) do sp, node
+    # Decompose the node into the month (::Int) and spot price (::Float64)
+    t, price = node::Tuple{Int,Float64}
+    # Transactions on the futures market cost 0.01
+    c_transaction = 0.01
+    # It costs the company +50% to buy milk on the spot market and deliver to
+    # their customers
+    c_buy_premium = 1.5
+    # Buyer is willing to pay +5% for certainty
+    c_contango = 1.05
+    # Distribution of production
+    Ω_production = range(0.1, 0.2; length = 5)
+    c_max_production = 12 * maximum(Ω_production)
+    # x_stock: quantity of milk in stock pile
+    @variable(sp, 0 &lt;= x_stock, SDDP.State, initial_value = 0)
+    # x_forward[i]: quantity of milk for delivery in i months
+    @variable(sp, 0 &lt;= x_forward[1:4], SDDP.State, initial_value = 0)
+    # u_spot_sell: quantity of milk to sell on spot market
+    @variable(sp, 0 &lt;= u_spot_sell &lt;= c_max_production)
+    # u_spot_buy: quantity of milk to buy on spot market
+    @variable(sp, 0 &lt;= u_spot_buy &lt;= c_max_production)
+    # u_spot_buy: quantity of milk to sell on futures market
+    c_max_futures = t &lt;= 8 ? c_max_production : 0.0
+    @variable(sp, 0 &lt;= u_forward_sell &lt;= c_max_futures)
+    # ω_production: production random variable
+    @variable(sp, ω_production)
+    # Forward contracting constraints:
+    @constraint(sp, [i in 1:3], x_forward[i].out == x_forward[i+1].in)
+    @constraint(sp, x_forward[4].out == u_forward_sell)
+    # Stockpile balance constraint
+    @constraint(
+        sp,
+        x_stock.out ==
+        x_stock.in + ω_production + u_spot_buy - x_forward[1].in - u_spot_sell
+    )
+    # The random variables. `price` comes from the Markov node
+    #
+    # !!! warning
+    #     The elements in Ω MUST be a tuple with 1 or 2 values, where the first
+    #     value is `price` and the second value is the random variable for the
+    #     current node. If the node is deterministic, use Ω = [(price,)].
+    Ω = [(price, p) for p in Ω_production]
+    SDDP.parameterize(sp, Ω) do ω
+        # Fix the ω_production variable
+        fix(ω_production, ω[2])
+        @stageobjective(
+            sp,
+            # Sales on spot market
+            ω[1] * (u_spot_sell - c_buy_premium * u_spot_buy) +
+            # Sales on futures smarket
+            (ω[1] * c_contango - c_transaction) * u_forward_sell
+        )
+        return
+    end
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 30 nodes.
+ Node indices: (1, 4.585513536790549), ..., (12, 7.5919668437050305)
+</code></pre><h2 id="Training-a-policy"><a class="docs-heading-anchor" href="#Training-a-policy">Training a policy</a><a id="Training-a-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Training-a-policy" title="Permalink"></a></h2><p>Now we have a model, we train a policy. The <a href="../../apireference/#SDDP.SimulatorSamplingScheme"><code>SDDP.SimulatorSamplingScheme</code></a> is used in the forward pass. It generates an out-of-sample sequence of prices using <code>simulator</code> and traverses the closest sequence of nodes in the policy graph. When calling <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a> for each subproblem, it uses the new out-of-sample price instead of the price associated with the Markov node.</p><pre><code class="language-julia hljs">SDDP.train(
+    model;
+    time_limit = 20,
+    risk_measure = 0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.25),
+    sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-24
+-------------------------------------------------------------------
+problem
+  nodes           : 30
+  state variables : 5
+  scenarios       : 8.04688e+11
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : A convex combination of 0.5 * SDDP.Expectation() + 0.5 * SDDP.AVaR(0.25)
+  sampling scheme : SDDP.SimulatorSamplingScheme{typeof(Main.simulator)}
+subproblem structure
+  VariableRef                             : [15, 15]
+  AffExpr in MOI.EqualTo{Float64}         : [5, 5]
+  VariableRef in MOI.GreaterThan{Float64} : [8, 9]
+  VariableRef in MOI.LessThan{Float64}    : [4, 4]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 1e+01]
+  bounds range     [2e+00, 1e+02]
+  rhs range        [0e+00, 0e+00]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1  -4.352955e+01  5.960953e+01  1.294548e+00       162   1
+        61   8.431990e+00  7.836298e+00  2.306283e+00      9882   1
+       110   9.578252e+00  7.817993e+00  3.314879e+00     17820   1
+       152   1.026780e+01  7.816954e+00  4.335966e+00     24624   1
+       194   8.375974e+00  7.816473e+00  5.348552e+00     31428   1
+       233   1.015380e+01  7.815265e+00  6.362904e+00     37746   1
+       268   9.080066e+00  7.814867e+00  7.377117e+00     43416   1
+       303   9.105637e+00  7.814404e+00  8.382515e+00     49086   1
+       336   1.013411e+01  7.814352e+00  9.382895e+00     54432   1
+       477   6.770925e+00  7.813749e+00  1.439921e+01     77274   1
+       594   9.947555e+00  7.813542e+00  1.943203e+01     96228   1
+       606   1.048412e+01  7.813542e+00  2.003090e+01     98172   1
+-------------------------------------------------------------------
+status         : time_limit
+total time (s) : 2.003090e+01
+total solves   : 98172
+best bound     :  7.813542e+00
+simulation ci  :  8.879838e+00 ± 3.047661e-01
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>We&#39;re intentionally terminating the training early so that the documentation doesn&#39;t take too long to build. If you run this example locally, increase the time limit.</p></div></div><h2 id="Simulating-the-policy"><a class="docs-heading-anchor" href="#Simulating-the-policy">Simulating the policy</a><a id="Simulating-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Simulating-the-policy" title="Permalink"></a></h2><p>When simulating the policy, we can also use the <a href="../../apireference/#SDDP.SimulatorSamplingScheme"><code>SDDP.SimulatorSamplingScheme</code></a>.</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
+    model,
+    200,
+    Symbol[:x_stock, :u_forward_sell, :u_spot_sell, :u_spot_buy];
+    sampling_scheme = SDDP.SimulatorSamplingScheme(simulator),
+);</code></pre><p>To show how the sampling scheme uses the new out-of-sample price instead of the price associated with the Markov node, compare the index of the Markov state visited in stage 12 of the first simulation:</p><pre><code class="language-julia hljs">simulations[1][12][:node_index]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(12, 5.942390232702823)</code></pre><p>to the realization of the noise <code>(price, ω)</code> passed to <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a>:</p><pre><code class="language-julia hljs">simulations[1][12][:noise_term]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(6.178445600855114, 0.2)</code></pre><h2 id="Visualizing-the-policy"><a class="docs-heading-anchor" href="#Visualizing-the-policy">Visualizing the policy</a><a id="Visualizing-the-policy-1"></a><a class="docs-heading-anchor-permalink" href="#Visualizing-the-policy" title="Permalink"></a></h2><p>Finally, we can plot the policy to gain insight (although note that we terminated the training early, so we should run the re-train the policy for more iterations before making too many judgements).</p><pre><code class="language-julia hljs">plot = Plots.plot(
+    SDDP.publication_plot(simulations; title = &quot;x_stock.out&quot;) do data
+        return data[:x_stock].out
+    end,
+    SDDP.publication_plot(simulations; title = &quot;u_forward_sell&quot;) do data
+        return data[:u_forward_sell]
+    end,
+    SDDP.publication_plot(simulations; title = &quot;u_spot_buy&quot;) do data
+        return data[:u_spot_buy]
+    end,
+    SDDP.publication_plot(simulations; title = &quot;u_spot_sell&quot;) do data
+        return data[:u_spot_sell]
+    end;
+    layout = (2, 2),
+)</code></pre><img src="5453279a.svg" alt="Example block output"/><h2 id="Next-steps"><a class="docs-heading-anchor" href="#Next-steps">Next steps</a><a id="Next-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-steps" title="Permalink"></a></h2><ul><li>Train the policy for longer. What do you observe?</li><li>Try creating different Markovian graphs. What happens if you add more nodes?</li><li>Try different risk measures</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_reservoir/">« Example: deterministic to stochastic</a><a class="docs-footer-nextpage" href="../inventory/">Example: inventory management »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Tuesday 19 November 2024 00:58">Tuesday 19 November 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

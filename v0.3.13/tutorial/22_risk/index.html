@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Theory II: risk aversion · SDDP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">SDDP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../01_first_steps/">Basic I: first steps</a></li><li><a class="tocitem" href="../02_adding_uncertainty/">Basic II: adding uncertainty</a></li><li><a class="tocitem" href="../03_objective_uncertainty/">Basic III: objective uncertainty</a></li><li><a class="tocitem" href="../04_markov_uncertainty/">Basic IV: Markov uncertainty</a></li><li><a class="tocitem" href="../05_plotting/">Basic V: plotting</a></li><li><a class="tocitem" href="../06_warnings/">Basic VI: words of warning</a></li><li><a class="tocitem" href="../11_objective_states/">Advanced I: objective states</a></li><li><a class="tocitem" href="../12_belief_states/">Advanced II: belief states</a></li><li><a class="tocitem" href="../13_integrality/">Advanced III: integrality</a></li><li><a class="tocitem" href="../21_theory_intro/">Theory I: an intro to SDDP</a></li><li class="is-active"><a class="tocitem" href>Theory II: risk aversion</a><ul class="internal"><li><a class="tocitem" href="#Risk-aversion:-what-and-why?"><span>Risk aversion: what and why?</span></a></li><li><a class="tocitem" href="#Risk-measures"><span>Risk measures</span></a></li><li><a class="tocitem" href="#Risk-averse-decision-rules:-Part-I"><span>Risk-averse decision rules: Part I</span></a></li><li><a class="tocitem" href="#Primal-risk-measures"><span>Primal risk measures</span></a></li><li><a class="tocitem" href="#Dual-risk-measures"><span>Dual risk measures</span></a></li><li><a class="tocitem" href="#Risk-averse-subgradients"><span>Risk-averse subgradients</span></a></li><li class="toplevel"><a class="tocitem" href="#Risk-averse-decision-rules:-Part-II"><span>Risk-averse decision rules: Part II</span></a></li><li><a class="tocitem" href="#Implementation"><span>Implementation</span></a></li><li><a class="tocitem" href="#Example:-risk-averse-hydro-thermal-scheduling"><span>Example: risk-averse hydro-thermal scheduling</span></a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Theory II: risk aversion</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Theory II: risk aversion</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/22_risk.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Theory-II:-risk-aversion"><a class="docs-heading-anchor" href="#Theory-II:-risk-aversion">Theory II: risk aversion</a><a id="Theory-II:-risk-aversion-1"></a><a class="docs-heading-anchor-permalink" href="#Theory-II:-risk-aversion" title="Permalink"></a></h1><p>In <a href="../21_theory_intro/#Theory-I:-an-intro-to-SDDP">Theory I: an intro to SDDP</a>, we implemented a basic version of the SDDP algorithm. This tutorial extends that implementation to add <strong>risk-aversion</strong>.</p><p><strong>Packages</strong></p><p>This tutorial uses the following packages. For clarity, we call <code>import PackageName</code> so that we must prefix <code>PackageName.</code> to all functions and structs provided by that package. Everything not prefixed is either part of base Julia, or we wrote it.</p><pre><code class="language-julia">import ForwardDiff
+import GLPK
+import Ipopt
+import JuMP
+import Statistics</code></pre><h2 id="Risk-aversion:-what-and-why?"><a class="docs-heading-anchor" href="#Risk-aversion:-what-and-why?">Risk aversion: what and why?</a><a id="Risk-aversion:-what-and-why?-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-aversion:-what-and-why?" title="Permalink"></a></h2><p>Often, the agents making decisions in complex systems are <strong>risk-averse</strong>, that is, they care more about avoiding very bad outcomes, than they do about having a good average outcome.</p><p>As an example, consumers in a hydro-thermal problem may be willing to pay a slightly higher electricity price on average, if it means that there is a lower probability of blackouts.</p><p>Risk aversion in multistage stochastic programming has been well studied in the academic literature, and is widely used in production implementations around the world.</p><h2 id="Risk-measures"><a class="docs-heading-anchor" href="#Risk-measures">Risk measures</a><a id="Risk-measures-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-measures" title="Permalink"></a></h2><p>One way to add risk aversion to models is to use a <strong>risk measure</strong>. A risk measure is a function that maps a random variable to a real number.</p><p>You are probably already familiar with lots of different risk measures. For example, the mean, median, mode, and maximum are all risk measures.</p><p>We call the act of applying a risk measure to a random variable &quot;computing the risk&quot; of a random variable.</p><p>To keep things simple, and because we need it for SDDP, we restrict our attention to random variables <span>$Z$</span> with a finite sample space <span>$\Omega$</span> and positive probabilities <span>$p_\omega$</span> for all <span>$\omega \in \Omega$</span>. We denote the realizations of <span>$Z$</span> by <span>$Z(\omega) = z_\omega$</span>.</p><p>A risk measure, <span>$\mathbb{F}[Z]$</span>, is a <strong>convex risk measure</strong> if it satisfies the following axioms:</p><p><strong>Axiom 1: monotonicity</strong></p><p>Given two random variables <span>$Z_1$</span> and <span>$Z_2$</span>, with <span>$Z_1 \le Z_2$</span> almost surely, then <span>$\mathbb{F}[Z_1] \le F[Z_2]$</span>.</p><p><strong>Axiom 2: translation equivariance</strong></p><p>Given two random variables <span>$Z_1$</span> and <span>$Z_2$</span>, then for all <span>$a \in \mathbb{R}$</span>, <span>$\mathbb{F}[Z + a] = \mathbb{F}[Z] + a$</span>.</p><p><strong>Axiom 3: convexity</strong></p><p>Given two random variables <span>$Z_1$</span> and <span>$Z_2$</span>, then for all <span>$a \in [0, 1]$</span>,</p><p class="math-container">\[\mathbb{F}[a Z_1 + (1 - a) Z_2] \le a \mathbb{F}[Z_1] + (1-a)\mathbb{F}[Z_2].\]</p><p>Now we know what a risk measure is, let&#39;s see how we can use them to form risk-averse decision rules.</p><h2 id="Risk-averse-decision-rules:-Part-I"><a class="docs-heading-anchor" href="#Risk-averse-decision-rules:-Part-I">Risk-averse decision rules: Part I</a><a id="Risk-averse-decision-rules:-Part-I-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-averse-decision-rules:-Part-I" title="Permalink"></a></h2><p>We started this tutorial by explaining that we are interested in risk aversion because some agents are risk-averse. What that really means, is that they want a policy that is also risk-averse. The question then becomes, how do we create risk-averse decision rules and policies?</p><p>Recall from <a href="../21_theory_intro/#Theory-I:-an-intro-to-SDDP">Theory I: an intro to SDDP</a> that we can form an optimal decision rule using the recursive formulation:</p><p class="math-container">\[\begin{aligned}
+V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) + \mathbb{E}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
+&amp; x^\prime = T_i(\bar{x}, u, \omega) \\
+&amp; u \in U_i(\bar{x}, \omega) \\
+&amp; \bar{x} = x,
+\end{aligned}\]</p><p>where our decision rule, <span>$\pi_i(x, \omega)$</span>, solves this optimization problem and returns a <span>$u^*$</span> corresponding to an optimal solution.</p><p>If we can replace the expectation operator <span>$\mathbb{E}$</span> with another (more risk-averse) risk measure <span>$\mathbb{F}$</span>, then our decision rule will attempt to choose a control decision now that minimizes the risk of the future costs, as opposed to the expectation of the future costs. This makes our decisions more risk-averse, because we care more about the worst outcomes than we do about the average.</p><p>Therefore, we can form a risk-averse decision rule using the formulation:</p><p class="math-container">\[\begin{aligned}
+V_i(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) + \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]\\
+&amp; x^\prime = T_i(\bar{x}, u, \omega) \\
+&amp; u \in U_i(\bar{x}, \omega) \\
+&amp; \bar{x} = x.
+\end{aligned}\]</p><p>To convert this problem into a tractable equivalent, we apply Kelley&#39;s algorithm to the risk-averse cost-to-go term <span>$\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$</span>, to obtain the approximated problem:</p><p class="math-container">\[\begin{aligned}
+V_i^K(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) + \theta\\
+&amp; x^\prime = T_i(\bar{x}, u, \omega) \\
+&amp; u \in U_i(\bar{x}, \omega) \\
+&amp; \bar{x} = x \\
+&amp; \theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k)\quad k=1,\ldots,K.
+\end{aligned}\]</p><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>Note how we need to expliclty compute a risk-averse subgradient! (We need a subgradient because the function might not be differentiable.) When constructing cuts with the expectation operator in <a href="../21_theory_intro/#Theory-I:-an-intro-to-SDDP">Theory I: an intro to SDDP</a>, we implicitly used the law of total expectation to combine the two expectations; we can&#39;t do that for a general risk measure.</p></div></div><div class="admonition is-success"><header class="admonition-header">Homework challenge</header><div class="admonition-body"><p>If it&#39;s not obvious why we can use Kelley&#39;s here, try to use the axioms of a convex risk measure to show that <span>$\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}[V_j(x^\prime, \varphi)]$</span> is a convex function w.r.t. <span>$x^\prime$</span> if <span>$V_j$</span> is also a convex function.</p></div></div><p>Our challenge is now to find a way to compute the risk-averse cost-to-go function <span>$\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]$</span>, and a way to compute a subgradient of the risk-averse cost-to-go function with respect to <span>$x^\prime$</span>.</p><h2 id="Primal-risk-measures"><a class="docs-heading-anchor" href="#Primal-risk-measures">Primal risk measures</a><a id="Primal-risk-measures-1"></a><a class="docs-heading-anchor-permalink" href="#Primal-risk-measures" title="Permalink"></a></h2><p>Now we know what a risk measure is, and how we will use it, let&#39;s implement some code to see how we can compute the risk of some random variables.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>We&#39;re going to start by implementing the <strong>primal</strong> version of each risk measure. We implement the <strong>dual</strong> version in the next section.</p></div></div><p>First, we need some data:</p><pre><code class="language-julia">Z = [1.0, 2.0, 3.0, 4.0]</code></pre><pre><code class="language-none">4-element Array{Float64,1}:
+ 1.0
+ 2.0
+ 3.0
+ 4.0</code></pre><p>with probabilities:</p><pre><code class="language-julia">p = [0.1, 0.2, 0.4, 0.3]</code></pre><pre><code class="language-none">4-element Array{Float64,1}:
+ 0.1
+ 0.2
+ 0.4
+ 0.3</code></pre><p>We&#39;re going to implement a number of different risk measures, so to leverage Julia&#39;s multiple dispatch, we create an abstract type:</p><pre><code class="language-julia">abstract type AbstractRiskMeasure end</code></pre><p>and function to overload:</p><pre><code class="language-julia">&quot;&quot;&quot;
+    primal_risk(F::AbstractRiskMeasure, Z::Vector{&lt;:Real}, p::Vector{Float64})
+
+Use `F` to compute the risk of the random variable defined by a vector of costs
+`Z` and non-zero probabilities `p`.
+&quot;&quot;&quot;
+function primal_risk end</code></pre><pre><code class="language-none">Main.##1589.primal_risk</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>We want <code>Vector{&lt;:Real}</code> instead of <code>Vector{Float64}</code> because we&#39;re going to automatically differentiate this function in the next section.</p></div></div><h3 id="Expectation"><a class="docs-heading-anchor" href="#Expectation">Expectation</a><a id="Expectation-1"></a><a class="docs-heading-anchor-permalink" href="#Expectation" title="Permalink"></a></h3><p>The expectation, <span>$\mathbb{E}$</span>, also called the mean or the average, is the most widely used convex risk measure. The expectation of a random variable is just the sum of <span>$Z$</span> weighted by the probability:</p><p class="math-container">\[\mathbb{F}[Z] = \mathbb{E}_p[Z] = \sum\limits_{\omega\in\Omega} p_\omega z_\omega.\]</p><pre><code class="language-julia">struct Expectation &lt;: AbstractRiskMeasure end
+
+function primal_risk(::Expectation, Z::Vector{&lt;:Real}, p::Vector{Float64})
+    return sum(p[i] * Z[i] for i = 1:length(p))
+end</code></pre><pre><code class="language-none">primal_risk (generic function with 1 method)</code></pre><p>Let&#39;s try it out:</p><pre><code class="language-julia">primal_risk(Expectation(), Z, p)</code></pre><pre><code class="language-none">2.9000000000000004</code></pre><h3 id="WorstCase"><a class="docs-heading-anchor" href="#WorstCase">WorstCase</a><a id="WorstCase-1"></a><a class="docs-heading-anchor-permalink" href="#WorstCase" title="Permalink"></a></h3><p>The worst-case risk measure, also called the maximum, is another widely used convex risk measure. This risk measure doesn&#39;t care about the probability vector <code>p</code>, only the cost vector <code>Z</code>:</p><p class="math-container">\[\mathbb{F}[Z] = \max[Z] = \max\limits_{\omega\in\Omega} z_\omega.\]</p><pre><code class="language-julia">struct WorstCase &lt;: AbstractRiskMeasure end
+
+function primal_risk(::WorstCase, Z::Vector{&lt;:Real}, ::Vector{Float64})
+    return maximum(Z)
+end</code></pre><pre><code class="language-none">primal_risk (generic function with 2 methods)</code></pre><p>Let&#39;s try it out:</p><pre><code class="language-julia">primal_risk(WorstCase(), Z, p)</code></pre><pre><code class="language-none">4.0</code></pre><h3 id="Entropic"><a class="docs-heading-anchor" href="#Entropic">Entropic</a><a id="Entropic-1"></a><a class="docs-heading-anchor-permalink" href="#Entropic" title="Permalink"></a></h3><p>A more interesting, and less widely used risk measure is the entropic risk measure. The entropic risk measure is parameterized by a value <span>$\gamma &gt; 0$</span>, and computes the risk of a random variable as:</p><p class="math-container">\[\mathbb{F}_\gamma[Z] = \frac{1}{\gamma}\log\left(\mathbb{E}_p[e^{\gamma Z}]\right) = \frac{1}{\gamma}\log\left(\sum\limits_{\omega\in\Omega}p_\omega e^{\gamma z_\omega}\right).\]</p><div class="admonition is-success"><header class="admonition-header">Homework challenge</header><div class="admonition-body"><p>Prove that the entropic risk measure satisfies the three axioms of a convex risk measure.</p></div></div><pre><code class="language-julia">struct Entropic &lt;: AbstractRiskMeasure
+    γ::Float64
+    function Entropic(γ)
+        if !(γ &gt; 0)
+            throw(DomainError(γ, &quot;Entropic risk measure must have γ &gt; 0.&quot;))
+        end
+        return new(γ)
+    end
+end
+
+function primal_risk(F::Entropic, Z::Vector{&lt;:Real}, p::Vector{Float64})
+    return 1 / F.γ * log(sum(p[i] * exp(F.γ * Z[i]) for i = 1:length(p)))
+end</code></pre><pre><code class="language-none">primal_risk (generic function with 3 methods)</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p><code>exp(x)</code> overflows when <span>$x &gt; 709$</span>. Therefore, if we are passed a vector of <code>Float64</code>, use arbitrary precision arithmetic with <code>big.(Z)</code>.</p></div></div><pre><code class="language-julia">function primal_risk(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
+    return Float64(primal_risk(F, big.(Z), p))
+end</code></pre><pre><code class="language-none">primal_risk (generic function with 4 methods)</code></pre><p>Let&#39;s try it out for different values of <span>$\gamma$</span>:</p><pre><code class="language-julia">for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1_000.0]
+    println(&quot;γ = $(γ), F[Z] = &quot;, primal_risk(Entropic(γ), Z, p))
+end</code></pre><pre><code class="language-none">γ = 0.001, F[Z] = 2.9004449279791005
+γ = 0.01, F[Z] = 2.9044427792027596
+γ = 0.1, F[Z] = 2.9437604953310674
+γ = 1.0, F[Z] = 3.264357634151263
+γ = 10.0, F[Z] = 3.879608772845574
+γ = 100.0, F[Z] = 3.987960271956741
+γ = 1000.0, F[Z] = 3.998796027195674
+</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>The entropic has two extremes. As <span>$\gamma \rightarrow 0$</span>, the entropic acts like the expectation risk measure, and as <span>$\gamma \rightarrow \infty$</span>, the entropic acts like the worst-case risk measure.</p></div></div><p>Computing risk measures this way works well for computing the primal value. However, there isn&#39;t an obvious way to compute a subgradient of the risk-averse cost-to-go function, which we need for our cut calculation.</p><p>There is a nice solution to this problem, and that is to use the dual representation of a risk measure, instead of the primal.</p><h2 id="Dual-risk-measures"><a class="docs-heading-anchor" href="#Dual-risk-measures">Dual risk measures</a><a id="Dual-risk-measures-1"></a><a class="docs-heading-anchor-permalink" href="#Dual-risk-measures" title="Permalink"></a></h2><p>Convex risk measures have a dual representation as follows:</p><p class="math-container">\[\mathbb{F}[Z] = \sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[Z] - \alpha(p, q),\]</p><p>where <span>$\alpha$</span> is a concave function that maps the probability vectors <span>$p$</span> and <span>$q$</span> to a real number, and <span>$\mathcal{M}(p) \subseteq \mathcal{P}$</span> is a convex subset of the probability simplex:</p><p class="math-container">\[\mathcal{P} = \{p \ge 0\;|\;\sum\limits_{\omega\in\Omega}p_\omega = 1\}.\]</p><p>The dual of a convex risk measure can be interpreted as taking the expectation of the random variable <span>$Z$</span> with respect to the worst probability vector <span>$q$</span> that lies within the set <span>$\mathcal{M}$</span>, less some concave penalty term <span>$\alpha(p, q)$</span>.</p><p>If we define a function <code>dual_risk_inner</code> that computes <code>q</code> and <code>α</code>:</p><pre><code class="language-julia">&quot;&quot;&quot;
+    dual_risk_inner(
+        F::AbstractRiskMeasure, Z::Vector{Float64}, p::Vector{Float64}
+    )::Tuple{Vector{Float64},Float64}
+
+Return a tuple formed by the worst-case probability vector `q` and the
+corresponding evaluation `α(p, q)`.
+&quot;&quot;&quot;
+function dual_risk_inner end</code></pre><pre><code class="language-none">Main.##1589.dual_risk_inner</code></pre><p>then we can write a generic <code>dual_risk</code> function as:</p><pre><code class="language-julia">function dual_risk(
+    F::AbstractRiskMeasure,
+    Z::Vector{Float64},
+    p::Vector{Float64},
+)
+    q, α = dual_risk_inner(F, Z, p)
+    return sum(q[i] * Z[i] for i = 1:length(q)) - α
+end</code></pre><pre><code class="language-none">dual_risk (generic function with 1 method)</code></pre><h3 id="Expectation-2"><a class="docs-heading-anchor" href="#Expectation-2">Expectation</a><a class="docs-heading-anchor-permalink" href="#Expectation-2" title="Permalink"></a></h3><p>For the expectation risk measure, <span>$\mathcal{M}(p) = \{p\}$</span>, and <span>$\alpha(\cdot, \cdot) = 0$</span>. Therefore:</p><pre><code class="language-julia">function dual_risk_inner(::Expectation, ::Vector{Float64}, p::Vector{Float64})
+    return p, 0.0
+end</code></pre><pre><code class="language-none">dual_risk_inner (generic function with 1 method)</code></pre><p>We can check we get the same result as the primal version:</p><pre><code class="language-julia">dual_risk(Expectation(), Z, p) == primal_risk(Expectation(), Z, p)</code></pre><pre><code class="language-none">true</code></pre><h3 id="Worst-case"><a class="docs-heading-anchor" href="#Worst-case">Worst-case</a><a id="Worst-case-1"></a><a class="docs-heading-anchor-permalink" href="#Worst-case" title="Permalink"></a></h3><p>For the worst-case risk measure, <span>$\mathcal{M}(p) = \mathcal{P}$</span>, and <span>$\alpha(\cdot, \cdot) = 0$</span>. Therefore, the dual representation just puts all of the probability weight on the maximum outcome:</p><pre><code class="language-julia">function dual_risk_inner(::WorstCase, Z::Vector{Float64}, ::Vector{Float64})
+    q = zeros(length(Z))
+    _, index = findmax(Z)
+    q[index] = 1.0
+    return q, 0.0
+end</code></pre><pre><code class="language-none">dual_risk_inner (generic function with 2 methods)</code></pre><p>We can check we get the same result as the primal version:</p><pre><code class="language-julia">dual_risk(WorstCase(), Z, p) == primal_risk(WorstCase(), Z, p)</code></pre><pre><code class="language-none">true</code></pre><h3 id="Entropic-2"><a class="docs-heading-anchor" href="#Entropic-2">Entropic</a><a class="docs-heading-anchor-permalink" href="#Entropic-2" title="Permalink"></a></h3><p>For the entropic risk measure, <span>$\mathcal{M}(p) = \mathcal{P}$</span>, and:</p><p class="math-container">\[\alpha(p, q) = \frac{1}{\gamma}\sum\limits_{\omega\in\Omega} q_\omega \log\left(\frac{q_\omega}{p_\omega}\right).\]</p><p>One way to solve the dual problem is to explicitly solve a nonlinear optimization problem:</p><pre><code class="language-julia">function dual_risk_inner(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
+    N = length(p)
+    model = JuMP.Model(Ipopt.Optimizer)
+    JuMP.set_silent(model)
+    # For this problem, the solve is more accurate if we turn off problem
+    # scaling.
+    JuMP.set_optimizer_attribute(model, &quot;nlp_scaling_method&quot;, &quot;none&quot;)
+    JuMP.@variable(model, 0 &lt;= q[1:N] &lt;= 1)
+    JuMP.@constraint(model, sum(q) == 1)
+    JuMP.@NLexpression(
+        model,
+        α,
+        1 / F.γ * sum(q[i] * log(q[i] / p[i]) for i = 1:N),
+    )
+    JuMP.@NLobjective(model, Max, sum(q[i] * Z[i] for i = 1:N) - α)
+    JuMP.optimize!(model)
+    return JuMP.value.(q), JuMP.value(α)
+end</code></pre><pre><code class="language-none">dual_risk_inner (generic function with 3 methods)</code></pre><p>We can check we get the same result as the primal version:</p><pre><code class="language-julia">for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+    primal = primal_risk(Entropic(γ), Z, p)
+    dual = dual_risk(Entropic(γ), Z, p)
+    success = primal ≈ dual ? &quot;✓&quot; : &quot;×&quot;
+    println(&quot;$(success) γ = $(γ), primal = $(primal), dual = $(dual)&quot;)
+end</code></pre><pre><code class="language-none">
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+******************************************************************************
+
+✓ γ = 0.001, primal = 2.9004449279791005, dual = 2.9004449279790396
+✓ γ = 0.01, primal = 2.9044427792027596, dual = 2.9044427792027503
+✓ γ = 0.1, primal = 2.9437604953310674, dual = 2.9437604953310665
+✓ γ = 1.0, primal = 3.264357634151263, dual = 3.264357634151263
+✓ γ = 10.0, primal = 3.879608772845574, dual = 3.8796087723675954
+✓ γ = 100.0, primal = 3.987960271956741, dual = 3.987960271956741
+</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>This method of solving the dual problem &quot;on-the-side&quot; is used by SDDP.jl for a number of risk measures, including a distributionally robust risk measure with the Wasserstein distance. Check out all the risk measures that SDDP.jl supports in <a href="../../guides/add_a_risk_measure/#Add-a-risk-measure">Add a risk measure</a>.</p></div></div><p>The &quot;on-the-side&quot; method is very general, and it lets us incorporate any convex risk measure into SDDP. However, this comes at an increased computational cost and potential numerical issues (e.g., not converging to the exact solution).</p><p>However, for the entropic risk measure, <a href="http://www.optimization-online.org/DB_HTML/2020/08/7984.html">Dowson, Morton, and Pagnoncelli (2020)</a> derive the following closed form solution for <span>$q^*$</span>:</p><p class="math-container">\[q_\omega^* = \frac{p_\omega e^{\gamma z_\omega}}{\sum\limits_{\varphi \in \Omega} p_\varphi e^{\gamma z_\varphi}}.\]</p><p>This is faster because we don&#39;t need to use Ipopt, and it avoids some of the numerical issues associated with solving a nonlinear program.</p><pre><code class="language-julia">function dual_risk_inner(F::Entropic, Z::Vector{Float64}, p::Vector{Float64})
+    q, α = zeros(length(p)), big(0.0)
+    peγz = p .* exp.(F.γ .* big.(Z))
+    sum_peγz = sum(peγz)
+    for i = 1:length(q)
+        big_q = peγz[i] / sum_peγz
+        α += big_q * log(big_q / p[i])
+        q[i] = Float64(big_q)
+    end
+    return q, Float64(α / F.γ)
+end</code></pre><pre><code class="language-none">dual_risk_inner (generic function with 3 methods)</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>Again, note that we use <code>big</code> to avoid introducing overflow errors, before explicitly casting back to <code>Float64</code> for the values we return.</p></div></div><p>We can check we get the same result as the primal version:</p><pre><code class="language-julia">for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+    primal = primal_risk(Entropic(γ), Z, p)
+    dual = dual_risk(Entropic(γ), Z, p)
+    success = primal ≈ dual ? &quot;✓&quot; : &quot;×&quot;
+    println(&quot;$(success) γ = $(γ), primal = $(primal), dual = $(dual)&quot;)
+end</code></pre><pre><code class="language-none">✓ γ = 0.001, primal = 2.9004449279791005, dual = 2.9004449279791005
+✓ γ = 0.01, primal = 2.9044427792027596, dual = 2.9044427792027596
+✓ γ = 0.1, primal = 2.9437604953310674, dual = 2.943760495331067
+✓ γ = 1.0, primal = 3.264357634151263, dual = 3.264357634151263
+✓ γ = 10.0, primal = 3.879608772845574, dual = 3.879608772845574
+✓ γ = 100.0, primal = 3.987960271956741, dual = 3.987960271956741
+</code></pre><h2 id="Risk-averse-subgradients"><a class="docs-heading-anchor" href="#Risk-averse-subgradients">Risk-averse subgradients</a><a id="Risk-averse-subgradients-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-averse-subgradients" title="Permalink"></a></h2><p>We ended the section on primal risk measures by explaining how we couldn&#39;t use the primal risk measure in the cut calculation because we needed some way of computing a risk-averse subgradient:</p><p class="math-container">\[\theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k).\]</p><p>The reason we use the dual representation is because of the following theorem, which explains how to compute a risk-averse gradient.</p><div class="admonition is-info"><header class="admonition-header">The risk-averse subgradient theorem</header><div class="admonition-body"><p>Let <span>$\omega \in \Omega$</span> index a random vector with finite support and with nominal probability mass function, <span>$p \in \mathcal{P}$</span>, which satisfies <span>$p &gt; 0$</span>.</p><p>Consider a convex risk measure, <span>$\mathbb{F}$</span>, with a convex risk set, <span>$\mathcal{M}(p)$</span>, so that <span>$\mathbb{F}$</span> can be expressed as the dual form.</p><p>Let <span>$V(x,\omega)$</span> be convex with respect to <span>$x$</span> for all fixed <span>$\omega\in\Omega$</span>, and let <span>$\lambda(\tilde{x}, \omega)$</span> be a subgradient of <span>$V(x,\omega)$</span> with respect to <span>$x$</span> at <span>$x = \tilde{x}$</span> for each <span>$\omega \in \Omega$</span>.</p><p>Then, <span>$\sum_{\omega\in\Omega}q^*_{\omega} \lambda(\tilde{x},\omega)$</span> is a subgradient of <span>$\mathbb{F}[V(x,\omega)]$</span> at <span>$\tilde{x}$</span>, where</p><p class="math-container">\[q^* \in \argmax_{q \in \mathcal{M}(p)}\left\{{\mathbb{E}}_q[V(\tilde{x},\omega)] - \alpha(p, q)\right\}.\]</p></div></div><p>This theorem can be a little hard to unpack, so let&#39;s see an example:</p><pre><code class="language-julia">function dual_risk_averse_subgradient(
+    V::Function,
+    # Use automatic differentiation to compute the gradient of V w.r.t. x,
+    # given a fixed ω.
+    λ::Function = (x, ω) -&gt; ForwardDiff.gradient(x -&gt; V(x, ω), x);
+    F::AbstractRiskMeasure,
+    Ω::Vector,
+    p::Vector{Float64},
+    x̃::Vector{Float64},
+)
+    # Evaluate the function at x=x̃ for all ω ∈ Ω.
+    V_ω = [V(x̃, ω) for ω in Ω]
+    # Solve the dual problem to obtain an optimal q^*.
+    q, α = dual_risk_inner(F, V_ω, p)
+    # Compute the risk-averse subgradient by taking the expectation of the
+    # subgradients w.r.t. q^*.
+    dVdx = sum(q[i] * λ(x̃, ω) for (i, ω) in enumerate(Ω))
+    return dVdx
+end</code></pre><pre><code class="language-none">dual_risk_averse_subgradient (generic function with 2 methods)</code></pre><p>We can compare the subgradient obtained with the dual form against the automatic differentiation of the <code>primal_risk</code> function.</p><pre><code class="language-julia">function primal_risk_averse_subgradient(
+    V::Function;
+    F::AbstractRiskMeasure,
+    Ω::Vector,
+    p::Vector{Float64},
+    x̃::Vector{Float64},
+)
+    inner(x) = primal_risk(F, [V(x, ω) for ω in Ω], p)
+    return ForwardDiff.gradient(inner, x̃)
+end</code></pre><pre><code class="language-none">primal_risk_averse_subgradient (generic function with 1 method)</code></pre><p>As our example function, we use:</p><pre><code class="language-julia">V(x, ω) = ω * x[1]^2</code></pre><pre><code class="language-none">V (generic function with 1 method)</code></pre><p>with:</p><pre><code class="language-julia">Ω = [1.0, 2.0, 3.0]</code></pre><pre><code class="language-none">3-element Array{Float64,1}:
+ 1.0
+ 2.0
+ 3.0</code></pre><p>and:</p><pre><code class="language-julia">p = [0.3, 0.4, 0.3]</code></pre><pre><code class="language-none">3-element Array{Float64,1}:
+ 0.3
+ 0.4
+ 0.3</code></pre><p>at the point:</p><pre><code class="language-julia">x̃ = [3.0]</code></pre><pre><code class="language-none">1-element Array{Float64,1}:
+ 3.0</code></pre><p>If <span>$\mathbb{F}$</span> is the expectation risk-measure, then:</p><p class="math-container">\[\mathbb{F}[V(x, \omega)] =  2 x^2.\]</p><p>The function evaluation <span>$x=3$</span> is <span>$18$</span> and the subgradient is <span>$12$</span>. Let&#39;s check we get it right with the dual form:</p><pre><code class="language-julia">dual_risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)</code></pre><pre><code class="language-none">1-element Array{Float64,1}:
+ 12.0</code></pre><p>and the primal form:</p><pre><code class="language-julia">primal_risk_averse_subgradient(V; F = Expectation(), Ω = Ω, p = p, x̃ = x̃)</code></pre><pre><code class="language-none">1-element Array{Float64,1}:
+ 12.0</code></pre><p>If <span>$\mathbb{F}$</span> is the worst-case risk measure, then:</p><p class="math-container">\[\mathbb{F}[V(x, \omega)] = 3 x^2.\]</p><p>The function evaluation at <span>$x=3$</span> is <span>$27$</span>, and the subgradient is <span>$18$</span>. Let&#39;s check we get it right with the dual form:</p><pre><code class="language-julia">dual_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)</code></pre><pre><code class="language-none">1-element Array{Float64,1}:
+ 18.0</code></pre><p>and the primal form:</p><pre><code class="language-julia">primal_risk_averse_subgradient(V; F = WorstCase(), Ω = Ω, p = p, x̃ = x̃)</code></pre><pre><code class="language-none">1-element Array{Float64,1}:
+ 18.0</code></pre><p>If <span>$\mathbb{F}$</span> is the entropic risk measure, the math is a little more difficult to derive analytically. However, we can check against our primal version:</p><pre><code class="language-julia">for γ in [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+    dual = dual_risk_averse_subgradient(
+        V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃
+    )
+    primal = primal_risk_averse_subgradient(
+        V; F = Entropic(γ), Ω = Ω, p = p, x̃ = x̃
+    )
+    success = primal ≈ dual ? &quot;✓&quot; : &quot;×&quot;
+    println(&quot;$(success) γ = $(γ), primal = $(primal), dual = $(dual)&quot;)
+end</code></pre><pre><code class="language-none">✓ γ = 0.001, primal = [12.0324], dual = [12.0324]
+✓ γ = 0.01, primal = [12.3237], dual = [12.3237]
+✓ γ = 0.1, primal = [14.9332], dual = [14.9332]
+✓ γ = 1.0, primal = [17.999], dual = [17.999]
+✓ γ = 10.0, primal = [18.0], dual = [18.0]
+× γ = 100.0, primal = [NaN], dual = [18.0]
+</code></pre><p>Uh oh! What happened with the last line? It looks our <code>primal_risk_averse_subgradient</code> encountered an error and returned a subgradient of <code>NaN</code>. This is because of th # overflow issue with <code>exp(x)</code>. However, we can be confident that our dual method of computing the risk-averse subgradient is both correct and more numerically robust than the primal version.</p><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>As another sanity check, notice how as <span>$\gamma \rightarrow 0$</span>, we tend toward the solution of the expectation risk-measure <code>[12]</code>, and as <span>$\gamma \rightarrow \infty$</span>, we tend toward the solution of the worse-case risk measure <code>[18]</code>.</p></div></div><h1 id="Risk-averse-decision-rules:-Part-II"><a class="docs-heading-anchor" href="#Risk-averse-decision-rules:-Part-II">Risk-averse decision rules: Part II</a><a id="Risk-averse-decision-rules:-Part-II-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-averse-decision-rules:-Part-II" title="Permalink"></a></h1><p>Why is the risk-averse subgradient theorem helpful? Using the dual representation of a convex risk measure, we can re-write the cut:</p><p class="math-container">\[\theta \ge \mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right] + \frac{d}{dx^\prime}\mathbb{F}_{j \in i^+, \varphi \in \Omega_j}\left[V_j^k(x^\prime_k, \varphi)\right]^\top (x^\prime - x^\prime_k),\quad k=1,\ldots,K\]</p><p>as:</p><p class="math-container">\[\theta \ge \mathbb{E}_{q_k}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right] - \alpha(p, q_k),\quad k=1,\ldots,K,\]</p><p>where <span>$q_k = \mathrm{arg}\sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[V_j^k(x_k^\prime, \varphi)] - \alpha(p, q)$</span>.</p><p>Therefore, we can formulate a risk-averse decision rule as:</p><p class="math-container">\[\begin{aligned}
+V_i^K(x, \omega) = \min\limits_{\bar{x}, x^\prime, u} \;\; &amp; C_i(\bar{x}, u, \omega) + \theta\\
+&amp; x^\prime = T_i(\bar{x}, u, \omega) \\
+&amp; u \in U_i(\bar{x}, \omega) \\
+&amp; \bar{x} = x \\
+&amp; \theta \ge \mathbb{E}_{q_k}\left[V_j^k(x^\prime_k, \varphi) + \frac{d}{dx^\prime}V_j^k(x^\prime_k, \varphi)^\top (x^\prime - x^\prime_k)\right] - \alpha(p, q_k),\quad k=1,\ldots,K \\
+&amp; \theta \ge M.
+\end{aligned}\]</p><p>where <span>$q_k = \mathrm{arg}\sup\limits_{q \in\mathcal{M}(p)} \mathbb{E}_q[V_j^k(x_k^\prime, \varphi)] - \alpha(p, q)$</span>.</p><p>Thus, to implement risk-averse SDDP, all we need to do is modify the backward pass to include this calculation of <span>$q_k$</span>, form the cut using <span>$q_k$</span> instead of <span>$p$</span>, and subtract the penalty term <span>$\alpha(p, q_k)$</span>.</p><h2 id="Implementation"><a class="docs-heading-anchor" href="#Implementation">Implementation</a><a id="Implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation" title="Permalink"></a></h2><p>Now we&#39;re ready to implement our risk-averse version of SDDP.</p><p>As a prerequisite, we need most of the code from <a href="../21_theory_intro/#Theory-I:-an-intro-to-SDDP">Theory I: an intro to SDDP</a>.</p><p><details>
+<summary>Click to view code from the tutorial "Theory I: an intro to SDDP".</summary><pre><code class="language-julia">struct State
+    in::JuMP.VariableRef
+    out::JuMP.VariableRef
+end
+
+struct Uncertainty
+    parameterize::Function
+    Ω::Vector{Any}
+    P::Vector{Float64}
+end
+
+struct Node
+    subproblem::JuMP.Model
+    states::Dict{Symbol,State}
+    uncertainty::Uncertainty
+    cost_to_go::JuMP.VariableRef
+end
+
+struct PolicyGraph
+    nodes::Vector{Node}
+    arcs::Vector{Dict{Int,Float64}}
+end
+
+function Base.show(io::IO, model::PolicyGraph)
+    println(io, &quot;A policy graph with $(length(model.nodes)) nodes&quot;)
+    println(io, &quot;Arcs:&quot;)
+    for (from, arcs) in enumerate(model.arcs)
+        for (to, probability) in arcs
+            println(io, &quot;  $(from) =&gt; $(to) w.p. $(probability)&quot;)
+        end
+    end
+    return
+end
+
+function PolicyGraph(
+    subproblem_builder::Function;
+    graph::Vector{Dict{Int,Float64}},
+    lower_bound::Float64,
+    optimizer,
+)
+    nodes = Node[]
+    for t = 1:length(graph)
+        model = JuMP.Model(optimizer)
+        states, uncertainty = subproblem_builder(model, t)
+        JuMP.@variable(model, cost_to_go &gt;= lower_bound)
+        obj = JuMP.objective_function(model)
+        JuMP.@objective(model, Min, obj + cost_to_go)
+        if length(graph[t]) == 0
+            JuMP.fix(cost_to_go, 0.0; force = true)
+        end
+        push!(nodes, Node(model, states, uncertainty, cost_to_go))
+    end
+    return PolicyGraph(nodes, graph)
+end
+
+function sample_uncertainty(uncertainty::Uncertainty)
+    r = rand()
+    for (p, ω) in zip(uncertainty.P, uncertainty.Ω)
+        r -= p
+        if r &lt; 0.0
+            return ω
+        end
+    end
+    error(&quot;We should never get here because P should sum to 1.0.&quot;)
+end
+
+function sample_next_node(model::PolicyGraph, current::Int)
+    if length(model.arcs[current]) == 0
+        return nothing
+    else
+        r = rand()
+        for (to, probability) in model.arcs[current]
+            r -= probability
+            if r &lt; 0.0
+                return to
+            end
+        end
+        return nothing
+    end
+end
+
+function forward_pass(model::PolicyGraph, io::IO = stdout)
+    incoming_state = Dict(
+        k =&gt; JuMP.fix_value(v.in) for (k, v) in model.nodes[1].states
+    )
+    simulation_cost = 0.0
+    trajectory = Tuple{Int,Dict{Symbol,Float64}}[]
+    t = 1
+    while t !== nothing
+        node = model.nodes[t]
+        ω = sample_uncertainty(node.uncertainty)
+        node.uncertainty.parameterize(ω)
+        for (k, v) in incoming_state
+            JuMP.fix(node.states[k].in, v; force = true)
+        end
+        JuMP.optimize!(node.subproblem)
+        if JuMP.termination_status(node.subproblem) != JuMP.MOI.OPTIMAL
+            error(&quot;Something went terribly wrong!&quot;)
+        end
+        outgoing_state = Dict(k =&gt; JuMP.value(v.out) for (k, v) in node.states)
+        stage_cost = JuMP.objective_value(node.subproblem) - JuMP.value(node.cost_to_go)
+        simulation_cost += stage_cost
+        incoming_state = outgoing_state
+        push!(trajectory, (t, outgoing_state))
+        t = sample_next_node(model, t)
+    end
+    return trajectory, simulation_cost
+end
+
+function upper_bound(model::PolicyGraph; replications::Int)
+    simulations = [forward_pass(model, devnull) for i = 1:replications]
+    z = [s[2] for s in simulations]
+    μ  = Statistics.mean(z)
+    tσ = 1.96 * Statistics.std(z) / sqrt(replications)
+    return μ, tσ
+end
+
+function lower_bound(model::PolicyGraph)
+    node = model.nodes[1]
+    bound = 0.0
+    for (p, ω) in zip(node.uncertainty.P, node.uncertainty.Ω)
+        node.uncertainty.parameterize(ω)
+        JuMP.optimize!(node.subproblem)
+        bound += p * JuMP.objective_value(node.subproblem)
+    end
+    return bound
+end
+
+function evaluate_policy(
+    model::PolicyGraph;
+    node::Int,
+    incoming_state::Dict{Symbol,Float64},
+    random_variable,
+)
+    the_node = model.nodes[node]
+    the_node.uncertainty.parameterize(random_variable)
+    for (k, v) in incoming_state
+        JuMP.fix(the_node.states[k].in, v; force = true)
+    end
+    JuMP.optimize!(the_node.subproblem)
+    return Dict(
+        k =&gt; JuMP.value.(v)
+        for (k, v) in JuMP.object_dictionary(the_node.subproblem)
+    )
+end</code></pre><pre><code class="language-none">evaluate_policy (generic function with 1 method)</code></pre></details></p><p>First, we need to modify the backward pass to compute the cuts using the risk-averse subgradient theorem:</p><pre><code class="language-julia">function backward_pass(
+    model::PolicyGraph,
+    trajectory::Vector{Tuple{Int,Dict{Symbol,Float64}}},
+    io::IO = stdout;
+    risk_measure::AbstractRiskMeasure,
+)
+    println(io, &quot;| Backward pass&quot;)
+    for i = reverse(1:length(trajectory))
+        index, outgoing_states = trajectory[i]
+        node = model.nodes[index]
+        println(io, &quot;| | Visiting node $(index)&quot;)
+        if length(model.arcs[index]) == 0
+            continue
+        end
+        # =====================================================================
+        # New! Create vectors to store the cut expressions, V(x,ω) and p:
+        cut_expressions, V_ω, p = JuMP.AffExpr[], Float64[], Float64[]
+        # =====================================================================
+        for (j, P_ij) in model.arcs[index]
+            next_node = model.nodes[j]
+            for (k, v) in outgoing_states
+                JuMP.fix(next_node.states[k].in, v; force = true)
+            end
+            for (pφ, φ) in zip(next_node.uncertainty.P, next_node.uncertainty.Ω)
+                next_node.uncertainty.parameterize(φ)
+                JuMP.optimize!(next_node.subproblem)
+                V = JuMP.objective_value(next_node.subproblem)
+                dVdx = Dict(
+                    k =&gt; JuMP.reduced_cost(v.in) for (k, v) in next_node.states
+                )
+                # =============================================================
+                # New! Construct and append the expression
+                # `V_j^K(x_k, φ) + dVdx_j^K(x&#39;_k, φ)ᵀ(x - x_k)` to the list of
+                # cut expressions.
+                push!(
+                    cut_expressions,
+                    JuMP.@expression(
+                        node.subproblem,
+                        V + sum(
+                            dVdx[k] * (x.out - outgoing_states[k])
+                            for (k, x) in node.states
+                        ),
+                    )
+                )
+                # Add the objective value to Z:
+                push!(V_ω, V)
+                # Add the probability to p:
+                push!(p, P_ij * pφ)
+                # =============================================================
+            end
+        end
+        # =====================================================================
+        # New! Using the solutions in V_ω, compute q and α:
+        q, α = dual_risk_inner(risk_measure, V_ω, p)
+        println(io, &quot;| | | Z = &quot;, Z)
+        println(io, &quot;| | | p = &quot;, p)
+        println(io, &quot;| | | q = &quot;, q)
+        println(io, &quot;| | | α = &quot;, α)
+        # Then add the cut:
+        c = JuMP.@constraint(
+            node.subproblem,
+            node.cost_to_go &gt;=
+                sum(q[i] * cut_expressions[i] for i = 1:length(q)) - α
+        )
+        # =====================================================================
+        println(io, &quot;| | | Adding cut : &quot;, c)
+    end
+    return nothing
+end</code></pre><pre><code class="language-none">backward_pass (generic function with 2 methods)</code></pre><p>We also need to update the <code>train</code> loop of SDDP to pass a risk measure to the backward pass:</p><pre><code class="language-julia">function train(
+    model::PolicyGraph;
+    iteration_limit::Int,
+    replications::Int,
+    # =========================================================================
+    # New! Add a risk_measure argument
+    risk_measure::AbstractRiskMeasure,
+    # =========================================================================
+    io::IO = stdout,
+)
+    for i = 1:iteration_limit
+        println(io, &quot;Starting iteration $(i)&quot;)
+        outgoing_states, _ = forward_pass(model, io)
+        # =====================================================================
+        # New! Pass the risk measure to the backward pass.
+        backward_pass(model, outgoing_states, io; risk_measure = risk_measure)
+        # =====================================================================
+        println(io, &quot;| Finished iteration&quot;)
+        println(io, &quot;| | lower_bound = &quot;, lower_bound(model))
+    end
+    μ, tσ = upper_bound(model; replications = replications)
+    println(io, &quot;Upper bound = $(μ) ± $(tσ)&quot;)
+    return
+end</code></pre><pre><code class="language-none">train (generic function with 1 method)</code></pre><h3 id="Risk-averse-bounds"><a class="docs-heading-anchor" href="#Risk-averse-bounds">Risk-averse bounds</a><a id="Risk-averse-bounds-1"></a><a class="docs-heading-anchor-permalink" href="#Risk-averse-bounds" title="Permalink"></a></h3><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>This section is important.</p></div></div><p>When we had a risk-neutral policy (i.e., we only used the expectation risk measure), we discussed how we could form valid lower and upper bounds.</p><p>The upper bound is still valid as a Monte Carlo simulation of the expected cost of the policy. (Although this upper bound doesn&#39;t capture the change in the policy we wanted to achieve, namely that the impact of the worst outcomes were reduced.)</p><p>However, if we use a different risk measure, the lower bound is no longer valid!</p><p>We can still calculate a &quot;lower bound&quot; as the objective of the first-stage approximated subproblem, and this will converge to a finite value. However, we can&#39;t meaningfully interpret it as a bound with respect to the optimal policy. Therefore, it&#39;s best to just ignore the lower bound when training a risk-averse policy.</p><h2 id="Example:-risk-averse-hydro-thermal-scheduling"><a class="docs-heading-anchor" href="#Example:-risk-averse-hydro-thermal-scheduling">Example: risk-averse hydro-thermal scheduling</a><a id="Example:-risk-averse-hydro-thermal-scheduling-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-risk-averse-hydro-thermal-scheduling" title="Permalink"></a></h2><p>Now it&#39;s time for an example. We create the same problem as <a href="../21_theory_intro/#Theory-I:-an-intro-to-SDDP">Theory I: an intro to SDDP</a>:</p><pre><code class="language-julia">model = PolicyGraph(
+    graph = [
+        Dict(2 =&gt; 1.0),
+        Dict(3 =&gt; 1.0),
+        Dict{Int,Float64}(),
+    ],
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer,
+) do subproblem, t
+    JuMP.@variable(subproblem, volume_in == 200)
+    JuMP.@variable(subproblem, 0 &lt;= volume_out &lt;= 200)
+    states = Dict(:volume =&gt; State(volume_in, volume_out))
+    JuMP.@variables(subproblem, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+        inflow
+    end)
+    JuMP.@constraints(subproblem, begin
+        volume_out == volume_in + inflow - hydro_generation - hydro_spill
+        demand_constraint, thermal_generation + hydro_generation == 150.0
+    end)
+    fuel_cost = [50.0, 100.0, 150.0]
+    JuMP.@objective(subproblem, Min, fuel_cost[t] * thermal_generation)
+    uncertainty = Uncertainty([0.0, 50.0, 100.0], [1 / 3, 1 / 3, 1 / 3]) do ω
+        JuMP.fix(inflow, ω)
+    end
+    return states, uncertainty
+end</code></pre><pre><code class="language-none">A policy graph with 3 nodes
+Arcs:
+  1 =&gt; 2 w.p. 1.0
+  2 =&gt; 3 w.p. 1.0
+</code></pre><p>Then we train a risk-averse policy, passing a risk measure to <code>train</code>:</p><pre><code class="language-julia">train(
+    model;
+    iteration_limit = 3,
+    replications = 100,
+    risk_measure = Entropic(1.0),
+)</code></pre><pre><code class="language-none">Starting iteration 1
+| Backward pass
+| | Visiting node 3
+| | Visiting node 2
+| | | Z = [1.0, 2.0, 3.0, 4.0]
+| | | p = [0.333333, 0.333333, 0.333333]
+| | | q = [1.0, 0.0, 0.0]
+| | | α = 1.0986122886681098
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 22498.901387711332
+| | Visiting node 1
+| | | Z = [1.0, 2.0, 3.0, 4.0]
+| | | p = [0.333333, 0.333333, 0.333333]
+| | | q = [1.0, 0.0, 0.0]
+| | | α = 1.0986122886681098
+| | | Adding cut : 150 volume_out + cost_to_go ≥ 37497.802775422664
+| Finished iteration
+| | lower_bound = 12497.802775422664
+Starting iteration 2
+| Backward pass
+| | Visiting node 3
+| | Visiting node 2
+| | | Z = [1.0, 2.0, 3.0, 4.0]
+| | | p = [0.333333, 0.333333, 0.333333]
+| | | q = [0.6, 0.2, 0.2]
+| | | α = 0.14834174943478465
+| | | Adding cut : 89.99999999998764 volume_out + cost_to_go ≥ 13499.851658248712
+| | Visiting node 1
+| | | Z = [1.0, 2.0, 3.0, 4.0]
+| | | p = [0.333333, 0.333333, 0.333333]
+| | | q = [1.0, 0.0, 0.0]
+| | | α = 1.0986122886681098
+| | | Adding cut : 100 volume_out + cost_to_go ≥ 29998.594667538695
+| Finished iteration
+| | lower_bound = 14998.594667538693
+Starting iteration 3
+| Backward pass
+| | Visiting node 3
+| | Visiting node 2
+| | | Z = [1.0, 2.0, 3.0, 4.0]
+| | | p = [0.333333, 0.333333, 0.333333]
+| | | q = [0.843239, 0.0783804, 0.0783804]
+| | | α = 0.5556945523744657
+| | | Adding cut : 126.48587163090163 volume_out + cost_to_go ≥ 18972.32505008287
+| | Visiting node 1
+| | | Z = [1.0, 2.0, 3.0, 4.0]
+| | | p = [0.333333, 0.333333, 0.333333]
+| | | q = [1.0, 0.0, 0.0]
+| | | α = 1.0986122886681098
+| | | Adding cut : 100 volume_out + cost_to_go ≥ 29998.641399238186
+| Finished iteration
+| | lower_bound = 14998.641399238184
+Upper bound = 10724.47892990112 ± 929.8897316014472
+</code></pre><p>Finally, evaluate the decision rule:</p><pre><code class="language-julia">evaluate_policy(
+    model;
+    node = 1,
+    incoming_state = Dict(:volume =&gt; 150.0),
+    random_variable = 75,
+)</code></pre><pre><code class="language-none">Dict{Symbol,Float64} with 8 entries:
+  :volume_out =&gt; 200.0
+  :demand_constraint =&gt; 150.0
+  :hydro_spill =&gt; 0.0
+  :inflow =&gt; 75.0
+  :volume_in =&gt; 150.0
+  :thermal_generation =&gt; 125.0
+  :hydro_generation =&gt; 25.0
+  :cost_to_go =&gt; 9998.64</code></pre><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>For this trivial example, the risk-averse policy isn&#39;t very different from the policy obtained using the expectation risk-measure. If you try it on some bigger/more interesting problems, you should see the expected cost increase, and the upper tail of the policy decrease.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../21_theory_intro/">« Theory I: an intro to SDDP</a><a class="docs-footer-nextpage" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 26 March 2021 23:40">Friday 26 March 2021</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
