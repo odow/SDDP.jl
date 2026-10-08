@@ -643,7 +643,8 @@ function write_cuts_to_file(
     write_only_selected_cuts::Bool = false,
 ) where {T}
     cuts = Dict{String,Any}[]
-    for (node_name, node) in model.nodes
+    for node_name in sort_nodes(collect(keys(model.nodes)))
+        node = model.nodes[node_name]
         if node.objective_state !== nothing || node.belief_state !== nothing
             error(
                 "Unable to write cuts to file because model contains " *
