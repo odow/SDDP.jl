@@ -1360,6 +1360,10 @@ end
 # values of the `LOAD_BLOCK` or `CATCHMENT` column of the table. Every wide
 # file with load blocks must use the same set of load blocks.
 #
+# The code block under each file is an example of the structure of the file:
+# the header row, followed by the first few rows of the default data. The real
+# files have many more rows, and the examples are not valid on their own.
+
 # #### `hours_per_block.csv`
 #
 # Wide. One row for each `WEEK` from 1 to 52. The first column is `WEEK`, and
@@ -1371,6 +1375,17 @@ end
 # 1,35,76,57
 # 2,59.5,56,52.5
 # ```
+
+function _csv_hours_per_block(directory::String)
+    df = _read_csv(directory, "hours_per_block.csv")
+    return _stack(
+        df,
+        ["WEEK"];
+        variable_name = :LOAD_BLOCK,
+        value_name = :HOURS,
+    )
+end
+
 # #### `demand.csv`
 #
 # Wide. One row for each `NODE` of the power network and each `WEEK`. The first
@@ -1385,13 +1400,13 @@ end
 # HAY,2,276.5505882,201.8775,131.1262857
 # ```
 
-function _csv_hours_per_block(directory::String)
-    df = _read_csv(directory, "hours_per_block.csv")
+function _csv_demand(directory::String)
+    df = _read_csv(directory, "demand.csv")
     return _stack(
         df,
-        ["WEEK"];
+        ["NODE", "WEEK"];
         variable_name = :LOAD_BLOCK,
-        value_name = :HOURS,
+        value_name = :DEMAND,
     )
 end
 
@@ -1409,14 +1424,9 @@ end
 # HAY,1000,0.9
 # ```
 
-function _csv_demand(directory::String)
-    df = _read_csv(directory, "demand.csv")
-    return _stack(
-        df,
-        ["NODE", "WEEK"];
-        variable_name = :LOAD_BLOCK,
-        value_name = :DEMAND,
-    )
+function _csv_lost_load(directory::String)
+    columns = ["NODE", "COST", "PROPORTION"]
+    return _read_csv(directory, "lost_load.csv", columns)
 end
 
 # #### `fixed_stations.csv`
@@ -1430,9 +1440,8 @@ end
 # Tararua,NI
 # ```
 
-function _csv_lost_load(directory::String)
-    columns = ["NODE", "COST", "PROPORTION"]
-    return _read_csv(directory, "lost_load.csv", columns)
+function _csv_fixed_stations(directory::String)
+    return _read_csv(directory, "fixed_stations.csv", ["STATION", "NODE"])
 end
 
 # #### `fixed_station_output.csv`
@@ -1447,8 +1456,14 @@ end
 # Tararua,37,37,37
 # ```
 
-function _csv_fixed_stations(directory::String)
-    return _read_csv(directory, "fixed_stations.csv", ["STATION", "NODE"])
+function _csv_fixed_station_output(directory::String)
+    df = _read_csv(directory, "fixed_station_output.csv")
+    return _stack(
+        df,
+        ["STATION"];
+        variable_name = :LOAD_BLOCK,
+        value_name = :OUTPUT,
+    )
 end
 
 # #### `thermal_stations.csv`
@@ -1463,14 +1478,9 @@ end
 # Huntly_e3p,NI,gas,7.2,403,0
 # ```
 
-function _csv_fixed_station_output(directory::String)
-    df = _read_csv(directory, "fixed_station_output.csv")
-    return _stack(
-        df,
-        ["STATION"];
-        variable_name = :LOAD_BLOCK,
-        value_name = :OUTPUT,
-    )
+function _csv_thermal_stations(directory::String)
+    columns = ["GENERATOR", "NODE", "FUEL", "HEAT_RATE", "CAPACITY", "OMCOST"]
+    return _read_csv(directory, "thermal_stations.csv", columns)
 end
 
 # #### `fuels.csv`
@@ -1484,9 +1494,8 @@ end
 # gas,0.0528
 # ```
 
-function _csv_thermal_stations(directory::String)
-    columns = ["GENERATOR", "NODE", "FUEL", "HEAT_RATE", "CAPACITY", "OMCOST"]
-    return _read_csv(directory, "thermal_stations.csv", columns)
+function _csv_fuels(directory::String)
+    return _read_csv(directory, "fuels.csv", ["FUEL", "CO2_CONTENT"])
 end
 
 # #### `fuel_prices.csv`
@@ -1500,8 +1509,8 @@ end
 # 1,gas,6.68
 # ```
 
-function _csv_fuels(directory::String)
-    return _read_csv(directory, "fuels.csv", ["FUEL", "CO2_CONTENT"])
+function _csv_fuel_prices(directory::String)
+    return _read_csv(directory, "fuel_prices.csv", ["WEEK", "FUEL", "PRICE"])
 end
 
 # #### `co2_prices.csv`
@@ -1515,8 +1524,8 @@ end
 # 2,25.0
 # ```
 
-function _csv_fuel_prices(directory::String)
-    return _read_csv(directory, "fuel_prices.csv", ["WEEK", "FUEL", "PRICE"])
+function _csv_co2_prices(directory::String)
+    return _read_csv(directory, "co2_prices.csv", ["WEEK", "CO2_PRICE"])
 end
 
 # #### `hydro_stations.csv`
@@ -1532,8 +1541,16 @@ end
 # Arapuni,Lake_Arapuni,Lake_Karapiro,NI,196.7,0.439847649
 # ```
 
-function _csv_co2_prices(directory::String)
-    return _read_csv(directory, "co2_prices.csv", ["WEEK", "CO2_PRICE"])
+function _csv_hydro_stations(directory::String)
+    columns = [
+        "GENERATOR",
+        "HEAD_WATER_FROM",
+        "TAIL_WATER_TO",
+        "NODE",
+        "CAPACITY",
+        "SPECIFIC_POWER",
+    ]
+    return _read_csv(directory, "hydro_stations.csv", columns)
 end
 
 # #### `hydro_arcs.csv`
@@ -1550,16 +1567,9 @@ end
 # Clyde_tail,Lake_Roxburgh,50,1000
 # ```
 
-function _csv_hydro_stations(directory::String)
-    columns = [
-        "GENERATOR",
-        "HEAD_WATER_FROM",
-        "TAIL_WATER_TO",
-        "NODE",
-        "CAPACITY",
-        "SPECIFIC_POWER",
-    ]
-    return _read_csv(directory, "hydro_stations.csv", columns)
+function _csv_hydro_arcs(directory::String)
+    columns = ["ORIG", "DEST", "MIN_FLOW", "MAX_FLOW"]
+    return _read_csv(directory, "hydro_arcs.csv", columns)
 end
 
 # #### `reservoirs.csv`
@@ -1573,9 +1583,9 @@ end
 # Lake_Hawea,332.074,1378.764328
 # ```
 
-function _csv_hydro_arcs(directory::String)
-    columns = ["ORIG", "DEST", "MIN_FLOW", "MAX_FLOW"]
-    return _read_csv(directory, "hydro_arcs.csv", columns)
+function _csv_reservoirs(directory::String)
+    columns = ["RESERVOIR", "INITIAL_LEVEL", "MAX_LEVEL"]
+    return _read_csv(directory, "reservoirs.csv", columns)
 end
 
 # #### `inflows.csv`
@@ -1590,9 +1600,15 @@ end
 # 1970,1,27,67,71,...
 # ```
 
-function _csv_reservoirs(directory::String)
-    columns = ["RESERVOIR", "INITIAL_LEVEL", "MAX_LEVEL"]
-    return _read_csv(directory, "reservoirs.csv", columns)
+function _csv_inflows(directory::String)
+    df = _read_csv(directory, "inflows.csv")
+    df = _stack(
+        df,
+        ["YEAR", "WEEK"];
+        variable_name = :CATCHMENT,
+        value_name = :INFLOW,
+    )
+    return DataFrames.select(df, :CATCHMENT, :YEAR, :WEEK, :INFLOW)
 end
 
 # #### `station_outages.csv`
@@ -1607,15 +1623,9 @@ end
 # Huntly_main_g3,2,250
 # ```
 
-function _csv_inflows(directory::String)
-    df = _read_csv(directory, "inflows.csv")
-    df = _stack(
-        df,
-        ["YEAR", "WEEK"];
-        variable_name = :CATCHMENT,
-        value_name = :INFLOW,
-    )
-    return DataFrames.select(df, :CATCHMENT, :YEAR, :WEEK, :INFLOW)
+function _csv_station_outages(directory::String)
+    columns = ["GENERATOR", "WEEK", "OUTAGE"]
+    return _read_csv(directory, "station_outages.csv", columns)
 end
 
 # #### `transmission.csv`
@@ -1637,11 +1647,6 @@ end
 #
 # The reader converts the cumulative breakpoints into the width of each tranche,
 # which is what the `transmission` table stores.
-
-function _csv_station_outages(directory::String)
-    columns = ["GENERATOR", "WEEK", "OUTAGE"]
-    return _read_csv(directory, "station_outages.csv", columns)
-end
 
 function _csv_transmission(directory::String)
     df = _read_csv(directory, "transmission.csv")
