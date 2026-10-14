@@ -7,15 +7,25 @@
 
 # # JADE
 #
-# This file is a minimal implementation of JADE (Just Another DOASA
-# Environment), the New Zealand Electricity Authority's model for the
-# medium-term hydro-thermal scheduling problem.
-
+# This file is a simplified copy of
+# [JADE.jl](https://github.com/EPOC-NZ/JADE.jl), the New Zealand Electricity
+# Authority's model for the medium-term hydro-thermal scheduling problem. JADE
+# stands for Just Another DOASA Environment.
+#
 # It builds the model as an infinite-horizon
 # [SDDP.jl](https://github.com/odow/SDDP.jl) policy graph with 52 weekly nodes,
 # where the uncertainty is the weekly inflow into the hydro catchments. This
 # file only builds the model. Training, simulating, and analysing the results
 # are done with SDDP.jl.
+#
+# The source code is a single file, `models/JADE/JADE.jl`, in the
+# [SDDP.jl repository](https://github.com/odow/SDDP.jl/tree/master/models/JADE)
+# on GitHub. Download it, along with the `data` directory beside it, to use or
+# modify it. You can also find a local copy in the SDDP.jl package:
+# ```julia
+# using SDDP
+# JADE_DIR = joinpath(pkgdir(SDDP), "models", "JADE")
+# ```
 #
 # ## Purpose
 #
@@ -27,9 +37,9 @@
 #     to lay out the data, the policy graph, the subproblem, and the sampling
 #     schemes.
 #
-# The source code is a single file, written as a literate program. You should
-# be able to start at the top of this file and read to the bottom, and
-# understand everything that is contained within it.
+# The file is written as a literate program. You should be able to start at the
+# top of this file and read to the bottom, and understand everything that is
+# contained within it.
 #
 # A single file is also easy to modify. We do not provide options for every
 # way that the model could be extended. Instead, if you want to extend the
@@ -1162,11 +1172,9 @@ function _add_dual_conversions(
     ## water reduces the cost. One Mm³ of water in `r` can produce
     ## `specific_power[r] / MM3_PER_CUMEC_HOUR` MWh.
     specific_power = _specific_power(data)
-    sp.ext[:water_value_scale] = Dict(
-        r =>
-            -MM3_PER_CUMEC_HOUR / (config.objective_scale * specific_power[r]) for
-        r in data.reservoirs.RESERVOIR
-    )
+    scale = -MM3_PER_CUMEC_HOUR / config.objective_scale
+    sp.ext[:water_value_scale] =
+        Dict(r => scale / specific_power[r] for r in data.reservoirs.RESERVOIR)
     return
 end
 
