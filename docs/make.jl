@@ -91,6 +91,20 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
 end
 
 # ==============================================================================
+#  Add JADE
+# ==============================================================================
+
+# The code blocks are plain `julia` fences, rather than `@example` blocks,
+# because the file is one `module` spread over many blocks and cannot be
+# executed piecewise. The tests in `test/test_JADE.jl` exercise the code.
+Literate.markdown(
+    joinpath(dirname(@__DIR__), "models", "JADE", "JADE.jl"),
+    joinpath(@__DIR__, "src", "models");
+    documenter = true,
+    codefence = "```julia" => "```",
+)
+
+# ==============================================================================
 #  Modify the release notes
 # ==============================================================================
 
@@ -183,6 +197,7 @@ Documenter.makedocs(;
             "guides/simulate_using_a_different_sampling_scheme.md",
             "guides/create_a_belief_state.md",
         ],
+        "Models" => ["models/JADE.md"],
         "Explanation" => ["explanation/theory_intro.md", "explanation/risk.md"],
         "Examples" => list_of_sorted_files("examples", EXAMPLES_DIR),
         "API Reference" => "apireference.md",

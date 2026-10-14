@@ -22,6 +22,7 @@ jobs:
           using JuliaFormatter
           format("docs"; verbose = true)
           format("benchmarks"; verbose = true)
+          format("models"; verbose = true)
           format("src"; verbose = true)
           format("test"; verbose = true)
           out = String(read(Cmd(`git diff`)))
