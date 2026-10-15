@@ -72,12 +72,13 @@
 # simulations = JADE.simulate(model, 100)
 # ```
 #
-# `JADE.simulate` wraps `SDDP.simulate` to record the reservoir storages, the
+# `JADE.simulate` wraps `SDDP.simulate` to record the reservoir storage, the
 # thermal generation, the price of energy at each node, and the marginal value
 # of water in each reservoir.
 #
 # `JADE.Config` holds the options that a user can change, such as the week of
-# the year in which the model starts. See the docstring of `Config` below.
+# the year in which the model starts, or the historical years used as the
+# in-sample inflows. See the docstring of `Config` below.
 #
 # To evaluate a policy on the historical inflows, rather than on inflows sampled
 # independently in each week, use `JADE.HistoricalYears`, which has one
@@ -565,6 +566,11 @@ end
 #
 # The objective is measured in millions of dollars, `objective_scale = 1e-6`,
 # to improve the numerical stability of the subproblems.
+#
+# The uncertainty in each week is the inflows from that week of the historical
+# years. By default, every year in the `inflows` table is a realization. Pass
+# `inflow_years` to train the policy on a subset of the years, for example, to
+# hold some years out for an out-of-sample simulation.
 
 """
     Config(;
@@ -574,6 +580,7 @@ end
         penalty_below_min_flow::Float64 = 500.0,
         penalty_above_max_flow::Float64 = 50.0,
         objective_scale::Float64 = 1e-6,
+        inflow_years::Union{Nothing,Vector{Int}} = nothing,
     )
 
 The configuration options for `SDDP.PolicyGraph(data, config)`. The keyword
@@ -591,6 +598,11 @@ arguments are:
    a hydro arc.
  * `objective_scale`: the stage objective, in dollars, is multiplied by this
    before it is passed to the solver.
+ * `inflow_years`: the historical years whose inflows are the in-sample
+   realizations of the uncertainty in each week. If `nothing`, every year in
+   the data is used. Otherwise, a year is used if and only if it is in
+   `inflow_years`, and every year in `inflow_years` must be in the data. Any
+   `AbstractVector{Int}`, such as `2000:2008`, is converted to a `Vector{Int}`.
 """
 Base.@kwdef struct Config
     optimizer::Any
@@ -599,6 +611,19 @@ Base.@kwdef struct Config
     penalty_below_min_flow::Float64 = 500.0
     penalty_above_max_flow::Float64 = 50.0
     objective_scale::Float64 = 1e-6
+    inflow_years::Union{Nothing,Vector{Int}} = nothing
+end
+
+# `inflow_years` can be checked only once we have the data:
+
+function _validate_inflow_years(data::Data, config::Config)
+    if config.inflow_years === nothing
+        return
+    end
+    @assert !isempty(config.inflow_years) "`inflow_years` is empty"
+    missing_years = setdiff(config.inflow_years, data.inflows.YEAR)
+    @assert isempty(missing_years) "No inflows for years: $missing_years"
+    return
 end
 
 # ## The policy graph
@@ -618,7 +643,6 @@ function _create_graph(; start_week::Int, discount_factor::Float64)
     T::Int = 52
     @assert 1 <= start_week <= T
     @assert 0.0 < discount_factor < 1.0
-    @assert T >= 1
     graph = SDDP.Graph(0)
     for t in 1:T
         SDDP.add_node(graph, t)
@@ -646,11 +670,6 @@ const MM3_PER_CUMEC_HOUR = 3600 / 1e6
 # is the same at every arc in the network; and to convert the marginal value
 # of water in a reservoir from \$/Mm³ to \$/MWh.
 
-"""
-    _specific_power(data::Data)::Dict{String,Float64}
-
-Return the specific power (MW/cumec) of every node in the hydro network.
-"""
 function _specific_power(data::Data)
     specific_power = Dict{String,Float64}("SEA" => 0.0)
     function _specific_power(node)
@@ -699,6 +718,7 @@ Create an `SDDP.PolicyGraph` of the JADE model from `data` and the options in
 `config`.
 """
 function SDDP.PolicyGraph(data::Data, config::Config)
+    _validate_inflow_years(data, config)
     graph = _create_graph(;
         start_week = config.current_week,
         discount_factor = config.discount_factor,
@@ -749,7 +769,9 @@ end
 #
 # Many of the tables have one row for each week. `_this_week` picks out the
 # rows for the current week. Both networks need the set of load blocks `B`,
-# the hours in each load block, and the outages in this week.
+# the hours in each load block, and the outages in this week. The hydro
+# network needs the in-sample inflows of the week: one `Dict` of catchment to
+# inflow for each year in `config.inflow_years`.
 
 function _this_week(df::DataFrames.DataFrame, week::Int)
     return filter(r -> r.WEEK == week, df)
@@ -765,6 +787,16 @@ end
 function _outages(data::Data, week::Int)
     rows = _this_week(data.station_outages, week)
     return Dict(r.GENERATOR => r.OUTAGE for r in eachrow(rows))
+end
+
+function _inflow_realizations(data::Data, config::Config, week::Int)
+    df = _this_week(data.inflows, week)
+    if config.inflow_years !== nothing
+        filter!(r -> r.YEAR in config.inflow_years, df)
+    end
+    return [
+        Dict(g.CATCHMENT .=> g.INFLOW) for g in DataFrames.groupby(df, :YEAR)
+    ]
 end
 
 # ### The hydro network
@@ -800,13 +832,10 @@ function _add_hydro_network(
     )
     ## The inflow into node `n`. Nodes without an inflow in the data have zero
     ## inflow. Each realization of the uncertainty is the inflows from this
-    ## week of one historical year.
+    ## week of one historical year in `config.inflow_years`.
     ## Unit: cumecs [m³/s]
     JuMP.@variable(sp, w_inflow[n in N] == 0)
-    Ω = [
-        Dict(df.CATCHMENT .=> df.INFLOW) for
-        df in DataFrames.groupby(_this_week(data.inflows, week), :YEAR)
-    ]
+    Ω = _inflow_realizations(data, config, week)
     SDDP.parameterize(sp, Ω) do ω
         for (n, inflow) in ω
             JuMP.fix(w_inflow[n], inflow)
@@ -1077,10 +1106,10 @@ one fewer scenario than there are historical years.
 
 The scenarios are sampled in order, so simulate one replication for each:
 
-```julia
+````julia
 sampling_scheme = JADE.HistoricalYears(data, config)
 SDDP.simulate(model, length(sampling_scheme.scenarios); sampling_scheme)
-```
+````
 """
 function HistoricalYears(data::Data, config::Config)
     inflows = _inflows_by_week(data)
@@ -1099,36 +1128,44 @@ end
         data::Data,
         config::Config;
         start_year::Int = minimum(data.inflows.YEAR),
+        end_year::Int = maximum(data.inflows.YEAR),
     )
 
 Return an `SDDP.Historical` sampling scheme with a single scenario that starts
 in week `config.current_week` of `start_year` and runs for a whole number of
-years, as far as the historical inflows in `data` allow, for simulating a model
-created by `SDDP.PolicyGraph(data, config)`.
+years, using the historical inflows in `data` up to and including `end_year`,
+for simulating a model created by `SDDP.PolicyGraph(data, config)`.
 
-If the model starts in week 1, the scenario ends in week 52 of the last
-historical year. Otherwise, it ends in week `config.current_week - 1` of the
-last historical year.
+If the model starts in week 1, the scenario ends in week 52 of `end_year`.
+Otherwise, it ends in week `config.current_week - 1` of `end_year`. The
+defaults use the whole historical record.
 
-```julia
+````julia
 config = JADE.Config(; optimizer = HiGHS.Optimizer, current_week = 39)
-sampling_scheme = JADE.HistoricalSequence(data, config; start_year = 1980)
+sampling_scheme = JADE.HistoricalSequence(
+    data,
+    config;
+    start_year = 1980,
+    end_year = 1990,
+)
 SDDP.simulate(model, 1; sampling_scheme)
-```
+````
 """
 function HistoricalSequence(
     data::Data,
     config::Config;
     start_year::Int = minimum(data.inflows.YEAR),
+    end_year::Int = maximum(data.inflows.YEAR),
 )
     inflows = _inflows_by_week(data)
     years = sort(unique(data.inflows.YEAR))
     @assert start_year in years "No historical inflows in $start_year"
-    ## The number of whole years from `start_year` to the end of the record.
-    number_years = years[end] - start_year + (config.current_week == 1)
+    @assert end_year in years "No historical inflows in $end_year"
+    ## The number of whole years from `start_year` to the end of `end_year`.
+    number_years = end_year - start_year + (config.current_week == 1)
     @assert(
         number_years >= 1,
-        "Not enough historical inflows after $start_year",
+        "No whole years between $start_year and $end_year",
     )
     scenario = _historical_scenario(
         inflows,

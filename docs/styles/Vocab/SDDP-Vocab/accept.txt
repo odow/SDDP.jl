@@ -1,6 +1,7 @@
 Autoregressive
 [Bb]iobjective
 compat
+cumec(?s)
 dest
 devnull
 discretiz[e|ing]
@@ -20,6 +21,7 @@ performant
 preprint
 presolve
 Rethrow
+scalings
 src
 stagewise
 stochasticity

@@ -311,7 +311,15 @@ function test_config()
     @test config.penalty_below_min_flow == 500.0
     @test config.penalty_above_max_flow == 50.0
     @test config.objective_scale == 1e-6
+    @test config.inflow_years === nothing
     @test_throws UndefKeywordError JADE.Config()
+    # Abstract vectors are converted to a `Vector{Int}`
+    config = JADE.Config(; optimizer = HiGHS.Optimizer, inflow_years = 1:3)
+    @test config.inflow_years isa Vector{Int}
+    @test config.inflow_years == [1, 2, 3]
+    years = [2000, 1990]
+    config = JADE.Config(; optimizer = HiGHS.Optimizer, inflow_years = years)
+    @test config.inflow_years === years
     return
 end
 
@@ -351,6 +359,32 @@ function test_policy_graph()
     @test length(simulations) == 2
     @test all(length.(simulations) .== 52)
     @test [s[:node_index] for s in simulations[1]] == 1:52
+    return
+end
+
+function test_policy_graph_inflow_years()
+    data = JADE.Data(DB_FILE)
+    # A year is in-sample if and only if it is in `inflow_years`. The order
+    # and duplicates in `inflow_years` do not matter.
+    for inflow_years in ([1995], 1980:1984, [2001, 1973, 2019, 1973])
+        config = JADE.Config(; optimizer = HiGHS.Optimizer, inflow_years)
+        model = SDDP.PolicyGraph(data, config)
+        years = sort(unique(inflow_years))
+        for week in (1, 23, 52)
+            noises = model[week].noise_terms
+            @test length(noises) == length(years)
+            @test all(noise.probability ≈ 1 / length(years) for noise in noises)
+            terms = [_historical_inflows(data, year, week) for year in years]
+            @test [noise.term for noise in noises] == terms
+        end
+    end
+    # Every year in `inflow_years` must be in the data.
+    config = JADE.Config(; optimizer = HiGHS.Optimizer, inflow_years = Int[])
+    @test_throws AssertionError SDDP.PolicyGraph(data, config)
+    for inflow_years in ([1969], 2015:2020, [1990, 2050])
+        config = JADE.Config(; optimizer = HiGHS.Optimizer, inflow_years)
+        @test_throws AssertionError SDDP.PolicyGraph(data, config)
+    end
     return
 end
 
@@ -435,15 +469,61 @@ function test_historical_sequence()
     @test length(scenario_1) == 52 * 2
     @test scenario_1[1] == (1, _historical_inflows(data, 2018, 1))
     @test scenario_1[end] == (52, _historical_inflows(data, 2019, 52))
-    # Invalid start years
+    # `end_year` stops the scenario in week 38 of `end_year`
+    sampling_scheme = JADE.HistoricalSequence(
+        data,
+        config;
+        start_year = 1980,
+        end_year = 1990,
+    )
+    scenario_end = only(sampling_scheme.scenarios).term
+    @test length(scenario_end) == 52 * (1990 - 1980)
+    @test scenario_end[1] == (39, _historical_inflows(data, 1980, 39))
+    @test scenario_end[end] == (38, _historical_inflows(data, 1990, 38))
+    # If the model starts in week 1, a single year is possible
+    sampling_scheme = JADE.HistoricalSequence(
+        data,
+        config_1;
+        start_year = 2018,
+        end_year = 2018,
+    )
+    scenario_end_1 = only(sampling_scheme.scenarios).term
+    @test length(scenario_end_1) == 52
+    @test scenario_end_1[1] == (1, _historical_inflows(data, 2018, 1))
+    @test scenario_end_1[end] == (52, _historical_inflows(data, 2018, 52))
+    # Invalid start and end years
     @test_throws(
         AssertionError,
         JADE.HistoricalSequence(data, config; start_year = 1900),
+    )
+    @test_throws(
+        AssertionError,
+        JADE.HistoricalSequence(data, config; end_year = 2020),
     )
     # Week 39 of 2019 would need inflows from 2020
     @test_throws(
         AssertionError,
         JADE.HistoricalSequence(data, config; start_year = 2019),
+    )
+    # Week 39 of 1980 to week 38 of 1980 is not a whole year
+    @test_throws(
+        AssertionError,
+        JADE.HistoricalSequence(
+            data,
+            config;
+            start_year = 1980,
+            end_year = 1980,
+        ),
+    )
+    # `end_year` must not be before `start_year`
+    @test_throws(
+        AssertionError,
+        JADE.HistoricalSequence(
+            data,
+            config_1;
+            start_year = 1990,
+            end_year = 1980,
+        ),
     )
     # The scenario can be simulated by the model
     model = SDDP.PolicyGraph(data, config)
