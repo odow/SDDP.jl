@@ -36,3 +36,23 @@ jobs:
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+  jade:
+    name: JADE
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1'
+          arch: x64
+      - uses: julia-actions/cache@v3
+      # models/JADE has its own project. Develop the SDDP.jl checkout into it so
+      # the tests run against this commit, not the registered release.
+      - name: Install
+        shell: julia --color=yes --project=models/JADE {0}
+        run: |
+          import Pkg
+          Pkg.develop(; path = ".")
+          Pkg.instantiate()
+      - name: Test
+        run: julia --color=yes --project=models/JADE models/JADE/runtests.jl

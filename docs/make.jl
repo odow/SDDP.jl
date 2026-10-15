@@ -91,6 +91,50 @@ for dir in joinpath.(@__DIR__, "src", ("examples", "tutorial", "explanation"))
 end
 
 # ==============================================================================
+#  Add JADE
+# ==============================================================================
+
+const JADE_DIR = joinpath(dirname(@__DIR__), "models", "JADE")
+const JADE_DOCS_DIR = joinpath(@__DIR__, "src", "models", "JADE")
+
+# The code blocks of `JADE.jl` are plain `julia` fences, rather than `@example`
+# blocks, because the file is one `module` spread over many blocks and cannot
+# be executed piecewise. The tests in `models/JADE/runtests.jl` exercise the
+# code. The fences have four backticks so that the three-backtick fences in
+# the docstrings do not close them.
+Literate.markdown(
+    joinpath(JADE_DIR, "JADE.jl"),
+    JADE_DOCS_DIR;
+    documenter = true,
+    codefence = "````julia" => "````",
+)
+
+# `run.jl` is a tutorial, so it is tested and converted like the tutorials
+# above. The `.jl` file is copied next to the page so that the download link
+# works.
+let jl_filename = joinpath(JADE_DIR, "run.jl")
+    Random.seed!(12345)
+    Test.@testset "$jl_filename" begin
+        _include_sandbox(jl_filename)
+    end
+    Random.seed!(12345)
+    cp(jl_filename, joinpath(JADE_DOCS_DIR, "run.jl"); force = true)
+    Literate.markdown(
+        jl_filename,
+        JADE_DOCS_DIR;
+        documenter = true,
+        postprocess = content -> _link_example(content, "run.jl"),
+        credit = false,
+    )
+    Literate.notebook(
+        jl_filename,
+        JADE_DOCS_DIR;
+        execute = false,
+        credit = false,
+    )
+end
+
+# ==============================================================================
 #  Modify the release notes
 # ==============================================================================
 
@@ -183,6 +227,7 @@ Documenter.makedocs(;
             "guides/simulate_using_a_different_sampling_scheme.md",
             "guides/create_a_belief_state.md",
         ],
+        "Models" => ["models/JADE/JADE.md", "models/JADE/run.md"],
         "Explanation" => ["explanation/theory_intro.md", "explanation/risk.md"],
         "Examples" => list_of_sorted_files("examples", EXAMPLES_DIR),
         "API Reference" => "apireference.md",
