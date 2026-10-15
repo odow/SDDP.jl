@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Infinite horizon hydro-thermal · SDDP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">SDDP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/01_first_steps/">Basic I: first steps</a></li><li><a class="tocitem" href="../../tutorial/02_adding_uncertainty/">Basic II: adding uncertainty</a></li><li><a class="tocitem" href="../../tutorial/03_objective_uncertainty/">Basic III: objective uncertainty</a></li><li><a class="tocitem" href="../../tutorial/04_markov_uncertainty/">Basic IV: Markov uncertainty</a></li><li><a class="tocitem" href="../../tutorial/05_plotting/">Basic V: plotting</a></li><li><a class="tocitem" href="../../tutorial/06_warnings/">Basic VI: words of warning</a></li><li><a class="tocitem" href="../../tutorial/11_objective_states/">Advanced I: objective states</a></li><li><a class="tocitem" href="../../tutorial/12_belief_states/">Advanced II: belief states</a></li><li><a class="tocitem" href="../../tutorial/13_integrality/">Advanced III: integrality</a></li><li><a class="tocitem" href="../../tutorial/21_theory_intro/">Theory I: an intro to SDDP</a></li><li><a class="tocitem" href="../../tutorial/22_risk/">Theory II: risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../hydro_valley/">Hydro valleys</a></li><li class="is-active"><a class="tocitem" href>Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Infinite horizon hydro-thermal</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Infinite horizon hydro-thermal</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/infinite_horizon_hydro_thermal.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Infinite-horizon-hydro-thermal"><a class="docs-heading-anchor" href="#Infinite-horizon-hydro-thermal">Infinite horizon hydro-thermal</a><a id="Infinite-horizon-hydro-thermal-1"></a><a class="docs-heading-anchor-permalink" href="#Infinite-horizon-hydro-thermal" title="Permalink"></a></h1><pre><code class="language-julia">using SDDP, GLPK, Test, Statistics
+
+function infinite_hydro_thermal(; cut_type)
+    Ω = [
+        (inflow = 0.0, demand = 7.5),
+        (inflow = 5.0, demand = 5),
+        (inflow = 10.0, demand = 2.5),
+    ]
+    graph =
+        SDDP.Graph(:root_node, [:week], [(:root_node =&gt; :week, 1.0), (:week =&gt; :week, 0.9)])
+    model = SDDP.PolicyGraph(
+        graph,
+        bellman_function = SDDP.BellmanFunction(lower_bound = 0, cut_type = cut_type),
+        optimizer = GLPK.Optimizer,
+    ) do subproblem, node
+        @variable(subproblem, 5.0 &lt;= reservoir &lt;= 15.0, SDDP.State, initial_value = 10.0)
+        @variables(subproblem, begin
+            thermal_generation &gt;= 0
+            hydro_generation &gt;= 0
+            spill &gt;= 0
+            inflow
+            demand
+        end)
+        @constraints(
+            subproblem,
+            begin
+                reservoir.out == reservoir.in - hydro_generation - spill + inflow
+                hydro_generation + thermal_generation == demand
+            end
+        )
+        @stageobjective(subproblem, 10 * spill + thermal_generation)
+        SDDP.parameterize(subproblem, Ω) do ω
+            JuMP.fix(inflow, ω.inflow)
+            JuMP.fix(demand, ω.demand)
+        end
+    end
+    SDDP.train(
+        model;
+        time_limit = 2.0,
+        log_frequency = 100,
+        sampling_scheme = SDDP.InSampleMonteCarlo(terminate_on_cycle = true),
+        cycle_discretization_delta = 0.1,
+    )
+    @test SDDP.calculate_bound(model) ≈ 119.167 atol = 0.1
+
+    results = SDDP.simulate(model, 500)
+    objectives = [sum(s[:stage_objective] for s in simulation) for simulation in results]
+    sample_mean = round(Statistics.mean(objectives); digits = 2)
+    sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
+    println(&quot;Confidence_interval = $(sample_mean) ± $(sample_ci)&quot;)
+    @test sample_mean - sample_ci &lt;= 119.167 &lt;= sample_mean + sample_ci
+    return
+end
+
+infinite_hydro_thermal(cut_type = SDDP.SINGLE_CUT)
+infinite_hydro_thermal(cut_type = SDDP.MULTI_CUT)</code></pre><pre><code class="language-none">------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+00]
+  Non-zero Objective range  [1e+00, 1e+01]
+  Non-zero Bounds range     [5e+00, 2e+01]
+  Non-zero RHS range        [0e+00, 0e+00]
+No problems detected
+
+Solver: serial mode
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+      100    2.500000e+00   1.188652e+02   5.070801e-01          1       1068
+      200    0.000000e+00   1.191654e+02   5.744030e-01          1       2128
+      300    2.500000e+00   1.191667e+02   6.324072e-01          1       3196
+      400    5.000000e+00   1.191667e+02   6.991901e-01          1       4260
+      500    5.000000e+01   1.191667e+02   7.939661e-01          1       5340
+      600    0.000000e+00   1.191667e+02   8.772380e-01          1       6412
+      700    2.500000e+01   1.191667e+02   9.714122e-01          1       7476
+      800    3.250000e+01   1.191667e+02   1.104284e+00          1       8540
+      900    2.500000e+01   1.191667e+02   1.222180e+00          1       9600
+     1000    1.000000e+01   1.191667e+02   1.366299e+00          1      10672
+     1100    2.500000e+01   1.191667e+02   1.531629e+00          1      11732
+     1200    2.500000e+01   1.191667e+02   1.732737e+00          1      12796
+     1300    2.500000e+00   1.191667e+02   1.952435e+00          1      13860
+
+Terminating training with status: time_limit
+------------------------------------------------------------------------------
+Confidence_interval = 122.44 ± 13.57
+------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+00]
+  Non-zero Objective range  [1e+00, 1e+01]
+  Non-zero Bounds range     [5e+00, 2e+01]
+  Non-zero RHS range        [0e+00, 0e+00]
+No problems detected
+
+Solver: serial mode
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+      100    3.552714e-15   1.189513e+02   3.619123e-02          1       1048
+      200    2.500000e+01   1.191657e+02   1.005852e-01          1       2112
+      300    2.500000e+00   1.191667e+02   1.574271e-01          1       3160
+      400    1.000000e+01   1.191667e+02   2.230532e-01          1       4220
+      500    7.500000e+00   1.191667e+02   3.156631e-01          1       5288
+      600    0.000000e+00   1.191667e+02   3.960640e-01          1       6328
+      700    1.500000e+02   1.191667e+02   4.927671e-01          1       7392
+      800    1.382676e-14   1.191667e+02   6.013522e-01          1       8456
+      900   -1.065814e-14   1.191667e+02   7.427342e-01          1       9512
+     1000    2.500000e+01   1.191667e+02   8.749251e-01          1      10564
+     1100    2.500000e+00   1.191667e+02   1.046144e+00          1      11632
+     1200    8.881784e-15   1.191667e+02   1.221065e+00          1      12688
+     1300    2.500000e+01   1.191667e+02   1.450873e+00          1      13752
+     1400    7.500000e+00   1.191667e+02   1.653101e+00          1      14816
+     1500    2.321562e-14   1.191667e+02   1.900223e+00          1      15888
+
+Terminating training with status: time_limit
+------------------------------------------------------------------------------
+Confidence_interval = 110.68 ± 12.58
+</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hydro_valley/">« Hydro valleys</a><a class="docs-footer-nextpage" href="../infinite_horizon_trivial/">Infinite horizon trivial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 20 February 2021 03:19">Saturday 20 February 2021</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

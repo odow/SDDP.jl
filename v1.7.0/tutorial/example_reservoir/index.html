@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example: deterministic to stochastic · SDDP.jl</title><meta name="title" content="Example: deterministic to stochastic · SDDP.jl"/><meta property="og:title" content="Example: deterministic to stochastic · SDDP.jl"/><meta property="twitter:title" content="Example: deterministic to stochastic · SDDP.jl"/><meta name="description" content="Documentation for SDDP.jl."/><meta property="og:description" content="Documentation for SDDP.jl."/><meta property="twitter:description" content="Documentation for SDDP.jl."/><script async src="https://www.googletagmanager.com/gtag/js?id=G-HZQQDVMPZW"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HZQQDVMPZW', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="SDDP.jl logo"/></a><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../plotting/">Plotting tools</a></li><li><a class="tocitem" href="../warnings/">Words of warning</a></li><li><a class="tocitem" href="../arma/">Auto-regressive stochastic processes</a></li><li><a class="tocitem" href="../decision_hazard/">Here-and-now and hazard-decision</a></li><li><a class="tocitem" href="../objective_states/">Objective states</a></li><li><a class="tocitem" href="../pglib_opf/">Alternative forward models</a></li><li><a class="tocitem" href="../mdps/">Example: Markov Decision Processes</a></li><li><a class="tocitem" href="../example_newsvendor/">Example: two-stage newsvendor</a></li><li class="is-active"><a class="tocitem" href>Example: deterministic to stochastic</a><ul class="internal"><li><a class="tocitem" href="#Packages"><span>Packages</span></a></li><li><a class="tocitem" href="#Data"><span>Data</span></a></li><li><a class="tocitem" href="#Deterministic-JuMP-model"><span>Deterministic JuMP model</span></a></li><li><a class="tocitem" href="#Deterministic-SDDP-model"><span>Deterministic SDDP model</span></a></li><li><a class="tocitem" href="#Stochastic-SDDP-model"><span>Stochastic SDDP model</span></a></li><li><a class="tocitem" href="#Cyclic-graphs"><span>Cyclic graphs</span></a></li><li><a class="tocitem" href="#Next-steps"><span>Next steps</span></a></li></ul></li><li><a class="tocitem" href="../example_milk_producer/">Example: the milk producer</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/access_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/create_a_belief_state/">Create a belief state</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Explanation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../explanation/theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../explanation/risk/">Risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/air_conditioning_forward/">Training with a different forward model</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li><li><a class="tocitem" href="../../release_notes/">Release notes</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Example: deterministic to stochastic</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example: deterministic to stochastic</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/example_reservoir.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Example:-deterministic-to-stochastic"><a class="docs-heading-anchor" href="#Example:-deterministic-to-stochastic">Example: deterministic to stochastic</a><a id="Example:-deterministic-to-stochastic-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-deterministic-to-stochastic" title="Permalink"></a></h1><p><em>This tutorial was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em> <a href="../example_reservoir.jl"><em>Download the source as a <code>.jl</code> file</em></a>. <a href="../example_reservoir.ipynb"><em>Download the source as a <code>.ipynb</code> file</em></a>.</p><p>The purpose of this tutorial is to explain how we can go from a deterministic time-staged optimal control model in JuMP to a multistage stochastic optimization model in <code>SDDP.jl</code>. As a motivating problem, we consider the hydro-thermal problem with a single reservoir.</p><h2 id="Packages"><a class="docs-heading-anchor" href="#Packages">Packages</a><a id="Packages-1"></a><a class="docs-heading-anchor-permalink" href="#Packages" title="Permalink"></a></h2><p>This tutorial requires the following packages:</p><pre><code class="language-julia hljs">using JuMP
+using SDDP
+import CSV
+import DataFrames
+import HiGHS
+import Plots</code></pre><h2 id="Data"><a class="docs-heading-anchor" href="#Data">Data</a><a id="Data-1"></a><a class="docs-heading-anchor-permalink" href="#Data" title="Permalink"></a></h2><p>First, we need some data for the problem. For this tutorial, we&#39;ll write CSV files to a temporary directory from Julia. If you have an existing file, you could change the filename to point to that instead.</p><pre><code class="language-julia hljs">dir = mktempdir()
+filename = joinpath(dir, &quot;example_reservoir.csv&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&quot;/tmp/jl_b72gh1/example_reservoir.csv&quot;</code></pre><p>Here is the data</p><pre><code class="language-julia hljs">csv_data = &quot;&quot;&quot;
+week,inflow,demand,cost
+1,3,7,10.2\n2,2,7.1,10.4\n3,3,7.2,10.6\n4,2,7.3,10.9\n5,3,7.4,11.2\n
+6,2,7.6,11.5\n7,3,7.8,11.9\n8,2,8.1,12.3\n9,3,8.3,12.7\n10,2,8.6,13.1\n
+11,3,8.9,13.6\n12,2,9.2,14\n13,3,9.5,14.5\n14,2,9.8,14.9\n15,3,10.1,15.3\n
+16,2,10.4,15.8\n17,3,10.7,16.2\n18,2,10.9,16.6\n19,3,11.2,17\n20,3,11.4,17.4\n
+21,3,11.6,17.7\n22,2,11.7,18\n23,3,11.8,18.3\n24,2,11.9,18.5\n25,3,12,18.7\n
+26,2,12,18.9\n27,3,12,19\n28,2,11.9,19.1\n29,3,11.8,19.2\n30,2,11.7,19.2\n
+31,3,11.6,19.2\n32,2,11.4,19.2\n33,3,11.2,19.1\n34,2,10.9,19\n35,3,10.7,18.9\n
+36,2,10.4,18.8\n37,3,10.1,18.6\n38,2,9.8,18.5\n39,3,9.5,18.4\n40,3,9.2,18.2\n
+41,2,8.9,18.1\n42,3,8.6,17.9\n43,2,8.3,17.8\n44,3,8.1,17.7\n45,2,7.8,17.6\n
+46,3,7.6,17.5\n47,2,7.4,17.5\n48,3,7.3,17.5\n49,2,7.2,17.5\n50,3,7.1,17.6\n
+51,3,7,17.7\n52,3,7,17.8\n
+&quot;&quot;&quot;
+write(filename, csv_data);</code></pre><p>And here we read it into a DataFrame:</p><pre><code class="language-julia hljs">data = CSV.read(filename, DataFrames.DataFrame)</code></pre><div><div style = "float: left;"><span>52×4 DataFrame</span></div><div style = "clear: both;"></div></div><div class = "data-frame" style = "overflow-x: scroll;"><table class = "data-frame" style = "margin-bottom: 6px;"><thead><tr class = "header"><th class = "rowNumber" style = "font-weight: bold; text-align: right;">Row</th><th style = "text-align: left;">week</th><th style = "text-align: left;">inflow</th><th style = "text-align: left;">demand</th><th style = "text-align: left;">cost</th></tr><tr class = "subheader headerLastRow"><th class = "rowNumber" style = "font-weight: bold; text-align: right;"></th><th title = "Int64" style = "text-align: left;">Int64</th><th title = "Int64" style = "text-align: left;">Int64</th><th title = "Float64" style = "text-align: left;">Float64</th><th title = "Float64" style = "text-align: left;">Float64</th></tr></thead><tbody><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">1</td><td style = "text-align: right;">1</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.0</td><td style = "text-align: right;">10.2</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">2</td><td style = "text-align: right;">2</td><td style = "text-align: right;">2</td><td style = "text-align: right;">7.1</td><td style = "text-align: right;">10.4</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">3</td><td style = "text-align: right;">3</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.2</td><td style = "text-align: right;">10.6</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">4</td><td style = "text-align: right;">4</td><td style = "text-align: right;">2</td><td style = "text-align: right;">7.3</td><td style = "text-align: right;">10.9</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">5</td><td style = "text-align: right;">5</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.4</td><td style = "text-align: right;">11.2</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">6</td><td style = "text-align: right;">6</td><td style = "text-align: right;">2</td><td style = "text-align: right;">7.6</td><td style = "text-align: right;">11.5</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">7</td><td style = "text-align: right;">7</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.8</td><td style = "text-align: right;">11.9</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">8</td><td style = "text-align: right;">8</td><td style = "text-align: right;">2</td><td style = "text-align: right;">8.1</td><td style = "text-align: right;">12.3</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">9</td><td style = "text-align: right;">9</td><td style = "text-align: right;">3</td><td style = "text-align: right;">8.3</td><td style = "text-align: right;">12.7</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">10</td><td style = "text-align: right;">10</td><td style = "text-align: right;">2</td><td style = "text-align: right;">8.6</td><td style = "text-align: right;">13.1</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">11</td><td style = "text-align: right;">11</td><td style = "text-align: right;">3</td><td style = "text-align: right;">8.9</td><td style = "text-align: right;">13.6</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">12</td><td style = "text-align: right;">12</td><td style = "text-align: right;">2</td><td style = "text-align: right;">9.2</td><td style = "text-align: right;">14.0</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">13</td><td style = "text-align: right;">13</td><td style = "text-align: right;">3</td><td style = "text-align: right;">9.5</td><td style = "text-align: right;">14.5</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">14</td><td style = "text-align: right;">14</td><td style = "text-align: right;">2</td><td style = "text-align: right;">9.8</td><td style = "text-align: right;">14.9</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">15</td><td style = "text-align: right;">15</td><td style = "text-align: right;">3</td><td style = "text-align: right;">10.1</td><td style = "text-align: right;">15.3</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">16</td><td style = "text-align: right;">16</td><td style = "text-align: right;">2</td><td style = "text-align: right;">10.4</td><td style = "text-align: right;">15.8</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">17</td><td style = "text-align: right;">17</td><td style = "text-align: right;">3</td><td style = "text-align: right;">10.7</td><td style = "text-align: right;">16.2</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">18</td><td style = "text-align: right;">18</td><td style = "text-align: right;">2</td><td style = "text-align: right;">10.9</td><td style = "text-align: right;">16.6</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">19</td><td style = "text-align: right;">19</td><td style = "text-align: right;">3</td><td style = "text-align: right;">11.2</td><td style = "text-align: right;">17.0</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">20</td><td style = "text-align: right;">20</td><td style = "text-align: right;">3</td><td style = "text-align: right;">11.4</td><td style = "text-align: right;">17.4</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">21</td><td style = "text-align: right;">21</td><td style = "text-align: right;">3</td><td style = "text-align: right;">11.6</td><td style = "text-align: right;">17.7</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">22</td><td style = "text-align: right;">22</td><td style = "text-align: right;">2</td><td style = "text-align: right;">11.7</td><td style = "text-align: right;">18.0</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">23</td><td style = "text-align: right;">23</td><td style = "text-align: right;">3</td><td style = "text-align: right;">11.8</td><td style = "text-align: right;">18.3</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">24</td><td style = "text-align: right;">24</td><td style = "text-align: right;">2</td><td style = "text-align: right;">11.9</td><td style = "text-align: right;">18.5</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">25</td><td style = "text-align: right;">25</td><td style = "text-align: right;">3</td><td style = "text-align: right;">12.0</td><td style = "text-align: right;">18.7</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">26</td><td style = "text-align: right;">26</td><td style = "text-align: right;">2</td><td style = "text-align: right;">12.0</td><td style = "text-align: right;">18.9</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">27</td><td style = "text-align: right;">27</td><td style = "text-align: right;">3</td><td style = "text-align: right;">12.0</td><td style = "text-align: right;">19.0</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">28</td><td style = "text-align: right;">28</td><td style = "text-align: right;">2</td><td style = "text-align: right;">11.9</td><td style = "text-align: right;">19.1</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">29</td><td style = "text-align: right;">29</td><td style = "text-align: right;">3</td><td style = "text-align: right;">11.8</td><td style = "text-align: right;">19.2</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">30</td><td style = "text-align: right;">30</td><td style = "text-align: right;">2</td><td style = "text-align: right;">11.7</td><td style = "text-align: right;">19.2</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">31</td><td style = "text-align: right;">31</td><td style = "text-align: right;">3</td><td style = "text-align: right;">11.6</td><td style = "text-align: right;">19.2</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">32</td><td style = "text-align: right;">32</td><td style = "text-align: right;">2</td><td style = "text-align: right;">11.4</td><td style = "text-align: right;">19.2</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">33</td><td style = "text-align: right;">33</td><td style = "text-align: right;">3</td><td style = "text-align: right;">11.2</td><td style = "text-align: right;">19.1</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">34</td><td style = "text-align: right;">34</td><td style = "text-align: right;">2</td><td style = "text-align: right;">10.9</td><td style = "text-align: right;">19.0</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">35</td><td style = "text-align: right;">35</td><td style = "text-align: right;">3</td><td style = "text-align: right;">10.7</td><td style = "text-align: right;">18.9</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">36</td><td style = "text-align: right;">36</td><td style = "text-align: right;">2</td><td style = "text-align: right;">10.4</td><td style = "text-align: right;">18.8</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">37</td><td style = "text-align: right;">37</td><td style = "text-align: right;">3</td><td style = "text-align: right;">10.1</td><td style = "text-align: right;">18.6</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">38</td><td style = "text-align: right;">38</td><td style = "text-align: right;">2</td><td style = "text-align: right;">9.8</td><td style = "text-align: right;">18.5</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">39</td><td style = "text-align: right;">39</td><td style = "text-align: right;">3</td><td style = "text-align: right;">9.5</td><td style = "text-align: right;">18.4</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">40</td><td style = "text-align: right;">40</td><td style = "text-align: right;">3</td><td style = "text-align: right;">9.2</td><td style = "text-align: right;">18.2</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">41</td><td style = "text-align: right;">41</td><td style = "text-align: right;">2</td><td style = "text-align: right;">8.9</td><td style = "text-align: right;">18.1</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">42</td><td style = "text-align: right;">42</td><td style = "text-align: right;">3</td><td style = "text-align: right;">8.6</td><td style = "text-align: right;">17.9</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">43</td><td style = "text-align: right;">43</td><td style = "text-align: right;">2</td><td style = "text-align: right;">8.3</td><td style = "text-align: right;">17.8</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">44</td><td style = "text-align: right;">44</td><td style = "text-align: right;">3</td><td style = "text-align: right;">8.1</td><td style = "text-align: right;">17.7</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">45</td><td style = "text-align: right;">45</td><td style = "text-align: right;">2</td><td style = "text-align: right;">7.8</td><td style = "text-align: right;">17.6</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">46</td><td style = "text-align: right;">46</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.6</td><td style = "text-align: right;">17.5</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">47</td><td style = "text-align: right;">47</td><td style = "text-align: right;">2</td><td style = "text-align: right;">7.4</td><td style = "text-align: right;">17.5</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">48</td><td style = "text-align: right;">48</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.3</td><td style = "text-align: right;">17.5</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">49</td><td style = "text-align: right;">49</td><td style = "text-align: right;">2</td><td style = "text-align: right;">7.2</td><td style = "text-align: right;">17.5</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">50</td><td style = "text-align: right;">50</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.1</td><td style = "text-align: right;">17.6</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">51</td><td style = "text-align: right;">51</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.0</td><td style = "text-align: right;">17.7</td></tr><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">52</td><td style = "text-align: right;">52</td><td style = "text-align: right;">3</td><td style = "text-align: right;">7.0</td><td style = "text-align: right;">17.8</td></tr></tbody></table></div><p>It&#39;s easier to visualize the data if we plot it:</p><pre><code class="language-julia hljs">Plots.plot(
+    Plots.plot(data[!, :inflow], ylabel = &quot;Inflow&quot;),
+    Plots.plot(data[!, :demand], ylabel = &quot;Demand&quot;),
+    Plots.plot(data[!, :cost], ylabel = &quot;Cost&quot;, xlabel = &quot;Week&quot;);
+    layout = (3, 1),
+    legend = false,
+)</code></pre><img src="95d59ffe.svg" alt="Example block output"/><p>The number of weeks will be useful later:</p><pre><code class="language-julia hljs">T = size(data, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52</code></pre><h2 id="Deterministic-JuMP-model"><a class="docs-heading-anchor" href="#Deterministic-JuMP-model">Deterministic JuMP model</a><a id="Deterministic-JuMP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Deterministic-JuMP-model" title="Permalink"></a></h2><p>To start, we construct a deterministic model in pure JuMP.</p><p>Create a JuMP model, using <code>HiGHS</code> as the optimizer:</p><pre><code class="language-julia hljs">model = Model(HiGHS.Optimizer)
+set_silent(model)</code></pre><p><code>x_storage[t]</code>: the amount of water in the reservoir at the start of stage <code>t</code>:</p><pre><code class="language-julia hljs">reservoir_max = 320.0
+@variable(model, 0 &lt;= x_storage[1:T+1] &lt;= reservoir_max)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">53-element Vector{VariableRef}:
+ x_storage[1]
+ x_storage[2]
+ x_storage[3]
+ x_storage[4]
+ x_storage[5]
+ x_storage[6]
+ x_storage[7]
+ x_storage[8]
+ x_storage[9]
+ x_storage[10]
+ ⋮
+ x_storage[45]
+ x_storage[46]
+ x_storage[47]
+ x_storage[48]
+ x_storage[49]
+ x_storage[50]
+ x_storage[51]
+ x_storage[52]
+ x_storage[53]</code></pre><p>We need an initial condition for <code>x_storage[1]</code>. Fix it to 300 units:</p><pre><code class="language-julia hljs">reservoir_initial = 300
+fix(x_storage[1], reservoir_initial; force = true)</code></pre><p><code>u_flow[t]</code>: the amount of water to flow through the turbine in stage <code>t</code>:</p><pre><code class="language-julia hljs">flow_max = 12
+@variable(model, 0 &lt;= u_flow[1:T] &lt;= flow_max)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52-element Vector{VariableRef}:
+ u_flow[1]
+ u_flow[2]
+ u_flow[3]
+ u_flow[4]
+ u_flow[5]
+ u_flow[6]
+ u_flow[7]
+ u_flow[8]
+ u_flow[9]
+ u_flow[10]
+ ⋮
+ u_flow[44]
+ u_flow[45]
+ u_flow[46]
+ u_flow[47]
+ u_flow[48]
+ u_flow[49]
+ u_flow[50]
+ u_flow[51]
+ u_flow[52]</code></pre><p><code>u_spill[t]</code>: the amount of water to spill from the reservoir in stage <code>t</code>, bypassing the turbine:</p><pre><code class="language-julia hljs">@variable(model, 0 &lt;= u_spill[1:T])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52-element Vector{VariableRef}:
+ u_spill[1]
+ u_spill[2]
+ u_spill[3]
+ u_spill[4]
+ u_spill[5]
+ u_spill[6]
+ u_spill[7]
+ u_spill[8]
+ u_spill[9]
+ u_spill[10]
+ ⋮
+ u_spill[44]
+ u_spill[45]
+ u_spill[46]
+ u_spill[47]
+ u_spill[48]
+ u_spill[49]
+ u_spill[50]
+ u_spill[51]
+ u_spill[52]</code></pre><p><code>u_thermal[t]</code>: the amount of thermal generation in stage <code>t</code>:</p><pre><code class="language-julia hljs">@variable(model, 0 &lt;= u_thermal[1:T])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52-element Vector{VariableRef}:
+ u_thermal[1]
+ u_thermal[2]
+ u_thermal[3]
+ u_thermal[4]
+ u_thermal[5]
+ u_thermal[6]
+ u_thermal[7]
+ u_thermal[8]
+ u_thermal[9]
+ u_thermal[10]
+ ⋮
+ u_thermal[44]
+ u_thermal[45]
+ u_thermal[46]
+ u_thermal[47]
+ u_thermal[48]
+ u_thermal[49]
+ u_thermal[50]
+ u_thermal[51]
+ u_thermal[52]</code></pre><p><code>ω_inflow[t]</code>: the amount of inflow to the reservoir in stage <code>t</code>:</p><pre><code class="language-julia hljs">@variable(model, ω_inflow[1:T])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52-element Vector{VariableRef}:
+ ω_inflow[1]
+ ω_inflow[2]
+ ω_inflow[3]
+ ω_inflow[4]
+ ω_inflow[5]
+ ω_inflow[6]
+ ω_inflow[7]
+ ω_inflow[8]
+ ω_inflow[9]
+ ω_inflow[10]
+ ⋮
+ ω_inflow[44]
+ ω_inflow[45]
+ ω_inflow[46]
+ ω_inflow[47]
+ ω_inflow[48]
+ ω_inflow[49]
+ ω_inflow[50]
+ ω_inflow[51]
+ ω_inflow[52]</code></pre><p>For this model, our inflow is fixed, so we fix it to the data we have:</p><pre><code class="language-julia hljs">for t in 1:T
+    fix(ω_inflow[t], data[t, :inflow])
+end</code></pre><p>The water balance constraint says that the water in the reservoir at the start of stage <code>t+1</code> is the water in the reservoir at the start of stage <code>t</code>, less the amount flowed through the turbine, <code>u_flow[t]</code>, less the amount spilled, <code>u_spill[t]</code>, plus the amount of inflow, <code>ω_inflow[t]</code>, into the reservoir:</p><pre><code class="language-julia hljs">@constraint(
+    model,
+    [t in 1:T],
+    x_storage[t+1] == x_storage[t] - u_flow[t] - u_spill[t] + ω_inflow[t],
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52-element Vector{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.EqualTo{Float64}}, ScalarShape}}:
+ -x_storage[1] + x_storage[2] + u_flow[1] + u_spill[1] - ω_inflow[1] = 0
+ -x_storage[2] + x_storage[3] + u_flow[2] + u_spill[2] - ω_inflow[2] = 0
+ -x_storage[3] + x_storage[4] + u_flow[3] + u_spill[3] - ω_inflow[3] = 0
+ -x_storage[4] + x_storage[5] + u_flow[4] + u_spill[4] - ω_inflow[4] = 0
+ -x_storage[5] + x_storage[6] + u_flow[5] + u_spill[5] - ω_inflow[5] = 0
+ -x_storage[6] + x_storage[7] + u_flow[6] + u_spill[6] - ω_inflow[6] = 0
+ -x_storage[7] + x_storage[8] + u_flow[7] + u_spill[7] - ω_inflow[7] = 0
+ -x_storage[8] + x_storage[9] + u_flow[8] + u_spill[8] - ω_inflow[8] = 0
+ -x_storage[9] + x_storage[10] + u_flow[9] + u_spill[9] - ω_inflow[9] = 0
+ -x_storage[10] + x_storage[11] + u_flow[10] + u_spill[10] - ω_inflow[10] = 0
+ ⋮
+ -x_storage[44] + x_storage[45] + u_flow[44] + u_spill[44] - ω_inflow[44] = 0
+ -x_storage[45] + x_storage[46] + u_flow[45] + u_spill[45] - ω_inflow[45] = 0
+ -x_storage[46] + x_storage[47] + u_flow[46] + u_spill[46] - ω_inflow[46] = 0
+ -x_storage[47] + x_storage[48] + u_flow[47] + u_spill[47] - ω_inflow[47] = 0
+ -x_storage[48] + x_storage[49] + u_flow[48] + u_spill[48] - ω_inflow[48] = 0
+ -x_storage[49] + x_storage[50] + u_flow[49] + u_spill[49] - ω_inflow[49] = 0
+ -x_storage[50] + x_storage[51] + u_flow[50] + u_spill[50] - ω_inflow[50] = 0
+ -x_storage[51] + x_storage[52] + u_flow[51] + u_spill[51] - ω_inflow[51] = 0
+ -x_storage[52] + x_storage[53] + u_flow[52] + u_spill[52] - ω_inflow[52] = 0</code></pre><p>We also need a <code>supply = demand</code> constraint. In practice, the units of this would be in MWh, and there would be a conversion factor between the amount of water flowing through the turbine and the power output. To simplify, we assume that power and water have the same units, so that one &quot;unit&quot; of demand is equal to one &quot;unit&quot; of the reservoir <code>x_storage[t]</code>:</p><pre><code class="language-julia hljs">@constraint(model, [t in 1:T], u_flow[t] + u_thermal[t] == data[t, :demand])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">52-element Vector{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.EqualTo{Float64}}, ScalarShape}}:
+ u_flow[1] + u_thermal[1] = 7
+ u_flow[2] + u_thermal[2] = 7.1
+ u_flow[3] + u_thermal[3] = 7.2
+ u_flow[4] + u_thermal[4] = 7.3
+ u_flow[5] + u_thermal[5] = 7.4
+ u_flow[6] + u_thermal[6] = 7.6
+ u_flow[7] + u_thermal[7] = 7.8
+ u_flow[8] + u_thermal[8] = 8.1
+ u_flow[9] + u_thermal[9] = 8.3
+ u_flow[10] + u_thermal[10] = 8.6
+ ⋮
+ u_flow[44] + u_thermal[44] = 8.1
+ u_flow[45] + u_thermal[45] = 7.8
+ u_flow[46] + u_thermal[46] = 7.6
+ u_flow[47] + u_thermal[47] = 7.4
+ u_flow[48] + u_thermal[48] = 7.3
+ u_flow[49] + u_thermal[49] = 7.2
+ u_flow[50] + u_thermal[50] = 7.1
+ u_flow[51] + u_thermal[51] = 7
+ u_flow[52] + u_thermal[52] = 7</code></pre><p>Our objective is to minimize the cost of thermal generation:</p><pre><code class="language-julia hljs">@objective(model, Min, sum(data[t, :cost] * u_thermal[t] for t in 1:T))</code></pre><p class="math-container">\[ 10.2 u\_thermal_{1} + 10.4 u\_thermal_{2} + 10.6 u\_thermal_{3} + 10.9 u\_thermal_{4} + 11.2 u\_thermal_{5} + 11.5 u\_thermal_{6} + 11.9 u\_thermal_{7} + 12.3 u\_thermal_{8} + 12.7 u\_thermal_{9} + 13.1 u\_thermal_{10} + 13.6 u\_thermal_{11} + 14 u\_thermal_{12} + 14.5 u\_thermal_{13} + 14.9 u\_thermal_{14} + 15.3 u\_thermal_{15} + 15.8 u\_thermal_{16} + 16.2 u\_thermal_{17} + 16.6 u\_thermal_{18} + 17 u\_thermal_{19} + 17.4 u\_thermal_{20} + 17.7 u\_thermal_{21} + 18 u\_thermal_{22} + 18.3 u\_thermal_{23} + 18.5 u\_thermal_{24} + 18.7 u\_thermal_{25} + 18.9 u\_thermal_{26} + 19 u\_thermal_{27} + 19.1 u\_thermal_{28} + 19.2 u\_thermal_{29} + 19.2 u\_thermal_{30} + 19.2 u\_thermal_{31} + 19.2 u\_thermal_{32} + 19.1 u\_thermal_{33} + 19 u\_thermal_{34} + 18.9 u\_thermal_{35} + 18.8 u\_thermal_{36} + 18.6 u\_thermal_{37} + 18.5 u\_thermal_{38} + 18.4 u\_thermal_{39} + 18.2 u\_thermal_{40} + 18.1 u\_thermal_{41} + 17.9 u\_thermal_{42} + 17.8 u\_thermal_{43} + 17.7 u\_thermal_{44} + 17.6 u\_thermal_{45} + 17.5 u\_thermal_{46} + 17.5 u\_thermal_{47} + 17.5 u\_thermal_{48} + 17.5 u\_thermal_{49} + 17.6 u\_thermal_{50} + 17.7 u\_thermal_{51} + 17.8 u\_thermal_{52} \]</p><p>Let&#39;s optimize and check the solution</p><pre><code class="language-julia hljs">optimize!(model)
+solution_summary(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">* Solver : HiGHS
+
+* Status
+  Result count       : 1
+  Termination status : OPTIMAL
+  Message from the solver:
+  &quot;kHighsModelStatusOptimal&quot;
+
+* Candidate solution (result #1)
+  Primal status      : FEASIBLE_POINT
+  Dual status        : FEASIBLE_POINT
+  Objective value    : 6.82910e+02
+  Objective bound    : 0.00000e+00
+  Relative gap       : Inf
+  Dual objective value : 6.82910e+02
+
+* Work counters
+  Solve time (sec)   : 8.50677e-04
+  Simplex iterations : 53
+  Barrier iterations : 0
+  Node count         : -1
+</code></pre><p>The total cost is:</p><pre><code class="language-julia hljs">objective_value(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">682.9099999999999</code></pre><p>Here&#39;s a plot of demand and generation:</p><pre><code class="language-julia hljs">Plots.plot(data[!, :demand]; label = &quot;Demand&quot;, xlabel = &quot;Week&quot;)
+Plots.plot!(value.(u_thermal), label = &quot;Thermal&quot;)
+Plots.plot!(value.(u_flow), label = &quot;Hydro&quot;)</code></pre><img src="b094b7f3.svg" alt="Example block output"/><p>And here&#39;s the storage over time:</p><pre><code class="language-julia hljs">Plots.plot(value.(x_storage); label = &quot;Storage&quot;, xlabel = &quot;Week&quot;)</code></pre><img src="cf371bfd.svg" alt="Example block output"/><h2 id="Deterministic-SDDP-model"><a class="docs-heading-anchor" href="#Deterministic-SDDP-model">Deterministic SDDP model</a><a id="Deterministic-SDDP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Deterministic-SDDP-model" title="Permalink"></a></h2><p>For the next step, we show how to decompose our JuMP model into SDDP.jl. It should obtain the same solution.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(
+    stages = T,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, t
+    @variable(
+        sp,
+        0 &lt;= x_storage &lt;= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, 0 &lt;= u_flow &lt;= flow_max)
+    @variable(sp, 0 &lt;= u_thermal)
+    @variable(sp, 0 &lt;= u_spill)
+    @variable(sp, ω_inflow)
+    fix(ω_inflow, data[t, :inflow])
+    @constraint(sp, x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow)
+    @constraint(sp, u_flow + u_thermal == data[t, :demand])
+    @stageobjective(sp, data[t, :cost] * u_thermal)
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 52 nodes.
+ Node indices: 1, ..., 52
+</code></pre><p>Can you see how the JuMP model maps to this syntax? We have created a <a href="../../apireference/#SDDP.LinearPolicyGraph"><code>SDDP.LinearPolicyGraph</code></a> with <code>T</code> stages, we&#39;re minimizing, and we&#39;re using <code>HiGHS.Optimizer</code> as the optimizer.</p><p>A few bits might be non-obvious:</p><ul><li>We need to provide a lower bound for the objective function. Since our costs are always positive, a valid lower bound for the total cost is <code>0.0</code>.</li><li>We define <code>x_storage</code> as a state variable using <code>SDDP.State</code>. A state variable is any variable that flows through time, and for which we need to know the value of it in stage <code>t-1</code> to compute the best action in stage <code>t</code>. The state variable <code>x_storage</code> is actually two decision variables, <code>x_storage.in</code> and <code>x_storage.out</code>, which represent <code>x_storage[t]</code> and <code>x_storage[t+1]</code> respectively.</li><li>We need to use <code>@stageobjective</code> instead of <code>@objective</code>.</li></ul><p>Instead of calling <code>JuMP.optimize!</code>, SDDP.jl uses a <code>train</code> method. With our machine learning hat on, you can think of SDDP.jl as training a function for each stage that accepts the current reservoir state as input and returns the optimal actions as output. It is also an iterative algorithm, so we need to specify when it should terminate:</p><pre><code class="language-julia hljs">SDDP.train(model; iteration_limit = 10)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 52
+  state variables : 1
+  scenarios       : 1.00000e+00
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 7]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.EqualTo{Float64}     : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [2, 3]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 2e+01]
+  bounds range     [1e+01, 3e+02]
+  rhs range        [7e+00, 1e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   1.079600e+03  3.157700e+02  4.387617e-02       104   1
+        10   6.829100e+02  6.829100e+02  1.405470e-01      1040   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 1.405470e-01
+total solves   : 1040
+best bound     :  6.829100e+02
+simulation ci  :  7.289889e+02 ± 7.726064e+01
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><p>As a quick sanity check, did we get the same cost as our JuMP model?</p><pre><code class="language-julia hljs">SDDP.calculate_bound(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">682.910000000047</code></pre><p>That&#39;s good. Next, to check the value of the decision variables. This isn&#39;t as straight forward as our JuMP model. Instead, we need to <em>simulate</em> the policy, and then extract the values of the decision variables from the results of the simulation.</p><p>Since our model is deterministic, we need only 1 replication of the simulation, and we want to record the values of the <code>x_storage</code>, <code>u_flow</code>, and <code>u_thermal</code> variables:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
+    model,
+    1,  # Number of replications
+    [:x_storage, :u_flow, :u_thermal],
+);</code></pre><p>The <code>simulations</code> vector is too big to show. But it contains one element for each replication, and each replication contains one dictionary for each stage.</p><p>For example, the data corresponding to the tenth stage in the first replication is:</p><pre><code class="language-julia hljs">simulations[1][10]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{Symbol, Any} with 9 entries:
+  :u_flow          =&gt; 8.6
+  :bellman_term    =&gt; 0.0
+  :noise_term      =&gt; nothing
+  :node_index      =&gt; 10
+  :stage_objective =&gt; 0.0
+  :objective_state =&gt; nothing
+  :x_storage       =&gt; State{Float64}(316.2, 309.6)
+  :u_thermal       =&gt; 0.0
+  :belief          =&gt; Dict(10=&gt;1.0)</code></pre><p>Let&#39;s grab the trace of the <code>u_thermal</code> and <code>u_flow</code> variables in the first replication, and then plot them:</p><pre><code class="language-julia hljs">r_sim = [sim[:u_thermal] for sim in simulations[1]]
+u_sim = [sim[:u_flow] for sim in simulations[1]]
+
+Plots.plot(data[!, :demand]; label = &quot;Demand&quot;, xlabel = &quot;Week&quot;)
+Plots.plot!(r_sim, label = &quot;Thermal&quot;)
+Plots.plot!(u_sim, label = &quot;Hydro&quot;)</code></pre><img src="9cd5c8f3.svg" alt="Example block output"/><p>Perfect. That&#39;s the same as we got before.</p><p>Now let&#39;s look at <code>x_storage</code>. This is a little more complicated, because we need to grab the outgoing value of the state variable in each stage:</p><pre><code class="language-julia hljs">x_sim = [sim[:x_storage].out for sim in simulations[1]]
+
+Plots.plot(x_sim; label = &quot;Storage&quot;, xlabel = &quot;Week&quot;)</code></pre><img src="d7a58fd5.svg" alt="Example block output"/><h2 id="Stochastic-SDDP-model"><a class="docs-heading-anchor" href="#Stochastic-SDDP-model">Stochastic SDDP model</a><a id="Stochastic-SDDP-model-1"></a><a class="docs-heading-anchor-permalink" href="#Stochastic-SDDP-model" title="Permalink"></a></h2><p>Now we add some randomness to our model. In each stage, we assume that the inflow could be: 2 units lower, with 30% probability; the same as before, with 40% probability; or 5 units higher, with 30% probability.</p><pre><code class="language-julia hljs">model = SDDP.LinearPolicyGraph(
+    stages = T,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, t
+    @variable(
+        sp,
+        0 &lt;= x_storage &lt;= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, 0 &lt;= u_flow &lt;= flow_max)
+    @variable(sp, 0 &lt;= u_thermal)
+    @variable(sp, 0 &lt;= u_spill)
+    @variable(sp, ω_inflow)
+    # &lt;--- This bit is new
+    Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
+    SDDP.parameterize(sp, Ω, P) do ω
+        fix(ω_inflow, data[t, :inflow] + ω)
+        return
+    end
+    # ---&gt;
+    @constraint(sp, x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow)
+    @constraint(sp, u_flow + u_thermal == data[t, :demand])
+    @stageobjective(sp, data[t, :cost] * u_thermal)
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 52 nodes.
+ Node indices: 1, ..., 52
+</code></pre><p>Can you see the differences?</p><p>Let&#39;s train our new model. We need more iterations because of the stochasticity:</p><pre><code class="language-julia hljs">SDDP.train(model; iteration_limit = 100)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 52
+  state variables : 1
+  scenarios       : 6.46108e+24
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 7]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [2, 3]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 2e+01]
+  bounds range     [1e+01, 3e+02]
+  rhs range        [7e+00, 1e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   1.410200e+02  1.627572e+01  4.875398e-02       208   1
+        45   5.889258e+02  2.494644e+02  1.069401e+00      9360   1
+        85   1.399654e+02  2.637270e+02  2.093006e+00     17680   1
+       100   2.777002e+02  2.682040e+02  2.494001e+00     20800   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 2.494001e+00
+total solves   : 20800
+best bound     :  2.682040e+02
+simulation ci  :  2.839925e+02 ± 4.036184e+01
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><p>Now simulate the policy. This time we do 100 replications because the policy is now stochastic instead of deterministic:</p><pre><code class="language-julia hljs">simulations =
+    SDDP.simulate(model, 100, [:x_storage, :u_flow, :u_thermal, :ω_inflow]);</code></pre><p>And let&#39;s plot the use of thermal generation in each replication:</p><pre><code class="language-julia hljs">plot = Plots.plot(data[!, :demand]; label = &quot;Demand&quot;, xlabel = &quot;Week&quot;)
+for simulation in simulations
+    Plots.plot!(plot, [sim[:u_thermal] for sim in simulation], label = &quot;&quot;)
+end
+plot</code></pre><img src="9dc5ba20.svg" alt="Example block output"/><p>Viewing an interpreting static plots like this is difficult, particularly as the number of simulations grows. SDDP.jl includes an interactive <code>SpaghettiPlot</code> that makes things easier:</p><pre><code class="language-julia hljs">plot = SDDP.SpaghettiPlot(simulations)
+SDDP.add_spaghetti(plot; title = &quot;Storage&quot;) do sim
+    return sim[:x_storage].out
+end
+SDDP.add_spaghetti(plot; title = &quot;Hydro&quot;) do sim
+    return sim[:u_flow]
+end
+SDDP.add_spaghetti(plot; title = &quot;Inflow&quot;) do sim
+    return sim[:ω_inflow]
+end
+SDDP.plot(
+    plot,
+    &quot;spaghetti_plot.html&quot;;
+    # We need this to build the documentation. Set to true if running locally.
+    open = false,
+)</code></pre><iframe src="../spaghetti_plot.html" style="width:100%;height:500px;"></iframe><div class="admonition is-info"><header class="admonition-header">Info</header><div class="admonition-body"><p>If you have trouble viewing the plot, you can <a href="../spaghetti_plot.html">open it in a new window</a>.</p></div></div><h2 id="Cyclic-graphs"><a class="docs-heading-anchor" href="#Cyclic-graphs">Cyclic graphs</a><a id="Cyclic-graphs-1"></a><a class="docs-heading-anchor-permalink" href="#Cyclic-graphs" title="Permalink"></a></h2><p>One major problem with our model is that the reservoir is empty at the end of the time horizon. This is because our model does not consider the cost of future years after the <code>T</code> weeks.</p><p>We can fix this using a cyclic policy graph. One way to construct a graph is with the <a href="../../apireference/#SDDP.UnicyclicGraph"><code>SDDP.UnicyclicGraph</code></a> constructor:</p><pre><code class="language-julia hljs">SDDP.UnicyclicGraph(0.7; num_nodes = 2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Root
+ 0
+Nodes
+ 1
+ 2
+Arcs
+ 0 =&gt; 1 w.p. 1.0
+ 1 =&gt; 2 w.p. 1.0
+ 2 =&gt; 1 w.p. 0.7</code></pre><p>This graph has two nodes, and a loop from node 2 back to node 1 with probability 0.7.</p><p>We can construct a cyclic policy graph as follows:</p><pre><code class="language-julia hljs">graph = SDDP.UnicyclicGraph(0.95; num_nodes = T)
+model = SDDP.PolicyGraph(
+    graph;
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = HiGHS.Optimizer,
+) do sp, t
+    @variable(
+        sp,
+        0 &lt;= x_storage &lt;= reservoir_max,
+        SDDP.State,
+        initial_value = reservoir_initial,
+    )
+    @variable(sp, 0 &lt;= u_flow &lt;= flow_max)
+    @variable(sp, 0 &lt;= u_thermal)
+    @variable(sp, 0 &lt;= u_spill)
+    @variable(sp, ω_inflow)
+    Ω, P = [-2, 0, 5], [0.3, 0.4, 0.3]
+    SDDP.parameterize(sp, Ω, P) do ω
+        fix(ω_inflow, data[t, :inflow] + ω)
+        return
+    end
+    @constraint(sp, x_storage.out == x_storage.in - u_flow - u_spill + ω_inflow)
+    @constraint(sp, u_flow + u_thermal == data[t, :demand])
+    @stageobjective(sp, data[t, :cost] * u_thermal)
+    return
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A policy graph with 52 nodes.
+ Node indices: 1, ..., 52
+</code></pre><p>Notice how the only thing that has changed is our graph; the subproblems remain the same.</p><p>Let&#39;s train a policy:</p><pre><code class="language-julia hljs">SDDP.train(model; iteration_limit = 100)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-23
+-------------------------------------------------------------------
+problem
+  nodes           : 52
+  state variables : 1
+  scenarios       : Inf
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [7, 7]
+  AffExpr in MOI.EqualTo{Float64}         : [2, 2]
+  VariableRef in MOI.GreaterThan{Float64} : [5, 5]
+  VariableRef in MOI.LessThan{Float64}    : [2, 2]
+numerical stability report
+  matrix range     [1e+00, 1e+00]
+  objective range  [1e+00, 2e+01]
+  bounds range     [1e+01, 3e+02]
+  rhs range        [7e+00, 1e+01]
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   1.405140e+05  6.792656e+04  5.225320e-01      5619   1
+         8   1.015218e+05  9.091897e+04  1.895706e+00     21656   1
+        13   1.439415e+05  9.288051e+04  3.269135e+00     35191   1
+        16   2.709736e+05  9.322576e+04  5.798239e+00     51840   1
+        19   7.020247e+04  9.330265e+04  6.843831e+00     59961   1
+        20   3.173078e+05  9.334654e+04  9.314702e+00     73692   1
+        30   1.311267e+05  9.336153e+04  1.466913e+01    106586   1
+        34   2.529089e+05  9.336791e+04  1.968567e+01    133430   1
+        42   1.095370e+05  9.337503e+04  2.516992e+01    160494   1
+        44   4.395230e+05  9.337601e+04  3.098134e+01    186292   1
+        52   5.964529e+04  9.338123e+04  3.602331e+01    207324   1
+        56   2.110392e+05  9.338138e+04  4.130247e+01    227928   1
+        61   3.033503e+05  9.338346e+04  4.896297e+01    255607   1
+        66   1.521647e+05  9.338484e+04  5.472509e+01    275590   1
+        69   3.297084e+05  9.338635e+04  6.012850e+01    293071   1
+        75   3.305340e+05  9.338731e+04  6.917606e+01    321169   1
+        78   4.865163e+05  9.338776e+04  7.947886e+01    350922   1
+        82   9.411807e+04  9.339002e+04  8.575748e+01    368406   1
+        84   3.458474e+05  9.339071e+04  9.145037e+01    383804   1
+        90   5.548390e+03  9.339229e+04  9.657840e+01    397342   1
+        95   1.532402e+05  9.339282e+04  1.031148e+02    413997   1
+        99   1.279859e+05  9.339332e+04  1.087499e+02    427737   1
+       100   3.004165e+04  9.339350e+04  1.093469e+02    429196   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 1.093469e+02
+total solves   : 429196
+best bound     :  9.339350e+04
+simulation ci  :  9.649452e+04 ± 1.888309e+04
+numeric issues : 0
+-------------------------------------------------------------------</code></pre><p>When we simulate now, each trajectory will be a different length, because each cycle has a 95% probability of continuing and a 5% probability of stopping.</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(model, 3);
+length.(simulations)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Int64}:
+ 1040
+ 2132
+ 1196</code></pre><p>We can simulate a fixed number of cycles by passing a <code>sampling_scheme</code>:</p><pre><code class="language-julia hljs">simulations = SDDP.simulate(
+    model,
+    100,
+    [:x_storage, :u_flow];
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        max_depth = 5 * T,
+        terminate_on_dummy_leaf = false,
+    ),
+);
+length.(simulations)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">100-element Vector{Int64}:
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260
+   ⋮
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260
+ 260</code></pre><p>Let&#39;s visualize the policy:</p><pre><code class="language-julia hljs">Plots.plot(
+    SDDP.publication_plot(simulations; ylabel = &quot;Storage&quot;) do sim
+        return sim[:x_storage].out
+    end,
+    SDDP.publication_plot(simulations; ylabel = &quot;Hydro&quot;) do sim
+        return sim[:u_flow]
+    end;
+    layout = (2, 1),
+)</code></pre><img src="95a22659.svg" alt="Example block output"/><h2 id="Next-steps"><a class="docs-heading-anchor" href="#Next-steps">Next steps</a><a id="Next-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-steps" title="Permalink"></a></h2><p>Our model is very basic. There are many aspects that we could improve:</p><ul><li><p>Can you add a second reservoir to make a river chain?</p></li><li><p>Can you modify the problem and data to use proper units, including a conversion between the volume of water flowing through the turbine and the electrical power output?</p></li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example_newsvendor/">« Example: two-stage newsvendor</a><a class="docs-footer-nextpage" href="../example_milk_producer/">Example: the milk producer »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.1 on <span class="colophon-date" title="Tuesday 4 June 2024 03:57">Tuesday 4 June 2024</span>. Using Julia version 1.10.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
