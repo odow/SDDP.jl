@@ -142,7 +142,7 @@ import SQLite
 # | `transmission`         | Directed lines, with piecewise-linear losses     |
 #
 # `data.db` is a small three-node (`NI`, `HAY`, `SI`) model of New Zealand with
-# 50 years (1970–2019) of historical inflows.
+# 48 years (1970–2017) of historical inflows.
 #
 # ### The schema
 #

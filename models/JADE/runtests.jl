@@ -42,7 +42,7 @@ function test_data()
     @test_throws MethodError JADE.Data(data.hours_per_block)
     @test size(data.demand) == (3 * 52 * 3, 4)
     @test size(data.hours_per_block) == (52 * 3, 3)
-    @test size(data.inflows) == (26 * 50 * 52, 4)
+    @test size(data.inflows) == (26 * 48 * 52, 4)
     @test size(data.transmission) == (4 * 5, 5)
     # NULL means there is no limit
     row = only(filter(r -> r.ORIG == "Lake_Wanaka", data.hydro_arcs))
@@ -192,7 +192,7 @@ end
 function test_csv_inflows()
     df = JADE._csv_inflows(CSV_DIR)
     @test names(df) == ["CATCHMENT", "YEAR", "WEEK", "INFLOW"]
-    @test size(df, 1) == 26 * 50 * 52
+    @test size(df, 1) == 26 * 48 * 52
     rows = filter(r -> r.CATCHMENT == "Lake_Aviemore" && r.YEAR == 1970, df)
     @test rows.WEEK[1:2] == [1, 2]
     @test rows.INFLOW[1:2] == [27, 16]
@@ -330,7 +330,7 @@ function test_policy_graph()
     @test model isa SDDP.PolicyGraph
     @test sort(collect(keys(model.nodes))) == 1:52
     @test model.root_children == [SDDP.Noise(1, 1.0)]
-    @test length(model[1].noise_terms) == 50
+    @test length(model[1].noise_terms) == 48
     @test model[52].children == [SDDP.Noise(1, 0.95)]
     # The factors that convert duals into prices are stored in each subproblem
     sp = model[23].subproblem
@@ -366,7 +366,7 @@ function test_policy_graph_inflow_years()
     data = JADE.Data(DB_FILE)
     # A year is in-sample if and only if it is in `inflow_years`. The order
     # and duplicates in `inflow_years` do not matter.
-    for inflow_years in ([1995], 1980:1984, [2001, 1973, 2019, 1973])
+    for inflow_years in ([1995], 1980:1984, [2001, 1973, 2017, 1973])
         config = JADE.Config(; optimizer = HiGHS.Optimizer, inflow_years)
         model = SDDP.PolicyGraph(data, config)
         years = sort(unique(inflow_years))
@@ -413,8 +413,8 @@ function test_historical_years()
     sampling_scheme = JADE.HistoricalYears(data, config)
     @test sampling_scheme isa SDDP.Historical
     scenarios = [noise.term for noise in sampling_scheme.scenarios]
-    # 1970 to 2018: the last year cannot start a scenario
-    @test length(scenarios) == 49
+    # 1970 to 2016: the last year cannot start a scenario
+    @test length(scenarios) == 47
     for scenario in scenarios
         @test first.(scenario) == [39:52; 1:38]
     end
@@ -423,19 +423,19 @@ function test_historical_years()
     @test scenarios[1][14][2] == _historical_inflows(data, 1970, 52)
     @test scenarios[1][15][2] == _historical_inflows(data, 1971, 1)
     @test scenarios[1][end][2] == _historical_inflows(data, 1971, 38)
-    # The last scenario is week 39 of 2018 to week 38 of 2019
-    @test scenarios[end][1][2] == _historical_inflows(data, 2018, 39)
-    @test scenarios[end][end][2] == _historical_inflows(data, 2019, 38)
+    # The last scenario is week 39 of 2016 to week 38 of 2017
+    @test scenarios[end][1][2] == _historical_inflows(data, 2016, 39)
+    @test scenarios[end][end][2] == _historical_inflows(data, 2017, 38)
     # If the model starts in week 1, every year is a scenario
     config_1 = JADE.Config(; optimizer = HiGHS.Optimizer)
     sampling_scheme = JADE.HistoricalYears(data, config_1)
     scenarios = [noise.term for noise in sampling_scheme.scenarios]
-    @test length(scenarios) == 50
+    @test length(scenarios) == 48
     for scenario in scenarios
         @test first.(scenario) == 1:52
     end
     @test scenarios[1][1][2] == _historical_inflows(data, 1970, 1)
-    @test scenarios[end][end][2] == _historical_inflows(data, 2019, 52)
+    @test scenarios[end][end][2] == _historical_inflows(data, 2017, 52)
     # The scenarios can be simulated by the model
     model = SDDP.PolicyGraph(data, config)
     simulations = SDDP.simulate(model, 2, [:x_storage]; sampling_scheme)
@@ -450,25 +450,25 @@ function test_historical_sequence()
     sampling_scheme = JADE.HistoricalSequence(data, config; start_year = 1980)
     @test sampling_scheme isa SDDP.Historical
     scenario = only(sampling_scheme.scenarios).term
-    # Week 39 of 1980 to week 38 of 2019
-    @test length(scenario) == 52 * (2019 - 1980)
+    # Week 39 of 1980 to week 38 of 2017
+    @test length(scenario) == 52 * (2017 - 1980)
     @test scenario[1] == (39, _historical_inflows(data, 1980, 39))
     @test scenario[14] == (52, _historical_inflows(data, 1980, 52))
     @test scenario[15] == (1, _historical_inflows(data, 1981, 1))
-    @test scenario[end] == (38, _historical_inflows(data, 2019, 38))
+    @test scenario[end] == (38, _historical_inflows(data, 2017, 38))
     # The default start year is the first historical year
     sampling_scheme = JADE.HistoricalSequence(data, config)
     scenario_default = only(sampling_scheme.scenarios).term
-    @test length(scenario_default) == 52 * (2019 - 1970)
+    @test length(scenario_default) == 52 * (2017 - 1970)
     @test scenario_default[1] == (39, _historical_inflows(data, 1970, 39))
-    @test scenario_default[end] == (38, _historical_inflows(data, 2019, 38))
+    @test scenario_default[end] == (38, _historical_inflows(data, 2017, 38))
     # If the model starts in week 1, the scenario ends in week 52
     config_1 = JADE.Config(; optimizer = HiGHS.Optimizer)
-    sampling_scheme = JADE.HistoricalSequence(data, config_1; start_year = 2018)
+    sampling_scheme = JADE.HistoricalSequence(data, config_1; start_year = 2016)
     scenario_1 = only(sampling_scheme.scenarios).term
     @test length(scenario_1) == 52 * 2
-    @test scenario_1[1] == (1, _historical_inflows(data, 2018, 1))
-    @test scenario_1[end] == (52, _historical_inflows(data, 2019, 52))
+    @test scenario_1[1] == (1, _historical_inflows(data, 2016, 1))
+    @test scenario_1[end] == (52, _historical_inflows(data, 2017, 52))
     # `end_year` stops the scenario in week 38 of `end_year`
     sampling_scheme = JADE.HistoricalSequence(
         data,
@@ -484,13 +484,13 @@ function test_historical_sequence()
     sampling_scheme = JADE.HistoricalSequence(
         data,
         config_1;
-        start_year = 2018,
-        end_year = 2018,
+        start_year = 2016,
+        end_year = 2016,
     )
     scenario_end_1 = only(sampling_scheme.scenarios).term
     @test length(scenario_end_1) == 52
-    @test scenario_end_1[1] == (1, _historical_inflows(data, 2018, 1))
-    @test scenario_end_1[end] == (52, _historical_inflows(data, 2018, 52))
+    @test scenario_end_1[1] == (1, _historical_inflows(data, 2016, 1))
+    @test scenario_end_1[end] == (52, _historical_inflows(data, 2016, 52))
     # Invalid start and end years
     @test_throws(
         AssertionError,
@@ -500,10 +500,10 @@ function test_historical_sequence()
         AssertionError,
         JADE.HistoricalSequence(data, config; end_year = 2020),
     )
-    # Week 39 of 2019 would need inflows from 2020
+    # Week 39 of 2017 would need inflows from 2018
     @test_throws(
         AssertionError,
-        JADE.HistoricalSequence(data, config; start_year = 2019),
+        JADE.HistoricalSequence(data, config; start_year = 2017),
     )
     # Week 39 of 1980 to week 38 of 1980 is not a whole year
     @test_throws(
@@ -545,7 +545,7 @@ function test_simulate()
         sampling_scheme = SDDP.InSampleMonteCarlo(; max_depth = 52),
         print_level = 0,
     )
-    sampling_scheme = JADE.HistoricalSequence(data, config; start_year = 2019)
+    sampling_scheme = JADE.HistoricalSequence(data, config; start_year = 2017)
     simulations = JADE.simulate(model, 1; sampling_scheme)
     simulation = only(simulations)
     @test length(simulation) == 52

@@ -46,7 +46,7 @@ data = JADE.Data(;
 
 data.reservoirs
 
-# The historical inflows cover 50 years:
+# The historical inflows cover 48 years:
 
 years = sort(unique(data.inflows.YEAR))
 (first(years), last(years))
@@ -54,13 +54,16 @@ years = sort(unique(data.inflows.YEAR))
 # ## Configuration
 
 # The options of the model are collected in a [`JADE.Config`](JADE.md). The
-# only required option is the optimizer. We also set `inflow_years` to three
-# years of the record, so that the uncertainty in each week has three
-# realizations instead of 50. This makes the backward pass of SDDP much
+# only required option is the optimizer. We also set `inflow_years` to the
+# last three years of the record, so that the uncertainty in each week has
+# three realizations instead of 48. This makes the backward pass of SDDP much
 # cheaper. For a real run, leave `inflow_years` at its default to use every
 # year.
 
-config = JADE.Config(; optimizer = HiGHS.Optimizer, inflow_years = 2014:2016)
+config = JADE.Config(;
+    optimizer = HiGHS.Optimizer,
+    inflow_years = years[(end-2):end],
+)
 
 # ## Training a policy
 
@@ -75,20 +78,20 @@ model = SDDP.PolicyGraph(data, config)
 SDDP.plot(model, "model_jade.html"; open = false)
 
 # ```@raw html
-# <iframe src="../model_jadecapex_2.html" style="width:100%;height:500px;"></iframe>
+# <iframe src="../model_jade.html" style="width:100%;height:500px;"></iframe>
 # ```
 
 # Because the graph is cyclic, a forward pass continues until the discounting
 # terminates it, which takes 20 years on average. To keep each iteration
-# short, we limit the forward pass to one year with `max_depth = 52`. We also
+# short, we limit the forward pass to one year with `max_depth = 104`. We also
 # stop after 100 iterations. A real run would use many more iterations, or a
 # different stopping rule; see [How to choose a stopping rule](@ref).
 
 SDDP.train(
     model;
-    iteration_limit = 100,
+    iteration_limit = 200,
     log_frequency = 10,
-    sampling_scheme = SDDP.InSampleMonteCarlo(; max_depth = 52),
+    sampling_scheme = SDDP.InSampleMonteCarlo(; max_depth = 104),
 )
 
 # ## Simulating the historical years
@@ -116,7 +119,7 @@ simulations[1][1][:x_storage]
 
 # Let's plot the total storage over the year. Each line is one historical
 # year. The three years that the policy was trained on are highlighted; the
-# other 47 are out-of-sample:
+# other 45 are out-of-sample:
 
 function total_storage(simulation)
     return [sum(x.out for x in week[:x_storage]) for week in simulation]
@@ -141,7 +144,7 @@ end
 plt
 
 # The prices and the marginal water values are recorded in \$/MWh. A
-# [`SDDP.publication_plot`](@ref) shows the distribution across the 50 years
+# [`SDDP.publication_plot`](@ref) shows the distribution across the 48 years
 # of the price at the Haywards node in the peak load block, and of the
 # marginal value of water in Lake Pukaki:
 
@@ -169,14 +172,14 @@ Plots.plot(
 
 # The second sampling scheme, `JADE.HistoricalSequence`, has a single scenario
 # that runs through the whole historical record, from week 1 of 1970 to week
-# 52 of 2019. It shows how the reservoirs would have been managed over the 50
+# 52 of 2017. It shows how the reservoirs would have been managed over the 48
 # years if the policy had been in place:
 
 sampling_scheme = JADE.HistoricalSequence(data, config)
 simulation = only(JADE.simulate(model, 1; sampling_scheme));
 length(simulation)
 
-# The storage, the price, and the water value over the 50 years are:
+# The storage, the price, and the water value over the 48 years are:
 
 t = first(years) .+ (0:(length(simulation)-1)) ./ 52
 Plots.plot(
