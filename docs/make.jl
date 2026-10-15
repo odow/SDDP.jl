@@ -100,12 +100,13 @@ const JADE_DOCS_DIR = joinpath(@__DIR__, "src", "models", "JADE")
 # The code blocks of `JADE.jl` are plain `julia` fences, rather than `@example`
 # blocks, because the file is one `module` spread over many blocks and cannot
 # be executed piecewise. The tests in `models/JADE/runtests.jl` exercise the
-# code.
+# code. The fences have four backticks so that the three-backtick fences in
+# the docstrings do not close them.
 Literate.markdown(
     joinpath(JADE_DIR, "JADE.jl"),
     JADE_DOCS_DIR;
     documenter = true,
-    codefence = "```julia" => "```",
+    codefence = "````julia" => "````",
 )
 
 # `run.jl` is a tutorial, so it is tested and converted like the tutorials

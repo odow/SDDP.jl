@@ -1109,10 +1109,10 @@ one fewer scenario than there are historical years.
 
 The scenarios are sampled in order, so simulate one replication for each:
 
-````julia
+```julia
 sampling_scheme = JADE.HistoricalYears(data, config)
 SDDP.simulate(model, length(sampling_scheme.scenarios); sampling_scheme)
-````
+```
 """
 function HistoricalYears(data::Data, config::Config)
     inflows = _inflows_by_week(data)
@@ -1143,7 +1143,7 @@ If the model starts in week 1, the scenario ends in week 52 of `end_year`.
 Otherwise, it ends in week `config.current_week - 1` of `end_year`. The
 defaults use the whole historical record.
 
-````julia
+```julia
 config = JADE.Config(; optimizer = HiGHS.Optimizer, current_week = 39)
 sampling_scheme = JADE.HistoricalSequence(
     data,
@@ -1152,7 +1152,7 @@ sampling_scheme = JADE.HistoricalSequence(
     end_year = 1990,
 )
 SDDP.simulate(model, 1; sampling_scheme)
-````
+```
 """
 function HistoricalSequence(
     data::Data,
