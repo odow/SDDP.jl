@@ -11,6 +11,7 @@ doi
 elseif
 equivariance
 hasard
+Haywards
 infeasibilities
 kwargs
 multistock
@@ -20,6 +21,7 @@ parameteriz(es|ing)
 performant
 preprint
 presolve
+Pukaki
 Rethrow
 scalings
 src

@@ -97,7 +97,7 @@ SDDP.train(
 # ## Simulating the historical years
 
 # [`JADE.simulate`](JADE.md) wraps `SDDP.simulate` to record the reservoir
-# storages, the thermal generation, the price of energy at each node, and the
+# storage, the thermal generation, the price of energy at each node, and the
 # marginal value of water in each reservoir.
 #
 # The default sampling scheme of `SDDP.simulate` samples the inflows of each
