@@ -65,7 +65,10 @@
 # import HiGHS
 # JADE_DIR = joinpath(pkgdir(SDDP), "models", "JADE")
 # include(joinpath(JADE_DIR, "JADE.jl"))
-# data = JADE.Data("data.db")
+# data = JADE.Data(;
+#     directory = joinpath(JADE_DIR, "data"),
+#     filename = joinpath(JADE_DIR, "data.db"),
+# )
 # config = JADE.Config(; optimizer = HiGHS.Optimizer)
 # model = SDDP.PolicyGraph(data, config)
 # SDDP.train(model; iteration_limit = 100)
