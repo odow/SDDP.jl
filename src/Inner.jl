@@ -642,6 +642,8 @@ function InnerPolicyGraph(
             Dict{Symbol,Any}(),
             ReentrantLock(),
             Dict{Symbol,Tuple{Float64,Float64,Bool}}(),
+            Float64[],
+            SDDP.Noise{Tuple{T,Any}}[],
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node

@@ -424,6 +424,9 @@ function _refine_bellman_function_no_lock(
         objective_realizations,
         model.objective_sense == MOI.MIN_SENSE,
     )
+    # Stash the risk-adjusted probabilities so that they can be used by
+    # `RiskBiasedForwardPass`.
+    node.risk_adjusted_probability = risk_adjusted_probability
     # The meat of the function.
     if bellman_function.cut_type == SINGLE_CUT
         return _add_average_cut(

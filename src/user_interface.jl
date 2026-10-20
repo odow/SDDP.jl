@@ -658,6 +658,13 @@ mutable struct Node{T}
     lock::ReentrantLock
     # (lower, upper, is_integer)
     incoming_state_bounds::Dict{Symbol,Tuple{Float64,Float64,Bool}}
+    # The risk-adjusted probabilities computed the last time a cut was added to
+    # this node. These are consumed by the backward pass to update
+    # `risk_adjusted_transitions`. Empty if there are none.
+    risk_adjusted_probability::Vector{Float64}
+    # The distribution over `(child, noise)` pairs used by
+    # `RiskBiasedForwardPass`. Empty if it has not been computed yet.
+    risk_adjusted_transitions::Vector{Noise{Tuple{T,Any}}}
 end
 
 function Base.show(io::IO, node::Node)
@@ -991,6 +998,8 @@ function PolicyGraph(
             Dict{Symbol,Any}(),
             ReentrantLock(),
             Dict{Symbol,Tuple{Float64,Float64,Bool}}(),
+            Float64[],
+            Noise{Tuple{T,Any}}[],
         )
         subproblem.ext[:sddp_policy_graph] = policy_graph
         policy_graph.nodes[node_index] = subproblem.ext[:sddp_node] = node

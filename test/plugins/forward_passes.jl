@@ -325,6 +325,183 @@ function test_ImportanceSamplingForwardPass()
     return
 end
 
+function _risk_biased_model(sense)
+    return SDDP.LinearPolicyGraph(;
+        stages = 4,
+        sense = sense,
+        lower_bound = sense == :Min ? 0.0 : -100.0,
+        upper_bound = sense == :Min ? 100.0 : 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 0.0)
+        @constraint(sp, x.out == x.in)
+        SDDP.parameterize(sp, [1.0, 2.0, 3.0], [0.4, 0.4, 0.2]) do ω
+            # Cost of ω when minimizing, profit of -ω when maximizing. In both
+            # cases, ω = 3 is the unfavorable outcome.
+            @stageobjective(sp, sense == :Min ? ω : -ω)
+            return
+        end
+    end
+end
+
+function test_RiskBiasedForwardPass()
+    for sense in (:Min, :Max)
+        model = _risk_biased_model(sense)
+        options = SDDP.Options(model, Dict(:x => 0.0))
+        pass = SDDP.RiskBiasedForwardPass()
+        # Before training, no risk-adjusted probabilities exist, so we sample
+        # from the nominal distribution.
+        trajectory = SDDP.forward_pass(model, options, pass)
+        @test length(trajectory.scenario_path) == 4
+        @test trajectory.cumulative_value ≈
+              sum(ω for (_, ω) in trajectory.scenario_path) *
+              (sense == :Min ? 1 : -1)
+        n_iterations = 5
+        SDDP.train(
+            model;
+            risk_measure = SDDP.WorstCase(),
+            iteration_limit = n_iterations,
+            print_level = 0,
+        )
+        # Each iteration adds one cut to each of nodes 1, 2, and 3. WorstCase
+        # puts all of the risk-adjusted probability on ω = 3.
+        q = [0.4, 0.4, 0.2]
+        r = [0.0, 0.0, 1.0]
+        p = copy(q)
+        for _ in 1:n_iterations
+            p = (p .+ r .+ q) ./ 3
+        end
+        for t in 1:3
+            terms = model[t].risk_adjusted_transitions
+            @test [x.term for x in terms] == [(t + 1, ω) for ω in 1.0:3.0]
+            @test [x.probability for x in terms] ≈ p
+            @test all(x.probability > 0 for x in terms)
+        end
+        @test isempty(model[4].risk_adjusted_transitions)
+        # The forward pass should sample ω = 3 with probability p[3], instead of
+        # the nominal probability q[3].
+        n_worst, n_total = 0, 0
+        for _ in 1:2_000
+            trajectory = SDDP.forward_pass(model, options, pass)
+            @test length(trajectory.scenario_path) == 4
+            for (_, ω) in trajectory.scenario_path[2:end]
+                n_worst += ω == 3.0
+                n_total += 1
+            end
+        end
+        @test isapprox(n_worst / n_total, p[3]; atol = 0.03)
+    end
+    return
+end
+
+function test_RiskBiasedForwardPass_Expectation()
+    model = _risk_biased_model(:Min)
+    SDDP.train(
+        model;
+        forward_pass = SDDP.RiskBiasedForwardPass(),
+        risk_measure = SDDP.Expectation(),
+        iteration_limit = 3,
+        print_level = 0,
+    )
+    node = model[1]
+    terms = node.risk_adjusted_transitions
+    @test [t.term for t in terms] == [(2, 1.0), (2, 2.0), (2, 3.0)]
+    @test [t.probability for t in terms] ≈ [0.4, 0.4, 0.2]
+    @test isempty(model[4].risk_adjusted_transitions)
+    return
+end
+
+function test_RiskBiasedForwardPass_cyclic()
+    model = SDDP.PolicyGraph(
+        SDDP.UnicyclicGraph(0.5; num_nodes = 2);
+        sense = :Min,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, x, SDDP.State, initial_value = 0.0)
+        @constraint(sp, x.out == x.in)
+        SDDP.parameterize(sp, [1.0, 2.0]) do ω
+            @stageobjective(sp, ω)
+            return
+        end
+    end
+    SDDP.train(
+        model;
+        forward_pass = SDDP.RiskBiasedForwardPass(),
+        risk_measure = SDDP.WorstCase(),
+        iteration_limit = 20,
+        print_level = 0,
+    )
+    # Nodes 1 and 2 each get one cut per iteration. WorstCase puts all of the
+    # risk-adjusted probability on ω = 2, which is rescaled to sum to the
+    # probability of the edge to the child, 0.5 for node 2 and 1.0 for node 1.
+    for (t, child, edge) in ((1, 2, 1.0), (2, 1, 0.5))
+        q = edge .* [0.5, 0.5]
+        r = edge .* [0.0, 1.0]
+        p = copy(q)
+        for _ in 1:20
+            p = (p .+ r .+ q) ./ 3
+        end
+        terms = model[t].risk_adjusted_transitions
+        @test [x.term for x in terms] == [(child, 1.0), (child, 2.0)]
+        @test [x.probability for x in terms] ≈ p
+    end
+    # Also check that we respect terminate_on_cycle and max_depth.
+    for sampling_scheme in (
+        SDDP.InSampleMonteCarlo(; terminate_on_cycle = true),
+        SDDP.InSampleMonteCarlo(;
+            max_depth = 5,
+            terminate_on_dummy_leaf = false,
+        ),
+    )
+        options = SDDP.Options(model, Dict(:x => 0.0); sampling_scheme)
+        trajectory =
+            SDDP.forward_pass(model, options, SDDP.RiskBiasedForwardPass())
+        @test all(ω in (1.0, 2.0) for (_, ω) in trajectory.scenario_path)
+        if sampling_scheme.max_depth == 5
+            @test length(trajectory.scenario_path) == 5
+        else
+            @test length(trajectory.scenario_path) <= 3
+        end
+    end
+    return
+end
+
+function test_RiskBiasedForwardPass_MonteCarloSampler()
+    model = _risk_biased_model(:Min)
+    SDDP.train(
+        model;
+        forward_pass = SDDP.RiskBiasedForwardPass(),
+        backward_sampling_scheme = SDDP.MonteCarloSampler(1),
+        risk_measure = SDDP.WorstCase(),
+        iteration_limit = 5,
+        print_level = 0,
+    )
+    # Even though the backward pass evaluated only one noise per child, every
+    # nominal (child, noise) pair has a positive sampling probability.
+    for t in 1:3
+        terms = model[t].risk_adjusted_transitions
+        @test sort([x.term for x in terms]) == [(t + 1, ω) for ω in 1.0:3.0]
+        @test all(x.probability > 0 for x in terms)
+    end
+    return
+end
+
+function test_RiskBiasedForwardPass_errors()
+    model = _risk_biased_model(:Min)
+    sampling_scheme =
+        SDDP.Historical([[(1, 1.0), (2, 1.0), (3, 1.0), (4, 1.0)]])
+    options = SDDP.Options(model, Dict(:x => 0.0); sampling_scheme)
+    @test_throws(
+        ErrorException(
+            "RiskBiasedForwardPass requires the sampling scheme to be an " *
+            "`InSampleMonteCarlo`. Got: $(typeof(sampling_scheme))",
+        ),
+        SDDP.forward_pass(model, options, SDDP.RiskBiasedForwardPass()),
+    )
+    return
+end
+
 function test_LoggingForwardPass()
     model = SDDP.PolicyGraph(
         SDDP.UnicyclicGraph(0.5; num_nodes = 5);
