@@ -79,6 +79,64 @@ function test_InSampleMonteCarlo_Cyclic()
     return
 end
 
+function _infinite_cyclic_model()
+    # The edge 2 => 1 has probability 1, so a scenario never terminates at a
+    # dummy leaf. It terminates only because of a depth limit.
+    graph = SDDP.LinearGraph(2)
+    SDDP.add_edge(graph, 2 => 1, 1.0)
+    return SDDP.PolicyGraph(
+        graph;
+        lower_bound = 0.0,
+        direct_mode = false,
+    ) do node, stage
+        @variable(node, 0 <= x <= 1)
+        SDDP.parameterize(node, stage * [1, 3], [0.5, 0.5]) do ω
+            JuMP.set_upper_bound(x, ω)
+            return
+        end
+    end
+end
+
+function test_InSampleMonteCarlo_rollout_limit()
+    model = _infinite_cyclic_model()
+    # The rollout limit is called once per scenario, with the iteration number.
+    sampler = SDDP.InSampleMonteCarlo(; rollout_limit = i -> 2 * i)
+    for i in 1:4
+        scenario, terminated_due_to_cycle = SDDP.sample_scenario(model, sampler)
+        @test length(scenario) == 2 * i
+        @test !terminated_due_to_cycle
+        @test [node for (node, _) in scenario] == repeat([1, 2], i)
+    end
+    # If `max_depth > 0`, the limit is the smaller of the two.
+    sampler =
+        SDDP.InSampleMonteCarlo(; max_depth = 5, rollout_limit = i -> 2 * i)
+    for i in 1:4
+        scenario, _ = SDDP.sample_scenario(model, sampler)
+        @test length(scenario) == min(5, 2 * i)
+    end
+    return
+end
+
+function test_OutOfSampleMonteCarlo_rollout_limit()
+    model = _infinite_cyclic_model()
+    for (max_depth, expected) in ((0, [3, 6, 9]), (7, [3, 6, 7]))
+        sampler = SDDP.OutOfSampleMonteCarlo(
+            model;
+            use_insample_transition = true,
+            max_depth,
+            rollout_limit = i -> 3 * i,
+        ) do stage
+            return [SDDP.Noise(2 * stage, 0.4), SDDP.Noise(4 * stage, 0.6)]
+        end
+        lengths = map(1:3) do _
+            scenario, _ = SDDP.sample_scenario(model, sampler)
+            return length(scenario)
+        end
+        @test lengths == expected
+    end
+    return
+end
+
 function test_OutOfSampleMonteCarlo_Acyclic()
     model = SDDP.LinearPolicyGraph(;
         stages = 2,

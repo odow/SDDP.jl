@@ -264,7 +264,13 @@ function sample_scenario(
     graph::PolicyGraph{T},
     sampling_scheme::Union{InSampleMonteCarlo,OutOfSampleMonteCarlo{T}},
 ) where {T}
-    max_depth = min(sampling_scheme.max_depth, sampling_scheme.rollout_limit())
+    # The depth limit for this scenario. `max_depth = 0` means no limit, so the
+    # limit is the smaller of `max_depth` (if it is positive) and the rollout
+    # limit of this iteration.
+    max_depth = sampling_scheme.rollout_limit()
+    if sampling_scheme.max_depth > 0
+        max_depth = min(max_depth, sampling_scheme.max_depth)
+    end
     # Storage for our scenario. Each tuple is (node_index, noise.term).
     scenario_path = Tuple{T,Any}[]
     # We only use visited_nodes if terminate_on_cycle=true. Just initialize
@@ -288,8 +294,8 @@ function sample_scenario(
         elseif sampling_scheme.terminate_on_cycle && node_index in visited_nodes
             # 2. terminate_on_cycle = true and we have detected a cycle.
             return scenario_path, true
-        elseif 0 < sampling_scheme.max_depth <= length(scenario_path)
-            # 3. max_depth > 0 and we have explored max_depth number of nodes.
+        elseif 0 < max_depth <= length(scenario_path)
+            # 3. we have explored max_depth number of nodes.
             return scenario_path, false
         elseif sampling_scheme.terminate_on_dummy_leaf &&
                rand() < 1 - sum(child.probability for child in children)
