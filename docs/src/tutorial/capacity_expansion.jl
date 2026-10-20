@@ -651,11 +651,11 @@ function sample_scenario()
     inv_2 = Symbol("$(inv_1)$(rand((:l, :h)))")
     return vcat(
         ((:inv, 0), nothing),
-        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+        [((:op, t), SDDP.sample_noise(D)) for year in 1:T for t in 1:52],
         ((inv_1, 0), nothing),
-        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+        [((:op, t), SDDP.sample_noise(D)) for year in 1:T for t in 1:52],
         ((inv_2, 0), nothing),
-        [((:op, t), SDDP.sample_noise(D)) for t in 1:52 for year in 1:T],
+        [((:op, t), SDDP.sample_noise(D)) for year in 1:T for t in 1:52],
     )
 end
 simulations = SDDP.simulate(
