@@ -7,7 +7,7 @@
 # # Running JADE
 
 # The purpose of this tutorial is to show how to build, train, and simulate
-# the [JADE](JADE.md) model of the New Zealand electricity system.
+# the [JADE](@ref) model of the New Zealand electricity system.
 #
 # To keep the tutorial fast enough to run as part of the documentation, we
 # train the policy on a small subset of the historical inflows, and we stop
@@ -53,11 +53,11 @@ years = sort(unique(data.inflows.YEAR))
 
 # ## Configuration
 
-# The options of the model are collected in a [`JADE.Config`](JADE.md). The
-# only required option is the optimizer. We also set `inflow_years` to the
-# last three years of the record, so that the uncertainty in each week has
-# three realizations instead of 48. This makes the backward pass of SDDP much
-# cheaper. For a real run, leave `inflow_years` at its default to use every
+# The options of the model are collected in a `JADE.Config`. The only required
+# option is the optimizer. We also set `inflow_years` to the last three years of
+# the record, so that the uncertainty in each week has three realizations
+# instead of 48. This makes the backward pass of SDDP much cheaper. For a real
+# run, leave `inflow_years` at its default to use every
 # year.
 
 config = JADE.Config(;
@@ -82,23 +82,29 @@ SDDP.plot(model, "model_jade.html"; open = false)
 # ```
 
 # Because the graph is cyclic, a forward pass continues until the discounting
-# terminates it, which takes 20 years on average. To keep each iteration
-# short, we limit the forward pass to one year with `max_depth = 104`. We also
-# stop after 100 iterations. A real run would use many more iterations, or a
-# different stopping rule; see [How to choose a stopping rule](@ref).
+# terminates it, which takes 20 years on average. In the early iterations, a
+# long forward pass adds cuts at states that the policy is unlikely to visit
+# again. To keep the early iterations short, we use `rollout_limit` to limit
+# the forward pass of iteration `i` to `52 * cld(i, 104)` weeks, that is, to one
+# year for the first 104 iterations, then to two years for the next 104
+# iterations, and so on. We stop after 200 iterations. A real run would use many
+# more iterations, or a different stopping rule; see
+# [How to choose a stopping rule](@ref).
 
 SDDP.train(
     model;
     iteration_limit = 200,
     log_frequency = 10,
-    sampling_scheme = SDDP.InSampleMonteCarlo(; max_depth = 104),
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        rollout_limit = i -> 52 * cld(i, 104),
+    ),
 )
 
 # ## Simulating the historical years
 
-# [`JADE.simulate`](JADE.md) wraps `SDDP.simulate` to record the reservoir
-# storage, the thermal generation, the price of energy at each node, and the
-# marginal value of water in each reservoir.
+# `JADE.simulate` wraps `SDDP.simulate` to record the reservoir storage, the
+# thermal generation, the price of energy at each node, and the marginal value
+# of water in each reservoir.
 #
 # The default sampling scheme of `SDDP.simulate` samples the inflows of each
 # week independently. To see how the policy performs on the historical inflow
@@ -200,7 +206,7 @@ Plots.plot(
     size = (800, 600),
 )
 
-# The policy was trained on only three years of inflows and 100 iterations, so
+# The policy was trained on only three years of inflows and 200 iterations, so
 # it should not be read as a good policy for the New Zealand system. The
 # spikes in the price are weeks in which the policy sheds load. To improve
 # the policy, train on every year and for many more iterations.
