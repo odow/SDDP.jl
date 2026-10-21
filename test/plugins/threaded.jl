@@ -24,6 +24,37 @@ function runtests()
     return
 end
 
+function test_rollout_limit_threaded()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        @variable(sp, x >= 0, SDDP.State, initial_value = 0.0)
+        @stageobjective(sp, x.out)
+    end
+    n = 10_000
+    sampling_schemes = [
+        SDDP.InSampleMonteCarlo(; rollout_limit = identity),
+        SDDP.OutOfSampleMonteCarlo(
+            model;
+            use_insample_transition = true,
+            rollout_limit = identity,
+        ) do t
+            return [SDDP.Noise(nothing, 1.0)]
+        end,
+    ]
+    for sampling_scheme in sampling_schemes
+        # Every call gets a distinct iteration number, even when the calls are
+        # made from many threads at once.
+        tasks = map(1:n) do _
+            return Threads.@spawn sampling_scheme.rollout_limit()
+        end
+        @test sort(fetch.(tasks)) == 1:n
+    end
+    return
+end
+
 function test_threaded()
     if haskey(ENV, "JULIA_NUM_THREADS")
         num_threads = get(ENV, "JULIA_NUM_THREADS", "0")

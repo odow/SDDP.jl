@@ -117,6 +117,14 @@ function test_InSampleMonteCarlo_rollout_limit()
     return
 end
 
+function test_rollout_counter()
+    counter = SDDP._rollout_counter(i -> 10 * i)
+    @test [counter() for _ in 1:5] == [10, 20, 30, 40, 50]
+    # Each counter has its own count.
+    @test SDDP._rollout_counter(identity)() == 1
+    return
+end
+
 function test_OutOfSampleMonteCarlo_rollout_limit()
     model = _infinite_cyclic_model()
     for (max_depth, expected) in ((0, [3, 6, 9]), (7, [3, 6, 7]))
