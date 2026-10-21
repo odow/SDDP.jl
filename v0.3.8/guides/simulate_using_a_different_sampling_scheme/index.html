@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Simulate using a different sampling scheme · SDDP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">SDDP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/01_first_steps/">Basic I: first steps</a></li><li><a class="tocitem" href="../../tutorial/02_adding_uncertainty/">Basic II: adding uncertainty</a></li><li><a class="tocitem" href="../../tutorial/03_objective_uncertainty/">Basic III: objective uncertainty</a></li><li><a class="tocitem" href="../../tutorial/04_markov_uncertainty/">Basic IV: Markov uncertainty</a></li><li><a class="tocitem" href="../../tutorial/05_plotting/">Basic V: plotting</a></li><li><a class="tocitem" href="../../tutorial/06_warnings/">Basic VI: words of warning</a></li><li><a class="tocitem" href="../../tutorial/11_objective_states/">Advanced I: objective states</a></li><li><a class="tocitem" href="../../tutorial/12_belief_states/">Advanced II: belief states</a></li><li><a class="tocitem" href="../../tutorial/13_integrality/">Advanced III: integrality</a></li><li><a class="tocitem" href="../../tutorial/21_theory_intro/">Theory I: an intro to SDDP</a></li><li><a class="tocitem" href="../../tutorial/22_risk/">Theory II: risk aversion</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox" checked/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../improve_computational_performance/">Improve computational performance</a></li><li class="is-active"><a class="tocitem" href>Simulate using a different sampling scheme</a><ul class="internal"><li><a class="tocitem" href="#In-sample-Monte-Carlo-simulation"><span>In-sample Monte Carlo simulation</span></a></li><li><a class="tocitem" href="#Out-of-sample-Monte-Carlo-simulation"><span>Out-of-sample Monte Carlo simulation</span></a></li><li><a class="tocitem" href="#Historical-simulation"><span>Historical simulation</span></a></li></ul></li><li><a class="tocitem" href="../upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../../examples/FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../../examples/FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../../examples/Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../../examples/StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../../examples/StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../../examples/agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../../examples/air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../../examples/all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../../examples/asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../../examples/asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../../examples/belief/">Partially observable inventory management</a></li><li><a class="tocitem" href="../../examples/biobjective_hydro/">Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../../examples/booking_management/">Booking management</a></li><li><a class="tocitem" href="../../examples/generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../../examples/hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../../examples/infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../../examples/no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../../examples/objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../../examples/sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../../examples/sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../../examples/stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../../examples/vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">How-to guides</a></li><li class="is-active"><a href>Simulate using a different sampling scheme</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Simulate using a different sampling scheme</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/guides/simulate_using_a_different_sampling_scheme.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Simulate-using-a-different-sampling-scheme"><a class="docs-heading-anchor" href="#Simulate-using-a-different-sampling-scheme">Simulate using a different sampling scheme</a><a id="Simulate-using-a-different-sampling-scheme-1"></a><a class="docs-heading-anchor-permalink" href="#Simulate-using-a-different-sampling-scheme" title="Permalink"></a></h1><p>By default, <a href="../../apireference/#SDDP.simulate"><code>SDDP.simulate</code></a> will simulate the policy using the distributions of noise terms that were defined when the model was created. We call these <em>in-sample</em> simulations. However, in general the <em>in-sample</em> distributions are an approximation of some underlying probabiltiy model which we term the <em>true process</em>. Therefore, <code>SDDP.jl</code> makes it easy to simulate the policy using different probability distrutions.</p><p>To demonsrate the different ways of simulating the policy, we&#39;re going to use the model from the tutorial <a href="../../tutorial/04_markov_uncertainty/#Basic-IV:-Markov-uncertainty">Basic IV: Markov uncertainty</a>.</p><pre><code class="language-julia">using SDDP, GLPK
+
+Ω = [
+    (inflow = 0.0, fuel_multiplier = 1.5),
+    (inflow = 50.0, fuel_multiplier = 1.0),
+    (inflow = 100.0, fuel_multiplier = 0.75)
+]
+
+model = SDDP.MarkovianPolicyGraph(
+    transition_matrices = Array{Float64, 2}[
+        [ 1.0 ]&#39;,
+        [ 0.75 0.25 ],
+        [ 0.75 0.25 ; 0.25 0.75 ]
+    ],
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer
+) do subproblem, node
+    # Unpack the stage and Markov index.
+    t, markov_state = node
+    # Define the state variable.
+    @variable(subproblem, 0 &lt;= volume &lt;= 200, SDDP.State, initial_value = 200)
+    # Define the control variables.
+    @variables(subproblem, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+        inflow
+    end)
+    # Define the constraints
+    @constraints(subproblem, begin
+        volume.out == volume.in + inflow - hydro_generation - hydro_spill
+        thermal_generation + hydro_generation == 150.0
+    end)
+    # Note how we can use `markov_state` to dispatch an `if` statement.
+    probability = if markov_state == 1  # wet climate state
+        [1/6, 1/3, 1/2]
+    else  # dry climate state
+        [1/2, 1/3, 1/6]
+    end
+
+    fuel_cost = [50.0, 100.0, 150.0]
+    SDDP.parameterize(subproblem, Ω, probability) do ω
+        JuMP.fix(inflow, ω.inflow)
+        @stageobjective(subproblem,
+            ω.fuel_multiplier * fuel_cost[t] * thermal_generation)
+    end
+end
+
+SDDP.train(model; iteration_limit = 10, print_level = 0);
+
+model
+
+# output
+
+A policy graph with 5 nodes.
+ Node indices: (1, 1), (2, 1), (2, 2), (3, 1), (3, 2)</code></pre><h2 id="In-sample-Monte-Carlo-simulation"><a class="docs-heading-anchor" href="#In-sample-Monte-Carlo-simulation">In-sample Monte Carlo simulation</a><a id="In-sample-Monte-Carlo-simulation-1"></a><a class="docs-heading-anchor-permalink" href="#In-sample-Monte-Carlo-simulation" title="Permalink"></a></h2><p>To simulate the policy using the data defined when <code>model</code> was created, use <a href="../../apireference/#SDDP.InSampleMonteCarlo"><code>SDDP.InSampleMonteCarlo</code></a>.</p><pre><code class="language-julia">simulations = SDDP.simulate(
+    model, 20, sampling_scheme = SDDP.InSampleMonteCarlo()
+)
+
+sort(unique(
+    [node[:noise_term] for simulation in simulations for node in simulation]
+))
+
+# output
+
+3-element Array{NamedTuple{(:inflow, :fuel_multiplier),Tuple{Float64,Float64}},1}:
+ (inflow = 0.0, fuel_multiplier = 1.5)
+ (inflow = 50.0, fuel_multiplier = 1.0)
+ (inflow = 100.0, fuel_multiplier = 0.75)</code></pre><h2 id="Out-of-sample-Monte-Carlo-simulation"><a class="docs-heading-anchor" href="#Out-of-sample-Monte-Carlo-simulation">Out-of-sample Monte Carlo simulation</a><a id="Out-of-sample-Monte-Carlo-simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Out-of-sample-Monte-Carlo-simulation" title="Permalink"></a></h2><p>Instead of using the <em>in-sample</em> data, we can perform an <em>out-of-sample</em> simulation of the policy using the <a href="../../apireference/#SDDP.OutOfSampleMonteCarlo"><code>SDDP.OutOfSampleMonteCarlo</code></a> sampling scheme.</p><p>For each node, the <a href="../../apireference/#SDDP.OutOfSampleMonteCarlo"><code>SDDP.OutOfSampleMonteCarlo</code></a> needs to define a new distribution for the transition probabilities between nodes in the policy graph, and a new distribution for the stagewise independent noise terms.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>The support of the distribution for the stagewise independent noise terms does not have to be the same as the in-sample distributions.</p></div></div><pre><code class="language-julia">sampling_scheme = SDDP.OutOfSampleMonteCarlo(model) do node
+    stage, markov_state = node
+    if stage == 0
+        # Called from the root node. Transition to (1, 1) with probability 1.0.
+        # Only return the list of children, _not_ a list of noise terms.
+        return [SDDP.Noise((1, 1), 1.0)]
+    elseif stage == 3
+        # Called from the final node. Return an empty list for the children,
+        # and a single, deterministic realization for the noise terms.
+        children = SDDP.Noise[]
+        noise_terms = [SDDP.Noise((inflow = 75.0, fuel_multiplier = 1.2), 1.0)]
+        return children, noise_terms
+    else
+        # Called from a normal node. Return the in-sample distribution for the
+        # noise terms, but modify the transition probabilities so that the
+        # Markov switching probability is now 50%.
+        probability = markov_state == 1 ? [1/6, 1/3, 1/2] : [1/2, 1/3, 1/6]
+        noise_terms = [SDDP.Noise(ω, p) for (ω, p) in zip(Ω, probability)]
+        children = [
+            SDDP.Noise((stage + 1, 1), 0.5), SDDP.Noise((stage + 1, 2), 0.5)
+        ]
+        return children, noise_terms
+    end
+end
+
+simulations = SDDP.simulate(model, 1, sampling_scheme = sampling_scheme)
+
+simulations[1][3][:noise_term]
+
+# output
+
+(inflow = 75.0, fuel_multiplier = 1.2)</code></pre><p>Alternatively, if you only want to modify the stagewise independent noise terms, pass <code>use_insample_transition = true</code>.</p><pre><code class="language-julia">sampling_scheme = SDDP.OutOfSampleMonteCarlo(
+    model, use_insample_transition = true
+) do node
+stage, markov_state = node
+    if stage == 3
+        # Called from the final node. Return a single, deterministic
+        # realization for the noise terms. Don&#39;t return the children because we
+        # use the in-sample data.
+        return [SDDP.Noise((inflow = 65.0, fuel_multiplier = 1.1), 1.0)]
+    else
+        # Called from a normal node. Return the in-sample distribution for the
+        # noise terms. Don&#39;t return the children because we use the in-sample
+        # data.
+        probability = markov_state == 1 ? [1/6, 1/3, 1/2] : [1/2, 1/3, 1/6]
+        return [SDDP.Noise(ω, p) for (ω, p) in zip(Ω, probability)]
+    end
+end
+
+simulations = SDDP.simulate(model, 1, sampling_scheme = sampling_scheme)
+
+simulations[1][3][:noise_term]
+
+# output
+
+(inflow = 65.0, fuel_multiplier = 1.1)</code></pre><h2 id="Historical-simulation"><a class="docs-heading-anchor" href="#Historical-simulation">Historical simulation</a><a id="Historical-simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Historical-simulation" title="Permalink"></a></h2><p>Instead of performing a Monte Carlo simulation like the previous tutorials, we may want to simulate one particular sequence of noise realizations. This <em>historical</em> simulation can also be conducted by passing a <a href="../../apireference/#SDDP.Historical"><code>SDDP.Historical</code></a> sampling scheme to the <code>sampling_scheme</code> keyword of the <a href="../../apireference/#SDDP.simulate"><code>SDDP.simulate</code></a> function.</p><p>We can confirm that the historical sequence of nodes was visited by querying the <code>:node_index</code> key of the simulation results.</p><pre><code class="language-julia">simulations = SDDP.simulate(
+    model,
+    sampling_scheme = SDDP.Historical([
+        ((1, 1), Ω[1]),
+        ((2, 2), Ω[3]),
+        ((3, 1), Ω[2])
+    ])
+)
+
+[stage[:node_index] for stage in simulations[1]]
+
+# output
+
+3-element Array{Tuple{Int64,Int64},1}:
+ (1, 1)
+ (2, 2)
+ (3, 1)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../improve_computational_performance/">« Improve computational performance</a><a class="docs-footer-nextpage" href="../upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 19 January 2021 02:06">Tuesday 19 January 2021</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

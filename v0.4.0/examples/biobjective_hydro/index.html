@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Biobjective hydro-thermal · SDDP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SDDP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox"/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Basic</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/basic/01_first_steps/">An introduction to SDDP.jl</a></li><li><a class="tocitem" href="../../tutorial/basic/03_objective_uncertainty/">Uncertainty in the objective function</a></li><li><a class="tocitem" href="../../tutorial/basic/04_markov_uncertainty/">Markovian policy graphs</a></li><li><a class="tocitem" href="../../tutorial/basic/05_plotting/">Plotting tools</a></li><li><a class="tocitem" href="../../tutorial/basic/06_warnings/">Words of warning</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-2" type="checkbox"/><label class="tocitem" for="menuitem-2-2"><span class="docs-label">Advanced</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/advanced/11_objective_states/">Objective states</a></li><li><a class="tocitem" href="../../tutorial/advanced/12_belief_states/">Belief states</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-3" type="checkbox"/><label class="tocitem" for="menuitem-2-3"><span class="docs-label">Theory</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorial/theory/21_theory_intro/">Introductory theory</a></li><li><a class="tocitem" href="../../tutorial/theory/22_risk/">Risk aversion</a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/acess_previous_variables/">Access variables from a previous stage</a></li><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_integrality/">Integrality</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../FAST_hydro_thermal/">FAST: the hydro-thermal problem</a></li><li><a class="tocitem" href="../FAST_production_management/">FAST: the production management problem</a></li><li><a class="tocitem" href="../FAST_quickstart/">FAST: the quickstart problem</a></li><li><a class="tocitem" href="../Hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_multistock/">StochDynamicProgramming: the multistock problem</a></li><li><a class="tocitem" href="../StochDynamicProgramming.jl_stock/">StochDynamicProgramming: the stock problem</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_2stages/">StructDualDynProg: Problem 5.2, 2 stages</a></li><li><a class="tocitem" href="../StructDualDynProg.jl_prob5.2_3stages/">StructDualDynProg: Problem 5.2, 3 stages</a></li><li><a class="tocitem" href="../agriculture_mccardle_farm/">The farm planning problem</a></li><li><a class="tocitem" href="../air_conditioning/">Air conditioning</a></li><li><a class="tocitem" href="../all_blacks/">Deterministic All Blacks</a></li><li><a class="tocitem" href="../asset_management_simple/">Asset management</a></li><li><a class="tocitem" href="../asset_management_stagewise/">Asset management with modifications</a></li><li><a class="tocitem" href="../belief/">Partially observable inventory management</a></li><li class="is-active"><a class="tocitem" href>Biobjective hydro-thermal</a></li><li><a class="tocitem" href="../booking_management/">Booking management</a></li><li><a class="tocitem" href="../generation_expansion/">Generation expansion</a></li><li><a class="tocitem" href="../hydro_valley/">Hydro valleys</a></li><li><a class="tocitem" href="../infinite_horizon_hydro_thermal/">Infinite horizon hydro-thermal</a></li><li><a class="tocitem" href="../infinite_horizon_trivial/">Infinite horizon trivial</a></li><li><a class="tocitem" href="../no_strong_duality/">No strong duality</a></li><li><a class="tocitem" href="../objective_state_newsvendor/">Newsvendor</a></li><li><a class="tocitem" href="../sldp_example_one/">SLDP: example 1</a></li><li><a class="tocitem" href="../sldp_example_two/">SLDP: example 2</a></li><li><a class="tocitem" href="../stochastic_all_blacks/">Stochastic All Blacks</a></li><li><a class="tocitem" href="../the_farmers_problem/">The farmer&#39;s problem</a></li><li><a class="tocitem" href="../vehicle_location/">Vehicle location</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Biobjective hydro-thermal</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Biobjective hydro-thermal</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/examples/biobjective_hydro.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Biobjective-hydro-thermal"><a class="docs-heading-anchor" href="#Biobjective-hydro-thermal">Biobjective hydro-thermal</a><a id="Biobjective-hydro-thermal-1"></a><a class="docs-heading-anchor-permalink" href="#Biobjective-hydro-thermal" title="Permalink"></a></h1><pre><code class="language-julia hljs">using SDDP, GLPK, Statistics, Test
+
+function biobjective_hydro()
+    model = SDDP.PolicyGraph(
+        SDDP.LinearGraph(3),
+        bellman_function = SDDP.BellmanFunction(lower_bound = 0.0),
+        optimizer = GLPK.Optimizer,
+    ) do subproblem, stage
+        @variable(subproblem, 0 &lt;= v &lt;= 200, SDDP.State, initial_value = 50)
+
+        SDDP.add_objective_state(
+            subproblem,
+            initial_value = 0.0,
+            lower_bound = 0.0,
+            upper_bound = 1.0,
+            lipschitz = 1e6,
+        ) do y, ω
+            return y + ω.λ
+        end
+
+        @variables(subproblem, begin
+            0 &lt;= g[i = 1:2] &lt;= 100
+            0 &lt;= u &lt;= 150
+            s &gt;= 0
+            a
+            shortage_cost &gt;= 0
+            objective_1
+            objective_2
+        end)
+        @constraints(subproblem, begin
+            v.out == v.in - u - s + a
+            demand_eq, g[1] + g[2] + u == 150
+            objective_1 == g[1] + 10 * g[2]
+            shortage_cost &gt;= 40 - v.out
+            shortage_cost &gt;= 60 - 2 * v.out
+            shortage_cost &gt;= 80 - 4 * v.out
+            objective_2 == shortage_cost
+        end)
+        price_noise_terms = (stage == 1) ? [0.04, 0.12, 0.22, 0.64] : [0.0]
+        Ω = [(a = i, λ = j) for i in 0.0:5:50.0 for j in price_noise_terms]
+        SDDP.parameterize(subproblem, Ω) do ω
+            JuMP.fix(a, ω.a)
+            # This *has* to be called from inside `SDDP.parameterize`,
+            # otherwise it doesn&#39;t make sense.
+            λ = SDDP.objective_state(subproblem)
+            @stageobjective(subproblem, λ * objective_1 + (1 - λ) * objective_2)
+        end
+    end
+    SDDP.train(model, iteration_limit = 50, log_frequency = 10)
+
+    results = SDDP.simulate(model, 500)
+    objectives =
+        [sum(s[:stage_objective] for s in simulation) for simulation in results]
+    sample_mean = round(Statistics.mean(objectives); digits = 2)
+    sample_ci = round(1.96 * Statistics.std(objectives) / sqrt(500); digits = 2)
+    println(&quot;Confidence_interval = $(sample_mean) ± $(sample_ci)&quot;)
+    @test SDDP.calculate_bound(model) ≈ sample_mean atol = sample_ci
+    return
+end
+
+biobjective_hydro()</code></pre><pre><code class="nohighlight hljs">------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-21
+
+Problem
+  Nodes           : 3
+  State variables : 1
+  Scenarios       : 5.32400e+03
+  Existing cuts   : false
+  Subproblem structure                      : (min, max)
+    Variables                               : (12, 12)
+    VariableRef in MOI.LessThan{Float64}    : (5, 6)
+    AffExpr in MOI.GreaterThan{Float64}     : (3, 5)
+    AffExpr in MOI.EqualTo{Float64}         : (4, 6)
+    VariableRef in MOI.GreaterThan{Float64} : (8, 8)
+Options
+  Solver          : serial mode
+  Risk measure    : SDDP.Expectation()
+  Sampling scheme : SDDP.InSampleMonteCarlo
+
+Numerical stability report
+  Non-zero Matrix range     [1e+00, 1e+01]
+  Non-zero Objective range  [1e+00, 1e+00]
+  Non-zero Bounds range     [1e+02, 1e+06]
+  Non-zero RHS range        [4e+01, 2e+02]
+No problems detected
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+       10    8.840000e+01   1.183555e+02   9.409640e-01          1        690
+       20    3.000000e+01   1.849490e+02   9.609671e-01          1       1380
+       30    1.302000e+02   1.851810e+02   9.831181e-01          1       2070
+       40    4.965964e+02   1.864233e+02   1.010656e+00          1       2760
+       50    1.136000e+02   1.864322e+02   1.041784e+00          1       3450
+
+Terminating training
+  Status         : iteration_limit
+  Total time (s) : 1.041784e+00
+  Total solves   : 3450
+  Best bound     :  1.864322e+02
+  Simulation CI  :  1.857300e+02 ± 4.715676e+01
+------------------------------------------------------------------------------
+Confidence_interval = 189.59 ± 14.64
+</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../belief/">« Partially observable inventory management</a><a class="docs-footer-nextpage" href="../booking_management/">Booking management »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 17 August 2021 01:35">Tuesday 17 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

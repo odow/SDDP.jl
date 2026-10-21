@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Advanced I: objective states · SDDP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../logo.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="SDDP.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">SDDP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../01_first_steps/">Basic I: first steps</a></li><li><a class="tocitem" href="../02_adding_uncertainty/">Basic II: adding uncertainty</a></li><li><a class="tocitem" href="../03_objective_uncertainty/">Basic III: objective uncertainty</a></li><li><a class="tocitem" href="../04_markov_uncertainty/">Basic IV: Markov uncertainty</a></li><li><a class="tocitem" href="../05_plotting/">Basic V: plotting</a></li><li><a class="tocitem" href="../06_warnings/">Basic VI: words of warning</a></li><li class="is-active"><a class="tocitem" href>Advanced I: objective states</a><ul class="internal"><li><a class="tocitem" href="#One-dimensional-objective-states"><span>One-dimensional objective states</span></a></li><li><a class="tocitem" href="#Multi-dimensional-objective-states"><span>Multi-dimensional objective states</span></a></li><li><a class="tocitem" href="#objective_state_warnings"><span>Warnings</span></a></li></ul></li><li><a class="tocitem" href="../12_belief_states/">Advanced II: belief states</a></li><li><a class="tocitem" href="../13_integrality/">Advanced III: integrality</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">How-to guides</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../guides/add_a_multidimensional_state_variable/">Add a multi-dimensional state variable</a></li><li><a class="tocitem" href="../../guides/add_a_risk_measure/">Add a risk measure</a></li><li><a class="tocitem" href="../../guides/add_multidimensional_noise_Terms/">Add multi-dimensional noise terms</a></li><li><a class="tocitem" href="../../guides/add_noise_in_the_constraint_matrix/">Add noise in the constraint matrix</a></li><li><a class="tocitem" href="../../guides/choose_a_stopping_rule/">Choose a stopping rule</a></li><li><a class="tocitem" href="../../guides/create_a_general_policy_graph/">Create a general policy graph</a></li><li><a class="tocitem" href="../../guides/debug_a_model/">Debug a model</a></li><li><a class="tocitem" href="../../guides/improve_computational_performance/">Improve computational performance</a></li><li><a class="tocitem" href="../../guides/simulate_using_a_different_sampling_scheme/">Simulate using a different sampling scheme</a></li><li><a class="tocitem" href="../../guides/upgrade_from_the_old_sddp/">Upgrade from the old SDDP.jl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../examples/simple_hydro_thermal/">Hydro-thermal scheduling</a></li><li><a class="tocitem" href="../../examples/the_farmers_problem/">The farmer&#39;s problem</a></li></ul></li><li><a class="tocitem" href="../../apireference/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Advanced I: objective states</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Advanced I: objective states</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/odow/SDDP.jl/blob/master/docs/src/tutorial/11_objective_states.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Advanced-I:-objective-states"><a class="docs-heading-anchor" href="#Advanced-I:-objective-states">Advanced I: objective states</a><a id="Advanced-I:-objective-states-1"></a><a class="docs-heading-anchor-permalink" href="#Advanced-I:-objective-states" title="Permalink"></a></h1><p>There are many applications in which we want to model a price process that follows some auto-regressive process. Common examples include stock prices on financial exchanges and spot-prices in energy markets.</p><p>However, it is well known that these cannot be incorporated in to SDDP because they result in cost-to-go functions that are convex with respect to some state variables (e.g., the reservoir levels) and concave with respect to other state variables (e.g., the spot price in the current stage).</p><p>To overcome this problem, the approach in the literature has been to discretize the price process in order to model it using a Markovian policy graph like those discussed in <a href="../04_markov_uncertainty/#Basic-IV:-Markov-uncertainty">Basic IV: Markov uncertainty</a>.</p><p>However, recent work offers a way to include stagewise-dependent objective uncertainty into the objective function of SDDP subproblems. Readers are directed to the following works for an introduction:</p><ul><li><p>Downward, A., Dowson, O., and Baucke, R. (2017). Stochastic dual dynamic programming with stagewise dependent objective uncertainty. Optimization Online. <a href="http://www.optimization-online.org/DB_HTML/2018/02/6454.html">link</a></p></li><li><p>Dowson, O. PhD Thesis. University of Auckland, 2018. <a href="https://researchspace.auckland.ac.nz/handle/2292/37700">link</a></p></li></ul><p>The method discussed in the above works introduces the concept of an <em>objective state</em> into SDDP. Unlike normal state variables in SDDP (e.g., the volume of water in the reservoir), the cost-to-go function is <em>concave</em> with respect to the objective states. Thus, the method builds an outer approximation of the cost-to-go function in the normal state-space, and an inner approximation of the cost-to-go function in the objective state-space.</p><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>Support for objective states in <code>SDDP.jl</code> is experimental. Models are considerably more computational intensive, the interface is less user-friendly, and there are <a href="#objective_state_warnings">subtle gotchas to be aware of</a>. Only use this if you have read and understood the theory behind the method.</p></div></div><h2 id="One-dimensional-objective-states"><a class="docs-heading-anchor" href="#One-dimensional-objective-states">One-dimensional objective states</a><a id="One-dimensional-objective-states-1"></a><a class="docs-heading-anchor-permalink" href="#One-dimensional-objective-states" title="Permalink"></a></h2><p>Let&#39;s assume that the fuel cost is not fixed, but instead evolves according to a multiplicative auto-regressive process: <code>fuel_cost[t] = ω * fuel_cost[t-1]</code>, where <code>ω</code> is drawn from the sample space <code>[0.75, 0.9, 1.1, 1.25]</code> with equal probability.</p><p>An objective state can be added to a subproblem using the <a href="../../apireference/#SDDP.add_objective_state"><code>SDDP.add_objective_state</code></a> function. This can only be called once per subproblem. If you want to add a multi-dimensional objective state, read <a href="#Multi-dimensional-objective-states">Multi-dimensional objective states</a>. <a href="../../apireference/#SDDP.add_objective_state"><code>SDDP.add_objective_state</code></a> takes a number of keyword arguments. The two required ones are</p><ul><li><p><code>initial_value</code>: the value of the objective state at the root node of the policy graph (i.e., identical to the <code>initial_value</code> when defining normal state variables.</p></li><li><p><code>lipschitz</code>: the Lipschitz constant of the cost-to-go function with respect to the objective state. In other words, this value is the maximum change in the cost-to-go function <em>at any point in the state space</em>, given a one-unit change in the objective state.</p></li></ul><p>There are also two optional keyword arguments: <code>lower_bound</code> and <code>upper_bound</code>, which give SDDP.jl hints (importantly, not constraints) about the domain of the objective state. Setting these bounds appropriately can improve the speed of convergence.</p><p>Finally, <a href="../../apireference/#SDDP.add_objective_state"><code>SDDP.add_objective_state</code></a> requires an update function. This function takes two arguments. The first is the incoming value of the objective state, and the second is the realization of the stagewise-independent noise term (set using <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a>). The function should return the value of the objective state to be used in the current subproblem.</p><p>This connection with the stagewise-independent noise term means that <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a> <em>must</em> be called in a subproblem that defines an objective state. Inside <a href="../../apireference/#SDDP.parameterize"><code>SDDP.parameterize</code></a>, the value of the objective state to be used in the current subproblem (i.e., after the update function), can be queried using <a href="../../apireference/#SDDP.objective_state"><code>SDDP.objective_state</code></a>.</p><p>Here is the full model with the objective state.</p><pre><code class="language-julia">using SDDP, GLPK
+
+model = SDDP.LinearPolicyGraph(
+    stages = 3,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer
+) do subproblem, t
+    @variable(subproblem, 0 &lt;= volume &lt;= 200, SDDP.State, initial_value = 200)
+    @variables(subproblem, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+        inflow
+    end)
+    @constraints(subproblem, begin
+        volume.out == volume.in + inflow - hydro_generation - hydro_spill
+        demand_constraint, thermal_generation + hydro_generation == 150.0
+    end)
+
+    # Add an objective state. ω will be the same value that is called in
+    # `SDDP.parameterize`.
+
+    SDDP.add_objective_state(
+        subproblem,
+        initial_value = 50.0,
+        lipschitz = 10_000.0,
+        lower_bound = 50.0,
+        upper_bound = 150.0
+    ) do fuel_cost, ω
+        return ω.fuel * fuel_cost
+    end
+
+    # Create the cartesian product of a multi-dimensional random variable.
+
+    Ω = [
+        (fuel = f, inflow = w)
+        for f in [0.75, 0.9, 1.1, 1.25] for w in [0.0, 50.0, 100.0]
+    ]
+
+    SDDP.parameterize(subproblem, Ω) do ω
+        # Query the current fuel cost.
+        fuel_cost = SDDP.objective_state(subproblem)
+        @stageobjective(subproblem, fuel_cost * thermal_generation)
+        JuMP.fix(inflow, ω.inflow)
+    end
+end</code></pre><pre class="documenter-example-output">A policy graph with 3 nodes.
+ Node indices: 1, 2, 3
+</pre><p>After creating our model, we can train and simulate as usual.</p><pre><code class="language-julia">SDDP.train(model, iteration_limit = 10, run_numerical_stability_report=false)
+
+simulations = SDDP.simulate(model, 1)
+
+print(&quot;Finished training and simulating.&quot;)</code></pre><pre class="documenter-example-output">--------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-20
+
+Solver: serial mode
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    1.051875e+04   3.738585e+03   6.063700e-01          1         39
+        2    3.942397e+03   3.839365e+03   6.079669e-01          1         78
+        3    0.000000e+00   3.994616e+03   6.095409e-01          1        117
+        4    4.961814e+02   4.173355e+03   6.110318e-01          1        156
+        5    2.343750e+03   4.286119e+03   6.272559e-01          1        195
+        6    1.406250e+03   4.357074e+03   6.288290e-01          1        234
+        7    6.679471e+03   4.720764e+03   6.303918e-01          1        273
+        8    5.380477e+03   4.731229e+03   6.319599e-01          1        312
+        9    7.312500e+03   4.731229e+03   6.335690e-01          1        351
+       10   -2.149392e-12   4.778779e+03   6.351619e-01          1        390
+
+Terminating training with status: iteration_limit
+------------------------------------------------------------------------------
+Finished training and simulating.</pre><p>To demonstrate how the objective states are updated, consider the sequence of noise observations:</p><pre><code class="language-julia">[stage[:noise_term] for stage in simulations[1]]</code></pre><pre class="documenter-example-output">3-element Array{NamedTuple{(:fuel, :inflow),Tuple{Float64,Float64}},1}:
+ (fuel = 1.1, inflow = 100.0) 
+ (fuel = 0.75, inflow = 50.0) 
+ (fuel = 0.75, inflow = 100.0)</pre><p>This, the fuel cost in the first stage should be <code>0.75 * 50 = 37.5</code>. The fuel cost in the second stage should be <code>0.9 * 37.5 = 33.75</code>. The fuel cost in the third stage should be <code>1.25 * 33.75 = 42.1875</code>.</p><p>To confirm this, the values of the objective state in a simulation can be queried using the <code>:objective_state</code> key.</p><pre><code class="language-julia">[stage[:objective_state] for stage in simulations[1]]</code></pre><pre class="documenter-example-output">3-element Array{Float64,1}:
+ 55.00000000000001 
+ 41.25000000000001 
+ 30.937500000000007</pre><h2 id="Multi-dimensional-objective-states"><a class="docs-heading-anchor" href="#Multi-dimensional-objective-states">Multi-dimensional objective states</a><a id="Multi-dimensional-objective-states-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-dimensional-objective-states" title="Permalink"></a></h2><p>You can construct multi-dimensional price processes using <code>NTuple</code>s. Just replace every scalar value associated with the objective state by a tuple. For example, <code>initial_value = 1.0</code> becomes <code>initial_value = (1.0, 2.0)</code>.</p><p>Here is an example:</p><pre><code class="language-julia">model = SDDP.LinearPolicyGraph(
+    stages = 3,
+    sense = :Min,
+    lower_bound = 0.0,
+    optimizer = GLPK.Optimizer
+) do subproblem, t
+    @variable(subproblem, 0 &lt;= volume &lt;= 200, SDDP.State, initial_value = 200)
+    @variables(subproblem, begin
+        thermal_generation &gt;= 0
+        hydro_generation   &gt;= 0
+        hydro_spill        &gt;= 0
+        inflow
+    end)
+    @constraints(subproblem, begin
+        volume.out == volume.in + inflow - hydro_generation - hydro_spill
+        demand_constraint, thermal_generation + hydro_generation == 150.0
+    end)
+
+    SDDP.add_objective_state(
+        subproblem,
+        initial_value = (50.0, 50.0),
+        lipschitz = (10_000.0, 10_000.0),
+        lower_bound = (50.0, 50.0),
+        upper_bound = (150.0, 150.0)
+    ) do fuel_cost, ω
+        fuel_cost′ = fuel_cost[1] + 0.5 * (fuel_cost[1] - fuel_cost[2]) + ω.fuel
+        return (fuel_cost′, fuel_cost[1])
+    end
+
+    Ω = [
+        (fuel = f, inflow = w)
+        for f in [-10.0, -5.0, 5.0, 10.0] for w in [0.0, 50.0, 100.0]
+    ]
+
+    SDDP.parameterize(subproblem, Ω) do ω
+        (fuel_cost, fuel_cost_old) = SDDP.objective_state(subproblem)
+        @stageobjective(subproblem, fuel_cost * thermal_generation)
+        JuMP.fix(inflow, ω.inflow)
+    end
+end
+
+SDDP.train(model, iteration_limit = 10, run_numerical_stability_report=false)
+
+simulations = SDDP.simulate(model, 1)
+
+print(&quot;Finished training and simulating.&quot;)</code></pre><pre class="documenter-example-output">--------------------------------------------------------------------------------
+                      SDDP.jl (c) Oscar Dowson, 2017-20
+
+Solver: serial mode
+
+ Iteration    Simulation       Bound         Time (s)    Proc. ID   # Solves
+        1    2.000000e+03   2.150673e+03   5.132511e-01          1         39
+        2    4.375000e+03   2.888258e+03   5.149362e-01          1         78
+        3    4.187500e+03   4.486594e+03   5.166390e-01          1        117
+        4    6.687500e+03   4.516345e+03   5.183320e-01          1        156
+        5    2.125000e+03   4.525491e+03   5.199502e-01          1        195
+        6    6.750000e+03   4.525491e+03   5.215602e-01          1        234
+        7    1.000000e+03   4.525491e+03   5.233140e-01          1        273
+        8    6.125000e+03   4.617772e+03   5.251272e-01          1        312
+        9    1.187500e+03   4.618367e+03   5.269341e-01          1        351
+       10    5.125000e+03   4.631298e+03   5.286722e-01          1        390
+
+Terminating training with status: iteration_limit
+------------------------------------------------------------------------------
+Finished training and simulating.</pre><p>This time, since our objective state is two-dimensional, the objective states are tuples with two elements:</p><pre><code class="language-julia">[stage[:objective_state] for stage in simulations[1]]</code></pre><pre class="documenter-example-output">3-element Array{Tuple{Float64,Float64},1}:
+ (40.0, 50.0)
+ (40.0, 40.0)
+ (50.0, 40.0)</pre><h2 id="objective_state_warnings"><a class="docs-heading-anchor" href="#objective_state_warnings">Warnings</a><a id="objective_state_warnings-1"></a><a class="docs-heading-anchor-permalink" href="#objective_state_warnings" title="Permalink"></a></h2><p>There are number of things to be aware of when using objective states.</p><ul><li><p>The key assumption is that price is independent of the states and actions in the model.</p><p>That means that the price cannot appear in any <code>@constraint</code>s. Nor can you use any <code>@variable</code>s in the update function.</p></li><li><p>Choosing an appropriate Lipschitz constant is difficult.</p><p>The points discussed in <a href="../06_warnings/#Choosing-an-initial-bound">Choosing an initial bound</a> are relevant. The Lipschitz constant should not be chosen as large as possible (since this will help with convergence and the numerical issues discussed above), but if chosen to small, it may cut of the feasible region and lead to a sub-optimal solution.</p></li><li><p>You need to ensure that the cost-to-go function is concave with respect to the objective state <em>before</em> the update.</p><p>If the update function is linear, this is always the case. In some situations, the update function can be nonlinear (e.g., multiplicative as we have above). In general, placing constraints on the price (e.g., <code>clamp(price, 0, 1)</code>) will destroy concavity. <a href="https://en.wikipedia.org/wiki/Caveat_emptor">Caveat emptor</a>. It&#39;s up to you if this is a problem. If it isn&#39;t you&#39;ll get a good heuristic with no guarantee of global optimality.</p></li></ul><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../06_warnings/">« Basic VI: words of warning</a><a class="docs-footer-nextpage" href="../12_belief_states/">Advanced II: belief states »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 16 December 2020 19:52">Wednesday 16 December 2020</span>. Using Julia version 1.0.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
