@@ -6,6 +6,14 @@
 
 # ========================= Monte Carlo Sampling Scheme ====================== #
 
+# Internal function: return a function that, on its `i`'th call, returns
+# `rollout_limit(i)`. The counter is atomic so that each call gets a distinct `i`
+# even if the sampling scheme is used by multiple threads at once.
+function _rollout_counter(rollout_limit::Function)
+    counter = Threads.Atomic{Int}(0)
+    return () -> rollout_limit(Threads.atomic_add!(counter, 1) + 1)
+end
+
 struct InSampleMonteCarlo <: AbstractSamplingScheme
     max_depth::Int
     terminate_on_cycle::Bool
@@ -54,9 +62,7 @@ function InSampleMonteCarlo(;
             "false when max_depth=0.",
         )
     end
-    new_rollout = let i = 0
-        () -> (i += 1; rollout_limit(i))
-    end
+    new_rollout = _rollout_counter(rollout_limit)
     return InSampleMonteCarlo(
         max_depth,
         terminate_on_cycle,
@@ -183,9 +189,7 @@ function OutOfSampleMonteCarlo(
         noise_terms[key] = convert(Vector{Noise}, noise)
         children[key] = child
     end
-    new_rollout = let i = 0
-        () -> (i += 1; rollout_limit(i))
-    end
+    new_rollout = _rollout_counter(rollout_limit)
     return OutOfSampleMonteCarlo{T}(
         noise_terms,
         root_children,
