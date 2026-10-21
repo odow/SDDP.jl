@@ -52,8 +52,6 @@ mutable struct ConvexApproximation
     end
 end
 
-_magnitude(x) = abs(x) > 0 ? log10(abs(x)) : 0
-
 function _add_cut(
     V::ConvexApproximation,
     θᵏ::Float64,
