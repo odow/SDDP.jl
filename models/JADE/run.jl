@@ -81,15 +81,24 @@ SDDP.plot(model, "model_jade.html"; open = false)
 # <iframe src="../model_jade.html" style="width:100%;height:500px;"></iframe>
 # ```
 
-# `JADE.train` wraps `SDDP.train`. Because the graph is cyclic, a forward pass
-# continues until the discounting terminates it, which takes 20 years on
-# average. To keep the early iterations short, `JADE.train` limits the forward
-# pass to one year for the first 104 iterations, then to two years for the next
-# 104 iterations, and so on. We stop after 200 iterations. A real run would use
-# many more iterations, or a different stopping rule; see
+# Because the graph is cyclic, a forward pass continues until the discounting
+# terminates it, which takes 20 years on average. In the early iterations, a
+# long forward pass adds cuts at states that the policy is unlikely to visit
+# again. To keep the early iterations short, we use `rollout_limit` to limit
+# the forward pass of iteration `i` to `52 * cld(i, 104)` weeks, that is, to one
+# year for the first 104 iterations, then to two years for the next 104
+# iterations, and so on. We stop after 200 iterations. A real run would use many
+# more iterations, or a different stopping rule; see
 # [How to choose a stopping rule](@ref).
 
-JADE.train(model; iteration_limit = 200, log_frequency = 10)
+SDDP.train(
+    model;
+    iteration_limit = 200,
+    log_frequency = 10,
+    sampling_scheme = SDDP.InSampleMonteCarlo(;
+        rollout_limit = i -> 52 * cld(i, 104),
+    ),
+)
 
 # ## Simulating the historical years
 

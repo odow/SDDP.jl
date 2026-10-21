@@ -546,45 +546,6 @@ function test_historical_sequence()
     return
 end
 
-function test_default_sampling_scheme()
-    sampling_scheme = JADE.default_sampling_scheme()
-    @test sampling_scheme isa SDDP.InSampleMonteCarlo
-    @test sampling_scheme.max_depth == 0
-    # The rollout limit is called once per forward pass.
-    limits = [sampling_scheme.rollout_limit() for _ in 1:(3*104)]
-    @test limits == vcat(fill(52, 104), fill(104, 104), fill(156, 104))
-    # Each call starts the iteration count again.
-    @test JADE.default_sampling_scheme().rollout_limit() == 52
-    return
-end
-
-function test_train()
-    data = JADE.Data(DB_FILE)
-    config = JADE.Config(; optimizer = HiGHS.Optimizer)
-    model = SDDP.PolicyGraph(data, config)
-    depths = Int[]
-    JADE.train(
-        model;
-        iteration_limit = 2,
-        print_level = 0,
-        forward_pass_callback = t -> push!(depths, length(t.scenario_path)),
-    )
-    @test length(depths) == 2
-    @test all(d -> d <= 52, depths)
-    # A `sampling_scheme` replaces the default.
-    empty!(depths)
-    JADE.train(
-        model;
-        iteration_limit = 1,
-        print_level = 0,
-        sampling_scheme = SDDP.InSampleMonteCarlo(; max_depth = 3),
-        add_to_existing_cuts = true,
-        forward_pass_callback = t -> push!(depths, length(t.scenario_path)),
-    )
-    @test depths == [3]
-    return
-end
-
 function test_simulate()
     data = JADE.Data(DB_FILE)
     config = JADE.Config(; optimizer = HiGHS.Optimizer)

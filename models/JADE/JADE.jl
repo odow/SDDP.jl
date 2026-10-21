@@ -71,12 +71,9 @@
 # )
 # config = JADE.Config(; optimizer = HiGHS.Optimizer)
 # model = SDDP.PolicyGraph(data, config)
-# JADE.train(model; iteration_limit = 100)
+# SDDP.train(model; iteration_limit = 100)
 # simulations = JADE.simulate(model, 100)
 # ```
-#
-# `JADE.train` wraps `SDDP.train` to choose a sampling scheme that suits the
-# cyclic policy graph (see the section "Training the policy" below).
 #
 # `JADE.simulate` wraps `SDDP.simulate` to record the reservoir storage, the
 # thermal generation, the price of energy at each node, and the marginal value
@@ -1049,54 +1046,6 @@ function _add_power_network(sp::JuMP.Model, data::Data, week::Int)
         ),
     )
     return
-end
-
-# ## Training the policy
-#
-# The policy graph is cyclic, so a forward pass of `SDDP.train` continues until
-# the discounting terminates it, which takes 20 years on average. In the early
-# iterations, the cost-to-go functions are poor, so a long forward pass adds
-# cuts at states that the policy is unlikely to visit again. Instead, the
-# default sampling scheme limits the forward pass to one year (52 weeks) for
-# the first 104 iterations, then to two years for the next 104 iterations, and
-# so on. A forward pass can still end earlier, each time it completes a year,
-# because of the discounting.
-
-"""
-    default_sampling_scheme()
-
-Return the default sampling scheme of [`train`](@ref): an
-`SDDP.InSampleMonteCarlo` in which the forward pass of iteration `i` is limited
-to `52 * cld(i, 104)` weeks.
-
-The iteration count starts at `1` each time this function is called, so pass
-the same sampling scheme to every call of `train` that continues training the
-same model.
-"""
-function default_sampling_scheme()
-    return SDDP.InSampleMonteCarlo(; rollout_limit = i -> 52 * cld(i, 104))
-end
-
-"""
-    train(
-        model::SDDP.PolicyGraph;
-        sampling_scheme::SDDP.AbstractSamplingScheme = default_sampling_scheme(),
-        kwargs...,
-    )
-
-Train the policy in `model`, which must have been created by
-`SDDP.PolicyGraph(data, config)`, with `SDDP.train`.
-
-The default `sampling_scheme` is [`default_sampling_scheme`](@ref). The other
-keyword arguments are passed to `SDDP.train`, for example,
-`iteration_limit = 100`.
-"""
-function train(
-    model::SDDP.PolicyGraph;
-    sampling_scheme::SDDP.AbstractSamplingScheme = default_sampling_scheme(),
-    kwargs...,
-)
-    return SDDP.train(model; sampling_scheme, kwargs...)
 end
 
 # ## Simulating the policy
