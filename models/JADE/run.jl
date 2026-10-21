@@ -81,18 +81,15 @@ SDDP.plot(model, "model_jade.html"; open = false)
 # <iframe src="../model_jade.html" style="width:100%;height:500px;"></iframe>
 # ```
 
-# Because the graph is cyclic, a forward pass continues until the discounting
-# terminates it, which takes 20 years on average. To keep each iteration
-# short, we limit the forward pass to one year with `max_depth = 104`. We also
-# stop after 100 iterations. A real run would use many more iterations, or a
-# different stopping rule; see [How to choose a stopping rule](@ref).
+# [`JADE.train`](JADE.md) wraps `SDDP.train`. Because the graph is cyclic, a
+# forward pass continues until the discounting terminates it, which takes 20
+# years on average. To keep the early iterations short, `JADE.train` limits the
+# forward pass to one year for the first 104 iterations, then to two years for
+# the next 104 iterations, and so on. We stop after 200 iterations. A real run
+# would use many more iterations, or a different stopping rule; see
+# [How to choose a stopping rule](@ref).
 
-SDDP.train(
-    model;
-    iteration_limit = 200,
-    log_frequency = 10,
-    sampling_scheme = SDDP.InSampleMonteCarlo(; max_depth = 104),
-)
+JADE.train(model; iteration_limit = 200, log_frequency = 10)
 
 # ## Simulating the historical years
 
@@ -200,7 +197,7 @@ Plots.plot(
     size = (800, 600),
 )
 
-# The policy was trained on only three years of inflows and 100 iterations, so
+# The policy was trained on only three years of inflows and 200 iterations, so
 # it should not be read as a good policy for the New Zealand system. The
 # spikes in the price are weeks in which the policy sheds load. To improve
 # the policy, train on every year and for many more iterations.
