@@ -284,6 +284,19 @@ function prepare_backward_pass(
     return () -> nothing
 end
 
+# Undo the changes that `get_dual_solution(::Node, ::LagrangianDuality)` makes
+# to the incoming state variables: remove the integrality and fix them to their
+# original values again (`force = true` also removes the bounds).
+function _restore_incoming_state(node::Node, x_in_value::Vector{Float64})
+    for (i, (_, state)) in enumerate(node.states)
+        if JuMP.is_integer(state.in)
+            JuMP.unset_integer(state.in)
+        end
+        JuMP.fix(state.in, x_in_value[i]; force = true)
+    end
+    return
+end
+
 function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     undo_relax = _relax_integrality(node, lagrange.optimizer)
     optimize!(node.subproblem)
@@ -314,6 +327,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
     # issues.
     L_k = _solve_primal_problem(node.subproblem, λ_star, h_expr, h_k)
     if L_k === nothing
+        _restore_incoming_state(node, x_in_value)
         return conic_obj, conic_dual
     end
     L_star, λ_star =
@@ -321,12 +335,7 @@ function get_dual_solution(node::Node, lagrange::LagrangianDuality)
             L_k = _solve_primal_problem(node.subproblem, x, h_expr, h_k)
             return L_k === nothing ? nothing : (s * L_k, s * h_k)
         end
-    for (i, (_, state)) in enumerate(node.states)
-        if JuMP.is_integer(state.in)
-            JuMP.unset_integer(state.in)
-        end
-        JuMP.fix(state.in, x_in_value[i]; force = true)
-    end
+    _restore_incoming_state(node, x_in_value)
     λ_solution = Dict{Symbol,Float64}(
         k => _sparsify(λ_star[i]) for (i, k) in enumerate(keys(node.states))
     )

@@ -430,6 +430,57 @@ function test_LagrangianDuality_warn()
     return
 end
 
+function test_LagrangianDuality_first_solve_not_optimal()
+    model = SDDP.LinearPolicyGraph(;
+        stages = 2,
+        sense = :Min,
+        lower_bound = 0.0,
+        optimizer = HiGHS.Optimizer,
+    ) do sp, t
+        set_silent(sp)
+        @variable(sp, 0 <= x <= 2, Int, SDDP.State, initial_value = 1)
+        @variable(sp, y >= 0)
+        @constraint(sp, y >= x.in - x.out)
+        @stageobjective(sp, y + x.out)
+    end
+    node = model.nodes[2]
+    handler = SDDP.LagrangianDuality()
+    options = SDDP.Options(model, Dict(:x => 1.0); duality_handler = handler)
+    _ = SDDP.prepare_backward_pass(model, handler, options)
+    SDDP.set_incoming_state(node, Dict(:x => 1.0))
+    sp = node.subproblem
+    SDDP._initialize_solver(node; throw_error = false)
+    optimize!(sp)
+    # get_dual_solution first solves the LP relaxation, then the Lagrangian.
+    # Give the first Lagrangian solve a time limit of zero so that it does not
+    # terminate with OPTIMAL.
+    n_solves, status = Ref(0), Ref(MOI.OPTIMIZE_NOT_CALLED)
+    function hook(model; kwargs...)
+        n_solves[] += 1
+        if n_solves[] == 2
+            set_time_limit_sec(model, 0.0)
+        end
+        optimize!(model; ignore_optimize_hook = true)
+        if n_solves[] == 2
+            status[] = SDDP.JuMP.termination_status(model)
+        end
+        return
+    end
+    set_optimize_hook(sp, hook)
+    SDDP.get_dual_solution(node, handler)
+    set_time_limit_sec(sp, nothing)
+    @test n_solves[] >= 2
+    @test status[] == MOI.TIME_LIMIT
+    x_in = node.states[:x].in
+    @test is_fixed(x_in)
+    @test fix_value(x_in) == 1.0
+    @test !is_integer(x_in)
+    # The next backward pass solve fixes the incoming state again.
+    SDDP.set_incoming_state(node, Dict(:x => 0.0))
+    @test fix_value(x_in) == 0.0
+    return
+end
+
 function test_BanditDuality_show()
     @test sprint(show, SDDP.BanditDuality()) ==
           "BanditDuality with arms:\n * SDDP.ContinuousConicDuality{Nothing}(nothing)\n * SDDP.StrengthenedConicDuality{Nothing}(nothing)"
