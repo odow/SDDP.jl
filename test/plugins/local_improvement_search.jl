@@ -73,6 +73,32 @@ function test_piecewise()
     return
 end
 
+function test_line_search_evaluation_limit()
+    # Function values that are not consistent with the gradients, as can happen
+    # when they come from inexact subproblem solves. From x = 0 the line search
+    # alternates between the step lengths 1 and 0.5 without terminating, so it
+    # must stop when the evaluation limit is reached.
+    calls = 0
+    method = LocalImprovementSearch.BFGS(10)
+    f, x = LocalImprovementSearch.minimize(method, [0.0]) do x
+        calls += 1
+        if calls > 100
+            error("Evaluation limit not respected")
+        elseif x[1] == 0.0
+            return 0.0, [1.0]
+        elseif x[1] == -1.0
+            return 0.0, [-1.0]
+        else
+            @assert x[1] == -0.5
+            return -1.5, [-1.0]
+        end
+    end
+    @test calls == 11
+    @test f == 0.0
+    @test x == [0.0]
+    return
+end
+
 function test_x_squared_outer_approximation()
     calls = 0
     solver = LocalImprovementSearch.OuterApproximation(HiGHS.Optimizer)

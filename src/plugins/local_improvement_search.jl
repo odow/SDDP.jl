@@ -129,6 +129,12 @@ function _line_search(
     evals::Ref{Int},
 ) where {F<:Function}
     while _norm(α * p) > 1e-3 * max(1.0, _norm(x))
+        if evals[] <= 0
+            # We have evaluated the function too many times. Without this
+            # check the Newton step below can cycle forever when the function
+            # values are not consistent with the gradients.
+            break
+        end
         xₖ = x + α * p
         ret = f(xₖ)
         evals[] -= 1
