@@ -272,6 +272,11 @@ SDDP.RegularizedForwardPass
 SDDP.ImportanceSamplingForwardPass
 ```
 
+## `RiskBiasedForwardPass`
+```@docs
+SDDP.RiskBiasedForwardPass
+```
+
 ## `LoggingForwardPass`
 ```@docs
 SDDP.LoggingForwardPass

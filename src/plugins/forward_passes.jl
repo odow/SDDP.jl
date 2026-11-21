@@ -32,8 +32,25 @@ function forward_pass(
         scenario_path, terminated_due_to_cycle =
             sample_scenario(model, options.sampling_scheme)
     end
+    return _forward_pass_along_scenario(
+        model,
+        options,
+        scenario_path,
+        terminated_due_to_cycle,
+        pass.include_last_node,
+    )
+end
+
+# Internal function: solve the forward pass along a pre-sampled `scenario_path`.
+function _forward_pass_along_scenario(
+    model::PolicyGraph{T},
+    options::Options,
+    scenario_path::Vector,
+    terminated_due_to_cycle::Bool,
+    include_last_node::Bool,
+) where {T}
     final_node = scenario_path[end]
-    if terminated_due_to_cycle && !pass.include_last_node
+    if terminated_due_to_cycle && !include_last_node
         pop!(scenario_path)
     end
     # Storage for the list of outgoing states that we visit on the forward pass.
@@ -125,7 +142,7 @@ function forward_pass(
         starting_states = options.starting_states[final_node[1]]
         # We also need the incoming state variable to the final node, which
         # is the outgoing state value of the second to last node:
-        incoming_state_value = if pass.include_last_node
+        incoming_state_value = if include_last_node
             sampled_states[end-1]
         else
             sampled_states[end]
@@ -486,6 +503,242 @@ function forward_pass(
         objective_states = NTuple{0,Float64}[],
         belief_states = Tuple{Int,Dict{T,Float64}}[],
         cumulative_value = cumulative_value,
+    )
+end
+
+"""
+    RiskBiasedForwardPass(; include_last_node::Bool = true)
+
+A forward pass that biases the sampled trajectories toward unfavorable
+scenarios by sampling the transition to each `(child, noise)` pair using the
+risk-adjusted probabilities computed in the backward pass, instead of the
+nominal probabilities.
+
+Each time a cut is added to a node, the sampling probability `p` of each
+`(child, noise)` pair is updated using the risk-adjusted probability `r` and the
+nominal probability `q` as:
+```julia
+p = (p + r + q) / 3
+```
+where `p` is initialized to `q`, and `r` is rescaled to sum to the same total
+as `q`. This running average means that if the
+risk-adjusted probabilities change a lot between visits to the node, the
+forward pass samples close to the nominal distribution, and if they
+consistently identify a few unfavorable scenarios, the forward pass samples
+those scenarios more often. Because of the `q` term, the sampling probabilities
+converge to `(r + q) / 2` if `r` is fixed, and no scenario with a positive
+nominal probability is ever sampled with zero probability.
+
+If no cut has been added to a node yet (for example, on the first iteration),
+the nominal probabilities are used. The first node and its noise are always
+sampled from the nominal distribution.
+
+This forward pass requires the `sampling_scheme` to be an
+[`InSampleMonteCarlo`](@ref). The `max_depth`, `terminate_on_cycle`,
+`terminate_on_dummy_leaf`, and `initial_node` settings of the sampling scheme
+are respected. The probability of terminating at a dummy leaf node is computed
+using the nominal probabilities.
+
+See [`DefaultForwardPass`](@ref) for the meaning of `include_last_node`.
+
+## Caveats
+
+ * The risk-adjusted probabilities at a node were computed for the outgoing
+   state visited by a previous backward pass, which is not necessarily the
+   state visited by the current forward pass.
+ * Because the trajectories are not sampled from the nominal distribution, the
+   simulation value reported in the log is a biased estimate of the expected
+   cost of the policy.
+ * In models with a belief state, or if the backward sampling scheme does not
+   evaluate any children, the nominal probabilities are used.
+"""
+struct RiskBiasedForwardPass <: AbstractForwardPass
+    include_last_node::Bool
+    function RiskBiasedForwardPass(; include_last_node::Bool = true)
+        return new(include_last_node)
+    end
+end
+
+# Internal function: called from `backward_pass` after a cut is added to `node`
+# to update the distribution over `(child, noise)` pairs that is used by
+# `RiskBiasedForwardPass`.
+#
+# `_refine_bellman_function_no_lock` stashes the risk-adjusted probabilities
+# `r`, and `nominal_probability` contains the nominal probabilities `q`. For
+# each `(child, noise)` pair evaluated in the backward pass, the stored
+# probability `p` is updated to
+#
+#     p = (p + r + q) / 3
+#
+# where `p = q` if this is the first time we have seen the pair. This is a
+# running average that:
+#
+#  * smooths over the different risk-adjusted probabilities that are computed
+#    each time the node is visited (including multiple visits in a single
+#    backward pass of a cyclic graph), so that if the risk-adjusted
+#    probabilities are noisy, we sample something close to the nominal
+#    distribution, and if they consistently identify a few bad scenarios, we
+#    sample those more often
+#  * is pulled toward the nominal distribution, so that the steady-state is
+#    `p = (r + q) / 2`, and no scenario with a positive nominal probability ever
+#    has zero probability of being sampled.
+#
+# Before averaging, `r` is rescaled so that it sums to the same total as `q`.
+# This matters when the probabilities of the children sum to less than one (for
+# example, in a cyclic graph with a discount factor): some risk measures, like
+# `WorstCase` and `AVaR`, return probabilities that sum to one, which would
+# otherwise give `r` more weight than `q`.
+#
+# The first time the distribution is created, it is seeded with every
+# `(child, noise)` pair in the nominal distribution. Pairs that are not
+# evaluated in this backward pass (for example, because the backward sampling
+# scheme sampled a subset of the noise terms) keep their previous probability.
+function _store_risk_adjusted_transitions(
+    model::PolicyGraph{T},
+    node::Node{T},
+    items::BackwardPassItems,
+    nominal_probability::Vector{Float64},
+) where {T}
+    lock(node.lock) do
+        r = node.risk_adjusted_probability
+        node.risk_adjusted_probability = Float64[]
+        if !(length(r) == length(nominal_probability) == length(items.nodes))
+            # Either a custom Bellman function that did not store the
+            # probabilities, or another thread refined this node in the
+            # meantime. Keep whatever distribution we had previously.
+            return
+        end
+        terms = node.risk_adjusted_transitions
+        if isempty(terms)
+            append!(terms, _nominal_transitions(model, node))
+        end
+        # Aggregate the probabilities by (child, noise) pair, in case the same
+        # pair appears more than once.
+        r_sum, q_sum =
+            Dict{Tuple{T,Any},Float64}(), Dict{Tuple{T,Any},Float64}()
+        for (child, support, r_i, q_i) in
+            zip(items.nodes, items.supports, r, nominal_probability)
+            key = (child, support.term)
+            r_sum[key] = get(r_sum, key, 0.0) + max(0.0, r_i)
+            q_sum[key] = get(q_sum, key, 0.0) + q_i
+        end
+        total_r, total_q =
+            sum(values(r_sum); init = 0.0), sum(values(q_sum); init = 0.0)
+        if total_r <= 0.0
+            return
+        end
+        scale = total_q / total_r
+        index =
+            Dict{Tuple{T,Any},Int}(t.term => i for (i, t) in enumerate(terms))
+        for (key, q_i) in q_sum
+            i = get(index, key, nothing)
+            old = i === nothing ? q_i : terms[i].probability
+            new = (old + scale * r_sum[key] + q_i) / 3
+            if i === nothing
+                push!(terms, Noise{Tuple{T,Any}}(key, new))
+                index[key] = length(terms)
+            else
+                terms[i] = Noise{Tuple{T,Any}}(key, new)
+            end
+        end
+        if sum(t.probability for t in terms; init = 0.0) <= 0.0
+            empty!(terms)
+        end
+        return
+    end
+    return
+end
+
+function _nominal_transitions(model::PolicyGraph{T}, node::Node{T}) where {T}
+    terms = Noise{Tuple{T,Any}}[]
+    index = Dict{Tuple{T,Any},Int}()
+    for child in node.children
+        for noise in model[child.term].noise_terms
+            key = (child.term, noise.term)
+            p = child.probability * noise.probability
+            if haskey(index, key)
+                terms[index[key]] =
+                    Noise{Tuple{T,Any}}(key, terms[index[key]].probability + p)
+            else
+                push!(terms, Noise{Tuple{T,Any}}(key, p))
+                index[key] = length(terms)
+            end
+        end
+    end
+    return terms
+end
+
+function _sample_risk_biased_scenario(
+    model::PolicyGraph{T},
+    sampling_scheme::InSampleMonteCarlo,
+) where {T}
+    scenario_path = Tuple{T,Any}[]
+    visited_nodes = Set{T}()
+    node_index = something(
+        sampling_scheme.initial_node,
+        sample_noise(model.root_children),
+    )::T
+    noise = sample_noise(model[node_index].noise_terms)
+    while true
+        node = model[node_index]
+        push!(scenario_path, (node_index, noise))
+        children = node.children
+        # These termination conditions mirror `sample_scenario`.
+        if length(children) == 0
+            return scenario_path, false
+        elseif sampling_scheme.terminate_on_cycle && node_index in visited_nodes
+            return scenario_path, true
+        elseif 0 < sampling_scheme.max_depth <= length(scenario_path)
+            return scenario_path, false
+        elseif sampling_scheme.terminate_on_dummy_leaf &&
+               rand() < 1 - sum(child.probability for child in children)
+            return scenario_path, false
+        end
+        if sampling_scheme.terminate_on_cycle
+            push!(visited_nodes, node_index)
+        end
+        # The backward pass may update `risk_adjusted_transitions` in-place
+        # from another thread, so sample while holding the lock.
+        next = lock(node.lock) do
+            if isempty(node.risk_adjusted_transitions)
+                return nothing
+            end
+            return sample_noise(node.risk_adjusted_transitions)::Tuple{T,Any}
+        end
+        if next === nothing
+            node_index = sample_noise(children)::T
+            noise = sample_noise(model[node_index].noise_terms)
+        else
+            node_index, noise = next
+        end
+    end
+    return error(
+        "Internal SDDP error: something went wrong sampling a scenario.",
+    )
+end
+
+function forward_pass(
+    model::PolicyGraph{T},
+    options::Options,
+    pass::RiskBiasedForwardPass,
+) where {T}
+    sampling_scheme = options.sampling_scheme
+    if !(sampling_scheme isa InSampleMonteCarlo)
+        error(
+            "RiskBiasedForwardPass requires the sampling scheme to be an " *
+            "`InSampleMonteCarlo`. Got: $(typeof(sampling_scheme))",
+        )
+    end
+    @_timeit_threadsafe model.timer_output "sample_scenario" begin
+        scenario_path, terminated_due_to_cycle =
+            _sample_risk_biased_scenario(model, sampling_scheme)
+    end
+    return _forward_pass_along_scenario(
+        model,
+        options,
+        scenario_path,
+        terminated_due_to_cycle,
+        pass.include_last_node,
     )
 end
 

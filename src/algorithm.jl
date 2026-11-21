@@ -669,6 +669,8 @@ function backward_pass(
                         items.probability .* items.belief,
                         items.objectives,
                     )
+                    # RiskBiasedForwardPass does not support belief states.
+                    empty!(node.risk_adjusted_probability)
                     push!(cuts[node_index], new_cuts)
                 finally
                     unlock(node.lock)
@@ -704,6 +706,12 @@ function backward_pass(
                 items.probability,
                 items.objectives,
             )
+            _store_risk_adjusted_transitions(
+                model,
+                node,
+                items,
+                items.probability,
+            )
             push!(cuts[node_index], new_cuts)
             if options.refine_at_similar_nodes
                 # Refine the bellman function at other nodes with the same
@@ -731,6 +739,12 @@ function backward_pass(
                         items.supports,
                         copied_probability,
                         items.objectives,
+                    )
+                    _store_risk_adjusted_transitions(
+                        model,
+                        other_node,
+                        items,
+                        copied_probability,
                     )
                     push!(cuts[other_index], new_cuts)
                 end
