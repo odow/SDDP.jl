@@ -133,7 +133,7 @@ function _line_search(
             # We have evaluated the function too many times. Without this
             # check the Newton step below can cycle forever when the function
             # values are not consistent with the gradients.
-            return 0.0, fₖ, ∇fₖ
+            break
         end
         xₖ = x + α * p
         ret = f(xₖ)
