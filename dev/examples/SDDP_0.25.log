@@ -13,18 +13,18 @@ options
 subproblem structure
   VariableRef                             : [9, 9]
   AffExpr in MOI.EqualTo{Float64}         : [2, 4]
-  AffExpr in MOI.GreaterThan{Float64}     : [3, 21]
+  AffExpr in MOI.GreaterThan{Float64}     : [3, 20]
   VariableRef in MOI.EqualTo{Float64}     : [1, 1]
   VariableRef in MOI.GreaterThan{Float64} : [8, 8]
   VariableRef in MOI.LessThan{Float64}    : [5, 6]
 -------------------------------------------------------------------
  iteration    simulation      bound        time (s)     solves  pid
 -------------------------------------------------------------------
-         1   1.887500e+02  1.995243e+02  2.232075e-03      1149   1
-        10   2.962500e+02  2.052855e+02  1.567912e-02      1473   1
+         1   1.887500e+02  1.995243e+02  7.648945e-03      1149   1
+        10   2.962500e+02  2.052855e+02  7.565188e-02      1473   1
 -------------------------------------------------------------------
 status         : iteration_limit
-total time (s) : 1.567912e-02
+total time (s) : 7.565188e-02
 total solves   : 1473
 best bound     :  2.052855e+02
 numeric issues : 0
